@@ -20,6 +20,12 @@ namespace HpacSafety.Api.Admin;
 ///     <paramref name="PilotName" />, to this record carrying no other answer text.
 /// </param>
 /// <param name="PilotName">The pilot's first and last name answers, joined, or null when neither was given.</param>
+/// <param name="AttachmentCount">
+///     Every non-deleted attachment, whatever its kind, state, or visibility — every
+///     reader of this list is staff. Never counts a staff-only private attachment
+///     (ADR-0135). The icon is omitted client-side when this is 0 (issue #427,
+///     decisions 1-2).
+/// </param>
 public sealed record ReportListItem(
 	string Id,
 	DateTimeOffset SubmittedAt,
@@ -29,7 +35,8 @@ public sealed record ReportListItem(
 	bool IsStuck,
 	string Version,
 	string? ReporterName,
-	string? PilotName);
+	string? PilotName,
+	int AttachmentCount);
 
 /// <summary>
 ///     One page of the admin report list, newest submitted first, a tie broken

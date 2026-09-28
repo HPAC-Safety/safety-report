@@ -1,9 +1,13 @@
 using System.Buffers.Text;
 using System.Text;
+using HpacSafety.Api.Admin;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
+using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HpacSafety.Api.PublicReports;
 
@@ -51,15 +55,18 @@ public static class PublicReportEndpoints
 		string? q,
 		string? locale,
 		HpacSafetyDbContext database,
+		HttpContext context,
+		IOptions<HpacAuthenticationOptions> authOptions,
 		CancellationToken cancellationToken)
 	{
+		var isStaff = IsStaff(context, authOptions);
 		var trimmed = q?.Trim();
 
 		if (!string.IsNullOrEmpty(trimmed))
 		{
 			return await Search(
 				trimmed.Length > MaxSearchQueryLength ? trimmed[..MaxSearchQueryLength] : trimmed,
-				locale, after, database, cancellationToken).ConfigureAwait(false);
+				locale, after, isStaff, database, cancellationToken).ConfigureAwait(false);
 		}
 
 		var query = database.PublicReports.AsNoTracking();
@@ -96,7 +103,9 @@ public static class PublicReportEndpoints
 			.OrderByDescending(report => report.SubmittedAt)
 			.ThenByDescending(report => report.Id)
 			.Take(PageSize + 1)
-			.Select(report => new PublicReportRow(report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount))
+			.Select(report => new PublicReportRow(
+				report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount,
+				report.PublicAttachmentCount, report.FullAttachmentCount))
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
@@ -104,7 +113,9 @@ public static class PublicReportEndpoints
 		var next = rows.Count > PageSize ? Cursor.Write(page[^1].Id) : null;
 
 		var items = page
-			.Select(row => new PublicReportView(row.Id, row.AiSummaryEn, row.AiSummaryFr, row.PublishedAt, row.CommentCount))
+			.Select(row => new PublicReportView(
+				row.Id, row.AiSummaryEn, row.AiSummaryFr, row.PublishedAt, row.CommentCount,
+				isStaff ? row.FullAttachmentCount : row.PublicAttachmentCount))
 			.ToList();
 
 		return Results.Ok(new PublicReportPage(items, next));
@@ -125,6 +136,7 @@ public static class PublicReportEndpoints
 		string q,
 		string? localeCode,
 		string? after,
+		bool isStaff,
 		HpacSafetyDbContext database,
 		CancellationToken cancellationToken)
 	{
@@ -135,7 +147,9 @@ public static class PublicReportEndpoints
 			.SqlQuery<PublicReportSearchRow>(
 				$"""
 				 SELECT id AS "Id", ai_summary_en AS "AiSummaryEn", ai_summary_fr AS "AiSummaryFr",
-				        published_at AS "PublishedAt", comment_count AS "CommentCount"
+				        published_at AS "PublishedAt", comment_count AS "CommentCount",
+				        public_attachment_count AS "PublicAttachmentCount",
+				        full_attachment_count AS "FullAttachmentCount"
 				 FROM search_public_reports({q}, {locale.Code}, {afterId}, {PageSize + 1})
 				 """)
 			.ToListAsync(cancellationToken)
@@ -145,7 +159,9 @@ public static class PublicReportEndpoints
 		var next = rows.Count > PageSize ? Cursor.Write(page[^1].Id) : null;
 
 		var items = page
-			.Select(row => new PublicReportView(row.Id, row.AiSummaryEn, row.AiSummaryFr, row.PublishedAt, row.CommentCount))
+			.Select(row => new PublicReportView(
+				row.Id, row.AiSummaryEn, row.AiSummaryFr, row.PublishedAt, row.CommentCount,
+				isStaff ? row.FullAttachmentCount : row.PublicAttachmentCount))
 			.ToList();
 
 		return Results.Ok(new PublicReportPage(items, next));
@@ -159,13 +175,17 @@ public static class PublicReportEndpoints
 	private static async Task<IResult> Get(
 		string reportId,
 		HpacSafetyDbContext database,
+		HttpContext context,
+		IOptions<HpacAuthenticationOptions> authOptions,
 		CancellationToken cancellationToken)
 	{
+		var isStaff = IsStaff(context, authOptions);
+
 		// Any text is only a lookup key here: an ID that is not one simply has no row.
 		var report = await database.PublicReports
 			.AsNoTracking()
 			.Where(candidate => candidate.Id == reportId)
-			.Select(candidate => new PublicReportView(candidate.Id, candidate.AiSummaryEn, candidate.AiSummaryFr, candidate.PublishedAt, candidate.CommentCount))
+			.Select(candidate => new { candidate.Id, candidate.AiSummaryEn, candidate.AiSummaryFr, candidate.PublishedAt, candidate.CommentCount, candidate.PublicAttachmentCount, candidate.FullAttachmentCount })
 			.SingleOrDefaultAsync(cancellationToken)
 			.ConfigureAwait(false);
 
@@ -184,9 +204,53 @@ public static class PublicReportEndpoints
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
+		IReadOnlyList<ReportAttachmentView>? staffAttachments = null;
+
+		if (isStaff && TinyId.TryParse(reportId, out var parsedReportId))
+		{
+			// Reused from the admin report page (issue #427, decision 14): every
+			// attachment — public or not — with its state and public visibility, in
+			// the same vocabulary. Not an audited read: only opening an attachment's
+			// own bytes is (see AttachmentEndpoints).
+			var source = await database.Reports
+				.AsNoTracking()
+				.Include(candidate => candidate.Files)
+				.SingleOrDefaultAsync(candidate => candidate.Id == parsedReportId, cancellationToken)
+				.ConfigureAwait(false);
+
+			if (source is not null)
+			{
+				staffAttachments = [.. source.Files
+					.OrderBy(file => file.UploadedAt)
+					.ThenBy(file => file.Id)
+					.Select(file => new ReportAttachmentView(
+						file.Id.Value, EnumCode.Of(file.Kind), ReportEndpoints.AttachmentState(file), ReportEndpoints.Visibility(source, file)))];
+			}
+		}
+
 		return Results.Ok(new PublicReportDetail(
 			report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount,
-			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind), FormatOf(file.Kind, file.ContentType)))]));
+			isStaff ? report.FullAttachmentCount : report.PublicAttachmentCount,
+			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind), FormatOf(file.Kind, file.ContentType)))],
+			staffAttachments));
+	}
+
+	/// <summary>
+	///     True for a validated bearer token carrying <c>SafetyOfficer</c> or
+	///     <c>Administrator</c> (decision 4). The public endpoints stay anonymous;
+	///     JwtBearer is the default scheme, so a sent token is still authenticated
+	///     here even though nothing requires one.
+	/// </summary>
+	private static bool IsStaff(HttpContext context,
+								IOptions<HpacAuthenticationOptions> authOptions)
+	{
+		if (context.User.Identity?.IsAuthenticated != true)
+		{
+			return false;
+		}
+
+		var role = MemberRoles.EffectiveRole(context.User, authOptions.Value.RoleClaimType);
+		return role is MemberRole.SafetyOfficer or MemberRole.Administrator;
 	}
 
 	/// <summary>A document's coarse format, the extension it downloads with; none for an image or video.</summary>
@@ -260,7 +324,9 @@ public static class PublicReportEndpoints
 		string AiSummaryEn,
 		string AiSummaryFr,
 		DateTimeOffset PublishedAt,
-		int CommentCount);
+		int CommentCount,
+		int PublicAttachmentCount,
+		int FullAttachmentCount);
 
 	/// <summary>One <c>search_public_reports</c> row, aliased to match these property names exactly.</summary>
 	private sealed record PublicReportSearchRow(
@@ -268,7 +334,9 @@ public static class PublicReportEndpoints
 		string AiSummaryEn,
 		string AiSummaryFr,
 		DateTimeOffset PublishedAt,
-		int CommentCount);
+		int CommentCount,
+		int PublicAttachmentCount,
+		int FullAttachmentCount);
 
 	/// <summary>
 	///     The feed's keyset position: the last page's last report ID, an opaque

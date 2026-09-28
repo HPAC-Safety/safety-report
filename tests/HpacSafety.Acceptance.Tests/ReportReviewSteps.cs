@@ -94,6 +94,25 @@ public sealed class ReportReviewSteps
 		_namedReportId = report.Id.Value;
 	}
 
+	[Given(@"a report has one hidden attachment and one still-processing attachment")]
+	public async Task GivenAReportWithAHiddenAndAStillProcessingAttachment()
+	{
+		var factory = await BootedApi.Factory();
+		await using var scope = factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var now = DateTimeOffset.UtcNow;
+		var report = new Report(Locale.EnCa, now);
+		var hidden = report.AddFile(TinyId.New(), $"{report.Id}/original/hidden", MediaType.Jpeg.ContentType, 1024, "hidden.jpg", now);
+		hidden.RecordStripped($"{report.Id}/stripped/hidden", now);
+		hidden.HideBy("synthetic-reviewer", now);
+		report.AddFile(TinyId.New(), $"{report.Id}/original/processing", MediaType.Jpeg.ContentType, 1024, "processing.jpg", now);
+
+		database.Reports.Add(report);
+		await database.SaveChangesAsync();
+		_namedReportId = report.Id.Value;
+	}
+
 	// ── When ────────────────────────────────────────────────────────────────
 
 	[When(@"a reviewer lists reports")]
@@ -172,6 +191,12 @@ public sealed class ReportReviewSteps
 	{
 		ArgumentNullException.ThrowIfNull(expected);
 		ReadNullableString(RowById(_namedReportId), "reporterName").ShouldBe(expected.Length == 0 ? null : expected);
+	}
+
+	[Then(@"the row's attachment count is (\d+)")]
+	public void ThenTheRowsAttachmentCountIs(int expected)
+	{
+		RowById(_namedReportId).GetProperty("attachmentCount").GetInt32().ShouldBe(expected);
 	}
 
 	[Then(@"the row's pilot name reads ""(.*)""")]

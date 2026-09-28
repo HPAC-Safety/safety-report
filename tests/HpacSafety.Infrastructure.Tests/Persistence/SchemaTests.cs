@@ -62,17 +62,22 @@ public sealed class SchemaTests(PostgresFixture postgres)
 			"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'public_reports' ORDER BY ordinal_position");
 
 		// Then — the view's columns are the public DTO's allowlist (CON-DP-011)
-		// plus submitted_at, the feed's sort and keyset cursor key, which the API
-		// reads but never serializes (#570, ADR-0153).
+		// plus submitted_at, the feed's sort and keyset cursor key (#570,
+		// ADR-0153), and the two viewer-scoped attachment counts (#427), none of
+		// which the API serializes as-is — it reads only whichever count fits
+		// the viewer's role.
 		views.ShouldBe([
 			"admin_pending_counts", "admin_report_queue", "admin_report_search_document", "answers_awaiting_translation",
 			"public_report_comments", "public_report_media", "public_reports",
 		]);
-		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count", "submitted_at"]);
+		columns.ShouldBe([
+			"id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count", "submitted_at",
+			"public_attachment_count", "full_attachment_count",
+		]);
 	}
 
 	[Theory]
-	[InlineData("admin_report_queue", "id,submitted_at,status,language,consent_publish,is_stuck,needs_action,version,reporter_name,pilot_name")]
+	[InlineData("admin_report_queue", "id,submitted_at,status,language,consent_publish,is_stuck,needs_action,version,reporter_name,pilot_name,attachment_count")]
 	[InlineData("answers_awaiting_translation", "id,question_key,value,locale,answered_at")]
 	[InlineData("admin_pending_counts", "reports_needing_action,answers_awaiting_translation,type_ahead_values_awaiting_review")]
 	[InlineData("public_report_media", "id,report_id,kind,content_type,stripped_blob_key,document_blob_key,uploaded_at")]

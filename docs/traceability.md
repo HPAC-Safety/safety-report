@@ -286,7 +286,7 @@ Each attachment fails and processes independently of the report — *Reqnroll, C
 
 ### REQ-MED-010
 
-A reviewer gets a short-lived URL only for successfully processed media — *Reqnroll, Covered*
+A reviewer gets a short-lived inline URL only for successfully processed media — *Reqnroll, Covered*
 
 ### REQ-MED-011
 
@@ -298,7 +298,7 @@ The admin site never inline-renders a private document — *playwright-bdd, Plan
 
 ### REQ-MED-013
 
-A failed attachment is inaccessible to reviewers — *Reqnroll, Covered*
+A failed image or video is never viewed inline, but its raw original downloads, audited — *Reqnroll, Covered*
 
 ### REQ-MED-015
 
@@ -451,6 +451,18 @@ Only the private attachment link signs a URL for the private compartment — *Re
 ### REQ-MED-052
 
 Nothing anonymizes a private attachment — *Reqnroll, Covered*
+
+### REQ-MED-053
+
+A still-processing image or video is never viewed inline, but its raw original downloads, audited — *Reqnroll, Covered*
+
+### REQ-MED-054
+
+The raw-original download refuses once a derivative exists — *Reqnroll, Covered*
+
+### REQ-MED-055
+
+The raw-original download refuses a document — *Reqnroll, Covered*
 
 ## Claims: moderation-authentication-and-publication
 
@@ -1029,6 +1041,18 @@ An empty search box lists newest submitted first, unchanged — *Reqnroll, Cover
 ### REQ-MOD-149
 
 The search box sits at the top of the public feed, and its query is bookmarkable — *playwright-bdd, Covered*
+
+### REQ-MOD-150
+
+The feed's attachment count is the public count for a visitor and the full count for staff — *Reqnroll, Covered*
+
+### REQ-MOD-151
+
+The admin report list carries every non-deleted attachment's count — *Reqnroll, Covered*
+
+### REQ-MOD-152
+
+A signed-in safety officer sees every attachment on the public report page, each marked public or not — *Reqnroll, Covered*
 
 ## Claims: question-bank-and-form
 

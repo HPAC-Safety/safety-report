@@ -193,7 +193,8 @@ public static class ReportEndpoints
 				report.IsStuck,
 				report.Version,
 				report.ReporterName,
-				report.PilotName))
+				report.PilotName,
+				report.AttachmentCount))
 			.ToList();
 
 		return Results.Ok(new ReportListPage(items, next));
@@ -489,7 +490,13 @@ public static class ReportEndpoints
 			.ToList();
 	}
 
-	private static string AttachmentState(ReportFile file)
+	/// <summary>
+	///     An attachment's state (<c>ready</c>, <c>processing</c>, or <c>failed</c>).
+	///     Shared with <see cref="PublicReports.PublicReportEndpoints" />, which uses
+	///     the same vocabulary on the public report page's staff-mode strip (issue
+	///     #427, decision 14).
+	/// </summary>
+	internal static string AttachmentState(ReportFile file)
 	{
 		if (file.ProcessingErrorCode is not null)
 		{
@@ -506,8 +513,9 @@ public static class ReportEndpoints
 	///     <c>public_report_media</c> view holds (ADR-0117, ADR-0119), so a
 	///     reviewer sees what a visitor would.
 	/// </summary>
-	private static string Visibility(Report report,
-									 ReportFile file)
+	/// <summary>Shared with <see cref="PublicReports.PublicReportEndpoints" />; see <see cref="AttachmentState" />.</summary>
+	internal static string Visibility(Report report,
+									  ReportFile file)
 	{
 		var isDocument = file.Kind is AttachmentKind.Document;
 

@@ -428,7 +428,29 @@ Scenario: Publication requires every guard to pass, with no bypass
 Scenario: The public DTO exposes only the approved summary and its metadata
   Given a report is published
   When the public API returns it
-  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, and each public file's opaque id, kind, and — for a document only — coarse format
+  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
+
+@REQ-MOD-150
+Scenario: The feed's attachment count is the public count for a visitor and the full count for staff
+  Given a published report has one public attachment and one attachment only staff may see
+  When an anonymous visitor lists the feed
+  Then the report's attachment count is 1
+  When a signed-in safety officer lists the feed
+  Then the report's attachment count is 2
+
+@REQ-MOD-151
+Scenario: The admin report list carries every non-deleted attachment's count
+  Given a report has one hidden attachment and one still-processing attachment
+  When a reviewer lists reports
+  Then the row's attachment count is 2
+
+@REQ-MOD-152
+Scenario: A signed-in safety officer sees every attachment on the public report page, each marked public or not
+  Given a published report has a public image and a hidden image
+  When a signed-in safety officer asks the public API for that report
+  Then the response carries a staff attachment for each file, with its state and public visibility
+  And the hidden file's visibility reads "hidden"
+  And the public file's visibility reads "public"
   And it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-037

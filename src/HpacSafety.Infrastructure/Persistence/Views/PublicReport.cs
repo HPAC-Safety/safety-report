@@ -32,4 +32,18 @@ public sealed class PublicReport
 	///     <see cref="PublishedAt" /> instead.
 	/// </summary>
 	public DateTimeOffset SubmittedAt { get; private init; }
+
+	/// <summary>
+	///     How many rows this report has in <c>public_report_media</c> — the
+	///     attachment count a public viewer sees (issue #427, decisions 1-2).
+	/// </summary>
+	public int PublicAttachmentCount { get; private init; }
+
+	/// <summary>
+	///     How many non-deleted <c>report_files</c> rows this report has, whatever
+	///     their kind, state, or visibility — the attachment count a signed-in
+	///     <c>SafetyOfficer</c>/<c>Administrator</c> sees. Never counts a staff-only
+	///     private attachment (ADR-0135). See issue #427, decisions 1-2.
+	/// </summary>
+	public int FullAttachmentCount { get; private init; }
 }

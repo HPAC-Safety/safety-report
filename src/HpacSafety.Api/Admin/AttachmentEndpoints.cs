@@ -9,13 +9,16 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-///     A reviewer's only two ways to see an uploaded file: a short-lived, forced
-///     download of an image or video's stripped derivative, or of a document's
-///     validated private original. Neither endpoint proxies bytes through the API
-///     or returns a public URL — both mint a pre-signed GET through
+///     A reviewer's ways to see an uploaded file: a short-lived, inline view of an
+///     image or video's stripped derivative (for the lightbox), a forced download
+///     of a document's validated private original, or — only while an image or
+///     video has no derivative yet — a forced, audited download of its raw
+///     original. Neither endpoint proxies bytes through the API or returns a
+///     public URL — every one mints a pre-signed GET through
 ///     <see cref="ReviewerMediaLink" />, the one place allowed to call
-///     <see cref="IBlobStore.CreateReadUrl" />. See REQ-MED-010, REQ-MED-011,
-///     REQ-MED-013, and ADR-0090 for the atomic audit write.
+///     <see cref="IBlobStore.CreateReadUrl" />/<see cref="IBlobStore.CreateInlineReadUrl" />.
+///     See REQ-MED-010, REQ-MED-011, REQ-MED-013, and ADR-0090 for the atomic
+///     audit write.
 /// </summary>
 public static class AttachmentEndpoints
 {
@@ -31,12 +34,20 @@ public static class AttachmentEndpoints
 
 		group.MapGet("/view", ViewAsync);
 		group.MapGet("/download", DownloadAsync);
+		group.MapGet("/original", OriginalAsync);
 		group.MapPost("/hide", Hide);
 		group.MapPost("/show", Show);
 
 		return group;
 	}
 
+	/// <summary>
+	///     An inline, short-lived link to an image or video's stripped derivative,
+	///     for the lightbox (issue #427 decision 10). Still audited, at most 15
+	///     minutes. 404 for a document (use <see cref="DownloadAsync" />) and for a
+	///     file with no derivative yet — still processing, or failed (use
+	///     <see cref="OriginalAsync" />) — REQ-MED-013.
+	/// </summary>
 	private static async Task<IResult> ViewAsync(
 		string reportId,
 		string attachmentId,
@@ -62,9 +73,9 @@ public static class AttachmentEndpoints
 		if (file.ProcessingErrorCode is not null
 			|| file.AwaitsStripping)
 		{
-			// A failed or still-processing file is inaccessible to any
-			// reviewer — REQ-MED-013. Refusing here, before minting a URL,
-			// means no audit row records a view that never actually happened.
+			// A failed or still-processing file has no derivative to view inline;
+			// use /original instead (decision 15). Refusing here, before minting a
+			// URL, means no audit row records a view that never actually happened.
 			return Results.NotFound();
 		}
 
@@ -72,8 +83,12 @@ public static class AttachmentEndpoints
 
 		try
 		{
-			url = await links.CreateViewUrl(
-				file.ViewableKey, DownloadFileName(file, derivative: true), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+			var contentType = MediaType.TryParse(file.ContentType, out var original) && original.DerivativeForm is { } derived
+				? derived.ContentType
+				: file.ContentType;
+
+			url = await links.CreateInlineViewUrl(
+				file.ViewableKey, contentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
 		}
 		catch (DomainRuleViolationException cause)
 		{
@@ -81,6 +96,58 @@ public static class AttachmentEndpoints
 		}
 
 		return await IssueAsync(file, url, DownloadFileName(file, derivative: true), context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	///     A forced, audited download of the raw original of an image or video
+	///     that has no stripped derivative yet — still processing, or failed
+	///     (issue #427 decision 15, widening ADR-0094 from a failed video to any
+	///     image or video with no derivative). 404 once a derivative exists (use
+	///     <see cref="ViewAsync" /> instead) and for a document (use
+	///     <see cref="DownloadAsync" />).
+	/// </summary>
+	private static async Task<IResult> OriginalAsync(
+		string reportId,
+		string attachmentId,
+		HttpContext context,
+		HpacSafetyDbContext database,
+		ReviewerMediaLink links,
+		IOptions<HpacAuthenticationOptions> authOptions,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		var file = await LoadAccessibleFileAsync(reportId, attachmentId, database, cancellationToken).ConfigureAwait(false);
+
+		if (file is null)
+		{
+			return Results.NotFound();
+		}
+
+		if (file.Kind is not (AttachmentKind.Image or AttachmentKind.Video))
+		{
+			return Problem("Use the download endpoint for a document.");
+		}
+
+		if (file.ProcessingErrorCode is null
+			&& !file.AwaitsStripping)
+		{
+			// A derivative exists — the caller should have used /view instead.
+			return Results.NotFound();
+		}
+
+		Uri url;
+
+		try
+		{
+			url = await links.CreateOriginalMediaDownloadUrl(
+				BlobKey.Parse(file.BlobKey), file.Kind, DownloadFileName(file, derivative: false), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Problem(cause.Message);
+		}
+
+		return await IssueAsync(file, url, DownloadFileName(file, derivative: false), AuditAction.DownloadedOriginalMedia, context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
 	}
 
 	private static async Task<IResult> DownloadAsync(
@@ -196,10 +263,24 @@ public static class AttachmentEndpoints
 	///     has no record of having happened — the atomicity ADR-0090 requires, with
 	///     "the action" being disclosure of the link itself.
 	/// </summary>
+	private static Task<IResult> IssueAsync(
+		ReportFile file,
+		Uri url,
+		string fileName,
+		HttpContext context,
+		HpacSafetyDbContext database,
+		IOptions<HpacAuthenticationOptions> authOptions,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		return IssueAsync(file, url, fileName, AuditAction.ViewedAttachment, context, database, authOptions, clock, cancellationToken);
+	}
+
 	private static async Task<IResult> IssueAsync(
 		ReportFile file,
 		Uri url,
 		string fileName,
+		AuditAction action,
 		HttpContext context,
 		HpacSafetyDbContext database,
 		IOptions<HpacAuthenticationOptions> authOptions,
@@ -214,7 +295,7 @@ public static class AttachmentEndpoints
 		}
 
 		database.AuditLog.Add(new AuditLogEntry(
-			identity.Subject, AuditAction.ViewedAttachment, "ReportFile", file.Id, clock.GetUtcNow()));
+			identity.Subject, action, "ReportFile", file.Id, clock.GetUtcNow()));
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

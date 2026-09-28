@@ -108,11 +108,10 @@ Scenario: Each attachment fails and processes independently of the report
   And the slow or corrupt file neither rolls back the valid report nor forces an additional AI call
 
 @REQ-MED-010
-Scenario: A reviewer gets a short-lived URL only for successfully processed media
+Scenario: A reviewer gets a short-lived inline URL only for successfully processed media
   Given an image or video attachment has finished processing successfully
   When an authorized reviewer requests to view it
-  Then the reviewer receives a short-lived read URL to the derivative
-  And the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff
+  Then the reviewer receives a short-lived URL to the derivative, served inline rather than as a forced download, so the lightbox can embed it, with the header X-Content-Type-Options: nosniff
   And there is no API blob proxy or public URL
 
 @REQ-MED-011
@@ -133,12 +132,34 @@ Scenario: The admin site never inline-renders a private document
   And the reviewer is warned that the document is unredacted before download
 
 @REQ-MED-013
-Scenario: A failed attachment is inaccessible to reviewers
+Scenario: A failed image or video is never viewed inline, but its raw original downloads, audited
   Given signature validation, decoding, metadata removal, writing, or verification fails for an image
   When processing finishes
   Then the file is marked failed
-  And the file is inaccessible to any reviewer
+  And no inline view link is issued for it
+  And a reviewer instead receives a short-lived, forced download of the raw original, audited as a distinct action, under the reporter's sanitized filename, or a server-minted name when there is none
+  And it is never offered inline and never opened in the lightbox
   And a video whose remux fails is not a failure of this kind: it is retained under its own rule
+
+@REQ-MED-053
+Scenario: A still-processing image or video is never viewed inline, but its raw original downloads, audited
+  Given a submitted image the Worker has not yet processed
+  When an authorized reviewer requests it
+  Then no inline view link is issued for it
+  And a reviewer instead receives a short-lived, forced download of the raw original, audited as a distinct action, under the reporter's sanitized filename, or a server-minted name when there is none
+  And it is never offered inline and never opened in the lightbox
+
+@REQ-MED-054
+Scenario: The raw-original download refuses once a derivative exists
+  Given an image or video attachment has finished processing successfully
+  When an authorized reviewer requests its raw original instead of its view link
+  Then the raw-original download is refused
+
+@REQ-MED-055
+Scenario: The raw-original download refuses a document
+  Given a document attachment has passed validation
+  When an authorized reviewer requests its raw original instead of its download link
+  Then the raw-original download is refused
 
 @REQ-MED-016
 Scenario: Removing an upload erases every version of it

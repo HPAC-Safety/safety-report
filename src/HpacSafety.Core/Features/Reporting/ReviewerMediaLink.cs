@@ -49,6 +49,56 @@ public sealed class ReviewerMediaLink
 	}
 
 	/// <summary>
+	///     A short-lived, inline pre-signed GET for a stripped derivative, served
+	///     under <paramref name="contentType" /> so the lightbox can embed it. Throws
+	///     for anything else. See REQ-MED-010 and issue #427 decision 10.
+	/// </summary>
+	public Task<Uri> CreateInlineViewUrl(BlobKey key,
+										 string contentType,
+										 TimeSpan lifetime,
+										 CancellationToken cancellationToken)
+	{
+		if (!IsViewable(key))
+		{
+			throw new DomainRuleViolationException(
+				"A reviewer may only be shown a stripped derivative, never the original upload.");
+		}
+
+		return _blobStore.CreateInlineReadUrl(key, contentType, lifetime, cancellationToken);
+	}
+
+	/// <summary>
+	///     A short-lived, forced-download pre-signed GET for the raw original of an
+	///     image or video that has no stripped derivative yet — still processing, or
+	///     failed. Throws for a document (use <see cref="CreateDocumentDownloadUrl" />)
+	///     and for anything not in the original compartment. Issuing this once a
+	///     derivative exists is the caller's mistake to avoid: the caller checks
+	///     <c>AwaitsStripping</c>/<c>ProcessingErrorCode</c> first and uses
+	///     <see cref="CreateInlineViewUrl" /> instead. See issue #427 decision 15,
+	///     which widens ADR-0094 from a failed video to any image or video with no
+	///     derivative.
+	/// </summary>
+	public Task<Uri> CreateOriginalMediaDownloadUrl(BlobKey originalKey,
+													AttachmentKind kind,
+													string downloadFileName,
+													TimeSpan lifetime,
+													CancellationToken cancellationToken)
+	{
+		if (kind is not (AttachmentKind.Image or AttachmentKind.Video))
+		{
+			throw new DomainRuleViolationException(
+				"Only an image or video's raw original may be downloaded this way; a document downloads through the document endpoint.");
+		}
+
+		if (originalKey.Compartment is not MediaCompartment.Original)
+		{
+			throw new DomainRuleViolationException("A raw-original download must reference the original compartment.");
+		}
+
+		return _blobStore.CreateReadUrl(originalKey, downloadFileName, lifetime, cancellationToken);
+	}
+
+	/// <summary>
 	///     A short-lived, forced-download pre-signed GET for a document's validated
 	///     private original. Throws for anything that is not a document's original —
 	///     an image or video original is never issued this way, because only a

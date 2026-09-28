@@ -136,6 +136,14 @@ export function judge({ changed, features, body, knownClaims }) {
 	if (changed.length === 0) return { ok: true, note: 'No behavior-bearing file changed.' }
 	if (features.length > 0) return { ok: true, note: `Scenarios changed alongside: ${features.join(', ')}.` }
 
+	// A diff that touches nothing but dependency manifests needs no exemption
+	// line at all — there is no author to write one on a Renovate pull request,
+	// and the category already exists to describe exactly this diff shape
+	// (ADR-0090; owner decision on #600).
+	if (changed.every(isDependencyManifest)) {
+		return { ok: true, note: `Dependency manifest${changed.length > 1 ? 's' : ''} only: ${changed.join(', ')}.` }
+	}
+
 	const exemption = parseExemption(body)
 	if (!exemption) {
 		const malformed = ATTEMPTED.test(body)

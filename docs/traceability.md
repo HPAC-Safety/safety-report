@@ -2334,6 +2334,14 @@ French is machine-translated into the English the configuration names — *Reqnr
 
 A translator with no usable English target refuses to start — *Reqnroll, Covered*
 
+### REQ-WLD-030
+
+A production hostname sets a first-time visitor's default language, but a saved choice still wins — *playwright-bdd, Covered*
+
+### REQ-WLD-031
+
+Switching the language toggle never changes the host — *playwright-bdd, Covered*
+
 ## Constraints
 
 A constraint states something the system must be true of; the claims beside

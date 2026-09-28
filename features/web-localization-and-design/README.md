@@ -32,6 +32,15 @@ using semantic HTML and compiled Tailwind CSS.
 
 ## Localization scope
 
+The initial locale is resolved in order: an explicit stored choice, then the
+hostname (`safety.hpac.ca` → English, `securite.acvl.ca` → French, #463), then
+the browser's languages, then English. The hostname→locale mapping is a small
+literal object in `src/web/src/i18n/locales.ts` — one entry per production
+hostname, nothing speculative. An unrecognized host, including staging's
+`*.cloudfront.net` address, has no entry and falls through to the browser
+languages. Switching the language toggle changes only the locale, never the
+host.
+
 Dates, numbers, and accessible labels use locale-aware formatting. Stored
 codes/values remain invariant. A free-text answer gets a second language only
 when an administrator marked its question for translation, and then off the

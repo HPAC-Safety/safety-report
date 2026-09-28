@@ -1,13 +1,22 @@
-import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "./locales"
+import { DEFAULT_LOCALE, isSupportedLocale, localeForHostname, type Locale } from "./locales"
 
 /**
  * Priority order per skills/localize-hpac-app/SKILL.md: an explicit stored
- * choice, then the browser's languages, then English. Pure and
- * browser-free so it can be exercised without a DOM.
+ * choice, then the hostname (issue 463), then the browser's languages, then
+ * English. Pure and browser-free so it can be exercised without a DOM.
  */
-export function resolveInitialLocale(storedValue: string | null, navigatorLanguages: readonly string[]): Locale {
+export function resolveInitialLocale(
+	storedValue: string | null,
+	navigatorLanguages: readonly string[],
+	hostname: string,
+): Locale {
 	if (storedValue && isSupportedLocale(storedValue)) {
 		return storedValue
+	}
+
+	const hostLocale = localeForHostname(hostname)
+	if (hostLocale) {
+		return hostLocale
 	}
 
 	for (const language of navigatorLanguages) {

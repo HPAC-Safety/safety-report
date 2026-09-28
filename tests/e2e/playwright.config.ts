@@ -42,7 +42,17 @@ export default defineConfig({
 		{
 			name: "chromium-bdd",
 			testDir: bddTestDir,
-			use: { ...devices["Desktop Chrome"] },
+			use: {
+				...devices["Desktop Chrome"],
+				// REQ-WLD-030/031 (#463) navigate to the production hostnames and
+				// one cloudfront.net stand-in for an unrecognized host, to exercise
+				// hostname-based locale selection without touching real DNS or TLS.
+				launchOptions: {
+					args: [
+						"--host-resolver-rules=MAP safety.hpac.ca 127.0.0.1,MAP securite.acvl.ca 127.0.0.1,MAP d1x2y3.cloudfront.net 127.0.0.1",
+					],
+				},
+			},
 		},
 	],
 	webServer: {

@@ -27,7 +27,7 @@ function interpolate(text: string, params?: Record<string, string | number>): st
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
 	const [locale, setLocaleState] = useState<Locale>(() =>
-		resolveInitialLocale(readStoredLocale(), navigator.languages ?? [navigator.language]),
+		resolveInitialLocale(readStoredLocale(), navigator.languages ?? [navigator.language], window.location.hostname),
 	)
 	const [catalogue, setCatalogue] = useState<Catalogue>({})
 

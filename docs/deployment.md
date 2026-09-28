@@ -83,9 +83,11 @@ today's Terraform differs" below for exactly what is still scaffolding.
    three are uploaded as workflow artifacts — nothing is pushed to either
    account's ECR yet.
 3. **`staging`** (GitHub environment `hpac-safety-staging`, no required reviewer)
-   loads those same artifacts, runs `terraform apply -var-file=infra/staging.tfvars`,
-   re-plans and fails the job on drift, replaces the NAT instance, pushes the
-   images to staging's ECR, refreshes `GEMINI_API_KEY`/`DEEPL_API_KEY` in
+   loads those same artifacts, creates the ECR repositories if they are
+   missing, pushes the images to them (a Lambda function cannot be created
+   from an image ECR does not yet hold, #623), runs
+   `terraform apply -var-file=infra/staging.tfvars`, re-plans and fails the job
+   on drift, replaces the NAT instance, refreshes `GEMINI_API_KEY`/`DEEPL_API_KEY` in
    staging's Secrets Manager, updates both Lambda functions to the pushed
    image digests, syncs the web bundle to the site bucket, invalidates
    CloudFront, and smoke-tests `/api/health`. The release ends there: it
@@ -183,14 +185,16 @@ This naming (the `_STAGING`/`_PRODUCTION` suffix) was decided in this pull
 request, not by #464 or #591 — `infra/bootstrap.sh` was extended in this pull
 request to print it.
 
-Every step that reads an AWS resource name — ECR repositories, the Lambda
-function names, the site and uploads buckets, the CloudFront distribution,
-the NAT instance's Auto Scaling group, the Gemini/DeepL secret ids — comes
+Every step that reads an AWS resource name — the Lambda function names, the
+site and uploads buckets, the CloudFront distribution, the NAT instance's Auto Scaling group, the Gemini/DeepL secret ids — comes
 from `terraform output`, never a GitHub variable, so `infra/` stays the one
 place those names are decided: `deploy_variables`, and the standalone
 outputs `nat_autoscaling_group_arn`, `secret_entries`, `site_urls`, and
-`dns_records_to_publish`. `node tools/check-terraform-outputs.mjs` (`ci.yml`'s
-`docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
+`dns_records_to_publish`. The ECR repository URLs are the one exception,
+read from Terraform state (`terraform show -json`) right after the targeted
+apply that creates them, because `deploy_variables` also names resources a
+first release has not created yet.
+`node tools/check-terraform-outputs.mjs` (`ci.yml`'s `docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
 reads an output name or JSON key `infra/outputs.tf` doesn't declare.
 
 Migrations apply at startup: the API and the Worker each run pending migrations

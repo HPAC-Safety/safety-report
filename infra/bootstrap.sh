@@ -101,6 +101,13 @@ ROLE_NAME='hpac-safety-deploy'
 POLICY_NAME='hpac-safety-deploy'
 PLAN_ROLE_NAME='hpac-safety-plan'
 PLAN_POLICY_NAME='hpac-safety-plan'
+# The deploy role's policy is split across four managed policies -
+# AWS limits a single managed policy to 6144 characters, and a policy this
+# thorough about tag/name scoping does not fit in one. See the comment
+# table above DEPLOY_POLICY_CORE below for what each one is for.
+POLICY_NAME_IAM='hpac-safety-deploy-iam'
+POLICY_NAME_SERVICES='hpac-safety-deploy-services'
+POLICY_NAME_GUARDRAILS='hpac-safety-deploy-guardrails'
 # One bucket per account, not per environment: each account IS one environment
 # (see above). S3 bucket names are globally unique, so the account id, not the
 # environment name, makes this bucket name collision-free across accounts.
@@ -122,6 +129,50 @@ TAG_VALUE='HPAC-Safety'
 
 say() { printf '%s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+# converge_managed_policy NAME ARN DOCUMENT DESCRIPTION
+#   Creates the customer-managed policy NAME if it does not exist, or - since a
+#   managed policy holds at most five versions - deletes every non-default
+#   version and publishes DOCUMENT as a new default version if it does. Used
+#   for every policy below; there are five now instead of two, so this is no
+#   longer worth inlining five times.
+converge_managed_policy() {
+  policy_name=$1
+  policy_arn=$2
+  policy_document=$3
+  policy_description=$4
+  if aws iam get-policy --policy-arn "$policy_arn" >/dev/null 2>&1; then
+    # shellcheck disable=SC2016  # JMESPath literal backticks, not shell expansion.
+    query='Versions[?IsDefaultVersion==`false`].VersionId'
+    for version in $(aws iam list-policy-versions --policy-arn "$policy_arn" \
+                       --query "$query" --output text); do
+      aws iam delete-policy-version --policy-arn "$policy_arn" --version-id "$version" >/dev/null
+    done
+    aws iam create-policy-version \
+      --policy-arn "$policy_arn" \
+      --policy-document "$policy_document" \
+      --set-as-default >/dev/null
+    say "     ${policy_name}: already exists; new default version published"
+  else
+    aws iam create-policy \
+      --policy-name "$policy_name" \
+      --description "$policy_description" \
+      --policy-document "$policy_document" \
+      --tags "Key=${TAG_KEY},Value=${TAG_VALUE}" >/dev/null
+    say "     ${policy_name}: created"
+  fi
+}
+
+# attach_policy_if_missing ROLE_NAME POLICY_ARN
+attach_policy_if_missing() {
+  role_name=$1
+  policy_arn=$2
+  if aws iam list-attached-role-policies --role-name "$role_name" \
+       --query 'AttachedPolicies[].PolicyArn' --output text | grep -qF "$policy_arn"; then
+    return 0
+  fi
+  aws iam attach-role-policy --role-name "$role_name" --policy-arn "$policy_arn" >/dev/null
+}
 
 # --------------------------------------------------------------------------
 # Preconditions
@@ -145,6 +196,9 @@ STATE_BUCKET="${STATE_BUCKET_PREFIX}-${ACCOUNT_ID}"
 OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/${OIDC_HOST}"
 ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
 POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/${POLICY_NAME}"
+POLICY_ARN_IAM="arn:aws:iam::${ACCOUNT_ID}:policy/${POLICY_NAME_IAM}"
+POLICY_ARN_SERVICES="arn:aws:iam::${ACCOUNT_ID}:policy/${POLICY_NAME_SERVICES}"
+POLICY_ARN_GUARDRAILS="arn:aws:iam::${ACCOUNT_ID}:policy/${POLICY_NAME_GUARDRAILS}"
 PLAN_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${PLAN_ROLE_NAME}"
 PLAN_POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/${PLAN_POLICY_NAME}"
 
@@ -251,7 +305,7 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# 2b. The policy the role carries
+# 2b. The policies the role carries
 # --------------------------------------------------------------------------
 #
 # Terraform manages the whole environment, so most of this is service-scoped
@@ -261,59 +315,137 @@ fi
 # Organizations, or the account itself, which is the class of action that
 # turns a leaked deploy path into a lost account.
 #
-# THE STAGING ACCOUNT ALSO RUNS OTHER APPLICATIONS. Two independent guards
-# keep this role off them:
-#   - IAM and S3 are restricted BY NAME to hpac-safety-* roles/policies and
-#     hpac-safety-* buckets: the only IAM/S3 resources this role can name at
-#     all belong to this system.
-#   - Everywhere IAM condition keys support it, a StringEqualsIfExists on
-#     aws:ResourceTag/Project and aws:RequestTag/Project pins this role to
-#     resources already tagged HPAC-Safety, and to newly created resources
-#     being tagged HPAC-Safety. "IfExists" is deliberate: a bare
-#     StringEquals would also have to match on actions that carry no tag
-#     context at all (many read/list calls, and some create calls before the
-#     resource exists to tag), which would silently break Terraform rather
-#     than protect anything. The name-based S3/IAM restriction is the hard
-#     boundary; the tag condition is defence in depth on top of it, not a
-#     substitute for it.
+# THE STAGING ACCOUNT IS THE OWNER'S OWN PERSONAL AWS ACCOUNT, AND ALSO RUNS
+# OTHER, UNRELATED WORKLOADS. A tag condition that only checks
+# StringEqualsIfExists on aws:ResourceTag/Project does NOT guard anything: it
+# passes whenever the resource carries no Project tag at all, which is every
+# resource belonging to those other workloads. Four independent guards close
+# that gap instead:
 #
-# It also cannot read an upload. `s3:*` would otherwise let it fetch a crash
-# photograph, and it has no reason to: it CONFIGURES that bucket - policy,
-# versioning, encryption, lifecycle - and never reads an object out of it. The
-# `NeverReadReportData` denial below covers the versioned actions too, because
-# `s3:GetObjectVersion` is a DISTINCT IAM action from `s3:GetObject` and denying
-# only the latter leaves every noncurrent version readable. That distinction
-# matters more since the quarantine lifecycle rule: between its two hops an
-# unverified upload exists precisely as a noncurrent version.
+#   1. NAME SCOPING wherever a service gives its resources predictable,
+#      HPAC-Safety-only names: secrets under secret:hpac-safety-*, functions
+#      under function:hpac-safety-* / layer:hpac-safety-*, ECR repositories
+#      under repository/hpac-safety-*, SNS topics under hpac-safety-*, event
+#      rules under rule/hpac-safety-*, schedules under
+#      schedule/*/hpac-safety-*, and our own log groups under
+#      /aws/lambda/hpac-safety-* and /aws/rds/instance/hpac-safety*. These
+#      services get their OWN Allow statements below (DEPLOY_POLICY_CORE),
+#      scoped to those ARN patterns instead of "*", so the tag condition is
+#      not the only thing standing between this role and another app's
+#      identically-typed resource.
+#   2. READ-ONLY METADATA everywhere else (Describe*/List*/most Get*) is
+#      allowed broadly: configuration facts, not data, and Terraform needs
+#      them to plan a diff against services that DON'T have a name pattern to
+#      scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS, Resource
+#      Groups, AppRegistry).
+#   3. CREATE is allowed for those un-scopable services only with
+#      aws:RequestTag/Project=HPAC-Safety - a real StringEquals, not
+#      IfExists, so an untagged create request is refused, not merely
+#      unchecked (DEPLOY_POLICY_SERVICES).
+#   4. EVERY MUTATING VERB (Delete/Modify/Update/Put/Stop/Start/Reboot/
+#      Terminate/Attach/Detach/Associate/Disassociate/Authorize/Revoke, and
+#      removing an existing tag) is denied outright unless the resource is
+#      ALREADY tagged Project=HPAC-Safety - StringNotEquals with no IfExists,
+#      so a resource with no tag at all is denied exactly like a resource
+#      tagged for someone else's project (DEPLOY_POLICY_GUARDRAILS). Create
+#      verbs are deliberately absent from this list: a brand-new resource
+#      cannot be tagged yet at the moment it is created, so gating creation
+#      itself on aws:ResourceTag would be circular. Guard 3 covers creation;
+#      this guards everything after it.
 #
-# SAME BUG CLASS, SECOND SERVICE: `rds:*` below lets this role manage the
-# database, and RDS mirrors its logs into CloudWatch Logs
-# (`enabled_cloudwatch_logs_exports` in database.tf) - the postgresql export can
-# carry report narrative text, because `log_min_duration_statement` logs the
-# statement TEXT for anything slower than a second. A Deny on CloudWatch Logs'
-# read API (`logs:GetLogEvents` etc.) is not enough on its own either: RDS's OWN
-# native log-download API (`rds:DownloadDBLogFilePortion`,
-# `rds:DownloadCompleteDBLogFile`) reaches the very same log content through a
-# completely different action namespace. `NeverReadDatabaseLogs` denies both.
+# Two narrow, documented exceptions to guard 4, because they touch a resource
+# that legitimately has no HPAC-Safety tag and never will:
+#   - `ec2:RunInstances` also names the `fck-nat` AMI (#465) as a resource in
+#     the same call. That AMI is a public image someone else publishes and
+#     tags however they like; RunInstances is a Create verb, so it is not in
+#     the guardrails deny list at all, and is governed solely by guard 3
+#     (allowed only with our own RequestTag on the instance/volume being
+#     created).
+#   - `ec2:CreateNetworkInterface`, and the handful of ATTACH/ASSOCIATE calls
+#     that wire a brand-new resource to the VPC/subnet it was just created
+#     in (`EstablishNetworkAttachmentsOnResourcesWeJustCreated` in
+#     DEPLOY_POLICY_SERVICES) are excluded from the guardrails deny list
+#     because at the moment they run, the resource on the other end (a
+#     subnet, a route table) is the one THIS role created moments earlier and
+#     tagged - but Attach/Associate verbs are still swept into the deny list
+#     for every OTHER resource type, and only the specific EC2 network calls
+#     needed to stand up a fresh VPC are carved out, each named explicitly
+#     rather than as a verb wildcard.
 #
-# THE NAT INSTANCE (#30, #465): every release deletes and recreates it, in a
-# one-instance Auto Scaling group (`fck-nat`, a t4g.nano). That is
-# `autoscaling:*` - the EC2 Auto Scaling service, a distinct action namespace
-# from both `ec2:*` (which covers the instance, its launch template, and the
-# network interface/EIP the group attaches to) and the now-dropped
-# `application-autoscaling:*` (which scales ECS/DynamoDB/etc. capacity, not EC2
-# instances, and this system has none of those left to scale).
+# DATA, NOT JUST RESOURCES, MUST STAY OUT OF REACH. Guard 1-4 stop this role
+# from CHANGING another workload's resources, but several read-only "Get" and
+# "list" style calls in these same services return the workload's DATA, not
+# its configuration, and a Describe*/List*/Get* allow-everything statement
+# would otherwise hand that over even though nothing was ever "mutated":
+#   - `s3:GetObject*` returns object bytes - scoped to hpac-safety-* buckets
+#     only, with an explicit deny on everything else
+#     (NeverReadDataOutsideOurBuckets);
+#   - `secretsmanager:GetSecretValue` returns a plaintext secret - denied
+#     outright, everywhere, including our OWN secrets. This role WRITES
+#     secret values (H4/#465 copies GitHub secrets into Secrets Manager); it
+#     never needs to read one back;
+#   - `lambda:GetFunction`/`GetFunctionConfiguration` return a function's
+#     environment variables, and `InvokeFunction` runs it - scoped to our own
+#     functions, denied for everything else;
+#   - `ecr:GetDownloadUrlForLayer`/`BatchGetImage` return container image
+#     layers - scoped to our own repositories, denied for everything else;
+#   - `logs:GetLogEvents`/`FilterLogEvents`/`StartQuery`/`GetQueryResults`
+#     return log line content, which for OUR OWN RDS log group can carry
+#     report narrative text (`log_min_duration_statement`) - denied
+#     outright, everywhere, ours included; this role manages log groups, it
+#     never reads their content;
+#   - `ssm:GetParameter*`, `dynamodb:GetItem`/`Query`/`Scan`,
+#     `kinesis:GetRecords`, `sqs:ReceiveMessage` are services this role has no
+#     legitimate reason to read at all - denied outright, everywhere, since
+#     this account may hold other applications' parameters, tables, streams,
+#     and queues.
 #
-# APPREGISTRY / RESOURCE GROUPS NAMING (#30, #465): each account's
-# myApplications application and its Resource Group are named after the
-# GitHub environment - `hpac-staging` / `hpac-production` - not
-# `hpac-safety-*`. `servicecatalog:*` and `resource-groups:*` below are
-# therefore NOT restricted by the hpac-safety-* name pattern the way IAM and
-# S3 are; the `Project=HPAC-Safety` tag condition on this whole statement is
-# what keeps them off another application's AppRegistry application or
-# Resource Group in the shared staging account instead.
+# NONE OF THIS HAS BEEN EXERCISED AGAINST REAL AWS. Nothing in this repository
+# can call AWS, and this pull request does not change that. Every statement
+# below is reviewed by inspection, JSON validation, and shellcheck only - the
+# same as `infra`'s required CI check does. Treat the four-policy split, the
+# exact action lists, and the two named exceptions above as a best-effort,
+# reviewable starting point, not a guarantee that no further gap exists.
+#
+# Statement -> intent, at a glance (full detail is in the JSON below):
+#
+#   DEPLOY_POLICY_CORE (hpac-safety-deploy)
+#     TerraformState                         read/write our own state object
+#     ManageOurBucketsOnly                   manage hpac-safety-* buckets
+#     NeverReadReportData                    deny: read an upload, even ours
+#     NeverReadDataOutsideOurBuckets          deny: read any object elsewhere
+#     ManageOurSecretsOnly                   manage hpac-safety-* secrets
+#     NeverReadASecretValueEvenOurOwn        deny: GetSecretValue, anywhere
+#     ManageOurFunctionsOnly                 manage hpac-safety-* functions
+#     ManageOurRepositoriesOnly              manage hpac-safety-* ECR repos
+#     ManageOurTopicsOnly                    manage hpac-safety-* SNS topics
+#     ManageOurEventRulesOnly                manage hpac-safety-* EventBridge
+#     ManageOurSchedulesOnly                 manage hpac-safety-* schedules
+#     ManageOurLogGroupsOnly                 manage our own log groups
+#     NeverReadLogContent                    deny: read log/RDS-log content
+#     NeverReadOtherFunctionsOrRepos          deny: Get/Invoke outside ours
+#     NeverReadOtherApplicationsData          deny: ssm/dynamodb/kinesis/sqs
+#     ManageOurRolesOnly/PoliciesOnly         IAM scoped to hpac-safety-*
+#     PassOnlyOurRolesToOurServices           PassRole to lambda/scheduler only
+#     ServiceLinkedRolesAwsRequiresByFixedName the two SLRs AWS names itself
+#     ReadOnlyIdentityAndApplicationRegistration sts/OIDC-provider read
+#     NeverMintACredentialOrChangeFederation  deny: users/keys/OIDC/org/account
+#     NeverEditItsOwnPrivileges               deny: editing its own role
+#
+#   DEPLOY_POLICY_SERVICES (hpac-safety-deploy-services)
+#     ReadOnlyMetadata                       Describe/List/Get for un-scopable services
+#     CreateOnlyAsOurProject                 Create* only with our RequestTag
+#     EstablishNetworkAttachmentsOnResourcesWeJustCreated  the named EC2 exception above
+#     UseTheAwsManagedKeys                   KMS use, not administration
+#
+#   DEPLOY_POLICY_GUARDRAILS (hpac-safety-deploy-guardrails)
+#     NeverMutateAnUntaggedResource          deny every mutating verb unless
+#                                             the resource already carries
+#                                             Project=HPAC-Safety
 
-DEPLOY_POLICY=$(cat <<JSON
+say '2/4  hpac-safety-deploy IAM role and policies'
+
+DEPLOY_POLICY_CORE=$(cat <<JSON
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -333,51 +465,6 @@ DEPLOY_POLICY=$(cat <<JSON
       ]
     },
     {
-      "Sid": "ManageTheEnvironment",
-      "Effect": "Allow",
-      "Action": [
-        "acm:*",
-        "autoscaling:*",
-        "cloudfront:*",
-        "cloudwatch:*",
-        "ec2:*",
-        "ecr:*",
-        "events:*",
-        "lambda:*",
-        "logs:*",
-        "rds:*",
-        "resource-groups:*",
-        "scheduler:*",
-        "secretsmanager:*",
-        "servicecatalog:*",
-        "sns:*",
-        "tag:*"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringEqualsIfExists": {
-          "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}",
-          "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}"
-        }
-      }
-    },
-    {
-      "Sid": "UseTheAwsManagedKeys",
-      "Effect": "Allow",
-      "Action": [
-        "kms:Decrypt",
-        "kms:Encrypt",
-        "kms:GenerateDataKey",
-        "kms:GenerateDataKeyWithoutPlaintext",
-        "kms:DescribeKey",
-        "kms:ListAliases",
-        "kms:CreateGrant",
-        "kms:ListGrants",
-        "kms:RevokeGrant"
-      ],
-      "Resource": "*"
-    },
-    {
       "Sid": "ManageOurBucketsOnly",
       "Effect": "Allow",
       "Action": "s3:*",
@@ -392,6 +479,224 @@ DEPLOY_POLICY=$(cat <<JSON
         }
       }
     },
+    {
+      "Sid": "NeverReadReportData",
+      "Effect": "Deny",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectAcl",
+        "s3:GetObjectAttributes",
+        "s3:GetObjectTorrent",
+        "s3:GetObjectVersion",
+        "s3:GetObjectVersionAcl",
+        "s3:GetObjectVersionAttributes",
+        "s3:GetObjectVersionTorrent"
+      ],
+      "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
+    },
+    {
+      "Sid": "NeverReadDataOutsideOurBuckets",
+      "Effect": "Deny",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectAcl",
+        "s3:GetObjectAttributes",
+        "s3:GetObjectTorrent",
+        "s3:GetObjectVersion",
+        "s3:GetObjectVersionAcl",
+        "s3:GetObjectVersionAttributes",
+        "s3:GetObjectVersionTorrent"
+      ],
+      "NotResource": [
+        "arn:aws:s3:::hpac-safety-*",
+        "arn:aws:s3:::hpac-safety-*/*"
+      ]
+    },
+    {
+      "Sid": "ManageOurSecretsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:Describe*",
+        "secretsmanager:List*",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:UpdateSecret",
+        "secretsmanager:DeleteSecret",
+        "secretsmanager:RestoreSecret",
+        "secretsmanager:TagResource",
+        "secretsmanager:UntagResource",
+        "secretsmanager:PutResourcePolicy",
+        "secretsmanager:DeleteResourcePolicy",
+        "secretsmanager:GetResourcePolicy",
+        "secretsmanager:RotateSecret",
+        "secretsmanager:CancelRotateSecret"
+      ],
+      "Resource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety-*"
+    },
+    {
+      "Sid": "NeverReadASecretValueEvenOurOwn",
+      "Effect": "Deny",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageOurFunctionsOnly",
+      "Effect": "Allow",
+      "Action": "lambda:*",
+      "Resource": [
+        "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:hpac-safety-*",
+        "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:layer:hpac-safety-*"
+      ]
+    },
+    {
+      "Sid": "LambdaAccountLevelReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:ListFunctions",
+        "lambda:ListLayers",
+        "lambda:GetAccountSettings"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageOurRepositoriesOnly",
+      "Effect": "Allow",
+      "Action": "ecr:*",
+      "Resource": "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/hpac-safety-*"
+    },
+    {
+      "Sid": "EcrAuthTokenIsAccountLevelOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:DescribeRegistry"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageOurTopicsOnly",
+      "Effect": "Allow",
+      "Action": "sns:*",
+      "Resource": "arn:aws:sns:${REGION}:${ACCOUNT_ID}:hpac-safety-*"
+    },
+    {
+      "Sid": "ManageOurEventRulesOnly",
+      "Effect": "Allow",
+      "Action": "events:*",
+      "Resource": [
+        "arn:aws:events:${REGION}:${ACCOUNT_ID}:rule/hpac-safety-*",
+        "arn:aws:events:${REGION}:${ACCOUNT_ID}:event-bus/default"
+      ]
+    },
+    {
+      "Sid": "ManageOurSchedulesOnly",
+      "Effect": "Allow",
+      "Action": "scheduler:*",
+      "Resource": [
+        "arn:aws:scheduler:${REGION}:${ACCOUNT_ID}:schedule/*/hpac-safety-*",
+        "arn:aws:scheduler:${REGION}:${ACCOUNT_ID}:schedule-group/hpac-safety*"
+      ]
+    },
+    {
+      "Sid": "ManageOurLogGroupsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:PutRetentionPolicy",
+        "logs:DeleteRetentionPolicy",
+        "logs:PutSubscriptionFilter",
+        "logs:DeleteSubscriptionFilter",
+        "logs:AssociateKmsKey",
+        "logs:DisassociateKmsKey",
+        "logs:TagResource",
+        "logs:UntagResource",
+        "logs:TagLogGroup",
+        "logs:UntagLogGroup",
+        "logs:Describe*",
+        "logs:List*",
+        "logs:PutMetricFilter",
+        "logs:DeleteMetricFilter"
+      ],
+      "Resource": [
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/hpac-safety-*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/hpac-safety-*:*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety*:*"
+      ]
+    },
+    {
+      "Sid": "LogsAccountLevelReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogGroups",
+        "logs:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NeverReadLogContent",
+      "Effect": "Deny",
+      "Action": [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:GetLogRecord",
+        "logs:StartQuery",
+        "logs:GetQueryResults",
+        "logs:StartLiveTail",
+        "rds:DownloadDBLogFilePortion",
+        "rds:DownloadCompleteDBLogFile"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NeverReadOtherFunctionsOrRepos",
+      "Effect": "Deny",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetFunctionUrlConfig",
+        "lambda:GetLayerVersion",
+        "lambda:GetLayerVersionByArn",
+        "lambda:InvokeFunction",
+        "lambda:InvokeAsync",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+      ],
+      "NotResource": [
+        "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:hpac-safety-*",
+        "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:layer:hpac-safety-*",
+        "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/hpac-safety-*"
+      ]
+    },
+    {
+      "Sid": "NeverReadOtherApplicationsData",
+      "Effect": "Deny",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath",
+        "ssm:GetParameterHistory",
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:PartiQLSelect",
+        "kinesis:GetRecords",
+        "kinesis:GetShardIterator",
+        "sqs:ReceiveMessage"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+JSON
+)
+
+DEPLOY_POLICY_IAM=$(cat <<JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [
     {
       "Sid": "ManageOurRolesOnly",
       "Effect": "Allow",
@@ -471,35 +776,6 @@ DEPLOY_POLICY=$(cat <<JSON
       "Resource": "*"
     },
     {
-      "Sid": "NeverReadReportData",
-      "Effect": "Deny",
-      "Action": [
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:GetObjectAttributes",
-        "s3:GetObjectTorrent",
-        "s3:GetObjectVersion",
-        "s3:GetObjectVersionAcl",
-        "s3:GetObjectVersionAttributes",
-        "s3:GetObjectVersionTorrent"
-      ],
-      "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
-    },
-    {
-      "Sid": "NeverReadDatabaseLogs",
-      "Effect": "Deny",
-      "Action": [
-        "logs:GetLogEvents",
-        "logs:FilterLogEvents",
-        "logs:GetLogRecord",
-        "logs:StartQuery",
-        "logs:GetQueryResults",
-        "rds:DownloadDBLogFilePortion",
-        "rds:DownloadCompleteDBLogFile"
-      ],
-      "Resource": "*"
-    },
-    {
       "Sid": "NeverMintACredentialOrChangeFederation",
       "Effect": "Deny",
       "Action": [
@@ -539,36 +815,262 @@ DEPLOY_POLICY=$(cat <<JSON
 JSON
 )
 
-if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
-  # A managed policy holds at most five versions. Delete every non-default one
-  # before adding another, or the fifth re-run of this script fails.
-  # shellcheck disable=SC2016  # JMESPath literal backticks, not shell expansion.
-  query='Versions[?IsDefaultVersion==`false`].VersionId'
-  for version in $(aws iam list-policy-versions --policy-arn "$POLICY_ARN" \
-                     --query "$query" --output text); do
-    aws iam delete-policy-version --policy-arn "$POLICY_ARN" --version-id "$version" >/dev/null
-  done
-  aws iam create-policy-version \
-    --policy-arn "$POLICY_ARN" \
-    --policy-document "$DEPLOY_POLICY" \
-    --set-as-default >/dev/null
-  say '     policy already exists; new default version published'
-else
-  aws iam create-policy \
-    --policy-name "$POLICY_NAME" \
-    --description 'What hpac-safety-deploy may do. Created by infra/bootstrap.sh.' \
-    --policy-document "$DEPLOY_POLICY" \
-    --tags "Key=${TAG_KEY},Value=${TAG_VALUE}" >/dev/null
-  say '     policy created'
-fi
+DEPLOY_POLICY_SERVICES=$(cat <<JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyMetadata",
+      "Effect": "Allow",
+      "Action": [
+        "acm:Describe*",
+        "acm:List*",
+        "acm:Get*",
+        "autoscaling:Describe*",
+        "cloudfront:Describe*",
+        "cloudfront:List*",
+        "cloudfront:Get*",
+        "cloudwatch:Describe*",
+        "cloudwatch:List*",
+        "cloudwatch:GetMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:GetDashboard",
+        "cloudwatch:GetInsightRuleReport",
+        "ec2:Describe*",
+        "rds:Describe*",
+        "rds:List*",
+        "resource-groups:Get*",
+        "resource-groups:List*",
+        "resource-groups:SearchResources",
+        "servicecatalog:Get*",
+        "servicecatalog:List*",
+        "servicecatalog:Search*",
+        "tag:Get*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CreateOnlyAsOurProject",
+      "Effect": "Allow",
+      "Action": [
+        "acm:RequestCertificate",
+        "acm:AddTagsToCertificate",
+        "autoscaling:CreateAutoScalingGroup",
+        "autoscaling:CreateLaunchConfiguration",
+        "autoscaling:CreateOrUpdateTags",
+        "cloudfront:CreateDistribution*",
+        "cloudfront:CreateOriginAccessControl",
+        "cloudfront:CreateResponseHeadersPolicy",
+        "cloudfront:CreateCachePolicy",
+        "cloudfront:CreateFunction",
+        "cloudfront:TagResource",
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:PutDashboard",
+        "cloudwatch:TagResource",
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateRouteTable",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateNatGateway",
+        "ec2:CreateLaunchTemplate",
+        "ec2:CreateNetworkInterface",
+        "ec2:AllocateAddress",
+        "ec2:CreateVpcEndpoint",
+        "ec2:CreateFlowLogs",
+        "ec2:CreateTags",
+        "ec2:RunInstances",
+        "rds:CreateDBInstance",
+        "rds:CreateDBSubnetGroup",
+        "rds:CreateDBParameterGroup",
+        "rds:AddTagsToResource",
+        "resource-groups:CreateGroup",
+        "resource-groups:Tag",
+        "servicecatalog:CreateApplication",
+        "servicecatalog:CreateAttributeGroup",
+        "servicecatalog:TagResource",
+        "servicecatalog:AssociateResource",
+        "servicecatalog:AssociateAttributeGroup"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
+      "Sid": "EstablishNetworkAttachmentsOnResourcesWeJustCreated",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:AttachInternetGateway",
+        "ec2:AssociateRouteTable",
+        "ec2:AssociateSubnetCidrBlock",
+        "ec2:AssociateAddress",
+        "ec2:ModifySubnetAttribute",
+        "ec2:ModifyVpcAttribute",
+        "ec2:CreateRoute",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:AuthorizeSecurityGroupEgress",
+        "ec2:RevokeSecurityGroupIngress",
+        "ec2:RevokeSecurityGroupEgress"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "UseTheAwsManagedKeys",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey",
+        "kms:GenerateDataKeyWithoutPlaintext",
+        "kms:DescribeKey",
+        "kms:ListAliases",
+        "kms:CreateGrant",
+        "kms:ListGrants",
+        "kms:RevokeGrant"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+JSON
+)
 
-if aws iam list-attached-role-policies --role-name "$ROLE_NAME" \
-     --query 'AttachedPolicies[].PolicyArn' --output text | grep -qF "$POLICY_ARN"; then
-  say '     policy already attached'
-else
-  aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn "$POLICY_ARN" >/dev/null
-  say '     policy attached'
-fi
+DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "NeverMutateAnUntaggedResource",
+      "Effect": "Deny",
+      "Action": [
+        "acm:Delete*",
+        "acm:Import*",
+        "acm:Renew*",
+        "acm:Resend*",
+        "acm:Update*",
+        "acm:RemoveTagsFromCertificate",
+        "autoscaling:Delete*",
+        "autoscaling:Update*",
+        "autoscaling:Suspend*",
+        "autoscaling:Resume*",
+        "autoscaling:Set*",
+        "autoscaling:Terminate*",
+        "autoscaling:Attach*",
+        "autoscaling:Detach*",
+        "autoscaling:Enter*",
+        "autoscaling:Exit*",
+        "autoscaling:Execute*",
+        "autoscaling:Put*",
+        "autoscaling:DeleteTags",
+        "cloudfront:Delete*",
+        "cloudfront:Update*",
+        "cloudfront:UntagResource",
+        "cloudwatch:Delete*",
+        "cloudwatch:Set*",
+        "cloudwatch:Disable*",
+        "cloudwatch:Enable*",
+        "cloudwatch:UntagResource",
+        "ec2:Delete*",
+        "ec2:Modify*",
+        "ec2:Terminate*",
+        "ec2:Stop*",
+        "ec2:Start*",
+        "ec2:Reboot*",
+        "ec2:Attach*",
+        "ec2:Detach*",
+        "ec2:Associate*",
+        "ec2:Disassociate*",
+        "ec2:Authorize*",
+        "ec2:Revoke*",
+        "ec2:ReplaceRoute*",
+        "ec2:ResetInstanceAttribute",
+        "ec2:DeleteTags",
+        "rds:Delete*",
+        "rds:Modify*",
+        "rds:Stop*",
+        "rds:Start*",
+        "rds:Reboot*",
+        "rds:Restore*",
+        "rds:CreateDBSnapshot",
+        "rds:CopyDBSnapshot",
+        "rds:ShareDBSnapshot",
+        "rds:PromoteReadReplica*",
+        "rds:Failover*",
+        "rds:RemoveFromGlobalCluster",
+        "rds:RemoveTagsFromResource",
+        "rds:PurchaseReservedDBInstancesOffering",
+        "resource-groups:Delete*",
+        "resource-groups:Update*",
+        "resource-groups:Untag",
+        "servicecatalog:Delete*",
+        "servicecatalog:Update*",
+        "servicecatalog:Disassociate*",
+        "servicecatalog:UntagResource",
+        "secretsmanager:Delete*",
+        "secretsmanager:Update*",
+        "secretsmanager:Restore*",
+        "secretsmanager:UntagResource",
+        "secretsmanager:PutResourcePolicy",
+        "secretsmanager:DeleteResourcePolicy",
+        "lambda:Delete*",
+        "lambda:Update*",
+        "lambda:Put*",
+        "lambda:Remove*",
+        "lambda:UntagResource",
+        "ecr:Delete*",
+        "ecr:Put*",
+        "ecr:BatchDeleteImage",
+        "ecr:SetRepositoryPolicy",
+        "ecr:UntagResource",
+        "sns:Delete*",
+        "sns:Set*",
+        "sns:Unsubscribe",
+        "sns:UntagResource",
+        "events:Delete*",
+        "events:Put*",
+        "events:Remove*",
+        "events:Disable*",
+        "events:Enable*",
+        "events:Deactivate*",
+        "events:Activate*",
+        "events:UntagResource",
+        "scheduler:Delete*",
+        "scheduler:Update*",
+        "scheduler:UntagResource",
+        "logs:Delete*",
+        "logs:Put*",
+        "logs:UntagResource",
+        "logs:UntagLogGroup",
+        "logs:DisassociateKmsKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    }
+  ]
+}
+JSON
+)
+
+converge_managed_policy "$POLICY_NAME" "$POLICY_ARN" "$DEPLOY_POLICY_CORE" \
+  'What hpac-safety-deploy may manage by name/ARN. Created by infra/bootstrap.sh.'
+converge_managed_policy "$POLICY_NAME_IAM" "$POLICY_ARN_IAM" "$DEPLOY_POLICY_IAM" \
+  'IAM/identity portion of what hpac-safety-deploy may do. Created by infra/bootstrap.sh.'
+converge_managed_policy "$POLICY_NAME_SERVICES" "$POLICY_ARN_SERVICES" "$DEPLOY_POLICY_SERVICES" \
+  'Read-only and create-with-tag grants for services with no HPAC-Safety-only name pattern. Created by infra/bootstrap.sh.'
+converge_managed_policy "$POLICY_NAME_GUARDRAILS" "$POLICY_ARN_GUARDRAILS" "$DEPLOY_POLICY_GUARDRAILS" \
+  'Denies every mutating action on a resource not tagged Project=HPAC-Safety. Created by infra/bootstrap.sh.'
+
+for arn in "$POLICY_ARN" "$POLICY_ARN_IAM" "$POLICY_ARN_SERVICES" "$POLICY_ARN_GUARDRAILS"; do
+  attach_policy_if_missing "$ROLE_NAME" "$arn"
+done
+say '     four policies converged and attached'
 
 # --------------------------------------------------------------------------
 # 3. The plan role
@@ -627,35 +1129,38 @@ else
   say '     created'
 fi
 
-# ReadOnlyAccess plus reading Terraform state, minus three explicit denials.
+# ReadOnlyAccess plus reading Terraform state, minus explicit denials.
 #
-# ReadOnlyAccess on its own would let a plan running on ANY pull request - from
-# any contributor with write access to a branch - read every object in the
-# uploads bucket. Those objects are photographs of crash sites.
+# ReadOnlyAccess is the AWS managed policy for "can read almost everything in
+# the account" - which is exactly the problem in a shared, unrelated-workloads
+# staging account. It grants, among many other things:
+#   - `s3:GetObject` on every bucket, not just the state bucket - denied for
+#     everything except the state bucket (NeverReadDataOutsideOurState) and
+#     the uploads bucket is denied explicitly too (NeverReadReportData),
+#     since `s3:GetObjectVersion` is a DISTINCT action from `s3:GetObject` and
+#     denying only the latter would leave every noncurrent version readable -
+#     including, between the two hops of the quarantine lifecycle rule, an
+#     upload that failed validation;
+#   - `lambda:GetFunction`/`GetFunctionConfiguration` (environment variables)
+#     and `ecr:GetDownloadUrlForLayer`/`BatchGetImage` (image layers) on every
+#     function/repository in the account - denied outside our own
+#     (NeverReadOtherFunctionsOrRepos);
+#   - `logs:GetLogEvents`/`FilterLogEvents` - which for OUR OWN RDS log group
+#     can carry report narrative text (`log_min_duration_statement`) - denied
+#     outright (NeverReadLogContentOrASecretValue), alongside RDS's own
+#     native log-download API, a distinct action namespace reaching the same
+#     data, and `secretsmanager:GetSecretValue`/`rds-data:*`, which
+#     ReadOnlyAccess does not currently grant but the denial is written out
+#     anyway so the guarantee does not depend on what AWS widens the managed
+#     policy to;
+#   - `ssm:GetParameter*`, `dynamodb:GetItem`/`Query`/`Scan`,
+#     `kinesis:GetRecords`, `sqs:ReceiveMessage` on every parameter,
+#     table, stream, and queue in the account - this role has no legitimate
+#     reason to read any of them, denied outright
+#     (NeverReadOtherApplicationsData).
 #
-# The denial names the VERSIONED actions as well. `s3:GetObjectVersion` is a
-# distinct IAM action from `s3:GetObject`, so denying only the latter would leave
-# every noncurrent version readable by version id - including, between the two
-# hops of the quarantine lifecycle rule, an upload that failed validation.
-#
-# SAME BUG CLASS, SECOND SERVICE: `ReadOnlyAccess` grants `logs:GetLogEvents` and
-# `logs:FilterLogEvents`, which is normally exactly what a read-only role should
-# have - except RDS mirrors its own logs into two of those log groups
-# (`enabled_cloudwatch_logs_exports` in database.tf), and the postgresql export
-# can carry report narrative text: `log_min_duration_statement` logs the
-# statement TEXT for anything slower than a second. `NeverReadASecretValue`
-# already denies RDS's *native* log-download API
-# (`rds:DownloadDBLogFilePortion`, `rds:DownloadCompleteDBLogFile`); it does not
-# touch CloudWatch Logs' API, which is a different action namespace reading the
-# same data. Same shape as the `s3:GetObjectVersion` gap above: a Deny naming
-# one API surface does not cover a different API surface that reaches the same
-# underlying data. It would also grant secretsmanager:GetSecretValue and
-# rds-data:* on nothing today (ReadOnlyAccess does not include either), but the
-# denial is written out anyway so the guarantee does not depend on what AWS
-# widens a managed policy to tomorrow.
-#
-# Deny beats Allow unconditionally, so these hold regardless of what the managed
-# policy contains today or gains tomorrow.
+# Deny beats Allow unconditionally, so these hold regardless of what the
+# managed policy contains today or gains tomorrow.
 
 PLAN_POLICY=$(cat <<JSON
 {
@@ -689,7 +1194,45 @@ PLAN_POLICY=$(cat <<JSON
       "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
     },
     {
-      "Sid": "NeverReadDatabaseLogs",
+      "Sid": "NeverReadDataOutsideOurState",
+      "Effect": "Deny",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectAcl",
+        "s3:GetObjectAttributes",
+        "s3:GetObjectTorrent",
+        "s3:GetObjectVersion",
+        "s3:GetObjectVersionAcl",
+        "s3:GetObjectVersionAttributes",
+        "s3:GetObjectVersionTorrent"
+      ],
+      "NotResource": [
+        "arn:aws:s3:::${STATE_BUCKET}",
+        "arn:aws:s3:::${STATE_BUCKET}/*"
+      ]
+    },
+    {
+      "Sid": "NeverReadOtherFunctionsOrRepos",
+      "Effect": "Deny",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetFunctionUrlConfig",
+        "lambda:GetLayerVersion",
+        "lambda:GetLayerVersionByArn",
+        "lambda:InvokeFunction",
+        "lambda:InvokeAsync",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+      ],
+      "NotResource": [
+        "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:hpac-safety-*",
+        "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:layer:hpac-safety-*",
+        "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/hpac-safety-*"
+      ]
+    },
+    {
+      "Sid": "NeverReadLogContentOrASecretValue",
       "Effect": "Deny",
       "Action": [
         "logs:GetLogEvents",
@@ -697,17 +1240,30 @@ PLAN_POLICY=$(cat <<JSON
         "logs:GetLogRecord",
         "logs:StartQuery",
         "logs:GetQueryResults",
+        "logs:StartLiveTail",
         "rds:DownloadDBLogFilePortion",
-        "rds:DownloadCompleteDBLogFile"
+        "rds:DownloadCompleteDBLogFile",
+        "secretsmanager:GetSecretValue",
+        "rds-data:*"
       ],
       "Resource": "*"
     },
     {
-      "Sid": "NeverReadASecretValue",
+      "Sid": "NeverReadOtherApplicationsData",
       "Effect": "Deny",
       "Action": [
-        "secretsmanager:GetSecretValue",
-        "rds-data:*"
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath",
+        "ssm:GetParameterHistory",
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:PartiQLSelect",
+        "kinesis:GetRecords",
+        "kinesis:GetShardIterator",
+        "sqs:ReceiveMessage"
       ],
       "Resource": "*"
     }
@@ -716,33 +1272,11 @@ PLAN_POLICY=$(cat <<JSON
 JSON
 )
 
-if aws iam get-policy --policy-arn "$PLAN_POLICY_ARN" >/dev/null 2>&1; then
-  # shellcheck disable=SC2016  # JMESPath literal backticks, not shell expansion.
-  query='Versions[?IsDefaultVersion==`false`].VersionId'
-  for version in $(aws iam list-policy-versions --policy-arn "$PLAN_POLICY_ARN" \
-                     --query "$query" --output text); do
-    aws iam delete-policy-version --policy-arn "$PLAN_POLICY_ARN" --version-id "$version" >/dev/null
-  done
-  aws iam create-policy-version \
-    --policy-arn "$PLAN_POLICY_ARN" \
-    --policy-document "$PLAN_POLICY" \
-    --set-as-default >/dev/null
-  say '     policy already exists; new default version published'
-else
-  aws iam create-policy \
-    --policy-name "$PLAN_POLICY_NAME" \
-    --description 'What hpac-safety-plan may do. Created by infra/bootstrap.sh.' \
-    --policy-document "$PLAN_POLICY" \
-    --tags "Key=${TAG_KEY},Value=${TAG_VALUE}" >/dev/null
-  say '     policy created'
-fi
+converge_managed_policy "$PLAN_POLICY_NAME" "$PLAN_POLICY_ARN" "$PLAN_POLICY" \
+  'What hpac-safety-plan may do. Created by infra/bootstrap.sh.'
 
 for arn in 'arn:aws:iam::aws:policy/ReadOnlyAccess' "$PLAN_POLICY_ARN"; do
-  if aws iam list-attached-role-policies --role-name "$PLAN_ROLE_NAME" \
-       --query 'AttachedPolicies[].PolicyArn' --output text | grep -qF "$arn"; then
-    continue
-  fi
-  aws iam attach-role-policy --role-name "$PLAN_ROLE_NAME" --policy-arn "$arn" >/dev/null
+  attach_policy_if_missing "$PLAN_ROLE_NAME" "$arn"
 done
 say '     ReadOnlyAccess and the denial policy attached'
 

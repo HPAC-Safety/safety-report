@@ -107,26 +107,19 @@ the API, the Worker, and the web dev server in Docker (see the root
 Terraform formatting/validation commands remain documented in
 [`infra/README.md`](../infra/README.md).
 
-## Two accounts, two environments
+## Bootstrapping each account's roles (once per account)
 
-Per #30's owner decisions, this system deploys to two **separate, unrelated**
-AWS accounts, each bootstrapped independently — there is no AWS Organizations
-relationship between them, and one is never reached by "switch role" from the
-other:
-
-- **staging** is the owner's own personal AWS account. It also runs other,
-  unrelated workloads, so every scoping safeguard below is load-bearing, not
-  defensive dressing: it is the only thing keeping this system's deploy role
-  off somebody else's resources in that same account.
-- **production** is a separate account HPAC creates and owns.
-
-Each gets its own `hpac-safety-deploy` role (trusted only by GitHub Actions
-jobs running under that account's matching GitHub *environment*, named
-`hpac-staging` and `hpac-production`, not just `staging`/`production` — see
-below), its own `hpac-safety-plan` role, and its own Terraform state bucket.
-Nothing is shared between them.
-
-## Connecting an AWS account to GitHub (once per account)
+See "Environments and accounts" above for what staging and production each
+are. Each account gets its own `hpac-safety-deploy` role (trusted only by
+GitHub Actions jobs running under that account's matching GitHub
+*environment*, named `hpac-staging` and `hpac-production`, not just
+`staging`/`production` — see below), its own `hpac-safety-plan` role, and its
+own Terraform state bucket. Every scoping safeguard described below is
+load-bearing, not defensive dressing: in the shared staging account, it is
+the only thing keeping this system's deploy role off somebody else's
+resources. Nothing is shared between the two accounts, and there is no AWS
+Organizations relationship between them — one is never reached by "switch
+role" from the other.
 
 Do this once in **each** account: the owner's personal account for `staging`,
 and HPAC's account for `production`. Nothing here needs a password or key to
@@ -164,8 +157,11 @@ you already have open, never a new long-lived credential.
      `staging`/`production`;
    - `hpac-safety-plan`, trusted only by this repository's pull requests, with
      `ReadOnlyAccess` plus Terraform state read, and explicit denies on
-     uploaded report objects, secret values, `rds-data`, and RDS log
-     downloads;
+     uploaded report objects, log/RDS-log content, secret values, `rds-data`,
+     and any object, function, image, parameter, table, stream, or queue
+     outside this system's own resources — `ReadOnlyAccess` alone would let
+     a plan on any pull request read data belonging to staging's other,
+     unrelated applications;
    - the Terraform state bucket `hpac-safety-tfstate-<account-id>`
      (versioned, encrypted, public access blocked, TLS-only).
 7. It prints four `NAME=value` lines on stdout:
@@ -181,10 +177,63 @@ you already have open, never a new long-lived credential.
    this script's output.
 
 What `hpac-safety-deploy` may do, and what it may never do, is documented in
-the "What the deploy role may do" section of #30 and enforced by
-[`infra/bootstrap.sh`](../infra/bootstrap.sh)'s policy: it is scoped to
-`hpac-safety-*` IAM roles/policies and `hpac-safety-*` S3 buckets, conditioned
-on the `Project=HPAC-Safety` tag wherever a service supports it, and it can
-never read an uploaded report file, read an RDS log, create an IAM user or
-access key, touch an OIDC/SAML provider, Organizations, or the account, or
-edit its own role.
+the "What the deploy role may do" section of #30 and enforced by four
+customer-managed policies `infra/bootstrap.sh` attaches to it (one managed
+policy is limited to 6144 characters; a policy this thorough about
+tag/name scoping does not fit in one):
+
+- **`hpac-safety-deploy`** — read/write its own Terraform state object,
+  manage `hpac-safety-*` S3 buckets, Secrets Manager secrets, Lambda
+  functions, ECR repositories, SNS topics, EventBridge rules, Scheduler
+  schedules, and its own log groups **by name**, and IAM roles/policies
+  named `hpac-safety-*`.
+- **`hpac-safety-deploy-services`** — for the services with no
+  HPAC-Safety-only name pattern to scope by (ACM, Auto Scaling, CloudFront,
+  CloudWatch, EC2, RDS, Resource Groups, AppRegistry): read-only metadata
+  broadly, and `Create*` only when the request carries the
+  `Project=HPAC-Safety` tag (`aws:RequestTag`, a real `StringEquals`, not
+  `IfExists`).
+- **`hpac-safety-deploy-guardrails`** — denies every mutating verb
+  (`Delete*`/`Modify*`/`Update*`/`Put*`/`Stop*`/`Start*`/`Reboot*`/
+  `Terminate*`/`Attach*`/`Detach*`/`Associate*`/`Disassociate*`/
+  `Authorize*`/`Revoke*`, and removing an existing tag) on a resource that
+  is not **already** tagged `Project=HPAC-Safety` (`aws:ResourceTag`, a real
+  `StringNotEquals`, with no `IfExists` — an untagged resource is denied
+  exactly like one tagged for someone else's project). This is what makes
+  the tag condition an actual guard: a `StringEqualsIfExists` check alone
+  passes whenever a resource carries **no** `Project` tag at all, which
+  describes almost every resource belonging to staging's other, unrelated
+  applications.
+- **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles/policies
+  named `hpac-safety-*`, `iam:PassRole` only to those roles and only with
+  `iam:PassedToService` in `[lambda.amazonaws.com, scheduler.amazonaws.com]`,
+  and the explicit denies: never read a secret value even its own, never
+  read an uploaded report file or RDS/log content, never read another
+  application's Lambda function, ECR image, SSM parameter, DynamoDB item,
+  Kinesis record, or SQS message, never create an IAM user or access key,
+  touch an OIDC/SAML provider, Organizations, or the account, or edit its
+  own role.
+
+**Two narrow, named exceptions** to the untagged-mutation guard, because
+they touch a resource that legitimately has no HPAC-Safety tag and never
+will: `ec2:RunInstances` (a Create verb, so it is governed by the
+tag-on-create guard instead) also names the public `fck-nat` AMI (#465) as
+a resource in the same call; and the handful of EC2 calls that attach a
+brand-new VPC/subnet/route table to itself
+(`ec2:AttachInternetGateway`, `ec2:CreateRoute`,
+`ec2:AuthorizeSecurityGroupIngress`, and similar — see
+`EstablishNetworkAttachmentsOnResourcesWeJustCreated` in
+`infra/bootstrap.sh`) are excluded from the guardrails deny list, each named
+explicitly rather than as a verb wildcard.
+
+**Residual risk, recorded rather than hidden**: nothing in this repository
+can call AWS, so none of the above has been exercised against a real AWS
+account — it is reviewed by inspection, JSON validation, and shellcheck
+only, the same as `infra`'s required CI check does. The exact action lists,
+the four-policy split, and the two named exceptions are a best-effort,
+reviewable starting point. A future gap — an AWS action this policy
+did not anticipate, a service added to the deploy role's scope without a
+matching name-scope or tag guard, or an untested interaction between the
+`CreateOnlyAsOurProject` and `NeverMutateAnUntaggedResource` statements —
+should be checked for on the first real `apply` in the staging account,
+before production is bootstrapped.

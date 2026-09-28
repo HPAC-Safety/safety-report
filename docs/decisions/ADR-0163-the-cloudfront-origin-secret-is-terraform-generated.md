@@ -53,9 +53,11 @@ rule:**
 
 Every other secret this system holds — the connection string, the identity
 provider's client secret, the Gemini and DeepL keys — has exactly one
-consumer that needs the value at runtime (a Lambda function's environment,
-populated by the deploy workflow from Secrets Manager), and a human is the
-only party who can reasonably choose it: nobody but a person can type in a
+consumer that needs the value at runtime, which reads it itself from Secrets
+Manager by ARN at cold start (`DatabaseConnectionStringResolver`,
+`SecretArnResolver`, #586/#597) — the Lambda function's environment carries
+only that ARN, never the value — and a human is the only party who can
+reasonably choose the value itself: nobody but a person can type in a
 vendor's issued API key. `infra/secrets.tf` creates the entry; an operator
 supplies the value out of band; `aws_secretsmanager_secret_version` never
 appears in this directory for any of them.
@@ -63,11 +65,12 @@ appears in this directory for any of them.
 The CloudFront origin-verify secret is a different shape. It has two
 consumers, not one: CloudFront's own origin configuration (`infra/cdn.tf`),
 which sends it as a literal custom header on every `/api/*` request, and the
-API, which reads it from Secrets Manager (via the deploy workflow, the same
-as every other secret) and refuses any request that doesn't carry the
-matching value. Both consumers must agree on the exact same string, and
-CloudFront cannot read Secrets Manager at request time to check — its custom
-header value is configuration, not a runtime lookup.
+API, which reads it from Secrets Manager itself, by ARN, at cold start (the
+same `SecretArnResolver` pattern as every other secret, #597) and refuses any
+request that doesn't carry the matching value. Both consumers must agree on
+the exact same string, and CloudFront cannot read Secrets Manager at request
+time to check — its custom header value is configuration, not a runtime
+lookup.
 
 If a human chose this value, they would have to type it correctly into two
 places at once (`aws secretsmanager put-secret-value` and a CloudFront

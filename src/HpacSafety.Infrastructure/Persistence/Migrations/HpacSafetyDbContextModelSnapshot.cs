@@ -1308,6 +1308,24 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.ToView("admin_report_queue", (string)null);
                 });
 
+            modelBuilder.Entity("HpacSafety.Infrastructure.Persistence.Views.AdminReportSearchMatch", b =>
+                {
+                    b.Property<double>("Rank")
+                        .HasColumnType("double precision")
+                        .HasColumnName("rank");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
             modelBuilder.Entity("HpacSafety.Infrastructure.Persistence.Views.AnswerAwaitingTranslation", b =>
                 {
                     b.Property<string>("Id")

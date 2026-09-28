@@ -6,9 +6,13 @@ namespace HpacSafety.Infrastructure.Translation;
 /// </summary>
 /// <remarks>
 ///     The key is the same DeepL credential the CI translation workflow uses
-///     (ADR-0022). It reaches a running task as an environment variable supplied by
-///     the deploy workflow; it is never sent to the browser, never logged, and
-///     never included in a problem response.
+///     (ADR-0022). In every deployed environment it is resolved from
+///     <see cref="ApiKeySecretArn" /> at cold start (#597), not read from
+///     configuration directly — the Lambda environment never carries the
+///     key's own value. Everywhere else (Development, every test host) it is
+///     the plain <c>Translation__ApiKey</c>/<c>DEEPL_API_KEY</c> environment
+///     variable. Either way it is never sent to the browser, never logged,
+///     and never included in a problem response.
 /// </remarks>
 public sealed class DeepLOptions
 {
@@ -21,6 +25,14 @@ public sealed class DeepLOptions
 	///     failure.
 	/// </summary>
 	public string? ApiKey { get; set; }
+
+	/// <summary>
+	///     The Secrets Manager ARN Terraform sets in every deployed environment
+	///     (<c>infra/lambda.tf</c>). When present, <see cref="ApiKey" /> is
+	///     resolved from this secret's current value at cold start instead of
+	///     from <see cref="ApiKey" />'s own configured value (#597).
+	/// </summary>
+	public string? ApiKeySecretArn { get; set; }
 
 	/// <summary>
 	///     Overrides the API host. Normally left unset: DeepL marks Free-tier keys

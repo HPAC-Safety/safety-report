@@ -242,6 +242,14 @@ A review action outside its states is refused and changes nothing — *Reqnroll,
 
 A report without publication consent is unpublished for good — *Reqnroll, Covered*
 
+### REQ-DOM-016
+
+An operator requeues poisoned outbox work — *Reqnroll, Covered*
+
+### REQ-DOM-017
+
+A poison-requeue payload naming a time window only requeues messages poisoned within it — *Reqnroll, Covered*
+
 ## Claims: media
 
 ### REQ-MED-001
@@ -941,6 +949,46 @@ Manage reports loads more automatically and offers the same hidden fallback and 
 ### REQ-MOD-129
 
 The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
+
+### REQ-MOD-130
+
+Searching Manage reports finds a report matched by any part of it — *Reqnroll, Covered*
+
+### REQ-MOD-131
+
+A misspelled search still finds the report — *Reqnroll, Covered*
+
+### REQ-MOD-132
+
+A search matches across English and French stemming — *Reqnroll, Covered*
+
+### REQ-MOD-133
+
+The best match is listed first — *Reqnroll, Covered*
+
+### REQ-MOD-134
+
+Clearing the search box returns to newest submitted first — *playwright-bdd, Covered*
+
+### REQ-MOD-135
+
+A search stays within the chosen filter — *Reqnroll, Covered*
+
+### REQ-MOD-136
+
+The search text lives in the address bar and survives a reload — *playwright-bdd, Covered*
+
+### REQ-MOD-137
+
+A search matching nothing shows a message naming the query, not an error — *playwright-bdd, Covered*
+
+### REQ-MOD-138
+
+Only a reviewer may find a match inside private report content — *Reqnroll, Covered*
+
+### REQ-MOD-139
+
+The search query text is never logged — *Reqnroll, Covered*
 
 ### REQ-MOD-140
 
@@ -2572,6 +2620,14 @@ infrastructure-and-operations.md — verified by none — a Lambda invocation's 
 ### CON-INF-017
 
 infrastructure-and-operations.md — verified by `REQ-SUB-116`
+
+### CON-INF-025
+
+infrastructure-and-operations.md — verified by none — an infrastructure/logging property no application scenario observes directly; `infra/observability.tf` and its tests are the check
+
+### CON-INF-026
+
+infrastructure-and-operations.md — verified by `REQ-DOM-016`, `REQ-DOM-017`
 
 ### CON-SO-001
 

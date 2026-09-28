@@ -2,6 +2,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Infrastructure.Observability;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,7 @@ public sealed class OutboxDrainPassTests(WorkerPostgresFixture postgres)
 		services.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql(connectionString));
 		services.AddScoped<ITranslator, StubTranslator>();
 		services.AddScoped<HpacSafety.Worker.Outbox.IOutboxMessageProcessor, TranslateAnswersProcessor>();
+		services.AddSingleton<IMetricsPublisher, NoOpMetricsPublisher>();
 		var scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
 		// When — an ample, never-shrinking time budget, as a Lambda invocation

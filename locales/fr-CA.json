@@ -400,6 +400,12 @@
   },
   "reports": {
     "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",
+    "search": {
+      "label": "Signalements de recherche",
+      "placeholder": "Recherchez dans toutes les réponses, notes, commentaires ou noms de fichiers…",
+      "clear": "Effacer la recherche"
+    },
+    "searchEmpty": "Aucun signalement ne correspond à «{q} » dans ce filtre.",
     "filter": {
       "label": "Filtrer les signalements",
       "all": "Tout",

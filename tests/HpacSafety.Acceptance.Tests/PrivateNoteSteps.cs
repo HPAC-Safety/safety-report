@@ -361,7 +361,7 @@ public sealed class PrivateNoteSteps
 		_publicBodies.ShouldContain(body => body.Contains(_reportId, StringComparison.Ordinal));
 	}
 
-	[Then(@"no database view reads a private-note table")]
+	[Then(@"no database view other than admin_report_search_document reads a private-note table")]
 	public async Task ThenNoViewReadsTheNotes()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
@@ -370,12 +370,29 @@ public sealed class PrivateNoteSteps
 		var views = await database.Database
 			.SqlQueryRaw<string>("SELECT viewname AS \"Value\" FROM pg_views WHERE schemaname = 'public'")
 			.ToListAsync();
+
+		// The exact set of views depending on either private-note table, via
+		// Postgres's own dependency catalogue rather than a text search over
+		// view definitions, so a rewritten view body can never slip past this.
+		// admin_report_search_document is the one reviewed exception
+		// (REQ-MOD-130, ADR-0156, amending ADR-0133 item 5): it gathers a
+		// note's current text for the admin search box, reachable only through
+		// SafetyOfficer/Administrator's GET /api/admin/reports?q=. Any other
+		// view naming either table fails this scenario, not just a public one.
 		var readers = await database.Database
-			.SqlQueryRaw<string>("SELECT viewname AS \"Value\" FROM pg_views WHERE schemaname = 'public' AND definition ILIKE '%private_note%'")
+			.SqlQueryRaw<string>(
+				"""
+				SELECT DISTINCT view_name AS "Value"
+				FROM information_schema.view_table_usage
+				WHERE view_schema = 'public'
+				  AND table_schema = 'public'
+				  AND table_name IN ('report_private_notes', 'report_private_note_revisions')
+				""")
 			.ToListAsync();
 
 		views.ShouldContain("public_reports");
-		readers.ShouldBeEmpty();
+		views.ShouldContain("admin_report_search_document");
+		readers.ShouldBe(["admin_report_search_document"]);
 	}
 
 	// ── Helpers ─────────────────────────────────────────────────────────────

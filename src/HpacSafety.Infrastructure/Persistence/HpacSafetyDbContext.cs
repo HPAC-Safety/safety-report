@@ -112,6 +112,28 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Typeform-imported fields whose branching logic still needs manual wiring.</summary>
 	public DbSet<PendingImportLogic> PendingImportLogic => Set<PendingImportLogic>();
 
+	/// <summary>Backs <see cref="SearchAdminReports" />; never queried directly (ADR-0156).</summary>
+	private DbSet<AdminReportSearchMatch> AdminReportSearchMatches => Set<AdminReportSearchMatch>();
+
+	/// <summary>
+	///     Every live report the <c>search_admin_reports(query)</c> Postgres
+	///     function ranks against <paramref name="query" />, best match first
+	///     (REQ-MOD-130..133, ADR-0156). The function, not this method, decides
+	///     what counts as a match: every answer including private ones, choice
+	///     labels in both languages, the summary pair, private notes, member
+	///     comments, and attachment file names, using full-text search (English
+	///     and French) plus trigram similarity for typos and partial words.
+	///     <paramref name="query" /> is never logged.
+	/// </summary>
+	public IQueryable<AdminReportSearchMatch> SearchAdminReports(string query)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
+		return AdminReportSearchMatches
+			.FromSqlInterpolated($"SELECT * FROM search_admin_reports({query})")
+			.AsNoTracking();
+	}
+
 	/// <summary>
 	///     Saves, and mints a new identifier for anything that lost a collision.
 	/// </summary>
@@ -236,6 +258,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new AdminReportQueueItemConfiguration());
 		modelBuilder.ApplyConfiguration(new AnswerAwaitingTranslationConfiguration());
 		modelBuilder.ApplyConfiguration(new AdminPendingCountsConfiguration());
+		modelBuilder.ApplyConfiguration(new AdminReportSearchMatchConfiguration());
 
 		// Every application table except the append-only audit log is filtered
 		// to its live rows by default. See docs/data-and-persistence.md.

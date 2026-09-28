@@ -12,6 +12,7 @@ import {
 	unpublishReport,
 	type ReportListItem,
 } from "../api/adminReports"
+import { AttachmentCountBadge } from "../components/AttachmentCountBadge"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
 import { InfiniteScrollStatus } from "../components/InfiniteScrollStatus"
 import { ReportBadges } from "../components/ReportBadges"
@@ -242,6 +243,7 @@ export function ManageReportsPage() {
 												{report.pilotName && t("reports.row.pilotName", { name: report.pilotName })}
 											</span>
 										)}
+										<AttachmentCountBadge count={report.attachmentCount} />
 									</span>
 									<ReportBadges status={report.status} consent={report.consent} isStuck={report.isStuck} />
 								</Link>

@@ -471,8 +471,6 @@
       "private": "Privé",
       "notAnswered": "Sans réponse",
       "translation": "Traduction : {text}",
-      "attachments": "Pièces jointes",
-      "attachment": "{kind} — {state}",
       "unpublishNote": "Note relative au retrait de la publication : {note}",
       "source": {
         "generated": "Généré par l'IA",
@@ -591,6 +589,12 @@
     "retry": "Réessayer",
     "error": "Certains signalements n'ont pas pu être chargés. Veuillez réessayer."
   },
+  "attachments": {
+    "count": {
+      "one": "#1 attachment",
+      "other": "#{count} attachments"
+    }
+  },
   "media": {
     "title": "Photos, vidéos et documents",
     "photoLabel": "Photo {index} de {count}",
@@ -604,7 +608,12 @@
     },
     "hide": "Masquer",
     "keep": "Conserver",
-    "confirmHide": "Cacher ceci à tout le monde?"
+    "confirmHide": "Cacher ceci à tout le monde?",
+    "lightbox": {
+      "previous": "#Previous",
+      "next": "#Next",
+      "close": "#Close"
+    }
   },
   "comments": {
     "title": "Commentaires",

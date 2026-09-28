@@ -315,9 +315,9 @@ Scenario: The report page shows a thumbnail strip, and activating a thumbnail op
   When a visitor opens the report
   Then the report page shows a thumbnail strip in place of stacked embeds
   When the visitor activates the image's thumbnail
-  Then the lightbox opens showing the image, labelled "Photo 1 of 2"
+  Then the lightbox opens showing the image, labelled "Photo 1 of 1"
   When the visitor activates the video's thumbnail
-  Then the lightbox shows the video, playable with its controls and audio, labelled "Video 2 of 2"
+  Then the lightbox shows the video, playable with its controls and audio, labelled "Video 1 of 1"
 
 @REQ-MED-033
 @ui

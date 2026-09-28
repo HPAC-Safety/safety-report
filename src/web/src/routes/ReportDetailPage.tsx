@@ -3,9 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
 import {
-	attachmentLink,
 	consentKey,
-	setAttachmentHidden,
 	deleteReport,
 	getReport,
 	publishReport,
@@ -14,9 +12,9 @@ import {
 	unpublishReport,
 	type ReportAnswer,
 	type ReportAnswerValue,
-	type ReportAttachment,
 	type ReportDetail,
 } from "../api/adminReports"
+import { AttachmentStrip } from "../components/AttachmentStrip"
 import { ReportBadges } from "../components/ReportBadges"
 import { ReviewActions } from "../components/ReviewActions"
 import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
@@ -85,24 +83,6 @@ export function ReportDetailPage() {
 			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
 		} finally {
 			setBusy(false)
-		}
-	}
-
-	async function setHidden(attachment: ReportAttachment, hidden: boolean) {
-		try {
-			await setAttachmentHidden(reportId, attachment.id, hidden)
-			setReport(await getReport(reportId))
-		} catch (cause) {
-			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
-		}
-	}
-
-	async function open(attachment: ReportAttachment) {
-		try {
-			const link = await attachmentLink(reportId, attachment)
-			window.open(link.url, "_blank", "noopener")
-		} catch (cause) {
-			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
 		}
 	}
 
@@ -313,53 +293,7 @@ export function ReportDetailPage() {
 						</dl>
 					</section>
 
-					{report.attachments.length > 0 && (
-						<section aria-labelledby="attachments-heading" className="mt-10">
-							<h2 id="attachments-heading" className="font-display text-2xl font-bold">
-								{t("reports.detail.attachments")}
-							</h2>
-							<ul className="mt-4 flex flex-col gap-2">
-								{report.attachments.map((attachment) => (
-									<li key={attachment.id} className="flex flex-wrap items-center gap-3 font-sans text-ink">
-										{t("reports.detail.attachment", {
-											kind: t(`reports.attachment.kind.${attachment.kind}`),
-											state: t(`reports.attachment.state.${attachment.state}`),
-										})}
-										{attachment.state === "ready" && (
-											<button
-												type="button"
-												className="touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
-												onClick={() => void open(attachment)}
-											>
-												{t(attachment.kind === "document" ? "reports.attachment.download" : "reports.attachment.view")}
-											</button>
-										)}
-										<span className="font-sans text-sm text-ink-muted" data-visibility={attachment.visibility}>
-											{t(`reports.attachment.visibility.${attachment.visibility}`)}
-										</span>
-										{(attachment.visibility === "public" || attachment.visibility === "when_published") && (
-											<button
-												type="button"
-												className="touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
-												onClick={() => void setHidden(attachment, true)}
-											>
-												{t("reports.attachment.hide")}
-											</button>
-										)}
-										{attachment.visibility === "hidden" && (
-											<button
-												type="button"
-												className="touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
-												onClick={() => void setHidden(attachment, false)}
-											>
-												{t("reports.attachment.show")}
-											</button>
-										)}
-									</li>
-								))}
-							</ul>
-						</section>
-					)}
+					<AttachmentStrip reportId={report.id} media={[]} staffAttachments={report.attachments} onChanged={reload} />
 
 					<PrivateAttachments reportId={report.id} state={privateAttachments} />
 					<PrivateNotes reportId={report.id} attachments={privateAttachments.attachments ?? []} />

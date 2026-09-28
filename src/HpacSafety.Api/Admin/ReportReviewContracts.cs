@@ -155,8 +155,10 @@ public sealed record ReportSummaryView(
 ///     <c>no_consent</c> because the reporter did not agree to share media; or
 ///     <c>private</c> — a document, or a file with no verified derivative.
 /// </param>
+/// <param name="Format">A document's coarse format, for the strip's type icon (issue #427); null for an image or video.</param>
 public sealed record ReportAttachmentView(
 	string Id,
 	string Kind,
 	string State,
-	string Visibility);
+	string Visibility,
+	string? Format = null);

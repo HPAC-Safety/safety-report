@@ -224,7 +224,8 @@ public static class PublicReportEndpoints
 					.OrderBy(file => file.UploadedAt)
 					.ThenBy(file => file.Id)
 					.Select(file => new ReportAttachmentView(
-						file.Id.Value, EnumCode.Of(file.Kind), ReportEndpoints.AttachmentState(file), ReportEndpoints.Visibility(source, file)))];
+						file.Id.Value, EnumCode.Of(file.Kind), ReportEndpoints.AttachmentState(file), ReportEndpoints.Visibility(source, file),
+						ReportEndpoints.FormatOf(file.Kind, file.ContentType)))];
 			}
 		}
 

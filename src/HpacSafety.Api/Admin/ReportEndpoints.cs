@@ -453,7 +453,7 @@ public static class ReportEndpoints
 					EnumCode.Of(summary.SourceEn),
 					EnumCode.Of(summary.SourceFr))
 				: null,
-			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file)))],
+			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file), FormatOf(file.Kind, file.ContentType)))],
 			ConcurrencyToken.Of(database, report),
 			report.UnpublishNote,
 			report.PublishedAt);
@@ -513,6 +513,17 @@ public static class ReportEndpoints
 	///     <c>public_report_media</c> view holds (ADR-0117, ADR-0119), so a
 	///     reviewer sees what a visitor would.
 	/// </summary>
+	/// <summary>
+	///     A document's coarse format, the extension it downloads with (issue
+	///     #427, so the strip's type icon can match it); none for an image or
+	///     video. Shared with <see cref="PublicReports.PublicReportEndpoints" />.
+	/// </summary>
+	internal static string? FormatOf(AttachmentKind kind,
+									 string contentType)
+	{
+		return kind is AttachmentKind.Document && MediaType.TryParse(contentType, out var type) ? type.Extension : null;
+	}
+
 	/// <summary>Shared with <see cref="PublicReports.PublicReportEndpoints" />; see <see cref="AttachmentState" />.</summary>
 	internal static string Visibility(Report report,
 									  ReportFile file)

@@ -254,7 +254,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		var attachments = body.GetProperty("staffAttachments").EnumerateArray().ToList();
 		attachments.Count.ShouldBe(2);
 		attachments.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal)
-			.SetEquals(new[] { "id", "kind", "state", "visibility" }));
+			.SetEquals(new[] { "id", "kind", "state", "visibility", "format" }));
 	}
 
 	[Then(@"the hidden file's visibility reads ""(.*)""")]

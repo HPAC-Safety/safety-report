@@ -47,6 +47,8 @@ export interface ReportListItem {
 	reporterName: string | null
 	/** The pilot's first and last name answers, joined, or null when neither was given. */
 	pilotName: string | null
+	/** Every non-deleted attachment, whatever its kind, state, or visibility (issue #427). */
+	attachmentCount: number
 }
 
 /** One page of the admin report list, newest submitted first; `next` continues it, or is null on the last page (REQ-MOD-129). */
@@ -103,6 +105,8 @@ export interface ReportAttachment {
 	kind: "image" | "video" | "document"
 	state: "ready" | "processing" | "failed"
 	visibility: AttachmentVisibility
+	/** A document's coarse format, for the strip's type icon (issue #427); null for an image or video. */
+	format: string | null
 }
 
 /** Everything a reviewer needs to judge one report (REQ-MOD-031). Reading it is audited. */
@@ -229,6 +233,16 @@ export function setAttachmentHidden(reportId: string, attachmentId: string, hidd
 export function attachmentLink(reportId: string, attachment: ReportAttachment): Promise<AttachmentLink> {
 	const verb = attachment.kind === "document" ? "download" : "view"
 	return get(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachment.id)}/${verb}`)
+}
+
+/**
+ * The raw original of an image or video that has no derivative yet — still
+ * processing, or failed. Forced and audited under its own action, never
+ * inline. 404 once a derivative exists (use `attachmentLink` instead) and for
+ * a document (issue #427 decision 15).
+ */
+export function attachmentOriginalLink(reportId: string, attachmentId: string): Promise<AttachmentLink> {
+	return get(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachmentId)}/original`)
 }
 
 /** How much admin work is waiting, for the Admin menu's badges (REQ-MOD-084). */

@@ -127,7 +127,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAMalformedReportId_WhenViewed_ThenNotFound()
+	public async Task GivenMalformedReportId_WhenViewed_ThenNotFound()
 	{
 		// Given
 		var (_, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
@@ -141,7 +141,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenViewed_ThenForbidden()
+	public async Task GivenValidatedTokenWithNoSubjectClaim_WhenViewed_ThenForbidden()
 	{
 		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
 		// subject claim is not separately enforced by the JWT middleware, so

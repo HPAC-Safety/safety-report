@@ -104,7 +104,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenHidden_ThenForbidden()
+	public async Task GivenValidatedTokenWithNoSubjectClaim_WhenHidden_ThenForbidden()
 	{
 		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
 		// subject claim is not separately enforced by the JWT middleware, so

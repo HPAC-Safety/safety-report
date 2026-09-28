@@ -82,7 +82,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenListingPrivateAttachments_ThenTheReaderReadsAsUnknownRatherThanFailing()
+	public async Task GivenValidatedTokenWithNoSubjectClaim_WhenListingPrivateAttachments_ThenReaderReadsAsUnknownRatherThanFailing()
 	{
 		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
 		// subject claim is not separately enforced, so List has to cope with a

@@ -1,6 +1,6 @@
 ---
 title: Two AWS accounts, staging and production, released by date tag and promoted by approval
-description: The existing AWS account becomes staging, synthetic data only; a new account becomes production. One release builds once, deploys to staging automatically, then to production after hpac-admins approval of the same artifacts. Each account groups its resources under its own hpac-staging/hpac-production myApplications application, and both run the same Terraform.
+description: The existing AWS account becomes staging, synthetic data only; a new account becomes production. One release builds once, deploys to staging automatically, then to production after hpac-safety-admins approval of the same artifacts. Each account groups its resources under its own hpac-safety-staging/hpac-safety-production myApplications application, and both run the same Terraform.
 type: adr
 status: accepted
 date: 2026-09-27
@@ -18,6 +18,15 @@ environment: production."). ADR-0031's other decisions — one root module of
 flat `.tf` files, no modules directory, no workspaces, S3-native state locking
 — stand: both environments still build from that one root, distinguished only
 by tfvars.
+
+**Amended 2026-09-28** ([#591](https://github.com/HPAC-Safety/safety-report/issues/591)):
+one prefix, `hpac-safety-`, for every name this system owns in a grouping or
+approval role. The GitHub org team renames `hpac-admins` → `hpac-safety-admins`;
+the GitHub environments rename `hpac-staging`/`hpac-production` →
+`hpac-safety-staging`/`hpac-safety-production`; the AWS myApplications
+application and Resource Group rename to match. `bootstrap.sh`'s argument,
+tfvars file names, `Environment` tag values, and backend state keys are
+unaffected and stay `staging`/`production`.
 
 ## Context
 
@@ -76,7 +85,7 @@ Nothing here reopens the identity-provider choice (ADR-0064) or the ALB (see
 
 Each account gets its own AWS **myApplications** application (Service
 Catalog AppRegistry) and tag-based Resource Group, named for the account it
-groups — **`hpac-staging`** and **`hpac-production`** — so every resource the
+groups — **`hpac-safety-staging`** and **`hpac-safety-production`** — so every resource the
 system owns is visible in one place per account even though staging's account
 also hosts unrelated applications. This is a grouping and cost-visibility
 tool, not a security boundary; the tags are what a policy condition actually
@@ -104,12 +113,12 @@ name.
   (for example `2026.10.02-1`).
 - **Build once.** The release workflow builds the API image, the Worker
   image, and the web bundle exactly once, tagged by commit SHA.
-- **Staging deploys on its own**, against the `hpac-staging` GitHub environment
+- **Staging deploys on its own**, against the `hpac-safety-staging` GitHub environment
   (deployment branch/tag rule `20*`, no required reviewers): `terraform
   apply`, push images, update both Lambda functions, sync the site bundle,
   invalidate CloudFront, smoke-test `/api/health`.
-- **Production waits.** The `hpac-production` GitHub environment requires
-  approval by the `hpac-admins` org team before its job runs. It then repeats the
+- **Production waits.** The `hpac-safety-production` GitHub environment requires
+  approval by the `hpac-safety-admins` org team before its job runs. It then repeats the
   same steps against the production account, deploying the **same image
   digests and the same web bundle** staging already ran — never a rebuild.
 - **There is no apply on merge to `main`.** A pull request still gets a
@@ -226,10 +235,10 @@ because this is the ADR that first writes the two-environment shape down:
   `diff` must be the whole story; a review that finds environment-specific
   logic anywhere else in the Terraform is a defect.
 - Issue #30's "Human work" H1–H3 (HPAC creates its own AWS account for
-  production, a maintainer sets up the `hpac-admins` team and both GitHub
+  production, a maintainer sets up the `hpac-safety-admins` team and both GitHub
   environments, and `bootstrap.sh` runs independently in each account) is the
   one-time setup this ADR assumes exists before a release can run end to end
-  against both accounts. Staging alone needs only H2's `hpac-staging` environment
+  against both accounts. Staging alone needs only H2's `hpac-safety-staging` environment
   and H3 run once, against the owner's existing account.
 - `docs/infrastructure-and-operations.md`, `docs/deployment.md`,
   `features/README.md`, and the `manage-hpac-infrastructure` skill are updated

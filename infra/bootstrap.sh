@@ -62,8 +62,8 @@ set -eu
 
 ENVIRONMENT="${1:-}"
 case "$ENVIRONMENT" in
-  staging) GITHUB_ENVIRONMENT='hpac-staging' ;;
-  production) GITHUB_ENVIRONMENT='hpac-production' ;;
+  staging) GITHUB_ENVIRONMENT='hpac-safety-staging' ;;
+  production) GITHUB_ENVIRONMENT='hpac-safety-production' ;;
   *)
     printf 'usage: %s <staging|production>\n' "$0" >&2
     printf '\n' >&2
@@ -258,8 +258,8 @@ fi
 # Trusts EXACTLY this repository's `environment: <GITHUB_ENVIRONMENT>` job,
 # and nothing else - not a branch ref, not a tag, not a pull request, not
 # another repository, not another environment. GITHUB_ENVIRONMENT
-# (hpac-staging / hpac-production) is the GitHub environment's own name,
-# distinct from ENVIRONMENT (staging / production), which names the AWS
+# (hpac-safety-staging / hpac-safety-production) is the GitHub environment's
+# own name, distinct from ENVIRONMENT (staging / production), which names the AWS
 # side: the Environment tag and the Terraform state key. `aud` and `sub` are
 # both StringEquals, never StringLike: a wildcard here is exactly the gap
 # that would let a workflow running under any OTHER GitHub environment (or
@@ -327,17 +327,33 @@ fi
 #      under function:hpac-safety-* / layer:hpac-safety-*, ECR repositories
 #      under repository/hpac-safety-*, SNS topics under hpac-safety-*, event
 #      rules under rule/hpac-safety-*, schedules under
-#      schedule/*/hpac-safety-*, and our own log groups under
-#      /aws/lambda/hpac-safety-* and /aws/rds/instance/hpac-safety*. These
-#      services get their OWN Allow statements below (DEPLOY_POLICY_CORE),
-#      scoped to those ARN patterns instead of "*", so the tag condition is
-#      not the only thing standing between this role and another app's
+#      schedule/*/hpac-safety-*, our own log groups under
+#      /aws/lambda/hpac-safety-* and /aws/rds/instance/hpac-safety*, and - now
+#      that #591 renamed the AWS grouping to match this account's own GitHub
+#      environment name - the Resource Group under
+#      group/${GITHUB_ENVIRONMENT}. These services get their OWN Allow
+#      statements below (DEPLOY_POLICY_CORE / DEPLOY_POLICY_SERVICES), scoped
+#      to those ARN patterns instead of "*", so the tag condition is not the
+#      only thing standing between this role and another app's
 #      identically-typed resource.
+#
+#      THE APPREGISTRY APPLICATION IS NOT SIMILARLY SCOPED, even though #591
+#      also renamed it to hpac-safety-<environment>: its ARN addresses the
+#      application by an AWS-assigned opaque id
+#      (arn:...:servicecatalog:.../applications/app-xxxxxxxxxxxx), never by
+#      the human-chosen name, and that id does not exist until
+#      CreateApplication has already run. There is no ARN pattern to write in
+#      advance, so guard 3's tag condition remains the only enforceable scope
+#      for it - see CreateOnlyAsOurProject below.
 #   2. READ-ONLY METADATA everywhere else (Describe*/List*/most Get*) is
 #      allowed broadly: configuration facts, not data, and Terraform needs
 #      them to plan a diff against services that DON'T have a name pattern to
-#      scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS, Resource
-#      Groups, AppRegistry).
+#      scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS,
+#      AppRegistry). Resource Groups' own Get*/List* moved to
+#      ManageOurResourceGroupOnly below, alongside its CreateGroup, once the
+#      group name itself became scopable; `resource-groups:SearchResources`
+#      stays here because it queries by tag/type, not by an existing group's
+#      name.
 #   3. CREATE is allowed for those un-scopable services only with
 #      aws:RequestTag/Project=HPAC-Safety - a real StringEquals, not
 #      IfExists, so an untagged create request is refused, not merely
@@ -501,6 +517,7 @@ fi
 #
 #   DEPLOY_POLICY_SERVICES (hpac-safety-deploy-services)
 #     ReadOnlyMetadata                       Describe/List/Get for un-scopable services
+#     ManageOurResourceGroupOnly             manage group/${GITHUB_ENVIRONMENT} only (name-scoped, not tag-only)
 #     CreateOnlyAsOurProject                 Create* only with our RequestTag (no tag-adding actions - see TAG-HIJACK CLOSED)
 #     TagOnlyAtEc2CreationTime               ec2:CreateTags gated on ec2:CreateAction
 #     EstablishNetworkAttachmentsOnResourcesWeJustCreated  wiring calls, still guardrail-gated (see above)
@@ -949,8 +966,6 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "ec2:Describe*",
         "rds:Describe*",
         "rds:List*",
-        "resource-groups:Get*",
-        "resource-groups:List*",
         "resource-groups:SearchResources",
         "servicecatalog:Get*",
         "servicecatalog:List*",
@@ -958,6 +973,31 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "tag:Get*"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "ManageOurResourceGroupOnly",
+      "Effect": "Allow",
+      "Action": [
+        "resource-groups:CreateGroup",
+        "resource-groups:GetGroup",
+        "resource-groups:GetGroupConfiguration",
+        "resource-groups:GetGroupQuery",
+        "resource-groups:GetTags",
+        "resource-groups:ListGroupResources",
+        "resource-groups:PutGroupConfiguration",
+        "resource-groups:Tag",
+        "resource-groups:Untag",
+        "resource-groups:UpdateGroup",
+        "resource-groups:UpdateGroupQuery",
+        "resource-groups:DeleteGroup"
+      ],
+      "Resource": "arn:aws:resource-groups:${REGION}:${ACCOUNT_ID}:group/${GITHUB_ENVIRONMENT}",
+      "Condition": {
+        "StringEqualsIfExists": {
+          "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}",
+          "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
     },
     {
       "Sid": "CreateOnlyAsOurProject",
@@ -988,7 +1028,6 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "rds:CreateDBInstance",
         "rds:CreateDBSubnetGroup",
         "rds:CreateDBParameterGroup",
-        "resource-groups:CreateGroup",
         "servicecatalog:CreateApplication",
         "servicecatalog:CreateAttributeGroup",
         "servicecatalog:AssociateResource",

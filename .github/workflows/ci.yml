@@ -250,6 +250,13 @@ jobs:
       - name: The source inventory lists every directory under src/
         run: node tools/check-inventories.mjs
 
+      # A workflow that reads `terraform output NAME` (or a deploy_variables /
+      # site_urls key) is trusting infra/outputs.tf to still declare it -
+      # nothing else catches a renamed or removed output before a release
+      # actually runs against AWS. #466.
+      - name: Every workflow's terraform output reference is declared in infra/outputs.tf
+        run: node tools/check-terraform-outputs.mjs
+
       # The .NET major lives in global.json, the target framework, the Worker's
       # base image, and Renovate's allowedVersions. Here, not behind the dotnet
       # path filter, because a renovate.json-only change must run it too.

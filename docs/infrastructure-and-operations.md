@@ -374,15 +374,22 @@ superseding [ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-secur
 **CON-INF-005** Secret values live in Secrets Manager and never in Terraform state, GitHub
 variables, source, appsettings committed to the repository, logs, or task
 definitions. Terraform creates the secret entry only; an authorized operator
-supplies the value out of band, and the deploy workflow reads it into the
-Lambda function's configuration at deploy time (Lambda has no built-in
-resolve-this-ARN mechanism the way the ECS agent did). Two entries exist, in
-both environments: the summarization provider's key, `AiChatClient__ApiKey`
+supplies the value out of band, and the Lambda function's environment carries
+only that secret's ARN — a non-secret identifier — which the application
+reads itself, resolving the current value from Secrets Manager at cold start
+(`SecretArnResolver`, #597; Lambda has no built-in resolve-this-ARN mechanism
+the way the ECS agent did). Two entries exist, in both environments: the
+summarization provider's key, `AiChatClient__ApiKey`, read by the Worker via
+`AiChatClient__ApiKeySecretArn`
 ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)),
-and DeepL's key
+and DeepL's key, `Translation__ApiKey`, read by both the API and the Worker
+via `Translation__ApiKeySecretArn`
 ([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-The identity provider is an external dependency the Terraform in this
-directory does not create a secret for yet
+Each Lambda role may read only its own secrets: the API's role can read
+DeepL's entry and the CloudFront origin-verify secret below; the Worker's can
+read DeepL's and Gemini's (`infra/iam.tf`). The identity provider is an
+external dependency the Terraform in this directory does not create a secret
+for yet
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)
 — its client secret, if the eventual provider needs one, is #443/a future
 issue's to add). The database connection is not one of these either: the

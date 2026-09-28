@@ -28,12 +28,35 @@ data "aws_iam_policy_document" "lambda_assume" {
   }
 }
 
-data "aws_iam_policy_document" "secrets_read" {
+# Scoped to each function's OWN secrets, not every entry in secrets.tf's map:
+# DeepL is read by both the API (translation drafts) and the Worker (an
+# answer's or a comment's second language); Gemini only by the Worker; the
+# CloudFront origin-verify secret only by the API (secrets.tf). Each function
+# resolves its own value itself, by ARN, at cold start (SecretArnResolver,
+# #597) — granting a function read access to a secret it never opens would
+# widen its role for no reason.
+
+data "aws_iam_policy_document" "api_function_secrets_read" {
   statement {
-    sid       = "ResolveSecretsAtColdStart"
-    effect    = "Allow"
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [for s in aws_secretsmanager_secret.this : s.arn]
+    sid     = "ResolveSecretsAtColdStart"
+    effect  = "Allow"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = [
+      aws_secretsmanager_secret.this["deepl_api_key"].arn,
+      aws_secretsmanager_secret.cloudfront_origin_secret.arn,
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "worker_function_secrets_read" {
+  statement {
+    sid     = "ResolveSecretsAtColdStart"
+    effect  = "Allow"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = [
+      aws_secretsmanager_secret.this["deepl_api_key"].arn,
+      aws_secretsmanager_secret.this["gemini_api_key"].arn,
+    ]
   }
 }
 
@@ -149,7 +172,7 @@ resource "aws_iam_role_policy" "api_function" {
 resource "aws_iam_role_policy" "api_function_secrets" {
   name   = "secrets"
   role   = aws_iam_role.api_function.id
-  policy = data.aws_iam_policy_document.secrets_read.json
+  policy = data.aws_iam_policy_document.api_function_secrets_read.json
 }
 
 # The API's async nudge (ADR-0123) — the only cross-function permission either
@@ -189,7 +212,7 @@ resource "aws_iam_role_policy" "worker_function" {
 resource "aws_iam_role_policy" "worker_function_secrets" {
   name   = "secrets"
   role   = aws_iam_role.worker_function.id
-  policy = data.aws_iam_policy_document.secrets_read.json
+  policy = data.aws_iam_policy_document.worker_function_secrets_read.json
 }
 
 # --------------------------------------------------------------------------

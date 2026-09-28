@@ -35,8 +35,33 @@ builder.Services.AddSingleton(TimeProvider.System);
 // Development and every test host. See #443, #465.
 var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(builder.Configuration).ConfigureAwait(false);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql(connectionString));
+
+// Resolved once, here, from Secrets Manager when Terraform supplies an ARN —
+// every deployed environment; the Lambda environment carries only the ARN,
+// never the key's value. Left unset in Development and every test host,
+// where the plain AiChatClient:ApiKey setting still applies. See #597.
+var aiChatClientSection = builder.Configuration.GetSection(AiChatClientOptions.SectionName);
+var aiChatClientApiKey = await SecretArnResolver.ResolveAsync(
+	aiChatClientSection[nameof(AiChatClientOptions.ApiKey)],
+	aiChatClientSection[nameof(AiChatClientOptions.ApiKeySecretArn)]).ConfigureAwait(false);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+	[$"{AiChatClientOptions.SectionName}:{nameof(AiChatClientOptions.ApiKey)}"] = aiChatClientApiKey,
+});
 builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
 builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
+
+// Resolved once, here, the same way as AiChatClient's key above. Left unset
+// in Development and every test host, where the plain
+// Translation:ApiKey/DEEPL_API_KEY setting still applies. See #597.
+var translationSection = builder.Configuration.GetSection(DeepLOptions.SectionName);
+var deepLApiKey = await SecretArnResolver.ResolveAsync(
+	translationSection[nameof(DeepLOptions.ApiKey)] ?? builder.Configuration["DEEPL_API_KEY"],
+	translationSection[nameof(DeepLOptions.ApiKeySecretArn)]).ConfigureAwait(false);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+	[$"{DeepLOptions.SectionName}:{nameof(DeepLOptions.ApiKey)}"] = deepLApiKey,
+});
 
 // Same port and adapter question authoring uses. With no credential, in any
 // environment, translation is unavailable and the message backs off rather

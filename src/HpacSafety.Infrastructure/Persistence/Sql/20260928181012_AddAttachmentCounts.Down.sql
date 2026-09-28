@@ -4,11 +4,13 @@
 -- search_public_reports (as of 20260928012335_AddPublicReportSearch.sql),
 -- none of which carry an attachment count. A view cannot lose a trailing
 -- column in place (CREATE OR REPLACE only ever appends), so every view that
--- reads public_reports or admin_report_queue is dropped and restored with
--- them, in dependency order, the same pattern
+-- reads public_reports or admin_report_queue — public_report_media,
+-- public_report_comments, admin_pending_counts — is dropped and restored
+-- with them, in dependency order, the same pattern
 -- 20260927172950_ListReportVersions.Down.sql uses.
 DROP FUNCTION IF EXISTS search_public_reports(text, text, text, integer);
 DROP VIEW public_report_media;
+DROP VIEW public_report_comments;
 DROP VIEW admin_pending_counts;
 DROP VIEW admin_report_queue;
 DROP VIEW public_reports;
@@ -73,6 +75,30 @@ SELECT (SELECT count(*) FROM admin_report_queue WHERE needs_action)::integer AS 
                  JOIN questions AS question ON question.id = choice.question_id
         WHERE choice.needs_review
           AND question.deleted IS NULL)::integer                             AS type_ahead_values_awaiting_review;
+
+CREATE VIEW public_report_comments AS
+SELECT comment.id COLLATE "C" AS id,
+       comment.report_id COLLATE "C" AS report_id,
+       comment.author_subject,
+       latest.text,
+       latest.locale,
+       latest.translated_text,
+       comment.created_at,
+       latest.created_at AS updated_at,
+       latest.number > 1 AS edited
+FROM report_comments comment
+         JOIN public_reports report ON report.id = comment.report_id
+         JOIN LATERAL (
+    SELECT revision.text,
+           revision.locale,
+           revision.translated_text,
+           revision.created_at,
+           revision.number
+    FROM report_comment_revisions revision
+    WHERE revision.comment_id = comment.id AND revision.deleted IS NULL
+    ORDER BY revision.number DESC
+    LIMIT 1) latest ON true
+WHERE comment.deleted IS NULL AND comment.hidden_at IS NULL;
 
 CREATE VIEW public_report_media AS
 SELECT file.id COLLATE "C"        AS id,

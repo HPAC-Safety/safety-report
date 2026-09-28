@@ -135,6 +135,72 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		Visibilities(detail).ShouldBe(["hidden", "private", "private"], ignoreOrder: true);
 	}
 
+	[Theory]
+	[InlineData(ReportStatus.Published, true, "public")]
+	[InlineData(ReportStatus.Pending, true, "when_published")]
+	[InlineData(ReportStatus.Published, false, "no_consent")]
+	public async Task GivenAValidatedDocument_WhenAdminReadsReport_ThenVisibilityFollowsConsentAndStatus(ReportStatus status,
+		bool mediaConsent,
+		string expected)
+	{
+		// Given
+		// ReportEndpoints.Visibility branches on isDocument separately from an
+		// image/video's — a document reads ValidatedAt where an image reads
+		// AwaitsStripping, and it is never in the lightbox (issue #427 decision 3).
+		var (reportId, fileIds) = await Seed(status, mediaConsent, MediaType.Pdf);
+		await Validate(fileIds[0]);
+
+		// When
+		var detail = await Detail(reportId);
+
+		// Then
+		Visibilities(detail).ShouldBe([expected]);
+	}
+
+	[Fact]
+	public async Task GivenAValidatedDocument_WhenHidden_ThenItReadsAsHidden()
+	{
+		// Given
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, true, MediaType.Pdf);
+		await Validate(fileIds[0]);
+		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		using var hid = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+		hid.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		// When
+		var detail = await Detail(reportId);
+
+		// Then
+		Visibilities(detail).ShouldBe(["hidden"]);
+	}
+
+	[Fact]
+	public async Task GivenAValidatedDocument_WhenAdminReadsReport_ThenItsStateIsReadyAndFormatIsItsExtension()
+	{
+		// Given
+		// ReportEndpoints.AttachmentState treats a document as ready once it is not
+		// failed — it never awaits a stripped derivative the way an image does.
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, true, MediaType.Pdf);
+		await Validate(fileIds[0]);
+
+		// When
+		var detail = await Detail(reportId);
+		var attachment = detail.GetProperty("attachments").EnumerateArray().Single();
+
+		// Then
+		attachment.GetProperty("state").GetString().ShouldBe("ready");
+		attachment.GetProperty("format").GetString().ShouldBe("pdf");
+	}
+
+	private async Task Validate(string fileId)
+	{
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var file = await database.ReportFiles.SingleAsync(candidate => candidate.Id == TinyId.Parse(fileId));
+		file.RecordValidated(Now);
+		await database.SaveChangesAsync();
+	}
+
 	private async Task<(string ReportId, List<string> FileIds)> Seed(ReportStatus status,
 																	 bool? mediaConsent,
 																	 params MediaType[] types)

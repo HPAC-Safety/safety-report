@@ -1,12 +1,11 @@
 # The API and the Worker, both container-image Lambda functions in the private
 # subnets (ADR-0042, ADR-0123, #443).
 #
-# WHO OWNS THE IMAGE. Terraform's `image_uri` is only ever the shape of a
-# first apply, before anything has been pushed to ECR — nothing has, so
-# neither function will report healthy until the first deploy runs, which is
-# why docs/deployment.md orders it: apply, push, deploy. The deploy workflow
-# (deploy-api.yml, deploy-worker.yml) updates each function's code to the
-# commit SHA CI tested, so both functions ignore `image_uri` after that.
+# WHO OWNS THE IMAGE. Terraform's `image_uri` (`:latest`) matters only when a
+# function is first created, and Lambda refuses to create one from an image
+# ECR does not hold. So deploy-environment.yml creates the registries and
+# pushes `:latest` before the full apply (#623), then updates each function to
+# the release's image digest; both functions ignore `image_uri` after that.
 #
 # WHO OWNS THE ENVIRONMENT. Every value in `environment` is plain, non-secret
 # configuration Terraform sets directly — including every secret's ARN (not

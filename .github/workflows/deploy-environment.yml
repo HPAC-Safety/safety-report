@@ -71,6 +71,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment_name }}
     steps:
+      # First: require-config below is a local action, read from the
+      # workspace, which is empty until checkout (issue #623).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag }}
+
       # Named, not opaque: a missing value fails here with the name that is
       # missing, not thirty steps later inside an AWS CLI error.
       - name: Required configuration is present
@@ -86,10 +92,6 @@ jobs:
           context: >-
             ${{ inputs.environment_name }} has not been bootstrapped yet.
             See infra/SETUP.md (steps 2.2-2.4, or 3.2-3.4) and infra/bootstrap.sh.
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ inputs.tag }}
 
       - name: Download the release's built artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -120,6 +122,72 @@ jobs:
           -lockfile=readonly
           -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
           -backend-config="key=${{ inputs.state_key }}"
+
+      # A Lambda function is created from an image that must already be in
+      # ECR (CreateFunction refuses a missing one), so on an account's first
+      # release the registries come first, then the images, then everything
+      # else (#623). Every later release this targeted apply changes nothing.
+      - name: Create the image registries
+        run: |
+          terraform -chdir=infra apply -no-color -auto-approve \
+            -target='aws_ecr_repository.this' \
+            -target='aws_ecr_lifecycle_policy.this' \
+            -var-file="$GITHUB_WORKSPACE/${{ inputs.tfvars_file }}"
+
+      # Read from state, not from `deploy_variables`: that output also names
+      # the Lambda functions and buckets, which do not exist yet on a first
+      # release.
+      - name: Read the image registries
+        id: ecr
+        run: |
+          set -euo pipefail
+          terraform -chdir=infra show -json > /tmp/ecr_state.json
+          url() {
+            jq -r --arg a "aws_ecr_repository.this[\"$1\"]" \
+              '.values.root_module.resources[] | select(.address == $a) | .values.repository_url' \
+              /tmp/ecr_state.json
+          }
+          api_repo=$(url api)
+          worker_repo=$(url worker)
+          {
+            echo "registry=${api_repo%%/*}"
+            echo "api_repo=$api_repo"
+            echo "worker_repo=$worker_repo"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Log in to this account's ECR
+        run: |
+          aws ecr get-login-password --region "${{ env.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "${{ steps.ecr.outputs.registry }}"
+
+      # Tagged with the commit SHA (what a rollback names) and `latest` (what
+      # lambda.tf's `image_uri` names on a function's first creation; ignored
+      # after that — the functions are updated by digest below).
+      - name: Load and push the API and Worker images
+        id: images
+        run: |
+          set -euo pipefail
+          docker load -i artifacts/release/api-image/api-image.tar.gz
+          docker load -i artifacts/release/worker-image/worker-image.tar.gz
+
+          api_image="${{ steps.ecr.outputs.api_repo }}:${{ inputs.sha }}"
+          worker_image="${{ steps.ecr.outputs.worker_repo }}:${{ inputs.sha }}"
+
+          docker tag "hpac-safety-api:${{ inputs.sha }}" "$api_image"
+          docker tag "hpac-safety-api:${{ inputs.sha }}" "${{ steps.ecr.outputs.api_repo }}:latest"
+          docker tag "hpac-safety-worker:${{ inputs.sha }}" "$worker_image"
+          docker tag "hpac-safety-worker:${{ inputs.sha }}" "${{ steps.ecr.outputs.worker_repo }}:latest"
+          docker push "$api_image"
+          docker push "${{ steps.ecr.outputs.api_repo }}:latest"
+          docker push "$worker_image"
+          docker push "${{ steps.ecr.outputs.worker_repo }}:latest"
+
+          api_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$api_image" | cut -d@ -f2)
+          worker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$worker_image" | cut -d@ -f2)
+          {
+            echo "api_digest=$api_digest"
+            echo "worker_digest=$worker_digest"
+          } >> "$GITHUB_OUTPUT"
 
       # No plan-then-apply-the-plan-file here, unlike terraform.yml's old
       # `apply` job: a release environment auto-applies on staging and applies
@@ -198,35 +266,6 @@ jobs:
           # shellcheck disable=SC2129
           jq -r 'to_entries[] | "\(.key)=\(.value)"' /tmp/deploy_variables.json >> "$GITHUB_OUTPUT"
 
-      - name: Log in to this account's ECR
-        run: |
-          aws ecr get-login-password --region "${{ env.AWS_REGION }}" \
-            | docker login --username AWS --password-stdin "${{ steps.tf.outputs.ECR_REGISTRY }}"
-
-      - name: Load and push the API and Worker images
-        id: images
-        run: |
-          set -euo pipefail
-          docker load -i artifacts/release/api-image/api-image.tar.gz
-          docker load -i artifacts/release/worker-image/worker-image.tar.gz
-
-          api_image="${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_API }}:${{ inputs.sha }}"
-          worker_image="${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_WORKER }}:${{ inputs.sha }}"
-
-          docker tag "hpac-safety-api:${{ inputs.sha }}" "$api_image"
-          docker tag "hpac-safety-worker:${{ inputs.sha }}" "$worker_image"
-          docker push "$api_image"
-          docker push "$worker_image"
-
-          api_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$api_image" | cut -d@ -f2)
-          worker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$worker_image" | cut -d@ -f2)
-          {
-            echo "api_digest=$api_digest"
-            echo "worker_digest=$worker_digest"
-            echo "api_image=$api_image"
-            echo "worker_image=$worker_image"
-          } >> "$GITHUB_OUTPUT"
-
       # Same content pushed by every environment (the build job produced one
       # tarball each, loaded unchanged here) — same manifest digest in every
       # account's ECR. This is what "the same image digests, never a rebuild"
@@ -260,7 +299,7 @@ jobs:
           set -euo pipefail
           aws lambda update-function-code \
             --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_API }}" \
-            --image-uri "${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_API }}@${{ steps.images.outputs.api_digest }}" \
+            --image-uri "${{ steps.ecr.outputs.api_repo }}@${{ steps.images.outputs.api_digest }}" \
             >/dev/null
           aws lambda wait function-updated --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_API }}"
 
@@ -269,7 +308,7 @@ jobs:
           set -euo pipefail
           aws lambda update-function-code \
             --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_WORKER }}" \
-            --image-uri "${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_WORKER }}@${{ steps.images.outputs.worker_digest }}" \
+            --image-uri "${{ steps.ecr.outputs.worker_repo }}@${{ steps.images.outputs.worker_digest }}" \
             >/dev/null
           aws lambda wait function-updated --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_WORKER }}"
 

@@ -77,6 +77,13 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
 - **Never use it because the scenario is slower to write**, or to get a green
   build. That is the one use this repository forbids outright.
 - Cannot name the preserved claims? Then the change needs a scenario.
+- **A manifest-only diff needs no exemption line at all.** If every changed
+  file matches the tool's `DEPENDENCY_MANIFESTS` (lock files, `package.json`,
+  a `.csproj`, `Directory.Packages.props`, `Directory.Build.props`, a
+  `Dockerfile`), `feature-coverage` passes with no citation, for any author —
+  including Renovate, which writes no pull-request body of its own
+  (ADR-0090 amendment). A diff mixing a manifest with anything else still
+  needs a scenario or the exemption above.
 
 ### Missing requirements
 

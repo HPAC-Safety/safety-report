@@ -121,4 +121,22 @@ it is why a well-formed exemption is evidence rather than an excuse.
 - [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)
 - [ADR-0083](ADR-0083-specification-driven-development.md)
 - [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
+- [ADR-0111](ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)
 - [lesson 0001](../lessons/0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md)
+
+## Amendment (2026-09-28)
+
+A manifest-only diff needs no exemption line at all. If every changed file
+matches `DEPENDENCY_MANIFESTS` — lock files, `package.json`,
+a `.csproj`, `Directory.Packages.props`, `Directory.Build.props`, or a
+`Dockerfile` — `feature-coverage` passes with no citation, for any author. A
+diff containing any other file is unaffected and still needs a scenario or a
+well-formed exemption exactly as above.
+
+This closes the gap the `dependency` category could not: a Renovate pull
+request has no author present to type the citation line, so a rule that
+requires one on every dependency-bearing diff fails a change that alters no
+behavior for want of a sentence nobody there could write. The `dependency`
+category and its `Claims preserved:` citation remain exactly as decided above,
+for a manifest change mixed with anything else, or for a human author who
+still wants to name what a manifest-only change preserves. See issue #600.

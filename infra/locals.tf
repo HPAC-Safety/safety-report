@@ -1,12 +1,18 @@
 locals {
   name = var.project
 
+  # The Project tag's value. Not var.project: the name prefix is lowercase
+  # (hpac-safety-*), but infra/bootstrap.sh's deploy policy (TAG_VALUE) and
+  # every document require the tag Project=HPAC-Safety, and IAM compares tag
+  # values case-sensitively. The two must never drift (#617).
+  project_tag = "HPAC-Safety"
+
   # Every resource carries these four (ADR-0158). Environment is the ONE tag
   # that differs between accounts; nothing else about the tag set does — the
   # per-account myApplications name (grouping.tf) is a separate, human-facing
   # label, not a fifth tag.
   tags = {
-    Project     = var.project
+    Project     = local.project_tag
     Environment = var.environment
     ManagedBy   = "terraform"
     Repo        = "HPAC-Safety/safety-report"

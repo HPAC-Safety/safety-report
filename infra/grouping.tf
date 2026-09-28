@@ -55,7 +55,7 @@ resource "aws_resourcegroups_group" "this" {
       TagFilters = [
         {
           Key    = "Project"
-          Values = [var.project]
+          Values = [local.project_tag]
         },
         {
           Key    = "Environment"

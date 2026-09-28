@@ -23,7 +23,7 @@ variable "environment" {
 }
 
 variable "project" {
-  description = "Name prefix for every resource. Also the Project tag. Identical in both accounts — they are separate AWS accounts, so the name never has to disambiguate an environment (see ADR-0158's deploy-role IAM, which scopes on this prefix)."
+  description = "Name prefix for every resource (lowercase; the Project tag is locals.tf's project_tag, HPAC-Safety). Identical in both accounts — they are separate AWS accounts, so the name never has to disambiguate an environment (see ADR-0158's deploy-role IAM, which scopes on this prefix)."
   type        = string
   default     = "hpac-safety"
 }
@@ -250,8 +250,12 @@ variable "nat_instance_type" {
 
 variable "fck_nat_ami_version" {
   description = <<-EOT
-    Pinned fck-nat AMI version (published by AWS account 568608671756, image
-    name fck-nat-al2023-<version>-arm64-ebs). Deliberately not "most recent" —
+    Pinned fck-nat AMI build (published by AWS account 568608671756, image
+    name fck-nat-al2023-hvm-<version>-<build date>-arm64-ebs), as
+    "<version>-<build date>": fck-nat publishes several dated builds of one
+    version, so the date is what names exactly one image. List them with
+    `aws ec2 describe-images --owners 568608671756 --filters
+    'Name=name,Values=fck-nat-al2023-*-arm64-ebs'`. Deliberately not "most recent" —
     a floating lookup would let the NAT instance's image drift on every
     release without anyone deciding to move it. The module version itself is
     pinned as a literal in network.tf's `module "fck_nat" { version = ... }`,
@@ -262,7 +266,7 @@ variable "fck_nat_ami_version" {
     reviewing them together is the point.
   EOT
   type        = string
-  default     = "1.6.1"
+  default     = "1.4.0-20260701"
 }
 
 # --------------------------------------------------------------------------

@@ -1,3 +1,5 @@
+using Amazon.Lambda.Core;
+using Amazon.Lambda.RuntimeSupport;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.AiChatClient;
 using HpacSafety.Infrastructure.Media;
@@ -8,8 +10,15 @@ using HpacSafety.Worker.Outbox;
 using HpacSafety.Worker.Summarization;
 using Microsoft.EntityFrameworkCore;
 
+// AWS sets AWS_LAMBDA_RUNTIME_API only inside the Lambda execution
+// environment. Deployed, the Worker is a Lambda function that drains once per
+// invocation and returns (ADR-0123); everywhere else — docker-compose.yml,
+// developer machines, CI — it is the polling BackgroundService loop
+// (Worker.cs) unchanged from before.
+var isLambda = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_LAMBDA_RUNTIME_API"));
+
 // The Generic Host reads DOTNET_ENVIRONMENT by default; this project's own
-// convention (docker-compose.yml, infra/ecs.tf) is ASPNETCORE_ENVIRONMENT,
+// convention (docker-compose.yml, infra/lambda.tf) is ASPNETCORE_ENVIRONMENT,
 // the variable WebApplication-based HpacSafety.Api reads automatically.
 // Preferring it here, and falling back to the Generic Host's own resolution
 // when it is unset, keeps both hosts driven by the one variable a deploy
@@ -20,8 +29,12 @@ var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
 	EnvironmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
 });
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
-	options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
+// Built once, at cold start, from the RDS-managed master-user secret in every
+// deployed environment (same shape the API resolves, ADR-0055 applies to
+// both). Falls back to the plain ConnectionStrings:HpacSafety value in
+// Development and every test host. See #443, #465.
+var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(builder.Configuration).ConfigureAwait(false);
+builder.Services.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
 builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
 
@@ -40,12 +53,20 @@ builder.Services.AddScoped<IOutboxMessageProcessor, TranslateAnswersProcessor>()
 builder.Services.AddScoped<IOutboxMessageProcessor, TranslateCommentProcessor>();
 builder.Services.AddScoped<IOutboxMessageProcessor, TranslateChoiceProcessor>();
 builder.Services.AddScoped<IOutboxMessageProcessor, SummarizeReportProcessor>();
-builder.Services.AddHostedService<Worker>();
+
+// The polling loop is a Lambda-less-host concern only — a deployed Lambda
+// invocation drains through OutboxDrainPass directly, below, and never starts
+// this hosted service.
+if (!isLambda)
+{
+	builder.Services.AddHostedService<Worker>();
+}
 
 var host = builder.Build();
 
 // Whichever of the Worker or the API starts first after a deploy applies any
-// pending migration; the other is a no-op. See ADR-0055.
+// pending migration; the other is a no-op. See ADR-0055. A Lambda cold start
+// pays this cost once per warm container, not once per invocation.
 await using (var scope = host.Services.CreateAsyncScope())
 {
 	var context = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
@@ -53,4 +74,34 @@ await using (var scope = host.Services.CreateAsyncScope())
 	await context.EnsureMigrated(logger).ConfigureAwait(false);
 }
 
-await host.RunAsync().ConfigureAwait(false);
+if (isLambda)
+{
+	await host.StartAsync().ConfigureAwait(false);
+
+	var scopeFactory = host.Services.GetRequiredService<IServiceScopeFactory>();
+	var clock = host.Services.GetRequiredService<TimeProvider>();
+
+	// One invocation, one drain, then return — never idle-poll inside a Lambda
+	// invocation. The API's async nudge and the EventBridge one-minute sweep
+	// both invoke this same handler; polling in Worker.cs remains the source
+	// of truth, so a lost or throttled invocation only delays work until the
+	// next sweep (ADR-0123). The margin leaves room for an in-flight message
+	// (at most a two-minute remux, ADR-0123) to finish and commit before the
+	// 15-minute Lambda ceiling.
+	var safetyMargin = TimeSpan.FromSeconds(30);
+
+	using var handlerWrapper = HandlerWrapper.GetHandlerWrapper((ILambdaContext context) =>
+		OutboxDrainPass.DrainUntilIdleOrOutOfTime(
+			scopeFactory,
+			clock,
+			() => context.RemainingTime,
+			safetyMargin,
+			CancellationToken.None));
+
+	using var bootstrap = new LambdaBootstrap(handlerWrapper);
+	await bootstrap.RunAsync().ConfigureAwait(false);
+}
+else
+{
+	await host.RunAsync().ConfigureAwait(false);
+}

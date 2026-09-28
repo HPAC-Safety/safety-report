@@ -134,9 +134,15 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		{
 			builder.UseEnvironment("Production");
 			builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
+
+			// A Production-shaped host must also satisfy the origin-secret
+			// check (ADR-0159) to start at all — this test is about auth
+			// routing, not that check.
+			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", "test-origin-secret");
 		});
 
 		using var client = production.CreateClient();
+		client.DefaultRequestHeaders.Add("X-Origin-Verify", "test-origin-secret");
 
 		// When
 		using var response = await client.PostAsJsonAsync(Token, new { username = "admin", password = "admin" });

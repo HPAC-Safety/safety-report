@@ -42,7 +42,7 @@ env:
 
 jobs:
   # Secrets:   AWS_DEPLOY_ROLE_ARN
-  # Variables: AWS_REGION, ECR_REPOSITORY_WORKER, ECS_CLUSTER, ECS_SERVICE_WORKER
+  # Variables: AWS_REGION, ECR_REPOSITORY_WORKER, LAMBDA_FUNCTION_WORKER (infra/lambda.tf, ADR-0123)
   #
   # AiChatClient__ApiKey is the second documented exception to "runtime
   # secrets live only in AWS Secrets Manager" — see deploy-api.yml's
@@ -52,8 +52,8 @@ jobs:
   # into Secrets Manager buys nothing an operator cannot already get from
   # GitHub's own secret store. It must be a paid, billing-enabled key. The
   # provider, model, and reasoning level are committed in the Worker's
-  # appsettings.json; only the key is supplied here. When the service roll
-  # below is implemented (#30), pass it into the task definition as:
+  # appsettings.json; only the key is supplied here. When the function update
+  # below is implemented (#30), pass it into the function's configuration as:
   #
   #   AiChatClient__ApiKey = ${{ secrets.GEMINI_API_KEY_PROD }}
   #
@@ -84,10 +84,9 @@ jobs:
           variables: |
             AWS_REGION=${{ vars.AWS_REGION }}
             ECR_REPOSITORY_WORKER=${{ vars.ECR_REPOSITORY_WORKER }}
-            ECS_CLUSTER=${{ vars.ECS_CLUSTER }}
-            ECS_SERVICE_WORKER=${{ vars.ECS_SERVICE_WORKER }}
+            LAMBDA_FUNCTION_WORKER=${{ vars.LAMBDA_FUNCTION_WORKER }}
 
-      - run: echo "Deploying $IMAGE_TAG to ${{ vars.ECS_SERVICE_WORKER }} on ${{ vars.ECS_CLUSTER }}."
+      - run: echo "Deploying $IMAGE_TAG to ${{ vars.LAMBDA_FUNCTION_WORKER }}."
 
   image:
     needs: preflight
@@ -110,7 +109,8 @@ jobs:
 
       # A Dockerfile over the publish output rather than PublishContainer,
       # because the Worker needs ffmpeg (ADR-0118). The runner is x86_64, the
-      # Fargate task's architecture, so the script publishes for linux-x64.
+      # Lambda function's architecture (infra/lambda.tf), so the script
+      # publishes for linux-x64.
       - name: Build and push the Worker image
         env:
           IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY_WORKER }}:${{ env.IMAGE_TAG }}
@@ -128,15 +128,20 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Roll the service
+      - name: Update the Lambda function
         run: |
-          echo "::error::TODO(#30): update the service to the new image and wait for stability."
+          echo "::error::TODO(#30): update the function to the new image, refresh its secrets, and wait for the update to finish."
           echo "Shape:"
-          echo "  aws ecs update-service --cluster \$ECS_CLUSTER --service \$ECS_SERVICE_WORKER --force-new-deployment"
-          echo "  aws ecs wait services-stable --cluster \$ECS_CLUSTER --services \$ECS_SERVICE_WORKER"
+          echo "  aws lambda update-function-code --function-name \$LAMBDA_FUNCTION_WORKER --image-uri <registry>/\$ECR_REPOSITORY_WORKER:\$IMAGE_TAG"
+          echo "  aws lambda wait function-updated --function-name \$LAMBDA_FUNCTION_WORKER"
+          echo "  # Then, reading each value from Secrets Manager (infra/lambda.tf's header comment):"
+          echo "  aws lambda update-function-configuration --function-name \$LAMBDA_FUNCTION_WORKER --environment 'Variables={...}'"
+          echo "  aws lambda wait function-updated --function-name \$LAMBDA_FUNCTION_WORKER"
           echo ""
-          echo "The Worker drains in-flight outbox rows on SIGTERM; give the ECS"
-          echo "stop timeout enough room that a summarize call is not cut off."
+          echo "No drain-on-SIGTERM concern any more (ADR-0123): each invocation"
+          echo "drains once and returns, so there is no long-lived process an"
+          echo "in-flight update could interrupt mid-remux the way stopping an"
+          echo "ECS task could."
           echo ""
           echo "Rollback: re-run via workflow_dispatch with image_tag set to the"
           echo "previous commit SHA."

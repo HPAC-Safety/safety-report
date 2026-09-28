@@ -19,6 +19,20 @@
 		     browser to a private bucket through a pre-signed PUT, so the SDK never
 		     appears in Core. See ADR-0026. -->
 		<PackageVersion Include="AWSSDK.S3" Version="4.0.103.4" />
+		<!-- The API's async nudge to the Worker's Lambda function after a commit
+		     that queues outbox work (ADR-0123, #443). Infrastructure only. -->
+		<PackageVersion Include="AWSSDK.Lambda" Version="4.0.108.1" />
+		<!-- Reads the RDS-managed master-user secret at cold start, to assemble
+		     the connection string without ever putting the password in
+		     Terraform state (#443, coordinated with #465). Infrastructure only. -->
+		<PackageVersion Include="AWSSDK.SecretsManager" Version="4.0.100.14" />
+	</ItemGroup>
+	<ItemGroup Label="AWSLambda">
+		<!-- The Worker's own Lambda entry point (ADR-0042, ADR-0123, #443): one
+		     drain-once invocation, not the ASP.NET Core Lambda Web Adapter the API
+		     uses. Worker only. -->
+		<PackageVersion Include="Amazon.Lambda.Core" Version="3.3.0" />
+		<PackageVersion Include="Amazon.Lambda.RuntimeSupport" Version="2.2.3" />
 	</ItemGroup>
 	<ItemGroup Label="Coverage">
 		<!-- ReportGenerator is the other half of this and lives in

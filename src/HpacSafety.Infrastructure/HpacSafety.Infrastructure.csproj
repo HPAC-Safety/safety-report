@@ -2,6 +2,10 @@
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.S3" />
+        <!-- The API's async nudge to the Worker's Lambda function (ADR-0123, #443). -->
+        <PackageReference Include="AWSSDK.Lambda" />
+        <!-- Reads the RDS-managed master-user secret at cold start (#443). -->
+        <PackageReference Include="AWSSDK.SecretsManager" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" />
     </ItemGroup>
 

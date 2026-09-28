@@ -7,11 +7,13 @@ using DotNet.Testcontainers.Containers;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Infrastructure.Worker;
 using HpacSafety.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Reqnroll;
 using Testcontainers.PostgreSql;
@@ -124,12 +126,23 @@ public static class BootedApi
 	///     never reach — which is all these scenarios need, because the routes they
 	///     ask about either do not exist there or refuse before any handler runs.
 	/// </summary>
+	/// <summary>The header name and value <see cref="ProductionShaped" /> requires (ADR-0159).</summary>
+	public const string ProductionOriginSecretHeader = "X-Origin-Verify";
+
+	/// <summary>See <see cref="ProductionOriginSecretHeader" />.</summary>
+	public const string ProductionOriginSecret = "acceptance-test-origin-secret";
+
 	public static async Task<WebApplicationFactory<Program>> ProductionShaped()
 	{
 		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
 		{
 			builder.UseEnvironment("Production");
 			builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
+
+			// Outside Development the origin-secret check is required to start
+			// at all (ADR-0159) — a caller still has to send it to reach
+			// anything; see ProductionOriginSecretHeader/-Secret.
+			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", ProductionOriginSecret);
 		});
 	}
 
@@ -174,7 +187,7 @@ public static class BootedApi
 
 	/// <summary>
 	///     A host with a one-permit rate-limit window for the given policy,
-	///     otherwise identical to <see cref="Factory" />. See ADR-0081 and
+	///     otherwise identical to <see cref="Factory" />. See ADR-0159 and
 	///     issue #15.
 	/// </summary>
 	public static async Task<WebApplicationFactory<Program>> RateLimited(string policy)
@@ -184,6 +197,46 @@ public static class BootedApi
 			builder.UseSetting($"HpacSafety:RateLimiting:{policy}:PermitLimit", "1");
 			builder.UseSetting($"HpacSafety:RateLimiting:{policy}:WindowSeconds", "60");
 		});
+	}
+
+	/// <summary>
+	///     A host that requires CloudFront's origin-secret header on every
+	///     request, otherwise identical to <see cref="Factory" /> (ADR-0159,
+	///     REQ-SUB-116). The header name is the default,
+	///     <c>X-Origin-Verify</c>.
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> OriginVerified(string secret)
+	{
+		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", secret));
+	}
+
+	private static WebApplicationFactory<Program>? nudgeRecorded;
+
+	/// <summary>
+	///     A host whose <see cref="IWorkerNudge" /> is <see cref="RecordingWorkerNudge" />
+	///     instead of the real Lambda invocation, otherwise identical to
+	///     <see cref="Factory" /> (ADR-0123, REQ-SUB-118). Built once and shared,
+	///     the same way <see cref="RecordingReads" /> is.
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> NudgeRecorded()
+	{
+		var booted = await Factory().ConfigureAwait(false);
+
+		await Gate.WaitAsync().ConfigureAwait(false);
+		try
+		{
+			return nudgeRecorded ??= booted.WithWebHostBuilder(builder =>
+				builder.ConfigureTestServices(services =>
+				{
+					services.RemoveAll<IWorkerNudge>();
+					services.AddSingleton<IWorkerNudge, RecordingWorkerNudge>();
+				}));
+		}
+		finally
+		{
+			Gate.Release();
+		}
 	}
 
 	/// <summary>

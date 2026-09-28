@@ -41,6 +41,7 @@ public sealed class AuthorizationSteps
 	{
 		var host = await BootedApi.ProductionShaped();
 		_client = host.CreateClient();
+		_client.DefaultRequestHeaders.Add(BootedApi.ProductionOriginSecretHeader, BootedApi.ProductionOriginSecret);
 		_productionShaped = true;
 	}
 

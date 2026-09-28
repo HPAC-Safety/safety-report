@@ -213,10 +213,9 @@ How the pieces connect:
 `infra/` predates ADR-0123, ADR-0158, and ADR-0159, and does not match this
 target yet. These are the known differences:
 
-- The API and the Worker run as ECS Fargate services, not Lambda functions
-  (#443).
-- An ALB fronts the API instead of CloudFront routing `/api/*` to a Function
-  URL (#465).
+- CloudFront does not yet route `/api/*` to the API's Function URL — the
+  Function URL exists (#443), but reaching it still means calling it directly
+  rather than through CloudFront (#465).
 - One AWS account and one Terraform state, not staging/production tfvars, an
   `hpac-safety-admins`-approved production promotion, or the `hpac-safety-staging`/
   `hpac-safety-production` AppRegistry applications (#464, #465, #466).
@@ -225,7 +224,8 @@ target yet. These are the known differences:
 - A managed NAT gateway, not a NAT instance (#465).
 
 The website's S3 bucket, CloudFront distribution, certificates, network, RDS,
-uploads bucket, alarms, and ECR already match.
+uploads bucket, alarms, ECR, and the API and Worker Lambda functions
+already match.
 
 **CON-INF-002** No SES/email resources, messaging integrations, public bucket or CDN copy of
 an attachment (a published file is reached only through a pre-signed GET of
@@ -302,6 +302,25 @@ implementation needs it.
 *Verified by: none — these are review-time properties no application scenario
 can observe.*
 
+**CON-INF-015** The API invokes the Worker's Lambda function asynchronously
+right after a report submission, a comment, or a review action commits an
+`OutboxMessage`, and only then — a save that queues nothing never nudges. A
+failed nudge is logged and never fails the request that queued the work; the
+EventBridge sweep is the delivery guarantee.
+*Verified by: REQ-SUB-118, and in finer detail by `WorkerNudgeTests`
+(`tests/HpacSafety.Api.Tests`).*
+([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md))
+
+**CON-INF-016** A Lambda invocation of the Worker drains due outbox messages —
+across every registered processor, repeating until a pass claims nothing —
+until either none is due or its remaining time falls inside a safety margin,
+then returns without idling. The processors themselves are unchanged from the
+polling loop a non-Lambda host still runs.
+*Verified by: none — a Lambda invocation's own time budget is not something
+`/features` scenarios observe; proven directly by `OutboxDrainPassTests`
+(`tests/HpacSafety.Worker.Tests`).*
+([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md))
+
 ## Network and data protection
 
 **CON-INF-003** Only the CloudFront distribution is public, in each account. There is no
@@ -314,6 +333,18 @@ required for browsers, the identity provider, AWS service access, database
 connections, and the model provider.
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
+
+**CON-INF-017** The API refuses any request that does not carry CloudFront's
+injected origin-secret header with the matching value, before any other
+middleware runs — including authentication, rate limiting, and the forwarded-
+headers ADR-0159 (superseding ADR-0081) governs. Left unconfigured
+(Development, every test host), the check does not run; outside Development
+it is required at startup, so a missing Secrets Manager value stops the host
+cold rather than answering unverified.
+*Verified by: REQ-SUB-116, and in finer detail by
+`OriginVerificationMiddlewareTests` and `OriginVerificationRegistrationTests`
+(`tests/HpacSafety.Api.Tests`).*
+([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md))
 
 A small deployment uses one NAT instance, not a managed NAT gateway
 (CON-INF-013), and the relevant AWS endpoints, to control cost. Availability,

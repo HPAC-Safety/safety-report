@@ -51,12 +51,16 @@ jobs:
   # Variables (ARNs and names are not credentials):
   #   AWS_REGION                  ca-central-1
   #   ECR_REPOSITORY_API          Image repository
-  #   ECS_CLUSTER                 Deploy target cluster
-  #   ECS_SERVICE_API             Deploy target service
+  #   LAMBDA_FUNCTION_API         Deploy target function (infra/lambda.tf, ADR-0042)
   #
-  # Runtime secrets — ConnectionStrings__Default, Notifications__To — are NOT
-  # here. They live in AWS Secrets Manager and are injected into the task
-  # definition. Putting them in GitHub would spread them for no reason. See
+  # Runtime secrets — ConnectionStrings__Default, HpacSafety__Security__OriginVerification__Secret —
+  # are NOT here. They live in AWS Secrets Manager. Unlike the ECS agent's
+  # `secrets` array, Lambda has no built-in "resolve this ARN into an
+  # environment variable" mechanism (infra/lambda.tf's header comment), so the
+  # deploy step below reads each one's current value with
+  # `aws secretsmanager get-secret-value` and sets it directly on the
+  # function's configuration alongside the image update. Putting the values
+  # themselves in GitHub would spread them for no reason. See
   # docs/deployment.md.
   #
   # Translation__ApiKey is the exception, by an explicit decision (ADR-0062):
@@ -98,10 +102,9 @@ jobs:
           variables: |
             AWS_REGION=${{ vars.AWS_REGION }}
             ECR_REPOSITORY_API=${{ vars.ECR_REPOSITORY_API }}
-            ECS_CLUSTER=${{ vars.ECS_CLUSTER }}
-            ECS_SERVICE_API=${{ vars.ECS_SERVICE_API }}
+            LAMBDA_FUNCTION_API=${{ vars.LAMBDA_FUNCTION_API }}
 
-      - run: echo "Deploying $IMAGE_TAG to ${{ vars.ECS_SERVICE_API }} on ${{ vars.ECS_CLUSTER }}."
+      - run: echo "Deploying $IMAGE_TAG to ${{ vars.LAMBDA_FUNCTION_API }}."
 
   image:
     needs: preflight
@@ -122,15 +125,16 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v3
 
-      # .NET 10 publishes an OCI image directly. No Dockerfile to keep in sync.
-      - name: Publish container
-        run: >
-          dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj
-          --configuration Release
-          /t:PublishContainer
-          -p:ContainerRegistry=${{ steps.ecr.outputs.registry }}
-          -p:ContainerRepository=${{ vars.ECR_REPOSITORY_API }}
-          -p:ContainerImageTag=${{ env.IMAGE_TAG }}
+      # A Dockerfile rather than PublishContainer, because the deployed image
+      # needs the Lambda Web Adapter (ADR-0042, ADR-0161, #443) — local
+      # development keeps using PublishContainer (dev-up.sh) for a plain
+      # Kestrel container. Same convention as the Worker's own build script.
+      - name: Build and push the API image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY_API }}:${{ env.IMAGE_TAG }}
+        run: |
+          tools/build-api-image.sh "$IMAGE"
+          docker push "$IMAGE"
 
   # No dedicated migrate job. Per ADR-0055, the API and Worker each apply
   # pending migrations themselves at startup through
@@ -147,12 +151,15 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Roll the service
+      - name: Update the Lambda function
         run: |
-          echo "::error::TODO(#30): update the service to the new image and wait for stability."
+          echo "::error::TODO(#30): update the function to the new image, refresh its secrets, and wait for the update to finish."
           echo "Shape:"
-          echo "  aws ecs update-service --cluster \$ECS_CLUSTER --service \$ECS_SERVICE_API --force-new-deployment"
-          echo "  aws ecs wait services-stable --cluster \$ECS_CLUSTER --services \$ECS_SERVICE_API"
+          echo "  aws lambda update-function-code --function-name \$LAMBDA_FUNCTION_API --image-uri <registry>/\$ECR_REPOSITORY_API:\$IMAGE_TAG"
+          echo "  aws lambda wait function-updated --function-name \$LAMBDA_FUNCTION_API"
+          echo "  # Then, reading each value from Secrets Manager (this file's header comment):"
+          echo "  aws lambda update-function-configuration --function-name \$LAMBDA_FUNCTION_API --environment 'Variables={...}'"
+          echo "  aws lambda wait function-updated --function-name \$LAMBDA_FUNCTION_API"
           echo ""
           echo "Rollback: re-run this workflow via workflow_dispatch with image_tag"
           echo "set to the previous commit SHA. No commit required."

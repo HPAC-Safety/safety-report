@@ -63,12 +63,6 @@ variable "site_domain" {
   default     = "safety.hpac.ca"
 }
 
-variable "api_domain" {
-  description = "The API, in front of the ALB. HTTPS only; port 80 redirects."
-  type        = string
-  default     = "api.hpac.ca"
-}
-
 variable "site_origins" {
   description = "Origins a browser may PUT an attachment to the uploads bucket from, through the pre-signed URL the API mints (ADR-0126). Scheme and host, no path. Empty means only https://<site_domain>."
   type        = list(string)
@@ -147,46 +141,50 @@ variable "db_multi_az" {
 
 # --------------------------------------------------------------------------
 # Compute
+#
+# Both are Lambda functions now (ADR-0042, ADR-0123, #443): no CPU units, no
+# desired count — Lambda scales invocations on its own, and the outbox's
+# FOR UPDATE SKIP LOCKED claim already makes overlapping invocations safe.
 # --------------------------------------------------------------------------
 
-variable "api_cpu" {
-  description = "Fargate CPU units for the API task."
-  type        = number
-  default     = 512
-}
-
-variable "api_memory" {
-  description = "Fargate memory (MiB) for the API task."
+variable "api_memory_mb" {
+  description = "Lambda memory for the API function. Bursty, sub-second request handling; the smallest size that keeps the Lambda Web Adapter's cold start reasonable."
   type        = number
   default     = 1024
 }
 
-variable "api_desired_count" {
-  description = "How many API tasks to run."
+variable "api_timeout_seconds" {
+  description = "Lambda timeout for the API function. Every request today completes in well under this; nothing in features/README.md needs a long-lived connection (ADR-0042)."
   type        = number
-  default     = 1
+  default     = 30
 }
 
-variable "worker_cpu" {
-  description = "Fargate CPU units for the Worker task."
+variable "worker_memory_mb" {
+  description = "Lambda memory for the Worker function, sized for a 250 MB video remux streamed to and from /tmp rather than buffered in memory (issue #462, #443)."
   type        = number
-  default     = 512
+  default     = 3008
 }
 
-variable "worker_memory" {
-  description = "Fargate memory (MiB) for the Worker task."
+variable "worker_timeout_seconds" {
+  description = "Lambda timeout for the Worker function. A remux is at most two minutes (ADR-0123); this leaves room for a full drain pass across several due messages before the EventBridge sweep's next minute arrives."
   type        = number
-  default     = 1024
+  default     = 300
 }
 
-variable "worker_desired_count" {
-  description = "How many Worker tasks to run. More than one is safe — the outbox is claimed FOR UPDATE SKIP LOCKED — but unnecessary at this volume."
+variable "worker_ephemeral_storage_mb" {
+  description = "The Worker's /tmp size. A 250 MB original plus its remuxed derivative, with headroom, never the full Lambda ceiling (issue #462, #443)."
   type        = number
-  default     = 1
+  default     = 2048
+}
+
+variable "worker_sweep_schedule_expression" {
+  description = "The EventBridge Scheduler expression that invokes the Worker as the delivery guarantee behind the API's async nudge (ADR-0123)."
+  type        = string
+  default     = "rate(1 minute)"
 }
 
 variable "container_port" {
-  description = "Port the API container listens on."
+  description = "Port the API's container listens on. The Lambda Web Adapter (AWS_LWA_PORT) forwards each Function URL event to it as a loopback HTTP request (ADR-0042)."
   type        = number
   default     = 8080
 }

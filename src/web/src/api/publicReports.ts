@@ -64,7 +64,7 @@ export class PublicReportNotFound extends Error {
 /**
  * One page of the feed. A non-blank `q` fuzzy-searches the published summary
  * and visible member comments, in `locale` only, best match first; a blank
- * or omitted `q` is the plain feed, newest submitted first, unchanged (#574).
+ * or omitted `q` is the plain feed, newest submitted first, unchanged (issue no. 574).
  */
 export async function fetchPublicReports(after: string | null, q?: string, locale?: string): Promise<PublicReportPage> {
 	const params = new URLSearchParams()

@@ -14,7 +14,7 @@ import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
 export function ViewReportsPage() {
 	const { t, locale } = useLocale()
 	const [searchParams] = useSearchParams()
-	// `q` is not read yet — reserved for search (#573) — but already folds into
+	// `q` is not read yet — reserved for the search issue — but already folds into
 	// the storage key so a future search never restores another search's list.
 	const q = searchParams.get("q") ?? ""
 

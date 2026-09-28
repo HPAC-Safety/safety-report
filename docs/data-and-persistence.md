@@ -179,7 +179,10 @@ The admin side reads its rules from views in the same way
 ([ADR-0116](decisions/ADR-0116-a-read-rule-lives-in-a-view.md)):
 
 - `admin_report_queue` is every live report, with `is_stuck` and
-  `needs_action` computed in SQL.
+  `needs_action` computed in SQL, plus `reporter_name` and `pilot_name` — the
+  reporter's and pilot's first and last name answers, read by `QuestionRole`
+  and joined, null when neither half was given (ADR-0154). The one exception
+  the admin list carries to no other answer text.
 - `answers_awaiting_translation` is every live answer still waiting for its
   machine-translated second language.
 - `admin_pending_counts` is one row counting the reports that need action and

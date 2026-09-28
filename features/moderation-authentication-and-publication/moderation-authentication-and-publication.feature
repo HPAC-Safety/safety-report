@@ -308,7 +308,22 @@ Scenario: The admin report list shows every live report with its state
   When a reviewer lists reports
   Then every live report appears, newest first, with its workflow status and whether publication consent was refused
   And the soft-deleted report does not appear
-  And no answer text or summary text appears in the list
+  And no answer text or summary text appears in the list, except the reporter's and pilot's names
+
+@REQ-MOD-124
+Scenario Outline: The admin report list shows the reporter's and pilot's names by stable role, blank when unanswered
+  Given a report whose reporter first name is "<reporter first>", reporter last name is "<reporter last>", pilot first name is "<pilot first>", and pilot last name is "<pilot last>"
+  When a reviewer lists reports
+  Then the row's reporter name reads "<reporter name>"
+  And the row's pilot name reads "<pilot name>"
+
+Examples:
+  | reporter first | reporter last | pilot first | pilot last | reporter name | pilot name  |
+  | Alex            | Rivera        | Sam         | Chen       | Alex Rivera   | Sam Chen    |
+  | Alex            | Rivera        | Alex        | Rivera     | Alex Rivera   | Alex Rivera |
+  | Alex            |               |             |            | Alex          |             |
+  |                 |               | Sam         | Chen       |               | Sam Chen    |
+  |                 |               |             |            |               |             |
 
 @REQ-MOD-119
 Scenario: A list row carries the version a review command sends back
@@ -518,6 +533,14 @@ Scenario: The Manage reports page lists reports with a status badge and a Privat
   Then each report shows its submission time and a badge for its workflow status
   And a report whose reporter refused consent also shows a "Private (no consent)" badge
   And a stuck report shows a "Stuck" badge
+
+@REQ-MOD-125
+@ui
+Scenario: Manage reports shows each row's reporter and pilot names, blank when unanswered
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  Then the pending row shows reporter name "Alex Rivera" and pilot name "Sam Chen"
+  And the published row shows no reporter or pilot name
 
 @REQ-MOD-053
 @ui

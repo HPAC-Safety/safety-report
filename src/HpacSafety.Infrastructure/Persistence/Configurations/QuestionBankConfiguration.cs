@@ -40,9 +40,20 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 			.IsUnique()
 			.HasFilter("deleted IS NULL");
 
+		// A role lives on at most one live question at a time (Question.AssignRole's
+		// own doc comment) — the database enforces it the same way it already
+		// enforces the key: unique among live rows only, so a fork's momentary
+		// second row sharing the value never collides (ADR-0071 shares this
+		// pattern for `key`, and Fork's Retire(at) plus the replacement's insert are
+		// the same single SaveChanges that keeps it working here). `none` is
+		// excluded — every ordinary question defaults to it (ADR-0154).
+		builder.HasIndex(question => question.Role)
+			.IsUnique()
+			.HasFilter("role <> 'none' AND deleted IS NULL");
+
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_questions_role",
-			"role IN ('none', 'consent_publish', 'consent_media')"));
+			"role IN ('none', 'consent_publish', 'consent_media', 'reporter_first_name', 'reporter_last_name', 'pilot_first_name', 'pilot_last_name')"));
 
 		builder.HasMany(question => question.Revisions)
 			.WithOne()

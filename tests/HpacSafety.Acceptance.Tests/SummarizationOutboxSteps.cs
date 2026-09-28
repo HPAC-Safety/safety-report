@@ -522,15 +522,15 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		string narrative = "Ada Lovelace reported a hard landing.",
 		bool consent = true)
 	{
-		// A second report seeded into the same database (e.g. the logging scenario,
-		// which needs both a success and a failure) reuses the one consent question
-		// rather than colliding on its unique key.
-		var consentQuestion = await db.Questions.SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish).ConfigureAwait(false);
-		if (consentQuestion is null)
-		{
-			consentQuestion = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
-			db.Questions.Add(consentQuestion);
-		}
+		// The seed's own consent question, read by role rather than an assumed
+		// key: a role lives on at most one live question (ix_questions_role,
+		// ADR-0154), and QuestionBankSeed's consent question keeps the real
+		// form's Typeform-derived key. A second report seeded into the same
+		// database (e.g. the logging scenario, which needs both a success and a
+		// failure) reuses the same tracked instance EF's identity map already
+		// loaded.
+		var consentQuestion = await db.Questions.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish).ConfigureAwait(false);
 
 		var pilotNameQuestion = Question.Create(
 			"pilot_name" + questionKeySuffix, QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);

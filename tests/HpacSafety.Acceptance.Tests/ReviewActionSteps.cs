@@ -651,15 +651,17 @@ internal static class BootedReports
 										  bool mediaConsentToEarlierWording = false)
 	{
 		var factory = await BootedApi.Factory();
-		await ReportSubmissionEndpointSteps.ConsentRevisionId();
 
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var now = at ?? DateTimeOffset.UtcNow;
 
+		// Read by role, not by an assumed key: the seed's consent question keeps
+		// the real form's Typeform-derived key, and a role lives on at most one
+		// live question (ix_questions_role, ADR-0154).
 		var consentQuestion = await database.Questions
 			.Include(question => question.Revisions)
-			.SingleAsync(question => question.Key == QuestionKey.ConsentPublish);
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
 		var pilot = Question.Create($"pilot_{Guid.NewGuid():n}"[..24], QuestionType.ShortText, "Pilot name", "Nom du pilote", now, isPrivate: true);
 		database.Questions.Add(pilot);
 

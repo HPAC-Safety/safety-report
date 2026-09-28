@@ -289,9 +289,19 @@ public sealed class MediaConsentSteps
 
 	private static async Task<JsonElement> PublicationConsentOnTheForm()
 	{
+		// The public form DTO carries no role, so the seeded question's real key —
+		// its own Typeform-derived one, not the QuestionKey.ConsentPublish
+		// constant — is read from the database first (ADR-0154).
+		string key;
+		await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			key = (await database.Questions.SingleAsync(question => question.Role == QuestionRole.ConsentPublish)).Key;
+		}
+
 		using var client = (await BootedApi.Factory()).CreateClient();
 		var form = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions", UriKind.Relative));
-		return form.EnumerateArray().Single(entry => entry.GetProperty("key").GetString() == QuestionKey.ConsentPublish);
+		return form.EnumerateArray().Single(entry => entry.GetProperty("key").GetString() == key);
 	}
 
 	private static async Task<string> ShortTextRevisionId()

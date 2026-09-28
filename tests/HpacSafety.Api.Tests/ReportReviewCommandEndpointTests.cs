@@ -459,7 +459,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 			var consentQuestion = await database.Questions
 				.Include(question => question.Revisions)
-				.SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish);
+				.SingleOrDefaultAsync(question => question.Role == QuestionRole.ConsentPublish);
 
 			if (consentQuestion is null)
 			{

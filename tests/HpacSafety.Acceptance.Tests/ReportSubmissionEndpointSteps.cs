@@ -1502,8 +1502,10 @@ public sealed class ReportSubmissionEndpointSteps
 
 	/// <summary>
 	///     The publication-consent revision, created once for the booted host.
-	///     Serialized, because scenarios run in parallel and two that both find no
-	///     consent question would both try to create the one key.
+	///     Serialized only for the same reason every read against the shared
+	///     database is: no other caller may write a second live question
+	///     carrying <see cref="QuestionRole.ConsentPublish" /> underneath this
+	///     read (<c>ix_questions_role</c>, ADR-0154).
 	/// </summary>
 	internal static async Task<string> ConsentRevisionId()
 	{
@@ -1511,7 +1513,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 		try
 		{
-			return await FindOrCreateConsentRevisionId();
+			return await FindConsentRevisionId();
 		}
 		finally
 		{
@@ -1519,24 +1521,21 @@ public sealed class ReportSubmissionEndpointSteps
 		}
 	}
 
-	private static async Task<string> FindOrCreateConsentRevisionId()
+	/// <summary>
+	///     The seeded publication-consent question's current revision. Read by
+	///     role (ADR-0154), not by an assumed key: <c>QuestionBankSeed</c>'s
+	///     consent question keeps the real form's Typeform-derived key, not the
+	///     <see cref="QuestionKey.ConsentPublish" /> constant, and a role lives on
+	///     at most one live question, so the seed always has exactly one.
+	/// </summary>
+	private static async Task<string> FindConsentRevisionId()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		var consent = await database.Questions
 			.Include(question => question.Revisions)
-			.FirstOrDefaultAsync(question => question.Key == "consent_publish");
-
-		if (consent is null)
-		{
-			consent = Question.CreateConsentPublish(
-				"May we publish a de-identified version of your report?",
-				"Pouvons-nous publier une version anonymisée de votre rapport ?",
-				DateTimeOffset.UtcNow);
-			database.Questions.Add(consent);
-			await database.SaveChangesAsync();
-		}
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
 
 		return consent.CurrentRevision.Id.Value;
 	}

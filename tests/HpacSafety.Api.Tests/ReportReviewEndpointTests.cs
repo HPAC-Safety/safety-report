@@ -518,7 +518,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		{
 			var existing = await database.Questions
 				.Include(question => question.Revisions)
-				.SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish);
+				.SingleOrDefaultAsync(question => question.Role == QuestionRole.ConsentPublish);
 
 			if (existing is not null)
 			{

@@ -305,6 +305,8 @@
   "reports.empty": "No reports match this filter.",
   "reports.error.unexpected": "The reports could not be loaded. Try again.",
   "reports.submittedAt": "Submitted {at}",
+  "reports.row.reporterName": "Reporter: {name}",
+  "reports.row.pilotName": "Pilot: {name}",
   "reports.status.submitted": "Submitted",
   "reports.status.summarizing": "Summarizing",
   "reports.status.pending": "Pending",

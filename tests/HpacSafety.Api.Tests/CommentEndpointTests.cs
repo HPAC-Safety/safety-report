@@ -129,7 +129,7 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		// the same find-or-create ReportReviewEndpointTests uses.
 		var consent = await database.Questions
 						  .Include(question => question.Revisions)
-						  .SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish)
+						  .SingleOrDefaultAsync(question => question.Role == QuestionRole.ConsentPublish)
 					  ?? database.Questions.Add(Question.CreateConsentPublish(
 						  "May we publish a de-identified version of your report?",
 						  "Pouvons-nous publier une version anonymisée de votre rapport ?",

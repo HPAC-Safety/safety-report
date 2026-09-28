@@ -918,6 +918,14 @@ Deleting from the list asks for confirmation first — *playwright-bdd, Covered*
 
 A stale row action tells the reviewer to reload the list — *playwright-bdd, Covered*
 
+### REQ-MOD-124
+
+The admin report list shows the reporter's and pilot's names by stable role, blank when unanswered — *Reqnroll, Covered*
+
+### REQ-MOD-125
+
+Manage reports shows each row's reporter and pilot names, blank when unanswered — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

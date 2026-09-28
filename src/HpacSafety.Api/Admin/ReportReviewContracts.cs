@@ -14,6 +14,12 @@ namespace HpacSafety.Api.Admin;
 ///     The version a review command sends back, the same value the detail view gives, so a
 ///     reviewer can act on a row without opening the report (ADR-0105, REQ-MOD-119).
 /// </param>
+/// <param name="ReporterName">
+///     The reporter's first and last name answers, joined, or null when neither was given. Read
+///     by question role, not wording or position (ADR-0154) — the one exception, with
+///     <paramref name="PilotName" />, to this record carrying no other answer text.
+/// </param>
+/// <param name="PilotName">The pilot's first and last name answers, joined, or null when neither was given.</param>
 public sealed record ReportListItem(
 	string Id,
 	DateTimeOffset SubmittedAt,
@@ -21,7 +27,9 @@ public sealed record ReportListItem(
 	string Language,
 	bool? Consent,
 	bool IsStuck,
-	string Version);
+	string Version,
+	string? ReporterName,
+	string? PilotName);
 
 /// <summary>
 ///     Everything a reviewer needs to judge one report, and nothing more

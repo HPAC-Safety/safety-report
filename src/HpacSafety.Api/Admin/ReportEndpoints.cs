@@ -54,8 +54,10 @@ public static class ReportEndpoints
 
 	/// <summary>
 	///     Every live report, newest first, narrowed by <paramref name="filter" />
-	///     (REQ-MOD-030, REQ-MOD-049, REQ-MOD-050). State and timing only — the list
-	///     carries no answer or summary text, so reading it is not audited.
+	///     (REQ-MOD-030, REQ-MOD-049, REQ-MOD-050, REQ-MOD-124). State and timing only,
+	///     plus the reporter's and pilot's names, is the one piece of answer text this
+	///     list shows without an audited read (ADR-0154) — it carries no other answer or
+	///     summary text. Opening a report remains the audited read of everything else.
 	/// </summary>
 	private static async Task<IResult> List(
 		string? filter,
@@ -88,7 +90,9 @@ public static class ReportEndpoints
 				report.Language.Code,
 				report.ConsentPublish,
 				report.IsStuck,
-				report.Version))
+				report.Version,
+				report.ReporterName,
+				report.PilotName))
 			.ToList());
 	}
 

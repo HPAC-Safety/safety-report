@@ -37,4 +37,16 @@ public sealed class AdminReportQueueItem
 	///     audited detail read (ADR-0105).
 	/// </summary>
 	public string Version { get; private init; } = string.Empty;
+
+	/// <summary>
+	///     The reporter's first and last name answers, joined, or null when
+	///     neither was given. Read by <c>QuestionRole</c>, not by wording or
+	///     position, so it survives a fork (ADR-0154). The one exception, with
+	///     <see cref="PilotName" />, to this list carrying no other answer text
+	///     (REQ-MOD-030, REQ-MOD-124).
+	/// </summary>
+	public string? ReporterName { get; private init; }
+
+	/// <summary>The pilot's first and last name answers, joined, or null when neither was given (ADR-0154).</summary>
+	public string? PilotName { get; private init; }
 }

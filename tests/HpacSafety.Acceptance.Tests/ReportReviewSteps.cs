@@ -15,8 +15,8 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The admin report list and read-only detail view, through the booted API
-///     (REQ-MOD-030, REQ-MOD-031, REQ-MOD-049..051, REQ-MOD-119). The booted database is shared
-///     by every scenario, so assertions name the reports seeded here.
+///     (REQ-MOD-030, REQ-MOD-031, REQ-MOD-049..051, REQ-MOD-119, REQ-MOD-124). The booted
+///     database is shared by every scenario, so assertions name the reports seeded here.
 /// </summary>
 [Binding]
 public sealed class ReportReviewSteps
@@ -30,6 +30,7 @@ public sealed class ReportReviewSteps
 	private string _detailBody = string.Empty;
 	private string _listBody = string.Empty;
 	private string _openedId = string.Empty;
+	private string _namedReportId = string.Empty;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -57,6 +58,37 @@ public sealed class ReportReviewSteps
 	{
 		await Seed();
 		_openedId = _seeded["pending"];
+	}
+
+	[Given(@"a report whose reporter first name is ""(.*)"", reporter last name is ""(.*)"", pilot first name is ""(.*)"", and pilot last name is ""(.*)""")]
+	public async Task GivenAReportWithReporterAndPilotNames(
+		string reporterFirst,
+		string reporterLast,
+		string pilotFirst,
+		string pilotLast)
+	{
+		ArgumentNullException.ThrowIfNull(reporterFirst);
+		ArgumentNullException.ThrowIfNull(reporterLast);
+		ArgumentNullException.ThrowIfNull(pilotFirst);
+		ArgumentNullException.ThrowIfNull(pilotLast);
+
+		var factory = await BootedApi.Factory();
+		await using var scope = factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var now = DateTimeOffset.UtcNow;
+		var consent = await ConsentQuestion(database);
+		var report = new Report(Locale.EnCa, now);
+		report.Answer(consent, true, now);
+
+		await AnswerRoleIfGiven(database, report, QuestionRole.ReporterFirstName, reporterFirst, now);
+		await AnswerRoleIfGiven(database, report, QuestionRole.ReporterLastName, reporterLast, now);
+		await AnswerRoleIfGiven(database, report, QuestionRole.PilotFirstName, pilotFirst, now);
+		await AnswerRoleIfGiven(database, report, QuestionRole.PilotLastName, pilotLast, now);
+
+		database.Reports.Add(report);
+		await database.SaveChangesAsync();
+		_namedReportId = report.Id.Value;
 	}
 
 	// ── When ────────────────────────────────────────────────────────────────
@@ -114,11 +146,25 @@ public sealed class ReportReviewSteps
 		Mine().ShouldNotContain(_seeded["deleted"]);
 	}
 
-	[Then(@"no answer text or summary text appears in the list")]
+	[Then(@"no answer text or summary text appears in the list, except the reporter's and pilot's names")]
 	public void ThenNoContentAppearsInTheList()
 	{
 		_listBody.ShouldNotContain(PilotName);
 		_listBody.ShouldNotContain(SummaryEn);
+	}
+
+	[Then(@"the row's reporter name reads ""(.*)""")]
+	public void ThenTheRowsReporterNameReads(string expected)
+	{
+		ArgumentNullException.ThrowIfNull(expected);
+		ReadNullableString(RowById(_namedReportId), "reporterName").ShouldBe(expected.Length == 0 ? null : expected);
+	}
+
+	[Then(@"the row's pilot name reads ""(.*)""")]
+	public void ThenTheRowsPilotNameReads(string expected)
+	{
+		ArgumentNullException.ThrowIfNull(expected);
+		ReadNullableString(RowById(_namedReportId), "pilotName").ShouldBe(expected.Length == 0 ? null : expected);
 	}
 
 	[Then(@"the list holds the pending, summary-failed, and two stuck reports")]
@@ -282,18 +328,56 @@ public sealed class ReportReviewSteps
 		return _listed.Single(item => item.GetProperty("id").GetString() == _seeded[name]);
 	}
 
+	private JsonElement RowById(string id)
+	{
+		return _listed.Single(item => item.GetProperty("id").GetString() == id);
+	}
+
+	private static string? ReadNullableString(JsonElement element,
+											  string property)
+	{
+		var value = element.GetProperty(property);
+		return value.ValueKind == JsonValueKind.Null ? null : value.GetString();
+	}
+
 	/// <summary>
-	///     The one consent question. Scenarios run in parallel against one booted
-	///     database and its key is unique, so every step file goes through the one
-	///     shared find-or-create in <see cref="ReportSubmissionEndpointSteps" />.
+	///     The one live question carrying a reporter- or pilot-name role — the
+	///     seeded "First name"/"Last name" question under "From:" or "Pilot:"
+	///     (ADR-0154). Answers to it are the one exception the admin list shows.
+	/// </summary>
+	private static async Task<Question> RoleQuestion(HpacSafetyDbContext database,
+													  QuestionRole role)
+	{
+		return await database.Questions
+			.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == role && question.Deleted == null);
+	}
+
+	private static async Task AnswerRoleIfGiven(
+		HpacSafetyDbContext database,
+		Report report,
+		QuestionRole role,
+		string value,
+		DateTimeOffset at)
+	{
+		if (value.Length == 0)
+		{
+			return;
+		}
+
+		var question = await RoleQuestion(database, role);
+		report.Answer(question, value, at);
+	}
+
+	/// <summary>
+	///     The one seeded consent question, read by role: a role lives on at most
+	///     one live question (ix_questions_role, ADR-0154), so this never races
+	///     with another scenario the way finding-or-creating one by an assumed key
+	///     would.
 	/// </summary>
 	private static async Task<Question> ConsentQuestion(HpacSafetyDbContext database)
 	{
-		await ReportSubmissionEndpointSteps.ConsentRevisionId();
-
-		return await database.Questions
-			.Include(question => question.Revisions)
-			.SingleAsync(question => question.Key == QuestionKey.ConsentPublish);
+		return await RoleQuestion(database, QuestionRole.ConsentPublish);
 	}
 
 	/// <summary>

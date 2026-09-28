@@ -72,7 +72,7 @@ public class ChoiceParentLinkRaceTests(ApiPostgresFixture fixture)
 		var now = DateTimeOffset.UtcNow;
 
 		var consent = await database.Questions.Include(question => question.Revisions)
-						  .SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish)
+						  .SingleOrDefaultAsync(question => question.Role == QuestionRole.ConsentPublish)
 					  ?? database.Questions.Add(Question.CreateConsentPublish(
 						  "May we publish a de-identified version of your report?",
 						  "Pouvons-nous publier une version anonymisée de votre rapport ?",

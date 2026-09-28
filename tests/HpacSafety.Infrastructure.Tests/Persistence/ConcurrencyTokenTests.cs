@@ -137,8 +137,11 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 												  bool withSummary)
 	{
 		await using var context = PostgresFixture.ContextFor(connectionString);
-		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
-		context.Questions.Add(consent);
+		// The seeded system question, not a synthetic one: a role lives on at
+		// most one live question (ix_questions_role, ADR-0154), and a fresh
+		// migrated database already seeds the real one.
+		var consent = await context.Questions.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
 
 		var report = new Report(Locale.EnCa, At);
 		report.Answer(consent, withSummary, At);

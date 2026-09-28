@@ -6,9 +6,10 @@
 # costs.
 #
 # Both buckets are fully private. The site bucket is read by CloudFront through
-# an Origin Access Control, not by the public — S3 website hosting is not used at
-# all, because clean URLs come from a CloudFront Function (ADR-0009) and website
-# hosting would require the bucket to be public to work.
+# an Origin Access Control, not by the public — S3 website hosting is not used
+# at all: deep links are handled by CloudFront's own custom_error_response
+# falling back to /index.html (cdn.tf), and website hosting would require the
+# bucket to be public to work.
 
 locals {
   # Account id in the name for the same reason as the state bucket: S3 names are
@@ -18,7 +19,15 @@ locals {
   site_bucket = "${local.name}-site-${local.bucket_suffix}"
 
   # The website is the one place a reporter attaches a file from (ADR-0126).
-  site_origins = length(var.site_origins) > 0 ? var.site_origins : ["https://${var.site_domain}"]
+  # In production that is either hostname; in staging, where site_domains is
+  # empty, it is CloudFront's own default address — computed, so this can only
+  # be known once the distribution exists (cdn.tf), which is fine: this
+  # resource does not gate the distribution's own creation.
+  site_origins = length(var.site_origins) > 0 ? var.site_origins : (
+    length(var.site_domains) > 0
+    ? [for d in var.site_domains : "https://${d}"]
+    : ["https://${aws_cloudfront_distribution.site.domain_name}"]
+  )
 }
 
 # --------------------------------------------------------------------------
@@ -33,7 +42,15 @@ locals {
 resource "aws_s3_bucket" "uploads" {
   bucket = "${local.name}-uploads-${local.bucket_suffix}"
 
-  tags = { Name = "${local.name}-uploads" }
+  tags = merge(local.app_tags, { Name = "${local.name}-uploads" })
+
+  lifecycle {
+    # Every attachment a reporter has ever sent. Never replaced, only updated
+    # in place — versioning (below) undoes an accidental overwrite, and this
+    # is what stops a Terraform plan from dropping and recreating the bucket
+    # itself (CON-INF-013, both environments).
+    prevent_destroy = true
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "uploads" {
@@ -250,7 +267,7 @@ data "aws_iam_policy_document" "uploads" {
 resource "aws_s3_bucket" "site" {
   bucket = local.site_bucket
 
-  tags = { Name = "${local.name}-site" }
+  tags = merge(local.app_tags, { Name = "${local.name}-site" })
 }
 
 resource "aws_s3_bucket_public_access_block" "site" {

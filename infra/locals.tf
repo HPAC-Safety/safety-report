@@ -1,11 +1,27 @@
 locals {
   name = var.project
 
+  # Every resource carries these four (ADR-0158). Environment is the ONE tag
+  # that differs between accounts; nothing else about the tag set does — the
+  # per-account myApplications name (grouping.tf) is a separate, human-facing
+  # label, not a fifth tag.
   tags = {
-    Project   = var.project
-    ManagedBy = "terraform"
-    Repo      = "HPAC-Safety/safety-report"
+    Project     = var.project
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    Repo        = "HPAC-Safety/safety-report"
   }
+
+  # AppRegistry's own tag proving myApplications membership (grouping.tf).
+  # NOT in providers.tf's default_tags: a provider configuration block cannot
+  # reference a managed resource's attribute — providers must be resolvable
+  # before Terraform can plan any resource, and application_tag is only known
+  # after aws_servicecatalogappregistry_application.this is created. So every
+  # OTHER resource in this directory merges this into its own explicit `tags`
+  # argument instead (`tags = merge(local.app_tags, { Name = ... })`), which
+  # AWS combines with default_tags exactly the same way at apply time. The
+  # application resource itself is the one exception — see its own comment.
+  app_tags = aws_servicecatalogappregistry_application.this.application_tag
 
   azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 
@@ -26,6 +42,13 @@ locals {
   # admin bundle is static HTML and JS and holds no report data. ADR-0031 has the
   # full assessment and the edge rules that partly compensate.
   admin_prefix = "/${var.admin_path_prefix}"
+
+  # Which external zone a production hostname's DNS records belong to —
+  # hpac.ca and acvl.ca are two different organisations' zones, administered
+  # outside AWS, so dns_records_to_publish groups by this map rather than by
+  # hostname alone (outputs.tf). Staging never reaches this: site_domains is
+  # empty there.
+  site_zone = { for d in var.site_domains : d => endswith(d, "hpac.ca") ? "hpac.ca" : "acvl.ca" }
 
   # Log group names, in one place, because the compute resources, the log
   # groups, and the alarms all have to agree on them. The API and the Worker

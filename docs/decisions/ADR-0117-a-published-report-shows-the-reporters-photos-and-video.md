@@ -173,15 +173,18 @@ the historical record of what shipped first.
   lists. Computed in SQL (`public_reports.public_attachment_count` /
   `.full_attachment_count`, `admin_report_queue.attachment_count`), never in
   C#. A staff-only private attachment (ADR-0135) is never counted. The public
-  report DTO carries only the count — no ids, kinds, names, or links.
+  feed item's DTO carries only the count — no ids, kinds, names, or links; a
+  report's own detail still lists each public file's opaque id, kind, and (for
+  a document) format, as point 5 above always did, plus the staff attachment
+  list below when the reader is staff.
 - **The strip replaces the stacked embeds** on `/reports/:id`. An image
   thumbnail is the existing derivative scaled with CSS; a video gets a
   generic play tile; a document gets a type icon and downloads instead of
   opening (never inline, never in the lightbox) — no new Worker derivative.
 - **Staff see every attachment, public or not**, each marked with its state
   and public visibility (the admin vocabulary: `public`, `hidden`,
-  `no_consent`, `when_published`, plus `processing`/`failed`), with Hide and
-  Show, on both `/reports/:id` and `/admin/reports/:id` — which now uses the
+  `no_consent`, `when_published`, `private`, plus `processing`/`failed`), with
+  Hide and Show, on both `/reports/:id` and `/admin/reports/:id` — which now uses the
   same strip and lightbox in place of its list rows, and works for an
   unpublished report. The public report endpoint reads a staff bearer token
   when one is sent (JwtBearer is the default scheme) while staying anonymous;
@@ -202,7 +205,17 @@ the historical record of what shipped first.
 - **A processing or failed image or video** (point 2 above: never public) is
   now also never viewed inline by staff. It is offered as a forced, audited
   download of its raw original instead — see the ADR-0094 amendment and the
-  new `GET .../attachments/{id}/original` endpoint.
+  new `GET .../attachments/{id}/original` endpoint. It is never reachable in
+  the lightbox either: the lightbox steps only through ready images and
+  videos.
+- **A staff user activates a document always through the audited
+  `/download`** (decision 21), under the sanitized reporter filename, whether
+  that document is currently public or not. Decision 11's unaudited public
+  link is for sparing thumbnail loads an extra audit row; it never covered a
+  document download, which is always audited for staff.
+- **Video in the lightbox autoplays, with its audio**, when the lightbox opens
+  on it or a Left/Right step lands on it (decision 22). It still stops when
+  the lightbox moves away from it or closes.
 
 See issue #427 for the full decision record, and
 [ADR-0094](ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md#amendment-2026-09-28)

@@ -70,16 +70,17 @@ public sealed class ReviewerMediaLink
 	/// <summary>
 	///     A short-lived, forced-download pre-signed GET for the raw original of an
 	///     image or video that has no stripped derivative yet — still processing, or
-	///     failed. Throws for a document (use <see cref="CreateDocumentDownloadUrl" />)
-	///     and for anything not in the original compartment. Issuing this once a
-	///     derivative exists is the caller's mistake to avoid: the caller checks
-	///     <c>AwaitsStripping</c>/<c>ProcessingErrorCode</c> first and uses
+	///     failed. Throws for a document (use <see cref="CreateDocumentDownloadUrl" />),
+	///     for anything not in the original compartment, and — enforced here, the
+	///     privacy chokepoint, not merely expected of the caller (ADR-0026) — once
+	///     <paramref name="hasDerivative" /> is true: use
 	///     <see cref="CreateInlineViewUrl" /> instead. See issue #427 decision 15,
 	///     which widens ADR-0094 from a failed video to any image or video with no
 	///     derivative.
 	/// </summary>
 	public Task<Uri> CreateOriginalMediaDownloadUrl(BlobKey originalKey,
 													AttachmentKind kind,
+													bool hasDerivative,
 													string downloadFileName,
 													TimeSpan lifetime,
 													CancellationToken cancellationToken)
@@ -88,6 +89,12 @@ public sealed class ReviewerMediaLink
 		{
 			throw new DomainRuleViolationException(
 				"Only an image or video's raw original may be downloaded this way; a document downloads through the document endpoint.");
+		}
+
+		if (hasDerivative)
+		{
+			throw new DomainRuleViolationException(
+				"The raw original is offered only while there is no derivative to view instead.");
 		}
 
 		if (originalKey.Compartment is not MediaCompartment.Original)

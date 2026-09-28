@@ -153,9 +153,11 @@ video is. The reviewer download this ADR described — "a short-lived, forced
 download of the unredacted original, authorized, never inline-rendered, and
 never published" — is now the real, built-in `GET
 /api/admin/reports/{reportId}/attachments/{attachmentId}/original`, for an
-image or video only while it has no derivative; it 404s once one exists (use
-`/view`, now inline — see the ADR-0117 amendment) and for a document (use
-`/download`). It is audited under its own action,
+image or video only while it has no derivative; it 404s once a derivative
+exists (use `/view`, now inline — see the ADR-0117 amendment), enforced in
+`ReviewerMediaLink` itself, not only by the endpoint, and answers 400 for a
+document (use `/download`), the same shape `/view` and `/download` already
+use for the wrong kind. It is audited under its own action,
 `AuditAction.DownloadedOriginalMedia`, distinct from `ViewedAttachment`, so an
 audit reader can spot a raw original — EXIF/GPS intact — without joining to
 the file's processing state. Never in the lightbox.

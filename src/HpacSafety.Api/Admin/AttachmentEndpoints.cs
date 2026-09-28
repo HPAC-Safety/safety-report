@@ -136,11 +136,12 @@ public static class AttachmentEndpoints
 		}
 
 		Uri url;
+		var hasDerivative = file.ProcessingErrorCode is null && !file.AwaitsStripping;
 
 		try
 		{
 			url = await links.CreateOriginalMediaDownloadUrl(
-				BlobKey.Parse(file.BlobKey), file.Kind, DownloadFileName(file, derivative: false), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+				BlobKey.Parse(file.BlobKey), file.Kind, hasDerivative, DownloadFileName(file, derivative: false), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
 		}
 		catch (DomainRuleViolationException cause)
 		{

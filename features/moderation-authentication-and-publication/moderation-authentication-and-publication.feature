@@ -429,6 +429,7 @@ Scenario: The public DTO exposes only the approved summary and its metadata
   Given a report is published
   When the public API returns it
   Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
+  And it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-150
 Scenario: The feed's attachment count is the public count for a visitor and the full count for staff
@@ -451,7 +452,6 @@ Scenario: A signed-in safety officer sees every attachment on the public report 
   Then the response carries a staff attachment for each file, with its state and public visibility
   And the hidden file's visibility reads "hidden"
   And the public file's visibility reads "public"
-  And it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-037
 Scenario: The public feed lists only publishable reports, newest submitted first

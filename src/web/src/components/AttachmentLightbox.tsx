@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
-import { PublicReportNotFound } from "../api/publicReports"
-import { linkFor, type StripItem } from "./AttachmentStrip"
+import { isGone, type StripItem } from "./AttachmentStrip"
 
 /*
  * Steps through a report's images and videos in attachment order (issue no. 427
@@ -24,18 +23,18 @@ import { linkFor, type StripItem } from "./AttachmentStrip"
 const MAX_CONSECUTIVE_FAILURES = 2
 
 export function AttachmentLightbox({
-	reportId,
 	items,
 	openId,
-	staff,
+	getLink,
+	invalidateLink,
 	onClose,
 	onGone,
 }: {
-	reportId: string
 	/** Images and videos only, in attachment order — a document is never here. */
 	items: StripItem[]
 	openId: string
-	staff: boolean
+	getLink: (item: StripItem) => Promise<string>
+	invalidateLink: (id: string) => void
 	onClose: () => void
 	onGone: (id: string) => void
 }) {
@@ -135,7 +134,14 @@ export function AttachmentLightbox({
 				>
 					‹
 				</button>
-				<LightboxMedia key={item.id} reportId={reportId} item={item} staff={staff} label={label} onGone={() => gone(item.id)} />
+				<LightboxMedia
+					key={item.id}
+					item={item}
+					label={label}
+					getLink={getLink}
+					invalidateLink={invalidateLink}
+					onGone={() => gone(item.id)}
+				/>
 				<button
 					type="button"
 					aria-label={t("media.lightbox.next")}
@@ -160,16 +166,16 @@ export function AttachmentLightbox({
 }
 
 function LightboxMedia({
-	reportId,
 	item,
-	staff,
 	label,
+	getLink,
+	invalidateLink,
 	onGone,
 }: {
-	reportId: string
 	item: StripItem
-	staff: boolean
 	label: string
+	getLink: (item: StripItem) => Promise<string>
+	invalidateLink: (id: string) => void
 	onGone: () => void
 }) {
 	const [url, setUrl] = useState<string | null>(null)
@@ -184,12 +190,13 @@ function LightboxMedia({
 	}, [onGone])
 
 	const refresh = useCallback(() => {
-		linkFor(reportId, item, staff)
+		getLink(item)
 			.then((link) => setUrl(link))
 			.catch((cause: unknown) => {
-				if (cause instanceof PublicReportNotFound) gone.current()
+				if (isGone(cause)) gone.current()
 			})
-	}, [reportId, item.id, staff])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [item.id, getLink])
 
 	useEffect(refresh, [refresh])
 
@@ -216,6 +223,7 @@ function LightboxMedia({
 			resume.current = { ...position.current }
 		}
 
+		invalidateLink(item.id)
 		refresh()
 	}
 

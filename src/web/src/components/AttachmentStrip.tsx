@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
+import { ApiError } from "../api/adminQuestions"
 import {
 	attachmentLink,
 	attachmentOriginalLink,
@@ -9,6 +10,11 @@ import {
 } from "../api/adminReports"
 import { fetchMediaLink, PublicReportNotFound, type PublicMedia } from "../api/publicReports"
 import { AttachmentLightbox } from "./AttachmentLightbox"
+
+/** True for anything that means "this item is no longer there" (issue no. 427). */
+export function isGone(cause: unknown): boolean {
+	return cause instanceof PublicReportNotFound || (cause instanceof ApiError && cause.status === 404)
+}
 
 /*
  * A report's attachments as one horizontal, scrollable strip of thumbnails, in
@@ -73,18 +79,47 @@ export function AttachmentStrip({
 	// The thumbnail that opened the lightbox, so closing it can return focus
 	// there (decision 5, issue no. 427).
 	const returnFocusTo = useRef<HTMLElement | null>(null)
+	// One link per id, shared between a thumbnail and the lightbox, so opening
+	// the lightbox on an already-loaded thumbnail mints nothing new — a
+	// non-public item's audited mint is one row, not two (decision 11).
+	// Re-minted only once it is within 5s of expiring, or after an error
+	// invalidates it.
+	const linkCache = useRef<Map<string, { url: string; expiresAt: string }>>(new Map())
+
+	const getLink = useCallback(
+		async (item: StripItem): Promise<string> => {
+			const cached = linkCache.current.get(item.id)
+			if (cached && new Date(cached.expiresAt).getTime() - Date.now() > 5000) {
+				return cached.url
+			}
+			const link = await linkFor(reportId, item, staff)
+			linkCache.current.set(item.id, link)
+			return link.url
+		},
+		[reportId, staff],
+	)
+
+	const invalidateLink = useCallback((id: string) => {
+		linkCache.current.delete(id)
+	}, [])
 
 	useEffect(() => {
 		setItems(staffAttachments ? itemsFromStaffAttachments(staffAttachments) : itemsFromPublicMedia(media))
 	}, [media, staffAttachments])
 
-	const remove = useCallback((id: string) => setItems((current) => current.filter((item) => item.id !== id)), [])
+	const remove = useCallback((id: string) => {
+		linkCache.current.delete(id)
+		setItems((current) => current.filter((item) => item.id !== id))
+	}, [])
 
 	if (items.length === 0) {
 		return null
 	}
 
-	const lightboxItems = items.filter((item) => item.kind === "image" || item.kind === "video")
+	// Only a ready image or video is ever stepped through — a processing or
+	// failed item is never reachable in the lightbox (decision 12; REQ-MED-013,
+	// REQ-MED-053, REQ-MED-060).
+	const lightboxItems = items.filter((item) => (item.kind === "image" || item.kind === "video") && item.state === "ready")
 
 	function label(item: StripItem): string {
 		const group = items.filter((candidate) => candidate.kind === item.kind)
@@ -130,7 +165,10 @@ export function AttachmentStrip({
 
 	async function downloadDocument(item: StripItem): Promise<void> {
 		try {
-			if (staff && item.visibility !== "public") {
+			// Staff always use the audited /download, under the sanitized reporter
+			// filename — decision 11 spares thumbnail loads an audit row, but it
+			// never covered a document download (decision 21, issue no. 427).
+			if (staff) {
 				const link = await attachmentLink(reportId, {
 					id: item.id,
 					kind: "document",
@@ -145,7 +183,7 @@ export function AttachmentStrip({
 			const link = await fetchMediaLink(reportId, item.id)
 			window.location.assign(link.url)
 		} catch (cause) {
-			if (cause instanceof PublicReportNotFound) remove(item.id)
+			if (isGone(cause)) remove(item.id)
 			else setError(t("media.error.download"))
 		}
 	}
@@ -154,8 +192,9 @@ export function AttachmentStrip({
 		try {
 			const link = await attachmentOriginalLink(reportId, item.id)
 			window.location.assign(link.url)
-		} catch {
-			setError(t("media.error.download"))
+		} catch (cause) {
+			if (isGone(cause)) remove(item.id)
+			else setError(t("media.error.download"))
 		}
 	}
 
@@ -175,10 +214,11 @@ export function AttachmentStrip({
 				{items.map((item) => (
 					<li key={item.id} data-media={item.kind} className="flex-none snap-start">
 						<Thumbnail
-							reportId={reportId}
 							item={item}
 							label={label(item)}
 							staff={staff}
+							getLink={getLink}
+							invalidateLink={invalidateLink}
 							onActivate={(trigger) => void activate(item, trigger)}
 							onGone={() => remove(item.id)}
 							onHide={staff && (item.visibility === "public" || item.visibility === "when_published") ? () => hide(item.id) : null}
@@ -190,10 +230,10 @@ export function AttachmentStrip({
 
 			{lightboxId && (
 				<AttachmentLightbox
-					reportId={reportId}
 					items={lightboxItems}
 					openId={lightboxId}
-					staff={staff}
+					getLink={getLink}
+					invalidateLink={invalidateLink}
 					onClose={() => {
 						setLightboxId(null)
 						returnFocusTo.current?.focus()
@@ -236,19 +276,21 @@ function VisibilityLabel({ item }: { item: StripItem }) {
 }
 
 function Thumbnail({
-	reportId,
 	item,
 	label,
 	staff,
+	getLink,
+	invalidateLink,
 	onActivate,
 	onGone,
 	onHide,
 	onShow,
 }: {
-	reportId: string
 	item: StripItem
 	label: string
 	staff: boolean
+	getLink: (item: StripItem) => Promise<string>
+	invalidateLink: (id: string) => void
 	onActivate: (trigger: HTMLElement) => void
 	onGone: () => void
 	onHide: (() => void) | null
@@ -266,13 +308,13 @@ function Thumbnail({
 			return
 		}
 
-		linkFor(reportId, item, staff)
+		getLink(item)
 			.then((link) => setThumbnailUrl(link))
 			.catch((cause: unknown) => {
-				if (cause instanceof PublicReportNotFound) onGone()
+				if (isGone(cause)) onGone()
 			})
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [reportId, item.id, item.kind, item.state, staff])
+	}, [item.id, item.kind, item.state, getLink])
 
 	useEffect(refresh, [refresh])
 
@@ -283,6 +325,7 @@ function Thumbnail({
 	function failed() {
 		failures.current += 1
 		if (failures.current <= 1) {
+			invalidateLink(item.id)
 			refresh()
 		}
 	}
@@ -402,18 +445,20 @@ function DocumentTile({ format }: { format: string | null }) {
 }
 
 /** The one link a thumbnail or the lightbox needs for an image or video (issue no. 427 decision 11). */
-export async function linkFor(reportId: string, item: StripItem, staff: boolean): Promise<string> {
+export async function linkFor(
+	reportId: string,
+	item: StripItem,
+	staff: boolean,
+): Promise<{ url: string; expiresAt: string }> {
 	if (!staff || item.visibility === "public") {
-		const link = await fetchMediaLink(reportId, item.id)
-		return link.url
+		return await fetchMediaLink(reportId, item.id)
 	}
 
-	const link = await attachmentLink(reportId, {
+	return await attachmentLink(reportId, {
 		id: item.id,
 		kind: item.kind,
 		state: item.state,
 		visibility: item.visibility ?? "private",
 		format: item.format,
 	})
-	return link.url
 }

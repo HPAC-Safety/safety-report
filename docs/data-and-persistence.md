@@ -153,10 +153,14 @@ positive allowlists rather than entity projections with fields removed later.
 
 The public report DTO is read from the `public_reports` view, never from the
 tables. The view states the whole publication invariant in SQL, including
-nonblank summary texts. Its columns are the allowlist plus one non-public
-column: `id`, `ai_summary_en`, `ai_summary_fr`, `published_at`,
-`comment_count`, and `submitted_at`. So a public query cannot reach a column
-the view does not carry. `submitted_at` is the feed's sort key (ADR-0153,
+nonblank summary texts. Its columns are the allowlist plus three non-public
+columns: `id`, `ai_summary_en`, `ai_summary_fr`, `published_at`,
+`comment_count`, `submitted_at`, `public_attachment_count`, and
+`full_attachment_count`. So a public query cannot reach a column the view does
+not carry. The API picks whichever attachment count fits the viewer's role —
+`public_attachment_count` mirrors `public_report_media`'s own predicate
+directly, rather than joining that view, to avoid a circular view reference
+(issue #427). `submitted_at` is the feed's sort key (ADR-0153,
 REQ-MOD-037); like `author_subject` below, the API reads it but never
 serializes it, and never even puts it in the feed's own keyset cursor — the
 cursor carries only a report ID, and the API looks that ID's `submitted_at`
@@ -193,7 +197,9 @@ The admin side reads its rules from views in the same way
   `needs_action` computed in SQL, plus `reporter_name` and `pilot_name` — the
   reporter's and pilot's first and last name answers, read by `QuestionRole`
   and joined, null when neither half was given (ADR-0154). The one exception
-  the admin list carries to no other answer text.
+  the admin list carries to no other answer text. `attachment_count` is every
+  non-deleted `report_files` row — every reader of this list is staff, so it
+  carries only the one, full count (issue #427).
 - `answers_awaiting_translation` is every live answer still waiting for its
   machine-translated second language.
 - `admin_pending_counts` is one row counting the reports that need action and

@@ -35,16 +35,23 @@
 #   git clone https://github.com/HPAC-Safety/safety-report
 #   sh safety-report/infra/bootstrap.sh staging
 #
-# On success it prints four values on stdout, one per line, as NAME=value -
-# the GitHub *environment variables* (not secrets) that H3 in issue #30 copies
-# into that same GitHub environment:
+# On success it prints six values on stdout, one per line, as NAME=value - all
+# GitHub *variables* (never secrets). The first four are what H3 in issue #30
+# copies into that account's GitHub *environment* (hpac-safety-staging or
+# hpac-safety-production); the last two repeat AWS_PLAN_ROLE_ARN and
+# TF_STATE_BUCKET's values under repository-scoped names, because
+# terraform.yml's pull-request plan job cannot read an environment's
+# variables - see ADR-0164 and docs/deployment.md "Required GitHub
+# configuration":
 #
 #   AWS_DEPLOY_ROLE_ARN=...
 #   AWS_PLAN_ROLE_ARN=...
 #   TF_STATE_BUCKET=...
 #   AWS_ACCOUNT_ID=...
+#   AWS_PLAN_ROLE_ARN_STAGING=...    (or _PRODUCTION, matching the argument)
+#   TF_STATE_BUCKET_STAGING=...      (or _PRODUCTION)
 #
-# Progress, warnings, and errors go to stderr, so the four lines above can be
+# Progress, warnings, and errors go to stderr, so the six lines above can be
 # parsed on their own:
 #
 #   sh infra/bootstrap.sh staging 2>/tmp/bootstrap.log | tee /tmp/bootstrap.env
@@ -1565,27 +1572,46 @@ say '     versioning, encryption, public-access block, TLS-only policy applied'
 # Done
 # --------------------------------------------------------------------------
 
+# Upper-cased for the two repository-level variable names below
+# (AWS_PLAN_ROLE_ARN_STAGING / _PRODUCTION, TF_STATE_BUCKET_STAGING /
+# _PRODUCTION) - $ENVIRONMENT itself is already lower-case staging/production.
+ENVIRONMENT_UPPER=$(printf '%s' "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+
 say ''
 say "Bootstrap complete for ${ENVIRONMENT} (GitHub environment ${GITHUB_ENVIRONMENT}). Next (see docs/deployment.md H3):"
 say ''
-say "  In GitHub: Settings -> Environments -> ${GITHUB_ENVIRONMENT} -> Environment variables,"
-say '  add each of the four NAME=value lines printed below (they are identifiers,'
+say "  Environment variables - In GitHub: Settings -> Environments -> ${GITHUB_ENVIRONMENT} ->"
+say '  Environment variables, add each of these four NAME=value lines (they are'
 # shellcheck disable=SC2016  # backticks are markdown code formatting, not shell expansion.
-say '  not secrets - no `gh secret set` here, only `gh variable set` if scripting it):'
+say '  identifiers, not secrets - no `gh secret set` here, only `gh variable set` if'
+say '  scripting it). release.yml reads these, scoped to this one environment:'
 say ''
 say "    gh variable set AWS_DEPLOY_ROLE_ARN --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${ROLE_ARN}"
 say "    gh variable set AWS_PLAN_ROLE_ARN   --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${PLAN_ROLE_ARN}"
 say "    gh variable set TF_STATE_BUCKET     --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${STATE_BUCKET}"
 say "    gh variable set AWS_ACCOUNT_ID      --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${ACCOUNT_ID}"
 say ''
+say "  Repository variables - hpac-safety-plan's OIDC trust matches a pull request's"
+say "  own subject (repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request), which a job presents"
+say "  only when it does NOT declare environment: - so terraform.yml's pull-request"
+say "  plan job cannot read the ${GITHUB_ENVIRONMENT} copy above. It reads this second,"
+say "  repository-scoped copy of the same two values instead (ADR-0164):"
+say ''
+say "    gh variable set AWS_PLAN_ROLE_ARN_${ENVIRONMENT_UPPER} --repo ${GITHUB_ORG}/${GITHUB_REPO} --body ${PLAN_ROLE_ARN}"
+say "    gh variable set TF_STATE_BUCKET_${ENVIRONMENT_UPPER}   --repo ${GITHUB_ORG}/${GITHUB_REPO} --body ${STATE_BUCKET}"
+say ''
 say "infra/backend.tf is a partial configuration: the bucket name carries the account"
 say "id, so it is supplied at init time from TF_STATE_BUCKET rather than committed,"
 say "and the state key is namespaced per environment: hpac-safety/${ENVIRONMENT}.tfstate."
 say ''
 
-# The four values on stdout, NAME=value, so the output stays parseable even
-# though there is more than one of them now.
+# The six values on stdout, NAME=value, so the output stays parseable even
+# though there is more than one of them now. The last two duplicate
+# AWS_PLAN_ROLE_ARN/TF_STATE_BUCKET's values under their repository-scoped
+# names, so a caller scripting this needs only one parse pass.
 printf 'AWS_DEPLOY_ROLE_ARN=%s\n' "$ROLE_ARN"
 printf 'AWS_PLAN_ROLE_ARN=%s\n' "$PLAN_ROLE_ARN"
 printf 'TF_STATE_BUCKET=%s\n' "$STATE_BUCKET"
 printf 'AWS_ACCOUNT_ID=%s\n' "$ACCOUNT_ID"
+printf 'AWS_PLAN_ROLE_ARN_%s=%s\n' "$ENVIRONMENT_UPPER" "$PLAN_ROLE_ARN"
+printf 'TF_STATE_BUCKET_%s=%s\n' "$ENVIRONMENT_UPPER" "$STATE_BUCKET"

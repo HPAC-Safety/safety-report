@@ -417,8 +417,8 @@
     },
     "submittedAt": "Soumis par {at}",
     "row": {
-      "reporterName": "#Reporter: {name}",
-      "pilotName": "#Pilot: {name}",
+      "reporterName": "Personne déclarante : {name}",
+      "pilotName": "Épisode pilote : {name}",
       "actions": "Mesures prises à la suite du signalement soumis à l’{at}",
       "stale": "Un autre réviseur a modifié ce signalement depuis le chargement de la liste. Rien de ce que vous venez de faire n'a été enregistré.",
       "reload": "Recharger la liste"

@@ -30,9 +30,10 @@ tests/e2e/.features-gen/
 .claude/agents/
 .skillfile/cache/
 
-# Written by `graphify claude install` — machine-local (hardcodes an absolute
-# path to the graphify binary), never committed.
-.claude/settings.json
+# .claude/settings.json is tracked (team-wide hooks, PATH-based, nothing
+# machine- or person-specific — see CONTRIBUTING.md). Personal overrides go
+# in .claude/settings.local.json instead, which stays untracked.
+.claude/settings.local.json
 
 # Secrets and local config
 .env

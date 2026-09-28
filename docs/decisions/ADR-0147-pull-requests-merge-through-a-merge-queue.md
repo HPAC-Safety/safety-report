@@ -279,11 +279,17 @@ are otherwise unchanged.
 Renovate is unaffected: its `automerge`/`platformAutomerge` configuration in
 `renovate.json` stays as is. This rule covers AI coding agents only.
 
-A repository-tracked Claude Code `PreToolUse` hook
-(`tools/guard-pr-merge.mjs`, wired in by `init-dev.sh`) refuses a `Bash` tool
-call running `gh pr merge` in any form, and a `gh api graphql` call whose body
-names `enablePullRequestAutoMerge` or `enqueuePullRequest`, with a message
-that the owner enables auto-merge. `AGENTS.md`, `deliver-change`, and
+The tracked, team-wide `.claude/settings.json` carries a Claude Code
+`PreToolUse` hook, on the `Bash` matcher, running `tools/guard-pr-merge.mjs`:
+it refuses a `Bash` tool call running `gh pr merge` in any form, and a
+`gh api graphql` call whose body names `enablePullRequestAutoMerge` or
+`enqueuePullRequest`, with a message that the owner enables auto-merge.
+`.claude/settings.json` holds only PATH-based, machine-independent hooks — no
+absolute path, nothing person-specific — which is why `init-dev.sh` no longer
+runs `graphify claude install` for the `claude` platform: that command would
+overwrite this tracked file with one hardcoding the local graphify binary's
+path. A contributor's personal hooks belong in the untracked
+`.claude/settings.local.json` instead. `AGENTS.md`, `deliver-change`, and
 `deliver-hpac-change` are amended to match. See issue #427.
 
 [manage]: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue

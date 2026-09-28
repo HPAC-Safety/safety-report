@@ -4,11 +4,11 @@
 // enqueues a pull request, by hand — an agent opens the pull request, gets
 // its checks green, and reports it ready.
 //
-// Wired in as a Claude Code `PreToolUse` hook (matcher: Bash) by
-// `init-dev.sh`, which merges a hook entry into `.claude/settings.json` —
-// that file is machine-local and gitignored (written by
-// `graphify claude install`), so this script, not the settings file, is what
-// the repository actually tracks.
+// Wired in as a Claude Code `PreToolUse` hook (matcher: Bash) directly in the
+// tracked, team-wide `.claude/settings.json`: `node
+// "$CLAUDE_PROJECT_DIR"/tools/guard-pr-merge.mjs`. That file carries only
+// PATH-based, machine-independent hooks — no absolute path, nothing
+// person-specific — which is also why `init-dev.sh` never writes to it.
 //
 //   <hook JSON on stdin> | node tools/guard-pr-merge.mjs
 //

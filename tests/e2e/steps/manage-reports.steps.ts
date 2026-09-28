@@ -808,16 +808,41 @@ Given("a safety officer is signed in and more reports exist than fit on one page
 	await disableAutoLoad(page)
 	await stubPagedReports(page, false)
 	await signInAs(page, "safety_officer")
+	await page.goto("/admin/reports")
+	await expect(row(page, "pending")).toBeVisible()
 })
 
 Given("the next report page fails to load", async ({ page }) => {
 	await stubPagedReports(page, true)
 })
 
+/**
+ * Tabs to the named button, bounded rather than one fixed Tab count, since
+ * it may already be visible (nothing to tab past) or still hidden behind
+ * this row's own quick actions.
+ */
+async function tabToButton(page: Page, name: string) {
+	const target = page.getByRole("button", { name })
+	const isFocused = () => target.evaluate((element) => element === document.activeElement).catch(() => false)
+
+	if (await isFocused()) {
+		return
+	}
+
+	for (let tabs = 0; tabs < 50; tabs += 1) {
+		await page.keyboard.press("Tab")
+		if (await isFocused()) {
+			return
+		}
+	}
+	throw new Error(`Could not reach the "${name}" action by tabbing.`)
+}
+
 When("the safety officer activates the {string} action", async ({ page }, name: string) => {
-	await page.goto("/admin/reports")
-	await expect(row(page, "pending")).toBeVisible()
-	await page.getByRole("button", { name }).click()
+	// The control is hidden until keyboard focus (ADR-0155); reach it the same
+	// way a keyboard visitor would rather than force-clicking past that.
+	await tabToButton(page, name)
+	await page.keyboard.press("Enter")
 })
 
 Then("the older reports load without leaving Manage reports", async ({ page }) => {
@@ -825,6 +850,6 @@ Then("the older reports load without leaving Manage reports", async ({ page }) =
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 })
 
-Then("the list offers a {string} action instead of failing silently", async ({ page }, name: string) => {
+Then("the list offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
 	await expect(page.getByRole("button", { name })).toBeVisible()
 })

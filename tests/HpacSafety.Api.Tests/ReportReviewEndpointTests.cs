@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
@@ -254,6 +255,60 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 
 		firstItems.Intersect(secondItems).ShouldBeEmpty();
 		firstItems.Concat(secondItems).ShouldContain(last["pending"]);
+	}
+
+	[Fact]
+	public async Task GivenSeveralReportsSharingOneSubmittedAt_WhenPagedAcrossTheirBoundary_ThenNoReportIsSkippedOrRepeated()
+	{
+		// Given: more than one page's worth of reports at the exact same instant,
+		// so the keyset tie-break — not submitted_at — decides where the page
+		// boundary falls.
+		var at = DateTimeOffset.UtcNow.AddYears(6);
+		var ids = new List<string>();
+
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			for (var i = 0; i < ReportEndpoints.PageSize + 5; i++)
+			{
+				var report = new Report(Locale.EnCa, at);
+				database.Reports.Add(report);
+				ids.Add(report.Id.Value);
+			}
+			await database.SaveChangesAsync();
+		}
+
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var first = await Page(client, null, null);
+		var firstIds = first.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()!).ToList();
+		var next = first.GetProperty("next").ValueKind == JsonValueKind.String ? first.GetProperty("next").GetString() : null;
+		next.ShouldNotBeNull();
+
+		var second = await Page(client, null, next);
+		var secondIds = second.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()!).ToList();
+
+		// Then: every one of this batch appears exactly once across the two
+		// pages, and — among this batch — each page reads in descending
+		// ordinal order, with the last of the first page ordinally after the
+		// first of the second.
+		var combined = firstIds.Concat(secondIds).Where(ids.Contains).ToList();
+		var seenTwice = combined.GroupBy(id => id).Where(group => group.Count() > 1);
+		seenTwice.ShouldBeEmpty();
+		combined.ShouldBe(ids, ignoreOrder: true);
+
+		var mineInFirst = firstIds.Where(ids.Contains).ToList();
+		var mineInSecond = secondIds.Where(ids.Contains).ToList();
+		mineInFirst.ShouldBe([.. mineInFirst.OrderDescending(StringComparer.Ordinal)]);
+		mineInSecond.ShouldBe([.. mineInSecond.OrderDescending(StringComparer.Ordinal)]);
+		if (mineInFirst.Count > 0 && mineInSecond.Count > 0)
+		{
+			// Both pages sort newest-submitted-first, a tie broken by report ID
+			// descending, so the first page's last (among this batch) continues
+			// directly into the second page's first: ordinally greater, not less.
+			string.CompareOrdinal(mineInFirst[^1], mineInSecond[0]).ShouldBeGreaterThan(0);
+		}
 	}
 
 	[Fact]

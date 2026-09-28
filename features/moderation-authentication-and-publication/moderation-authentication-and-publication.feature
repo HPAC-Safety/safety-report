@@ -920,28 +920,35 @@ Scenario: The public feed loads more reports automatically, and going back resto
 
 @REQ-MOD-126
 @ui
-Scenario: The public feed's next page offers a fallback button and announces itself
+Scenario: The public feed's next page offers a keyboard-only fallback and announces itself
   Given the public feed has more published reports than fit on one page
-  When a visitor activates the "Load more" action without scrolling
+  When a visitor opens the feed
+  Then the "Load more" action is not visible
+  When a keyboard visitor tabs to the "Load more" action
+  Then it becomes visible
+  When that visitor activates it
   Then the older reports load
   And a screen reader is told how many more reports loaded
 
 @REQ-MOD-127
 @ui
-Scenario: The public feed offers a Retry action when its next page fails to load
+Scenario: The public feed offers a visible Retry action when its next page fails to load
   Given the public feed's next page fails to load
-  When a visitor activates the "Load more" action
-  Then the feed offers a "Retry" action instead of failing silently
+  When a visitor activates the "Load more" action without scrolling
+  Then the feed offers a visible "Retry" action instead of failing silently
 
 @REQ-MOD-128
 @ui
-Scenario: Manage reports loads more automatically and offers the same fallback and retry
+Scenario: Manage reports loads more automatically and offers the same hidden fallback and visible retry
   Given a safety officer is signed in and more reports exist than fit on one page
-  When the safety officer activates the "Load more" action
+  Then the "Load more" action is not visible
+  When a keyboard visitor tabs to the "Load more" action
+  Then it becomes visible
+  When that visitor activates it
   Then the older reports load without leaving Manage reports
   Given the next report page fails to load
   When the safety officer activates the "Load more" action
-  Then the list offers a "Retry" action instead of failing silently
+  Then the list offers a visible "Retry" action instead of failing silently
 
 @REQ-MOD-083
 @ui

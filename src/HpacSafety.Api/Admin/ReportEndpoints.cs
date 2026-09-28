@@ -102,10 +102,11 @@ public static class ReportEndpoints
 			// starts over from the top — the same rule as an unreadable cursor.
 			//
 			// The tie-break for two reports submitted at the exact same instant
-			// (to the tick) excludes the anchor by ID rather than ordering past
-			// it: TinyId has no translatable ordering, only equality, and an
-			// exact `submitted_at` collision is vanishingly rare against a
-			// microsecond-resolution timestamp.
+			// orders past the anchor by ID, the same as the public feed's
+			// `string.Compare(report.Id, id) < 0` (ADR-0153): TinyId's `<`
+			// (ordinal over its Value, ADR-0155) translates the same way, so a
+			// shared `submitted_at` neither skips nor repeats a row across a page
+			// boundary.
 			if (position is not null)
 			{
 				var submittedAt = position.SubmittedAt;
@@ -113,7 +114,7 @@ public static class ReportEndpoints
 
 				query = query.Where(report =>
 					report.SubmittedAt < submittedAt
-					|| (report.SubmittedAt == submittedAt && report.Id != id));
+					|| (report.SubmittedAt == submittedAt && report.Id < id));
 			}
 		}
 

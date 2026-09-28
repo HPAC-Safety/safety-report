@@ -928,15 +928,15 @@ Manage reports shows each row's reporter and pilot names, blank when unanswered 
 
 ### REQ-MOD-126
 
-The public feed's next page offers a fallback button and announces itself — *playwright-bdd, Covered*
+The public feed's next page offers a keyboard-only fallback and announces itself — *playwright-bdd, Covered*
 
 ### REQ-MOD-127
 
-The public feed offers a Retry action when its next page fails to load — *playwright-bdd, Covered*
+The public feed offers a visible Retry action when its next page fails to load — *playwright-bdd, Covered*
 
 ### REQ-MOD-128
 
-Manage reports loads more automatically and offers the same fallback and retry — *playwright-bdd, Covered*
+Manage reports loads more automatically and offers the same hidden fallback and visible retry — *playwright-bdd, Covered*
 
 ### REQ-MOD-129
 

@@ -227,11 +227,58 @@ Then("the same reports are still shown, at the same scroll position", async ({ p
 	await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0)
 })
 
-When("a visitor activates the {string} action without scrolling", async ({ page }, name: string) => {
+/** The rendered width of whichever element currently holds focus, in CSS pixels. */
+async function focusedWidth(page: Page): Promise<number> {
+	const box = await page.locator(":focus").boundingBox()
+	return box?.width ?? 0
+}
+
+/**
+ * Tabs to the named button, bounded rather than one fixed Tab count, since
+ * the two lists' rows carry a different number of stops (Manage reports' row
+ * actions) before reaching this same fallback control.
+ */
+async function tabToButton(page: Page, name: string) {
+	const target = page.getByRole("button", { name })
+	const isFocused = () => target.evaluate((element) => element === document.activeElement).catch(() => false)
+
+	if (await isFocused()) {
+		return
+	}
+
+	for (let tabs = 0; tabs < 50; tabs += 1) {
+		await page.keyboard.press("Tab")
+		if (await isFocused()) {
+			return
+		}
+	}
+	throw new Error(`Could not reach the "${name}" action by tabbing.`)
+}
+
+When("a visitor opens the feed", async ({ page }) => {
 	await disableAutoLoad(page)
 	await page.goto("/reports")
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
-	await page.getByRole("button", { name }).click()
+})
+
+Then("the {string} action is not visible", async ({ page }, name: string) => {
+	const box = await page.getByRole("button", { name }).boundingBox()
+	// Tailwind's `sr-only` clips the button to a 1px square rather than
+	// removing it, so it stays reachable by Tab; a real, usable button is far
+	// wider than that.
+	expect(box?.width ?? 0).toBeLessThanOrEqual(2)
+})
+
+When("a keyboard visitor tabs to the {string} action", async ({ page }, name: string) => {
+	await tabToButton(page, name)
+})
+
+Then("it becomes visible", async ({ page }) => {
+	expect(await focusedWidth(page)).toBeGreaterThan(10)
+})
+
+When("that visitor activates it", async ({ page }) => {
+	await page.keyboard.press("Enter")
 })
 
 Then("the older reports load", async ({ page }) => {
@@ -247,13 +294,14 @@ Given("the public feed's next page fails to load", async ({ page }) => {
 	await page.route(/\/api\/v1\/public\/reports\?after=/, (route) => route.fulfill({ status: 500, body: "" }))
 })
 
-When("a visitor activates the {string} action", async ({ page }, name: string) => {
+When("a visitor activates the {string} action without scrolling", async ({ page }, name: string) => {
 	await disableAutoLoad(page)
 	await page.goto("/reports")
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
-	await page.getByRole("button", { name }).click()
+	await tabToButton(page, name)
+	await page.keyboard.press("Enter")
 })
 
-Then("the feed offers a {string} action instead of failing silently", async ({ page }, name: string) => {
+Then("the feed offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
 	await expect(page.getByRole("button", { name })).toBeVisible()
 })

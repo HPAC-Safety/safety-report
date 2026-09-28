@@ -1,6 +1,6 @@
 ---
 title: Infinite scroll replaces Load more on both report lists
-description: The public feed and Manage reports both auto-load their next keyset page as the reader nears the end, with an accessible fallback button and a Retry on failure; the admin list gains its first server-side keyset paging, using the same ID-only opaque cursor as the public feed, and the browser restores the same accumulated results and scroll position on a back-button return instead of reloading the first page.
+description: The public feed and Manage reports both auto-load their next keyset page as the reader nears the end; the fallback control stays visually hidden until keyboard focus and a Retry control appears only on failure, with a polite announcement of newly loaded items throughout. The admin list gains its first server-side keyset paging, using the same ID-only opaque cursor as the public feed with a true ordinal tie-break, and the browser restores the same accumulated results and scroll position on a back-button return instead of reloading the first page.
 type: adr
 status: accepted
 date: 2026-09-27
@@ -34,12 +34,16 @@ the admin list and replaces both lists' paging control with infinite scroll.
 
 - **Both lists auto-load their next page** as the reader nears the end of
   the list, through an `IntersectionObserver` sentinel placed after the last
-  item.
-- **An always-present fallback button** ("Load more") offers the same
-  action for a keyboard or screen-reader visitor who never triggers the
-  sentinel, and reads "Retry" once a page fails to load. It is not a
-  progressive-enhancement afterthought: it renders whenever another page
-  might exist, whether or not the sentinel already fired.
+  item. While auto-load is working, nothing is visibly shown for it.
+- **The fallback control ("Load more") is hidden until it is needed.** It
+  sits in the DOM at all times a further page might exist — never removed,
+  so it is reachable by Tab — but is visually hidden (an `sr-only`-style
+  rule) unless it holds keyboard focus (`:focus-visible`), so a sighted
+  mouse user never sees a control auto-load already makes unnecessary, while
+  a keyboard or screen-reader visitor can still tab to it and activate it.
+  Once a page fails to load, the control becomes visible unconditionally and
+  reads "Retry" — a failure is exactly the moment a sighted visitor also
+  needs it.
 - **A shared hook** (`useInfiniteReportList`, `src/web/src/hooks/`) and a
   shared status component (`InfiniteScrollStatus`,
   `src/web/src/components/`) back both lists, so the sentinel, the fallback
@@ -61,14 +65,17 @@ the admin list and replaces both lists' paging control with infinite scroll.
   matching the current filter — restarts the list from the top, the same
   rule as an unreadable cursor and as the public feed.
   - The admin list's tie-break for two reports submitted at the exact same
-    instant excludes the anchor by ID rather than ordering past it
-    lexicographically: `admin_report_queue`'s ID column is `TinyId`, which
-    has no translatable ordering in this codebase's EF model, only equality
-    — unlike the public feed's plain `string` ID column. An exact
-    `submitted_at` collision against a database timestamp is vanishingly
-    rare, so this is accepted as a pragmatic simplification rather than
-    adding an ordering conversion for a case that does not occur in
-    practice.
+    instant orders past the anchor by ID, ordinally — the same rule the
+    public feed's `string.Compare(report.Id, id) < 0` already applies
+    (ADR-0153) — rather than merely excluding it. `admin_report_queue`'s ID
+    column is `TinyId`, not `string`, so `TinyId` gains `IComparable<TinyId>`
+    and `<`/`>`/`<=`/`>=` operators over `string.CompareOrdinal(Value, ...)`
+    (`src/HpacSafety.Core/TinyId.cs`); EF Core translates the resulting
+    `report.Id < id` the same way it already translates `OrderBy(report =>
+    report.Id)`, against the mapped `char(11)` column. A dedicated test
+    (`GivenSeveralReportsSharingOneSubmittedAt_...`) seeds more than one
+    page's worth of reports at one identical instant and pages across the
+    boundary, asserting no report is skipped or repeated.
 - **The public feed's `?after=` address-bar cursor is removed.** REQ-MOD-082
   is amended in place (not renumbered): the back button now restores the
   same accumulated results and scroll position, rather than returning to a
@@ -112,9 +119,18 @@ the admin list and replaces both lists' paging control with infinite scroll.
   the back button restores the same results and position, which a
   cursor-only address bar cannot do once several auto-loaded pages have
   accumulated past whatever cursor is currently named in the address.
-- **Give `AdminReportQueueItem.Id` a translatable ordering (an `IComparable`
-  wrapper, or a shadow string column) so the admin tie-break could use a true
-  `<` rather than excluding the anchor by ID.** Rejected for now: it would
-  touch the shared `TinyId` type or add a projection used nowhere else, to
-  correct an ordering edge case that requires an exact `submitted_at`
-  collision to ever matter. Revisit if that assumption stops holding.
+- **Exclude the tie-break anchor by ID (`!=`) instead of giving `TinyId` a
+  real ordering.** This shipped in an earlier draft of this decision, on the
+  reasoning that an exact `submitted_at` collision is rare enough that a
+  slightly weaker tie-break would not matter in practice. Rejected on
+  review: "rare" is not "never," and a tie-break that can skip or repeat a
+  row under a real (if uncommon) condition is a correctness gap the fix
+  costs little to close. `TinyId` gaining `IComparable<TinyId>` is a small,
+  generically useful addition to a type every table already uses, not a
+  one-off workaround.
+- **Always show the "Load more" button, whether or not auto-load already
+  handles it** (this decision's own first draft). Rejected on review: a
+  control that is redundant every time auto-load already works is exactly
+  the kind of visible clutter infinite scroll is meant to remove; hiding it
+  until keyboard focus keeps it reachable without showing it to a visitor
+  who has no use for it.

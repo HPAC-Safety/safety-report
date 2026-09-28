@@ -73,14 +73,19 @@ without consent shows both.
 Both this list and the public feed load more automatically as the reviewer or
 visitor nears the end, the same infinite-scroll pattern
 ([ADR-0155](../../docs/decisions/ADR-0155-infinite-scroll-replaces-load-more-on-both-report-lists.md)):
-an `IntersectionObserver` sentinel triggers the next keyset page, a visible
-"Load more" button offers the same action for a keyboard or screen-reader
-visitor and reads "Retry" once a page fails, and each newly loaded batch is
-announced politely. The admin list gained server-side keyset paging for this
+an `IntersectionObserver` sentinel triggers the next keyset page, with
+nothing shown for it while auto-load keeps working. A "Load more" fallback
+stays reachable by Tab at all times but is visually hidden until it holds
+keyboard focus, so a sighted visitor never sees a control auto-load already
+made unnecessary; a screen reader still reaches it in the normal reading
+order. Once a page fails to load, the control becomes visible unconditionally
+and reads "Retry." Every newly loaded batch is announced politely regardless
+of how it loaded. The admin list gained server-side keyset paging for this
 (it had none before, REQ-MOD-129); its cursor carries only the last row's
 report ID, the same shape as the public feed's (ADR-0153) — never a
 timestamp — and a cursor naming a report no longer in the queue restarts the
-list from the top. The browser's back button restores the same accumulated
+list from the top, ordinally past the anchor by ID the same way the public
+feed's cursor does. The browser's back button restores the same accumulated
 rows and scroll position rather than reloading the first page.
 
 Each row also shows the **reporter's name** and the **pilot's name** — the

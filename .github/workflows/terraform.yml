@@ -14,8 +14,9 @@ name: Terraform
 #
 # There is no `apply` job here any more (issue #466, ADR-0158, CON-INF-012): a
 # merge to `main` never touches AWS. The only thing that ever applies Terraform
-# is release.yml's `staging`/`production` jobs, on a published, date-tagged
-# release, and only against the account the release is deploying to.
+# is deploy-environment.yml, called by release.yml (staging, on a published,
+# date-tagged release) and promote.yml (production, on a maintainer's
+# promotion of a staged tag), and only against the account it deploys to.
 #
 # `plan` SKIPS WITH A NOTICE, per account, when that account's AWS
 # configuration is absent, rather than failing. Both accounts do not exist

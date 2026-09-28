@@ -10,10 +10,9 @@ environment = "staging"
 # CloudFront default *.cloudfront.net address is the whole story.
 site_domains = []
 
-# DECIDED once infra/bootstrap.sh has run against this account (issue #30,
-# "Human work" H3): paste the account id bootstrap.sh prints, so the provider
-# refuses to apply this file against any other account.
-# allowed_account_ids = ["123456789012"]
+# The account infra/bootstrap.sh ran against (infra/SETUP.md step 2.2, #606):
+# the provider refuses to apply this file against any other account.
+allowed_account_ids = ["242157301937"]
 
 # 1-day automated backups. Still real backups, still deletion-protected,
 # still prevent_destroy (CON-INF-013) — staging holds synthetic data, but the

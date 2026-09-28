@@ -2,7 +2,7 @@
 title: Two AWS accounts, staging and production, released by date tag and promoted by approval
 description: The existing AWS account becomes staging, synthetic data only; a new account becomes production. One release builds once, deploys to staging automatically, then to production after hpac-safety-admins approval of the same artifacts. Each account groups its resources under its own hpac-safety-staging/hpac-safety-production myApplications application, and both run the same Terraform.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-27
 decision-makers: Chase Florell
 keywords: AWS accounts, staging, production, environments, release, promotion, GitHub environments, AppRegistry, Resource Groups, NAT instance, fck-nat, ADR-0031
@@ -11,6 +11,13 @@ keywords: AWS accounts, staging, production, environments, release, promotion, G
 # ADR-0158 — Two AWS accounts, staging and production, released by date tag and promoted by approval
 
 ## Status
+
+**Partially superseded by
+[ADR-0166](ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)**:
+a release now deploys staging only, and a separate `promote.yml` sends a
+staged tag's same artifacts to production after the same approval. "Production
+waits" inside the release, "one release workflow", and rollback by re-running
+the release no longer hold; everything else below stands.
 
 Accepted. **Supersedes** the single-environment part of
 [ADR-0031](ADR-0031-terraform-shape-and-topology.md) ("There is one

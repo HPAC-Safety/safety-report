@@ -112,7 +112,7 @@ The outbound calls, all over HTTPS through the NAT instance:
 
 ```mermaid
 flowchart LR
-    gha["GitHub Actions<br/>release.yml · OIDC role per account"]
+    gha["GitHub Actions<br/>release.yml · promote.yml<br/>OIDC role per account"]
     dns["hpac.ca / acvl.ca DNS<br/>outside AWS · production only"]
     admins["hpac-safety-admins team<br/>approves production"]
 
@@ -139,7 +139,7 @@ flowchart LR
     gha -->|"update functions"| worker
     gha -->|"sync build"| site
     gha -->|"invalidate"| cf
-    gha -.->|"2 · wait for approval"| admins
+    gha -.->|"2 · promote a staged tag, wait for approval"| admins
     admins -.->|"3 · same artifacts to production"| gha
     dns -->|"CNAME, production only"| cf
     dns -.->|"validation records, production only"| acmglobal
@@ -199,10 +199,12 @@ How the pieces connect:
   advisory lock. There is no migration task
   ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 - **Deployment** is a published GitHub Release, tagged `YYYY.MM.DD-N`. It
-  builds the API image, the Worker image, and the website bundle once, deploys
-  those same artifacts to staging automatically, then to production only
-  after the `hpac-safety-admins` team approves. There is no apply on merge to `main`
-  ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+  builds the API image, the Worker image, and the website bundle once and
+  deploys them to staging automatically. Promoting a staged tag to production
+  is a separate, deliberate step that deploys those same artifacts only after
+  the `hpac-safety-admins` team approves. There is no apply on merge to `main`
+  ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md),
+  [ADR-0166](decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)).
   Each account is reached only by its own short-lived OIDC role.
 - **DNS** for `hpac.ca` and `acvl.ca` stays with their current hosts, outside
   AWS. A human adds the CNAME and certificate-validation records for
@@ -261,11 +263,15 @@ observe; Terraform validation and the `infra` job are its check.*
 
 **CON-INF-012** A GitHub Release tagged `YYYY.MM.DD-N` builds the API image,
 the Worker image, and the website bundle exactly once. Staging deploys those
-artifacts automatically. Production deploys the same artifacts, never a
-rebuild, only after the `hpac-safety-admins` GitHub team approves the `hpac-safety-production`
-environment. There is no `terraform apply` on a merge to `main` — a pull
-request only plans, against both accounts
-([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+artifacts automatically, and a release never deploys to, or waits on,
+production. Production deploys only a tag a maintainer promotes, only once
+that tag's release has succeeded on staging, using that release's same
+artifacts, never a rebuild, and only after the `hpac-safety-admins` GitHub
+team approves the `hpac-safety-production` environment. A promotion awaiting
+approval never holds a staging release. There is no `terraform apply` on a
+merge to `main` — a pull request only plans, against both accounts
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md),
+[ADR-0166](decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)).
 *Verified by: none — an infrastructure property no application scenario can
 observe; the `release` and `terraform` workflows are its check.*
 
@@ -482,8 +488,9 @@ On a published, date-tagged release:
    Lambda functions are updated to that image, and the website build is synced
    to its S3 bucket and the CloudFront distribution invalidated, each
    independently;
-3. production deploys the identical artifacts only after the `hpac-safety-admins` GitHub
-   team approves the `hpac-safety-production` environment; and
+3. production deploys the identical artifacts only when a maintainer promotes
+   that tag, and only after the `hpac-safety-admins` GitHub team approves the
+   `hpac-safety-production` environment; and
 4. health/readiness checks confirm the rollout in each account.
 
 There is no `terraform apply` on a merge to `main`.

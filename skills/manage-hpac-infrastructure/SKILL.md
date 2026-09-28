@@ -22,9 +22,12 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   from the one `infra/` root, differing only in `infra/staging.tfvars` and
   `infra/production.tfvars`
   ([ADR-0158](../../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
-  A dated GitHub Release deploys to staging automatically, then to production
-  only after the `hpac-safety-admins` team approves the `hpac-safety-production` GitHub
-  environment for the same artifacts. First goal: staging alone; production
+  A dated GitHub Release deploys to staging automatically and never to
+  production. A maintainer promotes a staging-green tag with `promote.yml`,
+  which deploys the same artifacts to production only after the
+  `hpac-safety-admins` team approves the `hpac-safety-production` GitHub
+  environment
+  ([ADR-0166](../../docs/decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)). First goal: staging alone; production
   follows once HPAC's own account and DNS exist.
 - Each account groups its resources under its own myApplications application
   and Resource Group, `hpac-safety-staging`/`hpac-safety-production` — a cost/grouping

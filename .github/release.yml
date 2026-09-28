@@ -1,5 +1,5 @@
 # Categories for a release's generated notes (issue #619, ADR-0168).
-# create-release.yml passes --generate-notes; GitHub lists every pull request
+# release.yml's `release` job passes --generate-notes; GitHub lists every pull request
 # merged since the previous release under the first category whose labels it
 # carries. Labels come from this repository's set (deliver-hpac-change "File a
 # new issue"), which every pull request carries from its issue.

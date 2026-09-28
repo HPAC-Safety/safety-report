@@ -68,19 +68,14 @@ today's Terraform differs" below for exactly what is still scaffolding.
 [`deploy-environment.yml`](../.github/workflows/deploy-environment.yml);
 [ADR-0166](decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)):
 
-1. **Run Create release** on `main`
-   ([`create-release.yml`](../.github/workflows/create-release.yml),
-   [ADR-0168](decisions/ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md),
+1. **Run Release** (Actions → Release → Run workflow, from `main`, no
+   inputs; [ADR-0168](decisions/ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md),
    [`infra/SETUP.md`](../infra/SETUP.md) step 2.5) — the only human action
-   every release needs. It tags the run's `main` commit with the next
-   `YYYY.MM.DD-N` (today in UTC, next free `N`), creates a GitHub Release whose
-   notes list every pull request merged since the previous one, grouped by
-   label ([`.github/release.yml`](../.github/release.yml)), and dispatches
-   `release.yml` on that tag. It dispatches rather than relying on
-   `release: published`, because a release created with `GITHUB_TOKEN`
-   triggers no workflow, and on the tag rather than `main`, because
-   `hpac-safety-staging` accepts only refs matching `20*`. Any other tag shape
-   is rejected before anything is built.
+   every release needs. Its `release` job tags the run's `main` commit with
+   the next `YYYY.MM.DD-N` (today in UTC, next free `N`) and creates a GitHub
+   Release whose notes list every pull request merged since the previous one,
+   grouped by label ([`.github/release.yml`](../.github/release.yml)). A run on
+   any other ref is refused before anything is created.
 2. **`build`** checks out that tag and, with no AWS credential of any kind,
    builds the API image (the Lambda Web Adapter image, `tools/build-api-image.sh`,
    #443), the Worker image (`tools/build-worker-image.sh`, ADR-0118), and the
@@ -127,23 +122,17 @@ would simply never run a pull-request-triggered job. `plan` instead uses a
 same-repo pull request's own AWS role/state-bucket pair, one per account
 (below).
 
-**Rollback** redeploys an earlier tag:
+**Rollback** redeploys an earlier release:
 
 - **Production**: run `promote.yml` on the earlier tag. It redeploys that
   release run's own artifacts, after approval, without touching staging.
-- **Staging**: open that release's own workflow run under **Actions** and
-  choose **Re-run all jobs**. This rebuilds from the exact commit that tag
-  already pointed to — functionally identical to the original run, because
-  the same commit and the same build scripts produce the same image content
-  and therefore the same registry digest.
-- **If that run has aged out** (workflow artifacts expire; see the
-  `retention-days` on `release.yml`'s `upload-artifact` steps), dispatch
-  `release.yml` manually (`workflow_dispatch`) on that earlier tag, with the
-  same tag as its input: `gh workflow run release.yml --ref <tag> -f tag=<tag>`.
-  A dispatch from a branch is refused, because `hpac-safety-staging` allows
-  deployments only from refs matching `20*`. This
-  rebuilds from the tagged commit and restages it; `promote.yml` can then
-  promote the new run. Use it only when the native re-run is unavailable.
+- **Staging**: open that release's own Release run under **Actions** and
+  re-run its **`staging`** job only (**Re-run jobs** → `staging`). It
+  redeploys that run's artifacts. Never **Re-run all jobs**: the `release`
+  job would cut a new tag.
+- **If that run's artifacts have aged out** (90 days; see the
+  `retention-days` on `release.yml`'s `upload-artifact` steps), revert on
+  `main` and run Release: a new release of the old code.
 - Either way, migrations stay expand/contract (CON-INF-007): a rollback
   redeploys an artifact, and the schema already supports it.
 

@@ -149,8 +149,11 @@ job skipped by a broken filter would be a check that silently passed, so:
   tree is the one that becomes `main`.
 - The pull request comment step is skipped: a merge group has no pull request.
 - The baseline is only ever a successful `push` run on `main`
-  (`gh run list --branch main --event push`). A merge group's
-  `coverage-report` artifact never sets the bar.
+  (`gh run list --branch main --event push`) - not necessarily the newest one;
+  `tools/find-coverage-baseline.mjs` walks back to the newest run that
+  actually carries a `coverage-report` artifact
+  ([ADR-0165](ADR-0165-the-coverage-baseline-walks-back-to-the-newest-run-that-ran-coverage.md)).
+  A merge group's `coverage-report` artifact never sets the bar.
 
 ### No comment, bot push, or deploy on a merge group
 

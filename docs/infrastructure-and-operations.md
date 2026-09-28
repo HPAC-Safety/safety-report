@@ -210,22 +210,19 @@ How the pieces connect:
 
 ### Where today's Terraform differs
 
-`infra/` predates ADR-0123, ADR-0158, and ADR-0159, and does not match this
-target yet. These are the known differences:
+`infra/` and the application code now match this target (#443, #465): the
+API and the Worker are Lambda functions with no ALB, CloudFront routes
+`/api/*` to the API's Function URL guarded by the origin-verify secret,
+`staging.tfvars`/`production.tfvars` carry the only differences between the
+two environments, both accounts get their `hpac-safety-staging`/
+`hpac-safety-production` AppRegistry applications, the production pair of
+hostnames plus a staging default address are both wired up, and a NAT
+instance (`fck-nat`) replaces the managed NAT gateway. This remains open:
 
-- CloudFront does not yet route `/api/*` to the API's Function URL — the
-  Function URL exists (#443), but reaching it still means calling it directly
-  rather than through CloudFront (#465).
-- One AWS account and one Terraform state, not staging/production tfvars, an
-  `hpac-safety-admins`-approved production promotion, or the `hpac-safety-staging`/
-  `hpac-safety-production` AppRegistry applications (#464, #465, #466).
-- One CloudFront hostname (`safety.hpac.ca`), not the production pair plus a
-  staging default address (#463, #465).
-- A managed NAT gateway, not a NAT instance (#465).
-
-The website's S3 bucket, CloudFront distribution, certificates, network, RDS,
-uploads bucket, alarms, ECR, and the API and Worker Lambda functions
-already match.
+- `release.yml`'s build-once/staging/approved-production flow, and retiring
+  the `deploy-*.yml` stubs, is #466's (#465 leaves the existing `terraform.yml`
+  plan/apply jobs as a single-environment scaffold that #466 rewires to run
+  per account).
 
 **CON-INF-002** No SES/email resources, messaging integrations, public bucket or CDN copy of
 an attachment (a published file is reached only through a pre-signed GET of
@@ -376,13 +373,41 @@ superseding [ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-secur
 
 **CON-INF-005** Secret values live in Secrets Manager and never in Terraform state, GitHub
 variables, source, appsettings committed to the repository, logs, or task
-definitions. Terraform creates secret containers/references; an authorized
-operator supplies values out of band. The identity provider's client secret is
-one of these. Two recorded exceptions are GitHub repository secrets passed to a
-task as environment variables by the deploy workflow: DeepL's key
-([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md))
-and the summarization provider's key, `AiChatClient__ApiKey`
-([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+definitions. Terraform creates the secret entry only; an authorized operator
+supplies the value out of band, and the deploy workflow reads it into the
+Lambda function's configuration at deploy time (Lambda has no built-in
+resolve-this-ARN mechanism the way the ECS agent did). Two entries exist, in
+both environments: the summarization provider's key, `AiChatClient__ApiKey`
+([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)),
+and DeepL's key
+([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
+The identity provider is an external dependency the Terraform in this
+directory does not create a secret for yet
+([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)
+— its client secret, if the eventual provider needs one, is #443/a future
+issue's to add). The database connection is not one of these either: the
+API and the Worker read the
+RDS-managed master-user secret directly by its ARN (a non-secret identifier,
+passed as a plain environment variable alongside the equally non-secret host,
+port, and database name) and assemble the connection string themselves at
+cold start; Terraform never reads that secret's value either.
+
+**One recorded exception, and only this one:** the CloudFront origin-verify
+routing token is the sole value this system lets Terraform both originate
+(with `random_password`) and hold in Terraform state
+([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
+[ADR-0163](decisions/ADR-0163-the-cloudfront-origin-secret-is-terraform-generated.md)).
+Gemini, DeepL, and the database credentials above are unaffected and stay out
+of state, exactly as this constraint otherwise requires. The exception is
+narrow for three reasons: CloudFront's own distribution configuration holds
+this value in its `origin.custom_header` argument regardless of how the value
+was chosen, so keeping it out of state was never achievable by choosing a
+human-typed value instead; the token protects no data by itself — it only
+proves a request reached the API through this CloudFront distribution rather
+than the Function URL directly, and every actual authorization decision is
+still the JWT and role checks behind it; and Terraform state is already
+reachable only by the `hpac-safety-deploy` and `hpac-safety-plan` roles,
+against one encrypted, versioned, public-access-blocked bucket per account.
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 

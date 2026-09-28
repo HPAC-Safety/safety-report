@@ -27,9 +27,8 @@ staging and production, built from the same Terraform
 ## Environments and accounts
 
 **No AWS deployment exists yet.** This section describes the target: what a
-release will do once #443, #464, #465, and #466 land, not something already
-running. See "Where today's Terraform differs" below for exactly what is
-still scaffolding.
+release will do once #466 lands, not something already running. See "Where
+today's Terraform differs" below for exactly what is still scaffolding.
 
 - **Staging** will be the owner's personal AWS account, which also runs
   unrelated workloads. It is meant to hold synthetic data only and never run
@@ -92,16 +91,48 @@ place, protected from deletion.
 Alarms route through SNS to `safety@hpac.ca`, in production only; staging's
 topic has no subscriber.
 
-The current Terraform and deploy workflows are scaffolding. The API and the
-Worker are Lambda functions (#443), but CloudFront does not yet route
-`/api/*` to the API's Function URL (#465); there is still one AWS account
-instead of two, and one CloudFront hostname instead of the production pair
-plus a staging default address. Issue #30 owns bringing the deployed topology
-to
-[`infrastructure-and-operations.md`](infrastructure-and-operations.md), whose
-"Where today's Terraform differs" lists every known gap.
+The Terraform and the application code now match this shape (#443, #465):
+Lambda functions with no ALB, origin-secret verification, the Worker's
+Lambda-invocation mode, the API's async nudge, `staging.tfvars`/
+`production.tfvars`, both accounts' AppRegistry applications, both hostname
+sets, and a NAT instance instead of a managed NAT gateway. Only `release.yml`
+and retiring the `deploy-*.yml` stubs (#466) remain. Issue #30 tracks the
+remainder; see
+[`infrastructure-and-operations.md`](infrastructure-and-operations.md)'s
+"Where today's Terraform differs" for exactly what is still open.
 Do not interpret a successful Terraform validation as proof that the target
-environment exists or has been applied.
+environment exists or has been applied — **no AWS deployment exists yet**,
+and nothing in `infra/` runs against AWS on merge.
+
+## Estimated monthly cost
+
+Estimated from AWS's published `ca-central-1` list prices as of this pull
+request. **This is an estimate, not an AWS Pricing Calculator export** — #465
+was written without console access to produce one; someone with console
+access should still confirm it in the AWS Pricing Calculator before the first
+real deploy, per issue #30's acceptance criteria.
+
+| Resource | Staging (per month) | Production (per month) | Basis |
+|---|---|---|---|
+| RDS `db.t4g.micro`, 20 GB gp3, single-AZ | ~US$13 | ~US$13 | On-demand instance-hour rate × 730 h, plus 20 GB gp3 storage |
+| RDS automated backup storage | ~US$0 (1-day retention, within the free allowance) | ~US$1–2 (7-day retention) | Backup storage beyond the free allowance equal to the database's own size |
+| NAT instance (`t4g.nano`) | ~US$3 | ~US$3 | On-demand instance-hour rate × 730 h |
+| NAT instance's Elastic IP | ~US$4 | ~US$4 | A public IPv4 address is billed hourly whether or not attached |
+| Secrets Manager (Gemini, DeepL, origin-verify; the RDS master password is billed separately) | ~US$1.20 | ~US$1.20 | US$0.40/secret/month × 3 |
+| Lambda (API + Worker) | ~US$0–1 | ~US$1–3 | Dozens of reports a year; well within the perpetual free tier's request and compute allowances outside a burst of video remuxing |
+| S3 (site + uploads) | <US$1 | ~US$1–3 | Storage plus PUT/GET requests; grows with attachment volume |
+| CloudFront | <US$1 | ~US$1–2 | PriceClass_100, low request volume |
+| ECR | <US$1 | <US$1 | Two small image repositories, 30-image lifecycle |
+| CloudWatch Logs + alarms | <US$1 | ~US$1 | 90-day retention on a handful of small log groups |
+| ACM certificate | — | $0 | ACM certificates for CloudFront are free |
+| **Total** | **~US$22–25** | **~US$25–30** | |
+
+Both together: roughly **US$50–55/month**, close to issue #30's original
+US$45–50 estimate — the difference is mostly the NAT instance's Elastic IP,
+which #30's estimate already itemized separately at ~US$3.65 and this table
+rounds up slightly for margin. Prices are US dollars per AWS's published rate
+card; actual CAD billing depends on the account's currency settings and
+fluctuates with exchange rates.
 
 Local development requires no AWS account. `./init-dev.sh` prepares the
 machine once, and `./dev-up.sh` builds and starts PostgreSQL, the S3 server,

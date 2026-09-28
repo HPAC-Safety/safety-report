@@ -57,7 +57,7 @@ resource "aws_ecr_repository" "this" {
     encryption_type = "AES256"
   }
 
-  tags = { Name = "${local.name}-${each.key}" }
+  tags = merge(local.app_tags, { Name = "${local.name}-${each.key}" })
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {

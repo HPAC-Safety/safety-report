@@ -49,7 +49,7 @@ export interface ReportListItem {
 	pilotName: string | null
 }
 
-/** One page of the admin report list, newest submitted first; `next` continues it, or is null on the last page (REQ-MOD-125). */
+/** One page of the admin report list, newest submitted first; `next` continues it, or is null on the last page (REQ-MOD-129). */
 export interface ReportListPage {
 	items: ReportListItem[]
 	next: string | null
@@ -167,7 +167,7 @@ function post<T>(
 	return call<T>(path, { method: "POST", body: JSON.stringify(body) })
 }
 
-/** One page of the list, keyset-paginated; `after` continues a previous page (REQ-MOD-125). */
+/** One page of the list, keyset-paginated; `after` continues a previous page (REQ-MOD-129). */
 export function listReports(filter: ReportFilter, after: string | null = null): Promise<ReportListPage> {
 	const query = after ? `filter=${encodeURIComponent(filter)}&after=${encodeURIComponent(after)}` : `filter=${encodeURIComponent(filter)}`
 	return get(`/api/admin/reports?${query}`)

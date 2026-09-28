@@ -63,7 +63,7 @@ worker, or direct API caller can bypass a publication guard.
 ## The admin report list
 
 `/admin/reports` lists every live report, newest submitted first, a tie broken
-by report ID (REQ-MOD-125). Each row shows the submission time, a badge for
+by report ID (REQ-MOD-129). Each row shows the submission time, a badge for
 its workflow status, a separate **Private (no consent)** badge when the
 reporter refused publication, and a **Stuck** badge when it has waited in
 Submitted or Summarizing for more than 24 hours. Private is about consent and
@@ -77,7 +77,7 @@ an `IntersectionObserver` sentinel triggers the next keyset page, a visible
 "Load more" button offers the same action for a keyboard or screen-reader
 visitor and reads "Retry" once a page fails, and each newly loaded batch is
 announced politely. The admin list gained server-side keyset paging for this
-(it had none before, REQ-MOD-125); its cursor carries only the last row's
+(it had none before, REQ-MOD-129); its cursor carries only the last row's
 report ID, the same shape as the public feed's (ADR-0153) — never a
 timestamp — and a cursor naming a report no longer in the queue restarts the
 list from the top. The browser's back button restores the same accumulated

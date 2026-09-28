@@ -333,7 +333,7 @@ Scenario: A list row carries the version a review command sends back
   And publishing an unpublished report with its row's version succeeds without opening the report
   And no ViewedRawReport entry is written for that report
 
-@REQ-MOD-125
+@REQ-MOD-129
 Scenario: The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one
   Given reports exist in every workflow state
   When a reviewer lists reports

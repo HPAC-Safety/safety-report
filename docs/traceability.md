@@ -918,9 +918,13 @@ Deleting from the list asks for confirmation first — *playwright-bdd, Covered*
 
 A stale row action tells the reviewer to reload the list — *playwright-bdd, Covered*
 
+### REQ-MOD-124
+
+The admin report list shows the reporter's and pilot's names by stable role, blank when unanswered — *Reqnroll, Covered*
+
 ### REQ-MOD-125
 
-The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
+Manage reports shows each row's reporter and pilot names, blank when unanswered — *playwright-bdd, Covered*
 
 ### REQ-MOD-126
 
@@ -933,6 +937,10 @@ The public feed offers a Retry action when its next page fails to load — *play
 ### REQ-MOD-128
 
 Manage reports loads more automatically and offers the same fallback and retry — *playwright-bdd, Covered*
+
+### REQ-MOD-129
+
+The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
 
 ## Claims: question-bank-and-form
 

@@ -445,7 +445,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		return listed.Single(item => item.GetProperty("id").GetString() == id);
 	}
 
-	/// <summary>Reads every page of the list, following <c>next</c> until it is null (REQ-MOD-125).</summary>
+	/// <summary>Reads every page of the list, following <c>next</c> until it is null (REQ-MOD-129).</summary>
 	private static async Task<List<JsonElement>> List(HttpClient client,
 													  string? filter)
 	{

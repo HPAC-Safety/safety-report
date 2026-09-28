@@ -33,7 +33,7 @@ public sealed record ReportListItem(
 
 /// <summary>
 ///     One page of the admin report list, newest submitted first, a tie broken
-///     by report ID (REQ-MOD-125). <see cref="Next" /> is the opaque cursor that
+///     by report ID (REQ-MOD-129). <see cref="Next" /> is the opaque cursor that
 ///     continues it, or null on the last page — the same ID-only cursor shape as
 ///     the public feed (ADR-0155).
 /// </summary>

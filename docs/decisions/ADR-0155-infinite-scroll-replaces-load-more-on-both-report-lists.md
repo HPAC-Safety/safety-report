@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-27
 decision-makers: Chase Florell
-keywords: infinite scroll, keyset pagination, admin report list, admin_report_queue, public feed, IntersectionObserver, back button, scroll restoration, REQ-MOD-125, REQ-MOD-126, REQ-MOD-127, REQ-MOD-128, #572, #570
+keywords: infinite scroll, keyset pagination, admin report list, admin_report_queue, public feed, IntersectionObserver, back button, scroll restoration, REQ-MOD-129, REQ-MOD-126, REQ-MOD-127, REQ-MOD-128, #572, #570
 ---
 
 # ADR-0155 — Infinite scroll replaces Load more on both report lists
@@ -47,10 +47,10 @@ the admin list and replaces both lists' paging control with infinite scroll.
   many items just loaded are one implementation, not two.
 - **De-duplication by item ID.** Because a cursor naming an item no longer
   in the list (unpublished, deleted, or filtered out since) restarts that
-  list from the top rather than failing (REQ-MOD-037, and REQ-MOD-125
+  list from the top rather than failing (REQ-MOD-037, and REQ-MOD-129
   below), the hook filters every appended page against the IDs already
   shown, so a restart-from-top can never repeat a row.
-- **The admin report list gains server-side keyset paging** (REQ-MOD-125):
+- **The admin report list gains server-side keyset paging** (REQ-MOD-129):
   it had none before. `GET /api/admin/reports` now accepts `after` and
   returns `{ items, next }` in place of a bare array, ordered by
   `submitted_at` desc, a tie broken by report ID, working with the existing

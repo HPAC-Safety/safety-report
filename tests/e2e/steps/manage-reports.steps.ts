@@ -755,7 +755,7 @@ Then("the pending row still shows the {string} badge", async ({ page }, badge: s
 	await expect(row(page, "pending").locator('[data-badge="status"]')).toHaveText(badge)
 })
 
-// ── Manage reports' own infinite scroll (issue no. 572, REQ-MOD-125, REQ-MOD-128) ──
+// ── Manage reports' own infinite scroll (issue no. 572, REQ-MOD-129, REQ-MOD-128) ──
 
 const PAGE_TWO_CURSOR = "cGFnZS10d28"
 const PAGE_THREE_CURSOR = "cGFnZS10aHJlZQ"

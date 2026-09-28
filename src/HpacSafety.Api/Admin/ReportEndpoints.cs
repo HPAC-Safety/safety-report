@@ -20,7 +20,7 @@ namespace HpacSafety.Api.Admin;
 /// </summary>
 public static class ReportEndpoints
 {
-	/// <summary>How many reports one admin list page carries (REQ-MOD-125).</summary>
+	/// <summary>How many reports one admin list page carries (REQ-MOD-129).</summary>
 	public const int PageSize = 20;
 
 	/// <summary>
@@ -60,7 +60,7 @@ public static class ReportEndpoints
 	/// <summary>
 	///     One page of the live report list, newest submitted first, a tie broken
 	///     by report ID, narrowed by <paramref name="filter" /> (REQ-MOD-030,
-	///     REQ-MOD-049, REQ-MOD-050, REQ-MOD-124, REQ-MOD-125). State and timing
+	///     REQ-MOD-049, REQ-MOD-050, REQ-MOD-124, REQ-MOD-129). State and timing
 	///     only, plus the reporter's and pilot's names — the one piece of answer
 	///     text this list shows without an audited read (ADR-0154) — the list
 	///     carries no other answer or summary text, so reading it is not audited.

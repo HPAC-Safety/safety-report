@@ -940,7 +940,7 @@ Search is scoped to the visitor's current site language only — *Reqnroll, Cove
 
 ### REQ-MOD-143
 
-A private answer's text never matches — *Reqnroll, Covered*
+The public search never widens by caller role — *Reqnroll, Covered*
 
 ### REQ-MOD-144
 

@@ -1191,10 +1191,20 @@ Scenario: Search is scoped to the visitor's current site language only
   Then the report is listed among the results
 
 @REQ-MOD-143
-Scenario: A private answer's text never matches
-  Given a published report whose pilot's name is answered privately
-  When a visitor searches for the pilot's name
-  Then the report is not listed among the results
+Scenario Outline: The public search never widens by caller role
+  Given a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains
+  And another report is not publishable, and its summary contains a further private-only word
+  When <who> searches for the public word
+  Then the report is listed among the results
+  When <who> searches for each private-only word
+  Then no report is listed among the results, for every one of those searches
+
+Examples:
+  | who                  |
+  | an anonymous visitor |
+  | a User               |
+  | a SafetyOfficer      |
+  | an Administrator     |
 
 @REQ-MOD-144
 Scenario Outline: A non-publishable report's summary text never matches

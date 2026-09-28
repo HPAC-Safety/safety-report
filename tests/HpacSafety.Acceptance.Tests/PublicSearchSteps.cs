@@ -1,10 +1,12 @@
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.Json;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
@@ -35,7 +37,21 @@ public sealed class PublicSearchSteps
 
 	private const string Feed = "/api/v1/public/reports";
 
+	// Four distinct words, one per private surface (REQ-MOD-143): a private
+	// answer, a staff-only note, a staff-only attachment's file name, and
+	// another report's summary that never publishes. None of these words is
+	// the public word, and none appears anywhere public.
+	// Deliberately unrelated words (no shared substring of any length), so
+	// pg_trgm's word_similarity cannot bleed a match across them the way a
+	// shared suffix like "…synthetic" on every word once did in this test.
+	private const string PublicWord = "turbocharger";
+	private const string PrivateAnswerWord = "gyroscopic";
+	private const string PrivateNoteWord = "manifestly";
+	private const string PrivateAttachmentWord = "carburetion";
+	private const string UnpublishedWord = "empennage";
+
 	private readonly Dictionary<string, string> _reportIdsByLabel = [];
+	private readonly List<List<string>> _privateOnlySearchResults = [];
 	private JsonElement _results;
 	private List<string> _allIds = [];
 	private bool _resultsMatchThePlainFeed;
@@ -55,10 +71,37 @@ public sealed class PublicSearchSteps
 		_reportIdsByLabel["report"] = await BootedReports.Seed(ReportStatus.Published, true);
 	}
 
-	[Given(@"a published report whose pilot's name is answered privately")]
-	public async Task GivenAPublishedReportWithAPrivatePilotName()
+	[Given(@"a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains")]
+	public async Task GivenARoleScopingReport()
 	{
-		_reportIdsByLabel["report"] = await BootedReports.Seed(ReportStatus.Published, true);
+		var reportId = await SeedWithSummary(
+			$"During the flight the {PublicWord} began overheating and the crew diverted.",
+			$"Pendant le vol, le {PublicWord} a commencé à surchauffer et l'équipage a dérouté.");
+		_reportIdsByLabel["report"] = reportId;
+
+		// Private answer: an ordinary private question, the same shape as
+		// BootedReports.Seed's pilot name (REQ-MOD-143 must prove this
+		// surface too, not just the two staff-only ones below).
+		await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var report = await database.Reports.SingleAsync(candidate => candidate.Id == TinyId.Parse(reportId));
+			var question = Question.Create($"private_{Guid.NewGuid():n}"[..24], QuestionType.ShortText, "Private detail", "Détail privé", DateTimeOffset.UtcNow, isPrivate: true);
+			database.Questions.Add(question);
+			report.Answer(question, PrivateAnswerWord, DateTimeOffset.UtcNow);
+			await database.SaveChangesAsync();
+		}
+
+		await AddPrivateNote(reportId, $"Synthetic staff note mentioning {PrivateNoteWord}.");
+		await AddPrivateAttachment(reportId, $"{PrivateAttachmentWord}-manifest.pdf");
+	}
+
+	[Given(@"another report is not publishable, and its summary contains a further private-only word")]
+	public async Task GivenAnUnpublishableReportWithAFurtherWord()
+	{
+		await SeedPendingWithSummary(
+			$"An unrelated incident mentioned {UnpublishedWord} in passing.",
+			$"Un incident sans rapport a mentionné {UnpublishedWord} en passant.");
 	}
 
 	[Given(@"a published report carrying a member comment that says {string}")]
@@ -159,10 +202,22 @@ public sealed class PublicSearchSteps
 		await Search(query, language == "French" ? "fr-CA" : "en-CA");
 	}
 
-	[When(@"a visitor searches for the pilot's name")]
-	public async Task WhenAVisitorSearchesForThePilotsName()
+	[When(@"^(an anonymous visitor|a User|a SafetyOfficer|an Administrator) searches for the public word$")]
+	public async Task WhenSearchesForThePublicWord(string who)
 	{
-		await Search(BootedReports.PilotName, "en-CA");
+		await Search(PublicWord, "en-CA", who);
+	}
+
+	[When(@"^(an anonymous visitor|a User|a SafetyOfficer|an Administrator) searches for each private-only word$")]
+	public async Task WhenSearchesForEachPrivateOnlyWord(string who)
+	{
+		_privateOnlySearchResults.Clear();
+
+		foreach (var word in new[] { PrivateAnswerWord, PrivateNoteWord, PrivateAttachmentWord, UnpublishedWord })
+		{
+			await Search(word, "en-CA", who);
+			_privateOnlySearchResults.Add(Ids());
+		}
 	}
 
 	[When(@"a visitor searches its summary's distinctive word")]
@@ -222,6 +277,13 @@ public sealed class PublicSearchSteps
 		Ids().ShouldNotContain(_reportIdsByLabel["report"]);
 	}
 
+	[Then(@"no report is listed among the results, for every one of those searches")]
+	public void ThenNoReportIsListedForEveryOneOfThoseSearches()
+	{
+		_privateOnlySearchResults.ShouldNotBeEmpty();
+		_privateOnlySearchResults.ShouldAllBe(ids => ids.Count == 0);
+	}
+
 	[Then(@"the report with the hidden comment is not listed among the results")]
 	public void ThenTheReportWithTheHiddenCommentIsNotListed()
 	{
@@ -264,9 +326,10 @@ public sealed class PublicSearchSteps
 	///     well short of any real pathological case.
 	/// </summary>
 	private async Task Search(string query,
-							  string locale)
+							  string locale,
+							  string? who = null)
 	{
-		using var client = (await BootedApi.Factory()).CreateClient();
+		using var client = who is null ? (await BootedApi.Factory()).CreateClient() : await ClientFor(who);
 		var ids = new List<string>();
 		string? after = null;
 		var pages = 0;
@@ -360,5 +423,80 @@ public sealed class PublicSearchSteps
 		database.Reports.Add(report);
 		await database.SaveChangesAsync();
 		return report.Id.Value;
+	}
+
+	/// <summary>
+	///     A report with its own summary text that is never published — the
+	///     "unpublished report's summary" private surface (REQ-MOD-143): a
+	///     report awaiting review carries a real, matchable summary, and
+	///     proving the search never returns it is only meaningful if that
+	///     summary could otherwise match.
+	/// </summary>
+	private static async Task<string> SeedPendingWithSummary(string summaryEn,
+															  string summaryFr)
+	{
+		var factory = await BootedApi.Factory();
+		await using var scope = factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var now = DateTimeOffset.UtcNow;
+
+		var consentQuestion = await database.Questions
+			.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
+
+		var report = new Report(Locale.EnCa, now);
+		report.Answer(consentQuestion, true, now);
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, summaryEn, summaryFr, "gemini-3.7-flash", "summarize-anonymize.v3", now));
+		report.AwaitReview();
+
+		database.Reports.Add(report);
+		await database.SaveChangesAsync();
+		return report.Id.Value;
+	}
+
+	/// <summary>A client for the caller role a step's Gherkin table names, or anonymous.</summary>
+	private static async Task<HttpClient> ClientFor(string who)
+	{
+		return who switch
+		{
+			"a User" => await BootedApi.SignedInAs(MemberRole.User),
+			"a SafetyOfficer" => await BootedApi.SignedInAs(MemberRole.SafetyOfficer),
+			"an Administrator" => await BootedApi.SignedInAs(MemberRole.Administrator),
+			_ => (await BootedApi.Factory()).CreateClient(),
+		};
+	}
+
+	/// <summary>Adds a staff-only private note through the real Reviewer-only API (ADR-0133).</summary>
+	private static async Task AddPrivateNote(string reportId,
+											 string text)
+	{
+		using var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		using var response = await officer.PostAsJsonAsync(new Uri($"/api/admin/reports/{reportId}/private-notes", UriKind.Relative), new { text });
+		response.EnsureSuccessStatusCode();
+	}
+
+	/// <summary>Adds a staff-only private attachment through the real Reviewer-only API (ADR-0135).</summary>
+	private static async Task AddPrivateAttachment(string reportId,
+												   string fileName)
+	{
+		using var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var bytes = RandomNumberGenerator.GetBytes(256);
+
+		using var minted = await officer.PostAsJsonAsync(
+			new Uri($"/api/admin/reports/{reportId}/private-attachments/uploads", UriKind.Relative),
+			new { contentType = "application/octet-stream", byteSize = (long)bytes.Length });
+		minted.EnsureSuccessStatusCode();
+		var mintedBody = await minted.Content.ReadFromJsonAsync<JsonElement>();
+		var uploadId = mintedBody.GetProperty("uploadId").GetString()!;
+		var uploadUrl = new Uri(mintedBody.GetProperty("uploadUrl").GetString()!);
+
+		using var put = await DirectUpload.Put(uploadUrl, new ByteArrayContent(bytes), "application/octet-stream");
+		put.EnsureSuccessStatusCode();
+
+		using var added = await officer.PostAsJsonAsync(
+			new Uri($"/api/admin/reports/{reportId}/private-attachments", UriKind.Relative),
+			new { uploadId, fileName, description = (string?)null });
+		added.EnsureSuccessStatusCode();
 	}
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HpacSafety.Core.Features.Moderation;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Shouldly;
 
@@ -118,6 +119,29 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
 		var firstPage = await first.Content.ReadFromJsonAsync<JsonElement>();
 		page.GetProperty("items").GetRawText().ShouldBe(firstPage.GetProperty("items").GetRawText());
+	}
+
+	[Fact]
+	public async Task GivenTheSameSearchFromEveryCallerRole_WhenTheFeedIsQueried_ThenTheResultsAreIdentical()
+	{
+		// Given
+		var uri = new Uri($"{Feed}?q=integration-test-role-parity&locale=en-CA", UriKind.Relative);
+		using var anonymous = _factory.CreateClient();
+		using var user = await SignedInClient.As(_factory, MemberRole.User);
+		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		using var administrator = await SignedInClient.As(_factory, MemberRole.Administrator);
+
+		// When
+		var anonymousBody = await (await anonymous.GetAsync(uri)).Content.ReadAsStringAsync();
+		var userBody = await (await user.GetAsync(uri)).Content.ReadAsStringAsync();
+		var officerBody = await (await officer.GetAsync(uri)).Content.ReadAsStringAsync();
+		var administratorBody = await (await administrator.GetAsync(uri)).Content.ReadAsStringAsync();
+
+		// Then: the same query gets the same answer whoever asks, or asks
+		// anonymously — the public search endpoint never widens by role.
+		userBody.ShouldBe(anonymousBody);
+		officerBody.ShouldBe(anonymousBody);
+		administratorBody.ShouldBe(anonymousBody);
 	}
 
 	[Theory]

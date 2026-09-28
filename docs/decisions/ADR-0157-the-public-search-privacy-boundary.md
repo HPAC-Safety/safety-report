@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-27
 decision-makers: Chase Florell
-keywords: public search, public_reports, public_report_comments, pg_trgm, full-text search, REQ-MOD-140, REQ-MOD-149, ADR-0055, ADR-0153, ADR-0156, #574
+keywords: public search, public_reports, public_report_comments, pg_trgm, full-text search, role parity, REQ-MOD-140, REQ-MOD-143, REQ-MOD-149, ADR-0055, ADR-0153, ADR-0156, #574
 ---
 
 # ADR-0157 — The public search privacy boundary
@@ -120,6 +120,29 @@ parameter; nothing in `PublicReportEndpoints` or the SQL function writes it
 anywhere. The existing request-logging middleware logs the path and status,
 never the query string, for every route already — this adds no new
 exception to audit.
+
+**The public search endpoint reads no identity at all, so it cannot widen by
+role.** `List` and `Search` take no `ClaimsPrincipal`, `HttpContext.User`, or
+authorization policy — nothing about the caller reaches either method, sent
+or not. This is verified directly, not just argued: `PublicReportEndpointTests`
+sends the identical query anonymously and as each of the three member roles
+(`User`, `SafetyOfficer`, `Administrator`) and asserts byte-identical
+responses, and REQ-MOD-143 seeds one report carrying a distinct word behind
+each of four private surfaces — a private answer, a staff-only private note,
+a staff-only private attachment's file name, and a second report's own
+summary that is never published — and proves that searching any of those
+four words, as any of the four caller identities, finds nothing, while the
+same report's public summary word finds it every time. The admin search
+(#573, [PR #580](https://github.com/HPAC-Safety/safety-report/pull/580))
+reads private notes and private attachments through its own admin-only view,
+gated by the Reviewer authorization policy; `search_public_reports` and
+`PublicReportEndpoints` name neither that view nor `report_private_notes` or
+`report_private_attachments` anywhere, and never will, because nothing
+routed through the anonymous public group can carry a policy check in the
+first place. Two search endpoints, two boundaries: the admin one reads what
+a signed-in reviewer already reads, and the public one reads only what
+`public_reports` and `public_report_comments` already hold — one function
+never substitutes for the other's rule.
 
 ## Consequences
 

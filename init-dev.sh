@@ -819,6 +819,30 @@ else
 	fi
 fi
 
+# --------------------------------------------- claude code pull-request guard --
+#
+# Only the owner enables auto-merge or enqueues a pull request, by hand
+# (ADR-0147 amendment, issue #427). `tools/guard-pr-merge.mjs` is the tracked
+# guard; this step merges it into .claude/settings.json as a Claude Code
+# `PreToolUse` hook on the `Bash` matcher. That file is gitignored — written by
+# `graphify claude install` with a machine-local absolute path — so this runs
+# independently of graphify (an agent that never sets up graphify still needs
+# the guard) and only merges, never overwrites, so it never disturbs whatever
+# is already there. It needs `node` and is a no-op, safe to re-run, once the
+# hook is already present.
+
+heading "claude code pull-request guard (optional)"
+
+if [ "$CHECK_ONLY" -eq 1 ]; then
+	note "skipped: --check does not touch .claude/settings.json"
+elif ! have node; then
+	note "node is not installed — the pull-request merge/enqueue guard was not installed"
+elif node tools/install-pr-merge-guard.mjs >/dev/null 2>&1; then
+	ok ".claude/settings.json guards gh pr merge / auto-merge mutations"
+else
+	note "could not merge the pull-request guard into .claude/settings.json — run 'node tools/install-pr-merge-guard.mjs' directly to see why"
+fi
+
 # ------------------------------------------------------- repository restore ---
 #
 # Everything below is repository state rather than machine state, and every

@@ -245,8 +245,10 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
 
 ## Consequences
 
-- Agents enable auto-merge as before, and the pull request enters the queue
-  once its checks pass. A pull request that is only `BEHIND` needs no rebase.
+- An agent opens the pull request, gets its checks green, and reports it
+  ready. It never enables auto-merge or enqueues the pull request itself —
+  see the amendment below. A pull request that is only `BEHIND` needs no
+  rebase.
 - Each queued pull request runs CI twice: once on its branch, and once on the
   merge group.
 - A collision between two pull requests ejects the later one from the queue
@@ -261,6 +263,28 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
 - The rule takes effect when an administrator applies it after this change
   merges. The first queued pull request is the test that every required check
   reports, recorded on #547.
+
+## Amendment (2026-09-28)
+
+**Only the owner enables auto-merge or enqueues a pull request, by hand.** No
+agent runs `gh pr merge`, the `enablePullRequestAutoMerge` mutation, or the
+`enqueuePullRequest` mutation — on its own pull request or a sub-agent's. An
+agent opens the pull request, gets its own required checks green, and reports
+it ready; the owner is the last line of defence before anything joins the
+queue. This replaces every earlier statement in this ADR that an agent enables
+auto-merge (see "Consequences" above); the queue's mechanics — what GitHub
+does once auto-merge is on, and how a `BEHIND` or ejected pull request reads —
+are otherwise unchanged.
+
+Renovate is unaffected: its `automerge`/`platformAutomerge` configuration in
+`renovate.json` stays as is. This rule covers AI coding agents only.
+
+A repository-tracked Claude Code `PreToolUse` hook
+(`tools/guard-pr-merge.mjs`, wired in by `init-dev.sh`) refuses a `Bash` tool
+call running `gh pr merge` in any form, and a `gh api graphql` call whose body
+names `enablePullRequestAutoMerge` or `enqueuePullRequest`, with a message
+that the owner enables auto-merge. `AGENTS.md`, `deliver-change`, and
+`deliver-hpac-change` are amended to match. See issue #427.
 
 [manage]: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue
 [merging]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue

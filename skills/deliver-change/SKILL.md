@@ -260,15 +260,21 @@ same numbers.
 4. **Open the pull request** with a squash-ready title, then relabel the
    session `#<number> · PR #<pr> <short-description>`. Once the worktree is
    gone this label is the only record of which pull request the session owns.
-   - **Enable auto-merge at once**: `gh pr merge <pr> --auto --squash`, then
-     confirm `gh pr view <pr> --json autoMergeRequest` is not `null`.
-   - Skip it only for a draft, or a pull request the user asked to hold.
-   - **Merge queue**: auto-merge enters the queue once required checks pass.
-     The queue tests the pull request on top of the base branch and the pull
-     requests ahead of it, then merges it; a branch that is only `BEHIND`
-     needs no rebase.
-   - **No merge queue**: auto-merge does not replace step 9. A branch that
-     falls `BEHIND` still needs a rebase and push before it can merge.
+   - **Never enable auto-merge and never enqueue the pull request yourself** —
+     no `gh pr merge`, and no `enablePullRequestAutoMerge` or
+     `enqueuePullRequest` mutation, on your own pull request or a sub-agent's.
+     A project may reserve that step for a human; check `AGENTS.md` and this
+     skill's companion before assuming an agent may do it.
+   - Get the pull request's own required checks green and report it ready;
+     someone with the authority to merge enables auto-merge (or merges
+     directly) by hand.
+   - **Merge queue, once auto-merge is on**: the pull request enters the queue
+     when its required checks pass. The queue tests it on top of the base
+     branch and the pull requests ahead of it, then merges it; a branch that
+     is only `BEHIND` needs no rebase.
+   - **No merge queue**: auto-merge, once on, does not replace step 9. A
+     branch that falls `BEHIND` still needs a rebase and push before it can
+     merge.
 5. **PR body**: `Closes #<number>` on its own line, and the scenarios it
    satisfies. Built something the specification does not describe? Either fix
    the specification or the change exceeded its scope.
@@ -313,9 +319,11 @@ same numbers.
        stale generated file, a coverage drop). Rebase onto fresh `main`,
        reproduce the failure, fix it, and push.
      - Timed out: re-queue it once; a second timeout is a hung check to fix.
-     - Confirm auto-merge is still enabled, and enable it again if not.
+     - If auto-merge was on and no longer is, say so when reporting — do not
+       re-enable it yourself where a project reserves that step for a human.
    - Finish only when checks are green on a current (or queued) branch and no
-     worktree remains, then relabel the session `✓ #<number> · PR #<pr> green`.
+     worktree remains, then relabel the session `✓ #<number> · PR #<pr> ready`
+     (or `green` once merged, matching the project's convention).
 
 ## Path filters
 

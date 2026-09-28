@@ -149,6 +149,9 @@ resource "aws_lambda_function" "worker" {
     variables = merge(
       { for entry in local.common_environment : entry.name => entry.value },
       {
+        # The one application metric this system emits, OutboxOldestAgeSeconds
+        # (issue #467) — the namespace observability.tf's one remaining
+        # app-metric alarm reads.
         Metrics__Namespace = local.metric_namespace
 
         # Populated by the deploy workflow from a repository secret at deploy

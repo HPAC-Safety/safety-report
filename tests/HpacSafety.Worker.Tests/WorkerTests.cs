@@ -1,3 +1,4 @@
+using HpacSafety.Infrastructure.Observability;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,7 @@ public class WorkerTests
 		var services = new ServiceCollection();
 		services.AddDbContext<HpacSafetyDbContext>(options =>
 			options.UseNpgsql("Host=localhost;Database=hpac_worker_tests_unused"));
+		services.AddSingleton<IMetricsPublisher, NoOpMetricsPublisher>();
 
 		return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 	}

@@ -281,24 +281,39 @@ variable "alarm_email_addresses" {
   default     = []
 }
 
-variable "summary_failed_alarm_threshold" {
-  description = "SummaryFailed count within one period that raises the alarm."
-  type        = number
-  # DECIDED: 1 in five minutes. A summarization failure means a real report is
-  # sitting unprocessed, which is not a thing to average out over an hour.
-  default = 1
-}
-
-variable "summary_failed_alarm_period_seconds" {
-  description = "Evaluation period for the SummaryFailed alarm."
-  type        = number
-  default     = 300
-}
-
 variable "outbox_age_alarm_seconds" {
   description = "Age of the oldest unprocessed outbox row that raises the alarm."
   type        = number
   # DECIDED: 900s, over two consecutive periods. A report waiting a quarter of an
   # hour means the worker is wedged, not that it is busy.
   default = 900
+}
+
+# --------------------------------------------------------------------------
+# Issue #467 — the owner's alarm thresholds (2026-09-28 decision), scaled
+# back to four alarms total for a lightly used system, every one tunable per
+# environment in tfvars.
+# --------------------------------------------------------------------------
+
+variable "lambda_error_alarm_threshold" {
+  description = "Lambda Errors count within one period that raises an alarm, for the API and the Worker alike."
+  type        = number
+  # DECIDED: any error in five minutes — not an average to smooth out, a
+  # single one is a real request or a real piece of work that failed.
+  default = 1
+}
+
+variable "lambda_error_alarm_period_seconds" {
+  description = "Evaluation period for the Lambda Errors alarms."
+  type        = number
+  default     = 300
+}
+
+variable "nat_unhealthy_alarm_period_seconds" {
+  description = "Evaluation period for the NAT Auto Scaling group health alarm."
+  type        = number
+  # DECIDED: five minutes, one period. The ASG's own EC2 health check already
+  # folds a failed status check into a lower in-service count, so one alarm
+  # on GroupInServiceInstances covers both conditions the owner named.
+  default = 300
 }

@@ -503,21 +503,38 @@ reporter or reviewer email.
 *Verified by: REQ-MOD-039 for the absence of an outbound channel; none for the
 alert set itself.*
 
+**CON-INF-025** The Worker publishes one application metric, `OutboxOldestAgeSeconds` — how
+old the oldest unclaimed, unpoisoned outbox row is — as a CloudWatch
+Embedded Metric Format log line, every drain pass; no AWS SDK call, no new
+dependency (`HpacSafety.Infrastructure.Observability`). The owner scaled
+operations back for a lightly used system (#467, 2026-09-28): this is the
+only metric the application emits, and the only alarm it feeds besides the
+three below that read AWS's own signals directly.
+*Verified by: none — an infrastructure/logging property no application
+scenario observes directly; `infra/observability.tf` and its tests are the
+check.*
 
-- oldest live summarization/attachment work exceeds a configured age;
-- a summary or attachment job reaches poison/failed state;
-- API/Worker service or migration health fails; and
-- RDS capacity/availability or backup health requires intervention.
+**CON-INF-026** An operator may requeue outbox work that reached poison, once its cause is
+resolved: invoking the Worker Lambda function directly with a
+`{"requeue":"poison"}` payload (an optional time window narrows it) clears
+poison and gives each matching row a fresh retry budget. Authorization is
+whoever can invoke the function (IAM) — there is no sign-in and no admin UI
+for it. Only a count and each row's own identifier are ever logged or
+returned, never its payload.
+*Verified by: REQ-DOM-016, REQ-DOM-017.*
+
+Four alarms, each a short, self-contained description naming what is wrong
+and what it affects, no link:
+
+- the oldest unprocessed outbox row is older than 15 minutes;
+- the API's Lambda function is throwing unhandled exceptions;
+- the Worker's Lambda function is throwing unhandled exceptions; and
+- the NAT instance's Auto Scaling group has no healthy instance.
 
 Alerts route through SNS to `safety@hpac.ca`, in production only; staging's
 topic has no subscriber
 ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 The application itself does not send reporter/reviewer email.
-
-Runbooks cover first deployment, migration failure, rollback, stuck/poison work,
-model outage, identity-provider outage, safe derivative
-failure, restore-from-backup verification, secret rotation, and security
-incident response. Restore drills verify retained private data stays private.
 
 ## Storage lifecycles and backups
 

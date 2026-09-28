@@ -1,0 +1,126 @@
+---
+# Promote a tag already green on staging to production (issue #609,
+# ADR-0166, CON-INF-012).
+#
+# release.yml builds once and deploys staging only, so many releases can
+# reach staging without any of them asking for a production approval. This
+# workflow is the separate, deliberate step that sends one of them on: a
+# maintainer dispatches it ON a release tag, it finds that tag's latest
+# successful release.yml run, and deploys THAT run's artifacts — the same
+# images and web bundle staging ran, never a rebuild — through the same
+# deploy-environment.yml. The `hpac-safety-production` GitHub environment's
+# required reviewers gate the deploy job; nothing here re-implements that.
+#
+# It runs on the tag it is dispatched on ("Use workflow from" → the tag, or
+# `gh workflow run promote.yml --ref <tag>`), not a tag typed as an input:
+# `hpac-safety-production` allows deployments only from refs matching `20*`
+# (infra/SETUP.md 3.1), so a run dispatched from a branch would be refused by
+# the environment itself.
+#
+# It refuses, before any AWS call:
+#   - a run not dispatched on a tag, or on one that is not YYYY.MM.DD-N;
+#   - a tag with no successful release.yml run (never green on staging);
+#   - a run whose artifacts have expired (release.yml keeps them 90 days) —
+#     publish a new release, or dispatch release.yml on the tag to rebuild
+#     and restage it, then promote again.
+#
+# Production rollback is this same workflow on an earlier tag.
+name: Promote
+
+run-name: Promote ${{ github.ref_name }} to production
+
+on:
+  # No inputs: choose the release tag under "Use workflow from".
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Reading another run's metadata and artifacts (locate, and
+  # deploy-environment.yml's download).
+  actions: read
+  # A reusable workflow's job can never hold more than its caller grants;
+  # deploy-environment.yml needs it for OIDC.
+  id-token: write
+
+concurrency:
+  # Production's own group, apart from release.yml's `release-staging`: a
+  # promotion waiting on its approval holds only other promotions, never a
+  # staging release (lesson 0026). A second promotion dispatched while one
+  # waits queues behind it, and GitHub cancels an older queued one.
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  locate:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.find.outputs.tag }}
+      sha: ${{ steps.find.outputs.sha }}
+      run_id: ${{ steps.find.outputs.run_id }}
+    steps:
+      - name: Find the tag's green release run and its artifacts
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" != "tag" ]; then
+            echo "::error::Run this on a release tag, not the '$TAG' branch: Run workflow → Use workflow from → Tags → the tag (or: gh workflow run promote.yml --ref <tag>)."
+            exit 1
+          fi
+          if ! echo "$TAG" | grep -Eq '^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])-[1-9][0-9]*$'; then
+            echo "::error::Tag '$TAG' does not match YYYY.MM.DD-N (e.g. 2026.10.02-1). See ADR-0158."
+            exit 1
+          fi
+
+          # release.yml titles every run "Release <tag>" (its run-name), for a
+          # published release and a workflow_dispatch rebuild alike. Newest
+          # first; a success means its staging job was green.
+          runs=$(gh api --paginate \
+            "repos/$REPO/actions/workflows/release.yml/runs?status=success&per_page=100" \
+            --jq ".workflow_runs[] | select(.display_title == \"Release $TAG\") | .id")
+          run_id=$(printf '%s\n' "$runs" | sed -n '1p')
+          if [ -z "$run_id" ]; then
+            echo "::error::No successful Release run for $TAG. Only a tag already green on staging is promoted: publish the release, or wait for its staging job to pass."
+            exit 1
+          fi
+
+          live=$(gh api --paginate "repos/$REPO/actions/runs/$run_id/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | .name')
+          for name in api-image worker-image web-dist; do
+            if ! printf '%s\n' "$live" | grep -qx "$name"; then
+              echo "::error::Release run $run_id for $TAG no longer has its '$name' artifact (release.yml keeps them 90 days). Publish a new release, or dispatch release.yml on this tag to rebuild and restage it (gh workflow run release.yml --ref $TAG -f tag=$TAG), then promote again."
+              exit 1
+            fi
+          done
+
+          # The build job tagged every image with the commit the tag points to.
+          sha=$(gh api "repos/$REPO/commits/$TAG" --jq '.sha')
+
+          {
+            echo "tag=$TAG"
+            echo "sha=$sha"
+            echo "run_id=$run_id"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Promoting $TAG"
+            echo "- Release run: $GITHUB_SERVER_URL/$REPO/actions/runs/$run_id"
+            echo "- Commit: \`$sha\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production:
+    needs: locate
+    uses: ./.github/workflows/deploy-environment.yml
+    with:
+      environment_name: hpac-safety-production
+      tfvars_file: infra/production.tfvars
+      state_key: hpac-safety/production.tfstate
+      tag: ${{ needs.locate.outputs.tag }}
+      sha: ${{ needs.locate.outputs.sha }}
+      artifacts_run_id: ${{ needs.locate.outputs.run_id }}
+    # `inherit`: GEMINI_API_KEY and DEEPL_API_KEY are environment secrets,
+    # resolved inside deploy-environment.yml's own job (see release.yml).
+    secrets: inherit

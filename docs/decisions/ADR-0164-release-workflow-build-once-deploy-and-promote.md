@@ -2,7 +2,7 @@
 title: The release workflow builds once through a reusable deploy job, and a pull request plans through separate repository-scoped credentials
 description: release.yml builds the API image, the Worker image, and the web bundle once with no AWS credential, then calls one reusable workflow_call job twice — hpac-safety-staging, then hpac-safety-production — passing the same artifacts unchanged. terraform.yml's pull-request plan reaches both accounts through repository secrets/variables, not the deploy environments, because those restrict deployment to the release tag pattern. Rollback re-runs an earlier release's own jobs.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-27
 decision-makers: Chase Florell
 keywords: release, GitHub Actions, workflow_call, OIDC, rollback, NAT instance, Terraform plan, ADR-0158, CON-INF-012
@@ -11,6 +11,14 @@ keywords: release, GitHub Actions, workflow_call, OIDC, rollback, NAT instance, 
 # ADR-0164 — The release workflow builds once through a reusable deploy job, and a pull request plans through separate repository-scoped credentials
 
 ## Status
+
+**Partially superseded by
+[ADR-0166](ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)**:
+`release.yml` now calls `deploy-environment.yml` for staging only, and
+`promote.yml` calls it for production with the release run's artifacts.
+Rollback is re-promoting an earlier tag (production) or re-running its release
+(staging). The build job, the reusable deploy job, the pull-request plan, and
+Terraform outputs as the interface stand.
 
 Accepted. Implements [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)
 and [CON-INF-011 through CON-INF-013](../infrastructure-and-operations.md).

@@ -64,7 +64,9 @@ today's Terraform differs" below for exactly what is still scaffolding.
 ## Release and promotion
 
 **Releasing** ([`release.yml`](../.github/workflows/release.yml),
-[`deploy-environment.yml`](../.github/workflows/deploy-environment.yml)):
+[`promote.yml`](../.github/workflows/promote.yml),
+[`deploy-environment.yml`](../.github/workflows/deploy-environment.yml);
+[ADR-0166](decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)):
 
 1. **Publish a GitHub Release** on `main`, tagged with the date,
    `YYYY.MM.DD-N` (e.g. `2026.10.02-1`). This is the only thing that triggers
@@ -83,16 +85,30 @@ today's Terraform differs" below for exactly what is still scaffolding.
    images to staging's ECR, refreshes `GEMINI_API_KEY`/`DEEPL_API_KEY` in
    staging's Secrets Manager, updates both Lambda functions to the pushed
    image digests, syncs the web bundle to the site bucket, invalidates
-   CloudFront, and smoke-tests `/api/health`.
-4. **`production`** (GitHub environment `hpac-safety-production`) needs `staging` to
-   succeed, then waits for the `hpac-safety-admins` team's approval on that
-   environment — configured on the environment itself, not in the workflow —
-   before repeating the same steps against the production account with
-   `infra/production.tfvars` and the **identical image digests and web
-   bundle** staging already deployed. Never a rebuild
-   (CON-INF-012). Its job summary prints `dns_records_to_publish` — meaningful
-   the first time production exists ([`infra/SETUP.md`](../infra/SETUP.md) step 3.6), harmless
-   every other run.
+   CloudFront, and smoke-tests `/api/health`. The release ends there: it
+   never deploys to, or waits on, production, so any number of releases can
+   reach staging without promoting one.
+4. **Promote** is a separate, deliberate step: a maintainer runs
+   [`promote.yml`](../.github/workflows/promote.yml) on the tag: **Actions →
+   Promote → Run workflow → Use workflow from → Tags →** the tag, or
+   `gh workflow run promote.yml --ref <tag>`. It takes no input; it runs on
+   the tag because `hpac-safety-production` allows deployments only from refs
+   matching `20*`. Its `locate` job refuses a run not on a release tag, a tag
+   with no successful `release.yml` run, and a run whose artifacts have
+   expired (90 days). Its `production` job (GitHub environment
+   `hpac-safety-production`) then waits for the `hpac-safety-admins` team's
+   approval on that environment — configured on the environment itself, not
+   in the workflow — before repeating the same steps against the production
+   account with `infra/production.tfvars` and the **identical image digests
+   and web bundle** that release run built and staged, downloaded from it by
+   run ID. Never a rebuild (CON-INF-012). Its job summary prints
+   `dns_records_to_publish` — meaningful the first time production exists
+   ([`infra/SETUP.md`](../infra/SETUP.md) step 3.6), harmless every other run.
+
+Staging and production hold separate concurrency groups (`release-staging`,
+`promote-production`), so a promotion waiting on approval never holds a
+staging release
+([lesson 0026](lessons/0026-a-run-waiting-on-reviewers-held-every-later-run.md)).
 
 There is no `terraform apply` on a merge to `main`
 ([`terraform.yml`](../.github/workflows/terraform.yml)). A pull request only
@@ -103,19 +119,23 @@ would simply never run a pull-request-triggered job. `plan` instead uses a
 same-repo pull request's own AWS role/state-bucket pair, one per account
 (below).
 
-**Rollback** is re-running the release for an earlier tag:
+**Rollback** redeploys an earlier tag:
 
-- **Preferred**: open that release's own workflow run under **Actions** and
+- **Production**: run `promote.yml` on the earlier tag. It redeploys that
+  release run's own artifacts, after approval, without touching staging.
+- **Staging**: open that release's own workflow run under **Actions** and
   choose **Re-run all jobs**. This rebuilds from the exact commit that tag
-  already pointed to and redeploys it to whichever environment(s) you pick —
-  functionally identical to the original run, because the same commit and the
-  same build scripts produce the same image content and therefore the same
-  registry digest.
+  already pointed to — functionally identical to the original run, because
+  the same commit and the same build scripts produce the same image content
+  and therefore the same registry digest.
 - **If that run has aged out** (workflow artifacts expire; see the
   `retention-days` on `release.yml`'s `upload-artifact` steps), dispatch
-  `release.yml` manually (`workflow_dispatch`) with that earlier tag. This
-  rebuilds from the tagged commit rather than reusing the original run's
-  artifacts — use it only when the native re-run is unavailable.
+  `release.yml` manually (`workflow_dispatch`) on that earlier tag, with the
+  same tag as its input: `gh workflow run release.yml --ref <tag> -f tag=<tag>`.
+  A dispatch from a branch is refused, because `hpac-safety-staging` allows
+  deployments only from refs matching `20*`. This
+  rebuilds from the tagged commit and restages it; `promote.yml` can then
+  promote the new run. Use it only when the native re-run is unavailable.
 - Either way, migrations stay expand/contract (CON-INF-007): a rollback
   redeploys an artifact, and the schema already supports it.
 

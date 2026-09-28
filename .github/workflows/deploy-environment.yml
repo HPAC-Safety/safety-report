@@ -3,16 +3,17 @@
 # (CON-INF-011, CON-INF-012, ADR-0158, ADR-0164). Reusable (`workflow_call`)
 # only — it has no trigger of its own, so it never appears as a workflow a
 # person can run directly and does not count against "one release workflow"
-# (issue #466). release.yml calls it once for `hpac-safety-staging` and, after that
-# succeeds, once more for `hpac-safety-production` with the identical image digests
-# and web bundle. Keeping the steps in one file is deliberate: staging and
-# production must do EXACTLY the same thing, and two hand-maintained copies
-# would drift the day someone edits one and not the other.
+# (issue #466). release.yml calls it for `hpac-safety-staging`; promote.yml calls
+# it for `hpac-safety-production`, passing the release run's ID so the identical
+# image digests and web bundle staging ran are deployed (issue #609, ADR-0166).
+# Keeping the steps in one file is deliberate: staging and production must do
+# EXACTLY the same thing, and two hand-maintained copies would drift the day
+# someone edits one and not the other.
 #
 # Every AWS call in this file is real. It only ever runs from release.yml, on
 # `release: published` (or a maintainer's `workflow_dispatch` redeploy of an
-# earlier tag) — never on push, merge, or pull_request. See release.yml's own
-# header before changing that.
+# earlier tag), or from promote.yml, which a maintainer dispatches — never on
+# push, merge, or pull_request. See both callers' headers before changing that.
 name: Deploy environment
 
 on:
@@ -38,6 +39,11 @@ on:
         description: 'The commit SHA the build job tagged every artifact with.'
         required: true
         type: string
+      artifacts_run_id:
+        description: 'The workflow run whose artifacts to deploy. Empty (release.yml) means this run; promote.yml passes the release run it is promoting, so production deploys exactly what that run built and staged.'
+        required: false
+        type: string
+        default: ''
     secrets:
       # Named here for documentation even though release.yml calls this
       # workflow with `secrets: inherit` — the values below still resolve
@@ -52,6 +58,8 @@ on:
 permissions:
   contents: read
   id-token: write
+  # download-artifact reads another run's artifacts through the API.
+  actions: read
 
 env:
   AWS_REGION: ca-central-1
@@ -78,7 +86,7 @@ jobs:
             AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
           context: >-
             ${{ inputs.environment_name }} has not been bootstrapped yet.
-            See issue #30 "Human work" H3 and infra/bootstrap.sh (#464, #465).
+            See infra/SETUP.md (steps 2.2-2.4, or 3.2-3.4) and infra/bootstrap.sh.
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -88,6 +96,8 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: artifacts/release
+          run-id: ${{ inputs.artifacts_run_id || github.run_id }}
+          github-token: ${{ github.token }}
 
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
         with:

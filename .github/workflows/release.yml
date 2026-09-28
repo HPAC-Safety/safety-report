@@ -1,10 +1,11 @@
 ---
-# Build once, deploy to staging, promote to production on approval
-# (issue #466, part of #30 — ADR-0158, CON-INF-011..013).
+# Build once and deploy to staging (issue #466, part of #30 — ADR-0158,
+# CON-INF-011..013). Promotion to production is promote.yml's, a separate,
+# deliberate step (issue #609, ADR-0166).
 #
-# THE ONLY TRIGGER THAT MAY TOUCH AWS. `release: published` fires when a
+# THE ONLY TRIGGER THAT BUILDS A RELEASE. `release: published` fires when a
 # maintainer publishes a GitHub Release tagged `YYYY.MM.DD-N` on `main`
-# (issue #30 "Human work" H6). `workflow_dispatch` exists only to re-run an
+# (infra/SETUP.md step 2.5). `workflow_dispatch` exists only to rebuild an
 # earlier release by tag (rollback, or redeploying after the original run's
 # artifacts expired — see docs/deployment.md "Rollback"). NOTHING here runs on
 # push, merge, or pull_request: terraform.yml owns the credential-free
@@ -14,22 +15,24 @@
 # Three jobs: `build` makes the API image, the Worker image, and the web
 # bundle exactly once, tagged by commit SHA, and uploads them as workflow
 # artifacts — no AWS credential of any kind is requested here, on purpose,
-# so a bug in this job can never reach either account. `staging` and
-# `production` are the same reusable job (deploy-environment.yml), called
-# twice with different environments and tfvars; `production` needs `staging`
-# and additionally waits for the `hpac-safety-production` GitHub environment's
-# required-reviewer approval (`hpac-safety-admins`, configured on the environment
-# itself, not in this file). Both deploy the identical images and web bundle
-# `build` produced — never a rebuild (CON-INF-012).
+# so a bug in this job can never reach either account. `staging` deploys
+# them through the reusable deploy-environment.yml. Nothing here reaches
+# production: promote.yml deploys a tag this workflow already ran green on
+# staging, downloading this run's artifacts by run ID — the same artifacts,
+# never a rebuild (CON-INF-012). So a staging release never asks for, or
+# waits on, a production approval, and many releases can reach staging
+# without promoting any of them.
 #
 # Built on #443 (the Lambda-adapter API image and tools/build-api-image.sh)
 # and #465/#588 (infra/staging.tfvars, infra/production.tfvars, the
-# multi-account Terraform, and every Terraform output this file and
-# deploy-environment.yml read by name from infra/outputs.tf: deploy_variables,
+# multi-account Terraform, and every Terraform output deploy-environment.yml
+# reads by name from infra/outputs.tf: deploy_variables,
 # nat_autoscaling_group_arn, secret_entries, site_urls,
 # dns_records_to_publish). tools/check-terraform-outputs.mjs fails CI if
 # either file drifts from what infra/outputs.tf actually declares.
 name: Release
+# promote.yml finds this run by this exact title; keep the two in step.
+run-name: Release ${{ github.event.release.tag_name || inputs.tag }}
 
 on:
   release:
@@ -44,16 +47,19 @@ on:
 permissions:
   contents: read
   # A reusable workflow's job can never hold more than its caller grants,
-  # regardless of its own `permissions:` block — `staging` and `production`
-  # need `id-token: write` for OIDC (deploy-environment.yml), so it has to be
-  # granted here even though `validate-tag` and `build` never use it.
+  # regardless of its own `permissions:` block — `staging` needs
+  # `id-token: write` for OIDC and `actions: read` to download artifacts
+  # (deploy-environment.yml), so both are granted here even though
+  # `validate-tag` and `build` never use them.
   id-token: write
+  actions: read
 
 concurrency:
-  # One release moves through staging and production at a time. A second
-  # release published mid-promotion queues behind it rather than racing it
-  # for the same Terraform state lock.
-  group: release
+  # One release deploys to staging at a time; a second one queues behind it
+  # rather than racing it for staging's Terraform state lock. Production has
+  # its own group in promote.yml, so a promotion waiting on its approval never
+  # holds a staging release (lesson 0026).
+  group: release-staging
   cancel-in-progress: false
 
 env:
@@ -69,6 +75,8 @@ jobs:
         id: validate
         env:
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
         run: |
           set -euo pipefail
           if [ -z "$TAG" ]; then
@@ -80,6 +88,13 @@ jobs:
           # else is rejected before a single AWS call is even considered.
           if ! echo "$TAG" | grep -Eq '^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])-[1-9][0-9]*$'; then
             echo "::error::Tag '$TAG' does not match YYYY.MM.DD-N (e.g. 2026.10.02-1). See ADR-0158."
+            exit 1
+          fi
+          # hpac-safety-staging allows deployments only from refs matching
+          # `20*` (infra/SETUP.md 2.1), so a dispatch from a branch would be
+          # refused at the staging job. Refuse it here, before building.
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$REF" != "refs/tags/$TAG" ]; then
+            echo "::error::Dispatch this on the tag itself: Run workflow → Use workflow from → Tags → $TAG (or: gh workflow run release.yml --ref $TAG -f tag=$TAG)."
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -167,17 +182,3 @@ jobs:
     # instead and pick up nothing.
     secrets: inherit
 
-  # `needs: staging` is the promotion gate CON-INF-012 describes; the actual
-  # approval requirement (`hpac-safety-admins`) is configured on the `hpac-safety-production`
-  # GitHub environment itself (issue #30 "Human work" H2), not in this file —
-  # the job simply will not start running until that review is granted.
-  production:
-    needs: [validate-tag, build, staging]
-    uses: ./.github/workflows/deploy-environment.yml
-    with:
-      environment_name: hpac-safety-production
-      tfvars_file: infra/production.tfvars
-      state_key: hpac-safety/production.tfstate
-      tag: ${{ needs.validate-tag.outputs.tag }}
-      sha: ${{ needs.build.outputs.sha }}
-    secrets: inherit

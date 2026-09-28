@@ -23,7 +23,7 @@ page is only the checklist.
 | AWS account | The owner's existing account, shared with unrelated apps | HPAC's own account, unrelated to staging (not an AWS Organizations member of it) |
 | GitHub environment | `hpac-safety-staging` | `hpac-safety-production` |
 | Bootstrap argument | `staging` | `production` |
-| Approval before deploy | None: deploys when a release is published | The `hpac-safety-admins` team approves |
+| Deploys when | A release is published, with no approval | A maintainer promotes a staged tag with `promote.yml`, and the `hpac-safety-admins` team approves |
 | Web address | CloudFront default `dxxxx.cloudfront.net` only | `safety.hpac.ca` (English), `securite.acvl.ca` (French) |
 | DNS and certificate | None | ACM validation and CNAME records at the hpac.ca and acvl.ca DNS hosts |
 | Alarm email | None (the topic has no subscriber) | `safety@hpac.ca` |
@@ -203,9 +203,8 @@ Repository-level (not environment) settings, read by
   → **Choose a tag** → today's tag, e.g. `2026.10.02-1`, target `main` →
   **Publish release**. Any other tag shape is refused.
 - Watch it under [Actions → release](https://github.com/HPAC-Safety/safety-report/actions/workflows/release.yml).
-  The `staging` job runs on its own.
-- The `production` job then waits for approval. Until Part 3 is done, leave it
-  waiting or reject it.
+  The `staging` job runs on its own, and the release ends there. It never
+  deploys to or waits on production; publish as many as you like.
 - Check it worked: the `staging` job is green; the `cloudfront.net` address in
   its summary opens the site, and `<address>/api/health` answers.
 - Also check: open any pull request touching `infra/`; the `plan (staging)` leg
@@ -231,6 +230,8 @@ Repository-level (not environment) settings, read by
   `hpac-safety-production`.
 - **Required reviewers**: the `hpac-safety-admins` team.
 - Optionally tick **Prevent self-review**. With a sole maintainer, leave it off.
+- Untick **Allow administrators to bypass configured protection rules**, so a
+  repository admin cannot deploy to production without the approval.
 - **Deployment branches and tags** → **Selected branches and tags** → add a
   **tag** rule `20*`.
 - Check it worked: the environment lists the reviewers and the `20*` tag rule.
@@ -275,10 +276,15 @@ Repository-level (not environment) settings, read by
 
 ### 3.5 First production deploy
 
-- Publish a new release (as in 2.5), or re-run the waiting one.
-- After `staging` is green, a member of `hpac-safety-admins` opens the run →
-  **Review deployments** → tick `hpac-safety-production` → **Approve and deploy**.
+- Pick a release whose `staging` job is green (2.5).
+- [Actions → Promote → **Run workflow**](https://github.com/HPAC-Safety/safety-report/actions/workflows/promote.yml)
+  → **Use workflow from** → **Tags** → that tag → **Run workflow**. Or
+  `gh workflow run promote.yml --repo HPAC-Safety/safety-report --ref <tag>`.
+- A member of `hpac-safety-admins` opens the run → **Review deployments** →
+  tick `hpac-safety-production` → **Approve and deploy**.
 - It deploys the same images and web build staging ran; nothing is rebuilt.
+  A tag never green on staging, or older than the 90-day artifact retention,
+  is refused before any AWS call.
 - Check it worked: the job reaches the certificate step and prints
   `dns_records_to_publish` in its summary.
 
@@ -307,9 +313,11 @@ Repository-level (not environment) settings, read by
 
 ## Part 4 — After setup
 
-- **Every release**: publish a release (2.5), then approve production (3.5).
-  Nothing else.
-- **Rollback**: re-run an earlier release's jobs; see
+- **Every release**: publish a release (2.5); it reaches staging only.
+- **Promote to production**: when a staged tag is ready, promote it and
+  approve (3.5). Nothing else.
+- **Rollback**: production, promote an earlier tag; staging, re-run an
+  earlier release's jobs. See
   [`docs/deployment.md`](../docs/deployment.md) "Release and promotion".
 - **Rotating a key**: replace the environment secret (2.4 or 3.4), then
   publish a release.

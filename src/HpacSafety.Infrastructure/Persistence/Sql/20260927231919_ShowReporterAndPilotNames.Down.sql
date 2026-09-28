@@ -1,5 +1,13 @@
--- Reverses 20260927231919_ShowReporterAndPilotNames.sql.
-CREATE OR REPLACE VIEW admin_report_queue AS
+-- Reverses 20260927231919_ShowReporterAndPilotNames.sql. A view cannot lose a
+-- trailing column in place (CREATE OR REPLACE only ever appends), so
+-- admin_pending_counts, which reads admin_report_queue, is dropped and
+-- restored with it, the same pattern
+-- 20260927172950_ListReportVersions.Down.sql and
+-- 20260928181012_AddAttachmentCounts.Down.sql use.
+DROP VIEW admin_pending_counts;
+DROP VIEW admin_report_queue;
+
+CREATE VIEW admin_report_queue AS
 SELECT report.id,
        report.submitted_at,
        report.status,
@@ -17,6 +25,15 @@ FROM reports AS report
                    ON summary.report_id = report.id
                        AND summary.deleted IS NULL
 WHERE report.deleted IS NULL;
+
+CREATE VIEW admin_pending_counts AS
+SELECT (SELECT count(*) FROM admin_report_queue WHERE needs_action)::integer AS reports_needing_action,
+       (SELECT count(*) FROM answers_awaiting_translation)::integer          AS answers_awaiting_translation,
+       (SELECT count(*)
+        FROM question_choices AS choice
+                 JOIN questions AS question ON question.id = choice.question_id
+        WHERE choice.needs_review
+          AND question.deleted IS NULL)::integer                             AS type_ahead_values_awaiting_review;
 
 UPDATE questions
 SET role = 'none'

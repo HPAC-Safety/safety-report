@@ -39,9 +39,37 @@ public sealed class ConsentViewSteps
 	public async Task WhenASafetyOfficerReadsTheReport()
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		var listed = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/reports", UriKind.Relative));
-		_row = listed.EnumerateArray().Single(item => item.GetProperty("id").GetString() == _reportId);
+		_row = await FindInList(client, _reportId!);
 		_detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+	}
+
+	/// <summary>
+	///     Follows every keyset page of the admin list (REQ-MOD-129) until it
+	///     finds this report — it is seeded at "now," not a far-future instant,
+	///     so it can sit well past the first page in this suite's shared,
+	///     ever-growing database.
+	/// </summary>
+	private static async Task<JsonElement> FindInList(HttpClient client,
+													   string reportId)
+	{
+		string? after = null;
+
+		do
+		{
+			var query = after is null ? string.Empty : $"?after={Uri.EscapeDataString(after)}";
+			var page = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports{query}", UriKind.Relative));
+			var found = page.GetProperty("items").EnumerateArray()
+				.FirstOrDefault(item => item.GetProperty("id").GetString() == reportId);
+
+			if (found.ValueKind != JsonValueKind.Undefined)
+			{
+				return found;
+			}
+
+			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
+		} while (after is not null);
+
+		throw new ShouldAssertException($"Report {reportId} was not found on any page of the admin list.");
 	}
 
 	[Then(@"^the list row and the detail give consent as (true|false|null)$")]

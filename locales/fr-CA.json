@@ -556,9 +556,9 @@
   "feed": {
     "intro": "Leçons tirées des incidents signalés par les membres du HPAC et qu’ils ont accepté de partager. Chaque résumé a été anonymisé et approuvé par un responsable de la sécurité.",
     "search": {
-      "label": "#Search safety reports",
-      "placeholder": "#Search summaries and comments…",
-      "empty": "#No published reports match your search."
+      "label": "Rechercher des signalements de sécurité",
+      "placeholder": "Rechercher des résumés et des commentaires…",
+      "empty": "Aucun signalement publié ne correspond à votre recherche."
     },
     "listLabel": "Signalements de sécurité publiés",
     "loading": "Chargement des signalements…",

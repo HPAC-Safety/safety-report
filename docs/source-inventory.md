@@ -101,6 +101,7 @@ from S3 through CloudFront
 | [`src/api/`](../src/web/src/api/) | Typed clients for the public, reporter, and admin endpoints. |
 | [`src/auth/`](../src/web/src/auth/) | The session, sign-in, and role-aware context; the browser never parses a JWT. |
 | [`src/components/`](../src/web/src/components/) | Shared UI: header and menus, the admin route guard (ADR-0092), review actions, report media (ADR-0117) and comments, and the question editor. |
+| [`src/hooks/`](../src/web/src/hooks/) | Shared stateful behavior not tied to one page: infinite-scroll paging, de-duplication, and back-button restoration for a keyset-paginated list (ADR-0155). |
 | [`src/i18n/`](../src/web/src/i18n/) | Locale resolution and catalogue loading. |
 | [`src/lib/`](../src/web/src/lib/) | Answer formatting and the word diff behind translation confirmation (ADR-0108). |
 | [`src/report-form/`](../src/web/src/report-form/) | The paged reporter form, its saved report, attachment field, and the media-consent rule (ADR-0100, ADR-0119). |

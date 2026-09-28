@@ -135,4 +135,25 @@ public sealed class TinyIdTests
 		// Then
 		escaped.ShouldBe(id.Value);
 	}
+
+	[Theory]
+	[InlineData("AAAAAAAAAAA", "BBBBBBBBBBB")]
+	[InlineData("aBcDeFgHiJk", "aBcDeFgHiJl")]
+	public void GivenTwoIdentifiers_WhenCompared_ThenOrdinalOverValueDecidesEitherWay(string lesser,
+																					string greater)
+	{
+		// Given — a real page's keyset tie-break needs this ordering to agree
+		// with the database's own char(11) ordinal collation (REQ-MOD-129).
+		var left = TinyId.Parse(lesser);
+		var right = TinyId.Parse(greater);
+
+		// When / Then
+		(left < right).ShouldBeTrue();
+		(right > left).ShouldBeTrue();
+		(left <= right).ShouldBeTrue();
+		(right >= left).ShouldBeTrue();
+		left.CompareTo(right).ShouldBeLessThan(0);
+		right.CompareTo(left).ShouldBeGreaterThan(0);
+		left.CompareTo(left).ShouldBe(0);
+	}
 }

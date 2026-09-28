@@ -333,6 +333,13 @@ Scenario: A list row carries the version a review command sends back
   And publishing an unpublished report with its row's version succeeds without opening the report
   And no ViewedRawReport entry is written for that report
 
+@REQ-MOD-129
+Scenario: The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one
+  Given reports exist in every workflow state
+  When a reviewer lists reports
+  And a reviewer lists reports after a cursor naming a report no longer in the queue
+  Then that list starts with the same report the first page did
+
 @REQ-MOD-049
 Scenario: The Needs action filter shows pending, failed, and stuck reports
   Given reports exist in every workflow state
@@ -904,11 +911,44 @@ Scenario: An address for a report that is not public shows not found
 
 @REQ-MOD-082
 @ui
-Scenario: The public feed pages forward and the address keeps the page
+Scenario: The public feed loads more reports automatically, and going back restores them
   Given the public feed has more published reports than fit on one page
-  When a visitor moves to the next page
-  Then the address bar carries that page's cursor
-  And going back returns the visitor to the first page
+  When a visitor scrolls to the end of the list
+  Then the older reports load without a page change or an address change
+  When a visitor opens one of them and goes back
+  Then the same reports are still shown, at the same scroll position
+
+@REQ-MOD-126
+@ui
+Scenario: The public feed's next page offers a keyboard-only fallback and announces itself
+  Given the public feed has more published reports than fit on one page
+  When a visitor opens the feed
+  Then the "Load more" action is not visible
+  When a keyboard visitor tabs to the "Load more" action
+  Then it becomes visible
+  When that visitor activates it
+  Then the older reports load
+  And a screen reader is told how many more reports loaded
+
+@REQ-MOD-127
+@ui
+Scenario: The public feed offers a visible Retry action when its next page fails to load
+  Given the public feed's next page fails to load
+  When a visitor activates the "Load more" action without scrolling
+  Then the feed offers a visible "Retry" action instead of failing silently
+
+@REQ-MOD-128
+@ui
+Scenario: Manage reports loads more automatically and offers the same hidden fallback and visible retry
+  Given a safety officer is signed in and more reports exist than fit on one page
+  Then the "Load more" action is not visible
+  When a keyboard visitor tabs to the "Load more" action
+  Then it becomes visible
+  When that visitor activates it
+  Then the older reports load without leaving Manage reports
+  Given the next report page fails to load
+  When the safety officer activates the "Load more" action
+  Then the list offers a visible "Retry" action instead of failing silently
 
 @REQ-MOD-083
 @ui

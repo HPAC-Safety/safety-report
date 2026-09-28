@@ -23,7 +23,7 @@ namespace HpacSafety.Core;
 ///         looking like a mistake. See ADR-0034.
 ///     </para>
 /// </remarks>
-public readonly record struct TinyId
+public readonly record struct TinyId : IComparable<TinyId>
 {
 	/// <summary>How many characters an identifier has. Never more, never fewer.</summary>
 	public const int Length = 11;
@@ -136,5 +136,37 @@ public readonly record struct TinyId
 	public override string ToString()
 	{
 		return Value;
+	}
+
+	/// <summary>
+	///     Ordinal order over <see cref="Value" /> — the same order a keyset
+	///     query's <c>ORDER BY</c> (and its cursor's tie-break) already gets from
+	///     the mapped <c>char(11)</c> column, so a query written with these
+	///     operators translates to the same comparison the database performs
+	///     (REQ-MOD-129).
+	/// </summary>
+	public int CompareTo(TinyId other)
+	{
+		return string.CompareOrdinal(Value, other.Value);
+	}
+
+	public static bool operator <(TinyId left, TinyId right)
+	{
+		return left.CompareTo(right) < 0;
+	}
+
+	public static bool operator >(TinyId left, TinyId right)
+	{
+		return left.CompareTo(right) > 0;
+	}
+
+	public static bool operator <=(TinyId left, TinyId right)
+	{
+		return left.CompareTo(right) <= 0;
+	}
+
+	public static bool operator >=(TinyId left, TinyId right)
+	{
+		return left.CompareTo(right) >= 0;
 	}
 }

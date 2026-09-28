@@ -1,4 +1,6 @@
+using System.Buffers.Text;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
@@ -31,6 +33,7 @@ public sealed class ReportReviewSteps
 	private string _listBody = string.Empty;
 	private string _openedId = string.Empty;
 	private string _namedReportId = string.Empty;
+	private string _restartedFirstId = string.Empty;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -111,6 +114,17 @@ public sealed class ReportReviewSteps
 		await ListWith(filter);
 	}
 
+	[When(@"a reviewer lists reports after a cursor naming a report no longer in the queue")]
+	public async Task WhenAReviewerListsAfterAnUnknownCursor()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var cursor = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(TinyId.New().Value));
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports?after={cursor}", UriKind.Relative));
+		response.EnsureSuccessStatusCode();
+		var page = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+		_restartedFirstId = page.GetProperty("items").EnumerateArray().First().GetProperty("id").GetString()!;
+	}
+
 	[When(@"the detail query runs")]
 	public async Task WhenTheDetailQueryRuns()
 	{
@@ -173,6 +187,12 @@ public sealed class ReportReviewSteps
 		Mine().ShouldBe(
 			[.. new[] { "pending", "failed", "stuckSubmitted", "stuckSummarizing" }.Select(name => _seeded[name])],
 			ignoreOrder: true);
+	}
+
+	[Then(@"that list starts with the same report the first page did")]
+	public void ThenTheRestartedListStartsWithTheSameReport()
+	{
+		_restartedFirstId.ShouldBe(_listed[0].GetProperty("id").GetString());
 	}
 
 	[Then(@"each stuck report is marked stuck")]
@@ -307,14 +327,33 @@ public sealed class ReportReviewSteps
 			.SingleAsync();
 	}
 
+	/// <summary>Follows <c>next</c> until it is null, so every scenario sees the whole list regardless of page size (REQ-MOD-129).</summary>
 	private async Task ListWith(string? filter)
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		var path = filter is null ? "/api/admin/reports" : $"/api/admin/reports?filter={filter}";
-		using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
-		response.EnsureSuccessStatusCode();
-		_listBody = await response.Content.ReadAsStringAsync();
-		_listed = [.. JsonDocument.Parse(_listBody).RootElement.EnumerateArray()];
+		_listed = [];
+		var bodies = new List<string>();
+		string? after = null;
+
+		do
+		{
+			var query = string.Join('&', new[]
+			{
+				filter is null ? null : $"filter={filter}",
+				after is null ? null : $"after={after}",
+			}.Where(part => part is not null));
+
+			var path = query.Length == 0 ? "/api/admin/reports" : $"/api/admin/reports?{query}";
+			using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
+			response.EnsureSuccessStatusCode();
+			var body = await response.Content.ReadAsStringAsync();
+			bodies.Add(body);
+			var page = JsonDocument.Parse(body).RootElement;
+			_listed.AddRange(page.GetProperty("items").EnumerateArray());
+			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
+		} while (after is not null);
+
+		_listBody = string.Join('\n', bodies);
 	}
 
 	private List<string> Mine()

@@ -281,18 +281,6 @@
     "provider": "human",
     "reviewed": true
   },
-  "feed.newest": {
-    "source_hash": "57932dcf635539c56f6362771badc267a41cea29b5de9b5503130b5761a32068",
-    "target_hash": "1b53c5869cba324c4187171312c4de7c893d7b221ec092999be35f955df592f7",
-    "provider": "human",
-    "reviewed": true
-  },
-  "feed.next": {
-    "source_hash": "8b99e4a0a61205aafae8e5946d2ac295399797cf7a71362df2f3a170cbc64867",
-    "target_hash": "7f5c275f783f540388d43428bedf1d63a2daa3564b041dae60620689f7f0657c",
-    "provider": "human",
-    "reviewed": true
-  },
   "feed.notFound.body": {
     "source_hash": "9ca75c6a55c52b9515a9e20f277c197c16f80606b09a83586762d50679ff5720",
     "target_hash": "772174465d63e64b97f332f53109d163f4a1e0501975130cd80a742a5a4dbff2",
@@ -302,12 +290,6 @@
   "feed.notFound.title": {
     "source_hash": "f3da6b24873250c959ced55e307eb5a181d8d1124d928e7701a2f750e5d19a0d",
     "target_hash": "c13099d9885542a896a9c9b82e1be0e5189d0776222c467c99bd9fa677dcbf95",
-    "provider": "human",
-    "reviewed": true
-  },
-  "feed.pagesLabel": {
-    "source_hash": "68d58c9dd7b91e342a8858726a70b098458f94d4c764c2718b744aa990cfbc59",
-    "target_hash": "c18913fee5bf1230559ab7511fcea0f9acc44e81a2379254626f7dffcdf40979",
     "provider": "human",
     "reviewed": true
   },
@@ -423,6 +405,30 @@
     "source_hash": "e74b4e0cb2ca0462eb247fb87cda16bcc26433ff0788de99ad35bd16aae781be",
     "target_hash": "6ddebcea98640941e7f95e3630a6a1a8f6b82b731e0c32a1cfa0830038f9d70d",
     "provider": "glossary",
+    "reviewed": true
+  },
+  "list.error": {
+    "source_hash": "730f17ef46b1583b3d4f04332b1f7382d4c4e5e70ecb189d50b85a9a7e60f720",
+    "target_hash": "38f28c590fa1330052765625cff4d25cc9b794484e14491b2a8b2d4ec25ba888",
+    "provider": "human",
+    "reviewed": true
+  },
+  "list.loadMore": {
+    "source_hash": "ac8991ef01019cf55a2426194a05959e0cb886333f1a332ff4f442320d165400",
+    "target_hash": "e65e777e28e921251449c5b0d23db4db1d138d594fec546a60091378f9f39e6f",
+    "provider": "human",
+    "reviewed": true
+  },
+  "list.loadingMore": {
+    "source_hash": "964e5f88d03630deca8a0d52ae42323980e216a787afa7e7e77dbdaeaa760f62",
+    "target_hash": "66474911d95325c8efa1d226785b26f81d25c18fcf3897ca0abe5910167af5ee",
+    "provider": "human",
+    "reviewed": true
+  },
+  "list.retry": {
+    "source_hash": "942087cc2d41e01304b7195558d093d10c72af8e838c7556d6a02d471ee71852",
+    "target_hash": "af273d956b5bec8dce62f9ad74dd744ded027486ea69dbb724e246fa9aabe692",
+    "provider": "human",
     "reviewed": true
   },
   "media.confirmHide": {

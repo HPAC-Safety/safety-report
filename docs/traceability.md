@@ -756,7 +756,7 @@ An address for a report that is not public shows not found — *playwright-bdd, 
 
 ### REQ-MOD-082
 
-The public feed pages forward and the address keeps the page — *playwright-bdd, Covered*
+The public feed loads more reports automatically, and going back restores them — *playwright-bdd, Covered*
 
 ### REQ-MOD-083
 
@@ -925,6 +925,22 @@ The admin report list shows the reporter's and pilot's names by stable role, bla
 ### REQ-MOD-125
 
 Manage reports shows each row's reporter and pilot names, blank when unanswered — *playwright-bdd, Covered*
+
+### REQ-MOD-126
+
+The public feed's next page offers a keyboard-only fallback and announces itself — *playwright-bdd, Covered*
+
+### REQ-MOD-127
+
+The public feed offers a visible Retry action when its next page fails to load — *playwright-bdd, Covered*
+
+### REQ-MOD-128
+
+Manage reports loads more automatically and offers the same hidden fallback and visible retry — *playwright-bdd, Covered*
+
+### REQ-MOD-129
+
+The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
 
 ## Claims: question-bank-and-form
 

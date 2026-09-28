@@ -32,6 +32,14 @@ public sealed record ReportListItem(
 	string? PilotName);
 
 /// <summary>
+///     One page of the admin report list, newest submitted first, a tie broken
+///     by report ID (REQ-MOD-129). <see cref="Next" /> is the opaque cursor that
+///     continues it, or null on the last page — the same ID-only cursor shape as
+///     the public feed (ADR-0155).
+/// </summary>
+public sealed record ReportListPage(IReadOnlyList<ReportListItem> Items, string? Next);
+
+/// <summary>
 ///     Everything a reviewer needs to judge one report, and nothing more
 ///     (REQ-MOD-031). No storage key or link: an attachment is opened only through
 ///     its own audited request. <c>Version</c> is the opaque value every review

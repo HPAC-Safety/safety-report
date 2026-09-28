@@ -62,12 +62,31 @@ worker, or direct API caller can bypass a publication guard.
 
 ## The admin report list
 
-`/admin/reports` lists every live report, newest first. Each row shows the
-submission time, a badge for its workflow status, a separate **Private (no
-consent)** badge when the reporter refused publication, and a **Stuck** badge
-when it has waited in Submitted or Summarizing for more than 24 hours. Private
-is about consent and Unpublished is a status, so the two are never merged into
-one badge: a report without consent shows both.
+`/admin/reports` lists every live report, newest submitted first, a tie broken
+by report ID (REQ-MOD-129). Each row shows the submission time, a badge for
+its workflow status, a separate **Private (no consent)** badge when the
+reporter refused publication, and a **Stuck** badge when it has waited in
+Submitted or Summarizing for more than 24 hours. Private is about consent and
+Unpublished is a status, so the two are never merged into one badge: a report
+without consent shows both.
+
+Both this list and the public feed load more automatically as the reviewer or
+visitor nears the end, the same infinite-scroll pattern
+([ADR-0155](../../docs/decisions/ADR-0155-infinite-scroll-replaces-load-more-on-both-report-lists.md)):
+an `IntersectionObserver` sentinel triggers the next keyset page, with
+nothing shown for it while auto-load keeps working. A "Load more" fallback
+stays reachable by Tab at all times but is visually hidden until it holds
+keyboard focus, so a sighted visitor never sees a control auto-load already
+made unnecessary; a screen reader still reaches it in the normal reading
+order. Once a page fails to load, the control becomes visible unconditionally
+and reads "Retry." Every newly loaded batch is announced politely regardless
+of how it loaded. The admin list gained server-side keyset paging for this
+(it had none before, REQ-MOD-129); its cursor carries only the last row's
+report ID, the same shape as the public feed's (ADR-0153) — never a
+timestamp — and a cursor naming a report no longer in the queue restarts the
+list from the top, ordinally past the anchor by ID the same way the public
+feed's cursor does. The browser's back button restores the same accumulated
+rows and scroll position rather than reloading the first page.
 
 Each row also shows the **reporter's name** and the **pilot's name** — the
 only answer text the list ever carries (REQ-MOD-030, REQ-MOD-124). Both are
@@ -333,8 +352,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Automatic approval or publication, including "approve if the model is
   confident."
 - A per-reporter rate limit, which would mean identifying the reporter.
-- Pagination, search, or sorting of the admin report list other than newest
-  first. HPAC receives dozens of reports a year.
+- Search or sorting of the admin report list other than newest submitted
+  first, and a page-count or jump-to-page control.
 - Showing answer or summary text in the admin report list itself, other than
   the reporter's and pilot's names (REQ-MOD-124, ADR-0154).
 - Acting on several reports at once from the list, editing or writing the

@@ -6,9 +6,24 @@
 #
 # No default in this file is a guess any more. If you add a variable whose value
 # you had to invent, mark it plainly and say so in the pull request body.
+#
+# staging.tfvars and production.tfvars are the ONLY place the two environments
+# differ (ADR-0158). `diff infra/staging.tfvars infra/production.tfvars` must be
+# the complete story — if you find yourself branching on `var.environment`
+# anywhere outside a variable default or a validation message, that is a defect.
+
+variable "environment" {
+  description = "Which of the two environments this is. Drives nothing by name in resource logic — only which tfvars file supplied the other variables below (ADR-0158)."
+  type        = string
+
+  validation {
+    condition     = contains(["staging", "production"], var.environment)
+    error_message = "environment must be \"staging\" or \"production\". There are exactly two, and no third."
+  }
+}
 
 variable "project" {
-  description = "Name prefix for every resource. Also the Project tag."
+  description = "Name prefix for every resource. Also the Project tag. Identical in both accounts — they are separate AWS accounts, so the name never has to disambiguate an environment (see ADR-0158's deploy-role IAM, which scopes on this prefix)."
   type        = string
   default     = "hpac-safety"
 }
@@ -28,6 +43,20 @@ variable "aws_region" {
   }
 }
 
+variable "allowed_account_ids" {
+  description = <<-EOT
+    Guard against applying the wrong environment's tfvars against the wrong AWS
+    account: if non-empty, the provider refuses to run against any account not
+    in this list. Empty (the default) means no guard, which is the only
+    possible value before an account exists to name — infra/bootstrap.sh prints
+    the account id once it has run, and that id belongs in this environment's
+    tfvars from then on. Never a value invented in this file: it is one
+    specific account, decided by which account bootstrap ran in.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
 # --------------------------------------------------------------------------
 # Network
 # --------------------------------------------------------------------------
@@ -39,32 +68,47 @@ variable "vpc_cidr" {
 }
 
 variable "az_count" {
-  description = "How many availability zones to spread across. RDS multi-AZ and the ALB both need at least two."
+  description = "How many availability zones to spread across."
   type        = number
   default     = 2
 
   validation {
     condition     = var.az_count >= 2 && var.az_count <= 3
-    error_message = "An ALB needs subnets in at least two availability zones, and ca-central-1 has three."
+    error_message = "ca-central-1 has three availability zones; use 2 or 3."
   }
 }
 
 # --------------------------------------------------------------------------
 # Domains
 #
-# DECIDED. Two hostnames, not three: the admin review queue is a ROUTE on the
-# website, not a site of its own. See ADR-0031, which supersedes ADR-0009's
-# "one distribution each for public and admin".
+# DECIDED. Two hostnames in production, none in staging (ADR-0158). The admin
+# review queue is a ROUTE on the website, not a site of its own — ADR-0031
+# supersedes ADR-0009's "one distribution each for public and admin" — and the
+# API is reached only at /api/* on the same distribution
+# (ADR-0159): there is no api_domain and no second certificate.
 # --------------------------------------------------------------------------
 
-variable "site_domain" {
-  description = "The website. Serves the public report form at / and the admin review queue under the admin path prefix."
-  type        = string
-  default     = "safety.hpac.ca"
+variable "site_domains" {
+  description = <<-EOT
+    Hostnames CloudFront answers to, in addition to its own *.cloudfront.net
+    address. Empty in staging: the cloudfront.net address is the whole story,
+    no certificate needed, no external DNS entry. Exactly
+    ["safety.hpac.ca", "securite.acvl.ca"] in production: one CloudFront
+    distribution, one us-east-1 ACM certificate covering both names
+    (ADR-0158). Never a third name and never one name — see
+    dns_records_to_publish for what a human publishes at each hostname's zone.
+  EOT
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = length(var.site_domains) == 0 || length(var.site_domains) == 2
+    error_message = "site_domains is empty (staging) or exactly the production pair — safety.hpac.ca and securite.acvl.ca. Never one name and never a third."
+  }
 }
 
 variable "site_origins" {
-  description = "Origins a browser may PUT an attachment to the uploads bucket from, through the pre-signed URL the API mints (ADR-0126). Scheme and host, no path. Empty means only https://<site_domain>."
+  description = "Origins a browser may PUT an attachment to the uploads bucket from, through the pre-signed URL the API mints (ADR-0126). Scheme and host, no path. Empty means every https://<site_domains> host, or the CloudFront default address in staging where site_domains is empty."
   type        = list(string)
   default     = []
 
@@ -75,7 +119,7 @@ variable "site_origins" {
 }
 
 variable "admin_path_prefix" {
-  description = "Path prefix the admin review queue is served under, without slashes. Drives the CloudFront cache behavior, the response headers policy, and the URL-rewrite function, so it is defined once here rather than written into three places."
+  description = "Path prefix the admin review queue is served under, without slashes. Drives the CloudFront cache behavior and the response headers policy, so it is defined once here rather than written into two places."
   type        = string
   default     = "admin"
 
@@ -98,9 +142,9 @@ variable "db_engine_version" {
 variable "db_instance_class" {
   description = "RDS instance class."
   type        = string
-  # DECIDED: db.t4g.micro. ADR-0009 says 'the smallest viable instance sizes are
-  # correct here' for an association receiving dozens of reports a year, and this
-  # is the smallest Graviton class RDS PostgreSQL offers.
+  # DECIDED: db.t4g.micro, in both environments. The smallest Graviton class RDS
+  # PostgreSQL offers, and correct for an association receiving dozens of
+  # reports a year — including in production (ADR-0158's "sized the same way").
   default = "db.t4g.micro"
 }
 
@@ -117,34 +161,34 @@ variable "db_max_allocated_storage" {
 }
 
 variable "db_backup_retention_days" {
-  description = "Automated backup retention, in days."
+  description = "Automated backup retention, in days. DECIDED per environment (ADR-0158): 1 in staging.tfvars, 7 in production.tfvars — this variable is the whole difference; the resource itself is identical."
   type        = number
-  # DECIDED: 7 days. Raw reports are retained indefinitely and are the record of a
-  # real accident, so this is the window in which an accidental deletion is
-  # recoverable by rolling back rather than by restoring a snapshot.
-  default = 7
+  default     = 7
 
   validation {
     condition     = var.db_backup_retention_days >= 1
-    error_message = "Automated backups must be on. This database holds the only copy of reports about real accidents."
+    error_message = "Automated backups must be on, in every environment. See CON-INF-013: a Terraform plan that would turn them off fails review."
   }
 }
 
 variable "db_multi_az" {
   description = "Run a standby in a second availability zone."
   type        = bool
-  # DECIDED: off. It roughly doubles the RDS bill to shorten an outage of a system
-  # that receives dozens of reports a year, and a failed submission is retried by
-  # a pilot rather than lost.
+  # DECIDED: off, in both environments. It roughly doubles the RDS bill to
+  # shorten an outage of a system that receives dozens of reports a year, and a
+  # failed submission is retried by a pilot rather than lost. Out of scope per
+  # issue #30 and issue #465.
   default = false
 }
 
 # --------------------------------------------------------------------------
 # Compute
 #
-# Both are Lambda functions now (ADR-0042, ADR-0123, #443): no CPU units, no
-# desired count — Lambda scales invocations on its own, and the outbox's
-# FOR UPDATE SKIP LOCKED claim already makes overlapping invocations safe.
+# Both the API and the Worker are Lambda functions (ADR-0042, ADR-0123, #443):
+# no CPU units, no desired count — Lambda scales invocations on its own, and
+# the outbox's FOR UPDATE SKIP LOCKED claim already makes overlapping
+# invocations safe. Identical in both environments; #465 does not split these
+# per environment because nothing about #30's traffic estimate needs it yet.
 # --------------------------------------------------------------------------
 
 variable "api_memory_mb" {
@@ -190,6 +234,38 @@ variable "container_port" {
 }
 
 # --------------------------------------------------------------------------
+# NAT instance (CON-INF-013): fck-nat on a t4g.nano, in a one-instance ASG,
+# the one resource this system ever deletes and recreates. See network.tf.
+# --------------------------------------------------------------------------
+
+variable "nat_instance_type" {
+  description = "Instance type for the NAT instance."
+  type        = string
+  # DECIDED: t4g.nano — a NAT gateway would cost roughly $36/month per account
+  # against roughly $4/month for this instance plus its public IPv4 address
+  # (ADR-0158). Nothing at HPAC's traffic needs more than a nano's 5 Gbps
+  # burst ceiling.
+  default = "t4g.nano"
+}
+
+variable "fck_nat_ami_version" {
+  description = <<-EOT
+    Pinned fck-nat AMI version (published by AWS account 568608671756, image
+    name fck-nat-al2023-<version>-arm64-ebs). Deliberately not "most recent" —
+    a floating lookup would let the NAT instance's image drift on every
+    release without anyone deciding to move it. The module version itself is
+    pinned as a literal in network.tf's `module "fck_nat" { version = ... }`,
+    because a module block's version argument must be a literal Terraform can
+    resolve before any variable is evaluated; Renovate's terraform manager
+    bumps that literal directly. Bump this AMI version alongside it when that
+    pull request opens — the two numbers are not required to match, but
+    reviewing them together is the point.
+  EOT
+  type        = string
+  default     = "1.6.1"
+}
+
+# --------------------------------------------------------------------------
 # Observability
 # --------------------------------------------------------------------------
 
@@ -200,17 +276,9 @@ variable "log_retention_days" {
 }
 
 variable "alarm_email_addresses" {
-  description = "Addresses subscribed to the alarm topic. A role address, never a personal one."
+  description = "Addresses subscribed to the alarm topic. A role address, never a personal one. DECIDED per environment (ADR-0158): empty in staging.tfvars (the topic exists, unsubscribed — staging never holds a real report and nobody is on call for it), [\"safety@hpac.ca\"] in production.tfvars."
   type        = list(string)
-  # DECIDED: safety@hpac.ca — the single production address for this system, for
-  # operational alarms and for report notifications alike. A role address, so an
-  # alarm does not stop being read when one person leaves the safety committee.
-  #
-  # An email subscription is created PENDING CONFIRMATION and Terraform cannot
-  # complete it: AWS sends a confirmation link to the address and a human has to
-  # click it. Until someone does, the alarms fire, are visible in CloudWatch, and
-  # email nobody. That step is in docs/deployment.md's manual-steps table.
-  default = ["safety@hpac.ca"]
+  default     = []
 }
 
 variable "summary_failed_alarm_threshold" {

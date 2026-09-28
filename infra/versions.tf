@@ -15,5 +15,12 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.61"
     }
+
+    # Generates exactly one value: the CloudFront origin-verify secret
+    # (secrets.tf's documented exception to "entries, never values").
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }

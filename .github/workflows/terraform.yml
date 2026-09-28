@@ -1,6 +1,6 @@
 name: Terraform
 
-# The AWS environment itself: VPC, RDS, ECS, ECR, S3, CloudFront, Secrets
+# The AWS environment itself: VPC, RDS, Lambda, ECR, S3, CloudFront, Secrets
 # Manager, log groups, alarms. The three deploy-* workflows ship artifacts INTO
 # what this creates; they never create anything.
 #
@@ -97,21 +97,6 @@ jobs:
       # is the only thing standing between a typo and a failed bootstrap.
       - name: shellcheck bootstrap.sh
         run: shellcheck -s sh infra/bootstrap.sh
-
-      # The CloudFront Function is real JavaScript that runs on every request to
-      # both static sites, and it is reachable only from a Terraform apply. Parse
-      # it here so a syntax error surfaces on the pull request rather than as a
-      # 500 at the edge. Same reasoning as agent-config loading require-config:
-      # see "The deploy blind spot" in .github/workflows/README.md.
-      - name: CloudFront Function parses
-        run: |
-          set -euo pipefail
-          # It is a Terraform template, so substitute the prefix before parsing.
-          # A literal placeholder in a string is still valid JavaScript, but
-          # substituting keeps this honest about what actually gets published.
-          # shellcheck disable=SC2016  # A Terraform placeholder, not a shell one.
-          sed 's|\${admin_prefix}|/admin|' infra/functions/clean-urls.js.tftpl > /tmp/clean-urls.js
-          node --check /tmp/clean-urls.js
 
       - name: terraform fmt
         run: terraform -chdir=infra fmt -check -recursive -diff

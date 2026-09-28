@@ -1,6 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
@@ -9,6 +13,7 @@ using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -96,6 +101,38 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
+	[Fact]
+	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenHidden_ThenForbidden()
+	{
+		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
+		// subject claim is not separately enforced by the JWT middleware, so
+		// ChangeVisibility has to cope with a validated token that lacks one —
+		// there is no actor to record the hide against, so it is refused.
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: true, MediaType.Jpeg);
+		var token = ForgeTokenWithNoSubject();
+		using var client = SignedInClient.Bearing(_factory, token);
+
+		// When
+		using var response = await client.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	private static string ForgeTokenWithNoSubject()
+	{
+		var token = new JwtSecurityToken(
+			DevelopmentTokenIssuer.IssuerName,
+			"hpac-safety-api",
+			[new Claim("roles", "safety_officer")],
+			DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime,
+			DateTimeOffset.UtcNow.AddHours(1).UtcDateTime,
+			new SigningCredentials(
+				new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ApiPostgresFixture.SigningKey)), SecurityAlgorithms.HmacSha256));
+
+		return new JwtSecurityTokenHandler().WriteToken(token);
 	}
 
 	[Theory]

@@ -1,5 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
@@ -7,6 +11,7 @@ using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -119,6 +124,53 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenAMalformedReportId_WhenViewed_ThenNotFound()
+	{
+		// Given
+		var (_, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(ViewUrl("not-a-tiny-id", attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenViewed_ThenForbidden()
+	{
+		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
+		// subject claim is not separately enforced by the JWT middleware, so
+		// IssueAsync has to cope with a validated token that lacks one. Unlike
+		// the audit-actor endpoints, disclosing a link with no identity to
+		// attribute it to is refused outright.
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		var token = ForgeTokenWithNoSubject();
+		using var client = SignedInClient.Bearing(_factory, token);
+
+		// When
+		using var response = await client.GetAsync(ViewUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	private static string ForgeTokenWithNoSubject()
+	{
+		var token = new JwtSecurityToken(
+			DevelopmentTokenIssuer.IssuerName,
+			"hpac-safety-api",
+			[new Claim("roles", "safety_officer")],
+			DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime,
+			DateTimeOffset.UtcNow.AddHours(1).UtcDateTime,
+			new SigningCredentials(
+				new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ApiPostgresFixture.SigningKey)), SecurityAlgorithms.HmacSha256));
+
+		return new JwtSecurityTokenHandler().WriteToken(token);
 	}
 
 	[Fact]

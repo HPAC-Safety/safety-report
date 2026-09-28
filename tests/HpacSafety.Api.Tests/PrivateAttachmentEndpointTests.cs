@@ -1,7 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using Amazon.S3;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
@@ -11,6 +15,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -74,6 +79,38 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		added.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenListingPrivateAttachments_ThenTheReaderReadsAsUnknownRatherThanFailing()
+	{
+		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
+		// subject claim is not separately enforced, so List has to cope with a
+		// validated token that lacks one, the same stance the review endpoints
+		// take: it reads as "(unknown)" rather than failing.
+		var root = await Root();
+		var token = ForgeTokenWithNoSubject();
+		using var client = SignedInClient.Bearing(_factory, token);
+
+		// When
+		using var response = await client.GetAsync(root);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
+	private static string ForgeTokenWithNoSubject()
+	{
+		var token = new JwtSecurityToken(
+			DevelopmentTokenIssuer.IssuerName,
+			"hpac-safety-api",
+			[new Claim("roles", "safety_officer")],
+			DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime,
+			DateTimeOffset.UtcNow.AddHours(1).UtcDateTime,
+			new SigningCredentials(
+				new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ApiPostgresFixture.SigningKey)), SecurityAlgorithms.HmacSha256));
+
+		return new JwtSecurityTokenHandler().WriteToken(token);
 	}
 
 	[Theory]

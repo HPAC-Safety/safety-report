@@ -1,7 +1,12 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 
 import { blockReason, main } from '../../tools/guard-pr-merge.mjs'
+
+const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../tools/guard-pr-merge.mjs')
 
 describe('blockReason', () => {
 	it('blocks a plain gh pr merge', () => {
@@ -102,6 +107,35 @@ describe('blockReason', () => {
 		assert.equal(blockReason('Bash', 'rg enablePullRequestAutoMerge'), null)
 		assert.equal(blockReason('Bash', 'grep -rn mergePullRequest tools/'), null)
 	})
+
+	// --- Segment splitting on && and || ---
+
+	it('blocks gh pr merge chained after a passing command with &&', () => {
+		assert.ok(blockReason('Bash', 'git status && gh pr merge 123 --auto --squash'))
+	})
+
+	it('blocks gh pr merge chained after a failing command with ||', () => {
+		assert.ok(blockReason('Bash', 'false || gh pr merge 123 --auto --squash'))
+	})
+
+	it('allows an && or || chain with no merge in any segment', () => {
+		assert.equal(blockReason('Bash', 'git status && git fetch origin'), null)
+		assert.equal(blockReason('Bash', 'git fetch origin || echo failed'), null)
+	})
+
+	// --- Leading command past assignments and wrapper words ---
+
+	it('blocks gh pr merge prefixed by an inline environment variable assignment', () => {
+		assert.ok(blockReason('Bash', 'GH_TOKEN=abc gh pr merge 123 --auto --squash'))
+	})
+
+	it('blocks gh pr merge wrapped in a flagged wrapper command', () => {
+		assert.ok(blockReason('Bash', 'nice -n10 gh pr merge 123 --auto --squash'))
+	})
+
+	it('blocks gh pr merge wrapped in an unflagged wrapper command', () => {
+		assert.ok(blockReason('Bash', 'sudo gh pr merge 123 --auto --squash'))
+	})
 })
 
 describe('main', () => {
@@ -130,5 +164,22 @@ describe('main', () => {
 	it('exits 0 for a payload it does not recognise, rather than blocking', () => {
 		assert.equal(main('not json'), 0)
 		assert.equal(runMain({ tool_name: 'Edit', tool_input: { file_path: 'x' } }).code, 0)
+	})
+})
+
+describe('run as a hook command', () => {
+	it('exits 2 and prints the reason on stderr, reading the payload from stdin', () => {
+		const payload = JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'gh pr merge 99 --auto --squash' } })
+		const result = spawnSync(process.execPath, [scriptPath], { input: payload, encoding: 'utf8' })
+
+		assert.equal(result.status, 2)
+		assert.match(result.stderr, /Only the owner enables auto-merge/)
+	})
+
+	it('exits 0 for an allowed command read from stdin', () => {
+		const payload = JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'gh pr view 99' } })
+		const result = spawnSync(process.execPath, [scriptPath], { input: payload, encoding: 'utf8' })
+
+		assert.equal(result.status, 0)
 	})
 })

@@ -160,6 +160,34 @@ describe('judge', () => {
 		assert.equal(verdict.ok, true)
 		assert.match(verdict.note, /preserving REQ-SUB-012/)
 	})
+
+	it('passes a manifest-only diff with no exemption line at all', () => {
+		const changed = ['src/HpacSafety.Api/HpacSafety.Api.csproj', 'Directory.Packages.props', 'src/web/package-lock.json', 'src/HpacSafety.Worker/Dockerfile']
+		const verdict = judge({ changed, features: [], body: '', knownClaims: KNOWN })
+
+		assert.equal(verdict.ok, true)
+		assert.match(verdict.note, /Dependency manifests only/)
+	})
+
+	it('passes a single manifest-only diff with no exemption line', () => {
+		const verdict = judge({ changed: ['src/web/package-lock.json'], features: [], body: '', knownClaims: KNOWN })
+
+		assert.equal(verdict.ok, true)
+		assert.match(verdict.note, /Dependency manifest only/)
+	})
+
+	it('still fails a mixed diff with no exemption', () => {
+		const verdict = judge({ changed: ['src/web/package-lock.json', 'src/a.cs'], features: [], body: '', knownClaims: KNOWN })
+
+		assert.equal(verdict.ok, false)
+	})
+
+	it('still requires a well-formed exemption for a mixed diff, unaffected by the manifest carve-out', () => {
+		const verdict = judge({ changed: ['src/web/package-lock.json', 'src/a.cs'], features: [], body, knownClaims: KNOWN })
+
+		assert.equal(verdict.ok, true)
+		assert.match(verdict.note, /preserving REQ-SUB-012/)
+	})
 })
 
 describe('main', () => {
@@ -194,6 +222,13 @@ describe('main', () => {
 
 		assert.equal(code, 0)
 		assert.match(output.log.join('\n'), /Exempt as "revert", preserving REQ-SUB-013/)
+	})
+
+	it('passes a manifest-only diff with an empty body', () => {
+		const { code, output } = runMain({ changed: ['src/web/package-lock.json'], features: [], body: '' })
+
+		assert.equal(code, 0)
+		assert.match(output.log.join('\n'), /Dependency manifest only/)
 	})
 
 	it('offers every category in its guidance', () => {

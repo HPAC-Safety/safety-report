@@ -220,6 +220,11 @@ Then("the same reports are still shown, at the same scroll position", async ({ p
 	await expect(page).toHaveURL(/\/reports$/)
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
 	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+
+	// The end of the list: OLDER's own page named no further cursor, so
+	// neither the sentinel nor the fallback button is offered any more.
+	await expect(page.locator("[data-infinite-scroll-sentinel]")).toHaveCount(0)
+	await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0)
 })
 
 When("a visitor activates the {string} action without scrolling", async ({ page }, name: string) => {

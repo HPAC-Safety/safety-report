@@ -439,6 +439,14 @@ Scenario: The feed's attachment count is the public count for a visitor and the 
   When a signed-in safety officer lists the feed
   Then the report's attachment count is 2
 
+@REQ-MOD-155
+Scenario: An ordinary member's token widens nothing; only SafetyOfficer or Administrator does
+  Given a published report has one public attachment and one attachment only staff may see
+  When a signed-in member with the User role lists the feed
+  Then the report's attachment count is 1
+  When a signed-in Administrator lists the feed
+  Then the report's attachment count is 2
+
 @REQ-MOD-151
 Scenario: The admin report list carries every non-deleted attachment's count
   Given a report has one hidden attachment and one still-processing attachment

@@ -195,6 +195,102 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAStillProcessingImage_WhenOriginalRequested_ThenUrlIssued()
+	{
+		// Given
+		// issue #427 decision 15: the raw original is downloadable, audited, while
+		// there is no derivative yet.
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	[Fact]
+	public async Task GivenAFailedImage_WhenOriginalRequested_ThenUrlIssued()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: true);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	[Fact]
+	public async Task GivenADerivativeAlreadyExists_WhenOriginalRequested_ThenNotFound()
+	{
+		// Given
+		// Once a derivative exists, staff view it inline through /view instead
+		// (decision 15) — the endpoint refuses before ReviewerMediaLink is asked.
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenADocument_WhenOriginalRequested_ThenRejected()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenAUserRole_WhenOriginalRequested_ThenForbidden()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false);
+		using var reporter = await SignedInAsync(MemberRole.User);
+
+		// When
+		using var response = await reporter.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	[Fact]
+	public async Task GivenASuccessfulOriginalDownload_WhenTheAuditRowIsRead_ThenItIsDistinctFromAView()
+	{
+		// Given
+		// A raw original — EXIF/GPS intact — is audited under its own action so a
+		// reader can spot one without joining to the file's processing state
+		// (ADR-0094 amendment).
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+		// Then
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId));
+
+		entry.Action.ShouldBe(AuditAction.DownloadedOriginalMedia);
+	}
+
+	[Fact]
 	public async Task GivenASuccessfulView_WhenTheAuditRowIsRead_ThenItRecordsTheActorAndTarget()
 	{
 		// Given
@@ -252,6 +348,12 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 								   string attachmentId)
 	{
 		return new Uri($"/api/admin/reports/{reportId}/attachments/{attachmentId}/download", UriKind.Relative);
+	}
+
+	private static Uri OriginalUrl(string reportId,
+								   string attachmentId)
+	{
+		return new Uri($"/api/admin/reports/{reportId}/attachments/{attachmentId}/original", UriKind.Relative);
 	}
 
 	private async Task<(string ReportId, string AttachmentId)> SeedAsync(string contentType,

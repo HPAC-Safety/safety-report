@@ -1082,6 +1082,10 @@ The public feed shows each report's attachment icon and count, omitted at zero �
 
 Manage reports shows each row's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
 
+### REQ-MOD-155
+
+An ordinary member's token widens nothing; only SafetyOfficer or Administrator does — *Reqnroll, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

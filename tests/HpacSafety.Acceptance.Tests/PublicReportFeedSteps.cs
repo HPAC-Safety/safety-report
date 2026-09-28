@@ -228,6 +228,20 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
 	}
 
+	[When(@"a signed-in member with the User role lists the feed")]
+	public async Task WhenASignedInMemberWithTheUserRoleListsTheFeed()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.User);
+		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
+	[When(@"a signed-in Administrator lists the feed")]
+	public async Task WhenASignedInAdministratorListsTheFeed()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.Administrator);
+		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
 	[When(@"a signed-in safety officer asks the public API for that report")]
 	public async Task WhenASignedInSafetyOfficerAsksForThatReport()
 	{

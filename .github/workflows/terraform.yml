@@ -134,7 +134,7 @@ jobs:
   # alongside AWS_DEPLOY_ROLE_ARN and TF_STATE_BUCKET, for the operator to set
   # as `hpac-safety-staging`/`hpac-safety-production` GitHub Environment variables — but
   # this job cannot read that copy. `hpac-safety-plan`'s OIDC trust condition
-  # matches the subject `repo:HPAC-Safety/safety-report:pull_request`
+  # matches the subject `repo:HPAC-Safety@307760008/safety-report@1341995834:pull_request`
   # (bootstrap.sh's own comment on "the plan role"), which is exactly the
   # subject a job presents when it does NOT declare `environment:` — the
   # moment a job adds `environment: hpac-safety-staging`, its subject becomes
@@ -182,9 +182,9 @@ jobs:
       #
       # The role is hpac-safety-plan, NOT hpac-safety-deploy. The deploy role
       # trusts only the release job's own environment
-      # (repo:HPAC-Safety/safety-report:environment:hpac-<staging|production>,
+      # (repo:HPAC-Safety@307760008/safety-report@1341995834:environment:hpac-<staging|production>,
       # ADR-0158), and a pull_request-triggered run presents
-      # "repo:ORG/REPO:pull_request" — it cannot assume it, and widening it so
+      # "repo:ORG@ID/REPO@ID:pull_request" — it cannot assume it, and widening it so
       # it could is precisely what ADR-0032 forbids.
       - name: Is AWS configured for ${{ matrix.account }}?
         id: configured

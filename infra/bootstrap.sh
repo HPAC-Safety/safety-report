@@ -96,10 +96,22 @@ REGION='ca-central-1'
 # or workflow, including one pushed to a fork, do the same. Naming the GitHub
 # *environment* (rather than a ref) is what makes a job that declares
 # `environment: staging` or `environment: production` assumable at all - GitHub
-# presents the subject `repo:ORG/REPO:environment:<name>` for such a job, never
+# presents the subject `repo:ORG@ID/REPO@ID:environment:<name>` for such a job, never
 # a `ref:` subject (see the OIDC trust below).
 GITHUB_ORG='HPAC-Safety'
 GITHUB_REPO='safety-report'
+
+# This repository uses GitHub's immutable OIDC subject: every token names the
+# organization and repository by name AND numeric ID,
+# `repo:HPAC-Safety@307760008/safety-report@1341995834:<context>`
+# (`gh api repos/HPAC-Safety/safety-report/actions/oidc/customization/sub`).
+# The IDs are why the trust below cannot be met by an organization or
+# repository re-created under the same name after a rename or deletion. A
+# trust naming only `repo:HPAC-Safety/safety-report:...` matches no token this
+# repository issues (#612, ADR-0167).
+GITHUB_ORG_ID='307760008'
+GITHUB_REPO_ID='1341995834'
+OIDC_SUBJECT_PREFIX="repo:${GITHUB_ORG}@${GITHUB_ORG_ID}/${GITHUB_REPO}@${GITHUB_REPO_ID}"
 
 OIDC_HOST='token.actions.githubusercontent.com'
 OIDC_AUDIENCE='sts.amazonaws.com'
@@ -285,7 +297,7 @@ TRUST_POLICY=$(cat <<JSON
       "Condition": {
         "StringEquals": {
           "${OIDC_HOST}:aud": "${OIDC_AUDIENCE}",
-          "${OIDC_HOST}:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:${GITHUB_ENVIRONMENT}"
+          "${OIDC_HOST}:sub": "${OIDC_SUBJECT_PREFIX}:environment:${GITHUB_ENVIRONMENT}"
         }
       }
     }
@@ -1305,7 +1317,7 @@ say '     four policies converged and attached'
 # single most useful review artifact in the deployment story. But the deploy
 # role above trusts ONLY this repository's `environment:` jobs, and a
 # pull_request-triggered workflow presents the subject
-# "repo:ORG/REPO:pull_request", not an environment subject. It cannot assume
+# "<OIDC_SUBJECT_PREFIX>:pull_request", not an environment subject. It cannot assume
 # that role, and widening the deploy role so it could is exactly the thing
 # the issue says not to do.
 #
@@ -1330,7 +1342,7 @@ PLAN_TRUST_POLICY=$(cat <<JSON
       "Condition": {
         "StringEquals": {
           "${OIDC_HOST}:aud": "${OIDC_AUDIENCE}",
-          "${OIDC_HOST}:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request"
+          "${OIDC_HOST}:sub": "${OIDC_SUBJECT_PREFIX}:pull_request"
         }
       }
     }
@@ -1592,7 +1604,7 @@ say "    gh variable set TF_STATE_BUCKET     --repo ${GITHUB_ORG}/${GITHUB_REPO}
 say "    gh variable set AWS_ACCOUNT_ID      --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${ACCOUNT_ID}"
 say ''
 say "  Repository variables - hpac-safety-plan's OIDC trust matches a pull request's"
-say "  own subject (repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request), which a job presents"
+say "  own subject (${OIDC_SUBJECT_PREFIX}:pull_request), which a job presents"
 say "  only when it does NOT declare environment: - so terraform.yml's pull-request"
 say "  plan job cannot read the ${GITHUB_ENVIRONMENT} copy above. It reads this second,"
 say "  repository-scoped copy of the same two values instead (ADR-0164):"

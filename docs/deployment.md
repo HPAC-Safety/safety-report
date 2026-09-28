@@ -161,7 +161,7 @@ The `_STAGING`/`_PRODUCTION`-suffixed pair is a **second** copy of two values
 `TF_STATE_BUCKET`, set as plain repository variables instead of
 `hpac-safety-staging`/`hpac-safety-production` environment variables. Both
 copies have to exist: `hpac-safety-plan`'s OIDC trust condition matches the
-subject `repo:HPAC-Safety/safety-report:pull_request` (bootstrap.sh's own
+subject `repo:HPAC-Safety@307760008/safety-report@1341995834:pull_request` (bootstrap.sh's own
 comment on the plan role), which a job presents only when it does **not**
 declare `environment:` — the moment a job adds `environment: hpac-safety-staging`
 to read that environment's variables, its subject becomes
@@ -300,7 +300,7 @@ It creates, in that account only:
 
 - the GitHub OIDC identity provider (or reuses one that exists);
 - `hpac-safety-deploy`, trusted only by
-  `repo:HPAC-Safety/safety-report:environment:<hpac-safety-staging|hpac-safety-production>`
+  `repo:HPAC-Safety@307760008/safety-report@1341995834:environment:<hpac-safety-staging|hpac-safety-production>`
   — exactly the subject a job with `environment: hpac-safety-staging` (or
   `hpac-safety-production`) presents, and nothing else. The script argument stays
   `staging`/`production`; it maps that to the GitHub environment's actual

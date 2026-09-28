@@ -10,6 +10,12 @@ keywords: Terraform, CI, OIDC, credential-free
 
 # ADR-0032 — Two roles, and a check that works without an AWS account
 
+**Subject form amended by
+[ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
+subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is
+`repo:HPAC-Safety@307760008/safety-report@1341995834:<context>`, GitHub's
+immutable form, which is the only form this repository's tokens carry.
+
 **Status:** Accepted for the two-roles shape and credential-free validation.
 Any SES or combined-site examples below are superseded by the
 [infrastructure specification](../infrastructure-and-operations.md). The

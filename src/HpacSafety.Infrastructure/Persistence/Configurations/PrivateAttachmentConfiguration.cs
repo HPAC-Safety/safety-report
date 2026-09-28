@@ -9,7 +9,7 @@ namespace HpacSafety.Infrastructure.Persistence.Configurations;
 ///     The <c>report_private_attachments</c> table: staff-only files on a report
 ///     (ADR-0135). Deliberately not <c>report_files</c>, so no reporter-attachment
 ///     reader — the Worker, the model input, a public view, a count — can reach it
-///     by forgetting a flag. No view, public query, or Worker reads it.
+///     by forgetting a flag. No public query or Worker reads it; the one exception is admin_report_search_document, the admin-only search view (ADR-0156).
 /// </summary>
 public sealed class PrivateAttachmentConfiguration : IEntityTypeConfiguration<PrivateAttachment>
 {

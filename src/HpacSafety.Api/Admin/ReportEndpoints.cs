@@ -58,20 +58,28 @@ public static class ReportEndpoints
 	}
 
 	/// <summary>
-	///     One page of the live report list, newest submitted first, a tie broken
-	///     by report ID, narrowed by <paramref name="filter" /> (REQ-MOD-030,
-	///     REQ-MOD-049, REQ-MOD-050, REQ-MOD-124, REQ-MOD-129). State and timing
-	///     only, plus the reporter's and pilot's names — the one piece of answer
-	///     text this list shows without an audited read (ADR-0154) — the list
-	///     carries no other answer or summary text, so reading it is not audited.
-	///     Opening a report remains the audited read of everything else. An
-	///     unreadable cursor, or one naming a report no longer in the queue, starts
-	///     from the top rather than failing, the same rule as the public feed
-	///     (ADR-0155).
+	///     One page of the live report list, narrowed by <paramref name="filter" />
+	///     (REQ-MOD-030, REQ-MOD-049, REQ-MOD-050, REQ-MOD-124, REQ-MOD-129), newest
+	///     submitted first, or best match first while <paramref name="q" /> holds a
+	///     search (REQ-MOD-130..135, ADR-0156). A search matches every answer
+	///     including private ones, a choice's label in both languages, the summary
+	///     pair, private notes, member comments, and attachment file names, within
+	///     whichever filter is current; <paramref name="q" /> is never logged.
+	///     State and timing only, plus the reporter's and pilot's names — the one
+	///     piece of answer text this list shows without an audited read
+	///     (ADR-0154) — the list carries no other answer or summary text, so
+	///     reading it is not audited. Opening a report remains the audited read of
+	///     everything else. An unreadable cursor, or one naming a report no longer
+	///     in the queue or no longer matching <paramref name="q" />, starts from
+	///     the top rather than failing, the same rule as the public feed
+	///     (ADR-0155). The cursor is always the anchor report's ID alone — never a
+	///     rank or a timestamp — the same opaque shape whichever order the page is
+	///     in.
 	/// </summary>
 	private static async Task<IResult> List(
 		string? filter,
 		string? after,
+		string? q,
 		HpacSafetyDbContext database,
 		CancellationToken cancellationToken)
 	{
@@ -87,43 +95,90 @@ public static class ReportEndpoints
 		}
 
 		var query = database.AdminReportQueue.AsNoTracking().Where(matches);
+		var afterResolved = Cursor.TryRead(after, out var afterId) && TinyId.TryParse(afterId, out var afterTinyId)
+			? afterTinyId
+			: (TinyId?)null;
 
-		if (Cursor.TryRead(after, out var afterId) && TinyId.TryParse(afterId, out var afterTinyId))
+		List<AdminReportQueueItem> rows;
+
+		if (!string.IsNullOrWhiteSpace(q))
 		{
-			var position = await database.AdminReportQueue
-				.AsNoTracking()
-				.Where(report => report.Id == afterTinyId)
-				.Select(report => new { report.Id, report.SubmittedAt })
-				.SingleOrDefaultAsync(cancellationToken)
-				.ConfigureAwait(false);
+			var ranked = database.SearchAdminReports(q)
+				.Join(query, match => match.ReportId, report => report.Id, (match, report) => new { match.Rank, Report = report });
 
-			// A cursor naming a report no longer in the queue (deleted, or simply
-			// not matching this filter any more) resolves to nothing, and the page
-			// starts over from the top — the same rule as an unreadable cursor.
-			//
-			// The tie-break for two reports submitted at the exact same instant
-			// orders past the anchor by ID, the same as the public feed's
-			// `string.Compare(report.Id, id) < 0` (ADR-0153): TinyId's `<`
-			// (ordinal over its Value, ADR-0155) translates the same way, so a
-			// shared `submitted_at` neither skips nor repeats a row across a page
-			// boundary.
-			if (position is not null)
+			if (afterResolved is { } anchorId)
 			{
-				var submittedAt = position.SubmittedAt;
-				var id = position.Id;
+				var position = await ranked
+					.Where(ranked => ranked.Report.Id == anchorId)
+					.Select(ranked => new { ranked.Rank, ranked.Report.Id })
+					.SingleOrDefaultAsync(cancellationToken)
+					.ConfigureAwait(false);
 
-				query = query.Where(report =>
-					report.SubmittedAt < submittedAt
-					|| (report.SubmittedAt == submittedAt && report.Id < id));
+				// A cursor naming a report no longer in the queue, no longer
+				// matching this filter, or no longer matching this search, resolves
+				// to nothing, and the page starts over from the top — the same
+				// rule as an unreadable cursor. The tie-break for two reports
+				// ranked equally orders past the anchor by ID, the same shape the
+				// timestamp-ordered path below uses, so a shared rank neither
+				// skips nor repeats a row across a page boundary.
+				if (position is not null)
+				{
+					var anchorRank = position.Rank;
+					var anchorReportId = position.Id;
+
+					ranked = ranked.Where(ranked =>
+						ranked.Rank < anchorRank
+						|| (ranked.Rank == anchorRank && ranked.Report.Id < anchorReportId));
+				}
 			}
-		}
 
-		var rows = await query
-			.OrderByDescending(report => report.SubmittedAt)
-			.ThenByDescending(report => report.Id)
-			.Take(PageSize + 1)
-			.ToListAsync(cancellationToken)
-			.ConfigureAwait(false);
+			rows = await ranked
+				.OrderByDescending(ranked => ranked.Rank)
+				.ThenByDescending(ranked => ranked.Report.Id)
+				.Take(PageSize + 1)
+				.Select(ranked => ranked.Report)
+				.ToListAsync(cancellationToken)
+				.ConfigureAwait(false);
+		}
+		else
+		{
+			if (afterResolved is { } anchorId)
+			{
+				var position = await database.AdminReportQueue
+					.AsNoTracking()
+					.Where(report => report.Id == anchorId)
+					.Select(report => new { report.Id, report.SubmittedAt })
+					.SingleOrDefaultAsync(cancellationToken)
+					.ConfigureAwait(false);
+
+				// A cursor naming a report no longer in the queue (deleted, or simply
+				// not matching this filter any more) resolves to nothing, and the page
+				// starts over from the top — the same rule as an unreadable cursor.
+				//
+				// The tie-break for two reports submitted at the exact same instant
+				// orders past the anchor by ID, the same as the public feed's
+				// `string.Compare(report.Id, id) < 0` (ADR-0153): TinyId's `<`
+				// (ordinal over its Value, ADR-0155) translates the same way, so a
+				// shared `submitted_at` neither skips nor repeats a row across a page
+				// boundary.
+				if (position is not null)
+				{
+					var submittedAt = position.SubmittedAt;
+					var id = position.Id;
+
+					query = query.Where(report =>
+						report.SubmittedAt < submittedAt
+						|| (report.SubmittedAt == submittedAt && report.Id < id));
+				}
+			}
+
+			rows = await query
+				.OrderByDescending(report => report.SubmittedAt)
+				.ThenByDescending(report => report.Id)
+				.Take(PageSize + 1)
+				.ToListAsync(cancellationToken)
+				.ConfigureAwait(false);
+		}
 
 		var page = rows.Take(PageSize).ToList();
 		var next = rows.Count > PageSize ? Cursor.Write(page[^1].Id.Value) : null;

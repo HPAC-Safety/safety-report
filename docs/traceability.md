@@ -942,6 +942,46 @@ Manage reports loads more automatically and offers the same hidden fallback and 
 
 The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
 
+### REQ-MOD-130
+
+Searching Manage reports finds a report matched by any part of it — *Reqnroll, Covered*
+
+### REQ-MOD-131
+
+A misspelled search still finds the report — *Reqnroll, Covered*
+
+### REQ-MOD-132
+
+A search matches across English and French stemming — *Reqnroll, Covered*
+
+### REQ-MOD-133
+
+The best match is listed first — *Reqnroll, Covered*
+
+### REQ-MOD-134
+
+Clearing the search box returns to newest submitted first — *playwright-bdd, Covered*
+
+### REQ-MOD-135
+
+A search stays within the chosen filter — *Reqnroll, Covered*
+
+### REQ-MOD-136
+
+The search text lives in the address bar and survives a reload — *playwright-bdd, Covered*
+
+### REQ-MOD-137
+
+A search matching nothing shows a message naming the query, not an error — *playwright-bdd, Covered*
+
+### REQ-MOD-138
+
+Only a reviewer may find a match inside private report content — *Reqnroll, Covered*
+
+### REQ-MOD-139
+
+The search query text is never logged — *Reqnroll, Covered*
+
 ### REQ-MOD-140
 
 Search matches the approved published summary in the visitor's site language — *Reqnroll, Covered*

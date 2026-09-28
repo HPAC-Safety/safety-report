@@ -14,6 +14,11 @@ keywords: private notes, review, revisions, soft delete, identity, audit, ADR-00
 [ADR-0114](ADR-0114-members-may-comment-on-a-published-report.md) and records
 writers as opaque token subjects, as
 [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md) requires.
+**Amended by [ADR-0156](ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)
+(#573):** `admin_report_search_document`, the admin-only view backing Manage
+reports' search box, is the one other reader of `report_private_notes` /
+`report_private_note_revisions` — item 5 below no longer holds without
+exception.
 
 ## Context
 
@@ -50,6 +55,18 @@ feed, and the comments.
 5. **Nothing but those endpoints reads the tables.** No database view, no
    public or member endpoint, the report detail DTO, `ReportForSummaryDto`, or
    the Worker. Writing a note queues no outbox work.
+   **Amended by ADR-0156 (#573), on condition:** the one exception is
+   `admin_report_search_document`, a view reachable through exactly one code
+   path — `GET /api/admin/reports?q=`, gated by the same `Reviewer` policy
+   (`SafetyOfficer`/`Administrator` only; `401` anonymous, `403` for any
+   other role, neither response naming the report or its content) — that
+   gathers a note's *current* revision text to rank which report a search
+   matched. No other endpoint or code path queries it
+   (`SearchIsTheOnlyReaderOfPrivateContentTests`). It names no revision
+   number, writer subject, or note identifier, and no endpoint returns the
+   note's text through it — only which report matched, and at what rank. A
+   removed note, and any revision but the current one, is left
+   out.
 
 ```mermaid
 erDiagram
@@ -91,6 +108,9 @@ erDiagram
 - A second kind of opaque subject is stored against report content that only
   reviewers read. It identifies nobody outside the identity provider.
 - A note linking to a private attachment is #507's, not this decision's.
-- Mentions, notifications, rich text, attachments on a note, search, and
-  restoring a removed note are not built. See
+- Mentions, notifications, rich text, attachments on a note, and restoring a
+  removed note are not built. A dedicated search over notes is not built
+  either: the admin search box that finds a report by, among other things, a
+  note's words is a whole-report ranking, not a notes search of its own
+  (ADR-0156). See
   [`features/moderation-authentication-and-publication/README.md`](../../features/moderation-authentication-and-publication/README.md).

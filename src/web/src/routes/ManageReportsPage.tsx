@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
@@ -33,9 +33,11 @@ import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
  */
 export function ManageReportsPage() {
 	const { t, locale } = useLocale()
-	const [searchParams] = useSearchParams()
+	const [searchParams, setSearchParams] = useSearchParams()
 	const requested = searchParams.get("filter")
 	const filter = isReportFilter(requested) ? requested : "all"
+	const q = searchParams.get("q") ?? ""
+	const [searchInput, setSearchInput] = useState(q)
 	const [error, setError] = useState<string | null>(null)
 	const [busyId, setBusyId] = useState<string | null>(null)
 	const [stale, setStale] = useState(false)
@@ -53,10 +55,38 @@ export function ManageReportsPage() {
 		mutate,
 		reload: reloadList,
 	} = useInfiniteReportList<ReportListItem>({
-		storageKey: `admin:${filter}`,
+		// A changed search term starts a fresh accumulated list rather than
+		// restoring a stale one, the same rule a changed filter already follows
+		// (ADR-0155).
+		storageKey: `admin:${filter}:${q}`,
 		getId: (report) => report.id,
-		fetchPage: (after) => listReports(filter, after),
+		fetchPage: (after) => listReports(filter, after, q),
 	})
+
+	// The address bar is the source of truth for the search text (REQ-MOD-136):
+	// bookmarkable, and it survives back/reload. The input debounces before it
+	// updates the address bar, so a keystroke does not fire a request or a
+	// history entry on its own.
+	useEffect(() => {
+		setSearchInput(q)
+	}, [q])
+
+	useEffect(() => {
+		const trimmed = searchInput.trim()
+		if (trimmed === q) return
+		const timer = window.setTimeout(() => {
+			setSearchParams(
+				(current) => {
+					const next = new URLSearchParams(current)
+					if (trimmed) next.set("q", trimmed)
+					else next.delete("q")
+					return next
+				},
+				{ replace: true },
+			)
+		}, 300)
+		return () => window.clearTimeout(timer)
+	}, [searchInput, q, setSearchParams])
 
 	function fail(cause: unknown) {
 		if (cause instanceof ApiError && cause.type === STALE_REPORT) setStale(true)
@@ -116,6 +146,32 @@ export function ManageReportsPage() {
 			<h1 className="font-display text-3xl font-bold">{t("nav.manageReports")}</h1>
 			<p className="mt-2 font-sans text-ink-muted">{t("reports.intro")}</p>
 
+			<div className="mt-6">
+				<label htmlFor="report-search" className="sr-only">
+					{t("reports.search.label")}
+				</label>
+				<div className="relative">
+					<input
+						id="report-search"
+						type="search"
+						value={searchInput}
+						onChange={(event) => setSearchInput(event.target.value)}
+						placeholder={t("reports.search.placeholder")}
+						className="touch-target w-full rounded border border-rule bg-surface px-4 font-sans text-ink [&::-webkit-search-cancel-button]:appearance-none"
+					/>
+					{searchInput && (
+						<button
+							type="button"
+							aria-label={t("reports.search.clear")}
+							className="absolute inset-y-0 right-2 font-sans text-sm text-ink-muted"
+							onClick={() => setSearchInput("")}
+						>
+							×
+						</button>
+					)}
+				</div>
+			</div>
+
 			<nav aria-label={t("reports.filter.label")} className="mt-6">
 				<ul className="flex flex-wrap gap-2">
 					{REPORT_FILTERS.map((option) => (
@@ -162,7 +218,7 @@ export function ManageReportsPage() {
 			{loading ? (
 				<p className="mt-8 font-sans text-ink-muted">{t("reports.loading")}</p>
 			) : reports.length === 0 ? (
-				<p className="mt-8 font-sans text-ink-muted">{t("reports.empty")}</p>
+				<p className="mt-8 font-sans text-ink-muted">{q ? t("reports.searchEmpty", { q }) : t("reports.empty")}</p>
 			) : (
 				<ul aria-label={t("reports.listLabel")} className="mt-8 flex flex-col gap-3">
 					{reports.map((report) => {

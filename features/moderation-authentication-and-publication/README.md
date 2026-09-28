@@ -130,6 +130,38 @@ view, and that read is audited as `ViewedRawReport`
 Attachments are listed by kind and state; opening one goes through its own
 audited view or download request (REQ-MOD-046).
 
+### Search (#573)
+
+A search box sits at the very top of the page, above the filter. It
+fuzzy-searches every part of a live report — every answer including private
+ones, a choice's label in both languages, the summary pair, staff-only
+private notes, member comments, and both reporter-uploaded and staff-only
+attachment file names — built on PostgreSQL's own full-text search and
+`pg_trgm` word similarity, no new service
+([ADR-0156](../../docs/decisions/ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)).
+
+- **Best match first** while the box holds text; **newest submitted first**
+  when it is empty, exactly as before this decision (REQ-MOD-133,
+  REQ-MOD-134).
+- **Searches within the chosen filter.** Typing a query never leaves
+  "Published" or "Needs action"; it narrows what that filter already shows
+  (REQ-MOD-135).
+- **Typo-tolerant and bilingual**: a misspelled word, a partial word, or a
+  French query against an English answer (or the reverse) still finds the
+  report (REQ-MOD-131, REQ-MOD-132).
+- **Lives in the address bar** as `?q=`, alongside the filter — bookmarkable,
+  and it survives a reload or the back button (REQ-MOD-136).
+- **No results** shows a message naming the search text rather than an empty
+  list with no explanation (REQ-MOD-137).
+- Reads what it finds, never which part matched: a hit is the whole report,
+  not an attributed snippet.
+- Only live (non-deleted) reports, the same as the rest of the list. The
+  search text itself is never logged (REQ-MOD-139) — report content is never
+  logged (`AGENTS.md` invariant 8).
+- SafetyOfficer and Administrator only, the same authorization the rest of
+  Manage reports already requires; the search box adds no route and no
+  policy of its own.
+
 ### Quick actions on each row (#568)
 
 Each row also carries icon buttons, so a reviewer can act without opening the
@@ -371,8 +403,12 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Automatic approval or publication, including "approve if the model is
   confident."
 - A per-reporter rate limit, which would mean identifying the reporter.
-- Search or sorting of the admin report list other than newest submitted
-  first, and a page-count or jump-to-page control.
+- Sorting of the admin report list other than newest submitted first (or
+  best match first while a search is active), and a page-count or
+  jump-to-page control.
+- Showing which part of a report matched a search, or a highlighted snippet
+  of the match. A search only decides which reports are found and their
+  order (ADR-0156).
 - Showing answer or summary text in the admin report list itself, other than
   the reporter's and pilot's names (REQ-MOD-124, ADR-0154).
 - Acting on several reports at once from the list, editing or writing the

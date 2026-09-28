@@ -71,8 +71,15 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Theory]
-	[InlineData("a search term nobody's published summary or comment could ever contain")]
-	[InlineData("un terme de recherche introuvable")]
+	// Deliberately not an ordinary English or French sentence: this suite's
+	// Postgres container is shared with every other Api.Tests class
+	// (SharedApiPostgres), and every one of them publishes reports whose
+	// synthetic summaries are themselves plain English/French sentences. A
+	// "guaranteed no match" probe built from real words shares real trigrams
+	// with that ever-growing corpus and can cross pg_trgm's similarity
+	// threshold by chance once enough tests have run; a made-up token cannot.
+	[InlineData("zzqxjwsearchprobenomatchshouldeverexist")]
+	[InlineData("zzqxjwtermeinexistantquinecorrespondjamais")]
 	public async Task GivenNonBlankSearchMatchingNothing_WhenFeedIsQueried_ThenEmptyPageReturned(string q)
 	{
 		// Given

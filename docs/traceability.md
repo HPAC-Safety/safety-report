@@ -2469,6 +2469,22 @@ infrastructure-and-operations.md — verified by `REQ-MOD-039`
 
 infrastructure-and-operations.md — verified by `REQ-DOM-010`, `REQ-DOM-011`, `REQ-DOM-012`, `REQ-MED-005`
 
+### CON-INF-011
+
+infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check
+
+### CON-INF-012
+
+infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; the `release` and `terraform` workflows are its check
+
+### CON-INF-013
+
+infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform plan review and the `infra` job are its check
+
+### CON-INF-014
+
+infrastructure-and-operations.md — verified by none — these are review-time properties no application scenario can observe
+
 ### CON-SO-001
 
 system-overview.md — verified by `REQ-QB-001`, `REQ-QB-002`, `REQ-QB-009`

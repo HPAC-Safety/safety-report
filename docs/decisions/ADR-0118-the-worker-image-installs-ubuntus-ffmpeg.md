@@ -15,7 +15,10 @@ keywords: ffmpeg, worker, container image, dockerfile, PublishContainer, video, 
 consequence that "the Worker and API container images need ffmpeg": only the
 Worker's does. Since
 [ADR-0098](ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)
-the API never processes a video.
+the API never processes a video. **Partially superseded by
+[ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md):**
+this image now runs as a Lambda function, not an ECS Fargate service; the
+Dockerfile, the ffmpeg source, and the build script below are unchanged.
 
 ## Context
 

@@ -16,8 +16,12 @@ export default defineConfig({
 		host: true,
 		// Named hosts the dev server will answer to, beyond localhost. Vite
 		// refuses an unknown Host header, so reaching the dev server by machine
-		// name on a LAN needs it listed here.
-		allowedHosts: ["strider.local"],
+		// name on a LAN needs it listed here. `preview` (tests/e2e's Playwright
+		// webServer) inherits this list, which is how REQ-WLD-030/031 (#463)
+		// exercise the two production hostnames and a staging-shaped
+		// *.cloudfront.net address against a real Host header, without any real
+		// DNS or TLS.
+		allowedHosts: ["strider.local", "safety.hpac.ca", "securite.acvl.ca", ".cloudfront.net"],
 		// The admin screens call the API on the same origin, so there is no CORS
 		// configuration to get wrong in production and none to weaken in
 		// development. HPAC_API_ORIGIN covers running the API outside the

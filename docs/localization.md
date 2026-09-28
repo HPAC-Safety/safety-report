@@ -23,9 +23,13 @@ again. An edit to both languages of one key at once is recorded the same way:
 whoever edited both edited both on purpose
 ([ADR-0070](decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
 
-Resolve locale in this order: explicit user selection, browser preference,
-English fallback. Persist the explicit selection, set the HTML `lang`, and keep
-form answers/revision IDs when switching language.
+Resolve locale in this order: explicit user selection, then the hostname
+(`securite.acvl.ca` → French, `safety.hpac.ca` → English), then browser
+preference, then English fallback. An unrecognized host — staging's
+`*.cloudfront.net` address, or localhost — has no hostname default and falls
+through to the browser preference. Persist the explicit selection, set the
+HTML `lang`, and keep form answers/revision IDs when switching language.
+Switching language never changes the host.
 
 ## Database questions
 

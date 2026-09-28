@@ -51,6 +51,27 @@ Examples:
   | no stored choice but a supported browser language of fr-CA | the browser language, fr-CA |
   | no stored choice and no supported browser language         | English, as the fallback    |
 
+@REQ-WLD-030
+@ui
+Scenario Outline: A production hostname sets a first-time visitor's default language, but a saved choice still wins
+Given a visitor has <signal>
+When the page loads
+Then the locale <chosen> is selected
+
+Examples:
+  | signal                                                                                      | chosen                       |
+  | no stored choice, visiting securite.acvl.ca                                                 | the hostname's language, fr-CA |
+  | no stored choice, visiting safety.hpac.ca                                                    | the hostname's language, en-CA |
+  | an explicit stored language choice of en-CA, visiting securite.acvl.ca                      | the stored choice, en-CA     |
+  | no stored choice but a supported browser language of fr-CA, visiting d1x2y3.cloudfront.net   | the browser language, fr-CA  |
+
+@REQ-WLD-031
+@ui
+Scenario: Switching the language toggle never changes the host
+  Given a visitor loads the page at securite.acvl.ca
+  When the visitor switches the language toggle
+  Then the browser stays on securite.acvl.ca
+
 @REQ-WLD-006
 @ui
 Scenario: Switching the language toggle updates the document language and persists the choice

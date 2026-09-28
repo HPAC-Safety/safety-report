@@ -6,6 +6,7 @@ const { Given, When, Then } = createBdd()
 interface LocaleSignal {
 	storedLocale?: string
 	browserLanguages?: string[]
+	hostname?: string
 }
 
 let pendingSignal: LocaleSignal = {}
@@ -14,18 +15,29 @@ function localeCodeIn(text: string): string | undefined {
 	return text.match(/[a-z]{2}-[A-Z]{2}/)?.[0]
 }
 
+// The hostnames this suite navigates to (production's two, plus a
+// cloudfront.net stand-in for an unrecognized host) are mapped to loopback by
+// playwright.config.ts's --host-resolver-rules, so no real DNS or TLS is
+// needed.
+function hostnameIn(text: string): string | undefined {
+	return text.match(/visiting ([\w.-]+)/)?.[1]
+}
+
 Given(/^a visitor has ((?:an explicit stored language choice|no stored choice).+)$/, async ({}, signal: string) => {
+	const hostname = hostnameIn(signal)
 	if (signal.startsWith("an explicit stored language choice of")) {
-		pendingSignal = { storedLocale: localeCodeIn(signal) }
+		pendingSignal = { storedLocale: localeCodeIn(signal), hostname }
 	} else if (signal.startsWith("no stored choice but a supported browser language of")) {
-		pendingSignal = { browserLanguages: [localeCodeIn(signal)!] }
+		pendingSignal = { browserLanguages: [localeCodeIn(signal)!], hostname }
+	} else if (hostname) {
+		pendingSignal = { hostname }
 	} else {
 		pendingSignal = { browserLanguages: ["de-DE"] }
 	}
 })
 
 When("the page loads", async ({ page, context }) => {
-	const { storedLocale, browserLanguages } = pendingSignal
+	const { storedLocale, browserLanguages, hostname } = pendingSignal
 	await context.addInitScript(
 		([stored, languages]) => {
 			if (stored) localStorage.setItem("hpac.locale", stored)
@@ -36,7 +48,15 @@ When("the page loads", async ({ page, context }) => {
 		},
 		[storedLocale ?? null, browserLanguages ?? null] as const,
 	)
-	await page.goto("/")
+	await page.goto(hostname ? `http://${hostname}:4173/` : "/")
+})
+
+Given(/^a visitor loads the page at ([\w.-]+)$/, async ({ page }, hostname: string) => {
+	await page.goto(`http://${hostname}:4173/`)
+})
+
+Then(/^the browser stays on ([\w.-]+)$/, async ({ page }, hostname: string) => {
+	expect(new URL(page.url()).hostname).toBe(hostname)
 })
 
 Then(/^the locale (.+) is selected$/, async ({ page }, chosen: string) => {
@@ -48,8 +68,11 @@ Given("a visitor is on any page", async ({ page }) => {
 	await page.goto("/")
 })
 
+// The toggle's accessible name is locale-dependent ("Switch to …" in English,
+// "Passer à …" in French per locales/fr-CA.json), which matters here because
+// REQ-WLD-031 loads the page on a French-defaulting hostname.
 When("the visitor switches the language toggle", async ({ page }) => {
-	await page.getByRole("button", { name: /^Switch to/ }).click()
+	await page.getByRole("button", { name: /^(Switch to|Passer à)/ }).click()
 })
 
 Then("the document lang attribute and page title update", async ({ page }) => {

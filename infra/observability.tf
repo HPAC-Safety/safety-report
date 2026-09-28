@@ -44,9 +44,8 @@ resource "aws_sns_topic" "alarms" {
 # table in docs/deployment.md both exist so that gap is stated rather than
 # discovered.
 #
-# Alarm mail comes from Amazon SNS, not through the SES identity in ses.tf — so
-# it is not held up by the SES sandbox. It does still need safety@hpac.ca to be a
-# mailbox somebody reads.
+# Alarm mail comes from Amazon SNS — an operator alert, not an application
+# email flow. It does still need safety@hpac.ca to be a mailbox somebody reads.
 resource "aws_sns_topic_subscription" "alarms_email" {
   for_each = toset(var.alarm_email_addresses)
 

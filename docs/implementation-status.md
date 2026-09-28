@@ -40,7 +40,7 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Encryption | Implemented. The application-side AES-GCM field cipher, its converters, and `IFieldCipher` were removed (#100); the schema now relies on managed AWS encryption plus TLS, per ADR-0019 (superseded by [data-and-persistence.md](data-and-persistence.md)). | Keep. |
 | Localization | Locale catalogues, parity/lint/CI translation tooling, and locale value type exist, and every page reads its copy from them. | Keep catalogue tooling for app chrome; manually store both question languages; one AI call supplies both summaries. |
 | Design system | Tailwind v4 tokens, dark token redefinition, self-hosted Aleo/Poppins, preview, and the approved HPAC mark as light/dark SVG variants (#245) exist. | Keep and apply to the one accessible website. |
-| Infrastructure | AWS Terraform in `ca-central-1`: ECS Fargate services for the API and Worker, RDS, a private uploads bucket, the website's private S3 bucket behind one CloudFront distribution, secrets, alarms, and OIDC deploy workflows. It still holds an unused migrate task and SES resources (#441). | API and Worker on Lambda (#443; ADR-0042, ADR-0123), website on S3 + CloudFront (already built), migrations at startup (ADR-0055), Canadian minimal services, backups, OIDC, focused Worker alerts. See [infrastructure and operations](infrastructure-and-operations.md#where-todays-terraform-differs). |
+| Infrastructure | AWS Terraform in `ca-central-1`: ECS Fargate services for the API and Worker, RDS, a private uploads bucket, the website's private S3 bucket behind one CloudFront distribution, secrets, alarms, and OIDC deploy workflows. | API and Worker on Lambda (#443; ADR-0042, ADR-0123), website on S3 + CloudFront (already built), migrations at startup (ADR-0055), Canadian minimal services, backups, OIDC, focused Worker alerts. See [infrastructure and operations](infrastructure-and-operations.md#where-todays-terraform-differs). |
 | Tests/CI | Strong Core/persistence/media primitives and repository gates; API/Worker/UI feature coverage is mostly scaffold-level. The acceptance suite now boots the API for the scenarios that describe what it refuses over HTTP (#209). | Rewrite superseded contracts and add target API, Worker, browser, deletion, document, and public-boundary coverage. |
 
 ## Current database shape
@@ -126,6 +126,5 @@ Worker.
    deletion, and the exact public DTO.~~ Done (#191, #192, #25, #28).
 5. ~~Complete the end-to-end bilingual and privacy journey (#27).~~ Closed as
    unnecessary: the per-area claims cover each step.
-6. Bring the Terraform to the target: the API and Worker on Lambda (#443), and
-   the unused migrate task and SES removed (#441). Then deploy (#30) and verify
-   the focused operational alerts.
+6. Bring the Terraform to the target: the API and Worker on Lambda (#443). Then
+   deploy (#30) and verify the focused operational alerts.

@@ -27,7 +27,6 @@ output "deploy_variables" {
     ECS_CLUSTER                  = aws_ecs_cluster.main.name
     ECS_SERVICE_API              = aws_ecs_service.api.name
     ECS_SERVICE_WORKER           = aws_ecs_service.worker.name
-    ECS_TASK_DEFINITION_MIGRATE  = aws_ecs_task_definition.migrate.family
     ECS_SUBNETS                  = join(",", [for s in aws_subnet.private : s.id])
     ECS_SECURITY_GROUPS          = aws_security_group.api.id
     S3_BUCKET_SITE               = aws_s3_bucket.site.id
@@ -66,45 +65,9 @@ output "dns_records_to_publish" {
     Every DNS record HPAC's DNS administrator has to publish on hpac.ca, in one
     place, because that is an external dependency on another organisation and it
     takes days rather than minutes.
-
-    SPF and DMARC are literal strings rather than computed: they are policy, and
-    the DMARC policy in particular is a decision for HPAC. `p=none` here reports
-    without rejecting, which is the correct starting point — tighten to
-    quarantine and then reject once the reports show only SES sending.
   EOT
 
   value = {
-    ses_dkim = [
-      for token in aws_sesv2_email_identity.main.dkim_signing_attributes[0].tokens : {
-        type    = "CNAME"
-        name    = "${token}._domainkey.${var.ses_domain}"
-        value   = "${token}.dkim.amazonses.com"
-        purpose = "DKIM. Publishes the public half of the key SES signs with, and verifies the domain identity. All three are required; two out of three is a domain that stays unverified."
-      }
-    ]
-
-    ses_mail_from = [
-      {
-        type    = "MX"
-        name    = "${var.ses_mail_from_subdomain}.${var.ses_domain}"
-        value   = "10 feedback-smtp.${var.aws_region}.amazonses.com"
-        purpose = "Where bounces for the custom MAIL FROM subdomain go. On the SUBDOMAIN only — it does not touch the MX for ${var.ses_domain}, so it cannot affect mail delivered TO safety@${var.ses_domain}."
-      },
-      {
-        type    = "TXT"
-        name    = "${var.ses_mail_from_subdomain}.${var.ses_domain}"
-        value   = "v=spf1 include:amazonses.com ~all"
-        purpose = "SPF for the MAIL FROM subdomain, so the envelope sender authenticates and DMARC aligns with the visible From header."
-      },
-    ]
-
-    dmarc = {
-      type    = "TXT"
-      name    = "_dmarc.${var.ses_domain}"
-      value   = "v=DMARC1; p=none; rua=mailto:dmarc@${var.ses_domain}"
-      purpose = "DMARC policy. p=none reports without rejecting, which is the correct starting point; tighten to quarantine then reject once the reports show only SES sending."
-    }
-
     acm_validation = concat(
       [
         for o in aws_acm_certificate.api.domain_validation_options : {

@@ -26,10 +26,6 @@ locals {
       name        = "${local.name}/connection-string"
       description = "ConnectionStrings__Default. Built from the RDS endpoint and the RDS-managed master password secret; not derivable by Terraform without putting the password in state."
     }
-    notifications_to = {
-      name        = "${local.name}/notifications-to"
-      description = "Notifications__To. Where the Worker sends review alerts, safety@hpac.ca in production. A mailbox address, held here rather than in a variable so changing it is not a deploy."
-    }
   }
 }
 

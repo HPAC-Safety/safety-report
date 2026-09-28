@@ -1,6 +1,6 @@
 name: Terraform
 
-# The AWS environment itself: VPC, RDS, ECS, ECR, S3, CloudFront, SES, Secrets
+# The AWS environment itself: VPC, RDS, ECS, ECR, S3, CloudFront, Secrets
 # Manager, log groups, alarms. The three deploy-* workflows ship artifacts INTO
 # what this creates; they never create anything.
 #

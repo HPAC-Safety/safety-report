@@ -382,14 +382,14 @@ Scenario: The admin report page uses the same strip and lightbox, and works for 
   Given a safety officer is signed in and an unpublished report has an image and a hidden document
   When a safety officer opens the report in the admin area
   Then the report shows the same thumbnail strip and lightbox as the public report page
-  And the hidden document's thumbnail is marked "Hidden" and offers to show it
+  And the hidden document's thumbnail is marked "Hidden from the public" and offers to show it
 
 @REQ-MED-060
 @ui
 Scenario: A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox
   Given a safety officer is signed in and a report has a still-processing image
   When a safety officer opens the report in the admin area
-  Then the image's tile is marked "Processing"
+  Then the image's tile is marked "processing"
   And activating it downloads the raw original rather than opening the lightbox
 
 @REQ-MED-036

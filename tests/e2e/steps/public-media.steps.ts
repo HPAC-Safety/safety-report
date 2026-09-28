@@ -591,7 +591,7 @@ Then("the report shows the same thumbnail strip and lightbox as the public repor
 
 Then("the hidden document's thumbnail is marked {string} and offers to show it", async ({ page }, label: string) => {
 	const row = page.locator('[data-media="document"]')
-	await expect(row.locator('[data-visibility="hidden"]')).toHaveText(label === "Hidden" ? "Hidden from the public" : label)
+	await expect(row.locator('[data-visibility="hidden"]')).toHaveText(label)
 	await expect(row.getByRole("button", { name: "Show on the public report" })).toBeVisible()
 })
 
@@ -602,7 +602,7 @@ Given("a safety officer is signed in and a report has a still-processing image",
 })
 
 Then("the image's tile is marked {string}", async ({ page }, label: string) => {
-	await expect(page.locator('[data-media="image"]').getByTestId("attachment-state")).toHaveText(label === "Processing" ? "processing" : label)
+	await expect(page.locator('[data-media="image"]').getByTestId("attachment-state")).toHaveText(label)
 })
 
 Then("activating it downloads the raw original rather than opening the lightbox", async ({ page }) => {

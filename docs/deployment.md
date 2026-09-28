@@ -42,9 +42,12 @@ still scaffolding.
   holds real reports and serves `safety.hpac.ca` and `securite.acvl.ca` on one
   CloudFront distribution.
 - Each account groups its resources under its own AWS myApplications
-  application and tag-based Resource Group — **`hpac-staging`** and
-  **`hpac-production`** — a grouping and cost-visibility tool, not a security
-  boundary. Both accounts are reached only by their own short-lived GitHub
+  application and Resource Group — **`hpac-safety-staging`** and
+  **`hpac-safety-production`** — a grouping and cost-visibility tool, not a security
+  boundary; the myApplications application still relies on the
+  `Project=HPAC-Safety` tag, since its ARN carries an opaque id rather than
+  this name, but the Resource Group's own ARN carries the name, so it is
+  scoped by name as well. Both accounts are reached only by their own short-lived GitHub
   OIDC roles
   (`hpac-safety-deploy`, `hpac-safety-plan`) — never a long-lived AWS access
   key.
@@ -63,7 +66,7 @@ still scaffolding.
 A maintainer publishes a GitHub Release tagged with the date, `YYYY.MM.DD-N`.
 The release workflow builds the API image, the Worker image, and the website
 bundle exactly once, deploys those artifacts to staging automatically, then
-waits for the `hpac-admins` GitHub team to approve the `hpac-production` environment
+waits for the `hpac-safety-admins` GitHub team to approve the `hpac-safety-production` environment
 before deploying the **same artifacts** — never a rebuild — to production.
 Rollback re-runs the job for an earlier release's tag. There is no
 `terraform apply` on a merge to `main`; a pull request only plans, against
@@ -112,7 +115,7 @@ Terraform formatting/validation commands remain documented in
 See "Environments and accounts" above for what staging and production each
 are. Each account gets its own `hpac-safety-deploy` role (trusted only by
 GitHub Actions jobs running under that account's matching GitHub
-*environment*, named `hpac-staging` and `hpac-production`, not just
+*environment*, named `hpac-safety-staging` and `hpac-safety-production`, not just
 `staging`/`production` — see below), its own `hpac-safety-plan` role, and its
 own Terraform state bucket. Every scoping safeguard described below is
 load-bearing, not defensive dressing: in the shared staging account, it is
@@ -148,11 +151,11 @@ you already have open, never a new long-lived credential.
 6. It creates, in that account only:
    - the GitHub OIDC identity provider (or reuses one that exists);
    - `hpac-safety-deploy`, trusted only by
-     `repo:HPAC-Safety/safety-report:environment:<hpac-staging|hpac-production>`
-     — exactly the subject a job with `environment: hpac-staging` (or
-     `hpac-production`) presents, and nothing else. The script argument stays
+     `repo:HPAC-Safety/safety-report:environment:<hpac-safety-staging|hpac-safety-production>`
+     — exactly the subject a job with `environment: hpac-safety-staging` (or
+     `hpac-safety-production`) presents, and nothing else. The script argument stays
      `staging`/`production`; it maps that to the GitHub environment's actual
-     name (`hpac-staging`/`hpac-production`) for the trust condition, while
+     name (`hpac-safety-staging`/`hpac-safety-production`) for the trust condition, while
      the AWS-side `Environment` tag and the Terraform state key stay
      `staging`/`production`;
    - `hpac-safety-plan`, trusted only by this repository's pull requests, with
@@ -171,8 +174,8 @@ you already have open, never a new long-lived credential.
    TF_STATE_BUCKET=hpac-safety-tfstate-<account-id>
    AWS_ACCOUNT_ID=<account-id>
    ```
-   In GitHub, open **Settings → Environments → `hpac-staging`** (or
-   **`hpac-production`**) **→ Environment variables**, and add each one.
+   In GitHub, open **Settings → Environments → `hpac-safety-staging`** (or
+   **`hpac-safety-production`**) **→ Environment variables**, and add each one.
    These are identifiers, not secrets — no GitHub secret is ever set from
    this script's output.
 
@@ -190,9 +193,16 @@ tag/name scoping does not fit in one):
   create call that needed it — tags only an RDS resource named
   `db`/`subgrp`/`pg`/`snapshot`/`cluster`:`hpac-safety*`, or an Auto Scaling
   group named `hpac-safety*`.
-- **`hpac-safety-deploy-services`** — for the services with no
-  HPAC-Safety-only name pattern to scope by (ACM, Auto Scaling, CloudFront,
-  CloudWatch, EC2, RDS, Resource Groups, AppRegistry): read-only metadata
+- **`hpac-safety-deploy-services`** — manages the account's one Resource
+  Group **by name** too (`group/<hpac-safety-staging|hpac-safety-production>`,
+  matching this account's own GitHub environment name, now that #591 gave it
+  the `hpac-safety-` prefix), the one exception being CloudFront/ACM-style
+  services and the AppRegistry application itself, which keep tag-only
+  scoping — the myApplications application's ARN carries an AWS-assigned
+  opaque id, never the name, so there is no ARN pattern to write for it in
+  advance. For the remaining services with no HPAC-Safety-only name pattern
+  to scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS,
+  AppRegistry): read-only metadata
   broadly, `Create*` only when the request carries the `Project=HPAC-Safety`
   tag (`aws:RequestTag`, a real `StringEquals`, not `IfExists`), and
   `ec2:CreateTags` only when AWS's own `ec2:CreateAction` context key names

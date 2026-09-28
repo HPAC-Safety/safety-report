@@ -23,11 +23,11 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   `infra/production.tfvars`
   ([ADR-0158](../../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
   A dated GitHub Release deploys to staging automatically, then to production
-  only after the `hpac-admins` team approves the `hpac-production` GitHub
+  only after the `hpac-safety-admins` team approves the `hpac-safety-production` GitHub
   environment for the same artifacts. First goal: staging alone; production
   follows once HPAC's own account and DNS exist.
 - Each account groups its resources under its own myApplications application
-  and Resource Group, `hpac-staging`/`hpac-production` — a cost/grouping
+  and Resource Group, `hpac-safety-staging`/`hpac-safety-production` — a cost/grouping
   view, not a security boundary — tagged `Project=HPAC-Safety`,
   `Environment=<staging|production>`, `ManagedBy=terraform`, `Repo=HPAC-Safety/safety-report`
   (ADR-0158).
@@ -37,9 +37,10 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   the uploads bucket, secrets, and log groups).
 - **Terraform and GitHub OIDC only** — `hpac-safety-deploy` (release) and
   `hpac-safety-plan` (pull-request plan) per account, scoped to
-  `hpac-safety-*` names and the `Project=HPAC-Safety` tag; that scoping, not
-  the AppRegistry grouping, is the actual security boundary. Never create a
-  long-lived AWS key.
+  `hpac-safety-*` names (including, now, the account's own Resource Group by
+  name) and the `Project=HPAC-Safety` tag; that scoping, not the AppRegistry
+  grouping, is the actual security boundary. Never create a long-lived AWS
+  key.
 - Preserve least privilege.
 
 ## Data

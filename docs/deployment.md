@@ -92,8 +92,9 @@ place, protected from deletion.
 Alarms route through SNS to `safety@hpac.ca`, in production only; staging's
 topic has no subscriber.
 
-The current Terraform and deploy workflows are scaffolding. They still run the
-API and the Worker on ECS Fargate behind an ALB (#443, #465), one AWS account
+The current Terraform and deploy workflows are scaffolding. The API and the
+Worker are Lambda functions (#443), but CloudFront does not yet route
+`/api/*` to the API's Function URL (#465); there is still one AWS account
 instead of two, and one CloudFront hostname instead of the production pair
 plus a staging default address. Issue #30 owns bringing the deployed topology
 to

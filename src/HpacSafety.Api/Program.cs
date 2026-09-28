@@ -4,9 +4,11 @@ using HpacSafety.Api.PublicQuestions;
 using HpacSafety.Api.PublicReports;
 using HpacSafety.Api.RateLimiting;
 using HpacSafety.Api.Reports;
+using HpacSafety.Api.Security;
 using HpacSafety.Infrastructure.Media;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
+using HpacSafety.Infrastructure.Worker;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +18,30 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
-	options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
+// Fails the host at startup, outside Development, if no origin secret is
+// configured — a caller must never reach an unverified Function URL because a
+// Secrets Manager value was missing. See ADR-0159.
+builder.Services.AddHpacSafetyOriginVerification(
+	builder.Configuration,
+	builder.Environment.IsDevelopment());
+
+// Behind the same Lambda invocation the report-submission, comment, and
+// review endpoints call after a commit that queues outbox work — a nudge
+// that only shortens the wait until the next EventBridge sweep, never the
+// only path to the work getting done. See ADR-0123, ADR-0159.
+builder.Services.AddHpacSafetyWorkerNudge(builder.Configuration);
+
+// Built once, at cold start, from the RDS-managed master-user secret in every
+// deployed environment — Terraform can set the host/port/database name but
+// never the connection string itself without putting the master password in
+// state (ADR-0010). Falls back to the plain ConnectionStrings:HpacSafety
+// value in Development and every test host. See #443, #465.
+var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(builder.Configuration).ConfigureAwait(false);
+builder.Services.AddDbContext<HpacSafetyDbContext>((provider, options) =>
+{
+	options.UseNpgsql(connectionString);
+	options.AddInterceptors(provider.GetRequiredService<OutboxNudgeInterceptor>());
+});
 
 // Machine translation for the question-authoring screen. With no credential
 // the API reports translation unavailable, in Development as everywhere else.
@@ -37,12 +61,15 @@ builder.Services.AddHpacSafetyAuthentication(
 // development; only configuration differs. See ADR-0096.
 builder.Services.AddHpacSafetyMedia(builder.Configuration);
 
-// The API sits directly behind exactly one AWS ALB hop (infra/alb.tf); the
-// container's security group (api_from_alb, infra/security-groups.tf) admits
-// traffic from nowhere else. So the connection this process ever sees
-// directly IS the ALB, unconditionally, and X-Forwarded-For/-Proto from it
-// are trusted without a static KnownProxies allowlist, which an ALB's
-// dynamic IPs make impractical anyway. See ADR-0081 and issue #15.
+// The Lambda Web Adapter (infra/lambda.tf) turns each Function URL event into
+// a loopback HTTP request against this process's own Kestrel listener — the
+// only "hop" this process ever sees directly, and always local. The
+// X-Forwarded-For/-Proto the adapter carries over from the original event are
+// trusted without a static KnownProxies allowlist, same as the ALB reasoning
+// this replaces: reaching this process at all already means the request came
+// through the adapter, and CloudFront's origin-secret header
+// (UseCloudFrontOriginVerification, ADR-0159) is what keeps a caller from
+// reaching the Function URL directly in the first place. See ADR-0081, ADR-0042, issue #15.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
 	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -60,6 +87,11 @@ if (app.Environment.IsDevelopment())
 {
 	app.MapOpenApi();
 }
+
+// First, and unconditional: an unverified caller's headers — including the
+// forwarded ones trusted next — are never trusted for anything. See
+// ADR-0159.
+app.UseCloudFrontOriginVerification();
 
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();

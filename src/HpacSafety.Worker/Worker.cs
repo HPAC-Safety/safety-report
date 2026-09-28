@@ -15,6 +15,13 @@ namespace HpacSafety.Worker;
 ///     This is a singleton <see cref="BackgroundService" />, so processors are
 ///     resolved fresh from a new scope every iteration rather than injected into
 ///     the constructor, which would be a scoped-from-singleton DI error.
+///
+///     Deployed, the Worker runs as a Lambda function that drains once per
+///     invocation and returns instead of polling (ADR-0123); this loop only runs
+///     in a host with no Lambda runtime — developer machines and CI, via
+///     <c>docker-compose.yml</c>. Both hosts share the same claim pass,
+///     <see cref="Outbox.OutboxDrainPass" />, so a processor behaves identically
+///     either way.
 /// </remarks>
 public sealed partial class Worker(IServiceScopeFactory scopeFactory, TimeProvider clock, ILogger<Worker> logger)
 	: BackgroundService
@@ -27,27 +34,7 @@ public sealed partial class Worker(IServiceScopeFactory scopeFactory, TimeProvid
 
 		while (!stoppingToken.IsCancellationRequested)
 		{
-			var claimedAny = false;
-
-			await using (var scope = scopeFactory.CreateAsyncScope())
-			{
-				var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-				var processors = scope.ServiceProvider.GetServices<IOutboxMessageProcessor>();
-
-				foreach (var processor in processors)
-				{
-					var claimed = await OutboxClaimer
-						.ClaimNext(
-							database,
-							processor.HandlesType,
-							clock.GetUtcNow(),
-							processor.Process,
-							stoppingToken)
-						.ConfigureAwait(false);
-
-					claimedAny |= claimed;
-				}
-			}
+			var claimedAny = await OutboxDrainPass.RunOnce(scopeFactory, clock, stoppingToken).ConfigureAwait(false);
 
 			if (!claimedAny)
 			{

@@ -26,6 +26,10 @@ locals {
       name        = "${local.name}/connection-string"
       description = "ConnectionStrings__Default. Built from the RDS endpoint and the RDS-managed master password secret; not derivable by Terraform without putting the password in state."
     }
+    cloudfront_origin_secret = {
+      name        = "${local.name}/cloudfront-origin-secret"
+      description = "HpacSafety__Security__OriginVerification__Secret. The header value CloudFront's origin request policy injects on every /api/* request (#465) and the API refuses to answer without (ADR-0159). A human puts a generated random value in once; CloudFront's own side of this is #465's."
+    }
   }
 }
 
@@ -43,7 +47,7 @@ resource "aws_secretsmanager_secret" "this" {
 }
 
 # The RDS-managed master password lives in its own secret, created by RDS rather
-# than by this file. The task execution role needs to read it only if the
+# than by this file. A Lambda function's role needs to read it only if the
 # connection string is ever assembled from it; today it is not, and the entry
 # above holds the assembled string. Exposed as an output so an operator can find
 # it without hunting through the console.

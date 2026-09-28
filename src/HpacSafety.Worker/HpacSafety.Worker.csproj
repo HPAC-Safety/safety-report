@@ -4,6 +4,12 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <!-- Deployed, the Worker is a Lambda function invoked directly (not
+             through the Web Adapter the API uses) — one drain per invocation,
+             then return (ADR-0123). Program.cs only reaches this path when
+             AWS_LAMBDA_RUNTIME_API is set; everywhere else it is unused. -->
+        <PackageReference Include="Amazon.Lambda.Core" />
+        <PackageReference Include="Amazon.Lambda.RuntimeSupport" />
     </ItemGroup>
 
     <ItemGroup>

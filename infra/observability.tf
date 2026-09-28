@@ -104,16 +104,21 @@ resource "aws_cloudwatch_metric_alarm" "outbox_age" {
 # Alarms on things AWS already measures
 # --------------------------------------------------------------------------
 
-resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
-  alarm_name        = "${local.name}-api-5xx"
-  alarm_description = "The API is returning server errors. Pilots filing reports are seeing failures."
+resource "aws_cloudwatch_metric_alarm" "api_errors" {
+  # Was the ALB's HTTPCode_Target_5XX_Count; there is no ALB in front of the
+  # API any more (ADR-0042, ADR-0159, #443). A Function URL has no per-request
+  # status-code metric of its own, so this watches the function's own
+  # unhandled-exception count instead — a superset of "5xx", since an
+  # unhandled exception is exactly what an ASP.NET Core process turns into one.
+  alarm_name        = "${local.name}-api-errors"
+  alarm_description = "The API's Lambda function is throwing unhandled exceptions. Pilots filing reports are seeing failures."
 
-  namespace   = "AWS/ApplicationELB"
-  metric_name = "HTTPCode_Target_5XX_Count"
+  namespace   = "AWS/Lambda"
+  metric_name = "Errors"
   statistic   = "Sum"
 
   dimensions = {
-    LoadBalancer = aws_lb.api.arn_suffix
+    FunctionName = aws_lambda_function.api.function_name
   }
 
   comparison_operator = "GreaterThanThreshold"
@@ -124,7 +129,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
 
   alarm_actions = [aws_sns_topic.alarms.arn]
 
-  tags = { Name = "${local.name}-api-5xx" }
+  tags = { Name = "${local.name}-api-errors" }
 }
 
 resource "aws_cloudwatch_metric_alarm" "database_storage" {

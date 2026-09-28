@@ -27,10 +27,14 @@ locals {
   # full assessment and the edge rules that partly compensate.
   admin_prefix = "/${var.admin_path_prefix}"
 
-  # Log group names, in one place, because the task definitions, the log groups,
-  # and the alarms all have to agree on them.
+  # Log group names, in one place, because the compute resources, the log
+  # groups, and the alarms all have to agree on them. The API and the Worker
+  # are Lambda functions (lambda.tf, ADR-0042, ADR-0123, #443): Lambda always
+  # logs to /aws/lambda/<function name>, so these ARE those functions' names
+  # — creating the log group ourselves, ahead of the function, is what puts our
+  # retention and prevent_destroy on it instead of an ungoverned default.
   log_groups = {
-    api    = "/aws/ecs/${local.name}/api"
-    worker = "/aws/ecs/${local.name}/worker"
+    api    = "/aws/lambda/${local.name}-api"
+    worker = "/aws/lambda/${local.name}-worker"
   }
 }

@@ -751,7 +751,7 @@ Scenario: A rate-limited submission is rejected
   Given a submission request arrives
   When the per-IP rate limit is exceeded
   Then the API rejects the request with 429 and a safe retry signal
-  And the client IP used for rate limiting comes from X-Forwarded-For, trusted because only the load balancer can reach the API, and is never stored on the report
+  And the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a caller cannot forge, and is never stored on the report
 
 @REQ-SUB-018
 Scenario: An unauthenticated submission is rejected
@@ -1040,3 +1040,21 @@ Scenario: A file dropped outside the drop zone does nothing
   When the reporter drops a file on the page outside the drop zone
   Then the browser stays on the form
   And no file is attached or uploaded
+
+@REQ-SUB-116
+Scenario: A request that reached the API without CloudFront's origin-secret header is refused
+  Given the booted API requires CloudFront's origin-secret header
+  When a submission request arrives without that header
+  Then the API refuses it with 403, before authentication or any endpoint runs
+
+@REQ-SUB-117
+Scenario: The rate limiter partitions by the CloudFront viewer address, not the shared connection
+  Given the per-IP submission rate limit is exhausted for one CloudFront viewer address
+  When a submission request arrives from a different CloudFront viewer address
+  Then the API does not reject it
+
+@REQ-SUB-118
+Scenario: A successful submission nudges the Worker
+  Given the booted API records each nudge it sends the Worker, and a submission is ready to persist
+  When the API responds
+  Then the Worker is nudged once

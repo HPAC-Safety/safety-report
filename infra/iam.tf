@@ -1,23 +1,23 @@
 # Runtime IAM. The deploy role is not here — it is created by infra/bootstrap.sh,
 # because a workflow cannot create the thing that lets it authenticate.
 #
-# Two roles per convention, and the split matters:
-#
-#   execution role — what the ECS AGENT does before the container starts: pull
-#                    the image, resolve the secrets, open the log stream.
-#   task role      — what the APPLICATION does once it is running.
-#
-# Collapsing them would give application code the ability to read every secret
-# entry, not just the ones injected into its own environment.
+# The API and the Worker are Lambda functions (lambda.tf, ADR-0042, ADR-0123,
+# #443), not ECS tasks, so there is no execution-role/task-role split here any
+# more — Lambda's own execution role covers both what the ECS agent used to do
+# (pull the image implicitly, write logs) and what the application may do,
+# and `AWSLambdaVPCAccessExecutionRole` below is the Lambda equivalent of the
+# execution role's job. `api_task`/`worker_task` stay as policy DOCUMENTS —
+# "what the application may do" hasn't changed — attached to each function's
+# own role instead of to a role an ECS task assumed.
 
-data "aws_iam_policy_document" "ecs_assume" {
+data "aws_iam_policy_document" "lambda_assume" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
+      identifiers = ["lambda.amazonaws.com"]
     }
 
     condition {
@@ -28,50 +28,22 @@ data "aws_iam_policy_document" "ecs_assume" {
   }
 }
 
-# --------------------------------------------------------------------------
-# Execution role
-# --------------------------------------------------------------------------
-
-resource "aws_iam_role" "task_execution" {
-  name               = "${local.name}-task-execution"
-  description        = "Assumed by the ECS agent to pull images, read secrets, and write logs."
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
-}
-
-resource "aws_iam_role_policy_attachment" "task_execution_managed" {
-  role       = aws_iam_role.task_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-data "aws_iam_policy_document" "task_execution_secrets" {
+data "aws_iam_policy_document" "secrets_read" {
   statement {
-    sid       = "ResolveInjectedSecrets"
+    sid       = "ResolveSecretsAtColdStart"
     effect    = "Allow"
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [for s in aws_secretsmanager_secret.this : s.arn]
   }
 }
 
-resource "aws_iam_role_policy" "task_execution_secrets" {
-  name   = "secrets"
-  role   = aws_iam_role.task_execution.id
-  policy = data.aws_iam_policy_document.task_execution_secrets.json
-}
-
 # --------------------------------------------------------------------------
-# Task roles
+# What each application may do
 # --------------------------------------------------------------------------
 #
 # The API writes uploads and reads them back for pre-signed GETs. The Worker
 # reads uploads and publishes the two custom metrics the alarms in
-# observability.tf watch. Neither reads a secret at runtime — the execution role
-# has already put them in the environment.
-
-resource "aws_iam_role" "api_task" {
-  name               = "${local.name}-api-task"
-  description        = "What the API application may do."
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
-}
+# observability.tf watch.
 
 data "aws_iam_policy_document" "api_task" {
   statement {
@@ -119,18 +91,6 @@ data "aws_iam_policy_document" "api_task" {
   }
 }
 
-resource "aws_iam_role_policy" "api_task" {
-  name   = "api"
-  role   = aws_iam_role.api_task.id
-  policy = data.aws_iam_policy_document.api_task.json
-}
-
-resource "aws_iam_role" "worker_task" {
-  name               = "${local.name}-worker-task"
-  description        = "What the Worker application may do."
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
-}
-
 data "aws_iam_policy_document" "worker_task" {
   statement {
     sid       = "ReadUploads"
@@ -163,8 +123,102 @@ data "aws_iam_policy_document" "worker_task" {
   }
 }
 
-resource "aws_iam_role_policy" "worker_task" {
+# --------------------------------------------------------------------------
+# Lambda execution roles
+# --------------------------------------------------------------------------
+
+resource "aws_iam_role" "api_function" {
+  name               = "${local.name}-api-function"
+  description        = "Assumed by the API's Lambda function. What it may do once running, and what it may read at cold start."
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+}
+
+# Lets Lambda create the function's ENIs in the private subnets and write its
+# own CloudWatch log group/stream.
+resource "aws_iam_role_policy_attachment" "api_function_vpc" {
+  role       = aws_iam_role.api_function.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "api_function" {
+  name   = "api"
+  role   = aws_iam_role.api_function.id
+  policy = data.aws_iam_policy_document.api_task.json
+}
+
+resource "aws_iam_role_policy" "api_function_secrets" {
+  name   = "secrets"
+  role   = aws_iam_role.api_function.id
+  policy = data.aws_iam_policy_document.secrets_read.json
+}
+
+# The API's async nudge (ADR-0123) — the only cross-function permission either
+# Lambda role needs.
+data "aws_iam_policy_document" "api_function_nudge" {
+  statement {
+    sid       = "NudgeWorker"
+    effect    = "Allow"
+    actions   = ["lambda:InvokeFunction"]
+    resources = [aws_lambda_function.worker.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "api_function_nudge" {
+  name   = "nudge-worker"
+  role   = aws_iam_role.api_function.id
+  policy = data.aws_iam_policy_document.api_function_nudge.json
+}
+
+resource "aws_iam_role" "worker_function" {
+  name               = "${local.name}-worker-function"
+  description        = "Assumed by the Worker's Lambda function. What it may do once running, and what it may read at cold start."
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "worker_function_vpc" {
+  role       = aws_iam_role.worker_function.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "worker_function" {
   name   = "worker"
-  role   = aws_iam_role.worker_task.id
+  role   = aws_iam_role.worker_function.id
   policy = data.aws_iam_policy_document.worker_task.json
+}
+
+resource "aws_iam_role_policy" "worker_function_secrets" {
+  name   = "secrets"
+  role   = aws_iam_role.worker_function.id
+  policy = data.aws_iam_policy_document.secrets_read.json
+}
+
+# --------------------------------------------------------------------------
+# The RDS-managed master-user secret (#443, coordinated with #465)
+# --------------------------------------------------------------------------
+#
+# DatabaseConnectionStringResolver (HpacSafety.Infrastructure) reads this one
+# secret itself, at cold start, to assemble the connection string — it is not
+# one of secrets.tf's entries, so it needs its own scoped grant rather than
+# reusing secrets_read above, which would otherwise widen to every entry in
+# that map for no reason either function needs.
+
+data "aws_iam_policy_document" "database_master_secret_read" {
+  statement {
+    sid       = "ReadDatabaseMasterSecret"
+    effect    = "Allow"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_db_instance.main.master_user_secret[0].secret_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "api_function_database_secret" {
+  name   = "database-master-secret"
+  role   = aws_iam_role.api_function.id
+  policy = data.aws_iam_policy_document.database_master_secret_read.json
+}
+
+resource "aws_iam_role_policy" "worker_function_database_secret" {
+  name   = "database-master-secret"
+  role   = aws_iam_role.worker_function.id
+  policy = data.aws_iam_policy_document.database_master_secret_read.json
 }

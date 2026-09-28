@@ -121,6 +121,54 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		second.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 	}
 
+	/// <summary>
+	///     ADR-0159: the partition key is <c>CloudFront-Viewer-Address</c>, not
+	///     the shared loopback address every request in this in-process test
+	///     host otherwise carries — proven by two "reporters" behind different
+	///     viewer addresses each getting their own one-permit window.
+	/// </summary>
+	[Fact]
+	public async Task GivenTwoDifferentCloudFrontViewerAddresses_WhenBothSubmitOnceEach_ThenNeitherIsRejected()
+	{
+		// Given
+		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
+		using var first = await SignedInClient.As(limited, MemberRole.User);
+		using var second = await SignedInClient.As(limited, MemberRole.User);
+		first.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "203.0.113.10:52341");
+		second.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "203.0.113.99:11402");
+
+		// When
+		using var firstBody = new MultipartFormDataContent();
+		using var secondBody = new MultipartFormDataContent();
+		using var firstResponse = await first.PostAsync(Submit, firstBody);
+		using var secondResponse = await second.PostAsync(Submit, secondBody);
+
+		// Then — both fail validation (a submission is JSON), neither is
+		// rate-limited, because each is its own partition.
+		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		secondResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	/// <summary>The same viewer address, read from the header, still shares one window.</summary>
+	[Fact]
+	public async Task GivenTheSameCloudFrontViewerAddressTwice_WhenBothSubmit_ThenTheSecondIsRejected()
+	{
+		// Given
+		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
+		using var reporter = await SignedInClient.As(limited, MemberRole.User);
+		reporter.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "198.51.100.7:40010");
+
+		// When
+		using var firstBody = new MultipartFormDataContent();
+		using var secondBody = new MultipartFormDataContent();
+		using var firstResponse = await reporter.PostAsync(Submit, firstBody);
+		using var secondResponse = await reporter.PostAsync(Submit, secondBody);
+
+		// Then
+		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		secondResponse.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+	}
+
 	private WebApplicationFactory<Program> RateLimitedFactory(
 		int publicSubmissionPermitLimit = 100000,
 		int signInPermitLimit = 100000,

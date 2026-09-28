@@ -24,11 +24,8 @@ output "deploy_variables" {
     ECR_REPOSITORY_API           = aws_ecr_repository.this["api"].name
     ECR_REPOSITORY_WORKER        = aws_ecr_repository.this["worker"].name
     ECR_REGISTRY                 = split("/", aws_ecr_repository.this["api"].repository_url)[0]
-    ECS_CLUSTER                  = aws_ecs_cluster.main.name
-    ECS_SERVICE_API              = aws_ecs_service.api.name
-    ECS_SERVICE_WORKER           = aws_ecs_service.worker.name
-    ECS_SUBNETS                  = join(",", [for s in aws_subnet.private : s.id])
-    ECS_SECURITY_GROUPS          = aws_security_group.api.id
+    LAMBDA_FUNCTION_API          = aws_lambda_function.api.function_name
+    LAMBDA_FUNCTION_WORKER       = aws_lambda_function.worker.function_name
     S3_BUCKET_SITE               = aws_s3_bucket.site.id
     S3_BUCKET_UPLOADS            = aws_s3_bucket.uploads.id
     CLOUDFRONT_DISTRIBUTION_SITE = aws_cloudfront_distribution.site.id
@@ -46,8 +43,8 @@ output "site_urls" {
 }
 
 output "api_url" {
-  description = "Where the API answers. HTTPS only; port 80 redirects."
-  value       = "https://${var.api_domain}"
+  description = "The API's Function URL. Not the public entry point — that is CloudFront's /api/* (#465); this is what the origin-secret check refuses direct requests to (ADR-0159)."
+  value       = aws_lambda_function_url.api.function_url
 }
 
 output "database_master_password_secret_arn" {
@@ -68,37 +65,24 @@ output "dns_records_to_publish" {
   EOT
 
   value = {
-    acm_validation = concat(
-      [
-        for o in aws_acm_certificate.api.domain_validation_options : {
-          type    = o.resource_record_type
-          name    = o.resource_record_name
-          value   = o.resource_record_value
-          purpose = "Proves we control ${var.api_domain}, so ACM will issue the API's certificate."
-        }
-      ],
-      [
-        for o in aws_acm_certificate.site.domain_validation_options : {
-          type    = o.resource_record_type
-          name    = o.resource_record_name
-          value   = o.resource_record_value
-          purpose = "Proves we control ${var.site_domain}, so ACM will issue the website's certificate."
-        }
-      ],
-    )
+    acm_validation = [
+      for o in aws_acm_certificate.site.domain_validation_options : {
+        type    = o.resource_record_type
+        name    = o.resource_record_name
+        value   = o.resource_record_value
+        purpose = "Proves we control ${var.site_domain}, so ACM will issue the website's certificate."
+      }
+    ]
 
     aliases = [
       {
-        type    = "CNAME"
-        name    = var.site_domain
+        type = "CNAME"
+        name = var.site_domain
+        # The API has no domain of its own any more (ADR-0042, ADR-0159): it is
+        # reached only through this same CloudFront distribution's /api/*
+        # behavior (#465), so there is only ever the one CNAME to publish.
         value   = aws_cloudfront_distribution.site.domain_name
-        purpose = "Points the website at CloudFront. One record: the review queue is a path on this host, not a second name."
-      },
-      {
-        type    = "CNAME"
-        name    = var.api_domain
-        value   = aws_lb.api.dns_name
-        purpose = "Points the API at the load balancer."
+        purpose = "Points the website — and, through it, the API at /api/* — at CloudFront. One record: neither the review queue nor the API is a second name."
       },
     ]
   }

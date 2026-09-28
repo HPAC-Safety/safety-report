@@ -2126,6 +2126,18 @@ A required dependent question that cannot be answered yet does not block a submi
 
 A choice offered under several parent answers is accepted under each, and refused under any other — *Reqnroll, Covered*
 
+### REQ-SUB-116
+
+A request that reached the API without CloudFront's origin-secret header is refused — *Reqnroll, Covered*
+
+### REQ-SUB-117
+
+The rate limiter partitions by the CloudFront viewer address, not the shared connection — *Reqnroll, Covered*
+
+### REQ-SUB-118
+
+A successful submission nudges the Worker — *Reqnroll, Covered*
+
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001
@@ -2492,6 +2504,18 @@ infrastructure-and-operations.md — verified by none — an infrastructure prop
 ### CON-INF-014
 
 infrastructure-and-operations.md — verified by none — these are review-time properties no application scenario can observe
+
+### CON-INF-015
+
+infrastructure-and-operations.md — verified by `REQ-SUB-118`
+
+### CON-INF-016
+
+infrastructure-and-operations.md — verified by none — a Lambda invocation's own time budget is not something `/features` scenarios observe; proven directly by `OutboxDrainPassTests` (`tests/HpacSafety.Worker.Tests`)
+
+### CON-INF-017
+
+infrastructure-and-operations.md — verified by `REQ-SUB-116`
 
 ### CON-SO-001
 

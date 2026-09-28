@@ -8,10 +8,10 @@
 # repository owner and is marked DECIDED with the reasoning, so an empty
 # production.tfvars is the correct production configuration.
 
-# The two hostnames. ONE website: the review queue is a route on it, under the
-# admin path prefix, not a site of its own. See ADR-0031.
+# ONE hostname: the website, with the review queue a route on it under the
+# admin path prefix, and the API reached only at /api/* on the same host
+# through CloudFront (ADR-0031, ADR-0161, #465) — there is no api_domain.
 # site_domain       = "safety.hpac.ca"
-# api_domain        = "api.hpac.ca"
 # admin_path_prefix = "admin"
 
 # Origins that may PUT an attachment to the uploads bucket (ADR-0126). Empty

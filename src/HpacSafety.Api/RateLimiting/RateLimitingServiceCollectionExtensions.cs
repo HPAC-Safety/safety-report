@@ -125,14 +125,7 @@ public static class RateLimitingServiceCollectionExtensions
 	{
 		var options = select(httpContext.RequestServices.GetRequiredService<IOptions<RateLimitingOptions>>().Value);
 
-		// The Forwarded Headers middleware (configured in Program.cs) has
-		// already rewritten this to the real client IP when the request
-		// came through the trusted ALB hop; otherwise it is the direct
-		// connection's own address. Either way this is never a spoofable
-		// header read a second time here.
-		var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-		return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+		return RateLimitPartition.GetSlidingWindowLimiter(ClientIpOf(httpContext), _ => new SlidingWindowRateLimiterOptions
 		{
 			PermitLimit = options.PermitLimit,
 			Window = TimeSpan.FromSeconds(options.WindowSeconds),
@@ -140,6 +133,41 @@ public static class RateLimitingServiceCollectionExtensions
 			QueueLimit = options.QueueLimit,
 			QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 		});
+	}
+
+	/// <summary>
+	///     The reporter's real client IP (ADR-0159): CloudFront always sets
+	///     <c>CloudFront-Viewer-Address</c> on every request it forwards to its
+	///     origin, and a caller cannot set or override it the way it could
+	///     <c>X-Forwarded-For</c> — this is what replaces
+	///     <see cref="HttpContext.Connection" />'s <c>RemoteIpAddress</c> as the
+	///     rate-limiting partition key now that there is no ALB whose security
+	///     group made the direct connection itself trustworthy (ADR-0081,
+	///     superseded). Falls back to the direct connection's own address when
+	///     the header is absent — Development, every test host, and any caller
+	///     that reached the Function URL directly rather than through
+	///     CloudFront, which <see cref="HpacSafety.Api.Security.OriginVerificationMiddlewareExtensions" />
+	///     has already refused before this policy ever runs.
+	/// </summary>
+	private static string ClientIpOf(HttpContext httpContext)
+	{
+		var viewerAddress = httpContext.Request.Headers["CloudFront-Viewer-Address"].ToString();
+
+		if (string.IsNullOrEmpty(viewerAddress))
+		{
+			return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+		}
+
+		// "ip:port" for IPv4, "[ipv6]:port" for IPv6 — strip the port CloudFront
+		// always appends; the partition key is the address alone.
+		if (viewerAddress.StartsWith('['))
+		{
+			var closingBracket = viewerAddress.IndexOf(']', StringComparison.Ordinal);
+			return closingBracket > 0 ? viewerAddress[1..closingBracket] : viewerAddress;
+		}
+
+		var lastColon = viewerAddress.LastIndexOf(':');
+		return lastColon > 0 ? viewerAddress[..lastColon] : viewerAddress;
 	}
 
 	private static ValueTask OnRejected(OnRejectedContext context,

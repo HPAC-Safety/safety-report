@@ -1049,7 +1049,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the client IP used for rate limiting comes from X-Forwarded-For, trusted because only the load balancer can reach the API, and is never stored on the report")]
+	[Then(@"the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a caller cannot forge, and is never stored on the report")]
 	public async Task ThenTheClientIpComesOnlyFromTrustedHeadersAndIsNeverStored()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();
@@ -1060,6 +1060,95 @@ public sealed class ReportSubmissionEndpointSteps
 		var reportColumns = database.Model.FindEntityType(typeof(Report))!.GetProperties()
 			.Select(property => property.Name);
 		reportColumns.ShouldNotContain(name => name.Contains("Ip", StringComparison.OrdinalIgnoreCase));
+	}
+
+	// --- A request without CloudFront's origin-secret header is refused (ADR-0159) ---
+
+	private HttpClient? _unverifiedClient;
+
+	[Given(@"the booted API requires CloudFront's origin-secret header")]
+	public async Task GivenTheBootedApiRequiresCloudFrontsOriginSecretHeader()
+	{
+		var verified = await BootedApi.OriginVerified("acceptance-test-origin-secret");
+		_unverifiedClient = verified.CreateClient();
+	}
+
+	[When(@"a submission request arrives without that header")]
+	public async Task WhenASubmissionRequestArrivesWithoutThatHeader()
+	{
+		_response = await _unverifiedClient!.PostAsync(Submit, ReportPart(new
+		{
+			language = "en-CA",
+			answers = Array.Empty<object>(),
+		}));
+	}
+
+	[Then(@"the API refuses it with 403, before authentication or any endpoint runs")]
+	public void ThenTheApiRefusesItWith403BeforeAuthenticationOrAnyEndpointRuns()
+	{
+		// No bearer token was ever attached, and a submission needs one
+		// (REQ-SUB-018) — a 403 here, not a 401, is exactly the proof that
+		// origin verification runs first (ADR-0159): had authentication run
+		// first, a missing token would answer 401.
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	// --- The rate limiter partitions by CloudFront-Viewer-Address (ADR-0159) ---
+
+	private const string FirstViewerAddress = "203.0.113.10:52341";
+	private const string SecondViewerAddress = "203.0.113.99:11402";
+
+	[Given(@"the per-IP submission rate limit is exhausted for one CloudFront viewer address")]
+	public async Task GivenThePerIpSubmissionRateLimitIsExhaustedForOneCloudFrontViewerAddress()
+	{
+		await EnsureConsentQuestion();
+
+		var limited = await BootedApi.RateLimited("PublicSubmission");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User, limited);
+		_reporter.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", FirstViewerAddress);
+
+		// The one permit this policy allows, consumed by this address.
+		await Post(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
+		});
+	}
+
+	[When(@"a submission request arrives from a different CloudFront viewer address")]
+	public async Task WhenASubmissionRequestArrivesFromADifferentCloudFrontViewerAddress()
+	{
+		_reporter!.DefaultRequestHeaders.Remove("CloudFront-Viewer-Address");
+		_reporter.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", SecondViewerAddress);
+
+		_response = await Post(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
+		});
+	}
+
+	[Then(@"the API does not reject it")]
+	public void ThenTheApiDoesNotRejectIt()
+	{
+		_response!.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+	}
+
+	// --- A successful submission nudges the Worker (ADR-0123) ---
+
+	[Given(@"the booted API records each nudge it sends the Worker, and a submission is ready to persist")]
+	public async Task GivenTheBootedApiRecordsNudgesAndASubmissionIsReadyToPersist()
+	{
+		var recording = await BootedApi.NudgeRecorded();
+		RecordingWorkerNudge.Reset();
+		_reporter = await BootedApi.SignedInAs(MemberRole.User, recording);
+		await EnsureConsentQuestion();
+	}
+
+	[Then(@"the Worker is nudged once")]
+	public void ThenTheWorkerIsNudgedOnce()
+	{
+		RecordingWorkerNudge.Calls.ShouldBe(1);
 	}
 
 	// --- A member of any role may submit a report (outline) ---

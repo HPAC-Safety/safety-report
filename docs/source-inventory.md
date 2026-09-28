@@ -33,6 +33,7 @@ migrations at startup, and does no AI work.
 | [`PublicReports/`](../src/HpacSafety.Api/PublicReports/) | The public feed, a report's page, its media links (ADR-0117, ADR-0119), and member comments (ADR-0114). |
 | [`RateLimiting/`](../src/HpacSafety.Api/RateLimiting/) | Per-IP policies for submission and sign-in (ADR-0081). |
 | [`Reports/`](../src/HpacSafety.Api/Reports/) | `POST /api/v1/uploads`, which mints a pre-signed PUT to quarantine, and the JSON report submission that validates and claims each upload (ADR-0096, ADR-0098, ADR-0126). |
+| [`Security/`](../src/HpacSafety.Api/Security/) | The CloudFront origin-secret check, first in the pipeline and required at startup outside Development (ADR-0159). |
 
 ## HpacSafety.Core — domain rules and small ports
 
@@ -67,6 +68,7 @@ Core has no runtime package dependency.
 | [`Persistence/Views/`](../src/HpacSafety.Infrastructure/Persistence/Views/) | Read-only entities for the six views. |
 | [`Storage/`](../src/HpacSafety.Infrastructure/Storage/) | `S3BlobStore`, the one storage adapter: S3 in AWS, RustFS in development (ADR-0096, ADR-0110). |
 | [`Translation/`](../src/HpacSafety.Infrastructure/Translation/) | The DeepL translator behind `ITranslator` (ADR-0022, ADR-0115). |
+| [`Worker/`](../src/HpacSafety.Infrastructure/Worker/) | `IWorkerNudge` and its Lambda-invoking and no-op implementations, and the `SaveChangesInterceptor` that nudges only when a save queues outbox work (ADR-0123). |
 
 ## HpacSafety.Worker — outbox processing
 

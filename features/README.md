@@ -103,7 +103,7 @@ specification rather than preserving competing designs.
 | Target records, naming, transactions, and query DTOs | [Data and persistence](../docs/data-and-persistence.md) |
 | HTTP surfaces, ports, and end-to-end data flow | [Interfaces and data flow](../docs/interfaces-and-data-flow.md) |
 | React/TypeScript sites, bilingual behavior, design, and accessibility | [Web, localization, and design](web-localization-and-design/web-localization-and-design.feature) |
-| Minimal AWS topology, deployment, secrets, and operations | [Infrastructure and operations](../docs/infrastructure-and-operations.md) |
+| Minimal AWS topology (staging and production accounts), release and promotion, deployment, secrets, and operations | [Infrastructure and operations](../docs/infrastructure-and-operations.md) |
 | Required tests and quality gates | [Testing and quality](../docs/testing-and-quality.md) |
 | Target-to-main gap analysis | [Implementation status](../docs/implementation-status.md) |
 | Every audited path under `src/` | [Source inventory](../docs/source-inventory.md) |

@@ -6,7 +6,9 @@ type: guide
 
 # Deployment
 
-The target deployment is a small AWS environment in `ca-central-1`:
+The target deployment is two small AWS environments in `ca-central-1`,
+staging and production, built from the same Terraform
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)):
 
 - the API and the Worker as Lambda functions
   ([ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md),
@@ -14,15 +16,48 @@ The target deployment is a small AWS environment in `ca-central-1`:
 - RDS PostgreSQL with backups;
 - private S3 attachment storage;
 - one website, with the review queue as its `/admin` route, served as static
-  files from a private S3 bucket through CloudFront
+  files from a private S3 bucket through CloudFront, which also routes
+  `/api/*` to the API's Lambda Function URL — there is no ALB
   ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md),
-  [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md));
+  [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
+  [ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md));
 - Secrets Manager, identity-provider configuration, and focused alerts for failed
   or stuck Worker work.
 
-GitHub Actions assumes AWS roles through OIDC. Do not create long-lived AWS
-access keys. Runtime secret values stay out of source control and Terraform
-state. Use AWS-managed encryption at rest and TLS.
+## Environments and accounts
+
+- **Staging** is the owner's personal AWS account, which also runs unrelated
+  workloads. It holds synthetic data only and never runs the Development-only
+  members-site login. It serves only its default `*.cloudfront.net` address.
+- **Production** is a separate account that HPAC creates and owns. It is
+  **not** created from the staging account through AWS Organizations — the
+  two accounts are unrelated, and `infra/bootstrap.sh` is run independently in
+  each one, from that account's own CloudShell. Production holds real reports
+  and serves `safety.hpac.ca` and `securite.acvl.ca` on one CloudFront
+  distribution.
+- Both accounts group their resources under one AWS myApplications
+  application named **HPAC-Safety** and a tag-based Resource Group, and are
+  reached only by their own short-lived GitHub OIDC roles
+  (`hpac-safety-deploy`, `hpac-safety-plan`) — never a long-lived AWS access
+  key.
+- **First goal: staging only.** A working release pipeline against staging
+  does not need the production account to exist yet. Production is created,
+  bootstrapped, and connected once HPAC's account and its DNS records are
+  ready; see issue #30's "Human work" for the exact one-time steps.
+
+## Release and promotion
+
+A maintainer publishes a GitHub Release tagged with the date, `YYYY.MM.DD-N`.
+The release workflow builds the API image, the Worker image, and the website
+bundle exactly once, deploys those artifacts to staging automatically, then
+waits for the `admins` GitHub team to approve the `production` environment
+before deploying the **same artifacts** — never a rebuild — to production.
+Rollback re-runs the job for an earlier release's tag. There is no
+`terraform apply` on a merge to `main`; a pull request only plans, against
+both accounts.
+
+Runtime secret values stay out of source control and Terraform state. Use
+AWS-managed encryption at rest and TLS.
 
 Migrations apply at startup: the API and the Worker each run pending migrations
 under an advisory lock, and there is no dedicated migration step
@@ -31,9 +66,16 @@ Rollback redeploys a previously tested artifact; schema changes must support the
 previous application during staged rollout. Backup restoration must be tested
 before cutover.
 
+Outbound internet, in both accounts, goes through a NAT instance (`fck-nat` on
+a `t4g.nano`), not a managed NAT gateway. It is the one resource this system
+ever deletes and recreates, and every release does so; everything else is
+created once and updated in place, protected from deletion.
+
 The current Terraform and deploy workflows are scaffolding. They still run the
-API and the Worker on ECS Fargate (#443). Issue #30 owns bringing the deployed
-topology to
+API and the Worker on ECS Fargate behind an ALB (#443, #465), one AWS account
+instead of two, and one CloudFront hostname instead of the production pair
+plus a staging default address. Issue #30 owns bringing the deployed topology
+to
 [`infrastructure-and-operations.md`](infrastructure-and-operations.md), whose
 "Where today's Terraform differs" lists every known gap.
 Do not interpret a successful Terraform validation as proof that the target

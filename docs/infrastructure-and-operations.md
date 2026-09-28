@@ -9,17 +9,21 @@ area: infrastructure-and-operations
 
 ## Production topology
 
-**CON-INF-001** Production is one deliberately small AWS environment in `ca-central-1`.
+**CON-INF-001** Each environment (staging, production) is one deliberately
+small AWS environment in `ca-central-1`, built from the same Terraform
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 
 The whole system runs in AWS. Everything that holds data is in `ca-central-1`;
-the only global pieces are CloudFront, which serves the static website bundle,
-and its `us-east-1` certificate. Hosting is set by
+the only global pieces are CloudFront, which serves the static website bundle
+and routes `/api/*` to the API, and its `us-east-1` certificate (production
+only). Hosting is set by
 [ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)
 (the API on Lambda) and
 [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)
-(the Worker on Lambda, the website on S3 and CloudFront).
+(the Worker on Lambda, the website on S3 and CloudFront). There is no ALB
+([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
 
 ### 1. How requests reach the system
 
@@ -29,14 +33,13 @@ flowchart LR
     idp["Identity provider<br/>OIDC, outside AWS<br/>(choice deferred, ADR-0064)"]
 
     subgraph global["AWS global"]
-        cf["CloudFront<br/>safety.hpac.ca<br/>clean URLs · /admin no-store"]
+        cf["CloudFront<br/>one distribution<br/>prod: safety.hpac.ca + securite.acvl.ca<br/>staging: *.cloudfront.net<br/>clean URLs · /admin no-store"]
     end
 
     subgraph region["AWS ca-central-1"]
         site[("S3 site bucket<br/>private · one Vite build")]
         subgraph vpc["VPC"]
-            alb["ALB<br/>HTTPS only · API hostname"]
-            api["API<br/>Lambda"]
+            api["API<br/>Lambda Function URL"]
         end
         uploads[("S3 uploads bucket<br/>private")]
     end
@@ -44,11 +47,18 @@ flowchart LR
     browser -->|"1 · load the website"| cf
     cf -->|"origin access control"| site
     browser -->|"2 · sign in"| idp
-    browser -->|"3 · /api calls, bearer token"| alb
-    alb -->|"Lambda target group"| api
+    browser -->|"3 · /api/* calls, bearer token"| cf
+    cf -->|"origin secret header<br/>+ CloudFront-Viewer-Address"| api
     browser -->|"4 · attach a file: pre-signed PUT, 15 min max"| uploads
     browser -->|"5 · open a file: pre-signed GET, 15 min max"| uploads
 ```
+
+There is no ALB: CloudFront is the one public entry point for both the
+website and the API, on the path `/api/*`
+([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
+A CloudFront-injected secret header, checked before any other API middleware
+runs, stops a request that reached the Function URL directly, bypassing
+CloudFront.
 
 ### 2. How work is processed
 
@@ -66,7 +76,7 @@ flowchart LR
         secrets["Secrets Manager<br/>connection string"]
         s3ep["S3 gateway endpoint"]
         uploads[("S3 uploads bucket<br/>quarantine/ · original · stripped")]
-        nat["NAT gateway"]
+        nat["NAT instance<br/>fck-nat · t4g.nano<br/>1-instance ASG · recreated every release"]
     end
 
     outside["Outside AWS<br/>identity provider · Google Gemini · DeepL"]
@@ -85,7 +95,7 @@ flowchart LR
     nat -->|"HTTPS"| outside
 ```
 
-The outbound calls, all over HTTPS through the NAT gateway:
+The outbound calls, all over HTTPS through the NAT instance:
 
 | Caller | Calls | For |
 |---|---|---|
@@ -98,58 +108,65 @@ The outbound calls, all over HTTPS through the NAT gateway:
 
 ```mermaid
 flowchart LR
-    gha["GitHub Actions<br/>OIDC role, no stored keys"]
-    dns["hpac.ca DNS<br/>HPAC's zone"]
+    gha["GitHub Actions<br/>release.yml · OIDC role per account"]
+    dns["hpac.ca / acvl.ca DNS<br/>outside AWS · production only"]
+    admins["admins team<br/>approves production"]
 
     subgraph global["AWS global"]
-        cf["CloudFront"]
-        acmglobal["ACM certificate<br/>us-east-1"]
+        cf["CloudFront<br/>site + /api/*"]
+        acmglobal["ACM certificate<br/>us-east-1 · production only"]
     end
 
     subgraph region["AWS ca-central-1"]
         ecr["ECR<br/>API and Worker images"]
-        api["API<br/>Lambda"]
+        api["API<br/>Lambda Function URL"]
         worker["Worker<br/>Lambda"]
         site[("S3 site bucket")]
-        alb["ALB"]
-        acm["ACM certificate"]
         watch["CloudWatch<br/>logs · alarms"]
-        sns["SNS<br/>alarm e-mail to operators"]
+        sns["SNS<br/>alarm e-mail<br/>production only"]
+        nat["NAT instance<br/>recreated every release"]
     end
 
-    gha -->|"push images"| ecr
+    gha -->|"build once: images + web bundle"| ecr
     ecr -->|"new image"| api
     ecr -->|"new image"| worker
-    gha -->|"update functions"| api
+    gha -->|"1 · deploy to staging"| api
+    gha -->|"terraform apply"| nat
     gha -->|"update functions"| worker
     gha -->|"sync build"| site
     gha -->|"invalidate"| cf
-    dns -->|"CNAME"| cf
-    dns -->|"CNAME"| alb
-    dns -.->|"validation records"| acm
-    dns -.->|"validation records"| acmglobal
+    gha -.->|"2 · wait for approval"| admins
+    admins -.->|"3 · same artifacts to production"| gha
+    dns -->|"CNAME, production only"| cf
+    dns -.->|"validation records, production only"| acmglobal
     acmglobal --> cf
-    acm --> alb
     api --> watch
     worker --> watch
-    alb --> watch
     watch -->|"alarm"| sns
 ```
 
 How the pieces connect:
 
-- **Two public entry points.**
-  - CloudFront serves the static website from a private bucket that only it
-    can read.
-  - The HTTPS ALB fronts the API and nothing else, reached on its own
-    hostname, not through CloudFront
-    ([ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
-  - The website bundle holds no report data. The API authorizes every data
-    request, so the delivery path is not the security boundary
-    ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)).
-- **The API** is a Lambda function behind an ALB Lambda target group. It
-  validates the member's token, writes a report with its outbox messages in
-  one transaction, and nudges the Worker.
+- **One public entry point per account: CloudFront.** It serves the static
+  website from a private bucket only it can read, and routes `/api/*` to the
+  API's Function URL, guarded by a CloudFront-injected secret header. There
+  is no ALB
+  ([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
+  The website bundle holds no report data. The API authorizes every data
+  request, so the delivery path is not the security boundary
+  ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)).
+- **Two accounts.** Staging is the owner's personal AWS account, which also
+  runs unrelated workloads, holding synthetic data only. Production is a
+  separate, HPAC-owned account holding real reports. The two accounts are not
+  linked — production is not created from staging, and neither can assume a
+  role in the other
+  ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+- **Hostnames.** Production serves `safety.hpac.ca` and `securite.acvl.ca` on
+  one CloudFront distribution with one `us-east-1` certificate. Staging uses
+  only the default `*.cloudfront.net` address.
+- **The API** is a Lambda function behind its Function URL. It validates the
+  member's token, writes a report with its outbox messages in one
+  transaction, and nudges the Worker.
 - **The Worker** is a Lambda function.
   - The API's nudge starts it after each commit, and an EventBridge schedule
     sweeps once a minute, so a lost nudge only delays work.
@@ -169,25 +186,39 @@ How the pieces connect:
     ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
     [ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
     [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
-- **Outbound calls** leave through the NAT gateway: the identity provider's
+- **Outbound calls** leave through the NAT instance: the identity provider's
   signing keys, Gemini, and DeepL. S3 traffic stays in the VPC through the
-  gateway endpoint.
+  gateway endpoint. The NAT instance is the only resource this system ever
+  deletes and recreates; every other resource is created once and updated in
+  place.
 - **Migrations** apply at each function's cold start under a PostgreSQL
   advisory lock. There is no migration task
   ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
-- **Deployment** is GitHub Actions assuming AWS roles through OIDC. It pushes
-  images to ECR, updates both functions, syncs the website build to its
-  bucket, and invalidates CloudFront.
-- **DNS** for `hpac.ca` is HPAC's own zone. Its records point at CloudFront and
-  the ALB, and it publishes the ACM validation records.
+- **Deployment** is a published GitHub Release, tagged `YYYY.MM.DD-N`. It
+  builds the API image, the Worker image, and the website bundle once, deploys
+  those same artifacts to staging automatically, then to production only
+  after the `admins` team approves. There is no apply on merge to `main`
+  ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+  Each account is reached only by its own short-lived OIDC role.
+- **DNS** for `hpac.ca` and `acvl.ca` stays with their current hosts, outside
+  AWS. A human adds the CNAME and certificate-validation records for
+  production once; staging needs none.
 
 ### Where today's Terraform differs
 
-`infra/` predates ADR-0123 and does not match this target yet. These are the
-known differences:
+`infra/` predates ADR-0123, ADR-0158, and ADR-0159, and does not match this
+target yet. These are the known differences:
 
 - The API and the Worker run as ECS Fargate services, not Lambda functions
   (#443).
+- An ALB fronts the API instead of CloudFront routing `/api/*` to a Function
+  URL (#465).
+- One AWS account and one Terraform state, not staging/production tfvars, an
+  `hpac-admins`-approved production promotion, or the `hpac-staging`/
+  `hpac-production` AppRegistry applications (#464, #465, #466).
+- One CloudFront hostname (`safety.hpac.ca`), not the production pair plus a
+  staging default address (#463, #465).
+- A managed NAT gateway, not a NAT instance (#465).
 
 The website's S3 bucket, CloudFront distribution, certificates, network, RDS,
 uploads bucket, alarms, and ECR already match.
@@ -200,9 +231,73 @@ machinery is part of the target.
 the rest.* Existing infrastructure for those removed
 features should be pruned when implementation aligns.
 
+## Environments, release, and durability
+
+**CON-INF-011** Two AWS accounts. Staging is the owner's personal AWS
+account, which also runs unrelated workloads, and holds synthetic data only —
+the Development-only members-site login
+([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
+never runs there. Production is a separate, HPAC-owned account holding real
+reports. The two accounts are not linked: production is not created from
+staging through AWS Organizations, and neither account can assume a role in
+the other. Both are built from the one `infra/` root module, differing only
+in `infra/staging.tfvars` and `infra/production.tfvars`. Each account carries
+an AWS myApplications application named **HPAC-Safety** (Service Catalog
+AppRegistry) and a tag-based Resource Group; every resource is tagged
+`Project=HPAC-Safety`, `Environment=<staging|production>`,
+`ManagedBy=terraform`, and `Repo=HPAC-Safety/safety-report`. Production serves
+`safety.hpac.ca` and `securite.acvl.ca` on one CloudFront distribution with one
+`us-east-1` certificate; staging serves only its default `*.cloudfront.net`
+address
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+*Verified by: none — an infrastructure property no application scenario can
+observe; Terraform validation and the `infra` job are its check.*
+
+**CON-INF-012** A GitHub Release tagged `YYYY.MM.DD-N` builds the API image,
+the Worker image, and the website bundle exactly once. Staging deploys those
+artifacts automatically. Production deploys the same artifacts, never a
+rebuild, only after the `admins` GitHub team approves the `production`
+environment. There is no `terraform apply` on a merge to `main` — a pull
+request only plans, against both accounts
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+*Verified by: none — an infrastructure property no application scenario can
+observe; the `release` and `terraform` workflows are its check.*
+
+**CON-INF-013** The NAT instance (`fck-nat` on a `t4g.nano`, in a one-instance
+Auto Scaling group) is the only resource this system ever deletes and
+recreates, and every release does so. Every other resource — the RDS
+instance, the uploads bucket, Secrets Manager entries, CloudWatch log groups,
+the VPC, CloudFront, ECR, IAM roles, alarms, and the Lambda functions
+themselves — is created once and updated in place, never destroyed and
+recreated by a release, in both environments. The RDS instance, the uploads
+bucket, secrets, and log groups additionally carry `prevent_destroy` and, for
+RDS, deletion protection and a final snapshot. A Terraform plan that would
+destroy one of them fails review
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+*Verified by: none — an infrastructure property no application scenario can
+observe; Terraform plan review and the `infra` job are its check.*
+
+**CON-INF-014** Design principles for this infrastructure, from
+[issue #30](https://github.com/HPAC-Safety/safety-report/issues/30): one way
+to do each thing (one Terraform root, one bootstrap script, one release
+workflow, one plan workflow; no modules directory, no workspaces, no
+Terragrunt); the two environments differ only in their tfvars; everything is
+code — nobody changes AWS through its console except the one-time steps in
+issue #30's "Human work", and a release re-plans after it applies and fails
+on drift; no hidden steps, every manual action is written down; every
+Terraform file opens with a comment on what it creates and why, and
+`infra/README.md` and `docs/deployment.md` say where to look; Renovate and
+`terraform-relock.yml` keep images, Actions, the pinned NAT image, and
+provider locks current; and an abstraction is added only when a second real
+implementation needs it.
+*Verified by: none — these are review-time properties no application scenario
+can observe.*
+
 ## Network and data protection
 
-**CON-INF-003** Only the CloudFront distribution and the HTTPS ALB are public. The API
+**CON-INF-003** Only the CloudFront distribution is public, in each account. There is no
+ALB ([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
+The API
 and Worker Lambda functions are attached to private subnets; security groups narrowly allow API/Worker to RDS and necessary
 egress. S3 public access is blocked. Managed encryption is
 enabled for RDS, snapshots/backups, logs, secrets, and every bucket. TLS is
@@ -211,9 +306,10 @@ connections, and the model provider.
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 
-A small deployment may use one NAT gateway and the relevant AWS endpoints to
-control cost. Availability, backup retention, deletion protection, and final
-snapshot behavior are explicit production variables, not assumptions hidden in
+A small deployment uses one NAT instance, not a managed NAT gateway
+(CON-INF-013), and the relevant AWS endpoints, to control cost. Availability,
+backup retention, deletion protection, and final snapshot behavior are
+explicit per-environment Terraform variables, not assumptions hidden in
 application code.
 
 ## Configuration and secrets
@@ -231,9 +327,11 @@ and outside Development this system never contacts a member login endpoint
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 The one exception is Development's members-site sign-in
 ([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
-Forwarded headers are trusted without a proxy list, because the security group
-admits only the load balancer
-([ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
+Forwarded headers are trusted without a proxy list; the API instead checks a
+CloudFront-injected secret origin header and reads the client IP from
+`CloudFront-Viewer-Address`, which only CloudFront sets
+([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
+superseding [ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
 *Verified by: REQ-SUB-018, REQ-MOD-003.*
 
 **CON-INF-005** Secret values live in Secrets Manager and never in Terraform state, GitHub
@@ -262,18 +360,25 @@ key of its own.
 ## Deployment
 
 **CON-INF-007** GitHub Actions authenticates to AWS through OIDC and short-lived role
-assumption. There are no long-lived AWS access keys. Pull requests run build,
-test, security/configuration, web, and Terraform validation/plan checks without
-production mutation.
+assumption, one role per account per purpose (`hpac-safety-deploy`,
+`hpac-safety-plan`). There are no long-lived AWS access keys. Pull requests run
+build, test, security/configuration, web, and Terraform validation/plan checks
+against both accounts without mutating either
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 
-On an approved main deployment:
+On a published, date-tagged release:
 
 1. immutable API and Worker images are built and pushed to ECR with the commit
-   SHA, and the website is built once;
-2. the API and Worker Lambda functions are updated to that image, and the
-   website build is synced to its S3 bucket and the CloudFront distribution
-   invalidated, each independently; and
-3. health/readiness checks confirm the rollout.
+   SHA, and the website is built once — all exactly once for the release;
+2. staging deploys those same artifacts automatically: the API and Worker
+   Lambda functions are updated to that image, and the website build is synced
+   to its S3 bucket and the CloudFront distribution invalidated, each
+   independently;
+3. production deploys the identical artifacts only after the `admins` GitHub
+   team approves the `production` environment; and
+4. health/readiness checks confirm the rollout in each account.
+
+There is no `terraform apply` on a merge to `main`.
 
 There is no migration task or deploy step. The API and the Worker each apply
 pending migrations at startup, under a PostgreSQL advisory lock that re-checks
@@ -303,9 +408,10 @@ alert set itself.*
 - API/Worker service or migration health fails; and
 - RDS capacity/availability or backup health requires intervention.
 
-Alerts route to the existing HPAC operational channel outside this application's
-publication features. The application itself does not send reporter/reviewer
-email.
+Alerts route through SNS to `safety@hpac.ca`, in production only; staging's
+topic has no subscriber
+([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+The application itself does not send reporter/reviewer email.
 
 Runbooks cover first deployment, migration failure, rollback, stuck/poison work,
 model outage, identity-provider outage, safe derivative

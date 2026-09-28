@@ -2,13 +2,26 @@
 title: Trust forwarded headers because the security group is the trust boundary, not a static proxy list
 description: Trust X-Forwarded-For/X-Forwarded-Proto unconditionally at the application layer, because the network layer already guarantees the direct connection is the ALB.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: rate limiting, RateLimiter, ForwardedHeaders, X-Forwarded-For, ALB, trusted proxy
 ---
 
 # ADR-0081 — Trust forwarded headers because the security group is the trust boundary, not a static proxy list
+
+**Status:** Superseded by
+[ADR-0159](ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md). The
+ALB and its `api_from_alb` security-group rule, the trust boundary this
+record reasoned from, no longer exist: CloudFront routes `/api/*` straight to
+the API's Lambda Function URL. This record's own "Consequences" named the
+case that now applies — "an extra untrusted hop… would let that hop forge
+`X-Forwarded-For`" — because a caller can reach the Function URL directly,
+bypassing CloudFront. ADR-0159 reads `CloudFront-Viewer-Address`, which
+CloudFront always sets and a caller cannot forge, instead of
+`X-Forwarded-For`, and adds the CloudFront-injected origin secret header as
+the check that a request genuinely passed through CloudFront.
+`KnownNetworks`/`KnownProxies` stay cleared, for the reason ADR-0159 gives.
 
 ## Context
 

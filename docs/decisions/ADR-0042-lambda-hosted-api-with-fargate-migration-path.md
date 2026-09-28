@@ -13,7 +13,12 @@ keywords: AWS, Lambda, API, hosting, Docker, ALB, Fargate migration
 **Status:** Accepted. Supersedes the API row of
 [ADR-0009](ADR-0009-hosting-on-aws.md) ("ECS Fargate service behind an ALB").
 The Worker row of ADR-0009 was unchanged here. **Partially superseded by
-[ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md):** the Worker now runs on Lambda too. The API decision stands.
+[ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md):** the Worker now runs on Lambda too. **Amended by
+[ADR-0159](ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md):** the
+API stays on Lambda, but there is no ALB; CloudFront routes `/api/*` straight
+to its Function URL. Every mention of the ALB below (its target group, its
+migration path) is superseded by ADR-0159; the Lambda-hosting decision and the
+Web Adapter choice stand.
 
 ## Context
 

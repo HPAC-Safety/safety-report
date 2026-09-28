@@ -19,12 +19,18 @@ which removes SES/email resources. Parts of this record hold again today:
   public and admin sites.
   [ADR-0048](ADR-0048-one-website-admin-as-a-route.md) reinstated it, and
   [ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)
-  confirms it: one website, one distribution, one hostname.
+  confirms it: one website, one distribution. Production now serves that one
+  distribution on **two** hostnames, `safety.hpac.ca` and `securite.acvl.ca`
+  ([ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 - **The S3 + CloudFront origin.** ADR-0044 replaced it with an ECS Fargate
   container. ADR-0123 made it current again: the website is static files in a
   private S3 bucket behind CloudFront.
 - **S3-native state locking.** This record's change from ADR-0010's DynamoDB
   lock table stands.
+
+**Superseded, not held:** "There is now one environment: production." ADR-0158
+supersedes this: there are now two AWS accounts, staging and production, built
+from the one root module below by tfvars alone.
 
 **Supersedes, in part:**
 

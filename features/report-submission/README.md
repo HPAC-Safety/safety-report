@@ -417,11 +417,11 @@ identifying the reporter.
 
 The rate limit itself is a sliding-window `RateLimiter` policy, partitioned by
 client IP, using ASP.NET Core's built-in middleware rather than a third-party
-package. The client IP comes from `X-Forwarded-For`, trusted unconditionally
-because the API's security group admits traffic only from the one AWS ALB in
-front of it — the network layer is the actual trust boundary, not a static
-proxy allowlist
-([ADR-0081](../../docs/decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
+package. The client IP comes from `CloudFront-Viewer-Address`, which only
+CloudFront sets and a caller cannot override — there is no ALB, and CloudFront
+is the one public entry point for the API, reached on the path `/api/*`
+([ADR-0159](../../docs/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
+superseding [ADR-0081](../../docs/decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
 The client IP is used only in memory for the rate-limiter partition key; it is
 never persisted on a report or logged. A rejected request gets `429` with a
 safe, content-free problem response.

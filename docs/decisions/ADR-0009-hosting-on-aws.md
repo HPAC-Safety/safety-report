@@ -12,16 +12,24 @@ keywords: AWS, hosting, infrastructure, ca-central-1
 
 **Status:** Superseded in part by the
 [infrastructure specification](../infrastructure-and-operations.md).
-AWS `ca-central-1` remains; the target has separate public/admin static sites
-and no SES/email resources. The API row is further superseded by
+AWS `ca-central-1` remains; the target has one website with admin as a route
+([ADR-0048](ADR-0048-one-website-admin-as-a-route.md)) and no SES/email
+resources. The API row is further superseded by
 [ADR-0042](ADR-0042-lambda-hosted-api-with-fargate-migration-path.md): the API
-runs on Lambda, not ECS Fargate. The Static sites row is further superseded by
-[ADR-0044](ADR-0044-containerized-web-hosting.md): the web front end runs in a
-Docker container on ECS Fargate behind the ALB, not S3. The Worker row is
-unchanged. The residency rule is narrowed for one boundary by
+runs on Lambda, not ECS Fargate; then by
+[ADR-0159](ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md): no
+ALB, CloudFront routes `/api/*` to the API's Function URL. The Static sites
+row was further superseded by [ADR-0044](ADR-0044-containerized-web-hosting.md)
+(ECS Fargate/Nginx behind the ALB) and is now superseded again by
+[ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md):
+the website is static files in a private S3 bucket behind CloudFront, not a
+container. The Worker row is likewise superseded by ADR-0123: it runs on
+Lambda, not ECS Fargate. The residency rule is narrowed for one boundary by
 [ADR-0104](ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md):
 the Worker's one summarization call is processed by Google Gemini outside
 Canada; every service that stores report data stays in `ca-central-1`.
+[ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md) adds
+a second account (staging) alongside production.
 
 ## Context
 

@@ -81,8 +81,13 @@ before cutover.
 
 Outbound internet, in both accounts, goes through a NAT instance (`fck-nat` on
 a `t4g.nano`), not a managed NAT gateway. It is the one resource this system
-ever deletes and recreates, and every release does so; everything else is
-created once and updated in place, protected from deletion.
+ever deletes and recreates, and every release does so; everything else —
+including the RDS instance, the uploads bucket, secrets, and log groups,
+which additionally carry `prevent_destroy` — is created once and updated in
+place, protected from deletion.
+
+Alarms route through SNS to `safety@hpac.ca`, in production only; staging's
+topic has no subscriber.
 
 The current Terraform and deploy workflows are scaffolding. They still run the
 API and the Worker on ECS Fargate behind an ALB (#443, #465), one AWS account

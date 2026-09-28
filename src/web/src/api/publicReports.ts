@@ -18,6 +18,7 @@
  */
 
 import { ApiError, authorization } from "./adminQuestions"
+import type { ReportAttachment } from "./adminReports"
 
 export interface PublicReport {
 	id: string
@@ -26,6 +27,12 @@ export interface PublicReport {
 	publishedAt: string
 	/** Comments that are neither deleted nor hidden. */
 	commentCount: number
+	/**
+	 * Viewer-scoped (issue no. 427): the public count for an anonymous visitor or a
+	 * `User`, the full non-deleted count for a signed-in `SafetyOfficer`/
+	 * `Administrator`. Never any other attachment detail.
+	 */
+	attachmentCount: number
 }
 
 /** One public image or video on a report's own page: an opaque id and its kind, nothing more. */
@@ -39,6 +46,13 @@ export interface PublicMedia {
 /** A report's own page: the feed item plus its public media. */
 export interface PublicReportDetail extends PublicReport {
 	media: PublicMedia[]
+	/**
+	 * Every attachment, public or not, each marked with its state and public
+	 * visibility — present only for a signed-in `SafetyOfficer`/`Administrator`,
+	 * null for everyone else (issue no. 427 decision 4). Same shape as the admin
+	 * report page's own attachment list.
+	 */
+	staffAttachments: ReportAttachment[] | null
 }
 
 /** A short-lived link to one public file's bytes, and when it stops working. */
@@ -79,7 +93,9 @@ export async function fetchPublicReports(after: string | null, q?: string, local
 	}
 
 	const query = params.size > 0 ? `?${params.toString()}` : ""
-	const response = await fetch(`/api/v1/public/reports${query}`)
+	// The endpoint stays anonymous; a bearer token, when one is sent, is read
+	// only to scope the attachment count to a signed-in reviewer (issue no. 427).
+	const response = await fetch(`/api/v1/public/reports${query}`, { headers: authorization() })
 
 	if (!response.ok) {
 		throw new Error(`The published reports could not be loaded (${response.status}).`)
@@ -89,7 +105,9 @@ export async function fetchPublicReports(after: string | null, q?: string, local
 }
 
 export async function fetchPublicReport(id: string): Promise<PublicReportDetail> {
-	const response = await fetch(`/api/v1/public/reports/${encodeURIComponent(id)}`)
+	// Same rule as the feed: anonymous, but a staff token widens the response
+	// (issue no. 427 decision 4).
+	const response = await fetch(`/api/v1/public/reports/${encodeURIComponent(id)}`, { headers: authorization() })
 
 	if (response.status === 404) {
 		throw new PublicReportNotFound()

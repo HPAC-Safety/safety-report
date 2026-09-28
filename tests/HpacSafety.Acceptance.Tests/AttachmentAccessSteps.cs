@@ -113,6 +113,17 @@ public sealed class AttachmentAccessSteps
 		_body.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
 	}
 
+	[Then(@"the reviewer receives a short-lived URL to the derivative, served inline rather than as a forced download, so the lightbox can embed it, with the header X-Content-Type-Options: nosniff")]
+	public void ThenTheReviewerReceivesAShortLivedInlineUrl()
+	{
+		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		_body!.Url.ShouldNotBeNullOrWhiteSpace();
+		_body.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
+		Uri.UnescapeDataString(_body.Url).ShouldNotContain("attachment;");
+		_response.Headers.TryGetValues("X-Content-Type-Options", out var values).ShouldBeTrue();
+		values!.ShouldContain("nosniff");
+	}
+
 	[Then(@"the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff")]
 	public void ThenTheResponseForcesDownloadUnderTheReportersNameAndNosniff()
 	{
@@ -157,6 +168,60 @@ public sealed class AttachmentAccessSteps
 	{
 		await WhenAnAuthorizedReviewerRequestsIt();
 		_response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Then(@"no inline view link is issued for it")]
+	public async Task ThenNoInlineViewLinkIsIssuedForIt()
+	{
+		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		_response = await reviewer.GetAsync(new Uri($"/api/admin/reports/{_reportId}/attachments/{_attachmentId}/view", UriKind.Relative));
+		_response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Then(@"a reviewer instead receives a short-lived, forced download of the raw original, audited as a distinct action, under the reporter's sanitized filename, or a server-minted name when there is none")]
+	public async Task ThenAReviewerReceivesTheRawOriginalAuditedDistinctly()
+	{
+		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		_response = await reviewer.GetAsync(new Uri($"/api/admin/reports/{_reportId}/attachments/{_attachmentId}/original", UriKind.Relative));
+		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		_body = await _response.Content.ReadFromJsonAsync<AttachmentLinkPayload>();
+		_body!.FileName.ShouldBe(_originalFileName ?? $"{_attachmentId}.jpg");
+		Uri.UnescapeDataString(_body.Url).ShouldContain("attachment;");
+
+		var database = await DatabaseAsync();
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(_attachmentId));
+		entry.Action.ShouldBe(AuditAction.DownloadedOriginalMedia);
+		entry.Action.ShouldNotBe(AuditAction.ViewedAttachment);
+	}
+
+	[Then(@"it is never offered inline and never opened in the lightbox")]
+	public void ThenItIsNeverOfferedInlineOrInTheLightbox()
+	{
+		// Proven by the two steps above: no inline link is ever issued (/view
+		// refuses), and the only link the raw original ever gets is the forced
+		// download asserted there. There is no third endpoint to check.
+	}
+
+	[When(@"an authorized reviewer requests its raw original instead of its view link")]
+	[When(@"an authorized reviewer requests its raw original instead of its download link")]
+	public async Task WhenAnAuthorizedReviewerRequestsItsRawOriginal()
+	{
+		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		_response = await reviewer.GetAsync(new Uri($"/api/admin/reports/{_reportId}/attachments/{_attachmentId}/original", UriKind.Relative));
+
+		if (_response.IsSuccessStatusCode)
+		{
+			_body = await _response.Content.ReadFromJsonAsync<AttachmentLinkPayload>();
+		}
+	}
+
+	[Then(@"the raw-original download is refused")]
+	public void ThenTheRawOriginalDownloadIsRefused()
+	{
+		// 404 once a derivative exists (the caller should have used /view) or 400
+		// for a document (use /download) — either way, never a link.
+		_response.IsSuccessStatusCode.ShouldBeFalse();
+		_body.ShouldBeNull();
 	}
 
 	[Then(@"a video whose remux fails is not a failure of this kind: it is retained under its own rule")]

@@ -428,8 +428,38 @@ Scenario: Publication requires every guard to pass, with no bypass
 Scenario: The public DTO exposes only the approved summary and its metadata
   Given a report is published
   When the public API returns it
-  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, and each public file's opaque id, kind, and — for a document only — coarse format
+  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
   And it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
+
+@REQ-MOD-150
+Scenario: The feed's attachment count is the public count for a visitor and the full count for staff
+  Given a published report has one public attachment and one attachment only staff may see
+  When an anonymous visitor lists the feed
+  Then the report's attachment count is 1
+  When a signed-in safety officer lists the feed
+  Then the report's attachment count is 2
+
+@REQ-MOD-155
+Scenario: An ordinary member's token widens nothing; only SafetyOfficer or Administrator does
+  Given a published report has one public attachment and one attachment only staff may see
+  When a signed-in member with the User role lists the feed
+  Then the report's attachment count is 1
+  When a signed-in Administrator lists the feed
+  Then the report's attachment count is 2
+
+@REQ-MOD-151
+Scenario: The admin report list carries every non-deleted attachment's count
+  Given a report has one hidden attachment and one still-processing attachment
+  When a reviewer lists reports
+  Then the row's attachment count is 2
+
+@REQ-MOD-152
+Scenario: A signed-in safety officer sees every attachment on the public report page, each marked public or not
+  Given a published report has a public image and a hidden image
+  When a signed-in safety officer asks the public API for that report
+  Then the response carries a staff attachment for each file, with its state and public visibility
+  And the hidden file's visibility reads "hidden"
+  And the public file's visibility reads "public"
 
 @REQ-MOD-037
 Scenario: The public feed lists only publishable reports, newest submitted first
@@ -548,6 +578,22 @@ Scenario: Manage reports shows each row's reporter and pilot names, blank when u
   When the safety officer opens Manage reports
   Then the pending row shows reporter name "Alex Rivera" and pilot name "Sam Chen"
   And the published row shows no reporter or pilot name
+
+@REQ-MOD-153
+@ui
+Scenario: The public feed shows each report's attachment icon and count, omitted at zero
+  Given the public feed holds a report with attachments and one with none
+  When a visitor opens the public feed
+  Then the report with attachments shows an attachment icon with its count, accessibly labelled
+  And the report with none shows no attachment icon
+
+@REQ-MOD-154
+@ui
+Scenario: Manage reports shows each row's attachment icon and count, omitted at zero
+  Given a safety officer is signed in and Manage reports holds a report with attachments and one with none
+  When the safety officer opens Manage reports
+  Then the row with attachments shows an attachment icon with its count, accessibly labelled
+  And the row with none shows no attachment icon
 
 @REQ-MOD-053
 @ui

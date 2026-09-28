@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using HpacSafety.Api.PublicReports;
 using HpacSafety.Core;
+using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,8 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	private const string Feed = "/api/v1/public/reports";
 
-	private static readonly string[] Allowlist = ["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount", "media"];
+	private static readonly string[] Allowlist =
+		["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount", "attachmentCount", "media", "staffAttachments"];
 
 	private readonly List<string> _publishable = [];
 	private readonly List<string> _hidden = [];
@@ -47,6 +49,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	private readonly List<(string Cursor, string LastItemId)> _cursors = [];
 	private HttpResponseMessage? _response;
 	private JsonElement? _body;
+	private string? _mixedVisibilityReportId;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -58,6 +61,49 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			ReportStatus.Published,
 			true,
 			report => report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, DateTimeOffset.UtcNow));
+	}
+
+	[Given(@"a published report has one public attachment and one attachment only staff may see")]
+	public async Task GivenAReportWithOnePublicAndOneStaffOnlyAttachment()
+	{
+		var now = DateTimeOffset.UtcNow;
+
+		// Submitted far in the future, like the pagination scenario above, so
+		// this scenario's report is always the feed's first (and only, per this
+		// scenario) page item — the shared database holds other scenarios'
+		// reports too.
+		var at = now.AddYears(60);
+
+		_mixedVisibilityReportId = await BootedReports.Seed(
+			ReportStatus.Published,
+			true,
+			report =>
+			{
+				var pub = report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, now);
+				pub.RecordStripped($"{report.Id}/stripped/{pub.Id}", now);
+				// Still processing — no derivative, so only staff may see it.
+				report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, now);
+			},
+			at: at,
+			mediaConsent: true);
+	}
+
+	[Given(@"a published report has a public image and a hidden image")]
+	public async Task GivenAReportWithAPublicAndAHiddenImage()
+	{
+		var now = DateTimeOffset.UtcNow;
+		_mixedVisibilityReportId = await BootedReports.Seed(
+			ReportStatus.Published,
+			true,
+			report =>
+			{
+				var pub = report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, now);
+				pub.RecordStripped($"{report.Id}/stripped/{pub.Id}", now);
+				var hidden = report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, now);
+				hidden.RecordStripped($"{report.Id}/stripped/{hidden.Id}", now);
+				hidden.HideBy("synthetic-reviewer", now);
+			},
+			mediaConsent: true);
 	}
 
 	[Given(@"some reports are publishable and others are not")]
@@ -168,6 +214,81 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		while (after is not null && _pages.Count < 1000);
 	}
 
+	[When(@"an anonymous visitor lists the feed")]
+	public async Task WhenAnAnonymousVisitorListsTheFeed()
+	{
+		using var client = await Anonymous();
+		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
+	[When(@"a signed-in safety officer lists the feed")]
+	public async Task WhenASignedInSafetyOfficerListsTheFeed()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
+	[When(@"a signed-in member with the User role lists the feed")]
+	public async Task WhenASignedInMemberWithTheUserRoleListsTheFeed()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.User);
+		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
+	[When(@"a signed-in Administrator lists the feed")]
+	public async Task WhenASignedInAdministratorListsTheFeed()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.Administrator);
+		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
+	[When(@"a signed-in safety officer asks the public API for that report")]
+	public async Task WhenASignedInSafetyOfficerAsksForThatReport()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		_response = await client.GetAsync(new Uri($"{Feed}/{_mixedVisibilityReportId}", UriKind.Relative));
+	}
+
+	[Then(@"the report's attachment count is (\d+)")]
+	public async Task ThenTheReportsAttachmentCountIs(int expected)
+	{
+		// Reads _response fresh rather than through the shared Body() cache: this
+		// scenario issues two requests, and Body()'s cache is meant for scenarios
+		// that issue only one.
+		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
+		var item = body.GetProperty("items").EnumerateArray().Single(candidate => candidate.GetProperty("id").GetString() == _mixedVisibilityReportId);
+		item.GetProperty("attachmentCount").GetInt32().ShouldBe(expected);
+	}
+
+	[Then(@"the response carries a staff attachment for each file, with its state and public visibility")]
+	public async Task ThenTheResponseCarriesAStaffAttachmentForEachFile()
+	{
+		var body = await Body();
+		var attachments = body.GetProperty("staffAttachments").EnumerateArray().ToList();
+		attachments.Count.ShouldBe(2);
+		attachments.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal)
+			.SetEquals(new[] { "id", "kind", "state", "visibility", "format" }));
+	}
+
+	[Then(@"the hidden file's visibility reads ""(.*)""")]
+	public async Task ThenTheHiddenFilesVisibilityReads(string expected)
+	{
+		var body = await Body();
+		body.GetProperty("staffAttachments").EnumerateArray()
+			.Count(item => item.GetProperty("visibility").GetString() == expected)
+			.ShouldBe(1);
+	}
+
+	[Then(@"the public file's visibility reads ""(.*)""")]
+	public async Task ThenThePublicFilesVisibilityReads(string expected)
+	{
+		var body = await Body();
+		body.GetProperty("staffAttachments").EnumerateArray()
+			.Count(item => item.GetProperty("visibility").GetString() == expected)
+			.ShouldBe(1);
+	}
+
 	[When(@"the public API is asked for that report")]
 	public async Task WhenThePublicApiIsAskedForEachReport()
 	{
@@ -181,12 +302,14 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, and each public file's opaque id, kind, and — for a document only — coarse format")]
+	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer")]
 	public async Task ThenTheResponseIsExactlyTheAllowlist()
 	{
 		var body = await Body();
 		body.EnumerateObject().Select(property => property.Name).ShouldBe(Allowlist, ignoreOrder: true);
 		body.GetProperty("id").GetString().ShouldBe(seeded.Id);
+		body.GetProperty("attachmentCount").GetInt32().ShouldBeGreaterThanOrEqualTo(0);
+		body.GetProperty("staffAttachments").ValueKind.ShouldBe(JsonValueKind.Null);
 
 		var media = body.GetProperty("media").EnumerateArray().ToList();
 		media.ShouldNotBeEmpty();

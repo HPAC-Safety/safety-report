@@ -27,6 +27,7 @@ interface StubRow {
 	version: string
 	reporterName: string | null
 	pilotName: string | null
+	attachmentCount: number
 }
 
 const ROWS: StubRow[] = [
@@ -40,12 +41,13 @@ const ROWS: StubRow[] = [
 		version: "11.1",
 		reporterName: "Alex Rivera",
 		pilotName: "Sam Chen",
+		attachmentCount: 0,
 	},
-	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false, version: "12.0", reporterName: null, pilotName: null },
-	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false, version: "13.1", reporterName: null, pilotName: null },
-	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false, version: "14.1", reporterName: null, pilotName: null },
-	{ id: "failedaaaaa", submittedAt: "2026-09-16T15:30:00Z", status: "summary_failed", language: "en-CA", consent: true, isStuck: false, version: "15.0", reporterName: null, pilotName: null },
-	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true, version: "16.0", reporterName: null, pilotName: null },
+	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false, version: "12.0", reporterName: null, pilotName: null, attachmentCount: 0 },
+	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false, version: "13.1", reporterName: null, pilotName: null, attachmentCount: 0 },
+	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false, version: "14.1", reporterName: null, pilotName: null, attachmentCount: 0 },
+	{ id: "failedaaaaa", submittedAt: "2026-09-16T15:30:00Z", status: "summary_failed", language: "en-CA", consent: true, isStuck: false, version: "15.0", reporterName: null, pilotName: null, attachmentCount: 0 },
+	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true, version: "16.0", reporterName: null, pilotName: null, attachmentCount: 0 },
 ]
 
 const DETAIL = {
@@ -97,7 +99,7 @@ const DETAIL = {
 		sourceEn: "generated",
 		sourceFr: "generated",
 	},
-	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready", visibility: "private" }],
+	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready", visibility: "private", format: "pdf" }],
 	mediaConsent: null,
 }
 
@@ -207,6 +209,22 @@ function rows(page: Page) {
 Given("a safety officer is signed in and reports exist in several states", async ({ page }) => {
 	await stubReports(page)
 	await signInAs(page, "safety_officer")
+})
+
+// --- REQ-MOD-154: Manage reports shows each row's attachment icon and count ---
+
+Given("a safety officer is signed in and Manage reports holds a report with attachments and one with none", async ({ page }) => {
+	await stubReports(page)
+	listStubs.get(page)!.rows.find((candidate) => candidate.id === "pendingaaaa")!.attachmentCount = 3
+	await signInAs(page, "safety_officer")
+})
+
+Then("the row with attachments shows an attachment icon with its count, accessibly labelled", async ({ page }) => {
+	await expect(row(page, "pending").getByText("3 attachments")).toBeVisible()
+})
+
+Then("the row with none shows no attachment icon", async ({ page }) => {
+	await expect(row(page, "published").getByText(/attachments?/)).toHaveCount(0)
 })
 
 When("the safety officer opens Manage reports", async ({ page }) => {
@@ -501,7 +519,7 @@ When("the safety officer confirms", async ({ page }) => {
 
 When("the safety officer opens its document attachment", async ({ page }) => {
 	await page.route("**/attachment-opened", (route) => route.fulfill({ body: "synthetic" }))
-	await page.getByRole("button", { name: "Download" }).click()
+	await page.getByRole("button", { name: /^Download/ }).click()
 })
 
 Then("the report shows the {string} badge", async ({ page }, badge: string) => {

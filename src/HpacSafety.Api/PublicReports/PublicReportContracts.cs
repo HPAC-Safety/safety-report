@@ -1,24 +1,38 @@
+using HpacSafety.Api.Admin;
+
 namespace HpacSafety.Api.PublicReports;
 
 /// <summary>
 ///     One published report as the public sees it. This is the whole allowlist:
-///     the opaque ID, the two approved summary texts, when it was published, and
-///     how many visible comments it has (REQ-MOD-036, REQ-COM-014, CON-DP-011).
-///     Nothing else about a report ever leaves through the public API.
+///     the opaque ID, the two approved summary texts, when it was published, how
+///     many visible comments it has, and how many attachments this viewer may see
+///     (REQ-MOD-036, REQ-COM-014, CON-DP-011). <see cref="AttachmentCount" /> is
+///     viewer-scoped (issue #427, decisions 1-2): the public count for an
+///     anonymous visitor or a <c>User</c>, the full non-deleted count for a
+///     signed-in <c>SafetyOfficer</c>/<c>Administrator</c>. It carries no other
+///     attachment detail — no ids, kinds, names, or links. Nothing else about a
+///     report ever leaves through the public API.
 /// </summary>
 public sealed record PublicReportView(
 	string Id,
 	string AiSummaryEn,
 	string AiSummaryFr,
 	DateTimeOffset PublishedAt,
-	int CommentCount);
+	int CommentCount,
+	int AttachmentCount);
 
 /// <summary>
-///     A published report's own page: the feed item's allowlist plus each public
-///     image or video, as an opaque id and a kind and nothing else — no name,
-///     size, type, key, or URL (REQ-MOD-036, REQ-MED-025). The page asks for each
-///     file's link separately, so a link is minted only when it is about to be
-///     used and expires on its own (ADR-0117).
+///     A published report's own page: the feed item's allowlist plus the
+///     attachments this viewer may see. For the public, <see cref="Media" /> is
+///     each public image, video, or document as an opaque id and a kind and
+///     nothing else — no name, size, type, key, or URL (REQ-MOD-036, REQ-MED-025).
+///     For a signed-in <c>SafetyOfficer</c>/<c>Administrator</c>,
+///     <see cref="StaffAttachments" /> additionally carries every attachment —
+///     public or not — each marked with its state and public visibility, the same
+///     vocabulary the admin report page uses (issue #427, decisions 1, 4, 14); it
+///     is null for anyone else. Either way the page asks for each file's link
+///     separately, so a link is minted only when it is about to be used and
+///     expires on its own (ADR-0117).
 /// </summary>
 public sealed record PublicReportDetail(
 	string Id,
@@ -26,7 +40,9 @@ public sealed record PublicReportDetail(
 	string AiSummaryFr,
 	DateTimeOffset PublishedAt,
 	int CommentCount,
-	IReadOnlyList<PublicMediaView> Media);
+	int AttachmentCount,
+	IReadOnlyList<PublicMediaView> Media,
+	IReadOnlyList<ReportAttachmentView>? StaffAttachments);
 
 /// <summary>
 ///     One public file: its opaque id, <c>image</c>, <c>video</c>, or

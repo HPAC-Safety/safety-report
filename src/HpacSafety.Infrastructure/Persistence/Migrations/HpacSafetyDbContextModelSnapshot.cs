@@ -1259,6 +1259,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnName("id")
                         .IsFixedLength();
 
+                    b.Property<int>("AttachmentCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attachment_count");
+
                     b.Property<bool?>("ConsentPublish")
                         .HasColumnType("boolean")
                         .HasColumnName("consent_publish");
@@ -1383,6 +1387,14 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.Property<int>("CommentCount")
                         .HasColumnType("integer")
                         .HasColumnName("comment_count");
+
+                    b.Property<int>("FullAttachmentCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("full_attachment_count");
+
+                    b.Property<int>("PublicAttachmentCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("public_attachment_count");
 
                     b.Property<DateTimeOffset>("PublishedAt")
                         .HasColumnType("timestamp with time zone")

@@ -88,12 +88,19 @@ A stream MP4 cannot hold is a remux that fails, never a reason to transcode.
 A video that cannot be remuxed into a verified derivative is retained rather
 than refused (REQ-MED-015,
 [ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
-It then behaves as a private document does: an original reachable only by an
-authorized reviewer as a short-lived forced download, never rendered inline.
-Unlike a document it is never published, not even on a published report that
-shows its other media. That reviewer path is REQ-MED-011's rule and is
-built with the reviewer endpoints (#311); this page records that an unstripped
-video joins it rather than getting a rule of its own.
+The same now holds for a still-processing or failed **image** (REQ-MED-013,
+REQ-MED-053, widening ADR-0094 — #427): either way the reviewer strip marks
+the tile Processing or Failed, and `GET
+/api/admin/reports/{reportId}/attachments/{attachmentId}/original` gives an
+authorized reviewer a short-lived, forced, audited download of the raw
+original under its own `AuditAction.DownloadedOriginalMedia`, never rendered
+inline and never opened in the lightbox. It refuses once a derivative exists
+(REQ-MED-054, use `/view` instead) and for a document (REQ-MED-055, use
+`/download`). Unlike a document it is never published, not even on a
+published report that shows its other media. That reviewer path is built with
+the reviewer endpoints (#311, #427); this page records that an unstripped
+video and a still-processing or failed image share it rather than each
+getting a rule of its own.
 
 The anonymity contract is unaffected. No attachment of any kind reaches the
 model — the summary never sees one.
@@ -145,6 +152,67 @@ reporter answered the wording the form showed at submission. Media consent was
 reworded to name documents. A yes given before that, or to a superseded wording
 a stale draft still held, shows the report's photos and video and keeps its
 documents private.
+
+## The thumbnail strip, lightbox, and viewer-scoped counts (#427)
+
+A report's own page and the admin report page each show its attachments as
+one horizontal, scrollable strip of thumbnails, in place of stacked embeds or
+list rows. An image thumbnail is its existing derivative scaled with CSS; a
+video gets a generic play tile; a document gets a type icon (PDF, DOC, DOCX,
+RTF, MD, TXT, ODT) and is never opened in the lightbox — activating it
+downloads instead, through the same public or staff path `/reports/:id` and
+`/admin/reports/:id` already use. No new Worker derivative.
+
+Activating an image or video thumbnail opens a lightbox that steps through
+every image and video on the report, in attachment order: caret buttons and
+the Left/Right arrow keys move, Escape closes, focus is trapped while it is
+open and returns to the thumbnail on close, and navigation wraps at both
+ends. A video plays with native controls and its audio, and stops when the
+lightbox moves away from it or closes. Labels stay generic ("Photo 1 of 3",
+"Video 1 of 2") — no reviewer-authored text.
+
+**Who sees what, on both pages:**
+
+- The public (anonymous visitors and `User`) sees only what `public_report_media`
+  already lists.
+- A signed-in `SafetyOfficer`/`Administrator` sees every attachment, each
+  marked with its state (`ready`, `processing`, `failed`) and its public
+  visibility (`public`, `hidden`, `no_consent`, `when_published`, or
+  `private`) — the same vocabulary the admin report page already used for its
+  list rows — with Hide and Show. `/admin/reports/:id` works this way even for
+  an unpublished report.
+- The public report endpoint (`GET /api/v1/public/reports/{id}`) stays
+  anonymous and reads a staff bearer token only when one is sent (JwtBearer is
+  the default scheme, so a sent token is still authenticated); a hidden or
+  otherwise non-public item's state and visibility appear only in that staff
+  response.
+
+**Counts, on the public feed and the admin report list:** a report with at
+least one attachment the viewer may see shows an attachment icon and count,
+omitted at zero, with an accessible localized label ("3 attachments"/"3
+pièces jointes"). The count is viewer-scoped exactly like the strip: the
+public count from `public_report_media` for the public, every non-deleted
+`report_files` row for staff — computed in the `public_reports` and
+`admin_report_queue` views, never in C#, and never counting a staff-only
+private attachment (see "Private attachments" below, ADR-0135). The public
+feed item carries only the count — no ids, kinds, names, or links.
+
+**Link and audit rules, unchanged in spirit, adjusted in shape:**
+
+- `/view` mints an **inline** link to an image or video's derivative now
+  (REQ-MED-010), not a forced download, so the lightbox can embed it; still
+  audited, still at most fifteen minutes. `/download` is unchanged
+  (documents only).
+- A public item on a staff page loads through the anonymous public link,
+  unaudited, the same as it does for a visitor. A non-public item goes
+  through the audited staff mint (`ViewedAttachment`, or
+  `DownloadedOriginalMedia` for a raw original), one row per mint. The
+  lightbox reuses a thumbnail's link while it is valid; a refresh after an
+  error writes another row and resumes playback position.
+  A 404 removes the item from both the strip and the lightbox.
+
+See [ADR-0117](../../docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md#amendment-2026-09-28)
+for the full record.
 
 ## Private attachments (#507)
 
@@ -203,8 +271,13 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   and a pre-publication media review step.
 - Choosing, per file, which attachments to share. Media consent covers all of
   a report's images, videos, and documents.
-- Media in the public feed list, thumbnails, or a gallery or lightbox beyond
-  the native image and video controls.
+- Worker-made thumbnails, video poster frames, and document previews or
+  first-page images (already out of scope above) — an image thumbnail is its
+  existing derivative scaled with CSS, a video gets a generic play tile, and a
+  document gets a type icon (#427).
+- Zoom, pan, and share buttons in the lightbox.
+- Attachment previews in the report and admin lists beyond the icon and
+  count — no ids, kinds, names, or links (#427).
 - Anonymizing or transforming a document. A validated original is retained
   exactly as it arrived.
 - Client-side processing, resizing, or stripping before upload. Validation and

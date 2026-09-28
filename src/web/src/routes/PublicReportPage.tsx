@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
+import { AttachmentStrip } from "../components/AttachmentStrip"
 import { ReportComments } from "../components/ReportComments"
-import { ReportMedia } from "../components/ReportMedia"
 import { fetchPublicReport, PublicReportNotFound, summaryIn, type PublicReportDetail } from "../api/publicReports"
 
 type Loaded = { state: "loading" } | { state: "ready"; report: PublicReportDetail } | { state: "missing" } | { state: "failed" }
@@ -20,24 +20,17 @@ export function PublicReportPage() {
 	const { reportId = "" } = useParams()
 	const [loaded, setLoaded] = useState<Loaded>({ state: "loading" })
 
-	useEffect(() => {
-		let current = true
-		setLoaded({ state: "loading" })
-		fetchPublicReport(reportId)
-			.then((report) => {
-				if (current) {
-					setLoaded({ state: "ready", report })
-				}
-			})
-			.catch((cause: unknown) => {
-				if (current) {
-					setLoaded({ state: cause instanceof PublicReportNotFound ? "missing" : "failed" })
-				}
-			})
-		return () => {
-			current = false
-		}
+	const load = useCallback((showLoading: boolean) => {
+		if (showLoading) setLoaded({ state: "loading" })
+		return fetchPublicReport(reportId)
+			.then((report) => setLoaded({ state: "ready", report }))
+			.catch((cause: unknown) => setLoaded({ state: cause instanceof PublicReportNotFound ? "missing" : "failed" }))
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [reportId])
+
+	useEffect(() => {
+		void load(true)
+	}, [load])
 
 	const published = new Intl.DateTimeFormat(locale, { dateStyle: "long" })
 
@@ -71,7 +64,12 @@ export function PublicReportPage() {
 					<p lang={locale} data-summary={locale} className="mt-6 whitespace-pre-line font-sans text-lg text-ink">
 						{summaryIn(loaded.report, locale)}
 					</p>
-					<ReportMedia reportId={loaded.report.id} media={loaded.report.media} />
+					<AttachmentStrip
+						reportId={loaded.report.id}
+						media={loaded.report.media}
+						staffAttachments={loaded.report.staffAttachments}
+						onChanged={() => void load(false)}
+					/>
 					<ReportComments reportId={loaded.report.id} />
 				</article>
 			)}

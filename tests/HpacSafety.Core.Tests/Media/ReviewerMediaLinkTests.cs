@@ -57,6 +57,38 @@ public class ReviewerMediaLinkTests
 	}
 
 	[Fact]
+	public async Task GivenStrippedDerivative_WhenInlineViewUrlIsRequested_ThenOneIsIssued()
+	{
+		// Given
+		// issue #427 decision 10: /view mints an inline link now, for the
+		// lightbox, rather than a forced download.
+		var derivative = BlobKey.For(ReportId, MediaCompartment.Stripped, "photo.jpg");
+
+		// When
+		var url = await new ReviewerMediaLink(new InMemoryBlobStore())
+			.CreateInlineViewUrl(derivative, "image/jpeg", TimeSpan.FromMinutes(5), CancellationToken.None);
+
+		// Then
+		url.ShouldNotBeNull();
+	}
+
+	[Theory]
+	[InlineData(MediaCompartment.Original)]
+	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
+	public async Task GivenKeyOutsideStrippedCompartment_WhenInlineViewUrlIsRequested_ThenRefused(MediaCompartment compartment)
+	{
+		// Given
+		var key = compartment == MediaCompartment.Quarantine
+			? BlobKey.ForUpload(UploadId.New())
+			: BlobKey.For(ReportId, compartment, "photo.jpg");
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateInlineViewUrl(key, "image/jpeg", TimeSpan.FromMinutes(5), CancellationToken.None));
+	}
+
+	[Fact]
 	public void GivenReportIdMovedToFrontOfKey_WhenViewabilityIsChecked_ThenStillReadsCompartment()
 	{
 		// Given
@@ -117,5 +149,73 @@ public class ReviewerMediaLinkTests
 		// When / Then
 		await Should.ThrowAsync<DomainRuleViolationException>(() =>
 			new ReviewerMediaLink(new InMemoryBlobStore()).CreateDocumentDownloadUrl(key, AttachmentKind.Document, "report.pdf", TimeSpan.FromMinutes(5), CancellationToken.None));
+	}
+
+	[Theory]
+	[InlineData(AttachmentKind.Image)]
+	[InlineData(AttachmentKind.Video)]
+	public async Task GivenImageOrVideoOriginalWithNoDerivative_WhenOriginalDownloadUrlIsRequested_ThenOneIsIssued(AttachmentKind kind)
+	{
+		// Given
+		// issue #427 decision 15: a raw original is downloadable this way only
+		// while there is no stripped derivative to view instead.
+		var original = BlobKey.For(ReportId, MediaCompartment.Original, "clip.mp4");
+
+		// When
+		var url = await new ReviewerMediaLink(new InMemoryBlobStore())
+			.CreateOriginalMediaDownloadUrl(original, kind, hasDerivative: false, "clip.mp4", TimeSpan.FromMinutes(5), CancellationToken.None);
+
+		// Then
+		url.ShouldNotBeNull();
+	}
+
+	[Fact]
+	public async Task GivenADocument_WhenOriginalDownloadUrlIsRequested_ThenRefused()
+	{
+		// Given
+		// A document downloads through CreateDocumentDownloadUrl instead — it
+		// never has a stripped derivative to fall back from.
+		var original = BlobKey.For(ReportId, MediaCompartment.Original, "report.pdf");
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateOriginalMediaDownloadUrl(
+				original, AttachmentKind.Document, hasDerivative: false, "report.pdf", TimeSpan.FromMinutes(5), CancellationToken.None));
+	}
+
+	[Theory]
+	[InlineData(AttachmentKind.Image)]
+	[InlineData(AttachmentKind.Video)]
+	public async Task GivenAStrippedDerivativeAlreadyExists_WhenOriginalDownloadUrlIsRequested_ThenRefused(AttachmentKind kind)
+	{
+		// Given
+		// The chokepoint's own enforcement of issue #427 decision 15 — not only the
+		// calling endpoint's: once a derivative exists, a reviewer views it through
+		// CreateInlineViewUrl instead. This is the ADR-0026 privacy boundary this
+		// method exists to hold even if a future caller forgets to check first.
+		var original = BlobKey.For(ReportId, MediaCompartment.Original, "clip.mp4");
+
+		// When / Then
+		var thrown = await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateOriginalMediaDownloadUrl(
+				original, kind, hasDerivative: true, "clip.mp4", TimeSpan.FromMinutes(5), CancellationToken.None));
+		thrown.Message.ShouldBe("The raw original is offered only while there is no derivative to view instead.");
+	}
+
+	[Theory]
+	[InlineData(MediaCompartment.Stripped)]
+	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
+	public async Task GivenOriginalKeyOutsideOriginalCompartment_WhenOriginalDownloadUrlIsRequested_ThenRefused(MediaCompartment compartment)
+	{
+		// Given
+		var key = compartment == MediaCompartment.Quarantine
+			? BlobKey.ForUpload(UploadId.New())
+			: BlobKey.For(ReportId, compartment, "clip.mp4");
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateOriginalMediaDownloadUrl(
+				key, AttachmentKind.Video, hasDerivative: false, "clip.mp4", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 }

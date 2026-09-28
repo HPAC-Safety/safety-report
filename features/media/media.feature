@@ -108,11 +108,10 @@ Scenario: Each attachment fails and processes independently of the report
   And the slow or corrupt file neither rolls back the valid report nor forces an additional AI call
 
 @REQ-MED-010
-Scenario: A reviewer gets a short-lived URL only for successfully processed media
+Scenario: A reviewer gets a short-lived inline URL only for successfully processed media
   Given an image or video attachment has finished processing successfully
   When an authorized reviewer requests to view it
-  Then the reviewer receives a short-lived read URL to the derivative
-  And the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff
+  Then the reviewer receives a short-lived URL to the derivative, served inline rather than as a forced download, so the lightbox can embed it, with the header X-Content-Type-Options: nosniff
   And there is no API blob proxy or public URL
 
 @REQ-MED-011
@@ -133,12 +132,34 @@ Scenario: The admin site never inline-renders a private document
   And the reviewer is warned that the document is unredacted before download
 
 @REQ-MED-013
-Scenario: A failed attachment is inaccessible to reviewers
+Scenario: A failed image or video is never viewed inline, but its raw original downloads, audited
   Given signature validation, decoding, metadata removal, writing, or verification fails for an image
   When processing finishes
   Then the file is marked failed
-  And the file is inaccessible to any reviewer
+  And no inline view link is issued for it
+  And a reviewer instead receives a short-lived, forced download of the raw original, audited as a distinct action, under the reporter's sanitized filename, or a server-minted name when there is none
+  And it is never offered inline and never opened in the lightbox
   And a video whose remux fails is not a failure of this kind: it is retained under its own rule
+
+@REQ-MED-053
+Scenario: A still-processing image or video is never viewed inline, but its raw original downloads, audited
+  Given a submitted image the Worker has not yet processed
+  When an authorized reviewer requests it
+  Then no inline view link is issued for it
+  And a reviewer instead receives a short-lived, forced download of the raw original, audited as a distinct action, under the reporter's sanitized filename, or a server-minted name when there is none
+  And it is never offered inline and never opened in the lightbox
+
+@REQ-MED-054
+Scenario: The raw-original download refuses once a derivative exists
+  Given an image or video attachment has finished processing successfully
+  When an authorized reviewer requests its raw original instead of its view link
+  Then the raw-original download is refused
+
+@REQ-MED-055
+Scenario: The raw-original download refuses a document
+  Given a document attachment has passed validation
+  When an authorized reviewer requests its raw original instead of its download link
+  Then the raw-original download is refused
 
 @REQ-MED-016
 Scenario: Removing an upload erases every version of it
@@ -289,11 +310,14 @@ Scenario: A member who is not a reviewer cannot hide or show a file
 
 @REQ-MED-032
 @ui
-Scenario: The report page embeds its photos and video with a generic label
+Scenario: The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label
   Given a published report shows an image and a video
   When a visitor opens the report
-  Then the image is shown in the page, labelled "Photo 1 of 1"
-  And the video can be played in the page with its controls, labelled "Video 1 of 1"
+  Then the report page shows a thumbnail strip in place of stacked embeds
+  When the visitor activates the image's thumbnail
+  Then the lightbox opens showing the image, labelled "Photo 1 of 1"
+  When the visitor moves to the next item in the lightbox
+  Then the lightbox shows the video, playable with its controls and audio, labelled "Video 1 of 1"
 
 @REQ-MED-033
 @ui
@@ -312,12 +336,61 @@ Scenario: Media that is no longer public is removed from the page
 
 @REQ-MED-035
 @ui
-Scenario: A reviewer hides a file from the public report page
+Scenario: A reviewer hides a file from the public report page, still marked in the staff strip
   Given a safety officer is signed in and a published report shows an image
   When the safety officer opens the report
   Then the image offers to hide it
   When the safety officer hides the image and confirms
-  Then the image is no longer shown
+  Then the image now reads as hidden from the public and offers to show it, still on the report page
+
+@REQ-MED-056
+@ui
+Scenario: The lightbox wraps, is keyboard-operable, and traps and returns focus
+  Given a published report shows two images
+  When a visitor opens the first image in the lightbox
+  Then the Right arrow key moves to the second image
+  And the Right arrow key from the last image wraps to the first
+  And the Left arrow key from the first image wraps to the last
+  And Tab never moves focus outside the lightbox while it is open
+  When the visitor closes the lightbox with Escape
+  Then focus returns to the first image's thumbnail
+
+@REQ-MED-057
+@ui
+Scenario: A document's thumbnail is never opened in the lightbox
+  Given a published report offers a validated PDF document
+  When a visitor activates the document's thumbnail
+  Then the document downloads and the lightbox does not open
+
+@REQ-MED-058
+@ui
+Scenario: A 404 removes the item from both the strip and an open lightbox
+  Given a visitor has the lightbox open on a public image, and another item remains after it
+  When the image's link answers 404 because the image is no longer public
+  Then the image's thumbnail is removed from the strip and the lightbox steps to the remaining item without closing
+
+@REQ-MED-061
+@ui
+Scenario: A 404 on the only remaining lightbox item closes it
+  Given a visitor has the lightbox open on the one public image a report has
+  When the image's link answers 404 because the image is no longer public
+  Then the image's thumbnail is removed from the strip and the lightbox closes, since nothing remains to show
+
+@REQ-MED-059
+@ui
+Scenario: The admin report page uses the same strip and lightbox, and works for an unpublished report
+  Given a safety officer is signed in and an unpublished report has an image and a hidden document
+  When a safety officer opens the report in the admin area
+  Then the report shows the same thumbnail strip and lightbox as the public report page
+  And the hidden document's thumbnail is marked "Hidden from the public" and offers to show it
+
+@REQ-MED-060
+@ui
+Scenario: A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox
+  Given a safety officer is signed in and a report has a still-processing image
+  When a safety officer opens the report in the admin area
+  Then the image's tile is marked "processing"
+  And activating it downloads the raw original rather than opening the lightbox
 
 @REQ-MED-036
 @ui

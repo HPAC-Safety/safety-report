@@ -27,6 +27,15 @@ into `obsidian-vault/` — notes plus a canvas, openable as an Obsidian vault.
 It is opt-in, clone-local, gitignored, and rebuilt from the graph on each run
 with the flag; nothing else in the repository reads it.
 
+`.claude/settings.json` is tracked and team-shared: a few PATH-based Claude
+Code hooks (the pull-request merge/enqueue guard, ADR-0147; graphify's search
+and read reminders where `graphify` is on `PATH`), nothing machine- or
+person-specific. `init-dev.sh` never writes to it — in particular, it skips
+`graphify claude install`, which would otherwise overwrite it with a hook
+hardcoding your own machine's graphify binary path. Keep personal hooks or
+settings in `.claude/settings.local.json` instead, which stays untracked, or
+in `~/.claude/settings.json` for every project.
+
 ## Workflow
 
 1. Find or open a focused issue.

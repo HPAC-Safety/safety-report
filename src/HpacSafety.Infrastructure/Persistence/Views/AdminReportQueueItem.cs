@@ -49,4 +49,12 @@ public sealed class AdminReportQueueItem
 
 	/// <summary>The pilot's first and last name answers, joined, or null when neither was given (ADR-0154).</summary>
 	public string? PilotName { get; private init; }
+
+	/// <summary>
+	///     How many non-deleted <c>report_files</c> rows this report has, whatever
+	///     their kind, state, or visibility — every admin reader is staff, so the
+	///     list carries only the one, full count. Never counts a staff-only private
+	///     attachment (ADR-0135). See issue #427, decisions 1-2.
+	/// </summary>
+	public int AttachmentCount { get; private init; }
 }

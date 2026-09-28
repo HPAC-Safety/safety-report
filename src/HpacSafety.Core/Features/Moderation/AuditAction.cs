@@ -36,4 +36,13 @@ public enum AuditAction
 	RemovedPrivateNote = 50,
 	DownloadedPrivateAttachment = 51,
 	RemovedPrivateAttachment = 52,
+
+	/// <summary>
+	///     A reviewer downloaded the raw original of an image or video that has no
+	///     stripped derivative yet (still processing, or failed) — decision 16,
+	///     issue #427. Distinct from <see cref="ViewedAttachment" /> so an audit
+	///     reader can spot a raw original, EXIF and GPS intact, without joining to
+	///     the file's processing state.
+	/// </summary>
+	DownloadedOriginalMedia = 53,
 }

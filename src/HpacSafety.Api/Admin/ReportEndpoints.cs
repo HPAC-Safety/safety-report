@@ -193,7 +193,8 @@ public static class ReportEndpoints
 				report.IsStuck,
 				report.Version,
 				report.ReporterName,
-				report.PilotName))
+				report.PilotName,
+				report.AttachmentCount))
 			.ToList();
 
 		return Results.Ok(new ReportListPage(items, next));
@@ -452,7 +453,7 @@ public static class ReportEndpoints
 					EnumCode.Of(summary.SourceEn),
 					EnumCode.Of(summary.SourceFr))
 				: null,
-			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file)))],
+			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file), FormatOf(file.Kind, file.ContentType)))],
 			ConcurrencyToken.Of(database, report),
 			report.UnpublishNote,
 			report.PublishedAt);
@@ -489,7 +490,13 @@ public static class ReportEndpoints
 			.ToList();
 	}
 
-	private static string AttachmentState(ReportFile file)
+	/// <summary>
+	///     An attachment's state (<c>ready</c>, <c>processing</c>, or <c>failed</c>).
+	///     Shared with <see cref="PublicReports.PublicReportEndpoints" />, which uses
+	///     the same vocabulary on the public report page's staff-mode strip (issue
+	///     #427, decision 14).
+	/// </summary>
+	internal static string AttachmentState(ReportFile file)
 	{
 		if (file.ProcessingErrorCode is not null)
 		{
@@ -502,12 +509,24 @@ public static class ReportEndpoints
 	}
 
 	/// <summary>
+	///     A document's coarse format, the extension it downloads with (issue
+	///     #427, so the strip's type icon can match it); none for an image or
+	///     video. Shared with <see cref="PublicReports.PublicReportEndpoints" />.
+	/// </summary>
+	internal static string? FormatOf(AttachmentKind kind,
+									 string contentType)
+	{
+		return kind is AttachmentKind.Document ? MediaType.Parse(contentType).Extension : null;
+	}
+
+	/// <summary>
 	///     Whether the published report shows this file, by the same rule the
 	///     <c>public_report_media</c> view holds (ADR-0117, ADR-0119), so a
-	///     reviewer sees what a visitor would.
+	///     reviewer sees what a visitor would. Shared with
+	///     <see cref="PublicReports.PublicReportEndpoints" />; see <see cref="AttachmentState" />.
 	/// </summary>
-	private static string Visibility(Report report,
-									 ReportFile file)
+	internal static string Visibility(Report report,
+									  ReportFile file)
 	{
 		var isDocument = file.Kind is AttachmentKind.Document;
 

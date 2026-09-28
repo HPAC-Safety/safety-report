@@ -407,8 +407,12 @@ Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
   identifier (ADR number, name, slug) only after that rebase
   ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 - PR body: `Closes #<number>` on its own line; squash-ready title.
-- **Enable auto-merge on every pull request you open**, unless it is a draft or
-  the user asked to hold it; see `deliver-change` "Verify and publish".
+- **Never enable auto-merge and never enqueue a pull request** — no
+  `gh pr merge`, `enablePullRequestAutoMerge`, or `enqueuePullRequest`, on your
+  own pull request or a sub-agent's. Open the pull request, get checks green,
+  and report it ready; the owner enables auto-merge by hand
+  ([ADR-0147](docs/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)
+  amendment). See `deliver-change` "Verify and publish".
 - No `Co-Authored-By` trailer; this is a convention, and nothing checks it.
 - No agent session link: the `commit-msg` hook and `linked-issue.yml`'s
   `no-session-link` job refuse one

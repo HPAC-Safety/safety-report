@@ -53,6 +53,10 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
 	[
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/view",
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/download",
+		// The raw-original download (issue #427, decision 15) is the same shape:
+		// a JSON envelope naming a short-lived pre-signed URL, minted through
+		// ReviewerMediaLink, never bytes proxied through the API.
+		"/api/admin/reports/{reportId}/attachments/{attachmentId}/original",
 		// Hide and show change a flag and return 204; they never touch bytes (ADR-0117).
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/hide",
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/show",

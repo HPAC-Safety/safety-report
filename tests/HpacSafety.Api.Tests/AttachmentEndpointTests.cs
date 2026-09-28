@@ -1,5 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
@@ -7,6 +11,7 @@ using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -122,6 +127,53 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenMalformedReportId_WhenViewed_ThenNotFound()
+	{
+		// Given
+		var (_, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(ViewUrl("not-a-tiny-id", attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenValidatedTokenWithNoSubjectClaim_WhenViewed_ThenForbidden()
+	{
+		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
+		// subject claim is not separately enforced by the JWT middleware, so
+		// IssueAsync has to cope with a validated token that lacks one. Unlike
+		// the audit-actor endpoints, disclosing a link with no identity to
+		// attribute it to is refused outright.
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		var token = ForgeTokenWithNoSubject();
+		using var client = SignedInClient.Bearing(_factory, token);
+
+		// When
+		using var response = await client.GetAsync(ViewUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	private static string ForgeTokenWithNoSubject()
+	{
+		var token = new JwtSecurityToken(
+			DevelopmentTokenIssuer.IssuerName,
+			"hpac-safety-api",
+			[new Claim("roles", "safety_officer")],
+			DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime,
+			DateTimeOffset.UtcNow.AddHours(1).UtcDateTime,
+			new SigningCredentials(
+				new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ApiPostgresFixture.SigningKey)), SecurityAlgorithms.HmacSha256));
+
+		return new JwtSecurityTokenHandler().WriteToken(token);
+	}
+
+	[Fact]
 	public async Task GivenAnUnknownDocumentAttachment_WhenDownloaded_ThenNotFound()
 	{
 		// Given
@@ -195,6 +247,115 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAStillProcessingImage_WhenOriginalRequested_ThenUrlIssued()
+	{
+		// Given
+		// issue #427 decision 15: the raw original is downloadable, audited, while
+		// there is no derivative yet.
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	[Fact]
+	public async Task GivenAFailedImage_WhenOriginalRequested_ThenUrlIssued()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: true);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	[Fact]
+	public async Task GivenADerivativeAlreadyExists_WhenOriginalRequested_ThenNotFound()
+	{
+		// Given
+		// Once a derivative exists, staff view it inline through /view instead
+		// (decision 15) — the endpoint refuses before ReviewerMediaLink is asked.
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenAnUnknownAttachment_WhenOriginalRequested_ThenNotFound()
+	{
+		// Given
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(TinyId.New().Value, TinyId.New().Value));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenADocument_WhenOriginalRequested_ThenRejected()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenAUserRole_WhenOriginalRequested_ThenForbidden()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false);
+		using var reporter = await SignedInAsync(MemberRole.User);
+
+		// When
+		using var response = await reporter.GetAsync(OriginalUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	[Fact]
+	public async Task GivenASuccessfulOriginalDownload_WhenTheAuditRowIsRead_ThenItIsDistinctFromAView()
+	{
+		// Given
+		// A raw original — EXIF/GPS intact — is audited under its own action so a
+		// reader can spot one without joining to the file's processing state
+		// (ADR-0094 amendment).
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+		// Then
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId));
+
+		entry.Action.ShouldBe(AuditAction.DownloadedOriginalMedia);
+	}
+
+	[Fact]
 	public async Task GivenASuccessfulView_WhenTheAuditRowIsRead_ThenItRecordsTheActorAndTarget()
 	{
 		// Given
@@ -252,6 +413,12 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 								   string attachmentId)
 	{
 		return new Uri($"/api/admin/reports/{reportId}/attachments/{attachmentId}/download", UriKind.Relative);
+	}
+
+	private static Uri OriginalUrl(string reportId,
+								   string attachmentId)
+	{
+		return new Uri($"/api/admin/reports/{reportId}/attachments/{attachmentId}/original", UriKind.Relative);
 	}
 
 	private async Task<(string ReportId, string AttachmentId)> SeedAsync(string contentType,

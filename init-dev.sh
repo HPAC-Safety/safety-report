@@ -670,9 +670,13 @@ fi
 # contributor's agent, and `graphify hook install` keeps the graph current
 # between runs, on every commit/pull (code only — re-run `graphify extract`
 # by hand after doc/ADR changes, same as the hook's own log tells you to).
-# All three are idempotent, so it is safe to run every time. The chosen
+# Both are idempotent, so it is safe to run every time. The chosen
 # platform is cached in .graphify-agent (clone-local, gitignored) so a second
-# run re-registers silently instead of asking again. Extraction also needs
+# run re-registers silently instead of asking again. For `claude`, this skips
+# the `install` step itself: it would rewrite the tracked, team-wide
+# .claude/settings.json with a machine-local absolute path (issue #427).
+# AGENTS.md's own "graphify" section covers what a Claude Code agent needs
+# instead. Extraction also needs
 # tree-sitter-hcl for this repository's Terraform files and tree-sitter-sql for
 # its SQL migration scripts, optional extras graphify does not install by
 # default — installed the same way as graphify itself (uv tool, falling back to
@@ -797,7 +801,16 @@ if have graphify; then
 			note "skipped: not running in a terminal — no agent to register"
 		fi
 
-		if [ -n "$GRAPHIFY_PLATFORM" ]; then
+		if [ "$GRAPHIFY_PLATFORM" = "claude" ]; then
+			# `graphify claude install` rewrites .claude/settings.json with a
+			# machine-local absolute path to this machine's graphify binary — but
+			# that file is tracked here (team-wide hooks, issue #427), so running
+			# it would commit a personal path over everyone else's. AGENTS.md's
+			# "graphify" section already covers the query/update workflow a
+			# contributor needs, without the PreToolUse hook this would add.
+			printf '%s\n' "$GRAPHIFY_PLATFORM" > "$GRAPHIFY_AGENT_FILE"
+			note "skipped: graphify claude install would overwrite the tracked .claude/settings.json with a machine-local path"
+		elif [ -n "$GRAPHIFY_PLATFORM" ]; then
 			if graphify "$GRAPHIFY_PLATFORM" install >/dev/null 2>&1; then
 				printf '%s\n' "$GRAPHIFY_PLATFORM" > "$GRAPHIFY_AGENT_FILE"
 				added "graphify registered with $GRAPHIFY_PLATFORM"

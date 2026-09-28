@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { fetchPublicReports, summaryIn, type PublicReport } from "../api/publicReports"
+import { AttachmentCountBadge } from "../components/AttachmentCountBadge"
 import { InfiniteScrollStatus } from "../components/InfiniteScrollStatus"
 import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
 
@@ -127,6 +128,7 @@ export function ViewReportsPage() {
 												count: String(report.commentCount),
 											})}
 										</span>
+										<AttachmentCountBadge count={report.attachmentCount} />
 									</span>
 								</Link>
 							</li>

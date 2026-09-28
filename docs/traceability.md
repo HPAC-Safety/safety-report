@@ -286,7 +286,7 @@ Each attachment fails and processes independently of the report — *Reqnroll, C
 
 ### REQ-MED-010
 
-A reviewer gets a short-lived URL only for successfully processed media — *Reqnroll, Covered*
+A reviewer gets a short-lived inline URL only for successfully processed media — *Reqnroll, Covered*
 
 ### REQ-MED-011
 
@@ -298,7 +298,7 @@ The admin site never inline-renders a private document — *playwright-bdd, Plan
 
 ### REQ-MED-013
 
-A failed attachment is inaccessible to reviewers — *Reqnroll, Covered*
+A failed image or video is never viewed inline, but its raw original downloads, audited — *Reqnroll, Covered*
 
 ### REQ-MED-015
 
@@ -370,7 +370,7 @@ A member who is not a reviewer cannot hide or show a file — *Reqnroll, Covered
 
 ### REQ-MED-032
 
-The report page embeds its photos and video with a generic label — *playwright-bdd, Covered*
+The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label — *playwright-bdd, Covered*
 
 ### REQ-MED-033
 
@@ -382,7 +382,7 @@ Media that is no longer public is removed from the page — *playwright-bdd, Cov
 
 ### REQ-MED-035
 
-A reviewer hides a file from the public report page — *playwright-bdd, Covered*
+A reviewer hides a file from the public report page, still marked in the staff strip — *playwright-bdd, Covered*
 
 ### REQ-MED-036
 
@@ -451,6 +451,42 @@ Only the private attachment link signs a URL for the private compartment — *Re
 ### REQ-MED-052
 
 Nothing anonymizes a private attachment — *Reqnroll, Covered*
+
+### REQ-MED-053
+
+A still-processing image or video is never viewed inline, but its raw original downloads, audited — *Reqnroll, Covered*
+
+### REQ-MED-054
+
+The raw-original download refuses once a derivative exists — *Reqnroll, Covered*
+
+### REQ-MED-055
+
+The raw-original download refuses a document — *Reqnroll, Covered*
+
+### REQ-MED-056
+
+The lightbox wraps, is keyboard-operable, and traps and returns focus — *playwright-bdd, Covered*
+
+### REQ-MED-057
+
+A document's thumbnail is never opened in the lightbox — *playwright-bdd, Covered*
+
+### REQ-MED-058
+
+A 404 removes the item from both the strip and an open lightbox — *playwright-bdd, Covered*
+
+### REQ-MED-059
+
+The admin report page uses the same strip and lightbox, and works for an unpublished report — *playwright-bdd, Covered*
+
+### REQ-MED-060
+
+A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox — *playwright-bdd, Covered*
+
+### REQ-MED-061
+
+A 404 on the only remaining lightbox item closes it — *playwright-bdd, Covered*
 
 ## Claims: moderation-authentication-and-publication
 
@@ -1029,6 +1065,30 @@ An empty search box lists newest submitted first, unchanged — *Reqnroll, Cover
 ### REQ-MOD-149
 
 The search box sits at the top of the public feed, and its query is bookmarkable — *playwright-bdd, Covered*
+
+### REQ-MOD-150
+
+The feed's attachment count is the public count for a visitor and the full count for staff — *Reqnroll, Covered*
+
+### REQ-MOD-151
+
+The admin report list carries every non-deleted attachment's count — *Reqnroll, Covered*
+
+### REQ-MOD-152
+
+A signed-in safety officer sees every attachment on the public report page, each marked public or not — *Reqnroll, Covered*
+
+### REQ-MOD-153
+
+The public feed shows each report's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
+
+### REQ-MOD-154
+
+Manage reports shows each row's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
+
+### REQ-MOD-155
+
+An ordinary member's token widens nothing; only SafetyOfficer or Administrator does — *Reqnroll, Covered*
 
 ## Claims: question-bank-and-form
 

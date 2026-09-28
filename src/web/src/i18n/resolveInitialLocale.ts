@@ -2,7 +2,7 @@ import { DEFAULT_LOCALE, isSupportedLocale, localeForHostname, type Locale } fro
 
 /**
  * Priority order per skills/localize-hpac-app/SKILL.md: an explicit stored
- * choice, then the hostname (#463), then the browser's languages, then
+ * choice, then the hostname (issue 463), then the browser's languages, then
  * English. Pure and browser-free so it can be exercised without a DOM.
  */
 export function resolveInitialLocale(

@@ -10,7 +10,7 @@ export function isSupportedLocale(value: string): value is Locale {
 	return (SUPPORTED_LOCALES as readonly string[]).includes(value)
 }
 
-// Production serves one site on two hostnames (#463): safety.hpac.ca in
+// Production serves one site on two hostnames (issue 463): safety.hpac.ca in
 // English, securite.acvl.ca in French. An unlisted host — staging's
 // *.cloudfront.net address, or localhost — has no entry and falls through to
 // the browser language.

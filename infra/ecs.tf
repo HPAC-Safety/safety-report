@@ -179,17 +179,10 @@ resource "aws_ecs_task_definition" "worker" {
       image     = local.images.worker
       essential = true
       environment = concat(local.common_environment, [
-        { name = "Ses__ConfigurationSet", value = aws_sesv2_configuration_set.main.configuration_set_name },
-        { name = "Ses__FromDomain", value = var.ses_domain },
         { name = "Metrics__Namespace", value = local.metric_namespace },
       ])
 
-      secrets = concat(local.common_secrets, [
-        {
-          name      = "Notifications__To"
-          valueFrom = aws_secretsmanager_secret.this["notifications_to"].arn
-        },
-      ])
+      secrets = local.common_secrets
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -233,56 +226,5 @@ resource "aws_ecs_service" "worker" {
 
   lifecycle {
     ignore_changes = [task_definition, desired_count]
-  }
-}
-
-# --------------------------------------------------------------------------
-# Migrations
-# --------------------------------------------------------------------------
-#
-# Its own task definition, run as a one-off by deploy-api.yml between pushing the
-# image and updating the service. Migrations deliberately do NOT run at
-# application startup: two API tasks booting together would both take the
-# migration lock and the loser either crashes or serves a half-migrated schema.
-# See docs/deployment.md.
-
-resource "aws_ecs_task_definition" "migrate" {
-  family                   = "${local.name}-migrate"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = var.api_cpu
-  memory                   = var.api_memory
-  execution_role_arn       = aws_iam_role.task_execution.arn
-  task_role_arn            = aws_iam_role.api_task.arn
-
-  runtime_platform {
-    cpu_architecture        = "X86_64"
-    operating_system_family = "LINUX"
-  }
-
-  container_definitions = jsonencode([
-    {
-      name        = "migrate"
-      image       = local.images.api
-      essential   = true
-      command     = ["--migrate"]
-      environment = local.common_environment
-      secrets     = local.common_secrets
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = local.log_groups.migrate
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "migrate"
-        }
-      }
-    }
-  ])
-
-  tags = { Name = "${local.name}-migrate" }
-
-  lifecycle {
-    ignore_changes = [container_definitions]
   }
 }

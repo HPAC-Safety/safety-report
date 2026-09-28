@@ -14,8 +14,8 @@ GitHub Actions assumes roles through OIDC; migrations run explicitly; backups
 and focused Worker alerts are required.
 
 The current Terraform has never been applied and still contains superseded
-combined-site, SES/email, and legacy upload assumptions. Issue #30 owns pruning
-it to [`../docs/infrastructure-and-operations.md`](../docs/infrastructure-and-operations.md).
+combined-site and legacy upload assumptions. Issue #30 owns pruning it to
+[`../docs/infrastructure-and-operations.md`](../docs/infrastructure-and-operations.md).
 
 The one-time bootstrap creates only the resources needed before Terraform can
 authenticate: GitHub OIDC roles and the remote state bucket. Secret values stay

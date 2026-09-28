@@ -188,9 +188,6 @@ known differences:
 
 - The API and the Worker run as ECS Fargate services, not Lambda functions
   (#443).
-- An unused `migrate` ECS task definition remains (#441).
-- SES resources, the Worker's `ses:SendEmail` grant, and a `notifications-to`
-  secret remain for an email flow that no longer exists (#441).
 
 The website's S3 bucket, CloudFront distribution, certificates, network, RDS,
 uploads bucket, alarms, and ECR already match.

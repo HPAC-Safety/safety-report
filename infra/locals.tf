@@ -30,8 +30,7 @@ locals {
   # Log group names, in one place, because the task definitions, the log groups,
   # and the alarms all have to agree on them.
   log_groups = {
-    api     = "/aws/ecs/${local.name}/api"
-    worker  = "/aws/ecs/${local.name}/worker"
-    migrate = "/aws/ecs/${local.name}/migrate"
+    api    = "/aws/ecs/${local.name}/api"
+    worker = "/aws/ecs/${local.name}/worker"
   }
 }

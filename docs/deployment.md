@@ -32,8 +32,8 @@ previous application during staged rollout. Backup restoration must be tested
 before cutover.
 
 The current Terraform and deploy workflows are scaffolding. They still run the
-API and the Worker on ECS Fargate (#443) and still hold an unused migrate task
-and SES resources (#441). Issue #30 owns bringing the deployed topology to
+API and the Worker on ECS Fargate (#443). Issue #30 owns bringing the deployed
+topology to
 [`infrastructure-and-operations.md`](infrastructure-and-operations.md), whose
 "Where today's Terraform differs" lists every known gap.
 Do not interpret a successful Terraform validation as proof that the target

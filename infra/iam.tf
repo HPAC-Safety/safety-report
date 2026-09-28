@@ -63,7 +63,7 @@ resource "aws_iam_role_policy" "task_execution_secrets" {
 # --------------------------------------------------------------------------
 #
 # The API writes uploads and reads them back for pre-signed GETs. The Worker
-# reads uploads, sends mail, and publishes the two custom metrics the alarms in
+# reads uploads and publishes the two custom metrics the alarms in
 # observability.tf watch. Neither reads a secret at runtime — the execution role
 # has already put them in the environment.
 
@@ -147,21 +147,6 @@ data "aws_iam_policy_document" "worker_task" {
     effect    = "Allow"
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.uploads.arn}/*/stripped/*"]
-  }
-
-  statement {
-    sid    = "SendNotifications"
-    effect = "Allow"
-
-    actions = [
-      "ses:SendEmail",
-      "ses:SendRawEmail",
-    ]
-
-    resources = [
-      aws_sesv2_email_identity.main.arn,
-      aws_sesv2_configuration_set.main.arn,
-    ]
   }
 
   statement {

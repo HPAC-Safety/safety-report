@@ -327,10 +327,20 @@ public sealed class ReportReviewSteps
 			.SingleAsync();
 	}
 
-	/// <summary>Follows <c>next</c> until it is null, so every scenario sees the whole list regardless of page size (REQ-MOD-129).</summary>
+	/// <summary>
+	///     Follows <c>next</c> until it is null, so every scenario sees the whole
+	///     list regardless of page size (REQ-MOD-129), de-duplicating by ID as it
+	///     goes — the same rule <c>useInfiniteReportList</c> applies on the web. A
+	///     cursor naming a report no longer in the queue (deleted, or moved past by
+	///     a concurrent write in this shared-collection database) restarts the
+	///     underlying query from the top rather than failing (ADR-0155), which
+	///     without de-duplication here would show an earlier page's rows a second
+	///     time and break a lookup expecting exactly one match.
+	/// </summary>
 	private async Task ListWith(string? filter)
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var seen = new HashSet<string>(StringComparer.Ordinal);
 		_listed = [];
 		var bodies = new List<string>();
 		string? after = null;
@@ -349,7 +359,15 @@ public sealed class ReportReviewSteps
 			var body = await response.Content.ReadAsStringAsync();
 			bodies.Add(body);
 			var page = JsonDocument.Parse(body).RootElement;
-			_listed.AddRange(page.GetProperty("items").EnumerateArray());
+
+			foreach (var item in page.GetProperty("items").EnumerateArray())
+			{
+				if (seen.Add(item.GetProperty("id").GetString()!))
+				{
+					_listed.Add(item);
+				}
+			}
+
 			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
 		} while (after is not null);
 

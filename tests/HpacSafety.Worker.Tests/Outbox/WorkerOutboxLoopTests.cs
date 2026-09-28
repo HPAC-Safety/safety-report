@@ -2,6 +2,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Infrastructure.Observability;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,7 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 		services.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql(connectionString));
 		services.AddScoped<ITranslator, StubTranslator>();
 		services.AddScoped<IOutboxMessageProcessor, TranslateAnswersProcessor>();
+		services.AddSingleton<IMetricsPublisher, NoOpMetricsPublisher>();
 
 		var scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 		var logger = new FakeLogger<Worker>();

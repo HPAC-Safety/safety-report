@@ -89,7 +89,7 @@ jobs:
         with:
           path: artifacts/release
 
-      - uses: aws-actions/configure-aws-credentials@4a1596c86fd706dc0521e32f0121ad1a6d1adb74 # v6
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           role-session-name: release-${{ inputs.tag }}-${{ inputs.environment_name }}

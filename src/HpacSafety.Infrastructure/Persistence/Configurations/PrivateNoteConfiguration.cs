@@ -8,7 +8,7 @@ namespace HpacSafety.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 ///     The <c>report_private_notes</c> table: staff-only notes on a report
-///     (ADR-0133). No view, public query, or Worker reads it.
+///     (ADR-0133). No public query or Worker reads it; the one exception is admin_report_search_document, the admin-only search view (ADR-0156).
 /// </summary>
 public sealed class PrivateNoteConfiguration : IEntityTypeConfiguration<PrivateNote>
 {

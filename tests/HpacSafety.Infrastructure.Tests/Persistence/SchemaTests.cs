@@ -64,7 +64,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// Then — the view's columns are the public DTO's allowlist (CON-DP-011)
 		// plus submitted_at, the feed's sort and keyset cursor key, which the API
 		// reads but never serializes (#570, ADR-0153).
-		views.ShouldBe(["admin_pending_counts", "admin_report_queue", "answers_awaiting_translation", "public_report_comments", "public_report_media", "public_reports"]);
+		views.ShouldBe([
+			"admin_pending_counts", "admin_report_queue", "admin_report_search_document", "answers_awaiting_translation",
+			"public_report_comments", "public_report_media", "public_reports",
+		]);
 		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count", "submitted_at"]);
 	}
 
@@ -203,6 +206,43 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		definitions[0].ShouldContain("UNIQUE");
 		definitions[0].ShouldContain("role)::text <> 'none'");
 		definitions[0].ShouldContain("deleted IS NULL");
+	}
+
+	[Fact]
+	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenSearchExtensionsAndFunctionExist()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+
+		// When
+		var extensions = await QueryStrings(
+			connectionString,
+			"SELECT extname FROM pg_extension WHERE extname IN ('pg_trgm', 'unaccent') ORDER BY extname");
+		var functions = await QueryStrings(
+			connectionString,
+			"SELECT proname FROM pg_proc WHERE proname = 'search_admin_reports'");
+
+		// Then — the admin search box's engine (REQ-MOD-130, ADR-0156): no new
+		// service, both extensions enabled, and the ranking function they back.
+		extensions.ShouldBe(["pg_trgm", "unaccent"]);
+		functions.ShouldBe(["search_admin_reports"]);
+	}
+
+	[Fact]
+	public async Task GivenMigratedDatabase_WhenSearchedWithNoMatch_ThenTheFunctionReturnsNoRowsRatherThanErroring()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+		await using var connection = new NpgsqlConnection(connectionString);
+		await connection.OpenAsync();
+		await using var command = new NpgsqlCommand("SELECT * FROM search_admin_reports(@query)", connection);
+		command.Parameters.AddWithValue("query", "zzsynthnothingmatchesanything");
+
+		// When
+		await using var reader = await command.ExecuteReaderAsync();
+
+		// Then
+		(await reader.ReadAsync()).ShouldBeFalse();
 	}
 
 	private static async Task<string[]> QueryStrings(string connectionString,

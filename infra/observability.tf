@@ -1,20 +1,24 @@
 # Log groups and alarms.
 #
-# THE TWO ALARMS THE ISSUE NAMES WATCH METRICS THE APPLICATION HAS TO PUBLISH.
-# They are not derived from anything AWS knows on its own:
+# THE ONE APPLICATION METRIC THIS SYSTEM PUBLISHES — everything else this
+# file's alarms watch is a signal AWS already measures on its own.
 #
-#   SummaryFailed           a count, incremented by the Worker each time a
-#                           summarization attempt fails. One failure means a real
-#                           report is sitting unprocessed.
-#   OutboxOldestAgeSeconds  a gauge, published by the Worker on each poll: how
-#                           old the oldest unclaimed outbox row is. It rises when
-#                           the Worker is wedged and stays flat when it is merely
-#                           busy, which is why it is the age and not the depth.
+#   OutboxOldestAgeSeconds  a gauge, published by the Worker on each drain
+#                           pass: how old the oldest unclaimed, unpoisoned
+#                           outbox row is. It rises when the Worker is wedged
+#                           and stays flat when it is merely busy, which is
+#                           why it is the age and not the depth.
 #
-# Both go to the namespace below. Until the Worker exists (#33) the metrics never
-# report, and `treat_missing_data` on each alarm says what that means. This
-# contract is written down in infra/README.md and docs/deployment.md so the
-# Worker author does not have to read Terraform to find the metric names.
+# It goes to the namespace below, which the Worker is given through
+# Metrics__Namespace (infra/lambda.tf) so it can never drift from what the
+# alarm reads. No dimension is ever derived from report content (AGENTS.md
+# invariant 8) — this metric has none at all.
+#
+# The owner scaled operations back for a lightly used system (#467,
+# 2026-09-28): four alarms total, production email only, each a short,
+# self-contained description naming what is wrong and what it affects — no
+# runbook link. The thresholds are the owner's, kept tunable per environment
+# in tfvars.
 
 locals {
   metric_namespace = "HpacSafety"
@@ -52,6 +56,9 @@ resource "aws_sns_topic" "alarms" {
 #
 # Alarm mail comes from Amazon SNS — an operator alert, not an application
 # email flow. It does still need safety@hpac.ca to be a mailbox somebody reads.
+# ADR-0158: this subscription exists in every environment, but only
+# production's list of addresses is non-empty — staging holds synthetic data
+# and has nobody on call for it.
 resource "aws_sns_topic_subscription" "alarms_email" {
   for_each = toset(var.alarm_email_addresses)
 
@@ -60,31 +67,9 @@ resource "aws_sns_topic_subscription" "alarms_email" {
   endpoint  = each.value
 }
 
-resource "aws_cloudwatch_metric_alarm" "summary_failed" {
-  alarm_name        = "${local.name}-summary-failed"
-  alarm_description = "The Worker failed to summarize a report. A real occurrence report is sitting unprocessed. Runbook: docs/deployment.md."
-
-  namespace   = local.metric_namespace
-  metric_name = "SummaryFailed"
-  statistic   = "Sum"
-
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  threshold           = var.summary_failed_alarm_threshold
-  period              = var.summary_failed_alarm_period_seconds
-  evaluation_periods  = 1
-
-  # No failures published is the healthy state, not an unknown one.
-  treat_missing_data = "notBreaching"
-
-  alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
-
-  tags = merge(local.app_tags, { Name = "${local.name}-summary-failed" })
-}
-
 resource "aws_cloudwatch_metric_alarm" "outbox_age" {
   alarm_name        = "${local.name}-outbox-age"
-  alarm_description = "The oldest unprocessed outbox row is older than the threshold. The Worker is not draining. Runbook: docs/deployment.md."
+  alarm_description = "Outbox stalled: reports have been waiting over 15 minutes for processing."
 
   namespace   = local.metric_namespace
   metric_name = "OutboxOldestAgeSeconds"
@@ -106,10 +91,6 @@ resource "aws_cloudwatch_metric_alarm" "outbox_age" {
   tags = merge(local.app_tags, { Name = "${local.name}-outbox-age" })
 }
 
-# --------------------------------------------------------------------------
-# Alarms on things AWS already measures
-# --------------------------------------------------------------------------
-
 resource "aws_cloudwatch_metric_alarm" "api_errors" {
   # Was the ALB's HTTPCode_Target_5XX_Count; there is no ALB in front of the
   # API any more (ADR-0042, ADR-0159, #443). A Function URL has no per-request
@@ -117,7 +98,7 @@ resource "aws_cloudwatch_metric_alarm" "api_errors" {
   # unhandled-exception count instead — a superset of "5xx", since an
   # unhandled exception is exactly what an ASP.NET Core process turns into one.
   alarm_name        = "${local.name}-api-errors"
-  alarm_description = "The API's Lambda function is throwing unhandled exceptions. Pilots filing reports are seeing failures."
+  alarm_description = "API failing: reporters cannot submit or view reports."
 
   namespace   = "AWS/Lambda"
   metric_name = "Errors"
@@ -127,9 +108,9 @@ resource "aws_cloudwatch_metric_alarm" "api_errors" {
     FunctionName = aws_lambda_function.api.function_name
   }
 
-  comparison_operator = "GreaterThanThreshold"
-  threshold           = 5
-  period              = 300
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = var.lambda_error_alarm_threshold
+  period              = var.lambda_error_alarm_period_seconds
   evaluation_periods  = 1
   treat_missing_data  = "notBreaching"
 
@@ -138,25 +119,61 @@ resource "aws_cloudwatch_metric_alarm" "api_errors" {
   tags = merge(local.app_tags, { Name = "${local.name}-api-errors" })
 }
 
-resource "aws_cloudwatch_metric_alarm" "database_storage" {
-  alarm_name        = "${local.name}-database-storage"
-  alarm_description = "RDS free storage is low. Storage autoscaling has a ceiling and this is the warning before it."
+resource "aws_cloudwatch_metric_alarm" "worker_errors" {
+  alarm_name        = "${local.name}-worker-errors"
+  alarm_description = "Worker failing: summaries and translations have stopped."
 
-  namespace   = "AWS/RDS"
-  metric_name = "FreeStorageSpace"
-  statistic   = "Minimum"
+  namespace   = "AWS/Lambda"
+  metric_name = "Errors"
+  statistic   = "Sum"
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.main.identifier
+    FunctionName = aws_lambda_function.worker.function_name
   }
 
-  comparison_operator = "LessThanThreshold"
-  threshold           = 2 * 1024 * 1024 * 1024 # 2 GiB
-  period              = 300
-  evaluation_periods  = 2
-  treat_missing_data  = "missing"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = var.lambda_error_alarm_threshold
+  period              = var.lambda_error_alarm_period_seconds
+  evaluation_periods  = 1
+  treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
 
-  tags = merge(local.app_tags, { Name = "${local.name}-database-storage" })
+  tags = merge(local.app_tags, { Name = "${local.name}-worker-errors" })
+}
+
+# The NAT instance (#465/#588, ADR-0158) is the one resource this system ever
+# deletes and recreates — a one-instance Auto Scaling group heals it on its
+# own between releases. GroupInServiceInstances < 1 covers both conditions the
+# owner named: the ASG's own EC2 health check already folds a failed status
+# check into a lower in-service count, so a single alarm on the in-service
+# count is "0 healthy instances, or a failed status check" — not two alarms
+# for the same underlying signal. Approved as is (#467, 2026-09-28).
+resource "aws_cloudwatch_metric_alarm" "nat_unhealthy" {
+  alarm_name        = "${local.name}-nat-unhealthy"
+  alarm_description = "NAT instance down: outbound calls to the identity provider, Gemini, and DeepL are failing."
+
+  namespace   = "AWS/AutoScaling"
+  metric_name = "GroupInServiceInstances"
+  statistic   = "Minimum"
+
+  dimensions = {
+    # The module exposes only the ARN (autoscaling_group_arn); the name is its
+    # last "/"-separated segment
+    # (arn:aws:autoscaling:<region>:<account>:autoScalingGroup:<id>:autoScalingGroupName/<name>).
+    AutoScalingGroupName = element(split("/", module.fck_nat.autoscaling_group_arn), 1)
+  }
+
+  comparison_operator = "LessThanThreshold"
+  threshold           = 1
+  period              = var.nat_unhealthy_alarm_period_seconds
+  evaluation_periods  = 1
+
+  # No data at all from the ASG is exactly the failure this alarm watches for.
+  treat_missing_data = "breaching"
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+
+  tags = merge(local.app_tags, { Name = "${local.name}-nat-unhealthy" })
 }

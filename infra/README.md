@@ -17,9 +17,14 @@ The current Terraform has never been applied and still contains superseded
 combined-site and legacy upload assumptions. Issue #30 owns pruning it to
 [`../docs/infrastructure-and-operations.md`](../docs/infrastructure-and-operations.md).
 
-The one-time bootstrap creates only the resources needed before Terraform can
-authenticate: GitHub OIDC roles and the remote state bucket. Secret values stay
-out of Terraform state; application data uses AWS-managed encryption and TLS.
+The bootstrap (`sh infra/bootstrap.sh <staging|production>`, #464) creates only
+the resources needed before Terraform can authenticate: the GitHub OIDC
+provider, the per-environment `hpac-safety-deploy` and `hpac-safety-plan`
+roles, and the remote state bucket. It runs once in each of the two separate,
+unrelated AWS accounts — staging and production — never through an
+Organizations relationship between them; see
+[`../docs/deployment.md`](../docs/deployment.md). Secret values stay out of
+Terraform state; application data uses AWS-managed encryption and TLS.
 
 Credential-free local checks:
 

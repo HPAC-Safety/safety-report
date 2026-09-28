@@ -10,9 +10,15 @@ keywords: Terraform, CI, OIDC, credential-free
 
 # ADR-0032 — Two roles, and a check that works without an AWS account
 
-**Status:** Accepted for OIDC roles and credential-free validation. Any SES or
-combined-site examples below are superseded by the
-[infrastructure specification](../infrastructure-and-operations.md).
+**Status:** Accepted for the two-roles shape and credential-free validation.
+Any SES or combined-site examples below are superseded by the
+[infrastructure specification](../infrastructure-and-operations.md). The
+`hpac-safety-deploy` trust condition below (`ref:refs/heads/main`, one
+account) is superseded by #464: each of the two accounts (staging,
+production) now runs its own `hpac-safety-deploy`, trusted by
+`repo:HPAC-Safety/safety-report:environment:<that account's environment>` —
+see [`infrastructure-and-operations.md`](../infrastructure-and-operations.md)
+CON-INF-007 and `docs/deployment.md`.
 
 ## Context
 
@@ -128,9 +134,11 @@ ADR-0011 exists to describe. The job runs in well under a minute.
 
 ## Consequences
 
-- **There are two GitHub secrets now**, not one: `AWS_DEPLOY_ROLE_ARN` and
-  `AWS_PLAN_ROLE_ARN`. Neither is a credential — both are inert without their
-  trust policies. `docs/deployment.md` carries the contract.
+- **There are two role ARNs per account now**, not one: `AWS_DEPLOY_ROLE_ARN`
+  and `AWS_PLAN_ROLE_ARN`. Neither is a credential — both are inert without
+  their trust policies. Per #464, each is a GitHub *environment variable*
+  (not a repository secret), set once per account in that account's matching
+  GitHub environment. `docs/deployment.md` carries the contract.
 - `infra` reports green on a pull request while `plan` says nothing about AWS.
   That is a real cost, the same one ADR-0011 accepted: a reviewer sees a green
   list and may read more assurance into it than is there. It ends when the

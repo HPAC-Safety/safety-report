@@ -106,3 +106,176 @@ the API, the Worker, and the web dev server in Docker (see the root
 
 Terraform formatting/validation commands remain documented in
 [`infra/README.md`](../infra/README.md).
+
+## Bootstrapping each account's roles (once per account)
+
+See "Environments and accounts" above for what staging and production each
+are. Each account gets its own `hpac-safety-deploy` role (trusted only by
+GitHub Actions jobs running under that account's matching GitHub
+*environment*, named `hpac-staging` and `hpac-production`, not just
+`staging`/`production` — see below), its own `hpac-safety-plan` role, and its
+own Terraform state bucket. Every scoping safeguard described below is
+load-bearing, not defensive dressing: in the shared staging account, it is
+the only thing keeping this system's deploy role off somebody else's
+resources. Nothing is shared between the two accounts, and there is no AWS
+Organizations relationship between them — one is never reached by "switch
+role" from the other.
+
+Do this once in **each** account: the owner's personal account for `staging`,
+and HPAC's account for `production`. Nothing here needs a password or key to
+be shared with anyone — the whole point of OIDC is that GitHub Actions
+authenticates without one, and this script itself runs under whatever session
+you already have open, never a new long-lived credential.
+
+1. Sign in to that AWS account directly, as an administrator —
+   <https://console.aws.amazon.com>. There is no organization to switch roles
+   through; each account is its own sign-in.
+2. At the top right, set the region to **Canada (Central) ca-central-1**.
+3. Click the **CloudShell** icon (`>_`) in the top bar and wait for the
+   prompt. CloudShell already has the AWS CLI and a POSIX shell; nothing
+   needs installing.
+4. Paste one line. For the staging account:
+   ```sh
+   git clone https://github.com/HPAC-Safety/safety-report && sh safety-report/infra/bootstrap.sh staging
+   ```
+   For the production account, use `production` in place of `staging`.
+5. `infra/bootstrap.sh` is idempotent: re-running it in the same account
+   converges the existing OIDC provider, roles, policies, and state bucket
+   onto the current definitions and changes nothing else. It tolerates — and
+   never modifies or deletes — an OIDC provider, client ID, or thumbprint that
+   another application already created in that account; it only adds the
+   `sts.amazonaws.com` audience if that one is missing.
+6. It creates, in that account only:
+   - the GitHub OIDC identity provider (or reuses one that exists);
+   - `hpac-safety-deploy`, trusted only by
+     `repo:HPAC-Safety/safety-report:environment:<hpac-staging|hpac-production>`
+     — exactly the subject a job with `environment: hpac-staging` (or
+     `hpac-production`) presents, and nothing else. The script argument stays
+     `staging`/`production`; it maps that to the GitHub environment's actual
+     name (`hpac-staging`/`hpac-production`) for the trust condition, while
+     the AWS-side `Environment` tag and the Terraform state key stay
+     `staging`/`production`;
+   - `hpac-safety-plan`, trusted only by this repository's pull requests, with
+     `ReadOnlyAccess` plus Terraform state read, and explicit denies on
+     uploaded report objects, log/RDS-log content, secret values, `rds-data`,
+     and any object, function, image, parameter, table, stream, or queue
+     outside this system's own resources — `ReadOnlyAccess` alone would let
+     a plan on any pull request read data belonging to staging's other,
+     unrelated applications;
+   - the Terraform state bucket `hpac-safety-tfstate-<account-id>`
+     (versioned, encrypted, public access blocked, TLS-only).
+7. It prints four `NAME=value` lines on stdout:
+   ```
+   AWS_DEPLOY_ROLE_ARN=arn:aws:iam::<account-id>:role/hpac-safety-deploy
+   AWS_PLAN_ROLE_ARN=arn:aws:iam::<account-id>:role/hpac-safety-plan
+   TF_STATE_BUCKET=hpac-safety-tfstate-<account-id>
+   AWS_ACCOUNT_ID=<account-id>
+   ```
+   In GitHub, open **Settings → Environments → `hpac-staging`** (or
+   **`hpac-production`**) **→ Environment variables**, and add each one.
+   These are identifiers, not secrets — no GitHub secret is ever set from
+   this script's output.
+
+What `hpac-safety-deploy` may do, and what it may never do, is documented in
+the "What the deploy role may do" section of #30 and enforced by four
+customer-managed policies `infra/bootstrap.sh` attaches to it (one managed
+policy is limited to 6144 characters; a policy this thorough about
+tag/name scoping does not fit in one):
+
+- **`hpac-safety-deploy`** — read/write its own Terraform state object,
+  manage `hpac-safety-*` S3 buckets, Secrets Manager secrets, Lambda
+  functions, ECR repositories, SNS topics, EventBridge rules, Scheduler
+  schedules, and its own log groups **by name**, and — because neither RDS
+  nor Auto Scaling has a context key that ties a tag-adding call to the
+  create call that needed it — tags only an RDS resource named
+  `db`/`subgrp`/`pg`/`snapshot`/`cluster`:`hpac-safety*`, or an Auto Scaling
+  group named `hpac-safety*`.
+- **`hpac-safety-deploy-services`** — for the services with no
+  HPAC-Safety-only name pattern to scope by (ACM, Auto Scaling, CloudFront,
+  CloudWatch, EC2, RDS, Resource Groups, AppRegistry): read-only metadata
+  broadly, `Create*` only when the request carries the `Project=HPAC-Safety`
+  tag (`aws:RequestTag`, a real `StringEquals`, not `IfExists`), and
+  `ec2:CreateTags` only when AWS's own `ec2:CreateAction` context key names
+  one of those same create calls — a key EC2 populates only when tagging is
+  bundled into a genuine create request, never for a standalone `CreateTags`
+  call. KMS use (not administration) of the AWS-managed keys is scoped to
+  calls made *via* the services this system actually uses (see "KMS" below).
+- **`hpac-safety-deploy-guardrails`** — denies every mutating verb
+  (`Delete*`/`Modify*`/`Update*`/`Put*`/`Stop*`/`Start*`/`Reboot*`/
+  `Terminate*`/`Attach*`/`Detach*`/`Associate*`/`Disassociate*`/
+  `Authorize*`/`Revoke*`, and adding or removing a tag through any action
+  other than the two carve-outs above) on a resource that is not
+  **already** tagged `Project=HPAC-Safety` (`aws:ResourceTag`, a real
+  `StringNotEquals`, with no `IfExists` — an untagged resource is denied
+  exactly like one tagged for someone else's project). This is what makes
+  the tag condition an actual guard: a `StringEqualsIfExists` check alone
+  passes whenever a resource carries **no** `Project` tag at all, which
+  describes almost every resource belonging to staging's other, unrelated
+  applications — and it is also what closes the tag-hijack path: without
+  it, `aws:RequestTag` alone would let this role stamp
+  `Project=HPAC-Safety` onto ANY existing, untagged resource in the
+  account, after which this same guard would treat it as ours and let it
+  be modified or deleted.
+- **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles, policies,
+  and instance profiles (for the NAT instance, #465) named `hpac-safety-*`;
+  `iam:PassRole` only to those roles and only with `iam:PassedToService` in
+  `[lambda.amazonaws.com, scheduler.amazonaws.com, ec2.amazonaws.com]`; and
+  the explicit denies: never read a secret value even its own, never read
+  an uploaded report file or RDS/log content, never read another
+  application's Lambda function, ECR image, SSM parameter, DynamoDB item,
+  Kinesis record, or SQS message, never create an IAM user or access key,
+  touch an OIDC/SAML provider, Organizations, or the account, or edit its
+  own role.
+
+**Two narrow, named exceptions** to the untagged-mutation guard, because
+they touch a resource that legitimately has no HPAC-Safety tag and never
+will: `ec2:RunInstances` (a Create verb, so it is governed by the
+tag-on-create guard instead) also names the public `fck-nat` AMI (#465) as
+a resource in the same call; and the handful of EC2 calls that attach a
+brand-new VPC/subnet/route table to itself
+(`ec2:AttachInternetGateway`, `ec2:AuthorizeSecurityGroupIngress`, and
+similar — see `EstablishNetworkAttachmentsOnResourcesWeJustCreated` in
+`infra/bootstrap.sh`) are allowed unconditionally by that one statement —
+but every one of those same verbs is *also* in the guardrails deny list, so
+the untagged-mutation guard still applies on top and requires the resource
+on the other end (a subnet, a route table, a security group) to already
+carry the tag this role's own creation calls put there moments earlier.
+Nothing here is actually excluded from the guard. `ec2:CreateRoute` is
+named explicitly in the guardrails deny list rather than covered by a verb
+wildcard, because — unlike every other `Create*` action — it mutates an
+existing route table rather than creating a new resource.
+
+**KMS**: `kms:Decrypt`/`Encrypt`/`GenerateDataKey*` are allowed only with
+`kms:ViaService` naming the services this system uses (RDS, Secrets
+Manager, S3, Lambda, Logs, ECR) — a customer-managed key's own key policy,
+not this IAM policy, is usually what actually delegates decrypt access, so
+without this condition the role could decrypt data under another
+application's key too. `kms:CreateGrant`/`ListGrants`/`RevokeGrant` are
+allowed only with `kms:GrantIsForAWSResource: true`. A deny closes the gap
+those two conditions leave open: any of the five actions above **without**
+`kms:ViaService` present at all — a direct call to KMS, not AWS calling KMS
+on this role's behalf — is refused outright. `DescribeKey`/`ListAliases`
+stay unconditional, since they return metadata, not data.
+
+**Residual risk, recorded rather than hidden**: nothing in this repository
+can call AWS, so none of the above has been exercised against a real AWS
+account — it is reviewed by inspection, JSON validation, and shellcheck
+only, the same as `infra`'s required CI check does. The exact action
+lists, the four-policy split, and the two named exceptions are a
+best-effort, reviewable starting point, refined twice already through
+review rather than testing. One specific, named risk this leaves: if the
+Terraform AWS provider ever tags an ACM certificate, a CloudFront
+distribution, a CloudWatch alarm, an AppRegistry application, or a
+Resource Group with a *separate* API call after creating it, rather than
+through that create call's own tag parameter, that specific call is
+refused on the first real `apply` — a loud, narrow failure to fix, not a
+silent security gap. More generally: an AWS action this policy did not
+anticipate, a service added to the deploy role's scope without a matching
+name-scope or tag guard, or an untested interaction between the
+`CreateOnlyAsOurProject`/`TagOnlyAtEc2CreationTime` and
+`NeverMutateAnUntaggedResource` statements, should be checked for on the
+first real `apply` in the staging account, before production is
+bootstrapped. The NAT instance's exact IAM role/instance-profile and Auto
+Scaling group names are not yet settled (#465 is unmerged); coordinate the
+`hpac-safety-*` naming this policy assumes with that work before the first
+apply.

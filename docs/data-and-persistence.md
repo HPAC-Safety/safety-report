@@ -49,9 +49,9 @@ REQ-QB-131.*
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
 | `report_comments` | ID, report ID, the author's token subject (opaque, no foreign key), created timestamp, nullable hidden timestamp and hiding reviewer's subject, Deleted. A member's comment on a published report ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | `report_comment_revisions` | ID, comment ID, revision number (unique per comment), text, the locale it was written in, nullable machine translation and its source (`auto`), created timestamp, Deleted. Immutable once written, except that its translation is filled in once. The comment's current text is its highest revision. |
-| `report_private_notes` | ID, report ID, created timestamp, Deleted. A safety officer's or administrator's note on a report; no view, public query, or Worker reads it ([ADR-0133](decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)). |
+| `report_private_notes` | ID, report ID, created timestamp, Deleted. A safety officer's or administrator's note on a report; no public query or Worker reads it, and the only view is the admin-only `admin_report_search_document` ([ADR-0133](decisions/ADR-0133-staff-keep-private-notes-on-a-report.md), amended by [ADR-0156](decisions/ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)). |
 | `report_private_note_revisions` | ID, note ID, revision number (unique per note), plain text of at most 4000 characters, the writer's token subject (opaque, no foreign key), the private attachment on the same report it refers to (nullable), created timestamp, Deleted. Immutable once written; the note's current text is its highest revision. |
-| `report_private_attachments` | ID, report ID, blob key (`<report id>/private/<id>`), the sanitized file name, the content type it was uploaded as, byte size, an optional description of at most 500 characters, the adder's token subject and time, the remover's token subject, Deleted. A staff-only file, never anonymized, summarized, processed, or published; no view, public query, or Worker reads it ([ADR-0135](decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)). |
+| `report_private_attachments` | ID, report ID, blob key (`<report id>/private/<id>`), the sanitized file name, the content type it was uploaded as, byte size, an optional description of at most 500 characters, the adder's token subject and time, the remover's token subject, Deleted. A staff-only file, never anonymized, summarized, processed, or published; no public query or Worker reads it, and the only view is the admin-only `admin_report_search_document` ([ADR-0135](decisions/ADR-0135-staff-add-private-attachments-to-a-report.md), amended by [ADR-0156](decisions/ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)). |
 | `audit_log` | ID, acting token subject where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
 
 **CON-DP-005** **There is no user table.** Identity and role come from claims on a validated
@@ -198,6 +198,15 @@ The admin side reads its rules from views in the same way
   machine-translated second language.
 - `admin_pending_counts` is one row counting the reports that need action and
   the answers awaiting translation.
+- `admin_report_search_document` gathers, per live report, every answer's
+  value and translated value (private included), a choice answer's label in
+  both languages, the summary pair, a private note's current text, a member
+  comment's current text and translation, and every attachment file name,
+  reporter-uploaded and staff-only, into one blob. `search_admin_reports(query)`
+  ranks it by PostgreSQL full-text search (English and French, via
+  `pg_trgm`'s `unaccent`) and word similarity, computed at query time — no
+  materialized view, no GIN index, since HPAC receives dozens of reports a
+  year ([ADR-0156](decisions/ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)).
 
 The report list and its filters, the translation queue, and the Admin menu's
 counts all read these views. So they share one definition of "stuck", "needs

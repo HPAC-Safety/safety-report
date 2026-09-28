@@ -167,10 +167,20 @@ function post<T>(
 	return call<T>(path, { method: "POST", body: JSON.stringify(body) })
 }
 
-/** One page of the list, keyset-paginated; `after` continues a previous page (REQ-MOD-129). */
-export function listReports(filter: ReportFilter, after: string | null = null): Promise<ReportListPage> {
-	const query = after ? `filter=${encodeURIComponent(filter)}&after=${encodeURIComponent(after)}` : `filter=${encodeURIComponent(filter)}`
-	return get(`/api/admin/reports?${query}`)
+/**
+ * One page of the list, keyset-paginated; `after` continues a previous page
+ * (REQ-MOD-129). Best match first while `q` holds a search — every answer
+ * including private ones, a choice's label in both languages, the summary
+ * pair, private notes, member comments, and attachment file names
+ * (REQ-MOD-130..135, ADR-0156). Newest submitted first when `q` is empty or
+ * omitted. The cursor `after` carries is always the anchor report's ID
+ * alone, whichever order the page is in, so it composes with `q` unchanged.
+ */
+export function listReports(filter: ReportFilter, after: string | null = null, q = ""): Promise<ReportListPage> {
+	const params = new URLSearchParams({ filter })
+	if (after) params.set("after", after)
+	if (q.trim()) params.set("q", q.trim())
+	return get(`/api/admin/reports?${params.toString()}`)
 }
 
 export function getReport(id: string): Promise<ReportDetail> {

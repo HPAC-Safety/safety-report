@@ -942,45 +942,45 @@ Manage reports loads more automatically and offers the same hidden fallback and 
 
 The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
 
-### REQ-MOD-140
+### REQ-MOD-130
 
-Search matches the approved published summary in the visitor's site language — *Reqnroll, Covered*
+Searching Manage reports finds a report matched by any part of it — *Reqnroll, Covered*
 
-### REQ-MOD-141
+### REQ-MOD-131
 
-Search matches a visible member comment as shown in the visitor's site language — *Reqnroll, Covered*
+A misspelled search still finds the report — *Reqnroll, Covered*
 
-### REQ-MOD-142
+### REQ-MOD-132
 
-Search is scoped to the visitor's current site language only — *Reqnroll, Covered*
+A search matches across English and French stemming — *Reqnroll, Covered*
 
-### REQ-MOD-143
+### REQ-MOD-133
 
-The public search never widens by caller role — *Reqnroll, Covered*
+The best match is listed first — *Reqnroll, Covered*
 
-### REQ-MOD-144
+### REQ-MOD-134
 
-A non-publishable report's summary text never matches — *Reqnroll, Covered*
+Clearing the search box returns to newest submitted first — *playwright-bdd, Covered*
 
-### REQ-MOD-145
+### REQ-MOD-135
 
-A hidden or a deleted comment never matches — *Reqnroll, Covered*
+A search stays within the chosen filter — *Reqnroll, Covered*
 
-### REQ-MOD-146
+### REQ-MOD-136
 
-A typo or a missing accent still finds the best match — *Reqnroll, Covered*
+The search text lives in the address bar and survives a reload — *playwright-bdd, Covered*
 
-### REQ-MOD-147
+### REQ-MOD-137
 
-Best match ranks first while a query is active — *Reqnroll, Covered*
+A search matching nothing shows a message naming the query, not an error — *playwright-bdd, Covered*
 
-### REQ-MOD-148
+### REQ-MOD-138
 
-An empty search box lists newest submitted first, unchanged — *Reqnroll, Covered*
+Only a reviewer may find a match inside private report content — *Reqnroll, Covered*
 
-### REQ-MOD-149
+### REQ-MOD-139
 
-The search box sits at the top of the public feed, and its query is bookmarkable — *playwright-bdd, Covered*
+The search query text is never logged — *Reqnroll, Covered*
 
 ## Claims: question-bank-and-form
 

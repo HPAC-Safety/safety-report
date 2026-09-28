@@ -704,7 +704,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await database.PublicReportMedia.AnyAsync(media => media.Id == _attachmentId)).ShouldBeFalse();
 	}
 
-	[Then(@"no database view reads the private-attachment table")]
+	[Then(@"no database view other than admin_report_search_document reads the private-attachment table")]
 	public async Task ThenNoViewReadsTheTable()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
@@ -713,13 +713,30 @@ public sealed partial class PrivateAttachmentSteps
 		var views = await database.Database
 			.SqlQueryRaw<string>("SELECT viewname AS \"Value\" FROM pg_views WHERE schemaname = 'public'")
 			.ToListAsync();
+
+		// The exact set of views depending on the private-attachment table, via
+		// Postgres's own dependency catalogue rather than a text search over
+		// view definitions, so a rewritten view body can never slip past this.
+		// admin_report_search_document is the one reviewed exception
+		// (REQ-MOD-130, ADR-0156, amending ADR-0135 item 1): it gathers a live
+		// attachment's file name for the admin search box, reachable only
+		// through SafetyOfficer/Administrator's GET /api/admin/reports?q=. Any
+		// other view naming the table fails this scenario.
 		var readers = await database.Database
-			.SqlQueryRaw<string>("SELECT viewname AS \"Value\" FROM pg_views WHERE schemaname = 'public' AND definition ILIKE '%private_attachment%'")
+			.SqlQueryRaw<string>(
+				"""
+				SELECT DISTINCT view_name AS "Value"
+				FROM information_schema.view_table_usage
+				WHERE view_schema = 'public'
+				  AND table_schema = 'public'
+				  AND table_name = 'report_private_attachments'
+				""")
 			.ToListAsync();
 
 		views.ShouldContain("public_reports");
 		views.ShouldContain("public_report_media");
-		readers.ShouldBeEmpty();
+		views.ShouldContain("admin_report_search_document");
+		readers.ShouldBe(["admin_report_search_document"]);
 	}
 
 	[Then(@"the private note lists the private attachment it refers to, by identifier and file name")]

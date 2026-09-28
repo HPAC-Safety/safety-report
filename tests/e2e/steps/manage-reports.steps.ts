@@ -127,8 +127,24 @@ async function stubReports(page: Page) {
 	listStubs.set(page, stub)
 
 	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
-		const filter = new URL(route.request().url()).searchParams.get("filter") ?? "all"
-		await route.fulfill({ json: { items: stub.rows.filter(FILTERED[filter] ?? (() => false)), next: null } })
+		const url = new URL(route.request().url())
+		const filter = url.searchParams.get("filter") ?? "all"
+		const q = url.searchParams.get("q")
+		let rows = stub.rows.filter(FILTERED[filter] ?? (() => false))
+
+		// The stub only simulates that a query narrows and reorders the list —
+		// what actually matches (every answer, choice label, summary, note,
+		// comment, or file name), and that paging a ranked result never skips or
+		// repeats a report, is proven server-side in HpacSafety.Api.Tests and the
+		// Reqnroll scenarios (ADR-0156).
+		if (q) {
+			const needle = q.toLowerCase()
+			rows = rows.filter(
+				(row) => (row.reporterName ?? "").toLowerCase().includes(needle) || (row.pilotName ?? "").toLowerCase().includes(needle),
+			)
+		}
+
+		await route.fulfill({ json: { items: rows, next: null } })
 	})
 
 	await page.route(/\/api\/admin\/reports\/[^/?]+(\/(publish|unpublish))?$/, async (route) => {
@@ -202,6 +218,22 @@ When("the safety officer chooses the {string} filter", async ({ page }, filter: 
 	await page.getByRole("navigation", { name: "Filter reports" }).getByRole("link", { name: filter, exact: true }).click()
 })
 
+When("the safety officer searches for {string}", async ({ page }, text: string) => {
+	await page.getByRole("searchbox", { name: "Search reports" }).fill(text)
+})
+
+When("the safety officer searches for a word that matches nothing", async ({ page }) => {
+	await page.getByRole("searchbox", { name: "Search reports" }).fill("zzsynthnothingmatchesanything")
+})
+
+When("the safety officer clears the search box", async ({ page }) => {
+	await page.getByRole("searchbox", { name: "Search reports" }).fill("")
+})
+
+When("the safety officer reloads the page", async ({ page }) => {
+	await page.reload()
+})
+
 When("the safety officer opens a pending report", async ({ page }) => {
 	await page.locator(`[data-report-id="${ROWS[0].id}"] a`).click()
 	await expect(page.getByRole("heading", { level: 1, name: "Report" })).toBeVisible()
@@ -254,6 +286,27 @@ Then("the chosen filter stays in the address bar", async ({ page }) => {
 	// A reload keeps it: the filter is read from the address, not from memory.
 	await page.reload()
 	await expect(rows(page)).toHaveCount(1)
+})
+
+Then("every report is listed newest first as before the search", async ({ page }) => {
+	await expect(page).not.toHaveURL(/[?&]q=/)
+	await expect(rows(page)).toHaveCount(ROWS.length)
+})
+
+Then('the address bar carries "q=Alex"', async ({ page }) => {
+	await expect(page).toHaveURL(/[?&]q=Alex$/)
+})
+
+Then('the search box still reads "Alex"', async ({ page }) => {
+	await expect(page.getByRole("searchbox", { name: "Search reports" })).toHaveValue("Alex")
+})
+
+Then("a message says no reports match that search", async ({ page }) => {
+	await expect(page.getByText('No reports match "zzsynthnothingmatchesanything" in this filter.')).toBeVisible()
+})
+
+Then("no error is shown", async ({ page }) => {
+	await expect(page.getByRole("alert")).toHaveCount(0)
 })
 
 Then("its answers are shown under their questions, with each private answer marked private", async ({ page }) => {

@@ -19,6 +19,10 @@ and the opaque token subject of
 [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md). Extends
 [ADR-0133](ADR-0133-staff-keep-private-notes-on-a-report.md): a private note's
 revision may refer to one private attachment.
+**Amended by [ADR-0156](ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)
+(#573):** `admin_report_search_document`, the admin-only view backing Manage
+reports' search box, is the one other reader of `report_private_attachments`
+— item 1 below no longer holds without exception.
 
 ## Context
 
@@ -41,6 +45,15 @@ that table would be all that keeps a coroner's report out of each of them.
    `MediaCompartment`. Nothing that reads reporter attachments — the Worker,
    `ReportForSummaryDto`, `public_reports`, `public_report_media`, the report
    detail DTO, any count — knows the table exists. No database view reads it.
+   **Amended by ADR-0156 (#573), on condition:** the one exception is
+   `admin_report_search_document`, a view reachable through exactly one code
+   path — `GET /api/admin/reports?q=`, gated by the same `Reviewer` policy
+   this item already names (`401` anonymous, `403` for any other role,
+   neither response naming the report or its content) — that reads a *live*
+   (non-removed) attachment's file name only, to rank which report a search
+   matched. No other endpoint or code path queries it
+   (`SearchIsTheOnlyReaderOfPrivateContentTests`), and no endpoint returns
+   the file name through it, only which report matched, and at what rank.
 2. **Only `SafetyOfficer` and `Administrator`**, under the reviewer policy at
    `/api/admin/reports/{reportId}/private-attachments`: mint an upload, add
    (claim), list, download, and remove. Any report that is not deleted, in any

@@ -608,6 +608,93 @@ Scenario: A stale row action tells the reviewer to reload the list
   Then a message says the report changed and offers to reload the list
   And the pending row still shows the "Pending" badge
 
+@REQ-MOD-130
+Scenario Outline: Searching Manage reports finds a report matched by any part of it
+  Given a report carries a distinct word in its <source>
+  When a reviewer searches for that word
+  Then the report is found
+
+Examples:
+  | source                          |
+  | private answer                  |
+  | choice label                    |
+  | summary pair                    |
+  | private note                    |
+  | member comment                  |
+  | reporter-uploaded attachment name |
+  | staff-only attachment name       |
+
+@REQ-MOD-131
+Scenario: A misspelled search still finds the report
+  Given a report carries a distinct word in its narrative
+  When a reviewer searches for a misspelling of that word
+  Then the report is found
+
+@REQ-MOD-132
+Scenario: A search matches across English and French stemming
+  Given a report carries a distinct word in its narrative
+  When a reviewer searches for that word
+  Then the report is found
+
+@REQ-MOD-133
+Scenario: The best match is listed first
+  Given two reports share a word, one repeating it and one only carrying a near-miss typo of it
+  When a reviewer searches for that word
+  Then the report repeating the word is listed before the one with the typo
+
+@REQ-MOD-135
+Scenario: A search stays within the chosen filter
+  Given a pending report and a published report share a distinct word
+  When a reviewer searches for that word within the published filter
+  Then only the published report is found
+
+@REQ-MOD-138
+Scenario Outline: Only a reviewer may find a match inside private report content
+  Given a report carries a distinct word only in its private answer, its private note, and its staff-only attachment name
+  When <who> searches for that word
+  Then <result>
+
+Examples:
+  | who                  | result                                 |
+  | an anonymous visitor | the request is refused as unauthorized |
+  | a member             | the request is refused as forbidden    |
+  | a safety officer     | the report is found                    |
+  | an administrator     | the report is found                    |
+
+@REQ-MOD-139
+Scenario: The search query text is never logged
+  Given a report carries a distinct word in its narrative
+  When a reviewer searches for that word
+  Then the query text never appears in anything the host logs
+
+@REQ-MOD-134
+@ui
+Scenario: Clearing the search box returns to newest submitted first
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer searches for "Alex"
+  And the safety officer clears the search box
+  Then every report is listed newest first as before the search
+
+@REQ-MOD-136
+@ui
+Scenario: The search text lives in the address bar and survives a reload
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer searches for "Alex"
+  Then the address bar carries "q=Alex"
+  When the safety officer reloads the page
+  Then the search box still reads "Alex"
+
+@REQ-MOD-137
+@ui
+Scenario: A search matching nothing shows a message naming the query, not an error
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer searches for a word that matches nothing
+  Then a message says no reports match that search
+  And no error is shown
+
 @REQ-MOD-054
 @ui
 Scenario: Opening a report shows its answers with private answers marked, and its summary pair
@@ -1030,7 +1117,7 @@ Scenario: No public or member read ever returns a private note, not even a count
   Given a published report whose reporter consented to publication and media carries one private note
   When an anonymous visitor and a User read the public feed, that report's public page, and its comments
   Then no response carries the private note's text or identifier, or any count of private notes
-  And no database view reads a private-note table
+  And no database view other than admin_report_search_document reads a private-note table
 
 @REQ-MOD-105
 Scenario: A private note never reaches the model or a translation provider
@@ -1118,7 +1205,7 @@ Scenario: No public or member read ever returns a private attachment, not even a
   When an anonymous visitor and a User read the public feed, that report's public page, and its public media
   Then no response carries the private attachment's name, description, or identifier, or any count of private attachments
   And asking for the private attachment's identifier as public media answers 404
-  And no database view reads the private-attachment table
+  And no database view other than admin_report_search_document reads the private-attachment table
 
 @REQ-MOD-113
 Scenario: A private attachment never reaches the model

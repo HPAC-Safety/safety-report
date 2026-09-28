@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
+using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Comments;
@@ -155,6 +157,56 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		found.ShouldContain(strong);
 		found.ShouldContain(weak);
 		found.IndexOf(strong).ShouldBeLessThan(found.IndexOf(weak));
+	}
+
+	[Fact]
+	public async Task GivenMoreMatchesThanFitOnOnePage_WhenPagedThroughASearch_ThenNoReportIsSkippedOrRepeated()
+	{
+		// Given: more than one page's worth of reports that all match the same
+		// word equally well (an identical narrative sentence, so they tie in
+		// rank), which is exactly when the keyset tie-break on report ID —
+		// not the rank alone — decides where the page boundary falls.
+		var word = $"zzsynthpaging{Suffix()}";
+		var ids = await SeedNarrativeBatch(ReportEndpoints.PageSize + 5, $"A synthetic occurrence: {word} happened near the runway.");
+
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var first = await SearchPage(client, word, null, null);
+		first.Next.ShouldNotBeNull();
+
+		var second = await SearchPage(client, word, null, first.Next);
+
+		// Then: every one of this batch appears exactly once across the two
+		// pages — nothing skipped, nothing repeated across the boundary.
+		var combined = first.Items.Concat(second.Items).Where(ids.Contains).ToList();
+		var seenTwice = combined.GroupBy(id => id).Where(group => group.Count() > 1);
+		seenTwice.ShouldBeEmpty();
+		combined.ShouldBe(ids, ignoreOrder: true);
+	}
+
+	[Fact]
+	public async Task GivenACursorFromASearch_WhenTheSameSearchIsRepeated_ThenTheCursorCarriesNoRankOrTimestamp()
+	{
+		// Given — the cursor #572/ADR-0155 defines is ID-only; a search's cursor
+		// must stay exactly that shape, never leaking the rank it was found at.
+		var word = $"zzsynthcursorshape{Suffix()}";
+		await SeedNarrativeBatch(ReportEndpoints.PageSize + 1, $"A synthetic occurrence: {word} happened near the runway.");
+
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var first = await SearchPage(client, word, null, null);
+		first.Next.ShouldNotBeNull();
+		var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(Pad(first.Next!.Replace('-', '+').Replace('_', '/'))));
+
+		// Then — the decoded cursor is exactly one TinyId, nothing else appended.
+		TinyId.TryParse(decoded, out _).ShouldBeTrue();
+	}
+
+	private static string Pad(string base64)
+	{
+		return base64.PadRight(base64.Length + ((4 - (base64.Length % 4)) % 4), '=');
 	}
 
 	[Fact]
@@ -345,15 +397,32 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		return Guid.NewGuid().ToString("n")[..10];
 	}
 
+	/// <summary>The first page's matched IDs, in rank order (REQ-MOD-129, REQ-MOD-133).</summary>
 	private static async Task<List<string>> Search(HttpClient client,
 													string q,
 													string? filter = null)
 	{
-		var path = filter is null
-			? $"/api/admin/reports?q={Uri.EscapeDataString(q)}"
-			: $"/api/admin/reports?filter={filter}&q={Uri.EscapeDataString(q)}";
-		var body = await client.GetFromJsonAsync<JsonElement>(new Uri(path, UriKind.Relative));
-		return [.. body.EnumerateArray().Select(item => item.GetProperty("id").GetString()!)];
+		var page = await SearchPage(client, q, filter, null);
+		return [.. page.Items];
+	}
+
+	/// <summary>One page of a search, following #572's keyset paging (REQ-MOD-129, ADR-0156).</summary>
+	private static async Task<(List<string> Items, string? Next)> SearchPage(HttpClient client,
+																			 string q,
+																			 string? filter,
+																			 string? after)
+	{
+		var query = string.Join('&', new[]
+		{
+			filter is null ? null : $"filter={filter}",
+			$"q={Uri.EscapeDataString(q)}",
+			after is null ? null : $"after={Uri.EscapeDataString(after)}",
+		}.Where(part => part is not null));
+
+		var body = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports?{query}", UriKind.Relative));
+		var items = body.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()!).ToList();
+		var next = body.GetProperty("next").ValueKind == JsonValueKind.String ? body.GetProperty("next").GetString() : null;
+		return (items, next);
 	}
 
 	private async Task<Seeded> SeedOne()
@@ -362,7 +431,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		var suffix = Suffix();
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 
 		var narrativeWord = $"zzsynthnarrative{suffix}";
 		var choiceLabelWord = $"zzsynthchoice{suffix}";
@@ -437,7 +506,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		var word = $"zzsynthprivateonly{Suffix()}";
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var suffix = Suffix();
 		var consent = await ConsentQuestion(database, now);
 
@@ -473,7 +542,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var suffix = Suffix();
 		var consent = await ConsentQuestion(database, now);
 		var narrative = Question.Create($"narrative_{suffix}", QuestionType.LongText, "What happened", "Ce qui s'est passé", now, isPrivate: false);
@@ -488,6 +557,48 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		return report.Id.Value;
 	}
 
+	/// <summary>
+	///     Seeds <paramref name="count" /> reports sharing one narrative, so a
+	///     search for a word inside it ranks them all equally — a bulk insert
+	///     large enough to force at least two pages. A search pages by
+	///     <c>(rank, id)</c>, never by <c>submitted_at</c> (ADR-0156), so this
+	///     batch's own correctness does not depend on where its timestamp sits.
+	///     Deliberately timestamped well *below* the +5/+6-year range every
+	///     other seed helper in this shared-collection database uses (Seeding,
+	///     the paging boundary tests in <c>ReportReviewEndpointTests</c>), so a
+	///     plain newest-first, unfiltered list this batch is not the subject of
+	///     never mistakes it for the newest reports in the database and pushes
+	///     someone else's single-row seed out of the page it asserts on by
+	///     count rather than by ID.
+	/// </summary>
+	private async Task<List<string>> SeedNarrativeBatch(int count,
+														 string narrativeText)
+	{
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var baseAt = DateTimeOffset.UtcNow.AddYears(1);
+		var suffix = Suffix();
+		var consent = await ConsentQuestion(database, baseAt);
+		var narrative = Question.Create($"narrative_{suffix}", QuestionType.LongText, "What happened", "Ce qui s'est passé", baseAt, isPrivate: false);
+		database.Questions.Add(narrative);
+
+		var ids = new List<string>();
+
+		for (var i = 0; i < count; i++)
+		{
+			var at = baseAt.AddSeconds(i);
+			var report = new Report(Locale.EnCa, at);
+			report.Answer(consent, true, at);
+			report.Answer(narrative, narrativeText, at);
+			database.Reports.Add(report);
+			ids.Add(report.Id.Value);
+		}
+
+		await database.SaveChangesAsync();
+		return ids;
+	}
+
 	private async Task<string> SeedNoteReport(string word,
 											  bool remove,
 											  bool deleteReport = false)
@@ -495,7 +606,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var consent = await ConsentQuestion(database, now);
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consent, true, now);
@@ -527,7 +638,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var consent = await ConsentQuestion(database, now);
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consent, true, now);
@@ -550,7 +661,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var consent = await ConsentQuestion(database, now);
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consent, true, now);
@@ -586,7 +697,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var consent = await ConsentQuestion(database, now);
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consent, true, now);
@@ -612,7 +723,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var consent = await ConsentQuestion(database, now);
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consent, true, now);
@@ -634,7 +745,7 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var suffix = Suffix();
 		var consent = await ConsentQuestion(database, now);
 		var narrative = Question.Create($"narrative_{suffix}", QuestionType.LongText, "What happened", "Ce qui s'est passé", now, isPrivate: false);

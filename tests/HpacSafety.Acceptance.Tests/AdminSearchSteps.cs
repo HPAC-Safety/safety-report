@@ -125,7 +125,7 @@ public sealed class AdminSearchSteps
 			{
 				var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 				_foundIds.Clear();
-				_foundIds.AddRange(body.EnumerateArray().Select(item => item.GetProperty("id").GetString()!));
+				_foundIds.AddRange(body.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()!));
 			}
 		}
 	}
@@ -202,7 +202,7 @@ public sealed class AdminSearchSteps
 		using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return [.. body.EnumerateArray().Select(item => item.GetProperty("id").GetString()!)];
+		return [.. body.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()!)];
 	}
 
 	private static async Task<Question> ConsentQuestion(HpacSafetyDbContext database)
@@ -228,7 +228,7 @@ public sealed class AdminSearchSteps
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var suffix = Guid.NewGuid().ToString("n")[..8];
 		var consent = await ConsentQuestion(database);
 
@@ -341,7 +341,7 @@ public sealed class AdminSearchSteps
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var suffix = Guid.NewGuid().ToString("n")[..8];
 		var consent = await ConsentQuestion(database);
 
@@ -378,7 +378,7 @@ public sealed class AdminSearchSteps
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		var now = DateTimeOffset.UtcNow.AddYears(5).AddSeconds(Random.Shared.Next());
+		var now = DateTimeOffset.UtcNow.AddYears(2).AddSeconds(Random.Shared.Next(86400));
 		var suffix = Guid.NewGuid().ToString("n")[..8];
 		var consent = await ConsentQuestion(database);
 		var narrative = Question.Create($"narrative_{suffix}", QuestionType.LongText, "What happened", "Ce qui s'est passé", now, isPrivate: false);

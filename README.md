@@ -213,7 +213,7 @@ it to reset.
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused coding-agent guidance: generic skills, and the project skills that extend them |
 | [`docs/`](docs/architecture.md) | Constraints, operational notes, the generated [traceability matrix](docs/traceability.md), and historical ADRs |
-| [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding |
+| [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding; [`infra/SETUP.md`](infra/SETUP.md) is the human setup checklist for staging and production |
 | [`locales/`](locales/en-CA.json) | Reviewed application UI catalogues |
 
 Runtime AI instructions live with the Worker under

@@ -22,8 +22,9 @@ attachment S3, and no ALB
 [ADR-0123](../docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
 [ADR-0159](../docs/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
 See [`docs/infrastructure-and-operations.md`](../docs/infrastructure-and-operations.md)
-for the full target design and [`docs/deployment.md`](../docs/deployment.md)
-for the operator guide.
+for the full target design, [`docs/deployment.md`](../docs/deployment.md)
+for the operator guide, and [`SETUP.md`](SETUP.md) for the step-by-step
+human setup of each environment.
 
 GitHub Actions assumes roles through OIDC, one per account per purpose
 (`hpac-safety-deploy`, `hpac-safety-plan`); there is no long-lived AWS key.
@@ -80,8 +81,9 @@ one environment's tfvars and a real AWS session in that account; see
 
 Do not add SES, ALB/ECS/Fargate, outbound notifications, public attachment
 delivery, speculative scaling, a managed NAT gateway, or long-lived AWS keys.
-Before a real cutover, exercise the restore drill in staging (issue #30,
-"Human work" H9).
+Every human step to set up staging or production — GitHub settings,
+bootstrap, variables, secrets, DNS, alarm email — is in
+[`SETUP.md`](SETUP.md).
 
 ## Metrics and alarms (issue #467)
 

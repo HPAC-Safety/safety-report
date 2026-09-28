@@ -53,7 +53,8 @@ today's Terraform differs" below for exactly what is still scaffolding.
 - **First goal: staging only.** A working release pipeline against staging
   does not need the production account to exist yet. Production is created,
   bootstrapped, and connected once HPAC's account and its DNS records are
-  ready; see issue #30's "Human work" for the exact one-time steps.
+  ready; see [`infra/SETUP.md`](../infra/SETUP.md) Part 3 for the exact
+  one-time steps.
 - **The identity provider is an external dependency, not chosen here**
   ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
   Until `AUTH_AUTHORITY` is set for an environment, that environment can still
@@ -68,7 +69,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
 1. **Publish a GitHub Release** on `main`, tagged with the date,
    `YYYY.MM.DD-N` (e.g. `2026.10.02-1`). This is the only thing that triggers
    `release.yml`, and the only human action every release afterwards needs
-   (issue #30 "Human work" H6). Any other tag shape is rejected before
+   ([`infra/SETUP.md`](../infra/SETUP.md) step 2.5). Any other tag shape is rejected before
    anything is built.
 2. **`build`** checks out that tag and, with no AWS credential of any kind,
    builds the API image (the Lambda Web Adapter image, `tools/build-api-image.sh`,
@@ -90,7 +91,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
    `infra/production.tfvars` and the **identical image digests and web
    bundle** staging already deployed. Never a rebuild
    (CON-INF-012). Its job summary prints `dns_records_to_publish` — meaningful
-   the first time production exists (issue #30 "Human work" H7), harmless
+   the first time production exists ([`infra/SETUP.md`](../infra/SETUP.md) step 3.6), harmless
    every other run.
 
 There is no `terraform apply` on a merge to `main`
@@ -123,7 +124,7 @@ AWS-managed encryption at rest and TLS.
 
 ### Required GitHub configuration
 
-Set once per account, by issue #30 "Human work" H2–H4 and `infra/bootstrap.sh`
+Set once per account by following [`infra/SETUP.md`](../infra/SETUP.md)
 (#464, #466, #465):
 
 | Name | Kind | Scope | Used by |
@@ -146,8 +147,8 @@ declare `environment:` — the moment a job adds `environment: hpac-safety-stagi
 to read that environment's variables, its subject becomes
 `repo:...:environment:hpac-safety-staging` instead, which is what
 `hpac-safety-deploy` trusts, not what `hpac-safety-plan` trusts. On top of
-that, both environments' deployment branch/tag policy (issue #30 "Human work"
-H2) restricts them to the release tag pattern, so a pull-request-triggered
+that, both environments' deployment branch/tag policy ([`infra/SETUP.md`](../infra/SETUP.md)
+steps 2.1 and 3.1) restricts them to the release tag pattern, so a pull-request-triggered
 job scoped to either would be refused before any step ran anyway.
 
 `infra/bootstrap.sh` prints both copies together, in the same run, under
@@ -264,60 +265,42 @@ resources. Nothing is shared between the two accounts, and there is no AWS
 Organizations relationship between them — one is never reached by "switch
 role" from the other.
 
-Do this once in **each** account: the owner's personal account for `staging`,
-and HPAC's account for `production`. Nothing here needs a password or key to
-be shared with anyone — the whole point of OIDC is that GitHub Actions
-authenticates without one, and this script itself runs under whatever session
-you already have open, never a new long-lived credential.
+The step-by-step procedure, for each account, is
+[`infra/SETUP.md`](../infra/SETUP.md) (staging: step 2.2; production: step
+3.2). Nothing there needs a password or key to be shared with anyone — the
+script runs under whatever CloudShell session you already have open, never a
+new long-lived credential. `infra/bootstrap.sh` is idempotent: re-running it
+converges the existing OIDC provider, roles, policies, and state bucket onto
+the current definitions and changes nothing else. It tolerates — and never
+modifies or deletes — an OIDC provider, client ID, or thumbprint that another
+application already created in that account; it only adds the
+`sts.amazonaws.com` audience if that one is missing.
 
-1. Sign in to that AWS account directly, as an administrator —
-   <https://console.aws.amazon.com>. There is no organization to switch roles
-   through; each account is its own sign-in.
-2. At the top right, set the region to **Canada (Central) ca-central-1**.
-3. Click the **CloudShell** icon (`>_`) in the top bar and wait for the
-   prompt. CloudShell already has the AWS CLI and a POSIX shell; nothing
-   needs installing.
-4. Paste one line. For the staging account:
-   ```sh
-   git clone https://github.com/HPAC-Safety/safety-report && sh safety-report/infra/bootstrap.sh staging
-   ```
-   For the production account, use `production` in place of `staging`.
-5. `infra/bootstrap.sh` is idempotent: re-running it in the same account
-   converges the existing OIDC provider, roles, policies, and state bucket
-   onto the current definitions and changes nothing else. It tolerates — and
-   never modifies or deletes — an OIDC provider, client ID, or thumbprint that
-   another application already created in that account; it only adds the
-   `sts.amazonaws.com` audience if that one is missing.
-6. It creates, in that account only:
-   - the GitHub OIDC identity provider (or reuses one that exists);
-   - `hpac-safety-deploy`, trusted only by
-     `repo:HPAC-Safety/safety-report:environment:<hpac-safety-staging|hpac-safety-production>`
-     — exactly the subject a job with `environment: hpac-safety-staging` (or
-     `hpac-safety-production`) presents, and nothing else. The script argument stays
-     `staging`/`production`; it maps that to the GitHub environment's actual
-     name (`hpac-safety-staging`/`hpac-safety-production`) for the trust condition, while
-     the AWS-side `Environment` tag and the Terraform state key stay
-     `staging`/`production`;
-   - `hpac-safety-plan`, trusted only by this repository's pull requests, with
-     `ReadOnlyAccess` plus Terraform state read, and explicit denies on
-     uploaded report objects, log/RDS-log content, secret values, `rds-data`,
-     and any object, function, image, parameter, table, stream, or queue
-     outside this system's own resources — `ReadOnlyAccess` alone would let
-     a plan on any pull request read data belonging to staging's other,
-     unrelated applications;
-   - the Terraform state bucket `hpac-safety-tfstate-<account-id>`
-     (versioned, encrypted, public access blocked, TLS-only).
-7. It prints four `NAME=value` lines on stdout:
-   ```
-   AWS_DEPLOY_ROLE_ARN=arn:aws:iam::<account-id>:role/hpac-safety-deploy
-   AWS_PLAN_ROLE_ARN=arn:aws:iam::<account-id>:role/hpac-safety-plan
-   TF_STATE_BUCKET=hpac-safety-tfstate-<account-id>
-   AWS_ACCOUNT_ID=<account-id>
-   ```
-   In GitHub, open **Settings → Environments → `hpac-safety-staging`** (or
-   **`hpac-safety-production`**) **→ Environment variables**, and add each one.
-   These are identifiers, not secrets — no GitHub secret is ever set from
-   this script's output.
+It creates, in that account only:
+
+- the GitHub OIDC identity provider (or reuses one that exists);
+- `hpac-safety-deploy`, trusted only by
+  `repo:HPAC-Safety/safety-report:environment:<hpac-safety-staging|hpac-safety-production>`
+  — exactly the subject a job with `environment: hpac-safety-staging` (or
+  `hpac-safety-production`) presents, and nothing else. The script argument stays
+  `staging`/`production`; it maps that to the GitHub environment's actual
+  name (`hpac-safety-staging`/`hpac-safety-production`) for the trust condition, while
+  the AWS-side `Environment` tag and the Terraform state key stay
+  `staging`/`production`;
+- `hpac-safety-plan`, trusted only by this repository's pull requests, with
+  `ReadOnlyAccess` plus Terraform state read, and explicit denies on
+  uploaded report objects, log/RDS-log content, secret values, `rds-data`,
+  and any object, function, image, parameter, table, stream, or queue
+  outside this system's own resources — `ReadOnlyAccess` alone would let
+  a plan on any pull request read data belonging to staging's other,
+  unrelated applications;
+- the Terraform state bucket `hpac-safety-tfstate-<account-id>`
+  (versioned, encrypted, public access blocked, TLS-only).
+
+It prints the values to set as GitHub variables — four environment
+variables and two repository variables — and the `gh variable set` lines for
+them; [`infra/SETUP.md`](../infra/SETUP.md) steps 2.3 and 3.3 say where each
+goes. They are identifiers, not secrets.
 
 What `hpac-safety-deploy` may do, and what it may never do, is documented in
 the "What the deploy role may do" section of #30 and enforced by four

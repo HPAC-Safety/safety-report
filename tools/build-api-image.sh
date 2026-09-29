@@ -9,8 +9,7 @@
 # NOT used by dev-up.sh: local development builds a plain Kestrel container
 # with `dotnet publish /t:PublishContainer` instead — nothing local puts a
 # Lambda Function URL event in front of it, so the adapter buys nothing there.
-# This script is deploy-api.yml's, and CI's, for the image that actually runs
-# on Lambda.
+# This script is release.yml's, for the image that actually runs on Lambda.
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
@@ -44,21 +43,10 @@ dotnet publish "$REPO_ROOT/src/HpacSafety.Api/HpacSafety.Api.csproj" \
 	--output "$OUTPUT" \
 	-p:UseAppHost=false
 
-# The Dockerfile copies the Lambda Web Adapter from public.ecr.aws, which
-# throttles anonymous pulls from shared CI runners with 429 Too Many Requests
-# (release run 36499358659, #621). The release's build job has no AWS
-# credential to log in with, by design, so retry with backoff instead.
-attempt=1
-until docker build \
+# The Dockerfile copies the Lambda Web Adapter from this organization's GHCR
+# mirror, not public.ecr.aws, whose per-IP anonymous limit shared CI runners
+# exhaust (#629); release.yml runs tools/mirror-lambda-adapter.sh first.
+docker build \
 	--file "$REPO_ROOT/src/HpacSafety.Api/Dockerfile" \
 	--tag "$IMAGE" \
-	"$OUTPUT"; do
-	if [ "$attempt" -ge 5 ]; then
-		echo "error: docker build failed $attempt times." >&2
-		exit 1
-	fi
-	delay=$((attempt * 30))
-	echo "docker build failed (attempt $attempt); retrying in ${delay}s." >&2
-	sleep "$delay"
-	attempt=$((attempt + 1))
-done
+	"$OUTPUT"

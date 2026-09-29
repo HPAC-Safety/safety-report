@@ -49,9 +49,31 @@
 				"public const string Image = \"(?<depName>[^\":]+):(?<currentValue>[^\"]+)\";"
 			],
 			"datasourceTemplate": "docker"
+		},
+		{
+			"description": "The API Dockerfile pulls the Lambda Web Adapter from this org's GHCR mirror, never public.ecr.aws (#629). The tag and digest on that line are upstream's, so track them against upstream; tools/mirror-lambda-adapter.sh copies a bumped version on the next release.",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^src/HpacSafety\\.Api/Dockerfile$/"
+			],
+			"matchStrings": [
+				"FROM ghcr\\.io/hpac-safety/aws-lambda-adapter:(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+			],
+			"depNameTemplate": "public.ecr.aws/awsguru/aws-lambda-adapter",
+			"datasourceTemplate": "docker"
 		}
 	],
 	"packageRules": [
+		{
+			"description": "The GHCR mirror of the Lambda Web Adapter holds only the versions release.yml copied into it; the regex manager above tracks the same line against upstream instead (#629).",
+			"matchManagers": [
+				"dockerfile"
+			],
+			"matchPackageNames": [
+				"ghcr.io/hpac-safety/aws-lambda-adapter"
+			],
+			"enabled": false
+		},
 		{
 			"description": "Label major updates as breaking changes",
 			"matchUpdateTypes": [

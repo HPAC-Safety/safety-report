@@ -77,6 +77,9 @@ today's Terraform differs" below for exactly what is still scaffolding.
    grouped by label ([`.github/release.yml`](../.github/release.yml)). A run on
    any other ref is refused before anything is created.
 2. **`build`** checks out that tag and, with no AWS credential of any kind,
+   mirrors the Lambda Web Adapter into this org's GHCR if that version is not
+   there yet (`tools/mirror-lambda-adapter.sh`, #629 — `public.ecr.aws` limits
+   anonymous pulls per shared runner IP), then
    builds the API image (the Lambda Web Adapter image, `tools/build-api-image.sh`,
    #443), the Worker image (`tools/build-worker-image.sh`, ADR-0118), and the
    web bundle, each tagged by the commit SHA the release tag points to. All

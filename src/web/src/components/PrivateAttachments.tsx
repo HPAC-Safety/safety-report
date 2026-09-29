@@ -257,13 +257,15 @@ function PrivateAttachmentStaging({ reportId, onAdded }: { reportId: string; onA
 	rowsRef.current = rows
 
 	const hasStaged = rows.length > 0
+	// A refused row holds nothing to lose; only a live or finished upload warns.
+	const hasUploads = rows.some((row) => row.status !== "rejected")
 	const settling = rows.some((row) => row.status === "uploading")
 	const finishedCount = rows.filter((row) => row.status === "uploaded").length
 	const tooLong = rows.some(
 		(row) => row.status === "uploaded" && row.description.trim().length > PRIVATE_ATTACHMENT_DESCRIPTION_MAX_LENGTH,
 	)
 
-	useLeaveWarning(hasStaged, t("privateAttachments.leaveWarning"))
+	useLeaveWarning(hasUploads, t("privateAttachments.leaveWarning"))
 
 	// Leaving the page abandons anything still uploading.
 	useEffect(
@@ -285,7 +287,7 @@ function PrivateAttachmentStaging({ reportId, onAdded }: { reportId: string; onA
 		if (file.size > PRIVATE_ATTACHMENT_MAX_BYTES) {
 			setRows((current) => [
 				...current,
-				{ key, name: file.name, size: file.size, description: "", status: "rejected", progress: 0, reason: file.size === 0 ? "empty" : "too_large" },
+				{ key, name: file.name, size: file.size, description: "", status: "rejected", progress: 0, reason: "too_large" },
 			])
 			return
 		}
@@ -366,7 +368,8 @@ function PrivateAttachmentStaging({ reportId, onAdded }: { reportId: string; onA
 								</div>
 								<button
 									type="button"
-									className="touch-target shrink-0 rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
+									className="touch-target shrink-0 rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2 disabled:opacity-50"
+									disabled={adding}
 									aria-label={row.status === "uploading" ? t("privateAttachments.cancelNamed", { name: row.name }) : t("privateAttachments.removeStagedNamed", { name: row.name })}
 									onClick={() => (row.status === "uploading" ? cancel(row) : remove(row))}
 								>
@@ -402,6 +405,7 @@ function PrivateAttachmentStaging({ reportId, onAdded }: { reportId: string; onA
 										{t("privateAttachments.descriptionLabel")}
 										<textarea
 											value={row.description}
+											disabled={adding}
 											rows={2}
 											onChange={(event) => update(row.key, { description: event.target.value })}
 											className="mt-1 block w-full rounded border border-rule bg-surface p-2 font-sans text-sm font-normal text-ink"

@@ -260,14 +260,14 @@ same numbers.
 4. **Open the pull request** with a squash-ready title, then relabel the
    session `#<number> · PR #<pr> <short-description>`. Once the worktree is
    gone this label is the only record of which pull request the session owns.
-   - **Never enable auto-merge and never enqueue the pull request yourself** —
-     no `gh pr merge`, and no `enablePullRequestAutoMerge` or
-     `enqueuePullRequest` mutation, on your own pull request or a sub-agent's.
-     A project may reserve that step for a human; check `AGENTS.md` and this
-     skill's companion before assuming an agent may do it.
-   - Get the pull request's own required checks green and report it ready;
-     someone with the authority to merge enables auto-merge (or merges
-     directly) by hand.
+   - **Enable auto-merge** on the pull request, unless it is a draft, someone
+     asked to hold it, or the project reserves that step for a human — check
+     `AGENTS.md` and this skill's companion.
+   - **Never merge directly, bypass protections, or enqueue explicitly** — no
+     plain or `--admin` merge, and no `enqueuePullRequest` or
+     `mergePullRequest` mutation. Someone with the authority to merge does
+     that by hand.
+   - Keep working until the pull request's own required checks are green.
    - **Merge queue, once auto-merge is on**: the pull request enters the queue
      when its required checks pass. The queue tests it on top of the base
      branch and the pull requests ahead of it, then merges it; a branch that

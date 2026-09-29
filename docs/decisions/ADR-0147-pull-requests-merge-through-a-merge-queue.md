@@ -245,9 +245,9 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
 
 ## Consequences
 
-- An agent opens the pull request, gets its checks green, and reports it
-  ready. It never enables auto-merge or enqueues the pull request itself —
-  see the amendment below. A pull request that is only `BEHIND` needs no
+- An agent opens the pull request, enables auto-merge, and gets its checks
+  green. It never merges directly or enqueues the pull request itself — see
+  the second amendment below. A pull request that is only `BEHIND` needs no
   rebase.
 - Each queued pull request runs CI twice: once on its branch, and once on the
   merge group.
@@ -265,6 +265,9 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
   reports, recorded on #547.
 
 ## Amendment (2026-09-28)
+
+> Replaced by the second amendment below (#625): an agent now enables
+> auto-merge; only a direct merge stays the owner's.
 
 **Only the owner enables auto-merge or enqueues a pull request, by hand.** No
 agent runs `gh pr merge`, the `enablePullRequestAutoMerge` mutation, or the
@@ -295,6 +298,27 @@ Codex, Cursor) never gets this guard mechanically; it reaches them the same
 way every other rule in this repository does — written into `AGENTS.md`
 (issue #427 decision 20). `AGENTS.md`, `deliver-change`, and
 `deliver-hpac-change` are amended to match. See issue #427.
+
+## Second amendment (2026-09-28, #625)
+
+**An agent enables auto-merge on every pull request it opens; the owner
+still does every direct merge by hand.** This replaces the first amendment's
+rule that only the owner enables auto-merge. The owner decided it on #625
+("you do set auto-merge"): enabling auto-merge only lets the queue take the
+pull request once its required checks pass, so it bypasses nothing, and
+holding every green pull request for a click only delayed it.
+
+- An agent runs `gh pr merge <number> --auto`, or the
+  `enablePullRequestAutoMerge` mutation, unless the pull request is a draft
+  or the owner asked to hold it.
+- An agent never merges directly: no `gh pr merge` without `--auto`, no
+  `--admin`, no `enqueuePullRequest` or `mergePullRequest` mutation, and no
+  REST `PUT .../merge`.
+- `tools/guard-pr-merge.mjs` enforces that line: it now allows `--auto`
+  without `--admin` and the `enablePullRequestAutoMerge` mutation, and still
+  refuses everything else above. `AGENTS.md`, `deliver-change`, and
+  `deliver-hpac-change` match.
+- Renovate is unaffected.
 
 [manage]: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue
 [merging]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue

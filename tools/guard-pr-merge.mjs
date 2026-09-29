@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Refuses a Bash tool call that would merge or enqueue a pull request
-// (ADR-0147 amendment, issue #427). Only the owner enables auto-merge or
-// enqueues a pull request, by hand — an agent opens the pull request, gets
-// its checks green, and reports it ready.
+// directly (ADR-0147 amendments, issues #427 and #625). An agent enables
+// auto-merge on the pull request it opens — `gh pr merge <n> --auto`, or the
+// `enablePullRequestAutoMerge` mutation — and GitHub queues it once its
+// required checks pass. A direct merge, an `--admin` merge, or an explicit
+// enqueue is the owner's, by hand.
 //
 // Wired in as a Claude Code `PreToolUse` hook (matcher: Bash) directly in the
 // tracked, team-wide `.claude/settings.json`: `node
@@ -150,13 +152,20 @@ function mergesAPullRequest(segment, tokens) {
 	return lower.includes('pr') && lower.includes('merge')
 }
 
-const AUTOMERGE_MUTATION_NAMES = ['enablePullRequestAutoMerge', 'enqueuePullRequest', 'mergePullRequest']
+// enablePullRequestAutoMerge is not here: an agent may enable auto-merge (#625).
+const AUTOMERGE_MUTATION_NAMES = ['enqueuePullRequest', 'mergePullRequest']
 const AUTOMERGE_MUTATIONS = new RegExp(`\\b(${AUTOMERGE_MUTATION_NAMES.join('|')})\\b`)
 
 const GRAPHQL_EXTERNAL_QUERY = /(?:^|\s)(?:-[fF]\s*['"]?query=@\S+|--input[= ]\S+)/
 
 const REST_MERGE_PATH = /\bpulls\/\S+\/merge\b/i
 const PUT_METHOD = /(?:^|\s)(?:-X\s*PUT|-XPUT|--method[= ]PUT)\b/i
+
+/** True when a `gh pr merge` only enables auto-merge: `--auto`, and never `--admin`, which bypasses the queue. */
+function onlyEnablesAutoMerge(tokens) {
+	const lower = tokens.map((token) => token.toLowerCase())
+	return lower.includes('--auto') && !lower.some((token) => token === '--admin' || token.startsWith('--admin='))
+}
 
 /** Decides whether a Bash command merges or enqueues a pull request. Returns the reason, or null to allow it. */
 export function blockReason(toolName, command) {
@@ -168,19 +177,19 @@ export function blockReason(toolName, command) {
 		const tokens = tokenize(segment)
 
 		if (leading === 'gh') {
-			if (mergesAPullRequest(segment, tokens)) {
+			if (mergesAPullRequest(segment, tokens) && !onlyEnablesAutoMerge(tokens)) {
 				return (
-					'Only the owner enables auto-merge or merges a pull request, by hand ' +
-					'(ADR-0147 amendment, issue #427). Open the pull request, get its ' +
-					'checks green, and report it ready — do not run `gh pr merge`.'
+					'Only the owner merges a pull request directly, by hand ' +
+					'(ADR-0147 amendments, issues #427 and #625). Enable auto-merge ' +
+					'instead: `gh pr merge <number> --auto`, never with `--admin`.'
 				)
 			}
 
 			if (tokens.some((token) => token.toLowerCase() === 'alias') && tokens.some((token) => token.toLowerCase() === 'set')) {
 				if (/\bpr\s+merge\b/i.test(segment) || AUTOMERGE_MUTATIONS.test(segment)) {
 					return (
-						'Only the owner enables auto-merge or merges a pull request, by hand ' +
-						'(ADR-0147 amendment, issue #427). This aliases a command that would — ' +
+						'Only the owner merges a pull request directly, by hand ' +
+						'(ADR-0147 amendments, issues #427 and #625). This aliases a command that would — ' +
 						'remove it rather than giving the merge another name.'
 					)
 				}
@@ -189,16 +198,16 @@ export function blockReason(toolName, command) {
 			if (tokens.some((token) => token.toLowerCase() === 'api')) {
 				if (REST_MERGE_PATH.test(segment) && PUT_METHOD.test(segment)) {
 					return (
-						'Only the owner enables auto-merge or merges a pull request, by hand ' +
-						'(ADR-0147 amendment, issue #427). This is a REST `PUT .../merge` call — ' +
-						'remove it and report the pull request ready instead.'
+						'Only the owner merges a pull request directly, by hand ' +
+						'(ADR-0147 amendments, issues #427 and #625). This is a REST `PUT .../merge` call — ' +
+						'remove it and report the pull request ready, or enable auto-merge with `gh pr merge <number> --auto`.'
 					)
 				}
 
 				if (/\bgraphql\b/i.test(segment) && GRAPHQL_EXTERNAL_QUERY.test(segment)) {
 					return (
-						'Only the owner enables auto-merge or merges a pull request, by hand ' +
-						'(ADR-0147 amendment, issue #427). This GraphQL call reads its query from ' +
+						'Only the owner merges a pull request directly, by hand ' +
+						'(ADR-0147 amendments, issues #427 and #625). This GraphQL call reads its query from ' +
 						'a file this hook cannot inspect, so it is refused outright — inline the ' +
 						'query, or ask the owner.'
 					)
@@ -210,10 +219,10 @@ export function blockReason(toolName, command) {
 			const mutation = segment.match(AUTOMERGE_MUTATIONS)
 			if (mutation) {
 				return (
-					`Only the owner enables auto-merge or enqueues a pull request, by hand ` +
-					`(ADR-0147 amendment, issue #427). This command names the ` +
+					`Only the owner merges or enqueues a pull request directly, by hand ` +
+					`(ADR-0147 amendments, issues #427 and #625). This command names the ` +
 					`\`${mutation[1]}\` mutation — remove it and report the pull request ` +
-					'ready instead.'
+					'ready, or enable auto-merge with `gh pr merge <number> --auto`.'
 				)
 			}
 		}

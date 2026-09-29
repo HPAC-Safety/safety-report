@@ -1699,7 +1699,7 @@ Scenario: Leaving the summary editor with unsaved changes is confirmed before th
   When they confirm leaving
   Then the browser navigates to that page and the edit is gone
 
-@REQ-MOD-174
+@REQ-MOD-176
 @ui
 Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
   Given a signed-in Safety Officer and two type-ahead questions with values flagged for review

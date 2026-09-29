@@ -1065,7 +1065,7 @@ Scenario: A successful submission nudges the Worker
   When the API responds
   Then the Worker is nudged once
 
-@REQ-SUB-119
+@REQ-SUB-122
 @ui
 Scenario: Leaving the report form for another page while it holds unsubmitted answers is confirmed first
   Given a reporter is filling out the form
@@ -1074,7 +1074,7 @@ Scenario: Leaving the report form for another page while it holds unsubmitted an
   When the reporter confirms leaving
   Then the browser navigates to that page
 
-@REQ-SUB-120
+@REQ-SUB-123
 @ui
 Scenario: Closing or reloading the tab while the report form holds unsubmitted answers triggers the browser's own prompt
   Given a reporter is filling out the form

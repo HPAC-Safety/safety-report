@@ -109,10 +109,11 @@ Every editable form calls the hook with its own `dirty` condition:
 | Form | Route | Scenarios |
 |---|---|---|
 | Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121..123 |
-| Question editor | `/admin/questions` | `question-bank-and-form.feature` REQ-QB-238 |
-| Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-176 |
-| Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-173 |
-| Private notes composer | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-175 |
+| Question editor | `/admin/questions` | `question-bank-and-form.feature` REQ-QB-238, REQ-QB-239 |
+| Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-179 |
+| Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-178 |
+| Private notes composer | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-180 |
+| Private-attachment staging area | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-177 |
 | Published-report comment composer | `/reports/:reportId` | `comments.feature` REQ-COM-021 |
 
 A multi-step form's own step navigation (the report form's
@@ -122,9 +123,6 @@ without a prompt.
 
 Out of scope for this mechanism, decided with issue #659:
 
-- The private-attachment drop zone (`PrivateAttachments.tsx`, issue #658):
-  built separately; #658 adopts the shared hook rather than this pull request
-  editing that file.
 - The member sign-in form (`/login`): re-entering a username and password is
   not the kind of loss this mechanism protects against, unlike free text a
   person wrote.

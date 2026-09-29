@@ -1178,6 +1178,14 @@ A too-large private attachment is refused on its own row while the others procee
 
 Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
 
+### REQ-MOD-180
+
+A staged private attachment cannot be removed or re-described while it is being added — *playwright-bdd, Covered*
+
+### REQ-MOD-181
+
+Leaving the report page with only refused private attachments staged does not warn — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

@@ -8,7 +8,7 @@ const { Given, When, Then } = createBdd()
  * its staging area (issue #658: drop or choose several files, each uploads on
  * staging, its own description, "Add N attachments"), and a private note that
  * refers to an already-added attachment (REQ-MOD-115..117, REQ-MOD-173..177,
- * ADR-0135).
+ * REQ-MOD-180..181, ADR-0135).
  *
  * The private-attachment endpoints, and the storage URLs they hand out, are
  * stubbed at the network boundary and keep their files in memory, so what is
@@ -52,6 +52,8 @@ const attachmentsByPage = new WeakMap<Page, StubAttachment[]>()
 const downloadsByPage = new WeakMap<Page, Promise<Download>>()
 const slowStorage = new WeakSet<Page>()
 const pendingPutsByPage = new WeakMap<Page, (() => void)[]>()
+const slowClaim = new WeakSet<Page>()
+const pendingClaimsByPage = new WeakMap<Page, (() => void)[]>()
 const erasedByPage = new WeakMap<Page, string[]>()
 const putsByPage = new WeakMap<Page, { contentType: string | null; size: number }[]>()
 const dialogsByPage = new WeakMap<Page, Dialog>()
@@ -97,6 +99,14 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 		}
 
 		if (!first && request.method() === "POST") {
+			if (slowClaim.has(page)) {
+				// Held open until a step releases it.
+				await new Promise<void>((resolve) => {
+					const waiting = pendingClaimsByPage.get(page) ?? []
+					waiting.push(resolve)
+					pendingClaimsByPage.set(page, waiting)
+				})
+			}
 			const body = request.postDataJSON()
 			const added: StubAttachment = {
 				id: `attach${String(attachments.length + 1).padStart(5, "a")}`,
@@ -412,18 +422,26 @@ Then("the private attachments section lists {string} only", async ({ page }, fil
 
 // --- A too-large file among several (REQ-MOD-175) ---
 
-When("the safety officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
+/** Drops synthetic files, the oversized one faking a size just past the private cap. */
+async function dropWithOversized(page: Page, withOrdinary: boolean) {
 	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
-	const dataTransfer = await page.evaluateHandle((capBytes) => {
-		const transfer = new DataTransfer()
-		transfer.items.add(new File(["synthetic ordinary content"], "ordinary.pdf", { type: "application/pdf" }))
-		const oversized = new File(["synthetic oversized content"], "oversized.zip", { type: "application/zip" })
-		Object.defineProperty(oversized, "size", { value: capBytes + 1 })
-		transfer.items.add(oversized)
-		return transfer
-	}, PRIVATE_CAP_BYTES)
+	const dataTransfer = await page.evaluateHandle(
+		({ capBytes, ordinary }) => {
+			const transfer = new DataTransfer()
+			if (ordinary) transfer.items.add(new File(["synthetic ordinary content"], "ordinary.pdf", { type: "application/pdf" }))
+			const oversized = new File(["synthetic oversized content"], "oversized.zip", { type: "application/zip" })
+			Object.defineProperty(oversized, "size", { value: capBytes + 1 })
+			transfer.items.add(oversized)
+			return transfer
+		},
+		{ capBytes: PRIVATE_CAP_BYTES, ordinary: withOrdinary },
+	)
 	const zone = section(page).getByTestId("attachment-drop-zone")
 	for (const type of ["dragenter", "dragover", "drop"]) await zone.dispatchEvent(type, { dataTransfer })
+}
+
+When("the safety officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
+	await dropWithOversized(page, true)
 })
 
 Then("the too-large attachment's staged row states the private cap and cannot be added", async ({ page }) => {
@@ -488,4 +506,48 @@ When("the safety officer tries to leave the page through a link and confirms", a
 
 Then("the safety officer leaves the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports$/)
+})
+
+// --- Rows locked while adding (REQ-MOD-180) ---
+
+Given("the report is slow to accept a private attachment", async ({ page }) => {
+	slowClaim.add(page)
+	await stubAttachments(page, [])
+})
+
+Then(
+	"the staged attachment {string} can be neither removed nor re-described while it is added",
+	async ({ page }, fileName: string) => {
+		const row = stagedRow(page, fileName)
+		await expect(row.getByRole("button", { name: `Remove ${fileName}` })).toBeDisabled()
+		await expect(row.getByLabel("Description (optional)")).toBeDisabled()
+		await expect(addAllButton(page)).toBeDisabled()
+	},
+)
+
+When("the report finishes accepting the private attachment", async ({ page }) => {
+	const waiting = pendingClaimsByPage.get(page) ?? []
+	pendingClaimsByPage.set(page, [])
+	for (const resolve of waiting) resolve()
+})
+
+// --- Only refused files staged: no leave warning (REQ-MOD-181) ---
+
+When("the safety officer drops only a private attachment larger than the private cap", async ({ page }) => {
+	await dropWithOversized(page, false)
+})
+
+When("the safety officer reloads the report page", async ({ page }) => {
+	const dialogs: Dialog[] = []
+	page.on("dialog", (dialog) => {
+		dialogs.push(dialog)
+		void dialog.dismiss()
+	})
+	await page.reload()
+	expect(dialogs).toEqual([])
+})
+
+Then("the page reloads without warning, and the refused row is gone", async ({ page }) => {
+	await expect(section(page).getByTestId("attachment-drop-zone")).toBeVisible()
+	await expect(stagingList(page)).toHaveCount(0)
 })

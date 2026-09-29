@@ -383,7 +383,10 @@ tag/name scoping does not fit in one):
   and instance profiles (for the NAT instance, #465) named `hpac-safety-*`;
   `iam:PassRole` only to those roles and only with `iam:PassedToService` in
   `[lambda.amazonaws.com, scheduler.amazonaws.com, ec2.amazonaws.com]`; and
-  the explicit denies: never read a secret value even its own, never read
+  the explicit denies: never read a secret value even its own (except the
+  Terraform-generated CloudFront origin secret, whose value is already in
+  Terraform state;
+  [ADR-0171](decisions/ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md)), never read
   an uploaded report file or RDS/log content, never read another
   application's Lambda function, ECR image, SSM parameter, DynamoDB item,
   Kinesis record, or SQS message, never create an IAM user or access key,

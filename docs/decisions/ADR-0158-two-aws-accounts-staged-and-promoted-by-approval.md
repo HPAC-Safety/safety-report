@@ -31,6 +31,11 @@ AWS closed AppRegistry to new accounts, so there is no myApplications
 application; each account's tag-based Resource Group is the only grouping,
 and the deploy role has no AppRegistry permission.
 
+**Secret and log-group denies amended by
+[ADR-0171](ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md):**
+both roles may read the Terraform-generated CloudFront origin secret and no
+other secret value; log-group mutation is guarded by name.
+
 **Subject form amended by
 [ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
 subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is

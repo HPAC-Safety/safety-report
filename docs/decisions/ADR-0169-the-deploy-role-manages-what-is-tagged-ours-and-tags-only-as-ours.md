@@ -23,6 +23,10 @@ the system has no AppRegistry application, so every `servicecatalog` action
 and the AppRegistry service-linked role below are gone, and the residual risk
 is an untagged ACM certificate or CloudFront distribution alone.
 
+**Log-group guardrail amended by
+[ADR-0171](ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md):**
+`logs` mutation is denied outside our log groups by name, not by tag.
+
 ## Context
 
 The first real staging `terraform apply` (release run 36501034107) failed:

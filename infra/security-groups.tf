@@ -6,8 +6,10 @@
 # as a replacement rather than an addition.
 
 resource "aws_security_group" "api" {
-  name        = "${local.name}-api"
-  description = "The API's Lambda function, in the private subnets (ADR-0042). No ingress rule at all — a Function URL's traffic never traverses this ENI; only the function's own outbound calls (RDS, Secrets Manager, the identity provider, DeepL) do."
+  name = "${local.name}-api"
+  # AWS accepts only a-z, A-Z, 0-9, spaces and ._-:/()#,@[]+=&;{}!$* in a
+  # security group's description: no apostrophe, no em dash (#637).
+  description = "API Lambda function in the private subnets (ADR-0042). No ingress: Function URL traffic never uses this ENI, only its own outbound calls do."
   vpc_id      = aws_vpc.main.id
 
   tags = { Name = "${local.name}-api" }
@@ -22,7 +24,7 @@ resource "aws_vpc_security_group_egress_rule" "api_all" {
 
 resource "aws_security_group" "worker" {
   name        = "${local.name}-worker"
-  description = "The Worker's Lambda function, in the private subnets. No ingress at all — it is invoked by the API and by EventBridge, neither of which reaches it over this ENI."
+  description = "Worker Lambda function in the private subnets. No ingress: the API and EventBridge invoke it without using this ENI."
   vpc_id      = aws_vpc.main.id
 
   tags = { Name = "${local.name}-worker" }

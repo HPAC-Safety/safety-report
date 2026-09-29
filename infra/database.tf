@@ -51,6 +51,9 @@ resource "aws_db_parameter_group" "main" {
   parameter {
     name  = "rds.force_ssl"
     value = "1"
+    # What RDS records for this parameter; "immediate" (the provider's
+    # default) is a permanent diff against it (#645).
+    apply_method = "pending-reboot"
   }
 
   lifecycle {

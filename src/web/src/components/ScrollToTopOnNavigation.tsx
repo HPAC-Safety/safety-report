@@ -3,7 +3,7 @@ import { useLocation, useNavigationType } from "react-router-dom"
 
 /*
  * Starts every page at its top when the reader navigates to it afresh
- * (issue no. 670, REQ-WLD-032). `<BrowserRouter>` resets nothing by itself,
+ * (ADR-0173, REQ-WLD-032). `<BrowserRouter>` resets nothing by itself,
  * so without this a new page opens at the old page's scroll position:
  * following a footer link from the bottom of one page lands at the bottom of
  * the next.

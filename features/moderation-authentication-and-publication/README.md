@@ -120,7 +120,8 @@ rows and scroll position rather than reloading the first page. Only a return
 to the same history entry restores (Back or Forward, or a reload); opening a
 list afresh, from a link or by typing its address, loads its first page and
 starts at the top, however far it was scrolled earlier in the same tab
-(REQ-MOD-178, REQ-MOD-179).
+(REQ-MOD-178, REQ-MOD-179,
+[ADR-0173](../../docs/decisions/ADR-0173-a-fresh-navigation-starts-at-the-top-and-only-a-return-restores.md)).
 
 Each row also shows the **reporter's name** and the **pilot's name** — the
 only answer text the list ever carries (REQ-MOD-030, REQ-MOD-124). Both are

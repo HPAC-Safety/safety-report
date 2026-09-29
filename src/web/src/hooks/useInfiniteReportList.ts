@@ -22,7 +22,7 @@ import { useLocation } from "react-router-dom"
  *   valid until the caller changes the key. It restores only on a return to
  *   the history entry the list was built in; a fresh visit, from a link or by
  *   typing the address again, loads the first page and starts at the top
- *   (issue no. 670).
+ *   (ADR-0173).
  */
 
 export interface ReportPage<T> {

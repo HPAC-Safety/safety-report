@@ -14,6 +14,11 @@ keywords: infinite scroll, keyset pagination, admin report list, admin_report_qu
 
 Accepted.
 
+Amended by
+[ADR-0173](ADR-0173-a-fresh-navigation-starts-at-the-top-and-only-a-return-restores.md):
+a list restores its saved results and position only on a return to the
+history entry it was built in, never on a fresh visit.
+
 ## Context
 
 Both report lists paged one screen at a time: the public feed

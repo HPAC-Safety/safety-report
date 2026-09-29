@@ -6,9 +6,12 @@
 # that to still be true a few weeks later.
 
 locals {
+  # hpac-safety-<deployable>, dash not slash: the deploy role's ECR statements
+  # (infra/bootstrap.sh ManageOurRepositoriesOnly, and the NeverRead… deny's
+  # exemption) match repository/hpac-safety-* only (#635).
   ecr_repositories = {
-    api    = "${local.name}/api"
-    worker = "${local.name}/worker"
+    api    = "${local.name}-api"
+    worker = "${local.name}-worker"
   }
 
   # Keep the last 30 SHA-tagged images: at a handful of deploys a week that is

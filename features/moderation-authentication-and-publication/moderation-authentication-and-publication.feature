@@ -1482,7 +1482,7 @@ Scenario: A safety officer cancels a private attachment while it uploads
   Then the staged attachment "investigation-archive.zip" is gone from the staging list
   And the cancelled upload is erased
 
-@REQ-MOD-164
+@REQ-MOD-169
 @ui
 Scenario Outline: Several private attachments staged at once each upload independently
   Given a safety officer is signed in and a pending report exists
@@ -1499,7 +1499,7 @@ Examples:
   | drops                        |
   | chooses, through the picker, |
 
-@REQ-MOD-165
+@REQ-MOD-170
 @ui
 Scenario: Removing a staged private attachment before it is added leaves the others staged
   Given a safety officer is signed in and a pending report exists
@@ -1511,7 +1511,7 @@ Scenario: Removing a staged private attachment before it is added leaves the oth
   When the safety officer adds the staged private attachments
   Then the private attachments section lists "keep-me.pdf" only
 
-@REQ-MOD-166
+@REQ-MOD-171
 @ui
 Scenario: A too-large private attachment is refused on its own row while the others proceed
   Given a safety officer is signed in and a pending report exists
@@ -1522,7 +1522,7 @@ Scenario: A too-large private attachment is refused on its own row while the oth
   When the safety officer adds the staged private attachments
   Then the private attachments section lists only the ordinary attachment
 
-@REQ-MOD-167
+@REQ-MOD-172
 @ui
 Scenario: "Add N attachments" is disabled until every staged private attachment has settled
   Given a safety officer is signed in and a pending report exists
@@ -1533,7 +1533,7 @@ Scenario: "Add N attachments" is disabled until every staged private attachment 
   When storage finishes accepting the staged upload
   Then "Add 1 attachment" becomes enabled
 
-@REQ-MOD-168
+@REQ-MOD-173
 @ui
 Scenario: Leaving the report page with staged, un-added private attachments warns
   Given a safety officer is signed in and a pending report exists

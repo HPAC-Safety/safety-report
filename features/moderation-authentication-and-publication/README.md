@@ -320,7 +320,7 @@ each in turn with its own description. Leaving the report page with staged,
 un-added rows warns, on both a browser close/reload and an in-app navigation
 (#658; a general leave-warning for every form is issue #659, not built here).
 Any reviewer may download any added attachment, or remove one after
-confirming (REQ-MOD-115, REQ-MOD-117, REQ-MOD-164..168). A note may refer to
+confirming (REQ-MOD-115, REQ-MOD-117, REQ-MOD-169..173). A note may refer to
 one (REQ-MOD-116).
 
 - Any report that is not deleted, in any status, including a report without

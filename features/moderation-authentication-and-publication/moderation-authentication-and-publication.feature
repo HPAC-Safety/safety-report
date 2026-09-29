@@ -400,6 +400,26 @@ Scenario: Translate is unavailable when the server has no translation provider
   And they begin correcting "coopers"
   Then that value's Translate action is unavailable and says why
 
+@REQ-MOD-171
+@ui
+Scenario: A failed translation says so on the value's row and drafts nothing
+  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation fails
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  Then that value's row says the translation failed
+  And that value's French field still reads ""
+  And that value's Translate action becomes available
+
+@REQ-MOD-172
+@ui
+Scenario: A translation overtaken by a direction flip is dropped, and Translate stops showing as working
+  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  And they flip that value's direction switch while the translation is still out
+  And the translation then answers
+  Then its answer is dropped and Translate is no longer shown as working
+
 @REQ-MOD-096
 Scenario Outline: A report's consent reaches the admin view as true, false, or null
   Given a report whose publication consent is <publication> and whose media consent is <media>

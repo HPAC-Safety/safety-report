@@ -1142,6 +1142,14 @@ The direction switch changes which language Translate reads from — *playwright
 
 Translate is unavailable when the server has no translation provider — *playwright-bdd, Covered*
 
+### REQ-MOD-171
+
+A failed translation says so on the value's row and drafts nothing — *playwright-bdd, Covered*
+
+### REQ-MOD-172
+
+A translation overtaken by a direction flip is dropped, and Translate stops showing as working — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

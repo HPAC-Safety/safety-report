@@ -133,12 +133,25 @@ Given("a signed-in Safety Officer and three type-ahead values flagged for review
  * Stubs the translation endpoint the same way `manage-questions.steps.ts`
  * does: the prefix makes a translation obviously machine-made, so a scenario
  * asserts a field was filled from the other language rather than the
- * quality of any French (REQ-MOD-166..170, ADR-0141, ADR-0144).
+ * quality of any French (REQ-MOD-166..172, ADR-0141, ADR-0144).
  */
-async function stubTranslation(page: Page, { available = true }: { available?: boolean } = {}) {
+type TranslationStub = "works" | "unavailable" | "fails" | "held"
+
+// A held translation waits here until the scenario releases it (REQ-MOD-172).
+const heldTranslation = new WeakMap<Page, () => void>()
+
+async function stubTranslation(page: Page, stub: TranslationStub = "works") {
 	await page.route("**/api/admin/translate", async (route) => {
 		if (route.request().method() === "GET") {
-			return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ available }) })
+			return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ available: stub !== "unavailable" }) })
+		}
+
+		if (stub === "fails") {
+			return route.fulfill({ status: 502, contentType: "application/problem+json", body: JSON.stringify({ detail: "The translation provider did not answer." }) })
+		}
+
+		if (stub === "held") {
+			await new Promise<void>((release) => heldTranslation.set(page, release))
 		}
 
 		const { texts, to } = JSON.parse(route.request().postData() ?? "{}") as { texts: string[]; to: string }
@@ -156,13 +169,13 @@ async function stubTranslation(page: Page, { available = true }: { available?: b
  * this suite's scenarios exercise. REQ-MOD-163 stubs a merge that leaves an
  * independently-flagged target in place instead (ADR-0129).
  */
-async function reviewPage(page: Page, values: StubValue[], options: { translation?: boolean } = {}) {
+async function reviewPage(page: Page, values: StubValue[], options: { translation?: TranslationStub } = {}) {
 	const waiting = values
 	const sent: Review[] = []
 	reviews.set(page, sent)
 
 	await stubAuth(page)
-	await stubTranslation(page, { available: options.translation ?? true })
+	await stubTranslation(page, options.translation)
 	await page.route("**/api/admin/type-ahead-values/**", async (route) => {
 		const request = route.request()
 		const url = new URL(request.url())
@@ -413,7 +426,7 @@ Then(
 	},
 )
 
-// ------------------------ re-translating a value's wording (REQ-MOD-166..170) --
+// ------------------------ re-translating a value's wording (REQ-MOD-166..172) --
 
 // The row currently being corrected. Its heading text stays the value's saved
 // wording — untouched by the draft — for as long as correction is open, the
@@ -427,7 +440,7 @@ const directionSwitch = (row: ReturnType<typeof valueRow>) =>
 Given(
 	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server with no translation provider",
 	async ({ page }) => {
-		await reviewPage(page, flaggedValues(), { translation: false })
+		await reviewPage(page, flaggedValues(), { translation: "unavailable" })
 	},
 )
 
@@ -506,3 +519,45 @@ Then("that value's English field is filled with the translation", async ({ page 
 	await expect(theValueRow(page).getByLabel("English wording")).toHaveValue("[en-CA] Site d'essai")
 })
 
+
+// ------------------------ a failed or overtaken translation (REQ-MOD-171, REQ-MOD-172) --
+
+Given(
+	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation fails",
+	async ({ page }) => {
+		await reviewPage(page, flaggedValues(), { translation: "fails" })
+	},
+)
+
+Given(
+	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released",
+	async ({ page }) => {
+		await reviewPage(page, flaggedValues(), { translation: "held" })
+	},
+)
+
+Then("that value's row says the translation failed", async ({ page }) => {
+	await expect(theValueRow(page).getByRole("alert")).toHaveText("The translation provider did not answer.")
+})
+
+Then(/^that value's French field still reads "([^"]*)"$/, async ({ page }, wording: string) => {
+	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue(wording)
+})
+
+When("they flip that value's direction switch while the translation is still out", async ({ page }) => {
+	await expect(translateButton(theValueRow(page))).toHaveCount(0)
+	await expect(theValueRow(page).getByRole("button", { name: "Translating…" })).toBeDisabled()
+	await directionSwitch(theValueRow(page)).click()
+	await expect(directionSwitch(theValueRow(page))).toHaveAccessibleName("Translate French to English")
+})
+
+When("the translation then answers", async ({ page }) => {
+	await expect.poll(() => heldTranslation.has(page)).toBe(true)
+	heldTranslation.get(page)!()
+})
+
+Then("its answer is dropped and Translate is no longer shown as working", async ({ page }) => {
+	await expect(theValueRow(page).getByRole("button", { name: "Translating…" })).toHaveCount(0)
+	await expect(translateButton(theValueRow(page))).toBeVisible()
+	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue("")
+})

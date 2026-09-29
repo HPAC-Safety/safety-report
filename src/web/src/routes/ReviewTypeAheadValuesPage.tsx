@@ -186,9 +186,11 @@ export function ReviewTypeAheadValuesPage() {
 			const drafted = texts[0] ?? ""
 			setDrafts((current) => {
 				const now = current[id]
-				if (!now || now.direction !== asked) return current
+				if (!now) return current
 				const stillSource = (asked === "toFrench" ? now.labelEn : now.labelFr) === source
-				if (!stillSource) return current
+				// Stale: the direction flipped or the source was edited while the
+				// request was out. Drop the result but stop showing it as working.
+				if (now.direction !== asked || !stillSource) return { ...current, [id]: { ...now, translating: false } }
 				const changes =
 					asked === "toFrench"
 						? { labelFr: drafted, baselineEn: source, baselineFr: drafted }
@@ -309,10 +311,11 @@ export function ReviewTypeAheadValuesPage() {
 													<TranslationDirectionSwitch
 														direction={draft.direction}
 														onChange={(direction) =>
-															setDrafts((current) => ({
-																...current,
-																[value.id]: { ...draft, direction },
-															}))
+															setDrafts((current) =>
+																current[value.id]
+																	? { ...current, [value.id]: { ...current[value.id], direction } }
+																	: current,
+															)
 														}
 													/>
 													<button

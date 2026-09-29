@@ -239,7 +239,11 @@ resource "aws_cloudfront_distribution" "site" {
     cloudfront_default_certificate = length(var.site_domains) == 0
     acm_certificate_arn            = length(var.site_domains) > 0 ? aws_acm_certificate_validation.site[0].certificate_arn : null
     ssl_support_method             = length(var.site_domains) > 0 ? "sni-only" : null
-    minimum_protocol_version       = "TLSv1.2_2021"
+    # CloudFront records TLSv1 for its default certificate whatever is
+    # requested, so asking for more there is a permanent diff that fails the
+    # release's drift re-plan (#645). With our own certificate (production)
+    # the TLS 1.2 floor is real and kept.
+    minimum_protocol_version = length(var.site_domains) > 0 ? "TLSv1.2_2021" : "TLSv1"
   }
 
   tags = { Name = "${local.name}-site" }

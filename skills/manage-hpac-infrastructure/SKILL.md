@@ -92,6 +92,10 @@ Lessons from staging's first real release, #613 through #638
   account (a public AMI). Never set a Lambda-reserved environment variable
   (`AWS_REGION`, `AWS_LAMBDA_*`, `_HANDLER`, and the rest)
   ([lesson 0035](../../docs/lessons/0035-a-guard-checked-against-the-resource-a-call-creates.md)).
+- Declare every attribute as AWS records it: a value AWS normalizes (a
+  default CloudFront certificate's TLS minimum, an RDS parameter's apply
+  method) is a permanent diff that fails the release's drift re-plan
+  ([lesson 0036](../../docs/lessons/0036-a-setting-aws-records-differently-than-it-was-asked.md)).
 - A failed create can leave a resource tainted; a `prevent_destroy` resource
   that is tainted blocks every later plan — the deploy untaints those before
   applying

@@ -27,7 +27,8 @@ locals {
   }
 
   common_environment = [
-    { name = "AWS_REGION", value = var.aws_region },
+    # No AWS_REGION: Lambda sets it for every function and refuses it as
+    # input (#643).
     { name = "ASPNETCORE_ENVIRONMENT", value = "Production" },
     # The key the API binds (HpacSafety:Media:Storage:S3:BucketName). No
     # ServiceUrl and no access key: in AWS the SDK reaches S3 as the

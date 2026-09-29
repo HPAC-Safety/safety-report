@@ -235,7 +235,7 @@ so it is not audited. It still gives an Administrator the number of answers
 waiting for the Worker's automatic translation
 ([REQ-MOD-084..086](moderation-authentication-and-publication.feature)), an
 operational signal only — there is no page or nav option to act on it, since
-nothing but the Worker ever fills that second language (ADR-0173). The counts
+nothing but the Worker ever fills that second language (ADR-0174). The counts
 are read from the same database views as the list and the queue, so they
 cannot disagree with them. The menu refetches on each navigation.
 

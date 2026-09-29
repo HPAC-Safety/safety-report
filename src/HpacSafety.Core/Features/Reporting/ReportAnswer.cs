@@ -31,7 +31,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         free text marked for translation is filled later, off the submission
 ///         path, mechanically by the Worker, exactly once
 ///         (<see cref="TranslationSource.Auto" />) — nothing else ever writes or
-///         overwrites it (ADR-0173); and anything else never has one. See
+///         overwrites it (ADR-0174); and anything else never has one. See
 ///         ADR-0080.
 ///     </para>
 ///     <para>
@@ -444,7 +444,7 @@ public class ReportAnswer
 	///     reporter's own <see cref="Value" /> is never touched — this fills the
 	///     language they did not answer in. Nothing may overwrite it afterward: the
 	///     Worker is the only writer, and it writes an answer's second language
-	///     exactly once (ADR-0173).
+	///     exactly once (ADR-0174).
 	/// </summary>
 	public void SupplyAutoTranslation(string translated)
 	{
@@ -466,7 +466,7 @@ public class ReportAnswer
 
 		if (TranslatedValue is not null)
 		{
-			throw new DomainRuleViolationException("This answer already has a translation. See ADR-0173.");
+			throw new DomainRuleViolationException("This answer already has a translation. See ADR-0174.");
 		}
 
 		if (string.IsNullOrWhiteSpace(translated))

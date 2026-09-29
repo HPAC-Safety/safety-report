@@ -138,7 +138,7 @@ Then(
 		await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
 		// Shared choice lists are gone: each question owns its choices (ADR-0095).
 		// The answer-translation queue is gone too: only the Worker ever writes
-		// an answer's second language, once (ADR-0173).
+		// an answer's second language, once (ADR-0174).
 		await expect(menu.getByRole("menuitem")).toHaveCount(3)
 	},
 )

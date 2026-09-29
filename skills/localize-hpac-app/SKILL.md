@@ -49,7 +49,7 @@ description: Keep HPAC Safety application chrome, database questions, validation
 - Reporter content is machine-translated only off the submission path, in these
   cases:
   - an answer that needs a second language, by the Worker, once — never by a
-    human, and never overwritten (ADR-0112, ADR-0173);
+    human, and never overwritten (ADR-0112, ADR-0174);
   - a summary language a reviewer asks to draft from the other (ADR-0108);
   - each revision of a member's comment (ADR-0114).
 - A select answer naming a choice written in both languages copies that
@@ -74,7 +74,7 @@ description: Keep HPAC Safety application chrome, database questions, validation
 - Translate attachments, documents, or model input.
 - Translate an answer that does not need a second language (ADR-0112).
 - Let a human supply or correct an answer's second language. Only the Worker
-  ever writes one, and only once (ADR-0173).
+  ever writes one, and only once (ADR-0174).
 - Translate database questions outside the authoring screen.
 - Produce the Worker's summary pair with a translation provider. It comes from
   the one model call.

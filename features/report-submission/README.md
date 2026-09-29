@@ -138,7 +138,7 @@ answer while the reporter works and sends the boolean when it submits, so
 switching language mid-form loses nothing. The report language is exactly
 `en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080, ADR-0112, ADR-0128, ADR-0129, ADR-0130, ADR-0173)
+## Bilingual answers (ADR-0080, ADR-0112, ADR-0128, ADR-0129, ADR-0130, ADR-0174)
 
 `value`, `value_boolean`, and `locale` are written once, here, and never again — no endpoint
 ever updates either column after this one inserts them. How an answer gets
@@ -159,9 +159,9 @@ translation provider itself; reading a choice's label is a lookup, not a
 translation.
 
 **The Worker writes a free-text answer's second language exactly once**
-(ADR-0173). There is no human path: no endpoint or admin page ever supplies
+(ADR-0174). There is no human path: no endpoint or admin page ever supplies
 or corrects `value_translated`. A second automatic supply is refused, and a
-row already written by an administrator before ADR-0173 (`translation_source
+row already written by an administrator before ADR-0174 (`translation_source
 = human`) is left exactly as stored.
 
 Out of scope: detecting which language a reporter actually typed, and

@@ -188,14 +188,14 @@ contributor who never invokes one is unaffected.
      - free text an administrator marked as needing translation: filled off
        the submission path, by the Worker through the question-authoring
        translation port, exactly once — nothing, human included, ever
-       overwrites it ([ADR-0173](docs/decisions/ADR-0173-an-answers-second-language-is-written-once-by-the-worker-only.md));
+       overwrites it ([ADR-0174](docs/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md));
      - a choice answer: reads its choice's other-language label — a lookup,
        not a translation. A reporter-added type-ahead value's missing label is
        filled on the choice by the Worker ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md));
      - everything else (unmarked text, email, phone, date, time, number,
        yes/no, checkbox): never has one;
      - the source is recorded: `auto` or `choice`; `human` is retired
-       (ADR-0173) and kept only on rows written before that change.
+       (ADR-0174) and kept only on rows written before that change.
    - **Storage forms**: a yes/no or checkbox answer is `true`/`false` in
      `value_boolean`, a JSON boolean on the wire, and never words in the
      database; the interface renders it in the reader's language
@@ -350,7 +350,7 @@ contributor who never invokes one is unaffected.
      needs one, exactly once — nothing else ever writes or overwrites it
      ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
      [ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
-     [ADR-0173](docs/decisions/ADR-0173-an-answers-second-language-is-written-once-by-the-worker-only.md));
+     [ADR-0174](docs/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md));
   3. a reviewer drafting one language of a summary pair from the other;
   4. the Worker translating each revision of a member's comment on a published
      report

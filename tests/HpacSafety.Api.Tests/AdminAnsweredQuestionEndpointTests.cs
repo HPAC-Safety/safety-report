@@ -16,7 +16,7 @@ namespace HpacSafety.Api.Tests;
 ///     Editing a question that has been answered, and how many answers are
 ///     waiting for the Worker's second official language. There is no admin
 ///     endpoint or page for that queue anymore — only the Worker ever fills it,
-///     exactly once (ADR-0173). See ADR-0071 and ADR-0072.
+///     exactly once (ADR-0174). See ADR-0071 and ADR-0072.
 /// </summary>
 /// <remarks>
 ///     These tests write a report answer directly, because no submission endpoint
@@ -251,7 +251,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoAdministratorSession_WhenTheOldQueueEndpointIsCalled_ThenApiReturnsNotFound(MemberRole? role)
 	{
 		// Given — the queue endpoint, and the Supply endpoint beside it, are
-		// gone entirely (ADR-0173): only the Worker ever fills an answer's
+		// gone entirely (ADR-0174): only the Worker ever fills an answer's
 		// second language, and it does so exactly once.
 		using var client = role is null ? _factory.CreateClient() : await SignedIn(role.Value);
 

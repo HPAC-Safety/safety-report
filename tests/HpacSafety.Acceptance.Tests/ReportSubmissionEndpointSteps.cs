@@ -433,7 +433,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 		// There is no route, admin or otherwise, that writes to an answer row
 		// anymore: the one endpoint that ever did — the translation queue's
-		// PUT — is gone entirely (ADR-0173), and every request to its old path
+		// PUT — is gone entirely (ADR-0174), and every request to its old path
 		// now falls through to a plain 404, like any other unmapped route.
 		using var put = await _admin.PutAsJsonAsync(
 			new Uri($"/api/admin/answers/{narrative.Id}/translation", UriKind.Relative),

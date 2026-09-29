@@ -10,7 +10,7 @@ namespace HpacSafety.Core.Tests;
 ///     its choice (ADR-0128). Every answer with a value that needs a second
 ///     language gets one from the Worker, mechanically, exactly once; nothing on
 ///     the submission path translates anything, and nothing ever overwrites a
-///     translation once written. See ADR-0072, ADR-0080, and ADR-0173.
+///     translation once written. See ADR-0072, ADR-0080, and ADR-0174.
 /// </summary>
 public class StringAnswerTests
 {
@@ -114,7 +114,7 @@ public class StringAnswerTests
 	public void GivenAlreadyAutoTranslatedAnswer_WhenWorkerSuppliesAnotherOne_ThenRefused()
 	{
 		// Given — idempotency: the Worker must not silently overwrite its own
-		// translation. Nothing else ever writes one at all (ADR-0173).
+		// translation. Nothing else ever writes one at all (ADR-0174).
 		var report = new Report(Locale.FrCa, Now);
 		var answer = report.Answer(Narrative(), "Alberta", Now);
 		answer.SupplyAutoTranslation("Alberta");

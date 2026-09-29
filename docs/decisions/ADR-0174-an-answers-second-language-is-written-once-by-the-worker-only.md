@@ -5,10 +5,10 @@ type: adr
 status: accepted
 date: 2026-09-29
 decision-makers: Chase Florell
-keywords: translation, ITranslator, worker, answers, immutability, ADR-0080, ADR-0112, ADR-0173
+keywords: translation, ITranslator, worker, answers, immutability, ADR-0080, ADR-0112, ADR-0174
 ---
 
-# ADR-0173 — An answer's second language is written once, by the Worker only
+# ADR-0174 — An answer's second language is written once, by the Worker only
 
 **Status:** Accepted. Supersedes the human-translation path of
 [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md)

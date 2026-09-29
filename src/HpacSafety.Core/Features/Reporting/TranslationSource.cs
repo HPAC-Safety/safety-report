@@ -4,7 +4,7 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 ///     How an answer's second-language value was produced. Stored as an invariant
-///     code, like every other domain enum. See ADR-0080, ADR-0112, ADR-0173.
+///     code, like every other domain enum. See ADR-0080, ADR-0112, ADR-0174.
 /// </summary>
 public enum TranslationSource
 {
@@ -15,7 +15,7 @@ public enum TranslationSource
 	Auto = 0,
 
 	/// <summary>
-	///     Typed or accepted by an administrator. Retired by ADR-0173: nothing
+	///     Typed or accepted by an administrator. Retired by ADR-0174: nothing
 	///     writes this value anymore, but it is kept for rows already stored under
 	///     it, which are never rewritten.
 	/// </summary>

@@ -99,7 +99,7 @@ public sealed class PendingCountSteps
 	}
 
 	/// <summary>
-	///     There is no admin endpoint or page for this queue anymore (ADR-0173):
+	///     There is no admin endpoint or page for this queue anymore (ADR-0174):
 	///     only the Worker ever fills an answer's second language. This reads the
 	///     same <c>answers_awaiting_translation</c> view the count itself reads,
 	///     straight from the database, as the removed queue endpoint once did.

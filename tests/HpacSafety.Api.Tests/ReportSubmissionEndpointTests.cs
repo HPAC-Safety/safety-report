@@ -208,7 +208,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 
 		// Then — the answer is stored untranslated, with the exact submitted
-		// words; only the Worker ever fills its second language (ADR-0173)
+		// words; only the Worker ever fills its second language (ADR-0174)
 		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

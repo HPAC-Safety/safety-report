@@ -19,7 +19,7 @@ export interface AttachmentDropZoneProps {
 
 /**
  * The dashed, clickable drop zone shared by the reporter's attachment field
- * and the report page's private-attachment staging area (issue #658): a
+ * and the report page's private-attachment staging area (issue 658): a
  * cloud-upload icon, a "Drag files here, or choose files" prompt, a steady
  * drag highlight (dragenter/dragleave fire for every child the pointer
  * crosses, so a depth counter is what keeps it steady rather than flicker),

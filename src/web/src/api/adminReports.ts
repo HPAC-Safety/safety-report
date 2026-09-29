@@ -387,7 +387,7 @@ export interface StagedPrivateUpload {
  * the bytes. Aborting `signal` cancels the send; an upload this leaves minted
  * but unclaimed is erased here, and the lifecycle rule is the backstop
  * otherwise, including for a staged upload a reviewer simply removes before
- * adding it (issue #658) — that removal calls no API at all.
+ * adding it (issue 658) — that removal calls no API at all.
  */
 export async function stagePrivateUpload(
 	reportId: string,

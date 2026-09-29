@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react"
  * Warns before leaving the page while `active` is true: the browser's own
  * prompt on a close or reload, and a confirmation before any in-app
  * navigation — a link click, or the back/forward buttons. Generic and small
- * on purpose (issue #658): the app has no data router here to hang a
+ * on purpose (issue 658): the app has no data router here to hang a
  * navigation blocker off, so this hook intercepts clicks and `popstate`
- * itself. Issue #659 will decide whether every form gets one of these; for
+ * itself. Issue 659 will decide whether every form gets one of these; for
  * now only the private-attachment staging area does.
  */
 export function useLeaveWarning(active: boolean, message: string) {

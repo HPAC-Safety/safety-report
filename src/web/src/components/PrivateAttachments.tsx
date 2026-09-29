@@ -237,7 +237,7 @@ interface StagedRow {
 let nextStagedKey = 0
 
 /**
- * The staging area that replaced the single-file Add form (issue #658): a
+ * The staging area that replaced the single-file Add form (issue 658): a
  * drop zone matching the reporter's — dropped or chosen, several files at
  * once — where each file starts uploading the moment it is staged, with its
  * own progress, its own Cancel (while uploading) or Remove (once settled)

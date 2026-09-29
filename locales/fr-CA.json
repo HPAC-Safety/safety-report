@@ -396,7 +396,15 @@
     "relinkTo": "Proposé dans le cadre des réponses à «{question} »",
     "relinkNone": "Choisissez un ou plusieurs…",
     "lastParent": "Une valeur est proposée sous au moins une réponse; par conséquent, la dernière reste cochée.",
-    "relink": "Modifier"
+    "relink": "Modifier",
+    "translate": {
+      "group": "Correction du libellé",
+      "action": "Traduire",
+      "working": "Traduction en cours…",
+      "hint": "Modifiez le texte, puis traduisez-le.",
+      "unavailable": "La traduction n'est pas disponible sur ce serveur.",
+      "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue."
+    }
   },
   "reports": {
     "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",

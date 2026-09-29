@@ -130,17 +130,52 @@ Given("a signed-in Safety Officer and three type-ahead values flagged for review
 })
 
 /**
+ * Stubs the translation endpoint the same way `manage-questions.steps.ts`
+ * does: the prefix makes a translation obviously machine-made, so a scenario
+ * asserts a field was filled from the other language rather than the
+ * quality of any French (REQ-MOD-166..172, ADR-0141, ADR-0144).
+ */
+type TranslationStub = "works" | "unavailable" | "fails" | "held"
+
+// A held translation waits here until the scenario releases it (REQ-MOD-172).
+const heldTranslation = new WeakMap<Page, () => void>()
+
+async function stubTranslation(page: Page, stub: TranslationStub = "works") {
+	await page.route("**/api/admin/translate", async (route) => {
+		if (route.request().method() === "GET") {
+			return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ available: stub !== "unavailable" }) })
+		}
+
+		if (stub === "fails") {
+			return route.fulfill({ status: 502, contentType: "application/problem+json", body: JSON.stringify({ detail: "The translation provider did not answer." }) })
+		}
+
+		if (stub === "held") {
+			await new Promise<void>((release) => heldTranslation.set(page, release))
+		}
+
+		const { texts, to } = JSON.parse(route.request().postData() ?? "{}") as { texts: string[]; to: string }
+		return route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({ texts: texts.map((text) => (text ? `[${to}] ${text}` : "")) }),
+		})
+	})
+}
+
+/**
  * Stubs the review API with these values. A review removes the value it names
  * from the list; here a merge also removes its target — the shape most of
  * this suite's scenarios exercise. REQ-MOD-163 stubs a merge that leaves an
  * independently-flagged target in place instead (ADR-0129).
  */
-async function reviewPage(page: Page, values: StubValue[]) {
+async function reviewPage(page: Page, values: StubValue[], options: { translation?: TranslationStub } = {}) {
 	const waiting = values
 	const sent: Review[] = []
 	reviews.set(page, sent)
 
 	await stubAuth(page)
+	await stubTranslation(page, options.translation)
 	await page.route("**/api/admin/type-ahead-values/**", async (route) => {
 		const request = route.request()
 		const url = new URL(request.url())
@@ -391,3 +426,138 @@ Then(
 	},
 )
 
+// ------------------------ re-translating a value's wording (REQ-MOD-166..172) --
+
+// The row currently being corrected. Its heading text stays the value's saved
+// wording — untouched by the draft — for as long as correction is open, the
+// same as `valueRow` finds any other row (issue no. 651's pattern).
+const correcting = new WeakMap<Page, string>()
+const theValueRow = (page: Page) => valueRow(page, correcting.get(page) ?? "")
+const translateButton = (row: ReturnType<typeof valueRow>) => row.getByRole("button", { name: "Translate", exact: true })
+const directionSwitch = (row: ReturnType<typeof valueRow>) =>
+	row.getByRole("button", { name: /^Translate (English to French|French to English)$/ })
+
+Given(
+	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server with no translation provider",
+	async ({ page }) => {
+		await reviewPage(page, flaggedValues(), { translation: "unavailable" })
+	},
+)
+
+When(/^they begin correcting "([^"]+)"$/, async ({ page }, wording: string) => {
+	correcting.set(page, wording)
+	await valueRow(page, wording).getByRole("button", { name: "Correct" }).click()
+})
+
+When(/^they edit its English wording to "([^"]+)"$/, async ({ page }, wording: string) => {
+	await theValueRow(page).getByLabel("English wording").fill(wording)
+})
+
+When(
+	/^they begin correcting "([^"]+)", edit its English wording to "([^"]+)", and press Translate$/,
+	async ({ page }, original: string, edited: string) => {
+		correcting.set(page, original)
+		await valueRow(page, original).getByRole("button", { name: "Correct" }).click()
+		await theValueRow(page).getByLabel("English wording").fill(edited)
+		await translateButton(theValueRow(page)).click()
+	},
+)
+
+When("they edit that value's English wording again", async ({ page }) => {
+	await theValueRow(page).getByLabel("English wording").fill("Cooper's Hill")
+})
+
+Then("that value's Translate action is unavailable", async ({ page }) => {
+	await expect(translateButton(theValueRow(page))).toBeDisabled()
+})
+
+Then("that value's Translate action becomes available", async ({ page }) => {
+	await expect(translateButton(theValueRow(page))).toBeEnabled()
+})
+
+Then("that value's Translate action is unavailable and says why", async ({ page }) => {
+	await expect(translateButton(theValueRow(page))).toBeDisabled()
+	await expect(theValueRow(page).getByText("Translation is not available on this server.")).toBeVisible()
+})
+
+Then("that value's French field is filled with the translation and remains editable", async ({ page }) => {
+	const french = theValueRow(page).getByLabel("French wording")
+
+	await expect(french).toHaveValue("[fr-CA] Cooper's")
+	await expect(french).not.toHaveAttribute("readonly", "")
+	await french.fill("Cooper's")
+	await expect(french).toHaveValue("Cooper's")
+})
+
+Then("nothing is saved until they press Save correction", async ({ page }) => {
+	expect(reviews.get(page)?.length ?? 0).toBe(0)
+
+	await theValueRow(page).getByRole("button", { name: "Save correction" }).click()
+	await expect.poll(() => reviews.get(page)!.length).toBe(1)
+	expect(reviews.get(page)![0]).toMatchObject({ method: "PUT", id: "value-coopers" })
+})
+
+Then("that value's direction switch translates English to French", async ({ page }) => {
+	await expect(directionSwitch(theValueRow(page))).toHaveAccessibleName("Translate English to French")
+})
+
+When("they flip that value's direction switch to French to English", async ({ page }) => {
+	await directionSwitch(theValueRow(page)).click()
+	await expect(directionSwitch(theValueRow(page))).toHaveAccessibleName("Translate French to English")
+})
+
+When(/^they write its French wording as "([^"]+)"$/, async ({ page }, wording: string) => {
+	await theValueRow(page).getByLabel("French wording").fill(wording)
+})
+
+When(/^they write its French wording as "([^"]+)" and press Translate$/, async ({ page }, wording: string) => {
+	await theValueRow(page).getByLabel("French wording").fill(wording)
+	await translateButton(theValueRow(page)).click()
+})
+
+Then("that value's English field is filled with the translation", async ({ page }) => {
+	await expect(theValueRow(page).getByLabel("English wording")).toHaveValue("[en-CA] Site d'essai")
+})
+
+
+// ------------------------ a failed or overtaken translation (REQ-MOD-171, REQ-MOD-172) --
+
+Given(
+	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation fails",
+	async ({ page }) => {
+		await reviewPage(page, flaggedValues(), { translation: "fails" })
+	},
+)
+
+Given(
+	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released",
+	async ({ page }) => {
+		await reviewPage(page, flaggedValues(), { translation: "held" })
+	},
+)
+
+Then("that value's row says the translation failed", async ({ page }) => {
+	await expect(theValueRow(page).getByRole("alert")).toHaveText("The translation provider did not answer.")
+})
+
+Then(/^that value's French field still reads "([^"]*)"$/, async ({ page }, wording: string) => {
+	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue(wording)
+})
+
+When("they flip that value's direction switch while the translation is still out", async ({ page }) => {
+	await expect(translateButton(theValueRow(page))).toHaveCount(0)
+	await expect(theValueRow(page).getByRole("button", { name: "Translating…" })).toBeDisabled()
+	await directionSwitch(theValueRow(page)).click()
+	await expect(directionSwitch(theValueRow(page))).toHaveAccessibleName("Translate French to English")
+})
+
+When("the translation then answers", async ({ page }) => {
+	await expect.poll(() => heldTranslation.has(page)).toBe(true)
+	heldTranslation.get(page)!()
+})
+
+Then("its answer is dropped and Translate is no longer shown as working", async ({ page }) => {
+	await expect(theValueRow(page).getByRole("button", { name: "Translating…" })).toHaveCount(0)
+	await expect(translateButton(theValueRow(page))).toBeVisible()
+	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue("")
+})

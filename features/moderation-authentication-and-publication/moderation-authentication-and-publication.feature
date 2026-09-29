@@ -347,6 +347,79 @@ Scenario: A merged value leaves the queue in place, and a merge target still awa
   Then "Coopers" leaves the list, and the rows around it stay where they are
   And "Cooper's" is still listed, showing 5 answers naming it
 
+# Re-translating a type-ahead value's wording while correcting it (ADR-0141,
+# ADR-0144): the correction view reuses the question editor's choice
+# affordance, scoped to the one value being corrected. No new API.
+
+@REQ-MOD-166
+@ui
+Scenario: A value written in both languages offers Translate only once its wording differs from what correction opened with
+  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they write its French wording as "Coopers (fr)"
+  Then that value's Translate action is unavailable
+  When they edit its English wording to "Cooper's"
+  Then that value's Translate action becomes available
+
+@REQ-MOD-167
+@ui
+Scenario: A value's Translate is unavailable after it translates, until its source is edited again
+  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  Then that value's Translate action is unavailable
+  When they edit that value's English wording again
+  Then that value's Translate action becomes available
+
+@REQ-MOD-168
+@ui
+Scenario: Pressing Translate drafts the other language, still editable, and saves nothing by itself
+  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  Then that value's French field is filled with the translation and remains editable
+  And nothing is saved until they press Save correction
+
+@REQ-MOD-169
+@ui
+Scenario: The direction switch changes which language Translate reads from
+  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  When they open the review-type-ahead-values page
+  And they begin correcting "Test site"
+  Then that value's direction switch translates English to French
+  When they flip that value's direction switch to French to English
+  And they write its French wording as "Site d'essai" and press Translate
+  Then that value's English field is filled with the translation
+
+@REQ-MOD-170
+@ui
+Scenario: Translate is unavailable when the server has no translation provider
+  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server with no translation provider
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  Then that value's Translate action is unavailable and says why
+
+@REQ-MOD-171
+@ui
+Scenario: A failed translation says so on the value's row and drafts nothing
+  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation fails
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  Then that value's row says the translation failed
+  And that value's French field still reads ""
+  And that value's Translate action becomes available
+
+@REQ-MOD-172
+@ui
+Scenario: A translation overtaken by a direction flip is dropped, and Translate stops showing as working
+  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released
+  When they open the review-type-ahead-values page
+  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  And they flip that value's direction switch while the translation is still out
+  And the translation then answers
+  Then its answer is dropped and Translate is no longer shown as working
+
 @REQ-MOD-096
 Scenario Outline: A report's consent reaches the admin view as true, false, or null
   Given a report whose publication consent is <publication> and whose media consent is <media>

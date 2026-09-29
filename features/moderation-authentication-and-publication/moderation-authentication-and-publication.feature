@@ -351,7 +351,7 @@ Scenario: A merged value leaves the queue in place, and a merge target still awa
 # ADR-0144): the correction view reuses the question editor's choice
 # affordance, scoped to the one value being corrected. No new API.
 
-@REQ-MOD-164
+@REQ-MOD-166
 @ui
 Scenario: A value written in both languages offers Translate only once its wording differs from what correction opened with
   Given a signed-in Safety Officer and three type-ahead values flagged for review
@@ -362,7 +362,7 @@ Scenario: A value written in both languages offers Translate only once its wordi
   When they edit its English wording to "Cooper's"
   Then that value's Translate action becomes available
 
-@REQ-MOD-165
+@REQ-MOD-167
 @ui
 Scenario: A value's Translate is unavailable after it translates, until its source is edited again
   Given a signed-in Safety Officer and three type-ahead values flagged for review
@@ -372,7 +372,7 @@ Scenario: A value's Translate is unavailable after it translates, until its sour
   When they edit that value's English wording again
   Then that value's Translate action becomes available
 
-@REQ-MOD-166
+@REQ-MOD-168
 @ui
 Scenario: Pressing Translate drafts the other language, still editable, and saves nothing by itself
   Given a signed-in Safety Officer and three type-ahead values flagged for review
@@ -381,7 +381,7 @@ Scenario: Pressing Translate drafts the other language, still editable, and save
   Then that value's French field is filled with the translation and remains editable
   And nothing is saved until they press Save correction
 
-@REQ-MOD-167
+@REQ-MOD-169
 @ui
 Scenario: The direction switch changes which language Translate reads from
   Given a signed-in Safety Officer and three type-ahead values flagged for review
@@ -392,7 +392,7 @@ Scenario: The direction switch changes which language Translate reads from
   And they write its French wording as "Site d'essai" and press Translate
   Then that value's English field is filled with the translation
 
-@REQ-MOD-168
+@REQ-MOD-170
 @ui
 Scenario: Translate is unavailable when the server has no translation provider
   Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server with no translation provider

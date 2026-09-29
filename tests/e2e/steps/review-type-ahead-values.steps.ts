@@ -133,7 +133,7 @@ Given("a signed-in Safety Officer and three type-ahead values flagged for review
  * Stubs the translation endpoint the same way `manage-questions.steps.ts`
  * does: the prefix makes a translation obviously machine-made, so a scenario
  * asserts a field was filled from the other language rather than the
- * quality of any French (REQ-MOD-164..168, ADR-0141, ADR-0144).
+ * quality of any French (REQ-MOD-166..170, ADR-0141, ADR-0144).
  */
 async function stubTranslation(page: Page, { available = true }: { available?: boolean } = {}) {
 	await page.route("**/api/admin/translate", async (route) => {
@@ -413,7 +413,7 @@ Then(
 	},
 )
 
-// ------------------------ re-translating a value's wording (REQ-MOD-164..168) --
+// ------------------------ re-translating a value's wording (REQ-MOD-166..170) --
 
 // The row currently being corrected. Its heading text stays the value's saved
 // wording — untouched by the draft — for as long as correction is open, the

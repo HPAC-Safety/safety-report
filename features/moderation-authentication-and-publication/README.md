@@ -304,10 +304,24 @@ staff only
 ([ADR-0135](../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 The report view has a **Private attachments** section, newest first. Each
 lists its file name, size, optional description, who added it (**You**, or
-the adder's opaque token subject), and when. Adding a file shows its progress
-and can be cancelled; any reviewer may download any attachment, or remove one
-after confirming (REQ-MOD-115, REQ-MOD-117). A note may refer to one
-(REQ-MOD-116).
+the adder's opaque token subject), and when.
+
+Adding files uses the same dashed drop zone as the reporter form's attachment
+field (#658): dropped or chosen, several at once, each begins uploading the
+moment it is staged, with its own progress and its own Cancel or Remove
+control and description box. Removing a staged, already-uploaded row asks no
+API to erase it; its bytes simply expire by the 15-day quarantine lifecycle
+rule that already governs an unclaimed upload
+([ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
+Cancelling a row still uploading aborts it and erases the mint, as before.
+**Add N attachments** stays disabled until every staged row has settled —
+finished or failed — where N counts only the finished ones; it then claims
+each in turn with its own description. Leaving the report page with staged,
+un-added rows warns, on both a browser close/reload and an in-app navigation
+(#658; a general leave-warning for every form is issue #659, not built here).
+Any reviewer may download any added attachment, or remove one after
+confirming (REQ-MOD-115, REQ-MOD-117, REQ-MOD-164..168). A note may refer to
+one (REQ-MOD-116).
 
 - Any report that is not deleted, in any status, including a report without
   publication consent (REQ-MOD-108). Any file type, up to the configured cap;

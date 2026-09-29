@@ -1,11 +1,14 @@
 import { createBdd } from "playwright-bdd"
-import { expect, type Download, type Page } from "@playwright/test"
+import { expect, type Dialog, type Download, type Page } from "@playwright/test"
 
 const { Given, When, Then } = createBdd()
 
 /*
- * The @ui scenarios for the Private attachments section of the report view,
- * and a private note that refers to one (REQ-MOD-115, REQ-MOD-116, ADR-0135).
+ * The @ui scenarios for the Private attachments section of the report view —
+ * its staging area (issue #658: drop or choose several files, each uploads on
+ * staging, its own description, "Add N attachments"), and a private note that
+ * refers to an already-added attachment (REQ-MOD-115..117, REQ-MOD-164..168,
+ * ADR-0135).
  *
  * The private-attachment endpoints, and the storage URLs they hand out, are
  * stubbed at the network boundary and keep their files in memory, so what is
@@ -40,19 +43,35 @@ interface StubNote {
 const ME = "dev:officer"
 const STORAGE = "/__storage-stub"
 const CONTENT = "Synthetic private attachment content."
+// HpacSafety:Media:PrivateAttachments:MaxByteSize's default (ADR-0135); faked
+// onto a synthetic File's `size` rather than actually built, so the too-large
+// scenario stays fast.
+const PRIVATE_CAP_BYTES = 1024 * 1024 * 1024
 
 const attachmentsByPage = new WeakMap<Page, StubAttachment[]>()
 const downloadsByPage = new WeakMap<Page, Promise<Download>>()
 const slowStorage = new WeakSet<Page>()
+const pendingPutsByPage = new WeakMap<Page, (() => void)[]>()
 const erasedByPage = new WeakMap<Page, string[]>()
 const putsByPage = new WeakMap<Page, { contentType: string | null; size: number }[]>()
+const dialogsByPage = new WeakMap<Page, Dialog>()
 
 async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 	attachmentsByPage.set(page, attachments)
 	const puts: { contentType: string | null; size: number }[] = []
 	putsByPage.set(page, puts)
+	const erased: string[] = []
+	erasedByPage.set(page, erased)
+	pendingPutsByPage.set(page, [])
 	const pending = new Map<string, number>()
 	let sequence = 0
+
+	// A minted-but-unclaimed upload is erased through the reporter upload
+	// route; private uploads share the same quarantine (ADR-0126).
+	await page.route(/\/api\/v1\/uploads\/[^/]+$/, (route) => {
+		erased.push(route.request().url().split("/").pop()!)
+		return route.fulfill({ status: 204, body: "" })
+	})
 
 	await page.route(/\/api\/admin\/reports\/[^/]+\/private-attachments(\/.*)?$/, async (route) => {
 		const request = route.request()
@@ -114,13 +133,17 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 	await page.route(new RegExp(`${STORAGE}/(put|get)/`), async (route) => {
 		const request = route.request()
 		if (request.method() === "PUT" && slowStorage.has(page)) {
-			// Never answers: the upload stays in flight until the page cancels it.
-			return
+			// Held open until a step releases it (or the page aborts it).
+			await new Promise<void>((resolve) => {
+				const waiting = pendingPutsByPage.get(page) ?? []
+				waiting.push(resolve)
+				pendingPutsByPage.set(page, waiting)
+			})
 		}
 
 		if (request.method() === "PUT") {
 			puts.push({ contentType: request.headers()["content-type"] ?? null, size: request.postDataBuffer()?.length ?? 0 })
-			return route.fulfill({ status: 200, body: "" })
+			return route.fulfill({ status: 200, body: "" }).catch(() => {}) // The browser may already have cancelled it.
 		}
 
 		const id = request.url().split("/").pop()
@@ -136,6 +159,12 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 	})
 }
 
+function releasePendingPuts(page: Page) {
+	const waiting = pendingPutsByPage.get(page) ?? []
+	pendingPutsByPage.set(page, [])
+	for (const resolve of waiting) resolve()
+}
+
 function section(page: Page) {
 	return page.getByRole("region", { name: "Private attachments" })
 }
@@ -144,6 +173,18 @@ function attachmentNamed(page: Page, fileName: string) {
 	return section(page).getByRole("list", { name: "Private attachments on this report" }).getByRole("listitem").filter({
 		has: page.locator("[data-private-attachment-name]", { hasText: fileName }),
 	})
+}
+
+function stagingList(page: Page) {
+	return section(page).getByRole("list", { name: "Files being added" })
+}
+
+function stagedRow(page: Page, fileName: string) {
+	return stagingList(page).getByRole("listitem").filter({ hasText: fileName })
+}
+
+function addAllButton(page: Page) {
+	return section(page).getByRole("button", { name: /^Add \d+ attachments?$/ })
 }
 
 Given("the report carries the private attachment {string}", async ({ page }, fileName: string) => {
@@ -188,20 +229,33 @@ Given("the report carries the private attachment {string}", async ({ page }, fil
 	})
 })
 
-When(
-	"the safety officer adds the private attachment {string} with the description {string}",
-	async ({ page }, fileName: string, description: string) => {
-		if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+// --- Staging one file (REQ-MOD-115, REQ-MOD-117) ---
 
-		await section(page).getByLabel("Add a private attachment").setInputFiles({
-			name: fileName,
-			mimeType: "application/zip",
-			buffer: Buffer.from(CONTENT),
-		})
-		await section(page).getByLabel("Description (optional)").fill(description)
-		await section(page).getByRole("button", { name: "Add attachment" }).click()
+When("the safety officer stages the private attachment {string}", async ({ page }, fileName: string) => {
+	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+	await section(page).getByLabel("Add a private attachment").setInputFiles({
+		name: fileName,
+		mimeType: "application/zip",
+		buffer: Buffer.from(CONTENT),
+	})
+})
+
+Then("the staged attachment {string} finishes uploading and offers a description box", async ({ page }, fileName: string) => {
+	const row = stagedRow(page, fileName)
+	await expect(row.getByLabel("Description (optional)")).toBeVisible()
+	await expect(row.getByRole("progressbar")).toHaveCount(0)
+})
+
+When(
+	"the safety officer describes the staged attachment {string} as {string}",
+	async ({ page }, fileName: string, description: string) => {
+		await stagedRow(page, fileName).getByLabel("Description (optional)").fill(description)
 	},
 )
+
+When("the safety officer adds the staged private attachments", async ({ page }) => {
+	await addAllButton(page).click()
+})
 
 Then(
 	"the private attachments section lists {string} with its description, its adder, and when it was added",
@@ -217,7 +271,8 @@ Then(
 		const puts = putsByPage.get(page)!
 		expect(puts).toHaveLength(1)
 		expect(puts[0]).toEqual({ contentType: "application/zip", size: CONTENT.length })
-		await expect(section(page).getByLabel("Description (optional)")).toHaveValue("")
+		// Added: gone from the staging list entirely, not just cleared.
+		await expect(stagingList(page)).toHaveCount(0)
 	},
 )
 
@@ -265,33 +320,172 @@ Then("that private note shows that it refers to {string}", async ({ page }, file
 Given("storage is slow to accept a private attachment", async ({ page }) => {
 	slowStorage.add(page)
 	await stubAttachments(page, [])
-
-	// A minted upload the page gives up on is erased through the reporter upload route.
-	const erased: string[] = []
-	erasedByPage.set(page, erased)
-	await page.route(/\/api\/v1\/uploads\/[^/]+$/, (route) => {
-		erased.push(route.request().url().split("/").pop()!)
-		return route.fulfill({ status: 204, body: "" })
-	})
 })
 
-Then("the private attachments section shows the upload's progress and offers to cancel it", async ({ page }) => {
-	await expect(section(page).getByRole("progressbar", { name: "Upload progress" })).toBeVisible()
-	await expect(section(page).getByRole("button", { name: "Cancel upload" })).toBeVisible()
-	await expect(section(page).getByRole("button", { name: "Add attachment" })).toBeDisabled()
+Then(
+	"the staged attachment {string} shows its upload progress, offers to cancel it, and {string} stays disabled",
+	async ({ page }, fileName: string, buttonLabel: string) => {
+		const row = stagedRow(page, fileName)
+		await expect(row.getByRole("progressbar")).toBeVisible()
+		await expect(row.getByRole("button", { name: `Cancel uploading ${fileName}` })).toBeVisible()
+		await expect(section(page).getByRole("button", { name: buttonLabel })).toBeDisabled()
+	},
+)
+
+When("the safety officer cancels the staged upload {string}", async ({ page }, fileName: string) => {
+	await stagedRow(page, fileName).getByRole("button", { name: `Cancel uploading ${fileName}` }).click()
 })
 
-When("the safety officer cancels the upload", async ({ page }) => {
-	await section(page).getByRole("button", { name: "Cancel upload" }).click()
-})
-
-Then("the private attachments section says the upload was cancelled and lists no attachments", async ({ page }) => {
-	await expect(section(page).getByRole("alert")).toHaveText("The upload was cancelled.")
-	await expect(section(page).getByRole("progressbar")).toHaveCount(0)
-	await expect(section(page).locator("[data-private-attachments-empty]")).toBeVisible()
-	expect(attachmentsByPage.get(page)).toHaveLength(0)
+Then("the staged attachment {string} is gone from the staging list", async ({ page }, fileName: string) => {
+	await expect(stagedRow(page, fileName)).toHaveCount(0)
 })
 
 Then("the cancelled upload is erased", async ({ page }) => {
 	await expect.poll(() => erasedByPage.get(page)!.length).toBe(1)
+})
+
+// --- Several files staged at once (REQ-MOD-164, REQ-MOD-165) ---
+
+/** Builds a DataTransfer carrying synthetic files in the page, as a real drag would. */
+async function filesTransfer(page: Page, names: string[]) {
+	return page.evaluateHandle((fileNames) => {
+		const transfer = new DataTransfer()
+		for (const name of fileNames) transfer.items.add(new File([`synthetic ${name}`], name, { type: "application/octet-stream" }))
+		return transfer
+	}, names)
+}
+
+async function dropOnZone(page: Page, ...names: string[]) {
+	const dataTransfer = await filesTransfer(page, names)
+	const zone = section(page).getByTestId("attachment-drop-zone")
+	for (const type of ["dragenter", "dragover", "drop"]) await zone.dispatchEvent(type, { dataTransfer })
+}
+
+When(
+	/^the safety officer (drops|chooses, through the picker,) the private attachments "([^"]+)" and "([^"]+)" at once$/,
+	async ({ page }, method: string, first: string, second: string) => {
+		if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+		if (method === "drops") {
+			await dropOnZone(page, first, second)
+		} else {
+			await section(page).getByLabel("Add a private attachment").setInputFiles([
+				{ name: first, mimeType: "application/octet-stream", buffer: Buffer.from(`synthetic ${first}`) },
+				{ name: second, mimeType: "application/octet-stream", buffer: Buffer.from(`synthetic ${second}`) },
+			])
+		}
+	},
+)
+
+Then("both staged attachments finish uploading independently, each with its own progress", async ({ page }) => {
+	await expect(stagingList(page).getByLabel("Description (optional)")).toHaveCount(2)
+	await expect(stagingList(page).getByRole("progressbar")).toHaveCount(0)
+})
+
+Then(
+	"the private attachments section lists {string} and {string}, each with its own description",
+	async ({ page }, first: string, second: string) => {
+		for (const name of [first, second]) {
+			const item = attachmentNamed(page, name)
+			await expect(item).toHaveCount(1)
+			await expect(item.locator("[data-private-attachment-description]")).not.toBeEmpty()
+		}
+	},
+)
+
+When("the safety officer removes the staged attachment {string}", async ({ page }, fileName: string) => {
+	await stagedRow(page, fileName).getByRole("button", { name: `Remove ${fileName}` }).click()
+})
+
+Then(
+	"only {string} remains in the staging list, and nothing erases the upload for {string}",
+	async ({ page }, keep: string, removed: string) => {
+		await expect(stagedRow(page, keep)).toHaveCount(1)
+		await expect(stagedRow(page, removed)).toHaveCount(0)
+		expect(erasedByPage.get(page)).toEqual([])
+	},
+)
+
+Then("the private attachments section lists {string} only", async ({ page }, fileName: string) => {
+	await expect(attachmentNamed(page, fileName)).toHaveCount(1)
+	await expect(section(page).getByRole("list", { name: "Private attachments on this report" }).getByRole("listitem")).toHaveCount(1)
+})
+
+// --- A too-large file among several (REQ-MOD-166) ---
+
+When("the safety officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
+	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+	const dataTransfer = await page.evaluateHandle((capBytes) => {
+		const transfer = new DataTransfer()
+		transfer.items.add(new File(["synthetic ordinary content"], "ordinary.pdf", { type: "application/pdf" }))
+		const oversized = new File(["synthetic oversized content"], "oversized.zip", { type: "application/zip" })
+		Object.defineProperty(oversized, "size", { value: capBytes + 1 })
+		transfer.items.add(oversized)
+		return transfer
+	}, PRIVATE_CAP_BYTES)
+	const zone = section(page).getByTestId("attachment-drop-zone")
+	for (const type of ["dragenter", "dragover", "drop"]) await zone.dispatchEvent(type, { dataTransfer })
+})
+
+Then("the too-large attachment's staged row states the private cap and cannot be added", async ({ page }) => {
+	const row = stagedRow(page, "oversized.zip")
+	await expect(row.getByRole("alert")).toContainText("larger than")
+	await expect(row.getByLabel("Description (optional)")).toHaveCount(0)
+})
+
+Then("the ordinary attachment finishes uploading and offers a description box", async ({ page }) => {
+	await expect(stagedRow(page, "ordinary.pdf").getByLabel("Description (optional)")).toBeVisible()
+})
+
+Then("the private attachments section lists only the ordinary attachment", async ({ page }) => {
+	await expect(attachmentNamed(page, "ordinary.pdf")).toHaveCount(1)
+	await expect(section(page).getByRole("list", { name: "Private attachments on this report" }).getByRole("listitem")).toHaveCount(1)
+})
+
+// --- "Add N attachments" disabled until settled (REQ-MOD-167) ---
+
+Then("{string} stays disabled while {string} uploads", async ({ page }, buttonLabel: string, fileName: string) => {
+	await expect(section(page).getByRole("button", { name: buttonLabel })).toBeDisabled()
+	await expect(stagedRow(page, fileName).getByRole("progressbar")).toBeVisible()
+})
+
+When("storage finishes accepting the staged upload", async ({ page }) => {
+	releasePendingPuts(page)
+})
+
+Then("{string} becomes enabled", async ({ page }, buttonLabel: string) => {
+	await expect(section(page).getByRole("button", { name: buttonLabel })).toBeEnabled()
+})
+
+// --- Leaving with staged, un-added uploads warns (REQ-MOD-168) ---
+
+When("the safety officer tries to leave the page by reloading it", async ({ page }) => {
+	const dialog = page.waitForEvent("dialog")
+	page.reload().catch(() => {}) // Navigation is blocked by the dialog until a step answers it.
+	dialogsByPage.set(page, await dialog)
+})
+
+Then("the browser warns before leaving", async ({ page }) => {
+	const dialog = dialogsByPage.get(page)!
+	expect(dialog.type()).toBe("beforeunload")
+	// Declines the reload, so the page (and its staged rows) survive for the
+	// steps that follow.
+	await dialog.dismiss()
+})
+
+When("the safety officer tries to leave the page through a link and declines", async ({ page }) => {
+	page.once("dialog", (dialog) => void dialog.dismiss())
+	await page.getByRole("link", { name: "Back to reports" }).click()
+})
+
+Then("the safety officer stays on the report page", async ({ page }) => {
+	await expect(page).toHaveURL(/\/admin\/reports\/[^/]+$/)
+})
+
+When("the safety officer tries to leave the page through a link and confirms", async ({ page }) => {
+	page.once("dialog", (dialog) => void dialog.accept())
+	await page.getByRole("link", { name: "Back to reports" }).click()
+})
+
+Then("the safety officer leaves the report page", async ({ page }) => {
+	await expect(page).toHaveURL(/\/admin\/reports$/)
 })

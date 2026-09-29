@@ -928,7 +928,7 @@ A private note may refer to a private attachment on its own report only — *Req
 
 ### REQ-MOD-115
 
-A safety officer adds, downloads, and removes a private attachment on the report page — *playwright-bdd, Covered*
+A safety officer stages, describes, adds, downloads, and removes a private attachment on the report page — *playwright-bdd, Covered*
 
 ### REQ-MOD-116
 
@@ -1124,11 +1124,23 @@ A merged value leaves the queue in place, and a merge target still awaiting revi
 
 ### REQ-MOD-164
 
-A published report page offers a same-tab link to its admin detail page for a reviewer — *playwright-bdd, Covered*
+Several private attachments staged at once each upload independently — *playwright-bdd, Covered*
 
 ### REQ-MOD-165
 
-A published report page offers no admin link to a non-reviewer — *playwright-bdd, Covered*
+Removing a staged private attachment before it is added leaves the others staged — *playwright-bdd, Covered*
+
+### REQ-MOD-166
+
+A too-large private attachment is refused on its own row while the others proceed — *playwright-bdd, Covered*
+
+### REQ-MOD-167
+
+"Add N attachments" is disabled until every staged private attachment has settled — *playwright-bdd, Covered*
+
+### REQ-MOD-168
+
+Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
 
 ### REQ-MOD-166
 

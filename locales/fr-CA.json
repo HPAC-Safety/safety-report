@@ -699,14 +699,20 @@
     "loading": "Chargement des pièces jointes privées…",
     "empty": "Il n'y a pas encore de pièces jointes privées.",
     "fileLabel": "Ajouter une pièce jointe privée",
+    "dropPrompt": "#Drag files here, or choose files",
     "limit": "Tout type de fichier, jusqu’à {max}.",
+    "stagedListLabel": "#Files being added",
     "descriptionLabel": "Description (facultative)",
     "descriptionLength": "{count} {max}s caractères",
-    "add": "Ajouter une pièce jointe",
-    "progressLabel": "Progression du téléversement",
+    "addAll": {
+      "one": "#Add 1 attachment",
+      "other": "#Add {count} attachments"
+    },
+    "uploadingNamed": "#Uploading {name}",
     "progress": "Téléversement en cours… {percent}%",
-    "cancel": "Annuler le téléversement",
-    "cancelled": "Le téléversement a été annulé.",
+    "cancelLabel": "#Cancel",
+    "cancelNamed": "#Cancel uploading {name}",
+    "removeStagedNamed": "#Remove {name}",
     "added": "Ajouté par {adder}, {at}",
     "author": {
       "you": "Vous"
@@ -715,6 +721,7 @@
     "remove": "Supprimer",
     "keep": "Conserver",
     "confirmRemove": "Souhaitez-vous supprimer cette pièce jointe? Elle ne pourra pas être récupérée.",
+    "leaveWarning": "#These private attachments have not been added yet. Leaving now will not add them to the report.",
     "error": {
       "load": "Les pièces jointes privées n'ont pas pu être chargées. Veuillez actualiser la page pour réessayer.",
       "upload": "Ce fichier n'a pas pu être ajouté. Veuillez réessayer.",

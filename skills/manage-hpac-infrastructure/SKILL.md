@@ -141,8 +141,9 @@ Lessons from staging's first real release, #613 through #638
 - Provider choice is deferred. Residency matters when it is made:
   `ca-central-1` favors AWS Cognito.
 - **`AUTH_AUTHORITY` is an external dependency, not chosen here.** Until the
-  identity provider exists, public pages and submission can still deploy in
-  either environment, but sign-in, review, and administration cannot work.
+  identity provider exists, the API still starts and serves public pages in
+  either environment (REQ-MOD-156), but every bearer token is refused, so
+  sign-in, filing a report, review, and administration cannot work.
 
 ## Operations
 

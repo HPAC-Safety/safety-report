@@ -12,6 +12,7 @@ using HpacSafety.Infrastructure.Worker;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -117,6 +118,21 @@ if (app.Environment.IsDevelopment())
 	app.MapOpenApi();
 }
 
+// The identity provider is an external dependency not yet chosen (ADR-0064).
+// Outside Development, an empty Authority no longer fails startup — this
+// environment still serves public endpoints, but no bearer token can ever
+// validate here, so sign-in, review, and administration cannot work until an
+// Authority is configured (ADR-0158). Logged once at startup rather than on
+// every refused request, so it never touches request-path logging.
+if (!app.Environment.IsDevelopment())
+{
+	var authenticationOptions = app.Services.GetRequiredService<IOptions<HpacAuthenticationOptions>>().Value;
+	if (string.IsNullOrWhiteSpace(authenticationOptions.Authority))
+	{
+		StartupLog.LogNoAuthorityConfigured(app.Logger, HpacAuthenticationOptions.SectionName);
+	}
+}
+
 // First, and unconditional: an unverified caller's headers — including the
 // forwarded ones trusted next — are never trusted for anything. See
 // ADR-0159.
@@ -140,6 +156,11 @@ await using (var scope = app.Services.CreateAsyncScope())
 // Endpoints are added as features land. See the Foundation and Phase 1
 // milestones, and src/HpacSafety.Api/README.md.
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// The same answer under /api/: CloudFront forwards only /api/* to this
+// function, unchanged, so this is the health route a deployment can reach
+// through the site's own address. The release's smoke test calls it (#647).
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 // Sign-in, and who the caller is. The development token endpoint inside is
 // mapped only in Development.
@@ -190,3 +211,18 @@ await app.RunAsync().ConfigureAwait(false);
 ///     <c>Program</c>, which the factory cannot reach.
 /// </summary>
 public partial class Program;
+
+/// <summary>The one startup-time log message Program.cs's top-level statements need.</summary>
+internal static partial class StartupLog
+{
+	/// <summary>
+	///     Logged once at startup, never on the request path — outside
+	///     Development, with no identity provider configured (ADR-0158).
+	/// </summary>
+	[LoggerMessage(
+		Level = LogLevel.Warning,
+		Message = "{Section}:Authority is empty. This environment will start and serve its public endpoints, "
+			+ "but no bearer token can validate — sign-in, review, and administration cannot work here until "
+			+ "an identity provider is configured. See ADR-0158.")]
+	public static partial void LogNoAuthorityConfigured(ILogger logger, string section);
+}

@@ -147,6 +147,27 @@ public static class BootedApi
 	}
 
 	/// <summary>
+	///     A host that is not in Development and has no identity provider
+	///     configured at all — the environment ADR-0158 describes: it still
+	///     starts and serves its public endpoints, but no bearer token can ever
+	///     validate. See REQ-MOD-156 and issue #647.
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> ProductionShapedWithNoAuthority()
+	{
+		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		{
+			builder.UseEnvironment("Production");
+
+			// Deliberately no HpacSafety:Authentication:Authority setting.
+
+			// Outside Development the origin-secret check is still required to
+			// start at all (ADR-0159) — that boundary is independent of the
+			// identity-provider one this scenario is about.
+			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", ProductionOriginSecret);
+		});
+	}
+
+	/// <summary>
 	///     A host whose clock stands still at <paramref name="now" />, otherwise
 	///     identical to <see cref="Factory" />, so a scenario judges "today" at the
 	///     same instant the API does (REQ-SUB-108, REQ-SUB-109, ADR-0138).

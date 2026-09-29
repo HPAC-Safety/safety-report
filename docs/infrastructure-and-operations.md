@@ -257,8 +257,9 @@ address
 ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 The identity provider is an external dependency this ADR does not choose
 (ADR-0064): until `AUTH_AUTHORITY` is set for an environment, that
-environment can still deploy public pages and submission, but sign-in,
-review, and administration cannot work there.
+environment still starts and serves its public pages and public API
+(REQ-MOD-156), but sign-in, filing a report (member-only, ADR-0067), review,
+and administration cannot work there.
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 

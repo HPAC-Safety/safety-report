@@ -17,7 +17,11 @@ public sealed class HpacAuthenticationOptions
 
 	/// <summary>
 	///     The identity provider's issuer URL. Used to discover its signing keys,
-	///     and required outside Development.
+	///     outside Development. Left unset, an environment still starts and serves
+	///     its public endpoints, but validates no bearer token — sign-in, review,
+	///     and administration cannot work there until it is set (ADR-0158). The
+	///     identity provider is an external dependency, not yet chosen
+	///     (ADR-0064).
 	/// </summary>
 	public string? Authority { get; set; }
 

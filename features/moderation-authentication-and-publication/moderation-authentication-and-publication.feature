@@ -213,6 +213,14 @@ Scenario: Every operation is authorized by the API, not just the UI
   When the API processes the request
   Then the API rejects the operation regardless of what the UI would have shown
 
+@REQ-MOD-156
+Scenario: An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token
+  Given the API is not running in development and no identity provider is configured
+  When the health endpoint is requested
+  Then the API answers 200
+  When a request carrying a bearer token reaches an authorization-protected endpoint
+  Then the API refuses it before the handler runs
+
 @REQ-MOD-025
 @ignore
 Scenario: User capabilities

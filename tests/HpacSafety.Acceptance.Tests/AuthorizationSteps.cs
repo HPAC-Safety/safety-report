@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
@@ -29,6 +30,7 @@ public sealed class AuthorizationSteps
 
 	private static readonly Uri Questions = new("/api/admin/questions", UriKind.Relative);
 	private static readonly Uri DevelopmentToken = new("/api/auth/token", UriKind.Relative);
+	private static readonly Uri Health = new("/health", UriKind.Relative);
 
 	private HttpClient? _client;
 	private bool _productionShaped;
@@ -43,6 +45,36 @@ public sealed class AuthorizationSteps
 		_client = host.CreateClient();
 		_client.DefaultRequestHeaders.Add(BootedApi.ProductionOriginSecretHeader, BootedApi.ProductionOriginSecret);
 		_productionShaped = true;
+	}
+
+	[Given(@"the API is not running in development and no identity provider is configured")]
+	public async Task GivenProductionShapedHostWithNoAuthority()
+	{
+		var host = await BootedApi.ProductionShapedWithNoAuthority();
+		_client = host.CreateClient();
+		_client.DefaultRequestHeaders.Add(BootedApi.ProductionOriginSecretHeader, BootedApi.ProductionOriginSecret);
+		_productionShaped = true;
+	}
+
+	[When(@"the health endpoint is requested")]
+	public async Task WhenHealthEndpointIsRequested()
+	{
+		_response = await _client!.GetAsync(Health);
+	}
+
+	[Then(@"the API answers 200")]
+	public void ThenApiAnswers200()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
+	[When(@"a request carrying a bearer token reaches an authorization-protected endpoint")]
+	public async Task WhenBearerTokenReachesProtectedEndpoint()
+	{
+		// Any bearer token — not a real one. Nothing outside Development with
+		// no Authority configured can validate any token, forged or genuine.
+		_client!.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "any-bearer-token-value");
+		_response = await _client.GetAsync(Questions);
 	}
 
 	[Given(@"a request carries no bearer token")]

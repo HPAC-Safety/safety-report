@@ -23,10 +23,15 @@ public static class AuthenticationServiceCollectionExtensions
 	/// </param>
 	/// <returns>The same collection.</returns>
 	/// <exception cref="InvalidOperationException">
-	///     When the configuration cannot produce a host that validates anything: no
-	///     development signing key, a key too short to sign safely, or no authority
-	///     outside Development. Failing at startup is the point — a host that
-	///     silently accepts nothing, or silently accepts everything, is worse.
+	///     When Development cannot produce a host that validates anything: no
+	///     development signing key, or a key too short to sign safely. Outside
+	///     Development, a missing <see cref="HpacAuthenticationOptions.Authority" />
+	///     no longer throws — the identity provider is an external dependency not
+	///     yet chosen (ADR-0064), and an environment without one still starts and
+	///     serves its public endpoints; only sign-in, review, and administration
+	///     cannot work there (ADR-0158). The host instead registers a bearer scheme
+	///     that can never validate a token: no authority, no signing keys, and an
+	///     issuer no real token will ever carry.
 	/// </exception>
 	public static IServiceCollection AddHpacSafetyAuthentication(
 		this IServiceCollection services,
@@ -135,13 +140,25 @@ public static class AuthenticationServiceCollectionExtensions
 		return Common(options, DevelopmentTokenIssuer.IssuerName, DevelopmentTokenIssuer.KeyFrom(options.DevelopmentSigningKey));
 	}
 
+	/// <summary>
+	///     No real token will ever carry this issuer, so <see cref="Common" />'s
+	///     <c>ValidIssuer</c> match can never succeed when no authority is
+	///     configured. See <see cref="ProviderParameters" /> and ADR-0158.
+	/// </summary>
+	private const string NoAuthorityIssuer = "urn:hpac-safety:no-identity-provider-configured";
+
 	private static TokenValidationParameters ProviderParameters(HpacAuthenticationOptions options)
 	{
 		if (string.IsNullOrWhiteSpace(options.Authority))
 		{
-			throw new InvalidOperationException(
-				$"{HpacAuthenticationOptions.SectionName}:Authority is required outside Development. "
-				+ "Without it there are no signing keys to validate against.");
+			// The identity provider is an external dependency not yet chosen
+			// (ADR-0064). Until it is, this environment still starts and serves
+			// its public endpoints; only sign-in, review, and administration
+			// cannot work here (ADR-0158). Refuse every token rather than fail
+			// to start: no signing keys are ever resolvable, and the sentinel
+			// issuer above matches nothing a real provider or the development
+			// issuer would ever emit.
+			return Common(options, NoAuthorityIssuer, null, noKeysCanEverResolve: true);
 		}
 
 		// No IssuerSigningKey: the authority's published keys are fetched and
@@ -152,9 +169,10 @@ public static class AuthenticationServiceCollectionExtensions
 	private static TokenValidationParameters Common(
 		HpacAuthenticationOptions options,
 		string issuer,
-		SecurityKey? signingKey)
+		SecurityKey? signingKey,
+		bool noKeysCanEverResolve = false)
 	{
-		return new TokenValidationParameters
+		var parameters = new TokenValidationParameters
 		{
 			ValidateIssuer = true,
 			ValidIssuer = issuer,
@@ -175,6 +193,16 @@ public static class AuthenticationServiceCollectionExtensions
 			RoleClaimType = options.RoleClaimType,
 			NameClaimType = ClaimTypes.NameIdentifier,
 		};
+
+		if (noKeysCanEverResolve)
+		{
+			// Belt and braces alongside the sentinel issuer above: even if a
+			// caller somehow forged a token naming that issuer, there is still
+			// no key this resolver will ever hand back to verify its signature.
+			parameters.IssuerSigningKeyResolver = (_, _, _, _) => [];
+		}
+
+		return parameters;
 	}
 
 	/// <summary>

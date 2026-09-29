@@ -123,6 +123,32 @@ jobs:
           -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
           -backend-config="key=${{ inputs.state_key }}"
 
+      # An apply that fails after AWS has created a resource leaves it
+      # tainted, and Terraform then plans to destroy and recreate it. For a
+      # resource carrying prevent_destroy (the database, the uploads bucket,
+      # the log groups, the secrets) that plan is refused, so every later
+      # release would stop here until someone untainted it by hand (#640).
+      # Untaint only those; the apply below then brings each one to its
+      # configuration in place. Any other tainted resource is still replaced.
+      - name: Untaint resources that must never be replaced
+        run: |
+          set -euo pipefail
+          # Addresses of every resource block with prevent_destroy = true,
+          # read from the configuration itself so the list cannot drift.
+          protected=$(awk '
+            /^resource "/ { gsub(/"/, "", $2); gsub(/"/, "", $3); addr = $2 "." $3 }
+            /prevent_destroy *= *true/ { print addr }
+          ' infra/*.tf | sort -u)
+          tainted=$(terraform -chdir=infra show -json \
+            | jq -r '.values.root_module.resources[]? | select(.tainted == true) | .address')
+          for address in $tainted; do
+            base=${address%%[*}
+            if grep -qx "$base" <<<"$protected"; then
+              echo "Untainting $address (prevent_destroy)."
+              terraform -chdir=infra untaint "$address"
+            fi
+          done
+
       # A Lambda function is created from an image that must already be in
       # ECR (CreateFunction refuses a missing one), so on an account's first
       # release the registries come first, then the images, then everything

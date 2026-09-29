@@ -88,7 +88,8 @@ today's Terraform differs" below for exactly what is still scaffolding.
 3. **`staging`** (GitHub environment `hpac-safety-staging`, no required reviewer)
    loads those same artifacts, creates the ECR repositories if they are
    missing, pushes the images to them (a Lambda function cannot be created
-   from an image ECR does not yet hold, #623), runs
+   from an image ECR does not yet hold, #623), untaints any resource carrying
+   `prevent_destroy` that a failed apply left tainted (#640), runs
    `terraform apply -var-file=infra/staging.tfvars`, re-plans and fails the job
    on drift, replaces the NAT instance, refreshes `GEMINI_API_KEY`/`DEEPL_API_KEY` in
    staging's Secrets Manager, updates both Lambda functions to the pushed

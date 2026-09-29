@@ -316,12 +316,15 @@ rule that already governs an unclaimed upload
 Cancelling a row still uploading aborts it and erases the mint, as before.
 **Add N attachments** stays disabled until every staged row has settled —
 finished or failed — where N counts only the finished ones; it then claims
-each in turn with its own description. Leaving the report page with staged,
-un-added rows warns, on both a browser close/reload and an in-app navigation
-(#658; a general leave-warning for every form is issue #659, not built here).
-Any reviewer may download any added attachment, or remove one after
-confirming (REQ-MOD-115, REQ-MOD-117, REQ-MOD-173..177). A note may refer to
-one (REQ-MOD-116).
+each in turn with its own description, and while it runs each staged row's
+Remove and description are locked, so what is added is exactly what was
+shown (#674). Leaving the report page while an upload is staged but not yet
+added warns, on both a browser close/reload and an in-app navigation; a list
+holding only refused files has nothing to lose and does not warn (#658, #674;
+a general leave-warning for every form is issue #659, not built here). Any
+reviewer may download any added attachment, or remove one after confirming
+(REQ-MOD-115, REQ-MOD-117, REQ-MOD-173..177, REQ-MOD-180..181). A note may
+refer to one (REQ-MOD-116).
 
 - Any report that is not deleted, in any status, including a report without
   publication consent (REQ-MOD-108). Any file type, up to the configured cap;

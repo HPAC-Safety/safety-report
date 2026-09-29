@@ -1547,6 +1547,29 @@ Scenario: Leaving the report page with staged, un-added private attachments warn
   When the safety officer tries to leave the page through a link and confirms
   Then the safety officer leaves the report page
 
+@REQ-MOD-180
+@ui
+Scenario: A staged private attachment cannot be removed or re-described while it is being added
+  Given a safety officer is signed in and a pending report exists
+  And the report is slow to accept a private attachment
+  When the safety officer opens that report
+  And the safety officer stages the private attachment "held.pdf"
+  Then the staged attachment "held.pdf" finishes uploading and offers a description box
+  When the safety officer adds the staged private attachments
+  Then the staged attachment "held.pdf" can be neither removed nor re-described while it is added
+  When the report finishes accepting the private attachment
+  Then the private attachments section lists "held.pdf" only
+
+@REQ-MOD-181
+@ui
+Scenario: Leaving the report page with only refused private attachments staged does not warn
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer drops only a private attachment larger than the private cap
+  Then the too-large attachment's staged row states the private cap and cannot be added
+  When the safety officer reloads the report page
+  Then the page reloads without warning, and the refused row is gone
+
 @REQ-MOD-140
 Scenario: Search matches the approved published summary in the visitor's site language
   Given a published report whose English summary says "The pilot landed in a field."

@@ -569,6 +569,7 @@
     "empty": "Aucun signalement de sécurité n'a encore été publié.",
     "error": "Les signalements publiés n'ont pas pu être chargés. Veuillez réessayer.",
     "publishedAt": "Publié le {at}",
+    "adminPage": "#Open the admin report",
     "read": "Lisez le signalement complet",
     "back": "Retour aux signalements de sécurité",
     "loadingOne": "Chargement du signalement…",

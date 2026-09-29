@@ -1,5 +1,6 @@
 import { createBdd } from "playwright-bdd"
 import { expect, type Page } from "@playwright/test"
+import { signInAs, stubAuth, type Role } from "./auth"
 
 const { Given, When, Then } = createBdd()
 
@@ -382,4 +383,49 @@ Then("the search box is empty and the full feed is shown again", async ({ page }
 	await expect(searchBox(page)).toHaveValue("")
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
 	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toBeVisible()
+})
+
+// ── Admin link from a published report's page (issue no. 657, REQ-MOD-164/165) ──
+
+const ADMIN_LINK_ROLES: Record<string, Role> = {
+	Administrator: "administrator",
+	SafetyOfficer: "safety_officer",
+	User: "user",
+}
+
+Given(
+	/^(?:a signed-in (Administrator|SafetyOfficer|User)|a signed-out visitor) visits a published report's page$/,
+	async ({ page }, roleLabel?: string) => {
+		await stubFeed(page)
+
+		if (roleLabel) {
+			await signInAs(page, ADMIN_LINK_ROLES[roleLabel])
+		} else {
+			await stubAuth(page)
+		}
+
+		await page.goto(`/reports/${FIRST.id}`)
+	},
+)
+
+function adminLink(page: Page) {
+	return page.locator("[data-admin-link]")
+}
+
+Then("the page offers a link to that report's admin detail page", async ({ page }) => {
+	await expect(adminLink(page)).toBeVisible()
+	await expect(adminLink(page)).toHaveAttribute("href", `/admin/reports/${FIRST.id}`)
+})
+
+When("the visitor activates that link", async ({ page }) => {
+	await adminLink(page).click()
+})
+
+Then("the browser opens the report's admin detail page, in the same tab", async ({ page, context }) => {
+	await expect(page).toHaveURL(new RegExp(`/admin/reports/${FIRST.id}$`))
+	expect(context.pages()).toHaveLength(1)
+})
+
+Then("the page offers no link to the admin detail page", async ({ page }) => {
+	await expect(adminLink(page)).toHaveCount(0)
 })

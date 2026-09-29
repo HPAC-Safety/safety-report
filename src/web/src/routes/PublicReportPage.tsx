@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
+import { useAuth } from "../auth/useAuth"
 import { AttachmentStrip } from "../components/AttachmentStrip"
 import { ReportComments } from "../components/ReportComments"
 import { fetchPublicReport, PublicReportNotFound, summaryIn, type PublicReportDetail } from "../api/publicReports"
@@ -13,11 +14,16 @@ type Loaded = { state: "loading" } | { state: "ready"; report: PublicReportDetai
  * in the site's language, which the header's language toggle chooses; the page
  * has no language control of its own (REQ-WLD-019). A report that is not public gets the same "not found" as one
  * that never existed (REQ-MOD-081). Its photos and video, when the reporter
- * agreed to share them, follow the summary (ADR-0117).
+ * agreed to share them, follow the summary (ADR-0117). A signed-in
+ * Administrator or Safety Officer sees a same-tab link to this report's admin
+ * detail page, next to the published date; the public payload carries nothing
+ * for it — only the token's role decides (REQ-MOD-164, REQ-MOD-165).
  */
 export function PublicReportPage() {
 	const { t, locale } = useLocale()
 	const { reportId = "" } = useParams()
+	const { isSignedIn, role } = useAuth()
+	const isReviewer = isSignedIn && role !== "user"
 	const [loaded, setLoaded] = useState<Loaded>({ state: "loading" })
 
 	const load = useCallback((showLoading: boolean) => {
@@ -61,6 +67,15 @@ export function PublicReportPage() {
 					<p className="mt-2 font-sans text-sm text-ink-muted">
 						{t("feed.publishedAt", { at: published.format(new Date(loaded.report.publishedAt)) })}
 					</p>
+					{isReviewer && (
+						<Link
+							to={`/admin/reports/${loaded.report.id}`}
+							className="mt-1 inline-block font-sans text-sm text-ink underline"
+							data-admin-link
+						>
+							{t("feed.adminPage")}
+						</Link>
+					)}
 					<p lang={locale} data-summary={locale} className="mt-6 whitespace-pre-line font-sans text-lg text-ink">
 						{summaryIn(loaded.report, locale)}
 					</p>

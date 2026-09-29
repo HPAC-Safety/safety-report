@@ -7,7 +7,7 @@ const { Given, When, Then } = createBdd()
  * The @ui scenarios for the Private attachments section of the report view —
  * its staging area (issue #658: drop or choose several files, each uploads on
  * staging, its own description, "Add N attachments"), and a private note that
- * refers to an already-added attachment (REQ-MOD-115..117, REQ-MOD-169..173,
+ * refers to an already-added attachment (REQ-MOD-115..117, REQ-MOD-173..177,
  * ADR-0135).
  *
  * The private-attachment endpoints, and the storage URLs they hand out, are
@@ -344,7 +344,7 @@ Then("the cancelled upload is erased", async ({ page }) => {
 	await expect.poll(() => erasedByPage.get(page)!.length).toBe(1)
 })
 
-// --- Several files staged at once (REQ-MOD-169, REQ-MOD-170) ---
+// --- Several files staged at once (REQ-MOD-173, REQ-MOD-174) ---
 
 /** Builds a DataTransfer carrying synthetic files in the page, as a real drag would. */
 async function filesTransfer(page: Page, names: string[]) {
@@ -410,7 +410,7 @@ Then("the private attachments section lists {string} only", async ({ page }, fil
 	await expect(section(page).getByRole("list", { name: "Private attachments on this report" }).getByRole("listitem")).toHaveCount(1)
 })
 
-// --- A too-large file among several (REQ-MOD-171) ---
+// --- A too-large file among several (REQ-MOD-175) ---
 
 When("the safety officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
 	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
@@ -441,7 +441,7 @@ Then("the private attachments section lists only the ordinary attachment", async
 	await expect(section(page).getByRole("list", { name: "Private attachments on this report" }).getByRole("listitem")).toHaveCount(1)
 })
 
-// --- "Add N attachments" disabled until settled (REQ-MOD-172) ---
+// --- "Add N attachments" disabled until settled (REQ-MOD-176) ---
 
 Then("{string} stays disabled while {string} uploads", async ({ page }, buttonLabel: string, fileName: string) => {
 	await expect(section(page).getByRole("button", { name: buttonLabel })).toBeDisabled()
@@ -456,7 +456,7 @@ Then("{string} becomes enabled", async ({ page }, buttonLabel: string) => {
 	await expect(section(page).getByRole("button", { name: buttonLabel })).toBeEnabled()
 })
 
-// --- Leaving with staged, un-added uploads warns (REQ-MOD-173) ---
+// --- Leaving with staged, un-added uploads warns (REQ-MOD-177) ---
 
 When("the safety officer tries to leave the page by reloading it", async ({ page }) => {
 	const dialog = page.waitForEvent("dialog")

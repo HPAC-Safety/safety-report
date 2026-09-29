@@ -1122,23 +1122,23 @@ Approving, correcting, removing, merging, and relinking a value keeps the review
 
 A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count — *playwright-bdd, Covered*
 
-### REQ-MOD-169
+### REQ-MOD-173
 
 Several private attachments staged at once each upload independently — *playwright-bdd, Covered*
 
-### REQ-MOD-170
+### REQ-MOD-174
 
 Removing a staged private attachment before it is added leaves the others staged — *playwright-bdd, Covered*
 
-### REQ-MOD-171
+### REQ-MOD-175
 
 A too-large private attachment is refused on its own row while the others proceed — *playwright-bdd, Covered*
 
-### REQ-MOD-172
+### REQ-MOD-176
 
 "Add N attachments" is disabled until every staged private attachment has settled — *playwright-bdd, Covered*
 
-### REQ-MOD-173
+### REQ-MOD-177
 
 Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
 

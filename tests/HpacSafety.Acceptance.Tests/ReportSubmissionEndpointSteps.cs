@@ -431,25 +431,24 @@ public sealed class ReportSubmissionEndpointSteps
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var (narrative, select) = await SubmittedNarrativeAndSelectAnswers();
 
-		// The only endpoint that ever writes to an answer row is the translation
-		// queue's PUT, and its request/response shape carries one field: the
-		// translated value. There is no route, admin or otherwise, whose body
-		// could reach the reporter's own value, choice, or locale.
+		// There is no route, admin or otherwise, that writes to an answer row
+		// anymore: the one endpoint that ever did — the translation queue's
+		// PUT — is gone entirely (ADR-0173), and every request to its old path
+		// now falls through to a plain 404, like any other unmapped route.
 		using var put = await _admin.PutAsJsonAsync(
 			new Uri($"/api/admin/answers/{narrative.Id}/translation", UriKind.Relative),
 			new { value = "Le vent s'est levé (admin)" });
-		put.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		put.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 
-		// A choice answer has no translation of its own to write (ADR-0128).
-		using var refused = await _admin.PutAsJsonAsync(
+		using var otherPut = await _admin.PutAsJsonAsync(
 			new Uri($"/api/admin/answers/{select.Id}/translation", UriKind.Relative),
 			new { value = "Bleu (admin)" });
-		refused.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		otherPut.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 
 		var (storedNarrative, storedSelect) = await SubmittedNarrativeAndSelectAnswers();
 		storedNarrative.Value.ShouldBe(Narrative);
 		storedNarrative.Locale.ShouldBe(Locale.EnCa);
-		storedNarrative.TranslatedValue.ShouldBe("Le vent s'est levé (admin)");
+		storedNarrative.TranslatedValue.ShouldBeNull();
 		storedSelect.ChoiceId.ShouldBe(TinyId.Parse(_selectedChoiceId!));
 		storedSelect.Value.ShouldBeNull();
 		storedSelect.Locale.ShouldBe(Locale.EnCa);
@@ -552,32 +551,57 @@ public sealed class ReportSubmissionEndpointSteps
 		_answerId = answer.Id.ToString();
 	}
 
-	[When(@"an administrator supplies or corrects that answer's translated value")]
-	public async Task WhenAnAdministratorSuppliesOrCorrectsTheTranslatedValue()
+	private string? _refusalMessage;
+
+	[When(@"the Worker's translator attempts to supply that answer's translation again")]
+	public async Task WhenTheWorkersTranslatorAttemptsToSupplyTheTranslationAgain()
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var answer = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
+
+		try
+		{
+			answer.SupplyAutoTranslation("A second, unwanted translation.");
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			_refusalMessage = cause.Message;
+		}
+	}
+
+	[Then(@"the domain refuses it")]
+	public void ThenTheDomainRefusesIt()
+	{
+		_refusalMessage.ShouldNotBeNull();
+	}
+
+	[Then(@"the stored translated value is unchanged")]
+	public async Task ThenTheStoredTranslatedValueIsUnchanged()
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
+		stored.TranslatedValue.ShouldBe("Le vent s'est levé en finale (auto).");
+		stored.TranslationSource.ShouldBe(TranslationSource.Auto);
+	}
+
+	[Then(@"no endpoint accepts a human-supplied translation for it")]
+	public async Task ThenNoEndpointAcceptsAHumanSuppliedTranslation()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		using var put = await _admin.PutAsJsonAsync(
 			new Uri($"/api/admin/answers/{_answerId}/translation", UriKind.Relative),
 			new { value = "Bleu (humain)" });
-		put.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		put.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Then(@"the stored translated value is the administrator's")]
-	public async Task ThenTheStoredTranslatedValueIsTheAdministrators()
+	[Then(@"no endpoint lists answers waiting for one")]
+	public async Task ThenNoEndpointListsAnswersWaitingForOne()
 	{
-		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
-		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
-		stored.TranslatedValue.ShouldBe("Bleu (humain)");
-	}
-
-	[Then(@"the translation source is marked ""human""")]
-	public async Task ThenTheTranslationSourceIsMarkedHuman()
-	{
-		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
-		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
-		stored.TranslationSource.ShouldBe(TranslationSource.Human);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var get = await _admin.GetAsync(new Uri("/api/admin/answers/awaiting-translation", UriKind.Relative));
+		get.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
 	// --- The API rejects a malformed submission DTO (outline) ---

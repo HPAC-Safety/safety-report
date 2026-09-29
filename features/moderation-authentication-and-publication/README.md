@@ -225,19 +225,19 @@ reload the list
 
 The Admin menu shows how much work is waiting, so a reviewer sees it without
 opening each page. **Manage reports** carries the number of reports the
-*Needs action* filter lists, and **Answers awaiting translation** carries the
-number of answers in that queue. That second number is only for an
-administrator, since the queue is theirs alone. The closed **Admin** button
-carries the total of the counts the member can see. A count of zero shows no
-badge. The badge is a filled brand-red pill
-([design system](../../docs/design-system.md)).
+*Needs action* filter lists, and **Type-ahead values to review** carries the
+number in that queue. The closed **Admin** button carries the total of the
+counts the member can see. A count of zero shows no badge. The badge is a
+filled brand-red pill ([design system](../../docs/design-system.md)).
 
-`GET /api/admin/counts` answers any reviewer. It gives the translation count
-only to an administrator and carries no report content, so it is not
-audited. The counts are read from the same database views as the list and the
-queue, so they cannot disagree with them
-([REQ-MOD-084..089](moderation-authentication-and-publication.feature)). The
-menu refetches on each navigation.
+`GET /api/admin/counts` answers any reviewer, and carries no report content,
+so it is not audited. It still gives an Administrator the number of answers
+waiting for the Worker's automatic translation
+([REQ-MOD-084..086](moderation-authentication-and-publication.feature)), an
+operational signal only — there is no page or nav option to act on it, since
+nothing but the Worker ever fills that second language (ADR-0173). The counts
+are read from the same database views as the list and the queue, so they
+cannot disagree with them. The menu refetches on each navigation.
 
 ## Review actions
 

@@ -29,9 +29,10 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         when it is recorded (<see cref="TranslationMode" />, ADR-0112): a choice
 ///         answer reads its choice's other label (<see cref="TranslationSource.Choice" />);
 ///         free text marked for translation is filled later, off the submission
-///         path, mechanically by the Worker (<see cref="TranslationSource.Auto" />) or
-///         by an administrator (<see cref="TranslationSource.Human" />); and anything
-///         else never has one. See ADR-0080.
+///         path, mechanically by the Worker, exactly once
+///         (<see cref="TranslationSource.Auto" />) — nothing else ever writes or
+///         overwrites it (ADR-0173); and anything else never has one. See
+///         ADR-0080.
 ///     </para>
 ///     <para>
 ///         A select answer stored before ADR-0128 keeps the label it copied in
@@ -439,28 +440,13 @@ public class ReportAnswer
 	}
 
 	/// <summary>
-	///     Supplies the second language of this answer, mechanically. The reporter's
-	///     own <see cref="Value" /> is never touched — this fills the language they
-	///     did not answer in.
+	///     Supplies the second language of this answer, mechanically, once. The
+	///     reporter's own <see cref="Value" /> is never touched — this fills the
+	///     language they did not answer in. Nothing may overwrite it afterward: the
+	///     Worker is the only writer, and it writes an answer's second language
+	///     exactly once (ADR-0173).
 	/// </summary>
 	public void SupplyAutoTranslation(string translated)
-	{
-		SupplyTranslation(translated, Reporting.TranslationSource.Auto);
-	}
-
-	/// <summary>
-	///     Supplies or corrects the second language of this answer by hand. Unlike the
-	///     automatic path, an administrator may overwrite an existing translation —
-	///     including one the Worker already produced.
-	/// </summary>
-	public void SupplyHumanTranslation(string translated)
-	{
-		SupplyTranslation(translated, Reporting.TranslationSource.Human, allowOverwrite: true);
-	}
-
-	private void SupplyTranslation(string translated,
-								   Reporting.TranslationSource source,
-								   bool allowOverwrite = false)
 	{
 		if (ChoiceId is not null)
 		{
@@ -478,10 +464,9 @@ public class ReportAnswer
 			throw new DomainRuleViolationException("A skipped answer has nothing to translate.");
 		}
 
-		if (TranslatedValue is not null
-			&& !allowOverwrite)
+		if (TranslatedValue is not null)
 		{
-			throw new DomainRuleViolationException("This answer already has a translation.");
+			throw new DomainRuleViolationException("This answer already has a translation. See ADR-0173.");
 		}
 
 		if (string.IsNullOrWhiteSpace(translated))
@@ -490,7 +475,7 @@ public class ReportAnswer
 		}
 
 		TranslatedValue = translated;
-		TranslationSource = source;
+		TranslationSource = Reporting.TranslationSource.Auto;
 	}
 
 	/// <summary>Stamps this answer deleted, as part of its report's soft deletion (REQ-DOM-007).</summary>

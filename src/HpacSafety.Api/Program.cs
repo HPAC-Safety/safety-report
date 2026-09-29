@@ -211,7 +211,6 @@ app.MapReportSubmission();
 // (ADR-0016). These are the endpoints that edit it.
 app.MapAdminQuestions();
 app.MapAdminTranslation();
-app.MapAdminAnswerTranslation();
 app.MapAdminTypeformImport();
 
 // Soft deletion (issue #82). The review queue itself is issue #25.

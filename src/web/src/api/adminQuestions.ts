@@ -268,42 +268,6 @@ export function translate(texts: string[], from: string, to: string): Promise<{ 
 	})
 }
 
-/** One answer waiting for an administrator to supply its second language. */
-export interface AwaitingTranslationView {
-	id: string
-	questionKey: string
-	value: string
-	locale: string
-	into: string
-}
-
-/**
- * The answers waiting for a second official language.
- *
- * A reporter answers a picker or a type-ahead in one language and nothing on
- * the submission path translates it (ADR-0072). This is the queue where an
- * administrator supplies the other one.
- */
-export function listAnswersAwaitingTranslation(): Promise<{
-	answers: AwaitingTranslationView[]
-	waiting: number
-}> {
-	return call<{ answers: AwaitingTranslationView[]; waiting: number }>(
-		"/api/admin/answers/awaiting-translation",
-	)
-}
-
-/**
- * Supplies an answer's second language. The reporter's own value is never
- * changed — this fills the language they did not answer in.
- */
-export function supplyAnswerTranslation(id: string, value: string): Promise<void> {
-	return call<void>(`/api/admin/answers/${id}/translation`, {
-		method: "PUT",
-		body: JSON.stringify({ value }),
-	})
-}
-
 /**
  * One type-ahead value waiting for a Safety Officer or Administrator to
  * review (ADR-0129): added by a reporter, or a removed one a reporter typed

@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
 using Shouldly;
 
@@ -18,7 +21,6 @@ public sealed class PendingCountSteps
 {
 	private static readonly Uri Counts = new("/api/admin/counts", UriKind.Relative);
 	private static readonly Uri NeedsAction = new("/api/admin/reports?filter=needs-action", UriKind.Relative);
-	private static readonly Uri AwaitingTranslation = new("/api/admin/answers/awaiting-translation", UriKind.Relative);
 	private static readonly Uri Submit = new("/api/v1/reports", UriKind.Relative);
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -97,6 +99,20 @@ public sealed class PendingCountSteps
 	}
 
 	/// <summary>
+	///     There is no admin endpoint or page for this queue anymore (ADR-0173):
+	///     only the Worker ever fills an answer's second language. This reads the
+	///     same <c>answers_awaiting_translation</c> view the count itself reads,
+	///     straight from the database, as the removed queue endpoint once did.
+	/// </summary>
+	private static async Task<int> CountAwaitingTranslation(HttpClient client)
+	{
+		_ = client;
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		return await database.AnswersAwaitingTranslation.CountAsync();
+	}
+
+	/// <summary>
 	///     The full count of reports the Needs action filter lists, following
 	///     every keyset page rather than reading only the first (REQ-MOD-129) —
 	///     the shared database this suite runs against can easily hold more than
@@ -116,12 +132,6 @@ public sealed class PendingCountSteps
 		} while (after is not null);
 
 		return total;
-	}
-
-	private static async Task<int> CountAwaitingTranslation(HttpClient client)
-	{
-		var queue = await client.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
-		return queue.GetProperty("answers").GetArrayLength();
 	}
 
 	[Then(@"the API refuses the pending counts with 403")]

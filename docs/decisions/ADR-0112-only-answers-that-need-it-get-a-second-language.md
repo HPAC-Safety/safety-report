@@ -25,7 +25,11 @@ each answer. Amends
 [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md):
 not every answer is machine-translated, and a select answer's second language
 is no longer machine-made. Amends the product invariant that "there is no
-answer type this ever skips".
+answer type this ever skips". **Amended by
+[ADR-0173](ADR-0173-an-answers-second-language-is-written-once-by-the-worker-only.md):**
+the `machine` mode's second writer — an administrator correcting or supplying
+`value_translated` by hand — is removed. Only the Worker writes it, and only
+once.
 
 ## Context
 

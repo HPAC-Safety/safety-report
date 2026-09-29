@@ -27,7 +27,6 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	private static readonly Uri Submit = new("/api/v1/reports", UriKind.Relative);
 	private static readonly Uri PublicQuestions = new("/api/v1/questions", UriKind.Relative);
 	private static readonly Uri AdminQuestions = new("/api/admin/questions", UriKind.Relative);
-	private static readonly Uri AwaitingTranslation = new("/api/admin/answers/awaiting-translation", UriKind.Relative);
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
@@ -208,11 +207,14 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var response = await reporter.PostAsync(Submit, content);
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 
-		// Then — the answer shows up in the translation queue, untranslated,
-		// with the exact submitted words
-		var queue = await admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
-		var entries = queue.GetProperty("answers").EnumerateArray().ToList();
-		entries.ShouldContain(entry => entry.GetProperty("value").GetString() == narrative);
+		// Then — the answer is stored untranslated, with the exact submitted
+		// words; only the Worker ever fills its second language (ADR-0173)
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.SingleAsync(a => a.ReportId == TinyId.Parse(body!.Id) && a.Value == narrative);
+		stored.TranslatedValue.ShouldBeNull();
+		stored.TranslationSource.ShouldBeNull();
 	}
 
 	[Fact]

@@ -7,10 +7,10 @@ namespace HpacSafety.Core.Tests;
 /// <summary>
 ///     Every answer that is not a choice is one string — the words the reporter
 ///     gave, in their language, and immutable once written; a choice answer names
-///     its choice (ADR-0128). Every answer with a value is
-///     eventually translated into the other official language, mechanically by the
-///     Worker or by an administrator; nothing on the submission path translates
-///     anything. See ADR-0072 and ADR-0080.
+///     its choice (ADR-0128). Every answer with a value that needs a second
+///     language gets one from the Worker, mechanically, exactly once; nothing on
+///     the submission path translates anything, and nothing ever overwrites a
+///     translation once written. See ADR-0072, ADR-0080, and ADR-0173.
 /// </summary>
 public class StringAnswerTests
 {
@@ -111,42 +111,10 @@ public class StringAnswerTests
 	}
 
 	[Fact]
-	public void GivenFlaggedAnswer_WhenAdministratorSuppliesTranslation_ThenSourceIsHuman()
-	{
-		// Given
-		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Narrative(), "Alberta", Now);
-
-		// When
-		answer.SupplyHumanTranslation("Alberta, as written in English");
-
-		// Then
-		answer.TranslatedValue.ShouldBe("Alberta, as written in English");
-		answer.TranslationSource.ShouldBe(TranslationSource.Human);
-	}
-
-	[Fact]
-	public void GivenAutoTranslatedAnswer_WhenAdministratorCorrectsIt_ThenSourceBecomesHuman()
-	{
-		// Given — the Worker already produced a draft
-		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Narrative(), "Alberta", Now);
-		answer.SupplyAutoTranslation("Alberta");
-
-		// When — an administrator overwrites it
-		answer.SupplyHumanTranslation("Alberta (corrected)");
-
-		// Then — unlike the automatic path, a human correction may overwrite
-		// an existing translation
-		answer.TranslatedValue.ShouldBe("Alberta (corrected)");
-		answer.TranslationSource.ShouldBe(TranslationSource.Human);
-	}
-
-	[Fact]
 	public void GivenAlreadyAutoTranslatedAnswer_WhenWorkerSuppliesAnotherOne_ThenRefused()
 	{
-		// Given — idempotency: the Worker must not silently overwrite a
-		// translation, its own or an administrator's
+		// Given — idempotency: the Worker must not silently overwrite its own
+		// translation. Nothing else ever writes one at all (ADR-0173).
 		var report = new Report(Locale.FrCa, Now);
 		var answer = report.Answer(Narrative(), "Alberta", Now);
 		answer.SupplyAutoTranslation("Alberta");
@@ -164,13 +132,13 @@ public class StringAnswerTests
 	[InlineData("   ")]
 	public void GivenFlaggedAnswer_WhenBlankTranslationIsSupplied_ThenRefused(string blank)
 	{
-		// Given — clearing the flag with nothing in the box would leave the
-		// answer looking translated when half of it is missing
+		// Given — a blank translation would leave the answer looking
+		// translated when half of it is missing
 		var report = new Report(Locale.FrCa, Now);
 		var answer = report.Answer(Narrative(), "Alberta", Now);
 
 		// When
-		var supplying = () => answer.SupplyHumanTranslation(blank);
+		var supplying = () => answer.SupplyAutoTranslation(blank);
 
 		// Then
 		supplying.ShouldThrow<DomainRuleViolationException>();
@@ -304,7 +272,7 @@ public class StringAnswerTests
 		var answer = new Report(Locale.EnCa, Now).Answer(Injury(), true, Now);
 
 		// When
-		var supplying = () => answer.SupplyHumanTranslation("oui");
+		var supplying = () => answer.SupplyAutoTranslation("oui");
 
 		// Then
 		supplying.ShouldThrow<DomainRuleViolationException>();

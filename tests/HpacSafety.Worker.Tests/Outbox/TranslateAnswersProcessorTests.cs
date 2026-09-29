@@ -128,8 +128,8 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);
-		var answer = report.Answer(narrative, "Already handled by an administrator.", At);
-		answer.SupplyHumanTranslation("Déjà traité par un administrateur.");
+		var answer = report.Answer(narrative, "Already handled.", At);
+		answer.SupplyAutoTranslation("Déjà traité.");
 		context.Reports.Add(report);
 		await context.SaveChangesAsync();
 
@@ -146,8 +146,8 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
 		var stored = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id);
-		stored.TranslatedValue.ShouldBe("Déjà traité par un administrateur.");
-		stored.TranslationSource.ShouldBe(TranslationSource.Human);
+		stored.TranslatedValue.ShouldBe("Déjà traité.");
+		stored.TranslationSource.ShouldBe(TranslationSource.Auto);
 	}
 
 	private static Question Province()

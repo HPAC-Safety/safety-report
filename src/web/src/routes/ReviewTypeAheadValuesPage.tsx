@@ -26,7 +26,7 @@ import {
  *
  * The queue groups values by question — one heading per question, A→Z — and
  * sorts values A→Z within each group, both collated in the viewer's language
- * (issue #651). Every action refetches the queue in place, without ever
+ * (issue no. 651). Every action refetches the queue in place, without ever
  * re-entering the loading state, so the list stays mounted and the
  * reviewer's scroll position and place in a run of duplicates survive.
  */
@@ -103,7 +103,7 @@ export function ReviewTypeAheadValuesPage() {
 	);
 
 	// Refetches the queue without touching `loading`, so the list stays mounted
-	// and the reviewer's scroll position is unchanged (issue #651).
+	// and the reviewer's scroll position is unchanged (issue no. 651).
 	const refresh = useCallback(async () => {
 		const queue = await listTypeAheadValuesAwaitingReview();
 		setValues(queue.values);

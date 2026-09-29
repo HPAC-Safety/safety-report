@@ -61,7 +61,7 @@ const PARENT = { questionId: "q-launch-method", questionLabelEn: "Launch method"
  * Twenty flagged values under one question, "Site 1".."Site 20" — long enough
  * to scroll. "Site 15" carries a merge target and a dependent parent, so every
  * review action (approve, correct, remove, merge, relink) can act on the same
- * row (issue #651).
+ * row (issue no. 651).
  */
 function twentyValues(): StubValue[] {
 	return Array.from({ length: 20 }, (_, index) => {

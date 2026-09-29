@@ -25,6 +25,12 @@ for the services that cannot be scoped by name, the role may run any action
 on a resource already tagged `Project=HPAC-Safety`, and add a tag at creation
 only when that tag is ours.
 
+**Grouping amended by
+[ADR-0170](ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md):**
+AWS closed AppRegistry to new accounts, so there is no myApplications
+application; each account's tag-based Resource Group is the only grouping,
+and the deploy role has no AppRegistry permission.
+
 **Subject form amended by
 [ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
 subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is

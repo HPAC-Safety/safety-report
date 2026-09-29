@@ -242,5 +242,5 @@ resource "aws_cloudfront_distribution" "site" {
     minimum_protocol_version       = "TLSv1.2_2021"
   }
 
-  tags = merge(local.app_tags, { Name = "${local.name}-site" })
+  tags = { Name = "${local.name}-site" }
 }

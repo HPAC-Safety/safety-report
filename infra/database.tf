@@ -9,7 +9,7 @@ resource "aws_db_subnet_group" "main" {
   description = "Private subnets. The database has no route to or from the internet."
   subnet_ids  = [for s in aws_subnet.private : s.id]
 
-  tags = merge(local.app_tags, { Name = local.name })
+  tags = { Name = local.name }
 }
 
 # A parameter group exists so there is somewhere to put a setting, rather than
@@ -107,7 +107,7 @@ resource "aws_db_instance" "main" {
   performance_insights_enabled    = false
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
-  tags = merge(local.app_tags, { Name = local.name })
+  tags = { Name = local.name }
 
   lifecycle {
     # timestamp() changes on every plan. Without this, an unchanged repository

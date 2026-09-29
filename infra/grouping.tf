@@ -1,45 +1,14 @@
-# Grouping and cost visibility, per account (ADR-0158). NOT a security
-# boundary — the deploy role's IAM policy (infra/bootstrap.sh, #464) is what
-# actually keeps staging's deploy role off the account's other, unrelated
-# applications; this file only makes the system's resources visible together
-# in the console.
+# Grouping and cost visibility, per account (ADR-0158, ADR-0170). NOT a
+# security boundary — the deploy role's IAM policy (infra/bootstrap.sh, #464)
+# is what actually keeps staging's deploy role off the account's other,
+# unrelated applications; this file only makes the system's resources visible
+# together in the console.
 #
-#   myApplications (Service Catalog AppRegistry)   hpac-safety-staging / hpac-safety-production
-#   Resource Group (tag-based)                     the same name, same query
+#   Resource Group (tag-based)   hpac-safety-staging / hpac-safety-production
 #
-# HOW A RESOURCE ACTUALLY JOINS THE MYAPPLICATIONS APP. The AWS provider has
-# no `aws_servicecatalogappregistry_resource_association` for arbitrary
-# resource types — only `aws_servicecatalogappregistry_attribute_group_association`
-# exists, which associates an attribute group, not a VPC or an S3 bucket.
-# What actually makes myApplications show a resource as a member is the
-# `awsApplication` tag AWS looks for, which this resource exports as its
-# `application_tag` computed attribute once created. A provider's
-# `default_tags` block cannot reference a managed resource's attribute (the
-# provider must be resolvable before Terraform can plan anything the
-# provider creates), so `locals.tf`'s `app_tags` merges it separately, and
-# every OTHER resource in this directory carries `tags = merge(local.app_tags,
-# { Name = ... })` in addition to `default_tags`' Project/Environment/
-# ManagedBy/Repo — the two combine at apply time exactly the way any
-# resource-level tag adds to a provider-level default. This resource itself
-# is the one exception (see its own comment): tagging the application with
-# its own not-yet-created output would be a cycle.
-#
-# The Resource Group below is a second, independent membership signal
-# (tag-matched, not the `awsApplication` tag) — useful on its own in the
-# console, but the myApplications app's real membership comes from the tag
-# above, not from this resource.
-
-resource "aws_servicecatalogappregistry_application" "this" {
-  name        = "hpac-safety-${var.environment}"
-  description = "Every AWS resource HPAC-Safety owns in this account (myApplications). Grouping and cost visibility only — see ADR-0158."
-
-  # NOT merge(local.app_tags, ...): local.app_tags is THIS resource's own
-  # computed application_tag output (below), so tagging the application with
-  # itself would be a dependency cycle. Every other resource in this
-  # directory carries local.app_tags; this one and default_tags are enough
-  # for the application to show its own Name.
-  tags = { Name = "hpac-safety-${var.environment}" }
-}
+# There is no myApplications (Service Catalog AppRegistry) application: AWS
+# closed AppRegistry to accounts that had never used it on 2026-07-30, and
+# named a tag-based Resource Group as its replacement (#633, ADR-0170).
 
 # A tag-based query, not an explicit per-resource association: every resource
 # already carries Project/Environment (locals.tf), so the group's membership
@@ -65,5 +34,5 @@ resource "aws_resourcegroups_group" "this" {
     })
   }
 
-  tags = merge(local.app_tags, { Name = "hpac-safety-${var.environment}" })
+  tags = { Name = "hpac-safety-${var.environment}" }
 }

@@ -91,7 +91,7 @@ resource "aws_lambda_function" "api" {
     )
   }
 
-  tags = merge(local.app_tags, { Name = "${local.name}-api" })
+  tags = { Name = "${local.name}-api" }
 
   lifecycle {
     ignore_changes = [image_uri]
@@ -165,7 +165,7 @@ resource "aws_lambda_function" "worker" {
     )
   }
 
-  tags = merge(local.app_tags, { Name = "${local.name}-worker" })
+  tags = { Name = "${local.name}-worker" }
 
   lifecycle {
     ignore_changes = [image_uri]

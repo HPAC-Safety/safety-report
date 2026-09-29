@@ -30,7 +30,7 @@ resource "aws_cloudwatch_log_group" "this" {
   name              = each.value
   retention_in_days = var.log_retention_days
 
-  tags = merge(local.app_tags, { Name = each.value })
+  tags = { Name = each.value }
 
   lifecycle {
     # Audit history. Never replaced, in both environments (CON-INF-013) — a
@@ -42,7 +42,7 @@ resource "aws_cloudwatch_log_group" "this" {
 resource "aws_sns_topic" "alarms" {
   name = "${local.name}-alarms"
 
-  tags = merge(local.app_tags, { Name = "${local.name}-alarms" })
+  tags = { Name = "${local.name}-alarms" }
 }
 
 # PENDING CONFIRMATION until a human clicks the link AWS emails to the address.
@@ -88,7 +88,7 @@ resource "aws_cloudwatch_metric_alarm" "outbox_age" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = merge(local.app_tags, { Name = "${local.name}-outbox-age" })
+  tags = { Name = "${local.name}-outbox-age" }
 }
 
 resource "aws_cloudwatch_metric_alarm" "api_errors" {
@@ -116,7 +116,7 @@ resource "aws_cloudwatch_metric_alarm" "api_errors" {
 
   alarm_actions = [aws_sns_topic.alarms.arn]
 
-  tags = merge(local.app_tags, { Name = "${local.name}-api-errors" })
+  tags = { Name = "${local.name}-api-errors" }
 }
 
 resource "aws_cloudwatch_metric_alarm" "worker_errors" {
@@ -139,7 +139,7 @@ resource "aws_cloudwatch_metric_alarm" "worker_errors" {
 
   alarm_actions = [aws_sns_topic.alarms.arn]
 
-  tags = merge(local.app_tags, { Name = "${local.name}-worker-errors" })
+  tags = { Name = "${local.name}-worker-errors" }
 }
 
 # The NAT instance (#465/#588, ADR-0158) is the one resource this system ever
@@ -175,5 +175,5 @@ resource "aws_cloudwatch_metric_alarm" "nat_unhealthy" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = merge(local.app_tags, { Name = "${local.name}-nat-unhealthy" })
+  tags = { Name = "${local.name}-nat-unhealthy" }
 }

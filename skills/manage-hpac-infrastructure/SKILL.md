@@ -29,8 +29,8 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   environment
   ([ADR-0166](../../docs/decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)). First goal: staging alone; production
   follows once HPAC's own account and DNS exist.
-- Each account groups its resources under its own myApplications application
-  and Resource Group, `hpac-safety-staging`/`hpac-safety-production` — a cost/grouping
+- Each account groups its resources under its own tag-based Resource Group
+  (no AppRegistry application; ADR-0170), `hpac-safety-staging`/`hpac-safety-production` — a cost/grouping
   view, not a security boundary — tagged `Project=HPAC-Safety`,
   `Environment=<staging|production>`, `ManagedBy=terraform`, `Repo=HPAC-Safety/safety-report`
   (ADR-0158).
@@ -41,8 +41,8 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 - **Terraform and GitHub OIDC only** — `hpac-safety-deploy` (release) and
   `hpac-safety-plan` (pull-request plan) per account, scoped to
   `hpac-safety-*` names (including, now, the account's own Resource Group by
-  name) and the `Project=HPAC-Safety` tag; that scoping, not the AppRegistry
-  grouping, is the actual security boundary. Never create a long-lived AWS
+  name) and the `Project=HPAC-Safety` tag; that scoping, not the Resource
+  Group, is the actual security boundary. Never create a long-lived AWS
   key.
 - Preserve least privilege.
 

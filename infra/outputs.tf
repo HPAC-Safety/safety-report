@@ -126,13 +126,11 @@ output "nat_autoscaling_group_arn" {
   value       = module.fck_nat.autoscaling_group_arn
 }
 
-output "myapplications" {
-  description = "The AppRegistry application and Resource Group grouping every resource in this account (ADR-0158). Grouping and cost visibility only, never a security boundary."
+output "resource_group" {
+  description = "The tag-based Resource Group grouping every resource in this account (ADR-0158, ADR-0170). Grouping and cost visibility only, never a security boundary."
 
   value = {
-    application_name    = aws_servicecatalogappregistry_application.this.name
-    application_arn     = aws_servicecatalogappregistry_application.this.arn
-    resource_group_name = aws_resourcegroups_group.this.name
-    resource_group_arn  = aws_resourcegroups_group.this.arn
+    name = aws_resourcegroups_group.this.name
+    arn  = aws_resourcegroups_group.this.arn
   }
 }

@@ -10,7 +10,7 @@ resource "aws_security_group" "api" {
   description = "The API's Lambda function, in the private subnets (ADR-0042). No ingress rule at all — a Function URL's traffic never traverses this ENI; only the function's own outbound calls (RDS, Secrets Manager, the identity provider, DeepL) do."
   vpc_id      = aws_vpc.main.id
 
-  tags = merge(local.app_tags, { Name = "${local.name}-api" })
+  tags = { Name = "${local.name}-api" }
 }
 
 resource "aws_vpc_security_group_egress_rule" "api_all" {
@@ -25,7 +25,7 @@ resource "aws_security_group" "worker" {
   description = "The Worker's Lambda function, in the private subnets. No ingress at all — it is invoked by the API and by EventBridge, neither of which reaches it over this ENI."
   vpc_id      = aws_vpc.main.id
 
-  tags = merge(local.app_tags, { Name = "${local.name}-worker" })
+  tags = { Name = "${local.name}-worker" }
 }
 
 resource "aws_vpc_security_group_egress_rule" "worker_all" {
@@ -40,7 +40,7 @@ resource "aws_security_group" "database" {
   description = "PostgreSQL. Reachable from the two task groups and nothing else."
   vpc_id      = aws_vpc.main.id
 
-  tags = merge(local.app_tags, { Name = "${local.name}-database" })
+  tags = { Name = "${local.name}-database" }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "database_from_api" {

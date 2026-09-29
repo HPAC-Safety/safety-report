@@ -8,26 +8,15 @@ locals {
   project_tag = "HPAC-Safety"
 
   # Every resource carries these four (ADR-0158). Environment is the ONE tag
-  # that differs between accounts; nothing else about the tag set does — the
-  # per-account myApplications name (grouping.tf) is a separate, human-facing
-  # label, not a fifth tag.
+  # that differs between accounts; nothing else about the tag set does. The
+  # Resource Group in grouping.tf matches on Project and Environment, so these
+  # tags are also what groups the system's resources in the console (#633).
   tags = {
     Project     = local.project_tag
     Environment = var.environment
     ManagedBy   = "terraform"
     Repo        = "HPAC-Safety/safety-report"
   }
-
-  # AppRegistry's own tag proving myApplications membership (grouping.tf).
-  # NOT in providers.tf's default_tags: a provider configuration block cannot
-  # reference a managed resource's attribute — providers must be resolvable
-  # before Terraform can plan any resource, and application_tag is only known
-  # after aws_servicecatalogappregistry_application.this is created. So every
-  # OTHER resource in this directory merges this into its own explicit `tags`
-  # argument instead (`tags = merge(local.app_tags, { Name = ... })`), which
-  # AWS combines with default_tags exactly the same way at apply time. The
-  # application resource itself is the one exception — see its own comment.
-  app_tags = aws_servicecatalogappregistry_application.this.application_tag
 
   azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 

@@ -12,13 +12,13 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = merge(local.app_tags, { Name = local.name })
+  tags = { Name = local.name }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = merge(local.app_tags, { Name = local.name })
+  tags = { Name = local.name }
 }
 
 resource "aws_subnet" "public" {
@@ -32,10 +32,10 @@ resource "aws_subnet" "public" {
   # its own Elastic IP (below), not auto-assignment.
   map_public_ip_on_launch = false
 
-  tags = merge(local.app_tags, {
+  tags = {
     Name = "${local.name}-public-${each.key}"
     Tier = "public"
-  })
+  }
 }
 
 resource "aws_subnet" "private" {
@@ -45,10 +45,10 @@ resource "aws_subnet" "private" {
   availability_zone = each.key
   cidr_block        = local.private_subnet_cidrs[each.value]
 
-  tags = merge(local.app_tags, {
+  tags = {
     Name = "${local.name}-private-${each.key}"
     Tier = "private"
-  })
+  }
 }
 
 # --------------------------------------------------------------------------
@@ -100,7 +100,7 @@ data "aws_ami" "fck_nat" {
 resource "aws_eip" "nat" {
   domain = "vpc"
 
-  tags = merge(local.app_tags, { Name = "${local.name}-nat" })
+  tags = { Name = "${local.name}-nat" }
 }
 
 module "fck_nat" {
@@ -133,7 +133,7 @@ module "fck_nat" {
     private = aws_route_table.private.id
   }
 
-  tags = merge(local.app_tags, { Name = "${local.name}-nat" })
+  tags = { Name = "${local.name}-nat" }
 
   depends_on = [aws_internet_gateway.main]
 }
@@ -146,7 +146,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = merge(local.app_tags, { Name = "${local.name}-public" })
+  tags = { Name = "${local.name}-public" }
 }
 
 # No 0.0.0.0/0 route defined here for the private table: the fck-nat module
@@ -157,7 +157,7 @@ resource "aws_route_table" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  tags = merge(local.app_tags, { Name = "${local.name}-private" })
+  tags = { Name = "${local.name}-private" }
 
   lifecycle {
     # The fck-nat module manages the default route on this table out-of-band
@@ -194,5 +194,5 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private.id]
 
-  tags = merge(local.app_tags, { Name = "${local.name}-s3" })
+  tags = { Name = "${local.name}-s3" }
 }

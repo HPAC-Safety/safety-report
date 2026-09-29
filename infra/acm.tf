@@ -34,7 +34,7 @@ resource "aws_acm_certificate" "site" {
   subject_alternative_names = slice(var.site_domains, 1, length(var.site_domains))
   validation_method         = "DNS"
 
-  tags = merge(local.app_tags, { Name = "${local.name}-site" })
+  tags = { Name = "${local.name}-site" }
 
   lifecycle {
     create_before_destroy = true

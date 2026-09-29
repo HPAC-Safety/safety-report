@@ -217,7 +217,7 @@ API and the Worker are Lambda functions with no ALB, CloudFront routes
 `/api/*` to the API's Function URL guarded by the origin-verify secret,
 `staging.tfvars`/`production.tfvars` carry the only differences between the
 two environments, both accounts get their `hpac-safety-staging`/
-`hpac-safety-production` AppRegistry applications, the production pair of
+`hpac-safety-production` Resource Groups, the production pair of
 hostnames plus a staging default address are both wired up, and a NAT
 instance (`fck-nat`) replaces the managed NAT gateway. This remains open:
 
@@ -245,9 +245,10 @@ reports. The two accounts are not linked: production is not created from
 staging through AWS Organizations, and neither account can assume a role in
 the other. Both are built from the one `infra/` root module, differing only
 in `infra/staging.tfvars` and `infra/production.tfvars`. Each account carries
-its own AWS myApplications application (Service Catalog AppRegistry) and
-tag-based Resource Group — `hpac-safety-staging` and `hpac-safety-production` — a grouping
-and cost-visibility tool, not a security boundary. Every resource is tagged
+its own tag-based Resource Group — `hpac-safety-staging` and
+`hpac-safety-production` — a grouping and cost-visibility tool, not a
+security boundary; AWS closed AppRegistry (myApplications) to new accounts
+([ADR-0170](decisions/ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md)). Every resource is tagged
 `Project=HPAC-Safety`, `Environment=<staging|production>`,
 `ManagedBy=terraform`, and `Repo=HPAC-Safety/safety-report`. Production serves
 `safety.hpac.ca` and `securite.acvl.ca` on one CloudFront distribution with one

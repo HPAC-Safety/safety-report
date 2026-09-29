@@ -50,7 +50,7 @@ application data uses AWS-managed encryption and TLS.
 | `variables.tf` | Every input, including `environment`, with every default marked DECIDED | — |
 | `staging.tfvars` / `production.tfvars` | The only environment-specific values | — |
 | `locals.tf` | Shared naming, tags, subnet math, log group names | — |
-| `grouping.tf` | The `hpac-safety-<environment>` myApplications application (AppRegistry) and tag-based Resource Group | Lasts |
+| `grouping.tf` | The `hpac-safety-<environment>` tag-based Resource Group (ADR-0170) | Lasts |
 | `network.tf` | VPC, subnets, the S3 gateway endpoint, and the NAT instance (`fck-nat` module) | VPC/subnets/endpoint last; **the NAT instance is deleted and recreated every release** — the only resource in this system that is |
 | `security-groups.tf` | Security groups for the API/Worker Lambda functions and RDS | Lasts |
 | `database.tf` | RDS PostgreSQL, its subnet and parameter groups | Lasts — `prevent_destroy`, deletion protection, final snapshot |

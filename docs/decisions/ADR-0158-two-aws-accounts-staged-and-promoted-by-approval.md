@@ -282,8 +282,9 @@ because this is the ADR that first writes the two-environment shape down:
 - **The identity provider is an external dependency, not decided here**
   ([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)). Until
   `AUTH_AUTHORITY` is set for an environment — staging or production — that
-  environment can deploy public pages and submission, but sign-in, review,
-  and administration cannot work there. This is a stated limitation, not
+  environment can deploy public pages, but sign-in, filing a report (a
+  member-only action, ADR-0067), review, and administration cannot work
+  there. (Corrected by #647: "and submission" contradicted ADR-0067.) This is a stated limitation, not
   something either environment works around.
 - Vendor keys (`GEMINI_API_KEY`, `DEEPL_API_KEY`) are separate Secrets
   Manager entries per environment, holding the same values for now; upload

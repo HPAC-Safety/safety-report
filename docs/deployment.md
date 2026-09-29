@@ -57,9 +57,10 @@ today's Terraform differs" below for exactly what is still scaffolding.
   one-time steps.
 - **The identity provider is an external dependency, not chosen here**
   ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
-  Until `AUTH_AUTHORITY` is set for an environment, that environment can still
-  deploy public pages and submission, but sign-in, review, and administration
-  cannot work there.
+  Until `AUTH_AUTHORITY` is set for an environment, that environment still
+  starts and serves its public pages and public API (REQ-MOD-156, #647), but
+  every bearer token is refused, so sign-in, filing a report (a member-only
+  action, ADR-0067), review, and administration cannot work there.
 
 ## Release and promotion
 

@@ -70,14 +70,69 @@ public sealed class AuthenticationRegistrationTests
 	}
 
 	[Fact]
-	public void GivenNoAuthorityOutsideDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
+	public void GivenNoAuthorityOutsideDevelopment_WhenAuthenticationIsRegistered_ThenItDoesNotThrow()
 	{
-		// Given / When — without an authority there are no keys to validate against
+		// Given / When — an unconfigured identity provider is a stated
+		// limitation (ADR-0158), not a reason for the host to refuse to start.
 		var registering = () => Build([], false);
 
 		// Then
-		var exception = Should.Throw<InvalidOperationException>(registering);
-		exception.Message.ShouldContain("Authority");
+		Should.NotThrow(registering);
+	}
+
+	[Fact]
+	public void GivenNoAuthorityOutsideDevelopment_WhenAuthenticationIsRegistered_ThenNoDevelopmentIssuerExists()
+	{
+		// Given
+		var services = Build([], false);
+
+		// When
+		var issuer = services.GetService<DevelopmentTokenIssuer>();
+
+		// Then
+		issuer.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenNoAuthorityOutsideDevelopment_WhenValidationParametersAreBuilt_ThenNoIssuerSigningKeyIsSet()
+	{
+		// Given
+		var options = new HpacAuthenticationOptions();
+
+		// When
+		var parameters = HpacSafety.Api.Authentication.AuthenticationServiceCollectionExtensions.ValidationParametersFor(options, false);
+
+		// Then — no key the handler could validate a signature against
+		parameters.IssuerSigningKey.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenNoAuthorityOutsideDevelopment_WhenValidationParametersAreBuilt_ThenTheSigningKeyResolverReturnsNoKeys()
+	{
+		// Given
+		var options = new HpacAuthenticationOptions();
+
+		// When
+		var parameters = HpacSafety.Api.Authentication.AuthenticationServiceCollectionExtensions.ValidationParametersFor(options, false);
+		var resolved = parameters.IssuerSigningKeyResolver?.Invoke("token", null!, "kid", parameters);
+
+		// Then
+		resolved.ShouldNotBeNull();
+		resolved.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenAConfiguredAuthorityOutsideDevelopment_WhenValidationParametersAreBuilt_ThenNoSigningKeyResolverIsSet()
+	{
+		// Given — the authority's published keys are fetched and rotated by the
+		// handler itself; a configured environment keeps today's behavior.
+		var options = new HpacAuthenticationOptions { Authority = "https://provider.example.test" };
+
+		// When
+		var parameters = HpacSafety.Api.Authentication.AuthenticationServiceCollectionExtensions.ValidationParametersFor(options, false);
+
+		// Then
+		parameters.IssuerSigningKeyResolver.ShouldBeNull();
 	}
 
 	private static ServiceProvider Build(Dictionary<string, string?> settings,

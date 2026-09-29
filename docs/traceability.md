@@ -1090,6 +1090,10 @@ Manage reports shows each row's attachment icon and count, omitted at zero — *
 
 An ordinary member's token widens nothing; only SafetyOfficer or Administrator does — *Reqnroll, Covered*
 
+### REQ-MOD-156
+
+An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token — *Reqnroll, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

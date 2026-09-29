@@ -45,6 +45,18 @@ to offer it from `GET /api/auth/config`, never from a build flag.
 A bearer token carries no ambient authority, so state-changing admin requests
 need no CSRF protection.
 
+**No identity provider configured is a stated limitation, not a startup
+failure.** Outside Development, until `HpacSafety:Authentication:Authority`
+is set for an environment, that environment still starts and serves its
+public endpoints — `/health`, public questions, the public feed and
+submission — but no bearer token can ever validate: sign-in, review, and
+administration cannot work there
+([ADR-0158](../../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+The host logs one warning at startup and registers a bearer scheme with no
+authority, no signing keys, and an issuer no real token will ever carry, so
+every authorization-protected endpoint refuses every token with 401
+(REQ-MOD-156). A configured Authority keeps today's behavior exactly.
+
 ## Roles
 
 | Role | Capabilities |

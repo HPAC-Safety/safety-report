@@ -1562,11 +1562,14 @@ Scenario: Leaving the report page with staged, un-added private attachments warn
   When the safety officer opens that report
   And the safety officer stages the private attachment "unfinished.pdf"
   Then the staged attachment "unfinished.pdf" finishes uploading and offers a description box
-  When the safety officer tries to leave the page by reloading it
-  Then the browser warns before leaving
-  When the safety officer tries to leave the page through a link and declines
+  When the safety officer tries to close or reload the tab
+  Then the browser's own unload prompt appears, with no custom text
+  When the safety officer navigates away from the report through a link
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they keep the page
   Then the safety officer stays on the report page
-  When the safety officer tries to leave the page through a link and confirms
+  When the safety officer navigates away from the report through a link
+  And they confirm leaving
   Then the safety officer leaves the report page
 
 @REQ-MOD-180
@@ -1687,7 +1690,7 @@ Scenario: The search box sits at the top of the public feed, and its query is bo
   When the visitor goes back
   Then the search box is empty and the full feed is shown again
 
-@REQ-MOD-173
+@REQ-MOD-178
 @ui
 Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
   Given a safety officer is signed in and a pending report exists
@@ -1699,7 +1702,7 @@ Scenario: Leaving the summary editor with unsaved changes is confirmed before th
   When they confirm leaving
   Then the browser navigates to that page and the edit is gone
 
-@REQ-MOD-176
+@REQ-MOD-179
 @ui
 Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
   Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
@@ -1711,7 +1714,7 @@ Scenario: Leaving the type-ahead value review queue with an uncorrected draft is
   When they confirm leaving
   Then the browser navigates to that page and the correction is gone
 
-@REQ-MOD-175
+@REQ-MOD-180
 @ui
 Scenario: Leaving with an unsaved private note is confirmed
   Given a safety officer is signed in and a pending report exists

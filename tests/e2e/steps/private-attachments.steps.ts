@@ -1,5 +1,5 @@
 import { createBdd } from "playwright-bdd"
-import { expect, type Dialog, type Download, type Page } from "@playwright/test"
+import { expect, type Download, type Page } from "@playwright/test"
 
 const { Given, When, Then } = createBdd()
 
@@ -56,7 +56,6 @@ const slowClaim = new WeakSet<Page>()
 const pendingClaimsByPage = new WeakMap<Page, (() => void)[]>()
 const erasedByPage = new WeakMap<Page, string[]>()
 const putsByPage = new WeakMap<Page, { contentType: string | null; size: number }[]>()
-const dialogsByPage = new WeakMap<Page, Dialog>()
 
 async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 	attachmentsByPage.set(page, attachments)
@@ -474,34 +473,29 @@ Then("{string} becomes enabled", async ({ page }, buttonLabel: string) => {
 	await expect(section(page).getByRole("button", { name: buttonLabel })).toBeEnabled()
 })
 
-// --- Leaving with staged, un-added uploads warns (REQ-MOD-177) ---
+// --- Leaving with staged, un-added uploads warns (REQ-MOD-177), through the
+// shared useUnsavedChangesGuard (issue 659) rather than this page's own
+// mechanism — see unsaved-changes.steps.ts for the beforeunload and
+// bilingual-dialog steps this scenario reuses. ---
 
-When("the safety officer tries to leave the page by reloading it", async ({ page }) => {
-	const dialog = page.waitForEvent("dialog")
-	page.reload().catch(() => {}) // Navigation is blocked by the dialog until a step answers it.
-	dialogsByPage.set(page, await dialog)
-})
-
-Then("the browser warns before leaving", async ({ page }) => {
-	const dialog = dialogsByPage.get(page)!
+When("the safety officer tries to close or reload the tab", async ({ page }) => {
+	const dialogPromise = page.waitForEvent("dialog")
+	page.reload().catch(() => {}) // The reload never completes: the dialog cancels it.
+	const dialog = await dialogPromise
 	expect(dialog.type()).toBe("beforeunload")
-	// Declines the reload, so the page (and its staged rows) survive for the
-	// steps that follow.
 	await dialog.dismiss()
 })
 
-When("the safety officer tries to leave the page through a link and declines", async ({ page }) => {
-	page.once("dialog", (dialog) => void dialog.dismiss())
+When("the safety officer navigates away from the report through a link", async ({ page }) => {
 	await page.getByRole("link", { name: "Back to reports" }).click()
+})
+
+When("they keep the page", async ({ page }) => {
+	await page.getByRole("dialog", { name: "Leave without saving?" }).getByRole("button", { name: "Stay" }).click()
 })
 
 Then("the safety officer stays on the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports\/[^/]+$/)
-})
-
-When("the safety officer tries to leave the page through a link and confirms", async ({ page }) => {
-	page.once("dialog", (dialog) => void dialog.accept())
-	await page.getByRole("link", { name: "Back to reports" }).click()
 })
 
 Then("the safety officer leaves the report page", async ({ page }) => {

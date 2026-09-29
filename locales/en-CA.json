@@ -517,7 +517,6 @@
   "privateAttachments.remove": "Remove",
   "privateAttachments.keep": "Keep",
   "privateAttachments.confirmRemove": "Remove this attachment? It cannot be restored.",
-  "privateAttachments.leaveWarning": "These private attachments have not been added yet. Leaving now will not add them to the report.",
   "privateAttachments.error.load": "The private attachments could not be loaded. Reload the page to try again.",
   "privateAttachments.error.upload": "That file could not be added. Try again.",
   "privateAttachments.error.too_large": "That file is larger than {max}.",

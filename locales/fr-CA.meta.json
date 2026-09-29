@@ -851,12 +851,6 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "privateAttachments.leaveWarning": {
-    "source_hash": "cdf0a50b12b64d04ebfb37a2ceee11f601c7c242c7be9e1abb37a1841c88e15e",
-    "target_hash": "0bc7642f67f0bf03ada93223e788624e79f2b85ff2532bcfd7eb45e521600b97",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
   "privateAttachments.limit": {
     "source_hash": "2d0f758d9c0630da4df1a404e4096c07e1615054582371150edca0fceae85c29",
     "target_hash": "f20dad349830c3d42e16a5ca1e4c93dc2d360f17088fb7ae11e3b8f052ecb376",

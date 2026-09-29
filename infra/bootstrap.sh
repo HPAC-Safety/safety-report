@@ -455,9 +455,12 @@ fi
 #     only, with an explicit deny on everything else
 #     (NeverReadDataOutsideOurBuckets);
 #   - `secretsmanager:GetSecretValue` returns a plaintext secret - denied
-#     outright, everywhere, including our OWN secrets. This role WRITES
+#     everywhere, including our OWN secrets, with ONE exception: the
+#     CloudFront origin secret, whose value Terraform itself generates and
+#     already holds in state, and which the provider reads back after every
+#     create and on every plan (#637, ADR-0171). This role WRITES the vendor
 #     secret values (H4/#465 copies GitHub secrets into Secrets Manager); it
-#     never needs to read one back;
+#     never reads one back;
 #   - `lambda:GetFunction`/`GetFunctionConfiguration` return a function's
 #     environment variables, and `InvokeFunction` runs it - scoped to our own
 #     functions, denied for everything else;
@@ -509,7 +512,6 @@ fi
 #     NeverReadDataOutsideOurBuckets          deny: read any object elsewhere
 #     ManageOurSecretsOnly                   manage hpac-safety-* / hpac-safety/* secrets
 #     LetRdsCreateOurDatabasesMasterSecret   RDS-managed rds!db-* master secret
-#     NeverReadASecretValueEvenOurOwn        deny: GetSecretValue, anywhere
 #     ManageOurFunctionsOnly                 manage hpac-safety-* functions
 #     ManageOurRepositoriesOnly              manage hpac-safety-* ECR repos
 #     ManageOurTopicsOnly                    manage hpac-safety-* SNS topics
@@ -532,6 +534,7 @@ fi
 #     NeverEditItsOwnPrivileges               deny: editing its own role
 #
 #   DEPLOY_POLICY_SERVICES (hpac-safety-deploy-services)
+#     ReadTheTerraformGeneratedOriginSecret  GetSecretValue on the origin secret only
 #     ReadOnlyMetadata                       Describe/List/Get for un-scopable services
 #     ManageOurResourceGroupOnly             manage group/${GITHUB_ENVIRONMENT} only (name-scoped, not tag-only)
 #     CreateOnlyAsOurProject                 Create* only with our RequestTag
@@ -547,8 +550,11 @@ fi
 #     NeverUseKmsOutsideOurServices           deny: any of the above without kms:ViaService
 #
 #   DEPLOY_POLICY_GUARDRAILS (hpac-safety-deploy-guardrails)
+#     NeverReadASecretValueEvenOurOwn        deny: GetSecretValue, except the origin secret
 #     NeverMutateAnUntaggedResource          deny every mutating verb unless the
 #                                             resource already carries Project=HPAC-Safety
+#     NeverMutateAnotherApplicationsLogGroup deny logs Put/Delete/untag outside our
+#                                             log groups, by name (#637)
 #     NeverRetagAnotherProjectsResource      deny the five tag-add actions on a
 #                                             resource tagged for another project
 
@@ -654,12 +660,6 @@ DEPLOY_POLICY_CORE=$(cat <<JSON
         "secretsmanager:DescribeSecret"
       ],
       "Resource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:rds!db-*"
-    },
-    {
-      "Sid": "NeverReadASecretValueEvenOurOwn",
-      "Effect": "Deny",
-      "Action": "secretsmanager:GetSecretValue",
-      "Resource": "*"
     },
     {
       "Sid": "ManageOurFunctionsOnly",
@@ -979,6 +979,12 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "ReadTheTerraformGeneratedOriginSecret",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety/cloudfront-origin-secret-*"
+    },
+    {
       "Sid": "ReadOnlyMetadata",
       "Effect": "Allow",
       "Action": [
@@ -1233,6 +1239,12 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "NeverReadASecretValueEvenOurOwn",
+      "Effect": "Deny",
+      "Action": "secretsmanager:GetSecretValue",
+      "NotResource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety/cloudfront-origin-secret-*"
+    },
+    {
       "Sid": "NeverMutateAnUntaggedResource",
       "Effect": "Deny",
       "Action": [
@@ -1325,12 +1337,7 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "events:UntagResource",
         "scheduler:Delete*",
         "scheduler:Update*",
-        "scheduler:UntagResource",
-        "logs:Delete*",
-        "logs:Put*",
-        "logs:UntagResource",
-        "logs:UntagLogGroup",
-        "logs:DisassociateKmsKey"
+        "scheduler:UntagResource"
       ],
       "Resource": "*",
       "Condition": {
@@ -1338,6 +1345,23 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
           "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}"
         }
       }
+    },
+    {
+      "Sid": "NeverMutateAnotherApplicationsLogGroup",
+      "Effect": "Deny",
+      "Action": [
+        "logs:Delete*",
+        "logs:Put*",
+        "logs:UntagResource",
+        "logs:UntagLogGroup",
+        "logs:DisassociateKmsKey"
+      ],
+      "NotResource": [
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/hpac-safety-*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/hpac-safety-*:*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety*:*"
+      ]
     },
     {
       "Sid": "NeverRetagAnotherProjectsResource",
@@ -1454,10 +1478,12 @@ fi
 #     can carry report narrative text (`log_min_duration_statement`) - denied
 #     outright (NeverReadLogContentOrASecretValue), alongside RDS's own
 #     native log-download API, a distinct action namespace reaching the same
-#     data, and `secretsmanager:GetSecretValue`/`rds-data:*`, which
-#     ReadOnlyAccess does not currently grant but the denial is written out
-#     anyway so the guarantee does not depend on what AWS widens the managed
-#     policy to;
+#     data, and `rds-data:*`, which ReadOnlyAccess does not currently grant
+#     but the denial is written out anyway so the guarantee does not depend
+#     on what AWS widens the managed policy to. `secretsmanager:GetSecretValue`
+#     is denied on every secret but the Terraform-generated CloudFront origin
+#     secret, which a plan must read to refresh its version and whose value
+#     is already in the state this role reads (#637, ADR-0171);
 #   - `ssm:GetParameter*`, `dynamodb:GetItem`/`Query`/`Scan`,
 #     `kinesis:GetRecords`, `sqs:ReceiveMessage` on every parameter,
 #     table, stream, and queue in the account - this role has no legitimate
@@ -1548,10 +1574,21 @@ PLAN_POLICY=$(cat <<JSON
         "logs:StartLiveTail",
         "rds:DownloadDBLogFilePortion",
         "rds:DownloadCompleteDBLogFile",
-        "secretsmanager:GetSecretValue",
         "rds-data:*"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "ReadTheTerraformGeneratedOriginSecret",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety/cloudfront-origin-secret-*"
+    },
+    {
+      "Sid": "NeverReadASecretValueExceptTheOriginSecret",
+      "Effect": "Deny",
+      "Action": "secretsmanager:GetSecretValue",
+      "NotResource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety/cloudfront-origin-secret-*"
     },
     {
       "Sid": "NeverReadOtherApplicationsData",

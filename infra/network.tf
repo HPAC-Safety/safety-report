@@ -133,7 +133,12 @@ module "fck_nat" {
     private = aws_route_table.private.id
   }
 
-  tags = { Name = "${local.name}-nat" }
+  # local.tags in full, not only Name: the provider's default_tags never reach
+  # an aws_autoscaling_group's `tag` blocks, and the module builds its Auto
+  # Scaling group's tags from this argument alone. Without Project on the
+  # request, the deploy role's CreateOnlyAsOurProject refuses
+  # CreateAutoScalingGroup (#637).
+  tags = merge(local.tags, { Name = "${local.name}-nat" })
 
   depends_on = [aws_internet_gateway.main]
 }

@@ -883,6 +883,35 @@ Given("a safety officer is signed in and more reports exist than fit on one page
 	await expect(row(page, "pending")).toBeVisible()
 })
 
+// --- REQ-MOD-179: opening Manage reports afresh never restores a list kept from earlier ---
+
+const firstPageRequests = new WeakMap<Page, { count: number }>()
+
+When(
+	"the safety officer goes to another page and opens Manage reports again from the Admin menu",
+	async ({ page }) => {
+		await page.getByRole("contentinfo").getByRole("link", { name: "Contact", exact: true }).click()
+		await expect(page).toHaveURL(/\/contact$/)
+
+		// Counted only from here, so the first visit's own request does not count.
+		const counter = { count: 0 }
+		firstPageRequests.set(page, counter)
+		page.on("request", (request) => {
+			const url = new URL(request.url())
+			if (url.pathname === "/api/admin/reports" && !url.searchParams.has("after")) counter.count += 1
+		})
+
+		await page.getByRole("button", { name: /^Admin/ }).click()
+		await page.getByRole("menu", { name: "Admin" }).getByRole("menuitem", { name: /^Manage reports/ }).click()
+		await expect(page).toHaveURL(/\/admin\/reports$/)
+	},
+)
+
+Then("Manage reports asks for its first page again", async ({ page }) => {
+	await expect.poll(() => firstPageRequests.get(page)?.count ?? 0).toBeGreaterThan(0)
+	await expect(row(page, "pending")).toBeVisible()
+})
+
 Given("the next report page fails to load", async ({ page }) => {
 	await stubPagedReports(page, true)
 })

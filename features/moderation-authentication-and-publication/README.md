@@ -116,7 +116,11 @@ report ID, the same shape as the public feed's (ADR-0153) — never a
 timestamp — and a cursor naming a report no longer in the queue restarts the
 list from the top, ordinally past the anchor by ID the same way the public
 feed's cursor does. The browser's back button restores the same accumulated
-rows and scroll position rather than reloading the first page.
+rows and scroll position rather than reloading the first page. Only a return
+to the same history entry restores (Back or Forward, or a reload); opening a
+list afresh, from a link or by typing its address, loads its first page and
+starts at the top, however far it was scrolled earlier in the same tab
+(REQ-MOD-178, REQ-MOD-179).
 
 Each row also shows the **reporter's name** and the **pilot's name** — the
 only answer text the list ever carries (REQ-MOD-030, REQ-MOD-124). Both are

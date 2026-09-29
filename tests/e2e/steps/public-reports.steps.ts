@@ -266,6 +266,48 @@ Then("the same reports are still shown, at the same scroll position", async ({ p
 	await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0)
 })
 
+// --- REQ-MOD-178: opening the feed afresh never restores a list kept from earlier ---
+
+const firstPageRequests = new WeakMap<Page, { count: number }>()
+
+Given("the visitor's window is too short to show the whole feed", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 240 })
+})
+
+When(
+	"the visitor follows the footer's link to the contact page, then the one back to View safety reports",
+	async ({ page }) => {
+		await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+
+		const footer = page.getByRole("contentinfo")
+		await footer.getByRole("link", { name: "Contact", exact: true }).click()
+		await expect(page).toHaveURL(/\/contact$/)
+
+		// Counted only from here, so the first visit's own request does not count.
+		const counter = { count: 0 }
+		firstPageRequests.set(page, counter)
+		page.on("request", (request) => {
+			const url = new URL(request.url())
+			if (/\/api\/v1\/public\/reports\/?$/.test(url.pathname) && !url.searchParams.has("after")) counter.count += 1
+		})
+
+		await footer.getByRole("link", { name: "View safety reports", exact: true }).click()
+		await expect(page).toHaveURL(/\/reports$/)
+	},
+)
+
+Then("the public feed asks for its first page again", async ({ page }) => {
+	await expect.poll(() => firstPageRequests.get(page)?.count ?? 0).toBeGreaterThan(0)
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+})
+
+Then("the public feed is shown from its top", async ({ page }) => {
+	// Taller than the window, so a position of 0 is the reset rather than a clamp.
+	expect(await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true)
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+})
+
 /** The rendered width of whichever element currently holds focus, in CSS pixels. */
 async function focusedWidth(page: Page): Promise<number> {
 	const box = await page.locator(":focus").boundingBox()

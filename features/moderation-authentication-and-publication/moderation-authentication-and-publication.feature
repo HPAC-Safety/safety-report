@@ -1227,6 +1227,23 @@ Scenario: The public feed loads more reports automatically, and going back resto
   When a visitor opens one of them and goes back
   Then the same reports are still shown, at the same scroll position
 
+@REQ-MOD-178
+@ui
+Scenario: Opening the public feed afresh starts at its top and loads its first page again
+  Given the public feed has more published reports than fit on one page
+  And the visitor's window is too short to show the whole feed
+  When a visitor scrolls to the end of the list
+  And the visitor follows the footer's link to the contact page, then the one back to View safety reports
+  Then the public feed asks for its first page again
+  And the public feed is shown from its top
+
+@REQ-MOD-179
+@ui
+Scenario: Opening Manage reports afresh loads its first page again, not the list kept from earlier
+  Given a safety officer is signed in and more reports exist than fit on one page
+  When the safety officer goes to another page and opens Manage reports again from the Admin menu
+  Then Manage reports asks for its first page again
+
 @REQ-MOD-126
 @ui
 Scenario: The public feed's next page offers a keyboard-only fallback and announces itself

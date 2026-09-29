@@ -1178,6 +1178,14 @@ A too-large private attachment is refused on its own row while the others procee
 
 Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
 
+### REQ-MOD-178
+
+Opening the public feed afresh starts at its top and loads its first page again — *playwright-bdd, Covered*
+
+### REQ-MOD-179
+
+Opening Manage reports afresh loads its first page again, not the list kept from earlier — *playwright-bdd, Covered*
+
 ### REQ-MOD-180
 
 A staged private attachment cannot be removed or re-described while it is being added — *playwright-bdd, Covered*
@@ -2633,6 +2641,10 @@ A production hostname sets a first-time visitor's default language, but a saved 
 ### REQ-WLD-031
 
 Switching the language toggle never changes the host — *playwright-bdd, Covered*
+
+### REQ-WLD-032
+
+Following a link to another page starts that page at its top, on every page — *playwright-bdd, Covered*
 
 ## Constraints
 

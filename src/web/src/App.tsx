@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom"
 import { Header } from "./components/Header"
 import { Footer } from "./components/Footer"
+import { ScrollToTopOnNavigation } from "./components/ScrollToTopOnNavigation"
 import { AdminRouteGuard } from "./components/AdminRouteGuard"
 import { HomePage } from "./routes/HomePage"
 import { ViewReportsPage } from "./routes/ViewReportsPage"
@@ -19,6 +20,7 @@ import { NotFoundPage } from "./routes/NotFoundPage"
 function App() {
 	return (
 		<div className="flex min-h-screen flex-col">
+			<ScrollToTopOnNavigation />
 			<Header />
 			<div className="flex-1">
 				<Routes>

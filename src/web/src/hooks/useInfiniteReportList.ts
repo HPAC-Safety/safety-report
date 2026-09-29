@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useLocation } from "react-router-dom"
 
 /*
  * Infinite scroll for a keyset-paginated report list — the public feed and
@@ -18,7 +19,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
  *   button return, keyed by `storageKey` (which should fold in every query
  *   parameter the caller's page reads, such as a search term or a status
  *   filter) — it does not refetch in that case, since what was there is still
- *   valid until the caller changes the key.
+ *   valid until the caller changes the key. It restores only on a return to
+ *   the history entry the list was built in; a fresh visit, from a link or by
+ *   typing the address again, loads the first page and starts at the top
+ *   (issue no. 670).
  */
 
 export interface ReportPage<T> {
@@ -75,6 +79,28 @@ interface StoredState<T> {
 	items: T[]
 	next: string | null
 	scrollY: number
+	/** The history entry the list was built in: React Router's `location.key`. */
+	entry: string
+	/** The page load that saved it: {@link DOCUMENT}. */
+	document: string
+}
+
+/**
+ * Tells this page load apart from an earlier one in the same tab. React Router
+ * names the first history entry of every page load "default", so the entry
+ * alone cannot tell a Back return to that first entry (restore) from typing
+ * the list's address again in a new page load (start afresh).
+ */
+const DOCUMENT = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+
+/** How the browser arrived at this page load: "navigate", "reload", or "back_forward". */
+function documentNavigationType(): string {
+	try {
+		const [entry] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[]
+		return entry?.type ?? "navigate"
+	} catch {
+		return "navigate"
+	}
 }
 
 // Signature split across lines on purpose: tools/check-hardcoded-strings.mjs
@@ -88,6 +114,23 @@ function readStored<T>(
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The saved list for this key, only on a return to the history entry it was
+ * saved in: Back or Forward inside the site, a reload, or Back into the site
+ * from elsewhere. A fresh visit gets nothing, so it loads the first page and
+ * starts at the top instead of reusing a position saved earlier in the tab.
+ */
+function readRestorable<T>(
+	key: string,
+	entry: string,
+): StoredState<T> | null {
+	const stored = readStored<T>(key)
+	if (!stored || stored.entry !== entry) {
+		return null
+	}
+	return stored.document === DOCUMENT || documentNavigationType() !== "navigate" ? stored : null
 }
 
 function writeStored<T>(
@@ -107,8 +150,13 @@ export function useInfiniteReportList<T>(
 ): UseInfiniteReportListResult<T> {
 	const { fetchPage, getId, storageKey } = options
 	const key = `hpac.reportList.${storageKey}`
+	const { key: entry } = useLocation()
+	const entryRef = useRef(entry)
+	entryRef.current = entry
 	const restored = useMemo(() => {
-		return readStored<T>(key)
+		return readRestorable<T>(key, entry)
+		// Decided once per list key: a later entry change on the same list does not re-restore.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [key])
 
 	const [items, setItems] = useState<T[]>(restored?.items ?? [])
@@ -128,7 +176,7 @@ export function useInfiniteReportList<T>(
 	// A fresh key (a changed filter or search term) starts over; it never
 	// shares another key's accumulated items.
 	useEffect(() => {
-		const again = readStored<T>(key)
+		const again = readRestorable<T>(key, entryRef.current)
 		setItems(again?.items ?? [])
 		setNext(again?.next ?? null)
 		setHasMore(again === null || again.next !== null)
@@ -140,7 +188,13 @@ export function useInfiniteReportList<T>(
 
 	const persist = useCallback(
 		(nextItems: T[], nextCursor: string | null) => {
-			writeStored(key, { items: nextItems, next: nextCursor, scrollY: window.scrollY })
+			writeStored(key, {
+				items: nextItems,
+				next: nextCursor,
+				scrollY: window.scrollY,
+				entry: entryRef.current,
+				document: DOCUMENT,
+			})
 		},
 		[key],
 	)

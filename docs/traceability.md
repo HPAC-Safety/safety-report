@@ -1194,6 +1194,10 @@ A staged private attachment cannot be removed or re-described while it is being 
 
 Leaving the report page with only refused private attachments staged does not warn — *playwright-bdd, Covered*
 
+### REQ-MOD-184
+
+There is no admin page left to edit an answer's translation by hand — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -1423,14 +1427,6 @@ Editing an unanswered question from the dashboard shows its new version — *pla
 ### REQ-QB-082
 
 Editing an answered question warns that it will be replaced — *playwright-bdd, Covered*
-
-### REQ-QB-083
-
-An Administrator sees answers awaiting a second language — *playwright-bdd, Covered*
-
-### REQ-QB-084
-
-An Administrator translates an answer from the queue — *playwright-bdd, Covered*
 
 ### REQ-QB-085
 
@@ -2078,10 +2074,6 @@ Every answer's value and locale are immutable once submitted — *Reqnroll, Cove
 
 The Worker mechanically translates every answer that needs it — *Reqnroll, Covered*
 
-### REQ-SUB-027
-
-An administrator's correction always wins over the Worker's translation — *Reqnroll, Covered*
-
 ### REQ-SUB-028
 
 The leading statement question renders as an introduction — *playwright-bdd, Covered*
@@ -2425,6 +2417,14 @@ The rate limiter partitions by the CloudFront viewer address, not the shared con
 ### REQ-SUB-118
 
 A successful submission nudges the Worker — *Reqnroll, Covered*
+
+### REQ-SUB-119
+
+A second automatic translation is refused — *Reqnroll, Covered*
+
+### REQ-SUB-120
+
+There is no API endpoint left to supply or correct an answer's translation by hand — *Reqnroll, Covered*
 
 ## Claims: typeform-question-import-export
 

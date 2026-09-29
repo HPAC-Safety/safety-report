@@ -47,16 +47,25 @@ if skopeo inspect --raw --creds "$creds" "docker://$mirror@$digest" >/dev/null 2
 	exit 0
 fi
 
-echo "Mirroring $UPSTREAM:$tag@$digest to $mirror:$tag."
+echo "Mirroring $UPSTREAM@$digest ($tag) to $mirror:$tag."
 # The one pull from public.ecr.aws this version ever needs; retried because
-# that is exactly where the 429 comes from.
+# that is exactly where the 429 comes from. The source is named by digest
+# alone: skopeo refuses a reference carrying both a tag and a digest (#631),
+# and the digest is what pins the image anyway.
 attempt=1
+log=$(mktemp)
 until skopeo copy --all --preserve-digests --retry-times 3 \
 	--dest-creds "$creds" \
-	"docker://$UPSTREAM:$tag@$digest" \
-	"docker://$mirror:$tag"; do
+	"docker://$UPSTREAM@$digest" \
+	"docker://$mirror:$tag" 2>&1 | tee "$log"; [ "${PIPESTATUS[0]}" -eq 0 ]; do
+	# Only a refusal that can clear is worth waiting out; a malformed
+	# reference or a denied push fails the same way every time.
+	if ! grep -qiE '\b429\b|toomanyrequests|rate limit|limit exceeded|timeout|connection|EOF|\b5[0-9]{2}\b' "$log"; then
+		echo "error: skopeo copy failed with an error a retry cannot fix." >&2
+		exit 1
+	fi
 	if [ "$attempt" -ge 5 ]; then
-		echo "error: could not copy $UPSTREAM:$tag after $attempt attempts." >&2
+		echo "error: could not copy $UPSTREAM@$digest after $attempt attempts." >&2
 		exit 1
 	fi
 	delay=$((attempt * 60))

@@ -107,6 +107,19 @@ Scenario: The footer sits at the bottom of the viewport on a short page but belo
   Given a visitor loads a page whose content is taller than the viewport
   Then the footer sits below the content, not pinned to the viewport
 
+@REQ-WLD-032
+@ui
+Scenario Outline: Following a link to another page starts that page at its top, on every page
+  Given a visitor is at the bottom of the <from> page, in a window too short to show it all
+  When they follow the footer's "<link>" link
+  Then the <to> page is shown from its top
+
+Examples:
+  | from        | link                   | to          |
+  | contact     | View safety reports    | public feed |
+  | public feed | Submit a safety report | report      |
+  | public feed | Contact                | contact     |
+
 @REQ-WLD-010
 Scenario: Application chrome strings come from committed locale catalogues
   Given the UI renders chrome or a stable validation/error message

@@ -94,6 +94,12 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   and reviewed.
 - Treating client validation as the authority. It is a convenience in front of
   server validation, never a replacement for it.
+- A per-page opt-out of the scroll reset. Following a link to another page
+  starts it at its top on every page (REQ-WLD-032,
+  [ADR-0173](../../docs/decisions/ADR-0173-a-fresh-navigation-starts-at-the-top-and-only-a-return-restores.md)). The reset does not
+  apply to a change to the query string alone (the search box, a status
+  filter), a link to an in-page anchor, or Back and Forward, where the
+  browser or a report list restores the earlier position.
 - A third language, or a locale the association has not adopted.
 - Hand-editing `locales/fr-CA.json`. A French correction is a recorded
   provenance event

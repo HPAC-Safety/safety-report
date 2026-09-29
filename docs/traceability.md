@@ -1106,6 +1106,22 @@ With the temporary interim issuer disabled, none of its endpoints exist — *Req
 
 The temporary interim issuer's JWKS publishes only a public key — *Reqnroll, Covered*
 
+### REQ-MOD-160
+
+The review queue groups flagged values under their question, questions ordered alphabetically — *playwright-bdd, Covered*
+
+### REQ-MOD-161
+
+Values within a question's group are sorted alphabetically in the viewer's language, ignoring case and accents — *playwright-bdd, Covered*
+
+### REQ-MOD-162
+
+Approving, correcting, removing, merging, and relinking a value keeps the reviewer's scroll position, with no loading state — *playwright-bdd, Covered*
+
+### REQ-MOD-163
+
+A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

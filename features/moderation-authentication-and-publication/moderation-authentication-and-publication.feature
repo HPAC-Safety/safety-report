@@ -286,7 +286,7 @@ Examples:
 Scenario: A Safety Officer approves, corrects, and removes type-ahead values on the review page
   Given a signed-in Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
-  Then each value is listed with its question, the language it was typed in, and how many answers name it
+  Then each value is listed under its question's heading, with the language it was typed in and how many answers name it
   When they approve "Mount 7", correct "coopers" to "Cooper's", and remove "Test site"
   Then the API is asked to approve, correct, and remove exactly those values
   And the page lists no value left to review
@@ -296,10 +296,56 @@ Scenario: A Safety Officer approves, corrects, and removes type-ahead values on 
 Scenario: A Safety Officer reviews flagged type-ahead values on one page
   Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
   When they open the review-type-ahead-values page
-  Then every flagged value is listed with its question, its language, and how many answers name it
+  Then every flagged value is listed under its question's heading, with its language and how many answers name it
   When they merge "Coopers" into "Cooper's"
   Then "Coopers" leaves the list
   And "Cooper's" is no longer flagged
+
+@REQ-MOD-160
+@ui
+Scenario: The review queue groups flagged values under their question, questions ordered alphabetically
+  Given a signed-in Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first
+  When they open the review-type-ahead-values page
+  Then the question headings read, top to bottom, "Where did this happen?" then "Where did you launch?"
+
+@REQ-MOD-161
+@ui
+Scenario Outline: Values within a question's group are sorted alphabetically in the viewer's language, ignoring case and accents
+  Given a Safety Officer who reads <language> and one type-ahead question whose flagged values are "<second>", "<first>", and "<third>", in that order
+  When they open the review-type-ahead-values page
+  Then the values under that question's heading read, top to bottom, "<first>", "<second>", and "<third>"
+
+Examples:
+  | language | first  | second   | third |
+  | English  | cooper | Cooper's | zulu  |
+  | French   | Étang  | Etna     | zone  |
+
+@REQ-MOD-162
+@ui
+Scenario Outline: Approving, correcting, removing, merging, and relinking a value keeps the reviewer's scroll position, with no loading state
+  Given a signed-in Safety Officer and twenty flagged values under one type-ahead question
+  When they open the review-type-ahead-values page
+  And they scroll to "Site 15"
+  And they <action> "Site 15"
+  Then the page never shows the loading text
+  And the scroll position is unchanged
+
+Examples:
+  | action  |
+  | approve |
+  | remove  |
+  | correct |
+  | merge   |
+  | relink  |
+
+@REQ-MOD-163
+@ui
+Scenario: A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count
+  Given a signed-in Safety Officer and two flagged values of the same question, one also awaiting review in its own right
+  When they open the review-type-ahead-values page
+  And they merge "Coopers" into "Cooper's"
+  Then "Coopers" leaves the list, and the rows around it stay where they are
+  And "Cooper's" is still listed, showing 5 answers naming it
 
 @REQ-MOD-096
 Scenario Outline: A report's consent reaches the admin view as true, false, or null

@@ -60,6 +60,13 @@ after the choices pinned first and before the choices pinned last.**
   single-select, multi-select and type-ahead, the editor's options, the
   required-option control, the type-ahead review page's merge targets, and a
   multi-select answer on a report.
+- **The type-ahead review queue's own list** groups its flagged values by
+  question — one heading per question, questions and values both sorted with
+  the same collator — instead of the API's creation order, so a reviewer scans
+  one question at a time
+  ([#651](https://github.com/HPAC-Safety/safety-report/issues/651)). It reuses
+  the shared client helper for the alphabetical order within a group; grouping
+  by question is specific to that page.
 - **Separators.** A separator is drawn between non-empty groups where the
   control can draw one. In a multi-select it is a divider between checkbox
   groups. In a single-select `<select>` it is a disabled `──` option, because

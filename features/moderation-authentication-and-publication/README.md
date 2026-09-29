@@ -438,6 +438,11 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Sorting of the admin report list other than newest submitted first (or
   best match first while a search is active), and a page-count or
   jump-to-page control.
+- Sorting of the type-ahead review queue other than grouped by question and
+  alphabetical within each group; the API's own order is otherwise unchanged.
+  What each review action does on the server is unchanged too — only how the
+  page renders and refetches the queue changed
+  ([#651](https://github.com/HPAC-Safety/safety-report/issues/651)).
 - Showing which part of a report matched a search, or a highlighted snippet
   of the match. A search only decides which reports are found and their
   order (ADR-0156).

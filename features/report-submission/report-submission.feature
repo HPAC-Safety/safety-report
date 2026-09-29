@@ -601,12 +601,18 @@ Scenario: Only free text marked for translation is machine-translated
   And the yes/no answer, stored as a boolean, is never sent to the translator
   And every other answer, the yes/no answer included, keeps no second language
 
-@REQ-SUB-027
-Scenario: An administrator's correction always wins over the Worker's translation
+@REQ-SUB-119
+Scenario: A second automatic translation is refused
   Given an answer already has a translation the Worker supplied automatically
-  When an administrator supplies or corrects that answer's translated value
-  Then the stored translated value is the administrator's
-  And the translation source is marked "human"
+  When the Worker's translator attempts to supply that answer's translation again
+  Then the domain refuses it
+  And the stored translated value is unchanged
+
+@REQ-SUB-120
+Scenario: There is no API endpoint left to supply or correct an answer's translation by hand
+  Given an answer already has a translation the Worker supplied automatically
+  Then no endpoint accepts a human-supplied translation for it
+  And no endpoint lists answers waiting for one
 
 @REQ-SUB-008
 Scenario Outline: The API rejects a malformed submission DTO

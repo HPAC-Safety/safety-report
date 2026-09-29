@@ -13,8 +13,10 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-///     Editing a question that has been answered, and the queue of answers waiting
-///     for a second official language. See ADR-0071 and ADR-0072.
+///     Editing a question that has been answered, and how many answers are
+///     waiting for the Worker's second official language. There is no admin
+///     endpoint or page for that queue anymore — only the Worker ever fills it,
+///     exactly once (ADR-0174). See ADR-0071 and ADR-0072.
 /// </summary>
 /// <remarks>
 ///     These tests write a report answer directly, because no submission endpoint
@@ -25,7 +27,6 @@ namespace HpacSafety.Api.Tests;
 public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 {
 	private static readonly Uri Questions = new("/api/admin/questions", UriKind.Relative);
-	private static readonly Uri Awaiting = new("/api/admin/answers/awaiting-translation", UriKind.Relative);
 	private static readonly DateTimeOffset At = new(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
@@ -244,30 +245,38 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Fact]
-	public async Task GivenNoMemberSession_WhenQueueIsRead_ThenApiRefuses()
+	[Theory]
+	[InlineData(null)]
+	[InlineData(MemberRole.SafetyOfficer)]
+	public async Task GivenNoAdministratorSession_WhenTheOldQueueEndpointIsCalled_ThenApiReturnsNotFound(MemberRole? role)
 	{
-		// Given
-		using var client = _factory.CreateClient();
+		// Given — the queue endpoint, and the Supply endpoint beside it, are
+		// gone entirely (ADR-0174): only the Worker ever fills an answer's
+		// second language, and it does so exactly once.
+		using var client = role is null ? _factory.CreateClient() : await SignedIn(role.Value);
 
 		// When
-		using var response = await client.GetAsync(Awaiting);
+		using var response = await client.GetAsync(new Uri("/api/admin/answers/awaiting-translation", UriKind.Relative));
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
 	[Fact]
-	public async Task GivenSafetyOfficerSession_WhenQueueIsRead_ThenApiRefuses()
+	public async Task GivenAdministratorSession_WhenTheOldSupplyEndpointIsCalled_ThenApiReturnsNotFound()
 	{
-		// Given — the queue spans reports, so it is an Administrator's screen
-		using var client = await SignedIn(MemberRole.SafetyOfficer);
+		// Given
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("narrative"));
+		var answerId = await Answer(created.GetProperty("id").GetString()!, "It all happened quickly.");
 
 		// When
-		using var response = await client.GetAsync(Awaiting);
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
+			new { value = "Tout s'est passé très vite." });
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
 	[Fact]
@@ -283,63 +292,14 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		var answerId = await Answer(id, "Cooper's Hill");
 
 		// Then
-		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
-		queued.GetProperty("answers").EnumerateArray()
-			.ShouldNotContain(answer => answer.GetProperty("id").GetString() == answerId);
-
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		(await database.AnswersAwaitingTranslation.AnyAsync(a => a.Id == TinyId.Parse(answerId))).ShouldBeFalse();
 		var stored = await database.ReportAnswers.Include(a => a.Choice).SingleAsync(a => a.Id == TinyId.Parse(answerId));
 		stored.Value.ShouldBeNull();
 		stored.Text.ShouldBe("Cooper's Hill");
 		stored.DisplayedTranslation.ShouldBe("Colline Cooper");
 		stored.TranslationSource.ShouldBe(TranslationSource.Choice);
-	}
-
-	[Fact]
-	public async Task GivenEmailAnswer_WhenAdministratorSuppliesTranslation_ThenRefused()
-	{
-		// Given — an email never has a second language (ADR-0112)
-		using var client = await SignedIn();
-		var created = await Create(client, UniqueKey("contact"), "email");
-		var answerId = await Answer(created.GetProperty("id").GetString()!, "avery@example.test");
-
-		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
-			new { value = "avery@example.test" });
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Fact]
-	public async Task GivenNarrativeAnswer_WhenAdministratorSuppliesTranslation_ThenAcceptedWithHumanProvenance()
-	{
-		// Given — ADR-0080 widens the queue to every answer with a value, a
-		// free-text one included, not just select-shaped ones
-		using var client = await SignedIn();
-		var created = await Create(client, UniqueKey("narrative"));
-		var answerId = await Answer(created.GetProperty("id").GetString()!, "It all happened quickly.");
-
-		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
-		queued.GetProperty("answers").EnumerateArray()
-			.ShouldContain(answer => answer.GetProperty("id").GetString() == answerId);
-
-		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
-			new { value = "Tout s'est passé très vite." });
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-
-		using var scope = _factory.Services.CreateScope();
-		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.SingleAsync(a => a.Id == TinyId.Parse(answerId));
-		stored.Value.ShouldBe("It all happened quickly.");
-		stored.TranslatedValue.ShouldBe("Tout s'est passé très vite.");
-		stored.TranslationSource.ShouldBe(TranslationSource.Human);
 	}
 
 	[Fact]
@@ -350,49 +310,16 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var before = await PendingTranslationCount(client);
 		var created = await Create(client, UniqueKey("counted"));
-		await Answer(created.GetProperty("id").GetString()!, "It was windy.");
+		var answerId = await Answer(created.GetProperty("id").GetString()!, "It was windy.");
 
 		// When
 		var after = await PendingTranslationCount(client);
 
 		// Then
 		after.ShouldBe(before + 1);
-		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
-		after.ShouldBe(queued.GetProperty("waiting").GetInt32());
-	}
-
-	[Fact]
-	public async Task GivenAnswerWithNoValue_WhenTranslationIsSupplied_ThenApiRefuses()
-	{
-		// Given — a skipped answer has nothing to translate
-		using var client = await SignedIn();
-		var created = await Create(client, UniqueKey("skipped"));
-		var answerId = await Answer(created.GetProperty("id").GetString()!, value: null);
-
-		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
-			new { value = "anything" });
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Theory]
-	[InlineData("not-a-tiny-id")]
-	[InlineData("aaaaaaaaaaa")]
-	public async Task GivenUnknownAnswerId_WhenTranslationIsSupplied_ThenApiReturnsNotFound(string id)
-	{
-		// Given — a malformed id and a well-formed one that matches no answer
-		using var client = await SignedIn();
-
-		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{id}/translation", UriKind.Relative),
-			new { value = "Colline Cooper" });
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		(await database.AnswersAwaitingTranslation.AnyAsync(a => a.Id == TinyId.Parse(answerId))).ShouldBeTrue();
 	}
 
 	/// <summary>

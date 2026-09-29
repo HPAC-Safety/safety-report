@@ -56,7 +56,7 @@ Scenario: A signed-in Administrator's Admin menu offers every option
   Given a visitor signs in as an Administrator
   Then the header shows an Admin menu and no other header nav change
   When the visitor activates the Admin menu
-  Then it opens with manage-reports, review-type-ahead-values, manage-questions, and manage-answer-translations options
+  Then it opens with manage-reports, review-type-ahead-values, and manage-questions options
 
 @REQ-MOD-092
 @ui
@@ -64,7 +64,7 @@ Scenario: A signed-in SafetyOfficer's Admin menu offers reports and type-ahead r
   Given a visitor signs in as a SafetyOfficer
   When the visitor activates the Admin menu
   Then it opens with manage-reports and review-type-ahead-values options
-  And it offers no manage-questions or manage-answer-translations option
+  And it offers no manage-questions option
 
 @REQ-MOD-009
 @ui
@@ -102,18 +102,17 @@ Scenario: The Admin menu is absent for a signed-out visitor
 @REQ-MOD-087
 @ui
 Scenario: An Administrator's Admin menu shows how much work is waiting
-  Given the API counts 3 reports needing action and 2 answers awaiting translation
+  Given the API counts 3 reports needing action
   And a visitor signs in as an Administrator
-  Then the Admin menu shows a count of 5
+  Then the Admin menu shows a count of 3
   When the visitor activates the Admin menu
   Then the manage-reports option shows a count of 3
-  And the manage-answer-translations option shows a count of 2
   And the manage-questions option shows no count
 
 @REQ-MOD-093
 @ui
 Scenario: A SafetyOfficer's Admin menu counts reports and type-ahead values waiting
-  Given the API counts 4 reports needing action, 3 type-ahead values awaiting review, and no answers awaiting translation
+  Given the API counts 4 reports needing action and 3 type-ahead values awaiting review
   And a visitor signs in as a SafetyOfficer
   Then the Admin menu shows a count of 7
   When the visitor activates the Admin menu
@@ -123,7 +122,7 @@ Scenario: A SafetyOfficer's Admin menu counts reports and type-ahead values wait
 @REQ-MOD-089
 @ui
 Scenario: With nothing waiting, the Admin menu shows no count
-  Given the API counts 0 reports needing action and 0 answers awaiting translation
+  Given the API counts 0 reports needing action
   And a visitor signs in as an Administrator
   Then the Admin menu shows no count
   When the visitor activates the Admin menu
@@ -693,7 +692,13 @@ Examples:
   | User          | /admin/reports             |
   | User          | /admin/questions           |
   | SafetyOfficer | /admin/questions           |
-  | SafetyOfficer | /admin/answer-translations |
+
+@REQ-MOD-184
+@ui
+Scenario: There is no admin page left to edit an answer's translation by hand
+  Given a visitor signs in as an Administrator
+  When the visitor navigates directly to /admin/answer-translations
+  Then the page shows the not-found view
 
 @REQ-MOD-044
 Scenario: A successful sign-in writes an audit row

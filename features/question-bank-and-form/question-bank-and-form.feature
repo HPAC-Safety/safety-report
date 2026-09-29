@@ -535,7 +535,6 @@ Scenario: A translation draft comes from the API and is saved only by a person
   When they ask for the other language to be translated
   Then the request goes to the application's own API rather than to a provider from the browser
   And the translated text is returned as a draft that is not saved anywhere
-  And the same action is available for the second language of an answer awaiting translation
   And the reviewer-gated translate endpoint is the only API code that calls a translator
   And no domain code a reporter's submission runs calls a translator
 
@@ -799,21 +798,6 @@ Scenario: The editor offers Allow future dates only for a date question, uncheck
   Then Allow future dates is not offered
   When they choose date, check Allow future dates, write the question in both languages, and save
   Then the saved question is sent with allowFutureDates true
-
-@REQ-QB-083
-@ui
-Scenario: An Administrator sees answers awaiting a second language
-  Given a signed-in Administrator opens the answers-awaiting-translation page
-  Then each answer is listed with its question, its value, and the language it was given in
-  And the page says how many are waiting
-
-@REQ-QB-084
-@ui
-Scenario: An Administrator translates an answer from the queue
-  Given a signed-in Administrator opens the answers-awaiting-translation page
-  When they press Translate on the first answer and save
-  Then that answer leaves the queue
-  And the value the reporter gave is unchanged
 
 @REQ-QB-085
 @ui

@@ -103,7 +103,8 @@ Three tiers drive access control, logging, and what may reach a model:
 1. **Restricted** — reporter and pilot names, phone, email, member number, raw
    narrative, original uploaded media. Admin-only and never logged.
    - The one translation service it reaches is the Worker's answer translation
-     (DeepL), for free text marked Auto-translate answer (ADR-0112).
+     (DeepL), for free text marked Auto-translate answer, written exactly
+     once and never by a human (ADR-0112, ADR-0174).
    - The one original that can become public is a validated document on a
      published report under `consent_documents`, as a forced download
      (ADR-0119).

@@ -94,19 +94,6 @@ public sealed class QuestionTranslationSteps
 			.ShouldNotContain(name => name.Contains("Save", StringComparison.Ordinal));
 	}
 
-	[Then(@"the same action is available for the second language of an answer awaiting translation")]
-	public void ThenTheActionIsAvailableForAnAnswer()
-	{
-		// The same route and the same policy. What an administrator may draft
-		// now includes an answer's second language (ADR-0072); what fills it is
-		// still their deliberate save.
-		Assembly.Load("HpacSafety.Api")
-			.GetType("HpacSafety.Api.Admin.AnswerTranslationEndpoints")
-			.ShouldNotBeNull()
-			.GetMethod("MapAdminAnswerTranslation", BindingFlags.Static | BindingFlags.Public)
-			.ShouldNotBeNull();
-	}
-
 	[Then(@"the reviewer-gated translate endpoint is the only API code that calls a translator")]
 	public void ThenNoReportContentIsTranslated()
 	{

@@ -12,31 +12,29 @@ const { Given, Then } = createBdd()
  * draws is asserted. The stub answers as the API would for the signed-in role.
  */
 
-async function stubCounts(page: Page, reports: string, values: string, answers: string) {
+async function stubCounts(page: Page, reports: string, values: string) {
 	pendingCountsStubbed.add(page)
-	await page.route("**/api/admin/counts", (route) => {
-		const administrator = (route.request().headers()["authorization"] ?? "").includes("administrator")
-
-		return route.fulfill({
+	await page.route("**/api/admin/counts", (route) =>
+		route.fulfill({
 			status: 200,
 			contentType: "application/json",
 			body: JSON.stringify({
 				reportsNeedingAction: Number(reports),
-				answersAwaitingTranslation: administrator && answers !== "no" ? Number(answers) : null,
+				answersAwaitingTranslation: null,
 				typeAheadValuesAwaitingReview: Number(values),
 			}),
-		})
-	})
+		}),
+	)
 }
 
 Given(
-	/^the API counts (\d+) reports needing action and (\d+|no) answers awaiting translation$/,
-	async ({ page }, reports: string, answers: string) => stubCounts(page, reports, "0", answers),
+	/^the API counts (\d+) reports needing action$/,
+	async ({ page }, reports: string) => stubCounts(page, reports, "0"),
 )
 
 Given(
-	/^the API counts (\d+) reports needing action, (\d+) type-ahead values awaiting review, and (\d+|no) answers awaiting translation$/,
-	async ({ page }, reports: string, values: string, answers: string) => stubCounts(page, reports, values, answers),
+	/^the API counts (\d+) reports needing action and (\d+) type-ahead values awaiting review$/,
+	async ({ page }, reports: string, values: string) => stubCounts(page, reports, values),
 )
 
 const adminButton = (page: Page) => page.locator("header").getByRole("button", { name: /^Admin/ })
@@ -45,7 +43,6 @@ const menu = (page: Page) => page.getByRole("menu", { name: "Admin" })
 const OPTIONS: Record<string, string> = {
 	"manage-reports": "Manage reports",
 	"manage-questions": "Manage questions",
-	"manage-answer-translations": "Answers awaiting translation",
 	"review-type-ahead-values": "Type-ahead values to review",
 }
 

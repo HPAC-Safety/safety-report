@@ -18,6 +18,12 @@ other label at submission, and every other answer has no second language. The
 immutability of `value` and `locale` stands, with one exception:
 [ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md) converts
 every stored yes/no and checkbox word to a boolean, once, in one migration.
+**Its human-translation path is superseded by
+[ADR-0174](ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md):**
+`SupplyHumanTranslation`, the admin "awaiting translation" page, and its
+endpoint are removed. Only the Worker ever writes `value_translated`, and
+only once; `TranslationSource.Human` is kept solely for rows written before
+that change.
 
 ## Context
 

@@ -28,7 +28,6 @@
     "admin": "Admin",
     "manageReports": "Gérer les signalements",
     "manageQuestions": "Gérer les questions",
-    "manageAnswerTranslations": "Réponses en attente de traduction",
     "reviewTypeAheadValues": "Valeurs de saisie semi-automatique à vérifier",
     "pendingCount": "{count} en attente"
   },
@@ -355,20 +354,6 @@
     "export": {
       "action": "Exporter vers Typeform au format JSON",
       "working": "Exportation en cours…"
-    }
-  },
-  "answerTranslations": {
-    "title": "Réponses en attente de traduction",
-    "intro": "Une personne déclarante répond à une liste de choix ou à une saisie semi-automatique dans une langue officielle, et rien n’est traduit lors de la saisie. Indiquez ici l’autre langue; ce que la personne déclarante a écrit n’est jamais modifié.",
-    "loading": "Chargement des réponses…",
-    "empty": "Aucune réponse n’attend une deuxième langue.",
-    "waitingCount": "En attendant une deuxième langue : {count}.",
-    "givenIn": "Tiré de {locale}",
-    "supply": "{locale} de l'offre",
-    "translate": "Traduire",
-    "save": "Enregistrer",
-    "error": {
-      "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     }
   },
   "typeAheadValues": {

@@ -187,13 +187,15 @@ contributor who never invokes one is unaffected.
      ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)):
      - free text an administrator marked as needing translation: filled off
        the submission path, by the Worker through the question-authoring
-       translation port or by an administrator by hand;
+       translation port, exactly once — nothing, human included, ever
+       overwrites it ([ADR-0174](docs/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md));
      - a choice answer: reads its choice's other-language label — a lookup,
        not a translation. A reporter-added type-ahead value's missing label is
        filled on the choice by the Worker ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md));
      - everything else (unmarked text, email, phone, date, time, number,
        yes/no, checkbox): never has one;
-     - the source is recorded: `auto`, `human`, or `choice`.
+     - the source is recorded: `auto` or `choice`; `human` is retired
+       (ADR-0174) and kept only on rows written before that change.
    - **Storage forms**: a yes/no or checkbox answer is `true`/`false` in
      `value_boolean`, a JSON boolean on the wire, and never words in the
      database; the interface renders it in the reader's language
@@ -342,18 +344,18 @@ contributor who never invokes one is unaffected.
 
 - **Never on the submission path.** Nothing a reporter's request touches calls a
   translation provider.
-- Off that path it has six purposes:
+- Off that path it has five purposes:
   1. drafting question wording while authoring;
   2. the Worker mechanically supplying the second language of an answer that
-     needs one
+     needs one, exactly once — nothing else ever writes or overwrites it
      ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
-     [ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
-  3. an administrator correcting or supplying that language by hand;
-  4. a reviewer drafting one language of a summary pair from the other;
-  5. the Worker translating each revision of a member's comment on a published
+     [ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
+     [ADR-0174](docs/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md));
+  3. a reviewer drafting one language of a summary pair from the other;
+  4. the Worker translating each revision of a member's comment on a published
      report
      ([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md));
-  6. CI translating the English interface catalogue into `locales/fr-CA.json`
+  5. CI translating the English interface catalogue into `locales/fr-CA.json`
      ([ADR-0021](docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md),
      [ADR-0057](docs/decisions/ADR-0057-same-repo-pull-requests-translate-in-pr.md)).
 - The Worker's generated pair comes only from its one anonymized model call,

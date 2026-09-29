@@ -113,14 +113,14 @@ public class TranslationModeTests
 	}
 
 	[Fact]
-	public void GivenModeNone_WhenAdministratorSuppliesATranslation_ThenRefused()
+	public void GivenModeNone_WhenATranslationIsSupplied_ThenRefused()
 	{
 		// Given
 		var question = Question.Create("synthetic", QuestionType.Email, "Email", "Courriel", Now, isActive: true);
 		var answer = new Report(Locale.EnCa, Now).Answer(question, "avery@example.test", Now);
 
 		// When
-		var supplying = () => answer.SupplyHumanTranslation("avery@example.test");
+		var supplying = () => answer.SupplyAutoTranslation("avery@example.test");
 
 		// Then
 		supplying.ShouldThrow<DomainRuleViolationException>();
@@ -177,7 +177,7 @@ public class TranslationModeTests
 	}
 
 	[Fact]
-	public void GivenChoiceAnswer_WhenAdministratorSuppliesATranslation_ThenRefused()
+	public void GivenChoiceAnswer_WhenATranslationIsSupplied_ThenRefused()
 	{
 		// Given
 		var question = Question.Create(
@@ -186,7 +186,7 @@ public class TranslationModeTests
 		var answer = new Report(Locale.EnCa, Now).Answer(question, "Quebec", Now);
 
 		// When
-		var supplying = () => answer.SupplyHumanTranslation("Kebek");
+		var supplying = () => answer.SupplyAutoTranslation("Kebek");
 
 		// Then — its second language is its choice's (ADR-0128)
 		supplying.ShouldThrow<DomainRuleViolationException>();

@@ -42,7 +42,7 @@ locals {
 resource "aws_s3_bucket" "uploads" {
   bucket = "${local.name}-uploads-${local.bucket_suffix}"
 
-  tags = merge(local.app_tags, { Name = "${local.name}-uploads" })
+  tags = { Name = "${local.name}-uploads" }
 
   lifecycle {
     # Every attachment a reporter has ever sent. Never replaced, only updated
@@ -267,7 +267,7 @@ data "aws_iam_policy_document" "uploads" {
 resource "aws_s3_bucket" "site" {
   bucket = local.site_bucket
 
-  tags = merge(local.app_tags, { Name = "${local.name}-site" })
+  tags = { Name = "${local.name}-site" }
 }
 
 resource "aws_s3_bucket_public_access_block" "site" {

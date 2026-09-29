@@ -17,6 +17,12 @@ in [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md);
 everything else there stands. Issue
 [#626](https://github.com/HPAC-Safety/safety-report/issues/626).
 
+**AppRegistry removed by
+[ADR-0170](ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md):**
+the system has no AppRegistry application, so every `servicecatalog` action
+and the AppRegistry service-linked role below are gone, and the residual risk
+is an untagged ACM certificate or CloudFront distribution alone.
+
 ## Context
 
 The first real staging `terraform apply` (release run 36501034107) failed:

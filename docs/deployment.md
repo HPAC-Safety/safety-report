@@ -40,13 +40,13 @@ today's Terraform differs" below for exactly what is still scaffolding.
   each one, from that account's own CloudShell. Once deployed, production
   holds real reports and serves `safety.hpac.ca` and `securite.acvl.ca` on one
   CloudFront distribution.
-- Each account groups its resources under its own AWS myApplications
-  application and Resource Group — **`hpac-safety-staging`** and
-  **`hpac-safety-production`** — a grouping and cost-visibility tool, not a security
-  boundary; the myApplications application still relies on the
-  `Project=HPAC-Safety` tag, since its ARN carries an opaque id rather than
-  this name, but the Resource Group's own ARN carries the name, so it is
-  scoped by name as well. Both accounts are reached only by their own short-lived GitHub
+- Each account groups its resources under its own tag-based Resource Group
+  — **`hpac-safety-staging`** and **`hpac-safety-production`** — a grouping
+  and cost-visibility tool, not a security boundary; its ARN carries the
+  name, so the deploy role manages it by name. There is no myApplications
+  (AppRegistry) application: AWS closed AppRegistry to new accounts on
+  2026-07-30
+  ([ADR-0170](decisions/ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md)). Both accounts are reached only by their own short-lived GitHub
   OIDC roles
   (`hpac-safety-deploy`, `hpac-safety-plan`) — never a long-lived AWS access
   key.
@@ -226,7 +226,7 @@ none links elsewhere (issue #467).
 The Terraform and the application code now match this shape (#443, #465):
 Lambda functions with no ALB, origin-secret verification, the Worker's
 Lambda-invocation mode, the API's async nudge, `staging.tfvars`/
-`production.tfvars`, both accounts' AppRegistry applications, both hostname
+`production.tfvars`, both accounts' Resource Groups, both hostname
 sets, and a NAT instance instead of a managed NAT gateway. `release.yml` and
 `deploy-environment.yml` (#466) are now aligned against the real
 `infra/outputs.tf` this Terraform declares. Issue #30 tracks what remains;
@@ -344,12 +344,9 @@ tag/name scoping does not fit in one):
   Group **by name** too (`group/<hpac-safety-staging|hpac-safety-production>`,
   matching this account's own GitHub environment name, now that #591 gave it
   the `hpac-safety-` prefix), the one exception being CloudFront/ACM-style
-  services and the AppRegistry application itself, which keep tag-only
-  scoping — the myApplications application's ARN carries an AWS-assigned
-  opaque id, never the name, so there is no ARN pattern to write for it in
-  advance. For the remaining services with no HPAC-Safety-only name pattern
-  to scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS,
-  AppRegistry): read-only metadata
+  services, which keep tag-only scoping. For the remaining services with no
+  HPAC-Safety-only name pattern to scope by (ACM, Auto Scaling, CloudFront,
+  CloudWatch, EC2, RDS): read-only metadata
   broadly, `Create*` only when the request carries the `Project=HPAC-Safety`
   tag (`aws:RequestTag`, a real `StringEquals`, not `IfExists`), any action
   on a resource **already** tagged `Project=HPAC-Safety`
@@ -376,12 +373,11 @@ tag/name scoping does not fit in one):
   it, `aws:RequestTag` alone would let this role stamp
   `Project=HPAC-Safety` onto ANY existing, untagged resource in the
   account, after which this same guard would treat it as ours and let it
-  be modified or deleted. The five tag-adding actions a tagged create needs
-  (ACM, CloudFront, CloudWatch, Resource Groups, AppRegistry) are instead
+  be modified or deleted. The four tag-adding actions a tagged create needs
+  (ACM, CloudFront, CloudWatch, Resource Groups) are instead
   denied only on a resource tagged for another project
-  (`NeverRetagAnotherProjectsResource`); an untagged ACM certificate,
-  CloudFront distribution, or AppRegistry application of another workload is
-  the accepted residual risk
+  (`NeverRetagAnotherProjectsResource`); an untagged ACM certificate or
+  CloudFront distribution of another workload is the accepted residual risk
   ([ADR-0169](decisions/ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md)).
 - **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles, policies,
   and instance profiles (for the NAT instance, #465) named `hpac-safety-*`;

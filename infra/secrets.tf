@@ -54,7 +54,7 @@ resource "aws_secretsmanager_secret" "cloudfront_origin_secret" {
 
   recovery_window_in_days = 7
 
-  tags = merge(local.app_tags, { Name = "${local.name}/cloudfront-origin-secret" })
+  tags = { Name = "${local.name}/cloudfront-origin-secret" }
 
   lifecycle {
     prevent_destroy = true
@@ -95,7 +95,7 @@ resource "aws_secretsmanager_secret" "this" {
   # reused within a sprint.
   recovery_window_in_days = 7
 
-  tags = merge(local.app_tags, { Name = each.value.name })
+  tags = { Name = each.value.name }
 
   lifecycle {
     # The entry, not its value, is what a plan must never drop: deleting one

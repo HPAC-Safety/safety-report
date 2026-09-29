@@ -355,20 +355,11 @@ fi
 #      to those ARN patterns instead of "*", so the tag condition is not the
 #      only thing standing between this role and another app's
 #      identically-typed resource.
-#
-#      THE APPREGISTRY APPLICATION IS NOT SIMILARLY SCOPED, even though #591
-#      also renamed it to hpac-safety-<environment>: its ARN addresses the
-#      application by an AWS-assigned opaque id
-#      (arn:...:servicecatalog:.../applications/app-xxxxxxxxxxxx), never by
-#      the human-chosen name, and that id does not exist until
-#      CreateApplication has already run. There is no ARN pattern to write in
-#      advance, so guard 3's tag condition remains the only enforceable scope
-#      for it - see CreateOnlyAsOurProject below.
 #   2. READ-ONLY METADATA everywhere else (Describe*/List*/most Get*) is
 #      allowed broadly: configuration facts, not data, and Terraform needs
 #      them to plan a diff against services that DON'T have a name pattern to
-#      scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS,
-#      AppRegistry). Resource Groups' own Get*/List* moved to
+#      scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS).
+#      Resource Groups' own Get*/List* moved to
 #      ManageOurResourceGroupOnly below, alongside its CreateGroup, once the
 #      group name itself became scopable; `resource-groups:SearchResources`
 #      stays here because it queries by tag/type, not by an existing group's
@@ -433,7 +424,7 @@ fi
 #     (`db:hpac-safety*` and siblings; `autoScalingGroupName/hpac-safety*`) -
 #     `ManageOurDatabaseTagsOnly`, `ManageOurAutoScalingGroupTagsOnly`.
 #   - `acm:AddTagsToCertificate`, `cloudfront:TagResource`,
-#     `cloudwatch:TagResource`, `servicecatalog:TagResource`, and
+#     `cloudwatch:TagResource`, and
 #     `resource-groups:Tag`: AWS authorizes these on every create call that
 #     carries tags, so the first real apply refused them (#626, ADR-0169).
 #     They are allowed only when the tag being added is Project=HPAC-Safety
@@ -441,13 +432,13 @@ fi
 #     `TagOurAlarmsOnly`; the group by name in `ManageOurResourceGroupOnly`),
 #     and `NeverRetagAnotherProjectsResource` denies them on a resource
 #     tagged for another project. ACCEPTED RESIDUAL RISK (ADR-0169): an
-#     UNTAGGED ACM certificate, CloudFront distribution, or AppRegistry
-#     application of another workload could be tagged ours and then changed
+#     UNTAGGED ACM certificate or CloudFront distribution of another
+#     workload could be tagged ours and then changed
 #     - their ARNs are opaque, so no name scope exists. The alarm and the
 #     group are name-scoped, so they carry no such risk.
 #
 # UPDATES TO WHAT IS OURS. `ManageWhatIsAlreadyTaggedOurs` allows every
-# ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS, and AppRegistry action
+# ACM, Auto Scaling, CloudFront, CloudWatch, EC2, and RDS action
 # on a resource already tagged Project=HPAC-Safety - parameter-group
 # parameters, a NAT ENI's source_dest_check, the release's
 # StartInstanceRefresh and CreateInvalidation, and every later change. The
@@ -545,7 +536,7 @@ fi
 #     ManageOurResourceGroupOnly             manage group/${GITHUB_ENVIRONMENT} only (name-scoped, not tag-only)
 #     CreateOnlyAsOurProject                 Create* only with our RequestTag
 #     CreateCloudFrontConfigThatCannotBeTagged  OAC/headers/cache policy/function, untagged
-#     TagAtCreationAsOurProject              acm/cloudfront/servicecatalog tag-add, only our tag
+#     TagAtCreationAsOurProject              acm/cloudfront tag-add, only our tag
 #     TagOurAlarmsOnly                       cloudwatch tag-add on alarm:hpac-safety-*
 #     ManageWhatIsAlreadyTaggedOurs          any action on a resource tagged ours
 #     TagOnlyAtEc2CreationTime               ec2:CreateTags gated on ec2:CreateAction
@@ -928,8 +919,7 @@ DEPLOY_POLICY_IAM=$(cat <<JSON
         "StringEquals": {
           "iam:AWSServiceName": [
             "rds.amazonaws.com",
-            "autoscaling.amazonaws.com",
-            "servicecatalog-appregistry.amazonaws.com"
+            "autoscaling.amazonaws.com"
           ]
         }
       }
@@ -1009,9 +999,6 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "rds:Describe*",
         "rds:List*",
         "resource-groups:SearchResources",
-        "servicecatalog:Get*",
-        "servicecatalog:List*",
-        "servicecatalog:Search*",
         "tag:Get*"
       ],
       "Resource": "*"
@@ -1065,11 +1052,7 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "ec2:RunInstances",
         "rds:CreateDBInstance",
         "rds:CreateDBSubnetGroup",
-        "rds:CreateDBParameterGroup",
-        "servicecatalog:CreateApplication",
-        "servicecatalog:CreateAttributeGroup",
-        "servicecatalog:AssociateResource",
-        "servicecatalog:AssociateAttributeGroup"
+        "rds:CreateDBParameterGroup"
       ],
       "Resource": "*",
       "Condition": {
@@ -1094,8 +1077,7 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
       "Effect": "Allow",
       "Action": [
         "acm:AddTagsToCertificate",
-        "cloudfront:TagResource",
-        "servicecatalog:TagResource"
+        "cloudfront:TagResource"
       ],
       "Resource": "*",
       "Condition": {
@@ -1124,8 +1106,7 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "cloudfront:*",
         "cloudwatch:*",
         "ec2:*",
-        "rds:*",
-        "servicecatalog:*"
+        "rds:*"
       ],
       "Resource": "*",
       "Condition": {
@@ -1314,10 +1295,6 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "resource-groups:Delete*",
         "resource-groups:Update*",
         "resource-groups:Untag",
-        "servicecatalog:Delete*",
-        "servicecatalog:Update*",
-        "servicecatalog:Disassociate*",
-        "servicecatalog:UntagResource",
         "secretsmanager:Delete*",
         "secretsmanager:Update*",
         "secretsmanager:Restore*",
@@ -1369,8 +1346,7 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "acm:AddTagsToCertificate",
         "cloudfront:TagResource",
         "cloudwatch:TagResource",
-        "resource-groups:Tag",
-        "servicecatalog:TagResource"
+        "resource-groups:Tag"
       ],
       "Resource": "*",
       "Condition": {

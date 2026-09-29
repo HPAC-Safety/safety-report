@@ -88,7 +88,22 @@ resource "aws_lambda_function" "api" {
         # this file's header comment.
         HpacSafety__Security__OriginVerification__SecretArn = aws_secretsmanager_secret.cloudfront_origin_secret.arn
         Translation__ApiKeySecretArn                        = aws_secretsmanager_secret.this["deepl_api_key"].arn
-      }
+      },
+
+      # The temporary interim issuer (issue #648, ADR-0172) — staging only.
+      # Empty where var.interim_issuer_enabled is false, so production's API
+      # function carries none of this. The flag and the secret's ARN only;
+      # AddHpacSafetyAuthentication resolves the signing key's value itself,
+      # at cold start, the same way as every other secret above. The email
+      # lists are not secret — see interim_issuer_administrator_emails.
+      var.interim_issuer_enabled ? merge(
+        {
+          HpacSafety__Authentication__InterimIssuer__Enabled             = "true"
+          HpacSafety__Authentication__InterimIssuer__SigningKeySecretArn = aws_secretsmanager_secret.interim_issuer_signing_key[0].arn
+        },
+        { for idx, email in var.interim_issuer_administrator_emails : "MembersSiteLogin__AdministratorEmails__${idx}" => email },
+        { for idx, email in var.interim_issuer_safety_officer_emails : "MembersSiteLogin__SafetyOfficerEmails__${idx}" => email },
+      ) : {}
     )
   }
 

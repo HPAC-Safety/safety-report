@@ -30,7 +30,7 @@ namespace HpacSafety.Api.Authentication;
 ///         type's only job is minting the token once a source resolves a role.
 ///     </para>
 /// </remarks>
-public sealed class DevelopmentTokenIssuer
+public sealed class DevelopmentTokenIssuer : IMemberTokenIssuer
 {
 	/// <summary>The issuer a development token names.</summary>
 	public const string IssuerName = "https://localhost/hpac-safety-dev";

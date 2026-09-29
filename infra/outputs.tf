@@ -65,6 +65,19 @@ output "secret_entries" {
   )
 }
 
+output "interim_issuer_signing_key_secret" {
+  description = <<-EOT
+    The temporary interim issuer's Secrets Manager entry name (issue #648,
+    ADR-0172), or an empty string when var.interim_issuer_enabled is false.
+    deploy-environment.yml reads this, with `output -raw`, to decide whether
+    to generate and put the one-time RSA signing key. TEMPORARY: deleted
+    along with the whole interim-issuer feature once a real identity provider
+    exists (ADR-0064).
+  EOT
+
+  value = var.interim_issuer_enabled ? aws_secretsmanager_secret.interim_issuer_signing_key[0].name : ""
+}
+
 output "dns_records_to_publish" {
   description = <<-EOT
     Every DNS record a human has to publish, grouped by the zone that owns it,

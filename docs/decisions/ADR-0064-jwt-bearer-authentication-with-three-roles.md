@@ -13,6 +13,11 @@ keywords: authentication, JWT, bearer token, OIDC, roles, authorization, claims
 **Status:** Accepted. Supersedes
 [ADR-0005](ADR-0005-authentication.md).
 
+**Standing in for, temporarily, in staging:
+[ADR-0172](ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)'s**
+interim issuer — the provider choice below is still open; ADR-0172 only lets
+staging validate a bearer token before that choice is made.
+
 ## Context
 
 [ADR-0005](ADR-0005-authentication.md) investigated `members.hpac.ca` directly,

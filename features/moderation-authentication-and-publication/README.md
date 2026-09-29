@@ -57,6 +57,24 @@ authority, no signing keys, and an issuer no real token will ever carry, so
 every authorization-protected endpoint refuses every token with 401
 (REQ-MOD-156). A configured Authority keeps today's behavior exactly.
 
+**Staging is a temporary exception.** Behind
+`HpacSafety:Authentication:InterimIssuer:Enabled` — never set alongside an
+`Authority`, and never in Development or production — this API becomes its
+own small RS256 identity provider: `GET /api/auth/interim/.well-known/openid-configuration`
+and `GET /api/auth/interim/jwks` are mapped alongside `POST /api/auth/token`,
+which reuses Development's own members-site credential check and hard-coded
+administrator allowlist (ADR-0079) — **`FixedAccountCredentialSource` is not
+registered here**, so the fixed development accounts
+(`admin`/`admin`, `officer`/`officer`, `user`/`user`) do not exist outside
+Development; only a real members-site login, checked against
+`MembersSiteLoginOptions`' allowlists, signs a member in on staging.
+Validation is pinned in-process to this host's own key and issuer,
+`urn:hpac-safety:interim-issuer` — no metadata fetch, same as Development.
+With the flag off, none of these three routes exist (404, not 401)
+(REQ-MOD-157, REQ-MOD-158, REQ-MOD-159). Every part of this is deleted once a
+real identity provider is chosen
+([ADR-0172](../../docs/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
+
 ## Roles
 
 | Role | Capabilities |
@@ -406,8 +424,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - A user table, an allowlist, an allowlist-management screen, or a session
   store. Roles come from the token
   ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-- Handling a member's password, outside the one Development-only carve-out
-  ([ADR-0079](../../docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+- Handling a member's password, outside Development's carve-out and its
+  temporary staging extension
+  ([ADR-0079](../../docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md),
+  [ADR-0172](../../docs/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
 - CSRF machinery or Turnstile. A bearer token carries no ambient authority
   ([ADR-0068](../../docs/decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
 - Email, push, or chat notification of a reviewer, a reporter, or anyone else.

@@ -320,6 +320,33 @@ jobs:
           aws secretsmanager put-secret-value --secret-id "$deepl_secret_id" --secret-string "$DEEPL_API_KEY" >/dev/null
           echo "Vendor keys refreshed in Secrets Manager. Values are never echoed."
 
+      # The temporary interim issuer's one signing key (issue #648, ADR-0172,
+      # TEMPORARY: deleted along with the whole feature once a real identity
+      # provider exists). Unlike the vendor keys above, nobody types this
+      # value: it is an RSA private key PEM this step generates itself, put
+      # only if the entry has no AWSCURRENT version yet, and never read back
+      # or echoed. `interim_issuer_signing_key_secret` is empty where
+      # var.interim_issuer_enabled is false (production), so this is a no-op
+      # there. The deploy role can put a secret value but never get one
+      # (ADR-0171) — this step only ever writes.
+      - name: Generate the interim issuer signing key, if it does not exist yet
+        run: |
+          set -euo pipefail
+          secret_id=$(terraform -chdir=infra output -raw interim_issuer_signing_key_secret)
+          if [ -z "$secret_id" ]; then
+            echo "Interim issuer disabled for ${{ inputs.environment_name }}; nothing to generate."
+            exit 0
+          fi
+          current=$(aws secretsmanager describe-secret --secret-id "$secret_id" \
+            --query 'VersionIdsToStages' --output text 2>/dev/null | grep -c AWSCURRENT || true)
+          if [ "$current" -gt 0 ]; then
+            echo "Interim issuer signing key already exists; leaving it as it is."
+            exit 0
+          fi
+          key_pem=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048)
+          aws secretsmanager put-secret-value --secret-id "$secret_id" --secret-string "$key_pem" >/dev/null
+          echo "Interim issuer signing key generated. The value is never echoed or read back."
+
       - name: Update the API Lambda function
         run: |
           set -euo pipefail

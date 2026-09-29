@@ -61,6 +61,11 @@ today's Terraform differs" below for exactly what is still scaffolding.
   starts and serves its public pages and public API (REQ-MOD-156, #647), but
   every bearer token is refused, so sign-in, filing a report (a member-only
   action, ADR-0067), review, and administration cannot work there.
+  **Staging is the exception**: `interim_issuer_enabled` turns on a temporary
+  RS256 identity provider the API runs itself, so sign-in, filing a report,
+  review, and administration all work in staging today
+  ([ADR-0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
+  Production still waits for `AUTH_AUTHORITY`.
 
 ## Release and promotion
 

@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
 using Amazon.S3;
 using DotNet.Testcontainers.Containers;
@@ -165,6 +166,71 @@ public static class BootedApi
 			// identity-provider one this scenario is about.
 			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", ProductionOriginSecret);
 		});
+	}
+
+	/// <summary>
+	///     The temporary interim issuer's test signing key (issue #648,
+	///     ADR-0172) — generated once per test run, never a real deployed key.
+	/// </summary>
+	private static readonly string InterimIssuerSigningKeyPem = GenerateInterimIssuerSigningKeyPem();
+
+	/// <summary>
+	///     A host that is not in Development, with the temporary interim
+	///     issuer enabled — its own RS256 tokens, its discovery document and
+	///     JWKS, and <c>/api/auth/token</c> reusing the same members-site
+	///     credential check Development uses (ADR-0079). See ADR-0172.
+	/// </summary>
+	/// <param name="membersSiteHandler">
+	///     A stubbed transport for the members-site call, never the real
+	///     network. Omitted when a scenario only needs the fixed accounts.
+	/// </param>
+	/// <param name="administratorEmails">The Development-shaped administrator allowlist for this host.</param>
+	/// <param name="safetyOfficerEmails">The Development-shaped safety-officer allowlist for this host.</param>
+	public static async Task<WebApplicationFactory<Program>> ProductionShapedWithInterimIssuer(
+		HttpMessageHandler? membersSiteHandler = null,
+		IReadOnlyList<string>? administratorEmails = null,
+		IReadOnlyList<string>? safetyOfficerEmails = null)
+	{
+		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		{
+			builder.UseEnvironment("Production");
+			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", ProductionOriginSecret);
+			builder.UseSetting("HpacSafety:Authentication:InterimIssuer:Enabled", "true");
+			builder.UseSetting("HpacSafety:Authentication:InterimIssuer:SigningKeyPem", InterimIssuerSigningKeyPem);
+
+			if (membersSiteHandler is not null)
+			{
+				builder.ConfigureTestServices(services =>
+				{
+					services
+						.AddHttpClient(MembersSiteCredentialSource.HttpClientName)
+						.ConfigurePrimaryHttpMessageHandler(() => membersSiteHandler);
+				});
+			}
+
+			var emailSettings = new Dictionary<string, string?>();
+
+			for (var index = 0; index < (administratorEmails?.Count ?? 0); index++)
+			{
+				emailSettings[$"MembersSiteLogin:AdministratorEmails:{index}"] = administratorEmails![index];
+			}
+
+			for (var index = 0; index < (safetyOfficerEmails?.Count ?? 0); index++)
+			{
+				emailSettings[$"MembersSiteLogin:SafetyOfficerEmails:{index}"] = safetyOfficerEmails![index];
+			}
+
+			foreach (var (key, value) in emailSettings)
+			{
+				builder.UseSetting(key, value);
+			}
+		});
+	}
+
+	private static string GenerateInterimIssuerSigningKeyPem()
+	{
+		using var rsa = RSA.Create(2048);
+		return rsa.ExportPkcs8PrivateKeyPem();
 	}
 
 	/// <summary>

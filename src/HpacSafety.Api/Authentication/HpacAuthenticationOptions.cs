@@ -60,4 +60,11 @@ public sealed class HpacAuthenticationOptions
 	///     job in production.
 	/// </summary>
 	public TimeSpan TokenLifetime { get; set; } = TimeSpan.FromHours(8);
+
+	/// <summary>
+	///     The temporary, staging-only interim issuer (issue #648, ADR-0172).
+	///     Everything it configures is named "Interim" so the whole feature can
+	///     be deleted in one sweep once a real identity provider replaces it.
+	/// </summary>
+	public InterimIssuerOptions InterimIssuer { get; set; } = new();
 }

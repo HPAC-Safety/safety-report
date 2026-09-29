@@ -13,6 +13,13 @@ keywords: development, mock authentication, members site, email allowlist, crede
 **Status:** Accepted. Supersedes [ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)
 for this one case.
 
+**Extended to staging, temporarily, by
+[ADR-0172](ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md):**
+this same credential check and administrator allowlist also run in staging,
+behind a flag, signing RS256 tokens rather than Development's HS256 ones,
+until a real identity provider exists. Nothing below changes; ADR-0172 only
+names a second place this mechanism is allowed to run.
+
 ## Context
 
 [ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)

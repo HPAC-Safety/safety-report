@@ -78,10 +78,29 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 // See ADR-0062, ADR-0109.
 builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 
+// The temporary interim issuer's RSA private key (issue #648, ADR-0172):
+// resolved once, here, from Secrets Manager when Terraform supplies an ARN —
+// staging only, and only when HpacSafety:Authentication:InterimIssuer:Enabled
+// is set. Left unset in Development, every test host, and production, where
+// AddHpacSafetyAuthentication never reads it. Mirrors the origin-verification
+// secret and the DeepL key above (#597).
+var interimIssuerSection = builder.Configuration.GetSection(
+	$"{HpacAuthenticationOptions.SectionName}:InterimIssuer");
+var interimIssuerSigningKeyPem = await SecretArnResolver.ResolveAsync(
+	interimIssuerSection[nameof(InterimIssuerOptions.SigningKeyPem)],
+	interimIssuerSection[nameof(InterimIssuerOptions.SigningKeySecretArn)]).ConfigureAwait(false);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+	[$"{HpacAuthenticationOptions.SectionName}:InterimIssuer:{nameof(InterimIssuerOptions.SigningKeyPem)}"] =
+		interimIssuerSigningKeyPem,
+});
+
 // Identity is a signed JWT this API validates; it never sees a password. In
 // Development the API also issues the tokens it validates, so the same
 // middleware and the same policies run either way and only the issuer and key
-// differ. See ADR-0064 and ADR-0066.
+// differ. See ADR-0064 and ADR-0066. Outside Development, the temporary
+// interim issuer (ADR-0172) may do the same with its own RS256 key, in
+// staging only, until a real provider replaces it.
 builder.Services.AddHpacSafetyAuthentication(
 	builder.Configuration,
 	builder.Environment.IsDevelopment());
@@ -123,14 +142,18 @@ if (app.Environment.IsDevelopment())
 // environment still serves public endpoints, but no bearer token can ever
 // validate here, so sign-in, review, and administration cannot work until an
 // Authority is configured (ADR-0158). Logged once at startup rather than on
-// every refused request, so it never touches request-path logging.
-if (!app.Environment.IsDevelopment())
+// every refused request, so it never touches request-path logging. The
+// temporary interim issuer (ADR-0172) is the one thing that makes sign-in
+// work here without an Authority, so its warning is suppressed while it is
+// enabled.
+var authenticationOptions = app.Services.GetRequiredService<IOptions<HpacAuthenticationOptions>>().Value;
+var interimIssuerEnabled = !app.Environment.IsDevelopment() && authenticationOptions.InterimIssuer.Enabled;
+
+if (!app.Environment.IsDevelopment()
+	&& !interimIssuerEnabled
+	&& string.IsNullOrWhiteSpace(authenticationOptions.Authority))
 {
-	var authenticationOptions = app.Services.GetRequiredService<IOptions<HpacAuthenticationOptions>>().Value;
-	if (string.IsNullOrWhiteSpace(authenticationOptions.Authority))
-	{
-		StartupLog.LogNoAuthorityConfigured(app.Logger, HpacAuthenticationOptions.SectionName);
-	}
+	StartupLog.LogNoAuthorityConfigured(app.Logger, HpacAuthenticationOptions.SectionName);
 }
 
 // First, and unconditional: an unverified caller's headers — including the
@@ -162,9 +185,9 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 // through the site's own address. The release's smoke test calls it (#647).
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
-// Sign-in, and who the caller is. The development token endpoint inside is
-// mapped only in Development.
-app.MapAuth(app.Environment.IsDevelopment());
+// Sign-in, and who the caller is. The token endpoint inside is mapped only in
+// Development or where the temporary interim issuer is enabled (ADR-0172).
+app.MapAuth(app.Environment.IsDevelopment(), interimIssuerEnabled);
 
 // Today's live question set, as the reporter-facing form renders it. Public,
 // unlike everything below it.

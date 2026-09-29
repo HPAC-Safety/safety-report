@@ -41,13 +41,15 @@ export function ManageQuestionsPage() {
 	const [loading, setLoading] = useState(true)
 
 	// The draft as it stood when the editor opened, whether blank or an
-	// existing question's — captured once per open, so it survives every
-	// later edit. `null` while no editor is open.
+	// existing question's — captured at the moment it opened, alongside
+	// `setDraft`, so a direct switch from editing one question to another
+	// (no intervening close) compares the new draft against its own opening
+	// state, never the previous question's. `null` while no editor is open.
 	const openedDraft = useRef<QuestionDraft | null>(null)
-	useEffect(() => {
-		if (draft && !openedDraft.current) openedDraft.current = draft
-		if (!draft) openedDraft.current = null
-	}, [draft])
+	function openDraft(next: QuestionDraft | null) {
+		openedDraft.current = next
+		setDraft(next)
+	}
 	const dirty = draft !== null && JSON.stringify(draft) !== JSON.stringify(openedDraft.current)
 	useUnsavedChangesGuard(dirty)
 	const [importing, setImporting] = useState(false)
@@ -89,7 +91,7 @@ export function ManageQuestionsPage() {
 				await createQuestion(value.request)
 			}
 
-			setDraft(null)
+			openDraft(null)
 			setEditing(null)
 			await load()
 		} catch (cause) {
@@ -186,7 +188,7 @@ export function ManageQuestionsPage() {
 					: setDraft(change)
 			}
 			onCancel={() => {
-				setDraft(null)
+				openDraft(null)
 				setEditing(null)
 			}}
 			onSave={save}
@@ -210,7 +212,7 @@ export function ManageQuestionsPage() {
 					className="touch-target inline-flex items-center rounded bg-brand-700 px-5 font-sans font-medium text-ink-inverse hover:bg-brand-600"
 					onClick={() => {
 						setEditing(null)
-						setDraft(blankDraft())
+						openDraft(blankDraft())
 						setImporting(false)
 					}}
 				>
@@ -220,7 +222,7 @@ export function ManageQuestionsPage() {
 					type="button"
 					className="touch-target inline-flex items-center rounded border border-rule px-5 font-sans text-ink hover:bg-surface-2"
 					onClick={() => {
-						setDraft(null)
+						openDraft(null)
 						setEditing(null)
 						setImporting(true)
 					}}
@@ -248,7 +250,7 @@ export function ManageQuestionsPage() {
 						const existing = questions.find((question) => question.key === imported.key)
 
 						setEditing(existing?.id ?? null)
-						setDraft(draftFromImported(imported, questions))
+						openDraft(draftFromImported(imported, questions))
 						setImporting(false)
 					}}
 					onClose={() => setImporting(false)}
@@ -283,7 +285,7 @@ export function ManageQuestionsPage() {
 									onEdit={() => {
 										setImporting(false)
 										setEditing(question.id)
-										setDraft(draftOf(question, locale))
+										openDraft(draftOf(question, locale))
 									}}
 									onDelete={() => void remove(question)}
 								/>

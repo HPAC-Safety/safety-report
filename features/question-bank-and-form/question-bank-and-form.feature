@@ -1883,3 +1883,12 @@ Scenario: Leaving the question editor with an unsaved draft is confirmed before 
   Then a bilingual dialog asks whether to leave, offering to stay
   When they confirm leaving
   Then the browser navigates to that page and the draft is gone
+
+@REQ-QB-239
+@ui
+Scenario: Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning
+  Given a signed-in Administrator opens the manage-questions page
+  When they open the first question for editing
+  And they open the second question for editing
+  And they navigate to another admin page
+  Then no confirmation of any kind appears

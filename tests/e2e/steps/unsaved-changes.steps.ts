@@ -116,3 +116,8 @@ Then("the browser navigates to that page and the correction is gone", async ({ p
 Then("the browser navigates away and the unposted comment is gone", async ({ page }) => {
 	await expect(page).toHaveURL(/\/reports$/)
 })
+
+Then("no confirmation of any kind appears", async ({ page }) => {
+	await expect(page).toHaveURL(/\/admin\/reports$/)
+	await expect(unsavedChangesDialog(page)).toBeHidden()
+})

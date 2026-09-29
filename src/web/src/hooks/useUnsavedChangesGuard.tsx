@@ -26,7 +26,7 @@ interface Registry {
 
 const UnsavedChangesContext = createContext<Registry | null>(null)
 
-function leavesPath(pathname: string, withinPath: string): boolean {
+function isWithinPath(pathname: string, withinPath: string): boolean {
 	return pathname === withinPath || pathname.startsWith(`${withinPath}/`)
 }
 
@@ -86,7 +86,7 @@ export function useUnsavedChangesGuard(dirty: boolean, withinPath?: string): voi
 		if (!registry || !dirty) return
 		registry.register(id, ({ currentLocation, nextLocation }) => {
 			if (nextLocation.pathname === currentLocation.pathname) return false
-			if (withinPath && leavesPath(nextLocation.pathname, withinPath) && leavesPath(currentLocation.pathname, withinPath)) {
+			if (withinPath && isWithinPath(nextLocation.pathname, withinPath) && isWithinPath(currentLocation.pathname, withinPath)) {
 				return false
 			}
 			return true

@@ -86,6 +86,12 @@ Lessons from staging's first real release, #613 through #638
   plan, so the deploy and plan roles must be able to read it: keep secret
   values out of Terraform except where both readers need the literal
   ([lesson 0034](../../docs/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
+- A tag condition must name the resource type it guards: AWS evaluates a
+  call against every resource it touches, including one it is creating that
+  cannot be tagged yet (a security-group rule) and one owned by another
+  account (a public AMI). Never set a Lambda-reserved environment variable
+  (`AWS_REGION`, `AWS_LAMBDA_*`, `_HANDLER`, and the rest)
+  ([lesson 0035](../../docs/lessons/0035-a-guard-checked-against-the-resource-a-call-creates.md)).
 - A failed create can leave a resource tainted; a `prevent_destroy` resource
   that is tainted blocks every later plan — the deploy untaints those before
   applying

@@ -392,10 +392,10 @@ fi
 #     just created in (`EstablishNetworkAttachmentsOnResourcesWeJustCreated`
 #     in DEPLOY_POLICY_SERVICES), are allowed unconditionally by that
 #     statement - but that is not the last word: every one of those same
-#     verbs (`Attach*`/`Associate*`/`Modify*`/`Authorize*`/`Revoke*`) is ALSO
-#     in the guardrails deny list, so guard 4 still applies on top and
-#     requires the resource on the other end (a subnet, a route table, a
-#     security group) to already carry `Project=HPAC-Safety` - exactly the
+#     verbs (`Attach*`/`Associate*`/`Modify*`) is ALSO in the guardrails deny
+#     list, so guard 4 still applies on top and requires the resource on the
+#     other end (a subnet, a route table) to already carry
+#     `Project=HPAC-Safety` - exactly the
 #     tag THIS role's own `CreateOnlyAsOurProject`/`TagOnlyAtEc2CreationTime`
 #     put there moments earlier. Nothing in this family is actually excluded
 #     from guard 4; the two statements together are what let a legitimate
@@ -534,6 +534,7 @@ fi
 #     NeverEditItsOwnPrivileges               deny: editing its own role
 #
 #   DEPLOY_POLICY_SERVICES (hpac-safety-deploy-services)
+#     LaunchFromAnyImage                     RunInstances on an AMI (fck-nat's is another account's, #643)
 #     ReadTheTerraformGeneratedOriginSecret  GetSecretValue on the origin secret only
 #     ReadOnlyMetadata                       Describe/List/Get for un-scopable services
 #     ManageOurResourceGroupOnly             manage group/${GITHUB_ENVIRONMENT} only (name-scoped, not tag-only)
@@ -550,6 +551,9 @@ fi
 #     NeverUseKmsOutsideOurServices           deny: any of the above without kms:ViaService
 #
 #   DEPLOY_POLICY_GUARDRAILS (hpac-safety-deploy-guardrails)
+#     NeverChangeAnotherApplicationsSecurityGroupRules  deny Authorize*/Revoke* on a
+#                                             security group not tagged ours; a new rule
+#                                             cannot carry a tag yet, so the group is checked (#643)
 #     NeverReadASecretValueEvenOurOwn        deny: GetSecretValue, except the origin secret
 #     NeverMutateAnUntaggedResource          deny every mutating verb unless the
 #                                             resource already carries Project=HPAC-Safety
@@ -979,6 +983,12 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "LaunchFromAnyImage",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:${REGION}::image/*"
+    },
+    {
       "Sid": "ReadTheTerraformGeneratedOriginSecret",
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
@@ -1239,6 +1249,20 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "NeverChangeAnotherApplicationsSecurityGroupRules",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:Authorize*",
+        "ec2:Revoke*"
+      ],
+      "Resource": "arn:aws:ec2:*:*:security-group/*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
       "Sid": "NeverReadASecretValueEvenOurOwn",
       "Effect": "Deny",
       "Action": "secretsmanager:GetSecretValue",
@@ -1284,8 +1308,6 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "ec2:Detach*",
         "ec2:Associate*",
         "ec2:Disassociate*",
-        "ec2:Authorize*",
-        "ec2:Revoke*",
         "ec2:ReplaceRoute*",
         "ec2:ResetInstanceAttribute",
         "ec2:DeleteTags",

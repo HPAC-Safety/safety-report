@@ -115,14 +115,13 @@ writes it exactly once.**
 ## Alternatives rejected
 
 **Remove `TranslationSource.Human` and rewrite existing rows to `Auto`.**
-Rejected: no submission endpoint outside a discarded Testcontainers database
-has ever run in an environment with real `human` rows at the time ADR-0072
-was written, but by the time of this decision staging has been live long
-enough that this repository will not assume otherwise without checking, and
-ADR-0107/the "no physical deletion" invariant (AGENTS.md invariant 8) argues
-against silently rewriting recorded provenance either way. Keeping the value
-and leaving old rows alone costs nothing and is honest about what actually
-happened to them.
+Rejected: the owner decided existing `human` rows stay exactly as stored
+([issue #666](https://github.com/HPAC-Safety/safety-report/issues/666)).
+Rewriting them would falsify recorded provenance — the row would then claim
+the Worker wrote a translation it never touched — which invariant 8's
+"never physically delete application records" already argues against for
+the record itself, and the same reasoning extends to rewriting one in place.
+Keeping the enum value and leaving old rows alone costs nothing.
 
 **Drop the `answers_awaiting_translation` view and its count from
 `GET /api/admin/counts` along with the page.** Considered, since nothing

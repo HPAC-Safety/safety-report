@@ -693,7 +693,7 @@ Examples:
   | User          | /admin/questions           |
   | SafetyOfficer | /admin/questions           |
 
-@REQ-MOD-174
+@REQ-MOD-184
 @ui
 Scenario: There is no admin page left to edit an answer's translation by hand
   Given a visitor signs in as an Administrator

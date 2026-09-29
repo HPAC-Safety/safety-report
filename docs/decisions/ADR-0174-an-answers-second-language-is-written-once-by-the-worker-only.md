@@ -105,7 +105,7 @@ writes it exactly once.**
   Admin-menu scenarios (`@REQ-MOD-007`, `@REQ-MOD-092`, `@REQ-MOD-087`,
   `@REQ-MOD-093`, `@REQ-MOD-089`) drop the removed option and its count, its
   `@REQ-MOD-043` outline drops the `/admin/answer-translations` row, and a
-  new `@REQ-MOD-174` proves the route now shows the not-found page. The
+  new `@REQ-MOD-184` proves the route now shows the not-found page. The
   API-level pending-count scenarios (`@REQ-MOD-084`..`@REQ-MOD-086`) are
   unchanged: the count itself is not removed, only its consumer.
 - No migration: no column, table, or enum value changes shape.

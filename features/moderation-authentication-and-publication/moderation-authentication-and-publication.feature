@@ -1448,10 +1448,13 @@ Scenario: A private note may refer to a private attachment on its own report onl
 
 @REQ-MOD-115
 @ui
-Scenario: A safety officer adds, downloads, and removes a private attachment on the report page
+Scenario: A safety officer stages, describes, adds, downloads, and removes a private attachment on the report page
   Given a safety officer is signed in and a pending report exists
   When the safety officer opens that report
-  And the safety officer adds the private attachment "coroner-report.zip" with the description "Received from the coroner"
+  And the safety officer stages the private attachment "coroner-report.zip"
+  Then the staged attachment "coroner-report.zip" finishes uploading and offers a description box
+  When the safety officer describes the staged attachment "coroner-report.zip" as "Received from the coroner"
+  And the safety officer adds the staged private attachments
   Then the private attachments section lists "coroner-report.zip" with its description, its adder, and when it was added
   When the safety officer downloads the private attachment "coroner-report.zip"
   Then the browser saves a file named "coroner-report.zip"
@@ -1473,11 +1476,76 @@ Scenario: A safety officer cancels a private attachment while it uploads
   Given a safety officer is signed in and a pending report exists
   And storage is slow to accept a private attachment
   When the safety officer opens that report
-  And the safety officer adds the private attachment "investigation-archive.zip" with the description "Synthetic archive"
-  Then the private attachments section shows the upload's progress and offers to cancel it
-  When the safety officer cancels the upload
-  Then the private attachments section says the upload was cancelled and lists no attachments
+  And the safety officer stages the private attachment "investigation-archive.zip"
+  Then the staged attachment "investigation-archive.zip" shows its upload progress, offers to cancel it, and "Add 0 attachments" stays disabled
+  When the safety officer cancels the staged upload "investigation-archive.zip"
+  Then the staged attachment "investigation-archive.zip" is gone from the staging list
   And the cancelled upload is erased
+
+@REQ-MOD-173
+@ui
+Scenario Outline: Several private attachments staged at once each upload independently
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer <method> the private attachments "site-photo.jpg" and "weather-log.pdf" at once
+  Then both staged attachments finish uploading independently, each with its own progress
+  When the safety officer describes the staged attachment "site-photo.jpg" as "Taken at the site"
+  And the safety officer describes the staged attachment "weather-log.pdf" as "Environment Canada log"
+  And the safety officer adds the staged private attachments
+  Then the private attachments section lists "site-photo.jpg" and "weather-log.pdf", each with its own description
+
+Examples:
+  | method                       |
+  | drops                        |
+  | chooses, through the picker, |
+
+@REQ-MOD-174
+@ui
+Scenario: Removing a staged private attachment before it is added leaves the others staged
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer drops the private attachments "keep-me.pdf" and "drop-me.pdf" at once
+  Then both staged attachments finish uploading independently, each with its own progress
+  When the safety officer removes the staged attachment "drop-me.pdf"
+  Then only "keep-me.pdf" remains in the staging list, and nothing erases the upload for "drop-me.pdf"
+  When the safety officer adds the staged private attachments
+  Then the private attachments section lists "keep-me.pdf" only
+
+@REQ-MOD-175
+@ui
+Scenario: A too-large private attachment is refused on its own row while the others proceed
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer drops one ordinary private attachment and one larger than the private cap, at once
+  Then the too-large attachment's staged row states the private cap and cannot be added
+  And the ordinary attachment finishes uploading and offers a description box
+  When the safety officer adds the staged private attachments
+  Then the private attachments section lists only the ordinary attachment
+
+@REQ-MOD-176
+@ui
+Scenario: "Add N attachments" is disabled until every staged private attachment has settled
+  Given a safety officer is signed in and a pending report exists
+  And storage is slow to accept a private attachment
+  When the safety officer opens that report
+  And the safety officer stages the private attachment "slow-upload.zip"
+  Then "Add 0 attachments" stays disabled while "slow-upload.zip" uploads
+  When storage finishes accepting the staged upload
+  Then "Add 1 attachment" becomes enabled
+
+@REQ-MOD-177
+@ui
+Scenario: Leaving the report page with staged, un-added private attachments warns
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer stages the private attachment "unfinished.pdf"
+  Then the staged attachment "unfinished.pdf" finishes uploading and offers a description box
+  When the safety officer tries to leave the page by reloading it
+  Then the browser warns before leaving
+  When the safety officer tries to leave the page through a link and declines
+  Then the safety officer stays on the report page
+  When the safety officer tries to leave the page through a link and confirms
+  Then the safety officer leaves the report page
 
 @REQ-MOD-140
 Scenario: Search matches the approved published summary in the visitor's site language

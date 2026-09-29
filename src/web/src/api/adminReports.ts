@@ -375,19 +375,26 @@ export function privateAttachmentLink(reportId: string, attachmentId: string): P
 	return get(`${privateAttachmentsPath(reportId)}/${encodeURIComponent(attachmentId)}/download`)
 }
 
+/** What a staged private upload leaves behind, once its bytes have reached storage. */
+export interface StagedPrivateUpload {
+	uploadId: string
+	contentType: string
+}
+
 /**
- * Adds one file: mints a pre-signed PUT to quarantine, sends the file straight
- * to storage with progress, then claims it onto the report (ADR-0135). The API
- * never holds the bytes. Aborting `signal` cancels the send, and an upload that
- * was minted but never claimed is erased; the lifecycle rule is the backstop.
+ * Stages one file: mints a pre-signed PUT to quarantine, then sends the file
+ * straight to storage with progress (ADR-0135, ADR-0126). The API never holds
+ * the bytes. Aborting `signal` cancels the send; an upload this leaves minted
+ * but unclaimed is erased here, and the lifecycle rule is the backstop
+ * otherwise, including for a staged upload a reviewer simply removes before
+ * adding it (issue 658) — that removal calls no API at all.
  */
-export async function uploadPrivateAttachment(
+export async function stagePrivateUpload(
 	reportId: string,
 	file: File,
-	description: string,
 	onProgress: (fraction: number) => void,
 	signal: AbortSignal,
-): Promise<PrivateAttachment> {
+): Promise<StagedPrivateUpload> {
 	let minted: MintedPrivateUpload
 	try {
 		minted = await post<MintedPrivateUpload>(`${privateAttachmentsPath(reportId)}/uploads`, {
@@ -408,14 +415,28 @@ export async function uploadPrivateAttachment(
 		throw cause
 	}
 
+	return { uploadId: minted.uploadId, contentType: minted.contentType }
+}
+
+/**
+ * Claims one staged upload onto the report as a private attachment, with its
+ * description (ADR-0135). An upload the claim fails for is erased; the
+ * lifecycle rule is the backstop otherwise.
+ */
+export async function addPrivateAttachment(
+	reportId: string,
+	uploadId: string,
+	fileName: string,
+	description: string,
+): Promise<PrivateAttachment> {
 	try {
 		return await post<PrivateAttachment>(privateAttachmentsPath(reportId), {
-			uploadId: minted.uploadId,
-			fileName: file.name,
+			uploadId,
+			fileName,
 			description: description.trim() || null,
 		})
 	} catch {
-		void deleteUpload(minted.uploadId)
+		void deleteUpload(uploadId)
 		throw new PrivateUploadError("claim")
 	}
 }

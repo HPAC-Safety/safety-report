@@ -19,6 +19,12 @@ staged tag's same artifacts to production after the same approval. "Production
 waits" inside the release, "one release workflow", and rollback by re-running
 the release no longer hold; everything else below stands.
 
+**Deploy-role policy amended by
+[ADR-0169](ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md):**
+for the services that cannot be scoped by name, the role may run any action
+on a resource already tagged `Project=HPAC-Safety`, and add a tag at creation
+only when that tag is ours.
+
 **Subject form amended by
 [ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
 subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is

@@ -434,18 +434,26 @@ fi
 #     `ManageOurDatabaseTagsOnly`, `ManageOurAutoScalingGroupTagsOnly`.
 #   - `acm:AddTagsToCertificate`, `cloudfront:TagResource`,
 #     `cloudwatch:TagResource`, `servicecatalog:TagResource`, and
-#     `resource-groups:Tag` are removed from `CreateOnlyAsOurProject`
-#     entirely and added to the guardrails deny instead, because each of
-#     their services' create calls (`RequestCertificate`,
-#     `CreateDistribution*`, `PutMetricAlarm`, `CreateApplication`,
-#     `CreateGroup`) accepts tags directly at creation - so the standalone
-#     tag-adding action is never needed to tag OUR OWN new resource, and
-#     denying it on anything not already tagged ours closes the hijack.
-#     RESIDUAL RISK, recorded rather than assumed away: if the Terraform AWS
-#     provider ever calls one of these five tag actions as a SEPARATE step
-#     right after creating the resource, instead of relying on the create
-#     call's own tag parameter, that specific call fails on the first real
-#     `apply` - a loud, narrow failure to fix, not a silent security gap.
+#     `resource-groups:Tag`: AWS authorizes these on every create call that
+#     carries tags, so the first real apply refused them (#626, ADR-0169).
+#     They are allowed only when the tag being added is Project=HPAC-Safety
+#     (`TagAtCreationAsOurProject`; alarms also by name in
+#     `TagOurAlarmsOnly`; the group by name in `ManageOurResourceGroupOnly`),
+#     and `NeverRetagAnotherProjectsResource` denies them on a resource
+#     tagged for another project. ACCEPTED RESIDUAL RISK (ADR-0169): an
+#     UNTAGGED ACM certificate, CloudFront distribution, or AppRegistry
+#     application of another workload could be tagged ours and then changed
+#     - their ARNs are opaque, so no name scope exists. The alarm and the
+#     group are name-scoped, so they carry no such risk.
+#
+# UPDATES TO WHAT IS OURS. `ManageWhatIsAlreadyTaggedOurs` allows every
+# ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS, and AppRegistry action
+# on a resource already tagged Project=HPAC-Safety - parameter-group
+# parameters, a NAT ENI's source_dest_check, the release's
+# StartInstanceRefresh and CreateInvalidation, and every later change. The
+# four CloudFront configuration types that cannot carry a tag
+# (`CreateCloudFrontConfigThatCannotBeTagged`) are created untagged; the
+# guardrail still refuses updating or deleting them.
 #
 # DATA, NOT JUST RESOURCES, MUST STAY OUT OF REACH. Guard 1-4 stop this role
 # from CHANGING another workload's resources, but several read-only "Get" and
@@ -497,12 +505,9 @@ fi
 #     it - is refused regardless of anything else the policy grants.
 #     `DescribeKey`/`ListAliases` stay unconditional: metadata, not data.
 #
-# NONE OF THIS HAS BEEN EXERCISED AGAINST REAL AWS. Nothing in this repository
-# can call AWS, and this pull request does not change that. Every statement
-# below is reviewed by inspection, JSON validation, and shellcheck only - the
-# same as `infra`'s required CI check does. Treat the four-policy split, the
-# exact action lists, and the two named exceptions above as a best-effort,
-# reviewable starting point, not a guarantee that no further gap exists.
+# ONLY A REAL APPLY EXERCISES THIS. Nothing in this repository can call AWS;
+# CI checks it by JSON validation and shellcheck. The first staging apply
+# found the gaps #626 fixed; a further one is fixed the same way.
 #
 # Statement -> intent, at a glance (full detail is in the JSON below):
 #
@@ -511,7 +516,8 @@ fi
 #     ManageOurBucketsOnly                   manage hpac-safety-* buckets
 #     NeverReadReportData                    deny: read an upload, even ours
 #     NeverReadDataOutsideOurBuckets          deny: read any object elsewhere
-#     ManageOurSecretsOnly                   manage hpac-safety-* secrets
+#     ManageOurSecretsOnly                   manage hpac-safety-* / hpac-safety/* secrets
+#     LetRdsCreateOurDatabasesMasterSecret   RDS-managed rds!db-* master secret
 #     NeverReadASecretValueEvenOurOwn        deny: GetSecretValue, anywhere
 #     ManageOurFunctionsOnly                 manage hpac-safety-* functions
 #     ManageOurRepositoriesOnly              manage hpac-safety-* ECR repos
@@ -537,7 +543,11 @@ fi
 #   DEPLOY_POLICY_SERVICES (hpac-safety-deploy-services)
 #     ReadOnlyMetadata                       Describe/List/Get for un-scopable services
 #     ManageOurResourceGroupOnly             manage group/${GITHUB_ENVIRONMENT} only (name-scoped, not tag-only)
-#     CreateOnlyAsOurProject                 Create* only with our RequestTag (no tag-adding actions - see TAG-HIJACK CLOSED)
+#     CreateOnlyAsOurProject                 Create* only with our RequestTag
+#     CreateCloudFrontConfigThatCannotBeTagged  OAC/headers/cache policy/function, untagged
+#     TagAtCreationAsOurProject              acm/cloudfront/servicecatalog tag-add, only our tag
+#     TagOurAlarmsOnly                       cloudwatch tag-add on alarm:hpac-safety-*
+#     ManageWhatIsAlreadyTaggedOurs          any action on a resource tagged ours
 #     TagOnlyAtEc2CreationTime               ec2:CreateTags gated on ec2:CreateAction
 #     EstablishNetworkAttachmentsOnResourcesWeJustCreated  wiring calls, still guardrail-gated (see above)
 #     UseTheAwsManagedKeysViaOurServicesOnly  Decrypt/Encrypt/GenerateDataKey* via our services only
@@ -546,11 +556,10 @@ fi
 #     NeverUseKmsOutsideOurServices           deny: any of the above without kms:ViaService
 #
 #   DEPLOY_POLICY_GUARDRAILS (hpac-safety-deploy-guardrails)
-#     NeverMutateAnUntaggedResource          deny every mutating verb - including
-#                                             acm/cloudfront/cloudwatch/servicecatalog/
-#                                             resource-groups tag-ADD actions, closing the
-#                                             tag-hijack path - unless the resource already
-#                                             carries Project=HPAC-Safety
+#     NeverMutateAnUntaggedResource          deny every mutating verb unless the
+#                                             resource already carries Project=HPAC-Safety
+#     NeverRetagAnotherProjectsResource      deny the five tag-add actions on a
+#                                             resource tagged for another project
 
 say '2/4  hpac-safety-deploy IAM role and policies'
 
@@ -640,7 +649,20 @@ DEPLOY_POLICY_CORE=$(cat <<JSON
         "secretsmanager:RotateSecret",
         "secretsmanager:CancelRotateSecret"
       ],
-      "Resource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety-*"
+      "Resource": [
+        "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety-*",
+        "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:hpac-safety/*"
+      ]
+    },
+    {
+      "Sid": "LetRdsCreateOurDatabasesMasterSecret",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:CreateSecret",
+        "secretsmanager:TagResource",
+        "secretsmanager:DescribeSecret"
+      ],
+      "Resource": "arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:rds!db-*"
     },
     {
       "Sid": "NeverReadASecretValueEvenOurOwn",
@@ -906,7 +928,8 @@ DEPLOY_POLICY_IAM=$(cat <<JSON
         "StringEquals": {
           "iam:AWSServiceName": [
             "rds.amazonaws.com",
-            "autoscaling.amazonaws.com"
+            "autoscaling.amazonaws.com",
+            "servicecatalog-appregistry.amazonaws.com"
           ]
         }
       }
@@ -1026,10 +1049,6 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "autoscaling:CreateAutoScalingGroup",
         "autoscaling:CreateLaunchConfiguration",
         "cloudfront:CreateDistribution*",
-        "cloudfront:CreateOriginAccessControl",
-        "cloudfront:CreateResponseHeadersPolicy",
-        "cloudfront:CreateCachePolicy",
-        "cloudfront:CreateFunction",
         "cloudwatch:PutMetricAlarm",
         "cloudwatch:PutDashboard",
         "ec2:CreateVpc",
@@ -1060,6 +1079,62 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
       }
     },
     {
+      "Sid": "CreateCloudFrontConfigThatCannotBeTagged",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateOriginAccessControl",
+        "cloudfront:CreateResponseHeadersPolicy",
+        "cloudfront:CreateCachePolicy",
+        "cloudfront:CreateFunction"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TagAtCreationAsOurProject",
+      "Effect": "Allow",
+      "Action": [
+        "acm:AddTagsToCertificate",
+        "cloudfront:TagResource",
+        "servicecatalog:TagResource"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
+      "Sid": "TagOurAlarmsOnly",
+      "Effect": "Allow",
+      "Action": "cloudwatch:TagResource",
+      "Resource": "arn:aws:cloudwatch:${REGION}:${ACCOUNT_ID}:alarm:hpac-safety-*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
+      "Sid": "ManageWhatIsAlreadyTaggedOurs",
+      "Effect": "Allow",
+      "Action": [
+        "acm:*",
+        "autoscaling:*",
+        "cloudfront:*",
+        "cloudwatch:*",
+        "ec2:*",
+        "rds:*",
+        "servicecatalog:*"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
       "Sid": "TagOnlyAtEc2CreationTime",
       "Effect": "Allow",
       "Action": "ec2:CreateTags",
@@ -1078,7 +1153,9 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
             "CreateNetworkInterface",
             "AllocateAddress",
             "CreateVpcEndpoint",
-            "CreateFlowLogs"
+            "CreateFlowLogs",
+            "AuthorizeSecurityGroupIngress",
+            "AuthorizeSecurityGroupEgress"
           ]
         }
       }
@@ -1184,7 +1261,6 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "acm:Resend*",
         "acm:Update*",
         "acm:RemoveTagsFromCertificate",
-        "acm:AddTagsToCertificate",
         "autoscaling:Delete*",
         "autoscaling:Update*",
         "autoscaling:Suspend*",
@@ -1200,13 +1276,11 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "cloudfront:Delete*",
         "cloudfront:Update*",
         "cloudfront:UntagResource",
-        "cloudfront:TagResource",
         "cloudwatch:Delete*",
         "cloudwatch:Set*",
         "cloudwatch:Disable*",
         "cloudwatch:Enable*",
         "cloudwatch:UntagResource",
-        "cloudwatch:TagResource",
         "ec2:Delete*",
         "ec2:Modify*",
         "ec2:Terminate*",
@@ -1240,12 +1314,10 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "resource-groups:Delete*",
         "resource-groups:Update*",
         "resource-groups:Untag",
-        "resource-groups:Tag",
         "servicecatalog:Delete*",
         "servicecatalog:Update*",
         "servicecatalog:Disassociate*",
         "servicecatalog:UntagResource",
-        "servicecatalog:TagResource",
         "secretsmanager:Delete*",
         "secretsmanager:Update*",
         "secretsmanager:Restore*",
@@ -1285,6 +1357,26 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
       ],
       "Resource": "*",
       "Condition": {
+        "StringNotEquals": {
+          "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
+      "Sid": "NeverRetagAnotherProjectsResource",
+      "Effect": "Deny",
+      "Action": [
+        "acm:AddTagsToCertificate",
+        "cloudfront:TagResource",
+        "cloudwatch:TagResource",
+        "resource-groups:Tag",
+        "servicecatalog:TagResource"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:ResourceTag/${TAG_KEY}": "false"
+        },
         "StringNotEquals": {
           "aws:ResourceTag/${TAG_KEY}": "${TAG_VALUE}"
         }

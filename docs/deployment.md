@@ -348,7 +348,12 @@ tag/name scoping does not fit in one):
   to scope by (ACM, Auto Scaling, CloudFront, CloudWatch, EC2, RDS,
   AppRegistry): read-only metadata
   broadly, `Create*` only when the request carries the `Project=HPAC-Safety`
-  tag (`aws:RequestTag`, a real `StringEquals`, not `IfExists`), and
+  tag (`aws:RequestTag`, a real `StringEquals`, not `IfExists`), any action
+  on a resource **already** tagged `Project=HPAC-Safety`
+  (`ManageWhatIsAlreadyTaggedOurs`), the tag-adding action a tagged create
+  needs only when the tag it adds is ours (`TagAtCreationAsOurProject`,
+  `TagOurAlarmsOnly`), the four CloudFront configuration types that cannot
+  carry a tag created untagged, and
   `ec2:CreateTags` only when AWS's own `ec2:CreateAction` context key names
   one of those same create calls — a key EC2 populates only when tagging is
   bundled into a genuine create request, never for a standalone `CreateTags`
@@ -357,8 +362,7 @@ tag/name scoping does not fit in one):
 - **`hpac-safety-deploy-guardrails`** — denies every mutating verb
   (`Delete*`/`Modify*`/`Update*`/`Put*`/`Stop*`/`Start*`/`Reboot*`/
   `Terminate*`/`Attach*`/`Detach*`/`Associate*`/`Disassociate*`/
-  `Authorize*`/`Revoke*`, and adding or removing a tag through any action
-  other than the two carve-outs above) on a resource that is not
+  `Authorize*`/`Revoke*`, and removing a tag) on a resource that is not
   **already** tagged `Project=HPAC-Safety` (`aws:ResourceTag`, a real
   `StringNotEquals`, with no `IfExists` — an untagged resource is denied
   exactly like one tagged for someone else's project). This is what makes
@@ -369,7 +373,13 @@ tag/name scoping does not fit in one):
   it, `aws:RequestTag` alone would let this role stamp
   `Project=HPAC-Safety` onto ANY existing, untagged resource in the
   account, after which this same guard would treat it as ours and let it
-  be modified or deleted.
+  be modified or deleted. The five tag-adding actions a tagged create needs
+  (ACM, CloudFront, CloudWatch, Resource Groups, AppRegistry) are instead
+  denied only on a resource tagged for another project
+  (`NeverRetagAnotherProjectsResource`); an untagged ACM certificate,
+  CloudFront distribution, or AppRegistry application of another workload is
+  the accepted residual risk
+  ([ADR-0169](decisions/ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md)).
 - **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles, policies,
   and instance profiles (for the NAT instance, #465) named `hpac-safety-*`;
   `iam:PassRole` only to those roles and only with `iam:PassedToService` in
@@ -412,18 +422,9 @@ on this role's behalf — is refused outright. `DescribeKey`/`ListAliases`
 stay unconditional, since they return metadata, not data.
 
 **Residual risk, recorded rather than hidden**: nothing in this repository
-can call AWS, so none of the above has been exercised against a real AWS
-account — it is reviewed by inspection, JSON validation, and shellcheck
-only, the same as `infra`'s required CI check does. The exact action
-lists, the four-policy split, and the two named exceptions are a
-best-effort, reviewable starting point, refined twice already through
-review rather than testing. One specific, named risk this leaves: if the
-Terraform AWS provider ever tags an ACM certificate, a CloudFront
-distribution, a CloudWatch alarm, an AppRegistry application, or a
-Resource Group with a *separate* API call after creating it, rather than
-through that create call's own tag parameter, that specific call is
-refused on the first real `apply` — a loud, narrow failure to fix, not a
-silent security gap. More generally: an AWS action this policy did not
+can call AWS; only a real `apply` exercises this policy. The first one, in
+staging, found the tag-on-create and update gaps ADR-0169 fixes (#626). More
+generally: an AWS action this policy did not
 anticipate, a service added to the deploy role's scope without a matching
 name-scope or tag guard, or an untested interaction between the
 `CreateOnlyAsOurProject`/`TagOnlyAtEc2CreationTime` and

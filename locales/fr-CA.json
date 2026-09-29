@@ -396,7 +396,15 @@
     "relinkTo": "Proposé dans le cadre des réponses à «{question} »",
     "relinkNone": "Choisissez un ou plusieurs…",
     "lastParent": "Une valeur est proposée sous au moins une réponse; par conséquent, la dernière reste cochée.",
-    "relink": "Modifier"
+    "relink": "Modifier",
+    "translate": {
+      "group": "#Correction wording",
+      "action": "#Translate",
+      "working": "#Translating…",
+      "hint": "#Edit the wording, then translate it.",
+      "unavailable": "#Translation is not available on this server.",
+      "failed": "#The translation could not be completed. Please try again or write the other language yourself."
+    }
   },
   "reports": {
     "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",

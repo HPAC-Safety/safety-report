@@ -3,6 +3,12 @@ import { useLocale } from "../i18n/useLocale"
 import { sortChoices } from "../lib/sortChoices"
 import { MultiSelectPicker } from "../report-form/MultiSelectPicker"
 import {
+	DEFAULT_TRANSLATION_DIRECTION,
+	TranslationDirectionSwitch,
+	translationLocales,
+	type TranslationDirection,
+} from "../components/TranslationDirectionSwitch"
+import {
 	ApiError,
 	approveTypeAheadValue,
 	correctTypeAheadValue,
@@ -10,6 +16,8 @@ import {
 	mergeTypeAheadValue,
 	setTypeAheadValueParents,
 	removeTypeAheadValue,
+	translate,
+	translationAvailable,
 	type TypeAheadValueView,
 } from "../api/adminQuestions"
 
@@ -29,11 +37,39 @@ import {
  * loading state, so the list stays mounted and the reviewer keeps their place.
  */
 
-type Draft = { labelEn: string; labelFr: string }
+/**
+ * A correction in progress. `baselineEn`/`baselineFr` are the wording as the
+ * correction view opened, or as Translate last drafted from — the same
+ * "written and differs from the source" rule a question's choice uses
+ * (ADR-0141, ADR-0144). Editing the source again after an earlier translate,
+ * or after the target already had text, re-enables Translate.
+ */
+type Draft = {
+	labelEn: string
+	labelFr: string
+	baselineEn: string
+	baselineFr: string
+	direction: TranslationDirection
+	translating: boolean
+	translationError: string | null
+}
 
 // A call signature rather than an arrow type: tools/check-hardcoded-strings.mjs
 // is a line scanner and reads an arrow's `>` as the end of a tag.
 type ReviewAction = { (): Promise<void> }
+
+/**
+ * Whether Translate is offered for a draft: its source language has text, and
+ * either its target is empty or its source differs from the baseline — the
+ * wording when correction opened, or when it was last translated
+ * (ADR-0141/ADR-0144, same rule as `QuestionEditor`'s `canTranslateChoice`).
+ */
+function canTranslateDraft(draft: Draft): boolean {
+	const source = draft.direction === "toFrench" ? draft.labelEn : draft.labelFr
+	const target = draft.direction === "toFrench" ? draft.labelFr : draft.labelEn
+	const baseline = draft.direction === "toFrench" ? draft.baselineEn : draft.baselineFr
+	return source.trim().length > 0 && (target.trim().length === 0 || source !== baseline)
+}
 
 type QuestionGroup = { id: string; heading: string; values: TypeAheadValueView[] }
 
@@ -61,6 +97,7 @@ export function ReviewTypeAheadValuesPage() {
 	const [relinkTo, setRelinkTo] = useState<Record<string, string[]>>({})
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [canTranslate, setCanTranslate] = useState(false)
 
 	const report = useCallback(
 		(cause: unknown) => setError(cause instanceof ApiError ? cause.detail : t("typeAheadValues.error.unexpected")),
@@ -78,7 +115,13 @@ export function ReviewTypeAheadValuesPage() {
 	const load = useCallback(async () => {
 		try {
 			setLoading(true)
-			await refresh()
+			const [, translation] = await Promise.all([
+				refresh(),
+				// Asked once, so Translate is disabled rather than offered and
+				// then failing on a server with no credential.
+				translationAvailable().catch(() => ({ available: false })),
+			])
+			setCanTranslate(translation.available)
 		} catch (cause) {
 			report(cause)
 		} finally {
@@ -104,7 +147,68 @@ export function ReviewTypeAheadValuesPage() {
 	}
 
 	function startCorrecting(value: TypeAheadValueView) {
-		setDrafts((current) => ({ ...current, [value.id]: { labelEn: value.labelEn ?? "", labelFr: value.labelFr ?? "" } }))
+		const labelEn = value.labelEn ?? ""
+		const labelFr = value.labelFr ?? ""
+		setDrafts((current) => ({
+			...current,
+			[value.id]: {
+				labelEn,
+				labelFr,
+				baselineEn: labelEn,
+				baselineFr: labelFr,
+				direction: DEFAULT_TRANSLATION_DIRECTION,
+				translating: false,
+				translationError: null,
+			},
+		}))
+	}
+
+	/**
+	 * Translates one value's draft in its own chosen direction and replaces
+	 * its other language with the result, as a draft the reviewer still has
+	 * to save. Dropped if the draft was cancelled, its source edited, or its
+	 * direction flipped while the request was out — the same guard
+	 * `QuestionEditor`'s `translateChoice` uses.
+	 */
+	async function translateValue(id: string) {
+		const draft = drafts[id]
+		if (!draft) return
+		const asked = draft.direction
+		const source = asked === "toFrench" ? draft.labelEn : draft.labelFr
+		const { from, to } = translationLocales(asked)
+
+		setDrafts((current) =>
+			current[id] ? { ...current, [id]: { ...current[id], translating: true, translationError: null } } : current,
+		)
+
+		try {
+			const { texts } = await translate([source], from, to)
+			const drafted = texts[0] ?? ""
+			setDrafts((current) => {
+				const now = current[id]
+				if (!now || now.direction !== asked) return current
+				const stillSource = (asked === "toFrench" ? now.labelEn : now.labelFr) === source
+				if (!stillSource) return current
+				const changes =
+					asked === "toFrench"
+						? { labelFr: drafted, baselineEn: source, baselineFr: drafted }
+						: { labelEn: drafted, baselineEn: drafted, baselineFr: source }
+				return { ...current, [id]: { ...now, ...changes, translating: false } }
+			})
+		} catch (cause) {
+			setDrafts((current) =>
+				current[id]
+					? {
+							...current,
+							[id]: {
+								...current[id],
+								translating: false,
+								translationError: cause instanceof ApiError ? cause.detail : t("typeAheadValues.translate.failed"),
+							},
+						}
+					: current,
+			)
+		}
 	}
 
 	function wording(value: { labelEn: string | null; labelFr: string | null }) {
@@ -195,6 +299,41 @@ export function ReviewTypeAheadValuesPage() {
 													</label>
 												</div>
 											) : null}
+
+											{draft && (
+												<div
+													role="group"
+													aria-label={t("typeAheadValues.translate.group")}
+													className="mt-3 flex flex-wrap items-center gap-3"
+												>
+													<TranslationDirectionSwitch
+														direction={draft.direction}
+														onChange={(direction) =>
+															setDrafts((current) => ({
+																...current,
+																[value.id]: { ...draft, direction },
+															}))
+														}
+													/>
+													<button
+														type="button"
+														className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2 disabled:opacity-40"
+														disabled={!canTranslate || !canTranslateDraft(draft) || draft.translating}
+														onClick={() => void translateValue(value.id)}
+													>
+														{draft.translating ? t("typeAheadValues.translate.working") : t("typeAheadValues.translate.action")}
+													</button>
+													<p className="font-sans text-xs text-ink-muted">
+														{!canTranslate ? t("typeAheadValues.translate.unavailable") : t("typeAheadValues.translate.hint")}
+													</p>
+												</div>
+											)}
+
+											{draft?.translationError && (
+												<p role="alert" className="mt-2 font-sans text-sm text-ink">
+													{draft.translationError}
+												</p>
+											)}
 
 											<div className="mt-3 flex flex-wrap gap-3">
 												{draft ? (

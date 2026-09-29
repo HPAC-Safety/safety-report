@@ -1122,6 +1122,26 @@ Approving, correcting, removing, merging, and relinking a value keeps the review
 
 A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count — *playwright-bdd, Covered*
 
+### REQ-MOD-164
+
+A value written in both languages offers Translate only once its wording differs from what correction opened with — *playwright-bdd, Covered*
+
+### REQ-MOD-165
+
+A value's Translate is unavailable after it translates, until its source is edited again — *playwright-bdd, Covered*
+
+### REQ-MOD-166
+
+Pressing Translate drafts the other language, still editable, and saves nothing by itself — *playwright-bdd, Covered*
+
+### REQ-MOD-167
+
+The direction switch changes which language Translate reads from — *playwright-bdd, Covered*
+
+### REQ-MOD-168
+
+Translate is unavailable when the server has no translation provider — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

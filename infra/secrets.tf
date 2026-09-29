@@ -111,3 +111,27 @@ resource "aws_secretsmanager_secret" "this" {
 # because both assemble the connection string from it at cold start. Its ARN
 # is also exposed as an output so an operator can find it without hunting
 # through the console.
+
+# --------------------------------------------------------------------------
+# The temporary interim-issuer signing key (issue #648, ADR-0172)
+# --------------------------------------------------------------------------
+#
+# Entry only, created only when var.interim_issuer_enabled — staging today,
+# never production. Unlike every entry in `secret_entries` above, there is
+# deliberately NO prevent_destroy here: this whole feature, this secret
+# included, is meant to be deleted in one sweep once a real identity provider
+# exists (ADR-0064) — the same reason there is no aws_secretsmanager_secret_version
+# resource either. deploy-environment.yml's "Generate the interim issuer
+# signing key" step puts the one value — an RSA private key PEM it generates
+# itself with openssl, never a human-typed vendor key — only when the entry
+# has no AWSCURRENT version yet, and never reads it back.
+resource "aws_secretsmanager_secret" "interim_issuer_signing_key" {
+  count = var.interim_issuer_enabled ? 1 : 0
+
+  name        = "${local.name}/interim-issuer-signing-key"
+  description = "HpacSafety__Authentication__InterimIssuer__SigningKeyPem, read by the API itself at cold start via HpacSafety__Authentication__InterimIssuer__SigningKeySecretArn (#597, ADR-0172). An RSA private key PEM, generated once by deploy-environment.yml if this entry has no AWSCURRENT version yet. TEMPORARY: deleted along with the whole interim-issuer feature once a real identity provider exists (ADR-0064) — deliberately no prevent_destroy, unlike every other entry in this file."
+
+  recovery_window_in_days = 7
+
+  tags = { Name = "${local.name}/interim-issuer-signing-key" }
+}

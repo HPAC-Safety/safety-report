@@ -297,6 +297,12 @@ contributor who never invokes one is unaffected.
      checks it, never logging or storing it. It never runs outside Development
      and does not generalize
      ([ADR-0079](docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+     **Also staging, temporarily**: behind
+     `HpacSafety:Authentication:InterimIssuer:Enabled`, the same members-site
+     check and administrator allowlist run in staging too, signing RS256
+     tokens this API also validates, until a real identity provider is chosen
+     ([ADR-0172](docs/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
+     Never set in production.
 8. **Managed encryption, no deletion.**
    - Use managed encryption at rest and TLS. No application-level field
      encryption.
@@ -323,11 +329,14 @@ contributor who never invokes one is unaffected.
   outbound email flow, a server-side draft or resumable upload protocol, a
   speculative publication channel, a user table, an allowlist, a credential
   proxy, CSRF machinery, or Turnstile verification.
-- **One carved exception**: Development's members-site login (invariant 7)
+- **Two carved exceptions**: Development's members-site login (invariant 7)
   carries a hardcoded, Development-only email allowlist for role, and
   CSRF/session handling scoped entirely to that credential source. It never
-  reaches Production. Any other allowlist or credential-proxy-shaped code needs
-  its own argument on its own facts.
+  reaches Production. **Temporarily, staging carries the same allowlist too**,
+  behind the interim issuer's flag, until a real identity provider exists
+  ([ADR-0172](docs/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md));
+  production never sets it. Any other allowlist or credential-proxy-shaped
+  code needs its own argument on its own facts.
 
 ### Machine translation
 

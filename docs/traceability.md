@@ -1094,6 +1094,18 @@ An ordinary member's token widens nothing; only SafetyOfficer or Administrator d
 
 An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token — *Reqnroll, Covered*
 
+### REQ-MOD-157
+
+With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist — *Reqnroll, Covered*
+
+### REQ-MOD-158
+
+With the temporary interim issuer disabled, none of its endpoints exist — *Reqnroll, Covered*
+
+### REQ-MOD-159
+
+The temporary interim issuer's JWKS publishes only a public key — *Reqnroll, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

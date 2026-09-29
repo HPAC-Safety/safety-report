@@ -12,16 +12,23 @@ namespace HpacSafety.Api.Authentication;
 public static class AuthEndpoints
 {
 	/// <summary>
-	///     Maps them. The development token endpoint is mapped <b>only</b> in
-	///     Development, so elsewhere the route does not exist — a 404, not a 401.
-	///     There is no flag that turns it on in a deployed environment, because
-	///     there is no code path that maps it there. See ADR-0066.
+	///     Maps them. The token endpoint is mapped <b>only</b> in Development
+	///     or where the temporary interim issuer is enabled (issue #648,
+	///     ADR-0172), so elsewhere the route does not exist — a 404, not a
+	///     401. There is no flag that turns it on in production, because there
+	///     is no code path that maps it there. See ADR-0066.
 	/// </summary>
 	/// <param name="app">The route builder.</param>
-	/// <param name="isDevelopment">Whether this host issues its own tokens.</param>
+	/// <param name="isDevelopment">Whether this host issues its own HS256 development tokens.</param>
+	/// <param name="interimIssuerEnabled">
+	///     Whether this host issues its own RS256 interim tokens (never true
+	///     together with <paramref name="isDevelopment" />; ADR-0172). Also
+	///     maps the interim issuer's discovery and JWKS endpoints.
+	/// </param>
 	/// <returns>The group, so the caller can see what was mapped.</returns>
 	public static RouteGroupBuilder MapAuth(this IEndpointRouteBuilder app,
-											bool isDevelopment)
+											bool isDevelopment,
+											bool interimIssuerEnabled = false)
 	{
 		ArgumentNullException.ThrowIfNull(app);
 
@@ -35,9 +42,14 @@ public static class AuthEndpoints
 		// Proves a token was validated rather than merely minted.
 		group.MapGet("/me", Me).RequireAuthorization(HpacPolicies.Member);
 
-		if (isDevelopment)
+		if (isDevelopment || interimIssuerEnabled)
 		{
 			group.MapPost("/token", Token).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.SignIn);
+		}
+
+		if (interimIssuerEnabled)
+		{
+			group.MapInterimIssuer();
 		}
 
 		return group;
@@ -73,7 +85,7 @@ public static class AuthEndpoints
 
 	private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> Token(
 		[FromBody] TokenRequest request,
-		DevelopmentTokenIssuer issuer,
+		IMemberTokenIssuer issuer,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
 		CancellationToken cancellationToken)

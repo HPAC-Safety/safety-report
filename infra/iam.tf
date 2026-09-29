@@ -41,10 +41,15 @@ data "aws_iam_policy_document" "api_function_secrets_read" {
     sid     = "ResolveSecretsAtColdStart"
     effect  = "Allow"
     actions = ["secretsmanager:GetSecretValue"]
-    resources = [
-      aws_secretsmanager_secret.this["deepl_api_key"].arn,
-      aws_secretsmanager_secret.cloudfront_origin_secret.arn,
-    ]
+    resources = concat(
+      [
+        aws_secretsmanager_secret.this["deepl_api_key"].arn,
+        aws_secretsmanager_secret.cloudfront_origin_secret.arn,
+      ],
+      # The temporary interim issuer's signing key (issue #648, ADR-0172) —
+      # present only where var.interim_issuer_enabled created the secret.
+      var.interim_issuer_enabled ? [aws_secretsmanager_secret.interim_issuer_signing_key[0].arn] : [],
+    )
   }
 }
 

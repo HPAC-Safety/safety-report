@@ -47,7 +47,39 @@ public static class AuthenticationServiceCollectionExtensions
 		services.Configure<HpacAuthenticationOptions>(
 			configuration.GetSection(HpacAuthenticationOptions.SectionName));
 
-		var parameters = ValidationParametersFor(options, useDevelopmentIssuer);
+		// The temporary interim issuer (issue #648, ADR-0172) is honored only
+		// outside Development, which keeps its own HS256 issuer regardless of
+		// this setting.
+		var interimIssuerEnabled = !useDevelopmentIssuer && options.InterimIssuer.Enabled;
+		InterimIssuerSigningKey? interimSigningKey = null;
+
+		if (interimIssuerEnabled)
+		{
+			if (!string.IsNullOrWhiteSpace(options.Authority))
+			{
+				// A real provider replaces the interim issuer; it is never
+				// meant to run alongside one.
+				throw new InvalidOperationException(
+					$"{HpacAuthenticationOptions.SectionName}:InterimIssuer:Enabled and "
+					+ $"{HpacAuthenticationOptions.SectionName}:Authority are both configured. "
+					+ "A real identity provider replaces the interim issuer — configure exactly one.");
+			}
+
+			if (string.IsNullOrWhiteSpace(options.InterimIssuer.SigningKeyPem))
+			{
+				throw new InvalidOperationException(
+					$"{HpacAuthenticationOptions.SectionName}:InterimIssuer:SigningKeyPem is required "
+					+ "when InterimIssuer:Enabled is true. It signs the tokens this host issues and then "
+					+ "validates. In a deployed environment it is resolved from "
+					+ $"{HpacAuthenticationOptions.SectionName}:InterimIssuer:SigningKeySecretArn at cold start.");
+			}
+
+			interimSigningKey = InterimIssuerSigningKey.FromPem(options.InterimIssuer.SigningKeyPem);
+		}
+
+		var parameters = interimIssuerEnabled
+			? InterimIssuerParameters(options, interimSigningKey!.SecurityKey)
+			: ValidationParametersFor(options, useDevelopmentIssuer);
 
 		services
 			.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,7 +88,11 @@ public static class AuthenticationServiceCollectionExtensions
 				jwt.TokenValidationParameters = parameters;
 				jwt.MapInboundClaims = false;
 
-				if (!useDevelopmentIssuer)
+				// No Authority for the interim issuer either: it validates
+				// in-process against its own key, with no metadata fetch —
+				// exactly like the development issuer, and unlike a real
+				// provider.
+				if (!useDevelopmentIssuer && !interimIssuerEnabled)
 				{
 					jwt.Authority = options.Authority;
 				}
@@ -78,7 +114,40 @@ public static class AuthenticationServiceCollectionExtensions
 		if (useDevelopmentIssuer)
 		{
 			services.AddSingleton<DevelopmentTokenIssuer>();
+			services.AddSingleton<IMemberTokenIssuer>(provider => provider.GetRequiredService<DevelopmentTokenIssuer>());
 			services.AddSingleton<IDevelopmentCredentialSource, FixedAccountCredentialSource>();
+			services.AddSingleton<IDevelopmentCredentialSource, MembersSiteCredentialSource>();
+
+			services.Configure<MembersSiteLoginOptions>(
+				configuration.GetSection(MembersSiteLoginOptions.SectionName));
+
+			services
+				.AddHttpClient(MembersSiteCredentialSource.HttpClientName, (provider,
+																			client) =>
+				{
+					var membersOptions = provider.GetRequiredService<IOptions<MembersSiteLoginOptions>>().Value;
+					client.BaseAddress = new Uri(membersOptions.BaseUrl);
+					client.Timeout = membersOptions.Timeout;
+				})
+				.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+				{
+					UseCookies = false,
+					AllowAutoRedirect = false,
+				});
+		}
+		else if (interimIssuerEnabled)
+		{
+			// The members-site check only — the owner's decision on issue #648:
+			// the password is verified live against the members site, and "we
+			// only use the hard-coded accounts to determine administrators"
+			// (MembersSiteLoginOptions' email lists). NOT FixedAccountCredentialSource:
+			// its admin/admin, officer/officer, user/user accounts are for a
+			// developer's own machine, and on staging's public address they
+			// would let anyone sign in as an Administrator. Everything
+			// registered here is temporary (ADR-0172) and named "Interim".
+			services.AddSingleton(interimSigningKey!);
+			services.AddSingleton<InterimTokenIssuer>();
+			services.AddSingleton<IMemberTokenIssuer>(provider => provider.GetRequiredService<InterimTokenIssuer>());
 			services.AddSingleton<IDevelopmentCredentialSource, MembersSiteCredentialSource>();
 
 			services.Configure<MembersSiteLoginOptions>(
@@ -100,6 +169,19 @@ public static class AuthenticationServiceCollectionExtensions
 		}
 
 		return services;
+	}
+
+	/// <summary>
+	///     The rules a temporary interim-issued token must satisfy (issue
+	///     #648, ADR-0172): the same shape <see cref="Common" /> builds for
+	///     every issuer, pinned to <see cref="InterimTokenIssuer.IssuerName" />
+	///     and this host's own public key — no Authority, no metadata fetch.
+	/// </summary>
+	private static TokenValidationParameters InterimIssuerParameters(
+		HpacAuthenticationOptions options,
+		SecurityKey signingKey)
+	{
+		return Common(options, InterimTokenIssuer.IssuerName, signingKey);
 	}
 
 	/// <summary>

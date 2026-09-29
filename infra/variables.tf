@@ -321,3 +321,29 @@ variable "nat_unhealthy_alarm_period_seconds" {
   # on GroupInServiceInstances covers both conditions the owner named.
   default = 300
 }
+
+# --------------------------------------------------------------------------
+# Issue #648, ADR-0172 — the temporary interim issuer. TEMPORARY: this whole
+# block, and everything it turns on, is deleted in one sweep once a real
+# identity provider (ADR-0064) exists. DECIDED per environment: true in
+# staging.tfvars, explicitly false in production.tfvars — production never
+# signs its own tokens.
+# --------------------------------------------------------------------------
+
+variable "interim_issuer_enabled" {
+  description = "Turns on the temporary interim issuer: the API signs and validates its own RS256 tokens and maps its discovery, JWKS, and token endpoints, until a real identity provider is chosen (ADR-0064, issue #648, ADR-0172). Also turns on the same members-site sign-in and hard-coded administrator allowlist Development already uses (ADR-0079), composed the same way."
+  type        = bool
+  default     = false
+}
+
+variable "interim_issuer_administrator_emails" {
+  description = "Emails that resolve to Administrator when the interim issuer verifies a login against the live members site — MembersSiteLogin:AdministratorEmails (ADR-0079), reused unchanged for staging. Not a secret: the same two accounts are already committed, in plain text, in src/HpacSafety.Api/appsettings.Development.json. Empty unless interim_issuer_enabled."
+  type        = list(string)
+  default     = []
+}
+
+variable "interim_issuer_safety_officer_emails" {
+  description = "Emails that resolve to SafetyOfficer under the same rule as interim_issuer_administrator_emails, checked after it (MembersSiteLogin:SafetyOfficerEmails, ADR-0079)."
+  type        = list(string)
+  default     = []
+}

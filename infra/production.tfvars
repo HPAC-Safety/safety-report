@@ -29,3 +29,8 @@ db_backup_retention_days = 7
 # subscription is created PENDING CONFIRMATION — see
 # alarm_subscriptions_pending_confirmation and issue #30, "Human work" H8.
 alarm_email_addresses = ["safety@hpac.ca"]
+
+# Explicit, never on: the interim issuer (issue #648, ADR-0172) is a staging
+# stopgap until a real identity provider is chosen. Production waits for that
+# provider (ADR-0064) rather than signing its own tokens.
+interim_issuer_enabled = false

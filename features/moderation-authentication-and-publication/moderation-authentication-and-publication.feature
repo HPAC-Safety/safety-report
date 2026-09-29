@@ -221,6 +221,31 @@ Scenario: An environment with no identity provider configured still starts and s
   When a request carrying a bearer token reaches an authorization-protected endpoint
   Then the API refuses it before the handler runs
 
+@REQ-MOD-157
+Scenario: With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist
+  Given the API is not running in development and the temporary interim issuer is enabled
+  When a member signs in with credentials the members site accepts
+  Then the API issues a token the API itself accepts
+  And an allowlisted administrator account's token carries the Administrator role
+  When a sign-in is attempted with the fixed development administrator account
+  Then the API refuses it
+
+@REQ-MOD-158
+Scenario: With the temporary interim issuer disabled, none of its endpoints exist
+  Given the API is not running in development and the temporary interim issuer is disabled
+  When the interim issuer's discovery document is requested
+  Then the API answers 404
+  When the interim issuer's JWKS is requested
+  Then the API answers 404
+  When a token is requested from the token endpoint
+  Then the API answers 404
+
+@REQ-MOD-159
+Scenario: The temporary interim issuer's JWKS publishes only a public key
+  Given the API is not running in development and the temporary interim issuer is enabled
+  When the interim issuer's JWKS is requested
+  Then the response carries only a public key, never a private key field
+
 @REQ-MOD-025
 @ignore
 Scenario: User capabilities

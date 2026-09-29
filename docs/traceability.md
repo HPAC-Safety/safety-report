@@ -1122,6 +1122,14 @@ Approving, correcting, removing, merging, and relinking a value keeps the review
 
 A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count — *playwright-bdd, Covered*
 
+### REQ-MOD-164
+
+A published report page offers a same-tab link to its admin detail page for a reviewer — *playwright-bdd, Covered*
+
+### REQ-MOD-165
+
+A published report page offers no admin link to a non-reviewer — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

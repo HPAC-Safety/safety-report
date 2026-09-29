@@ -392,6 +392,14 @@ own. To read the other language, the visitor switches the site's language.
 The locale is edge state, not extra report data. The admin report view links to a published report's public
 address.
 
+A signed-in Administrator or Safety Officer sees a same-tab link, next to the
+published date, from a report's public page to that same report's admin
+detail page (`/admin/reports/<id>`, #657). The public payload is unchanged —
+the link needs only the report ID the page already has, and the signed-in
+member's role decided from the token (invariant 7); the admin route's own
+guard and the admin endpoints, not the button's presence, keep the detail
+page private. A `User`, or a visitor who is not signed in, sees nothing extra.
+
 A search box at the top of `/reports` fuzzy-searches the approved published
 summary and visible member comments, in the visitor's current site
 language only, best match first while the box holds text; an empty box is

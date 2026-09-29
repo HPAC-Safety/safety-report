@@ -540,6 +540,30 @@ Scenario: A signed-in safety officer sees every attachment on the public report 
   And the hidden file's visibility reads "hidden"
   And the public file's visibility reads "public"
 
+@REQ-MOD-164
+@ui
+Scenario Outline: A published report page offers a same-tab link to its admin detail page for a reviewer
+  Given <visitor> visits a published report's page
+  Then the page offers a link to that report's admin detail page
+  When the visitor activates that link
+  Then the browser opens the report's admin detail page, in the same tab
+
+Examples:
+  | visitor                    |
+  | a signed-in Administrator  |
+  | a signed-in SafetyOfficer  |
+
+@REQ-MOD-165
+@ui
+Scenario Outline: A published report page offers no admin link to a non-reviewer
+  Given <visitor> visits a published report's page
+  Then the page offers no link to the admin detail page
+
+Examples:
+  | visitor              |
+  | a signed-in User      |
+  | a signed-out visitor  |
+
 @REQ-MOD-037
 Scenario: The public feed lists only publishable reports, newest submitted first
   Given some reports are publishable and others are not

@@ -325,6 +325,8 @@ export interface TypeAheadValueView {
 	addedAt: string | null
 	/** The question's other live values, any of which this one may be merged into; the survivor is offered under every parent either was (ADR-0151). */
 	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null; pin: string }[]
+	/** Every wording ever merged into this value, chains already flattened. Read-only: there is no un-merge (ADR-0129 amendment). */
+	aliases: { labelEn: string | null; labelFr: string | null }[]
 	/** For a value whose question's choices depend on another's: that question, the choices it is offered under, and the choices it may be (ADR-0151). */
 	parent: {
 		questionId: string

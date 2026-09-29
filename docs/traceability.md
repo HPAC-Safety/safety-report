@@ -1932,6 +1932,26 @@ A dependent type-ahead's choices show a hint below 3 characters and filter at 3,
 
 Reopening a type-ahead filters by what it already holds, however it is reopened — *playwright-bdd, Covered*
 
+### REQ-QB-233
+
+Typing a merged-away wording offers the survivor, hinting the alias that matched — *playwright-bdd, Covered*
+
+### REQ-QB-234
+
+A merged-away wording matches typing in the other language too — *playwright-bdd, Covered*
+
+### REQ-QB-235
+
+A chained merge offers the final survivor, hinting the first wording — *playwright-bdd, Covered*
+
+### REQ-QB-236
+
+Under a dependent type-ahead, a merged-away wording offers the survivor only under its own parent choices — *playwright-bdd, Covered*
+
+### REQ-QB-237
+
+The type-ahead review page lists a value's aliases, chains included — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

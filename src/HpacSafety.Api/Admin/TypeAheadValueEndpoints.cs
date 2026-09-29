@@ -106,6 +106,12 @@ public static class TypeAheadValueEndpoints
 							.Where(target => target.Id != entry.Choice.Id)
 							.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr, EnumCode.Of(target.Pin))),
 					],
+					[
+						// Every wording ever merged into this value, chains flattened,
+						// so a reviewer sees what it is now an alias for (ADR-0129 amendment).
+						.. entry.Question.AliasesOf(entry.Choice.Id)
+							.Select(alias => new TypeAheadAliasView(alias.LabelEn, alias.LabelFr)),
+					],
 					parent is null ? null : new TypeAheadParentView(
 						parent.Id.Value,
 						parent.CurrentRevision.LabelEn,
@@ -301,6 +307,10 @@ public sealed record TypeAheadValuesResponse(IReadOnlyList<TypeAheadValueView> V
 ///     The question's other live values, any of which this one may be merged into
 ///     (ADR-0151).
 /// </param>
+/// <param name="Aliases">
+///     Every wording ever merged into this value, chains included and already
+///     flattened — read-only here; there is no un-merge (ADR-0129 amendment).
+/// </param>
 /// <param name="Parent">
 ///     For a type-ahead whose values depend on another question's answer, that
 ///     question, the choice this value is offered under, and the choices it may be
@@ -318,6 +328,7 @@ public sealed record TypeAheadValueView(
 	int AnswerCount,
 	DateTimeOffset? AddedAt,
 	IReadOnlyList<TypeAheadMergeTarget> MergeTargets,
+	IReadOnlyList<TypeAheadAliasView> Aliases,
 	TypeAheadParentView? Parent);
 
 /// <summary>The parent question a dependent type-ahead value is offered under a choice of (ADR-0146, ADR-0151).</summary>
@@ -349,6 +360,14 @@ public sealed record TypeAheadParentChoice(string Id, string? LabelEn, string? L
 ///     the form lists the choices (ADR-0136).
 /// </param>
 public sealed record TypeAheadMergeTarget(string Id, string? LabelEn, string? LabelFr, string Pin);
+
+/// <summary>
+///     One wording merged away into this value (ADR-0129 amendment). Read-only:
+///     there is no un-merge.
+/// </summary>
+/// <param name="LabelEn">Its English wording, or null while it had none.</param>
+/// <param name="LabelFr">Its French wording, or null while it had none.</param>
+public sealed record TypeAheadAliasView(string? LabelEn, string? LabelFr);
 
 /// <summary>A reviewer's change of the parent choices a dependent type-ahead value is offered under (ADR-0151).</summary>
 /// <param name="ParentChoiceIds">Every parent question's choice to offer it under: at least one, never none.</param>

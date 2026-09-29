@@ -1070,6 +1070,48 @@ Scenario: Reviewing a type-ahead value clears its flag
   Then the value is no longer flagged for review
   And the review records the Safety Officer's token subject and the time
 
+@REQ-QB-233
+@ui
+Scenario: Typing a merged-away wording offers the survivor, hinting the alias that matched
+  Given a type-ahead question offers "Cooper's Hill", one merged from "Coopers"
+  When a reporter using English opens that question
+  And they type "Coopers" in the field
+  Then the list offers "Cooper's Hill", hinting "also: Coopers"
+
+@REQ-QB-234
+@ui
+Scenario: A merged-away wording matches typing in the other language too
+  Given a type-ahead question offers "Cooper's Hill" / "Colline Cooper", one merged from "Colline du Cooper"
+  When a reporter using English opens that question
+  And they type "Colline du Cooper" in the field
+  Then the list offers "Cooper's Hill", hinting "also: Colline du Cooper"
+
+@REQ-QB-235
+@ui
+Scenario: A chained merge offers the final survivor, hinting the first wording
+  Given a type-ahead question offers "Cooper's Hill", merged from "Cooper's", itself merged from "Coopers"
+  When a reporter using English opens that question
+  And they type "Coopers" in the field
+  Then the list offers "Cooper's Hill", hinting "also: Coopers"
+
+@REQ-QB-236
+@ui
+Scenario: Under a dependent type-ahead, a merged-away wording offers the survivor only under its own parent choices
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question, and its "Mentor 7" under "Niviuk" was merged from "Mentr 7"
+  When they answer "Make" with "Ozone"
+  And they type "Mentr 7" in "Model"
+  Then "Model"'s list offers no choice
+  When they change "Make" to "Niviuk"
+  And they type "Mentr 7" in "Model"
+  Then "Model"'s list offers "Mentor 7", hinting "also: Mentr 7"
+
+@REQ-QB-237
+@ui
+Scenario: The type-ahead review page lists a value's aliases, chains included
+  Given a signed-in Safety Officer reviews a flagged value that two earlier wordings, one itself merged from a third, were merged into
+  When they open the review-type-ahead-values page
+  Then the value shows its aliases "Coopers" and "Cooper's"
+
 @REQ-QB-136
 Scenario: Existing answers are linked to their choices without being rewritten
   Given reports stored before this change answered a single-select question with one of its current labels and with a label it no longer offers

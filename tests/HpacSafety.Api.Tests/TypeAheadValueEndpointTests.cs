@@ -166,6 +166,95 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAMergedDependentValue_WhenTypedAgainUnderAnotherParentChoice_ThenItIsListedForReviewWithItsAlias()
+	{
+		// Given — "Mentr 7" was merged into "Mentor 7", offered under "Niviuk"
+		// only (ADR-0151). A merge reviews both sides at once, so the survivor
+		// needs a later, independent reason to be flagged again for review.
+		TinyId question;
+		TinyId mentor7;
+		TinyId ozone;
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var make = Question.Create(
+				$"make_{Guid.NewGuid():N}"[..20], QuestionType.SingleSelect, "Make", "Marque", At, isActive: true,
+				options: [new QuestionOptionInput("niviuk", "Niviuk", "Niviuk"), new QuestionOptionInput("ozone", "Ozone", "Ozone")]);
+			database.Questions.Add(make);
+			var niviuk = make.Choice("niviuk")!.Id;
+			ozone = make.Choice("ozone")!.Id;
+
+			var model = Question.Create(
+				$"model_{Guid.NewGuid():N}"[..20], QuestionType.Autocomplete, "Model", "Modèle", At, isActive: true,
+				choicesDependOnQuestionId: make.Id);
+			var mentr7 = model.AddChoiceFromReporter("Mentr 7", Locale.EnCa, At, niviuk);
+			var mentorChoice = model.AddChoiceFromReporter("Mentor 7", Locale.EnCa, At.AddMinutes(1), niviuk);
+			model.MergeValue(mentr7.Id, mentorChoice.Id, "synthetic-safety-officer", At.AddMinutes(2));
+			database.Questions.Add(model);
+			await database.SaveChangesAsync();
+			question = model.Id;
+			mentor7 = mentorChoice.Id;
+		}
+
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var model = await database.Questions
+				.Include(q => q.Revisions).Include(q => q.AllChoices).ThenInclude(choice => choice.ParentLinks)
+				.SingleAsync(q => q.Id == question);
+			var report = new Report(Locale.EnCa, At.AddMinutes(3));
+			report.Answer(model, model.CurrentRevision, "Mentr 7", At.AddMinutes(3), ozone);
+			database.Reports.Add(report);
+			await database.SaveChangesAsync();
+		}
+
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+
+		// Then — flagged again, offered under both parent choices now, and
+		// showing the merged-away wording as its alias.
+		var entry = listed.GetProperty("values").EnumerateArray().Single(candidate => candidate.GetProperty("id").GetString() == mentor7.Value);
+		var aliases = entry.GetProperty("aliases").EnumerateArray().ToList();
+		aliases.ShouldHaveSingleItem();
+		aliases[0].GetProperty("labelEn").GetString().ShouldBe("Mentr 7");
+	}
+
+	[Fact]
+	public async Task GivenAMergedValue_WhenTheCurrentFormIsRead_ThenTheSurvivorCarriesTheMergedWordingAsAnAliasAndTheMergedValueIsNeverOffered()
+	{
+		// Given
+		var (question, coopers) = await TypeAheadWithReporterValue("Coopers");
+		TinyId target;
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var loaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question);
+			var report = new Report(Locale.EnCa, At);
+			report.Answer(loaded, "Cooper's", At);
+			database.Reports.Add(report);
+			await database.SaveChangesAsync();
+			target = loaded.AllChoices.Single(choice => choice.LabelEn == "Cooper's").Id;
+		}
+
+		using var reviewer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		await reviewer.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{coopers}/merge", UriKind.Relative), new { intoId = target.Value });
+
+		// When
+		using var anonymous = _factory.CreateClient();
+		var form = await anonymous.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative));
+
+		// Then
+		var options = form.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == question.Value)
+			.GetProperty("options").EnumerateArray().ToList();
+		options.ShouldNotContain(option => option.GetProperty("id").GetString() == coopers.Value);
+		var survivor = options.Single(option => option.GetProperty("id").GetString() == target.Value);
+		survivor.GetProperty("aliases").EnumerateArray().Select(alias => alias.GetProperty("labelEn").GetString()).ShouldBe(["Coopers"]);
+	}
+
+	[Fact]
 	public async Task GivenAMergeNamingNoValue_WhenSent_ThenRefused()
 	{
 		// Given

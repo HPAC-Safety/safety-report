@@ -4,12 +4,24 @@ import { ChoiceOptions, choiceListClassName, choiceRowClassName, type ListChoice
 /** A type-ahead shows no choices below this many typed characters, trimmed (ADR-0140, ADR-0152). */
 export const TYPE_AHEAD_THRESHOLD = 3
 
+/** One wording merged away into a choice (ADR-0129 amendment). */
+export interface TypeAheadAlias {
+	labelEn: string | null
+	labelFr: string | null
+}
+
 export interface TypeAheadChoice {
 	key: string
 	/** The wording the reader sees. */
 	label: string
 	/** The choice's one language, when a reporter added it in one language only. */
 	lang: string | undefined
+	/**
+	 * Every wording ever merged into this choice — never offered as a choice
+	 * of its own — matched while typing in either language, whatever the
+	 * form's language (ADR-0129 amendment).
+	 */
+	aliases?: TypeAheadAlias[]
 }
 
 export interface TypeAheadFieldProps {
@@ -29,7 +41,7 @@ export interface TypeAheadFieldProps {
 	 * from the list. Typed text names no choice here (ADR-0129).
 	 */
 	onChange: (value: string, choiceKey?: string) => void
-	t: (key: string) => string
+	t: (key: string, params?: Record<string, string | number>) => string
 	/** True while the field cannot be answered yet: its parent question is unanswered (ADR-0146). */
 	disabled?: boolean
 }
@@ -74,11 +86,39 @@ export function TypeAheadField({
 	const listId = `${fieldId}-list`
 	const optionId = (choice: ListChoice) => `${fieldId}-option-${choice.key}`
 
-	/** `groups`, narrowed to the choices whose wording contains `needle` anywhere; every choice for an empty needle. */
+	/**
+	 * The alias wording of `choice` that contains `needle`, if any — checked in
+	 * both languages regardless of the form's own language, since a merged
+	 * value may have been worded in either one (ADR-0129 amendment).
+	 */
+	function matchedAlias(choice: TypeAheadChoice, needle: string): string | undefined {
+		for (const alias of choice.aliases ?? []) {
+			for (const wording of [alias.labelEn, alias.labelFr]) {
+				if (wording && folded(wording, locale).includes(needle)) return wording
+			}
+		}
+		return undefined
+	}
+
+	/**
+	 * `groups`, narrowed to the choices whose own wording, or an alias of
+	 * theirs, contains `needle` anywhere; every choice for an empty needle. A
+	 * choice offered only through an alias carries a hint naming it, so the
+	 * reporter sees why it matched (ADR-0129 amendment).
+	 */
 	function filterGroups(needle: string): ListChoice[][] {
-		return (needle ? groups.map((group) => group.filter((choice) => folded(choice.label, locale).includes(needle))) : groups).filter(
-			(group) => group.length > 0,
-		)
+		if (!needle) return groups
+
+		return groups
+			.map((group) =>
+				group.flatMap((choice): ListChoice[] => {
+					if (folded(choice.label, locale).includes(needle)) return [choice]
+
+					const alias = matchedAlias(choice, needle)
+					return alias ? [{ ...choice, hint: t("report.typeAhead.alsoKnownAs", { alias }) }] : []
+				}),
+			)
+			.filter((group) => group.length > 0)
 	}
 
 	// Below the threshold, the list shows only the hint: no choices, no active option.

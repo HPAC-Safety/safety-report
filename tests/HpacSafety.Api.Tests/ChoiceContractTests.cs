@@ -64,4 +64,48 @@ public class ChoiceContractTests
 
 		PublicOptionView.Of(question.Choice("coopers")!).OnlyIn.ShouldBeNull();
 	}
+
+	[Fact]
+	public void GivenNoMergedValue_WhenOfferedPublicly_ThenItCarriesNoAliases()
+	{
+		var question = Question.Create("site", QuestionType.Autocomplete, "Site", "Site", At, isActive: true);
+		var choice = question.AddChoiceFromReporter("Cooper's", Locale.EnCa);
+
+		PublicOptionView.Of(choice, question.AliasesOf(choice.Id)).Aliases.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenAMergedValue_WhenTheSurvivorIsOfferedPublicly_ThenItCarriesTheMergedWordingAsAnAlias()
+	{
+		// Given
+		var question = Question.Create("site", QuestionType.Autocomplete, "Site", "Site", At, isActive: true);
+		var source = question.AddChoiceFromReporter("Coopers", Locale.EnCa);
+		var target = question.AddChoiceFromReporter("Cooper's", Locale.EnCa);
+		question.MergeValue(source.Id, target.Id, "synthetic-safety-officer", At);
+
+		// When
+		var view = PublicOptionView.Of(target, question.AliasesOf(target.Id));
+
+		// Then
+		view.Aliases.ShouldHaveSingleItem();
+		view.Aliases[0].LabelEn.ShouldBe("Coopers");
+	}
+
+	[Fact]
+	public void GivenAChainedMerge_WhenTheFinalSurvivorIsOfferedPublicly_ThenItCarriesEveryEarlierWordingAsAnAlias()
+	{
+		// Given
+		var question = Question.Create("site", QuestionType.Autocomplete, "Site", "Site", At, isActive: true);
+		var a = question.AddChoiceFromReporter("A", Locale.EnCa);
+		var b = question.AddChoiceFromReporter("B", Locale.EnCa);
+		var c = question.AddChoiceFromReporter("C", Locale.EnCa);
+		question.MergeValue(a.Id, b.Id, "synthetic-safety-officer", At);
+		question.MergeValue(b.Id, c.Id, "synthetic-safety-officer", At);
+
+		// When
+		var view = PublicOptionView.Of(c, question.AliasesOf(c.Id));
+
+		// Then
+		view.Aliases.Select(alias => alias.LabelEn).ShouldBe(["A", "B"], ignoreOrder: true);
+	}
 }

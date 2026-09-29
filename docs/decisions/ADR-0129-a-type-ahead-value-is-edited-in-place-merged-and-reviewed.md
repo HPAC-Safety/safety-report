@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-25
 decision-makers: Chase Florell
-keywords: type-ahead, autocomplete, reporter-added, choices, merge, review, safety officer, soft delete, translation, Worker, ADR-0063, ADR-0095, ADR-0112
+keywords: type-ahead, autocomplete, reporter-added, choices, merge, review, safety officer, soft delete, translation, Worker, ADR-0063, ADR-0095, ADR-0112, aliases, issue-654
 ---
 
 # ADR-0129 — A type-ahead value is edited in place, merged, and reviewed by a safety officer
@@ -49,6 +49,14 @@ typed words are matched against the whole question, and a match not yet under
 the parent's answer is offered under it and flagged; a reviewer sets one or
 more parent choices, never none; and a merge offers the survivor under every
 parent either value was under.
+
+**Amended in place** (2026-09-29, issue
+[#654](https://github.com/HPAC-Safety/safety-report/issues/654)): "Aliases
+while typing" below records that a merged value's wording is offered while a
+reporter is still typing, not only resolved at submission, and that a
+reviewer sees a value's aliases. The owner ruled this stays an amendment to
+this ADR rather than a new one, since it extends the same matching rule
+without changing it.
 
 ## Context
 
@@ -122,6 +130,25 @@ ignoring case, against the question's values in both languages, in this order:
 3. a removed value: the answer names it, and it is flagged again;
 4. otherwise, a new reporter-added value.
 
+### Aliases while typing
+
+- **A merged value's wording is offered while a reporter is still typing, not
+  only resolved at submission.** The public form payload carries, on each
+  live type-ahead value, every wording ever merged into it — flattened, so a
+  chained merge needs no client-side chain-following. The merged value itself
+  is never offered as a choice of its own.
+- Typing text that matches one of a value's aliases — in either official
+  language, whatever the form's own language — offers that value, with a
+  hint naming the alias that matched (for example, "Cooper's Hill — also:
+  Coopers"). Picking it answers with the survivor, exactly as picking it by
+  its own wording does; the matching rule in "Matching a typed value" above
+  is unchanged.
+- On a dependent type-ahead (ADR-0151), the survivor is still offered only
+  under the parent choices it is offered under; an alias never widens that.
+- **Reviewers see it too.** The type-ahead review page lists each value's
+  aliases, chains included. It is read-only there: there is still no
+  un-merge.
+
 ### Review
 
 - A reviewed value is one a Safety Officer or an Administrator has approved,
@@ -166,6 +193,8 @@ ignoring case, against the question's values in both languages, in this order:
   both labels come from its value.
 - A reviewer who removes identifying text from a value (a person's name typed
   as a site) removes it for every answer and every future reporter at once.
+- The public question payload's option shape gains a nullable-labelled alias
+  list, and the type-ahead review payload gains the same, read-only.
 
 ## Related
 

@@ -153,7 +153,8 @@
     },
     "typeAhead": {
       "noMatches": "Aucun choix ne correspond. Ce que vous avez tapé sera envoyé tel quel.",
-      "typeToSeeChoices": "Tapez au moins trois lettres pour voir les suggestions correspondantes, ou saisissez votre propre terme."
+      "typeToSeeChoices": "Tapez au moins trois lettres pour voir les suggestions correspondantes, ou saisissez votre propre terme.",
+      "alsoKnownAs": "voir aussi : {alias}"
     },
     "dependent": {
       "answerFirst": "Répondez d’abord à la question «{question} ».",
@@ -382,6 +383,7 @@
     "written": "Rédigé par un administrateur",
     "answerCount": "Réponses mentionnant ce nom : {count}",
     "removedBadge": "Supprimé, retapé",
+    "aliases": "Également connu sous le nom de : {aliases}",
     "labelEn": "Texte en anglais",
     "labelFr": "Texte en français",
     "approve": "Approuver",

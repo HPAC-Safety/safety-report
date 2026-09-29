@@ -86,7 +86,7 @@ public sealed record PublicQuestionView(
 			revision.HelpTextFr,
 			revision.PlaceholderEn,
 			revision.PlaceholderFr,
-			[.. question.Choices.Select(PublicOptionView.Of)],
+			[.. question.Choices.Select(choice => PublicOptionView.Of(choice, question.AliasesOf(choice.Id)))],
 			children);
 	}
 
@@ -125,10 +125,28 @@ public sealed record PublicQuestionView(
 ///     question's choices depend on another's: it is offered whenever the parent
 ///     is answered with any of them (ADR-0151).
 /// </param>
-public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin, IReadOnlyList<string> ParentChoiceIds)
+/// <param name="Aliases">
+///     Every wording ever merged into this choice, so the form can offer this
+///     choice — never the merged-away value itself — with a hint naming the
+///     wording a reporter typed, while they type it (ADR-0129 amendment). A
+///     chained merge is already flattened here; no client-side chain-following
+///     is needed.
+/// </param>
+public sealed record PublicOptionView(
+	string Id,
+	string Code,
+	string LabelEn,
+	string LabelFr,
+	string? OnlyIn,
+	string Pin,
+	IReadOnlyList<string> ParentChoiceIds,
+	IReadOnlyList<PublicAliasView> Aliases)
 {
 	/// <summary>Flattens one choice for the public form.</summary>
-	public static PublicOptionView Of(QuestionChoice choice)
+	/// <param name="choice">The live choice to show.</param>
+	/// <param name="aliases">Every value merged into it (ADR-0129 amendment).</param>
+	public static PublicOptionView Of(QuestionChoice choice,
+									  IReadOnlyList<QuestionChoice>? aliases = null)
 	{
 		ArgumentNullException.ThrowIfNull(choice);
 
@@ -139,6 +157,16 @@ public sealed record PublicOptionView(string Id, string Code, string LabelEn, st
 			choice.Label(Locale.FrCa),
 			choice.NeedsTranslation ? (choice.LabelEn is null ? Locale.FrCa : Locale.EnCa).Code : null,
 			EnumCode.Of(choice.Pin),
-			[.. choice.ParentChoiceIds.Select(id => id.Value)]);
+			[.. choice.ParentChoiceIds.Select(id => id.Value)],
+			[.. (aliases ?? []).Select(alias => new PublicAliasView(alias.LabelEn, alias.LabelFr))]);
 	}
 }
+
+/// <summary>
+///     One wording merged away into a live type-ahead value (ADR-0129 amendment).
+///     Carries whichever language(s) it had — a reporter-added value may have had
+///     only one — so a reporter typing it in either language is matched.
+/// </summary>
+/// <param name="LabelEn">The merged value's English wording, or null while it had none.</param>
+/// <param name="LabelFr">The merged value's French wording, or null while it had none.</param>
+public sealed record PublicAliasView(string? LabelEn, string? LabelFr);

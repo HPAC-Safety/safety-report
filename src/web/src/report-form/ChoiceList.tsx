@@ -40,6 +40,12 @@ export interface ListChoice {
 	label: string
 	/** The choice's one language, when a reporter added it in one language only. */
 	lang?: string
+	/**
+	 * A short line shown after the label, already composed for display — a
+	 * type-ahead's "also: <alias>" when the typed text matched a merged-away
+	 * wording rather than the choice's own (ADR-0129 amendment).
+	 */
+	hint?: string
 }
 
 export interface ChoiceOptionsProps {
@@ -78,6 +84,11 @@ export function ChoiceOptions({ groups, leading, optionId, activeKey, isSelected
 			{...extra}
 		>
 			{choice.label}
+			{choice.hint && (
+				<span data-testid="choice-hint" className="ml-2 font-sans text-xs text-ink-muted">
+					{choice.hint}
+				</span>
+			)}
 		</li>
 	)
 

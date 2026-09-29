@@ -147,7 +147,12 @@ export function QuestionField({
 						fieldId={fieldId}
 						label={questionLabel(question, locale)}
 						groups={groups.map((group) =>
-							group.map((option) => ({ key: option.id, label: optionLabel(option, locale), lang: option.onlyIn ?? undefined })),
+							group.map((option) => ({
+								key: option.id,
+								label: optionLabel(option, locale),
+								lang: option.onlyIn ?? undefined,
+								aliases: option.aliases,
+							})),
 						)}
 						value={picked ? optionLabel(picked, locale) : value}
 						selectedKey={picked?.id}

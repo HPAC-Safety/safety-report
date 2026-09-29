@@ -2243,6 +2243,12 @@
     "provider": "human",
     "reviewed": true
   },
+  "report.typeAhead.alsoKnownAs": {
+    "source_hash": "d0c36e06029484229bf11074e4b01bce18fa2dfa7e05ab04eca1d768cabee94e",
+    "target_hash": "0bedb7651672649d698332ba3131685cf4ba2b9635e6a0876cb750cf64f1a046",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "report.typeAhead.noMatches": {
     "source_hash": "cc9f0a2805e3912e6d2096004948f76d6c0b8c9fdd79e5ef7f6b633cd73a17ad",
     "target_hash": "f936b4ed9301d2ebb9115bb8a5d923324f0429ad495764becc76188fccc1a0ae",
@@ -2924,6 +2930,12 @@
   "translationDirection.toFrench": {
     "source_hash": "d5c499d42802230906813f46523faaf8727c10c812162ef710260fdfabac03f6",
     "target_hash": "c6b4bee56157773797c97c49fdde66554c1ab879a5beda174547d81426aa79af",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "typeAheadValues.aliases": {
+    "source_hash": "efc175de742f4b6cb2a49ece0ab0f65de91c4f5cbb3da7e87f0276a46e439ba9",
+    "target_hash": "c458759cf4160db58c8ec5c5d1b19e59b0244587fc8369ecc6d052bd1a3f7f9b",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

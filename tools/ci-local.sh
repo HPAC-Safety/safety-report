@@ -187,63 +187,35 @@ REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git
 # "<workflow name>/<job name>"; verified by reading that source, since nothing
 # in act --help offers a container-name flag). Two concurrent runs of the same
 # job therefore hash to the same container name and either collide or remove
-# each other's container mid-run. So each run's clone gets its own workflow
-# names, tagged with this process's pid and the clone directory's random
-# suffix — unique enough that two runs never share one.
+# each other's container mid-run.
 #
-# The tag lands identically on both sides of the diff: the clone's HEAD (the
-# only copy act reads a workflow from) and a synthetic copy of BASE_SHA, built
-# below with plumbing commands and never checked out. Without the synthetic
-# base, every run would show every `.github/workflows/*.yml` as changed for a
-# reason that has nothing to do with the pull request — and the `changes`
-# job's dorny/paths-filter step names `.github/workflows/ci.yml` as a trigger
-# path for the dotnet, web, and e2e filters, so an untagged base would make
-# every filter true on every run, running the full suite even for a
-# documentation-only change GitHub would skip. Retagging the base identically
-# leaves every other path's diff exactly as it was, because nothing but this
-# one line is touched.
+# So each run reads its workflows from retagged copies written OUTSIDE the
+# clone, under $WORK/workflows/, never inside $WORK/repo — act's `-W` accepts
+# a file anywhere; the directory it is invoked from (the clone) is a separate
+# concept and still supplies the checkout it copies into each job container
+# (verified: `act -l -W <external file>` reports the retagged name, and a full
+# run against an external `-W` succeeds with the tag in its container name).
+# The clone's git history is never touched. That matters because
+# linked-issue.yml, feature-coverage.yml, and ci.yml's `changes` job all diff
+# with `...` (merge-base) rather than a plain two-dot diff: an earlier version
+# of this fix committed the retag onto the clone's HEAD, which made
+# merge-base(origin/main, HEAD) still the untagged upstream commit, so every
+# one of those `...` diffs saw all four workflow files as changed on every
+# run, regardless of what the pull request actually touched. Writing the
+# retagged copies elsewhere and leaving BASE_SHA and HEAD_SHA exactly as they
+# were removes the problem instead of working around it: nothing in the
+# clone's history differs from the real branch, so every diff any job or
+# filter computes is the one CI would compute.
 RUN_TAG="$$-${WORK##*.}"
-retag_workflow_name() {
-	# retag_workflow_name <file> — rewrites only line 1, the workflow's `name:`.
-	head -n 1 "$1" | grep -q '^name: ' || die "$1: expected its first line to be the workflow name"
-	sed -E "1s/^name: (.*)\$/name: \\1 (ci-local $RUN_TAG)/" "$1" > "$1.tmp" \
-		|| die "cannot rewrite $1"
-	mv "$1.tmp" "$1" || die "cannot replace $1"
-}
-
-BASE_INDEX="$WORK/base.index"
-git -C "$WORK/repo" read-tree "$BASE_SHA" --index-output="$BASE_INDEX" \
-	|| die "cannot read the base tree"
+WORKFLOWS="$WORK/workflows"
+mkdir -p "$WORKFLOWS" || die "cannot create $WORKFLOWS"
 for wf in linked-issue feature-coverage terraform ci; do
-	path=".github/workflows/$wf.yml"
-	git -C "$WORK/repo" cat-file -e "$BASE_SHA:$path" 2>/dev/null || continue
-	git -C "$WORK/repo" show "$BASE_SHA:$path" > "$WORK/base-$wf.yml" \
-		|| die "cannot read $path at origin/main"
-	retag_workflow_name "$WORK/base-$wf.yml"
-	blob=$(git -C "$WORK/repo" hash-object -w "$WORK/base-$wf.yml") \
-		|| die "cannot hash the retagged base $path"
-	GIT_INDEX_FILE="$BASE_INDEX" git -C "$WORK/repo" update-index --cacheinfo "100644,$blob,$path" \
-		|| die "cannot stage the retagged base $path"
+	src="$WORK/repo/.github/workflows/$wf.yml"
+	[ -f "$src" ] || continue
+	head -n 1 "$src" | grep -q '^name: ' || die "$src: expected its first line to be the workflow name"
+	sed -E "1s/^name: (.*)\$/name: \\1 (ci-local $RUN_TAG)/" "$src" > "$WORKFLOWS/$wf.yml" \
+		|| die "cannot write $WORKFLOWS/$wf.yml"
 done
-BASE_TREE=$(GIT_INDEX_FILE="$BASE_INDEX" git -C "$WORK/repo" write-tree) \
-	|| die "cannot write the base tree"
-BASE_SHA=$(git -C "$WORK/repo" commit-tree "$BASE_TREE" -p "$BASE_SHA" \
-	-m "ci-local: mirror this run's unique workflow names onto the base, so path filters diff nothing but the real change") \
-	|| die "cannot create the synthetic base commit"
-git -C "$WORK/repo" update-ref "refs/remotes/origin/main" "$BASE_SHA" \
-	|| die "git update-ref failed"
-
-for wf in linked-issue feature-coverage terraform ci; do
-	f="$WORK/repo/.github/workflows/$wf.yml"
-	[ -f "$f" ] || continue
-	retag_workflow_name "$f"
-done
-git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \
-	commit -q --no-verify -am "Give this run's workflows a unique name, so act's job containers don't collide with another run's" \
-	|| die "could not commit the unique workflow names in the clone"
-HEAD_SHA=$(git -C "$WORK/repo" rev-parse HEAD) || die "cannot read the clone's HEAD"
-git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" \
-	|| die "git update-ref failed"
 
 # -------------------------------------------------- the bots' two commits --
 #
@@ -393,8 +365,12 @@ run_act() {
 		# are unset too, so nothing act starts can read one from the environment.
 		# --use-gitignore=false copies the gitignored .ci-local/baseline/.
 		unset GITHUB_TOKEN GH_TOKEN GH_ENTERPRISE_TOKEN GITHUB_ENTERPRISE_TOKEN
+		# -W reads the retagged copy under $WORKFLOWS (see "unique job names"
+		# above), not the clone's own .github/workflows/$1: the invocation
+		# directory ($WORK/repo, via cd above) still supplies the checkout act
+		# copies into the job container, so nothing else about what runs changes.
 		# shellcheck disable=SC2086
-		if act pull_request -W ".github/workflows/$1" ${2:+-j "$2"} \
+		if act pull_request -W "$WORKFLOWS/$1" ${2:+-j "$2"} \
 			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
 			-s GITHUB_TOKEN= -e "$EVENT" $EXTRA; then

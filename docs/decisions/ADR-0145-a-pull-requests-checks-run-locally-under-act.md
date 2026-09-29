@@ -260,17 +260,37 @@ the lock protected is now kept apart per run instead of serialized:
   `pkg/runner/run_context.go`: `jobContainerName` hashes
   `"<workflow name>/<job name>"`), so two concurrent runs of the same job
   hashed to the same container name and either collided or removed each
-  other's container mid-run. `ci-local.sh` now tags every workflow file's
-  `name:` in its throwaway clone with this run's pid and the clone directory's
-  random suffix, so the hash is unique per run. The same tag is mirrored,
-  with git plumbing and never checked out, onto a synthetic copy of the base
-  commit the clone diffs against — otherwise every run would show
-  `.github/workflows/*.yml` as changed for a reason with nothing to do with
-  the pull request, and `ci.yml`'s `dorny/paths-filter` step names
-  `.github/workflows/ci.yml` as a trigger path for the `dotnet`, `web`, and
-  `e2e` filters; an untagged base would make every filter true on every run,
-  running the full suite even for a documentation-only change GitHub would
-  skip.
+  other's container mid-run. `ci-local.sh` now writes a retagged copy of each
+  workflow file — its `name:` line suffixed with this run's pid and the clone
+  directory's random suffix — to a directory *outside* the clone, and points
+  act's `-W` at that copy instead of the clone's own `.github/workflows/`.
+  act's `-W` accepts a file anywhere; the directory act is invoked from (the
+  clone) is a separate concept from the file `-W` names, and still supplies
+  the checkout act copies into each job container, so nothing else about what
+  runs changes (verified: `act -l -W <external file>` reports the retagged
+  name, and a full run against an external `-W` succeeds with the tag in its
+  container name). The clone's git history is never touched.
+  - **An earlier version of this fix committed the retag onto the clone's
+    HEAD instead**, and was caught in review before merging: `linked-issue.yml`
+    (`git diff --name-only "$BASE_SHA"...HEAD`), `feature-coverage.yml`
+    (`check "$BASE_SHA...HEAD"`), and `ci.yml`'s `changes` job (dorny's
+    `paths-filter`, reading `pull_request.base.sha`) all diff with `...`
+    (from the merge-base), not a plain two-dot diff. Committing the retag onto
+    HEAD alone left `merge-base(origin/main, HEAD)` at the untagged upstream
+    commit, so every one of those diffs still saw all four workflow files as
+    changed on every run, regardless of what the pull request touched — a
+    manifest-only or documentation-only change would have failed
+    `feature-coverage` or `linked-issue` locally while GitHub passed it. A
+    second attempt mirrored the same retag onto a synthetic copy of the base
+    commit, built with plumbing and never checked out, so a plain two-dot diff
+    against that synthetic base showed nothing extra — but `merge-base` finds
+    the *real* upstream commit as the common ancestor regardless, since the
+    synthetic base is the real base's child and HEAD does not descend from it,
+    so the same `...` diffs were unaffected. Writing the retagged copies
+    outside the clone and leaving `BASE_SHA` and `HEAD_SHA` exactly as they
+    were removes the problem instead of working around it: nothing in the
+    clone's history differs from the real branch, so every diff any job or
+    filter computes — two-dot or three-dot — is the one CI would compute.
 - **Everything else audited and found already safe**: no workflow run by
   `ci-local.sh` declares a `services:` container or another fixed port; none
   uses `actions/cache`, so its random-by-default cache-server port is never

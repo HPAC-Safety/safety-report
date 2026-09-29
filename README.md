@@ -195,6 +195,13 @@ installs from the release, checked against `.act-checksums`. `--job <id>`
 runs one job. GitHub stays the authority: a local pass is necessary, not
 sufficient.
 
+There is no lock: runs from different worktrees may proceed at the same time.
+Each gets its own throwaway clone, its own free port for the browser suite,
+and its own act job container names, so one run can't wait behind, or
+clobber, another. `dev-up.sh` and the dev compose stack are unaffected — they
+keep their fixed ports, so the app is always at the same address in
+development.
+
 It needs no token. act gets none, and every job runs anonymously, since the
 repository is public. The one exception is the coverage baseline: GitHub
 serves no artifact to an anonymous caller, so the script downloads main's last

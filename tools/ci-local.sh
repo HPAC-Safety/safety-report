@@ -48,8 +48,15 @@
 #
 # Exit codes: 0 every job passed; 1 a job failed; 2 a precondition or setup
 # step failed (usage, gh login, act version, dirty tree, branch behind
-# origin/main, Docker down, clone, baseline, image); 3 another run held the
-# lock past HPAC_CI_LOCAL_WAIT seconds (default 3600).
+# origin/main, Docker down, clone, baseline, image).
+#
+# There is no lock: runs from different worktrees proceed in parallel, even at
+# the same time. Each run gets its own throwaway clone, its own free e2e port
+# (tests/e2e/playwright.config.ts picks one when E2E_PORT is unset), and its
+# own act job container names (see "unique job names" below), so one run
+# can't wait behind, or clobber, another. The dev stack (dev-up.sh, dev
+# compose) is unaffected: it keeps its fixed ports, on purpose, so the app is
+# always at the same address in development.
 #
 # Full logs land in artifacts/ci-local/<workflow>[-<job>].log (gitignored).
 
@@ -63,7 +70,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,54p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,61p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -141,54 +148,13 @@ git fetch -q origin main || die "git fetch origin main failed"
 git merge-base --is-ancestor origin/main HEAD \
 	|| die "HEAD does not contain origin/main; rebase onto it first"
 
-# ---------------------------------------------------------------- the lock --
-#
-# Port 4173 and the Docker VM are shared by every checkout on this machine, so
-# one run at a time. mkdir is atomic. The holder writes its pid and start time
-# inside. A run releases only a lock it acquired and never clears another's: a
-# lock left by a killed run is removed by hand.
-
-LOCK=${HPAC_CI_LOCAL_LOCK:-${TMPDIR:-/tmp}/hpac-ci-local.lock}
-WAIT=${HPAC_CI_LOCAL_WAIT:-3600}
 WORK=''
-LOCKED=0
-
 cleanup() {
 	[ -z "$WORK" ] || rm -rf "$WORK"
-	if [ "$LOCKED" -eq 1 ]; then
-		rm -f "$LOCK/holder"
-		rmdir "$LOCK" 2>/dev/null || true
-	fi
 }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-
-holder() {
-	h=$(cat "$LOCK/holder" 2>/dev/null || true)
-	pid=${h%% *}
-	if [ -z "$h" ]; then
-		echo "an unknown holder"
-	elif kill -0 "$pid" 2>/dev/null; then
-		echo "pid $pid (alive), started ${h#* }"
-	else
-		echo "pid $pid (not running — remove $LOCK by hand if no run is left), started ${h#* }"
-	fi
-}
-
-waited=0
-until mkdir "$LOCK" 2>/dev/null; do
-	if [ "$waited" -ge "$WAIT" ]; then
-		printf 'ci-local: %s was held for %ss by %s\n' "$LOCK" "$WAIT" "$(holder)" >&2
-		exit 3
-	fi
-	[ "$waited" -gt 0 ] || say "Waiting for ${LOCK}, held by $(holder)."
-	sleep 10
-	waited=$((waited + 10))
-done
-LOCKED=1
-printf '%s %s\n' "$$" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/holder" \
-	|| die "cannot write $LOCK/holder"
 
 # ------------------------------------------------------------ the checkout --
 #
@@ -212,6 +178,72 @@ git -C "$WORK/repo" update-ref "refs/remotes/origin/main" "$BASE_SHA" || die "gi
 git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" || die "git update-ref failed"
 rm -f "$WORK/head.bundle"
 REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+
+# ------------------------------------------------------- unique job names --
+#
+# act derives a job's container name deterministically from the workflow's
+# top-level `name:` and the job's own name (act 0.2.89,
+# pkg/runner/run_context.go: jobContainerName -> createContainerName hashes
+# "<workflow name>/<job name>"; verified by reading that source, since nothing
+# in act --help offers a container-name flag). Two concurrent runs of the same
+# job therefore hash to the same container name and either collide or remove
+# each other's container mid-run. So each run's clone gets its own workflow
+# names, tagged with this process's pid and the clone directory's random
+# suffix — unique enough that two runs never share one.
+#
+# The tag lands identically on both sides of the diff: the clone's HEAD (the
+# only copy act reads a workflow from) and a synthetic copy of BASE_SHA, built
+# below with plumbing commands and never checked out. Without the synthetic
+# base, every run would show every `.github/workflows/*.yml` as changed for a
+# reason that has nothing to do with the pull request — and the `changes`
+# job's dorny/paths-filter step names `.github/workflows/ci.yml` as a trigger
+# path for the dotnet, web, and e2e filters, so an untagged base would make
+# every filter true on every run, running the full suite even for a
+# documentation-only change GitHub would skip. Retagging the base identically
+# leaves every other path's diff exactly as it was, because nothing but this
+# one line is touched.
+RUN_TAG="$$-${WORK##*.}"
+retag_workflow_name() {
+	# retag_workflow_name <file> — rewrites only line 1, the workflow's `name:`.
+	head -n 1 "$1" | grep -q '^name: ' || die "$1: expected its first line to be the workflow name"
+	sed -E "1s/^name: (.*)\$/name: \\1 (ci-local $RUN_TAG)/" "$1" > "$1.tmp" \
+		|| die "cannot rewrite $1"
+	mv "$1.tmp" "$1" || die "cannot replace $1"
+}
+
+BASE_INDEX="$WORK/base.index"
+git -C "$WORK/repo" read-tree "$BASE_SHA" --index-output="$BASE_INDEX" \
+	|| die "cannot read the base tree"
+for wf in linked-issue feature-coverage terraform ci; do
+	path=".github/workflows/$wf.yml"
+	git -C "$WORK/repo" cat-file -e "$BASE_SHA:$path" 2>/dev/null || continue
+	git -C "$WORK/repo" show "$BASE_SHA:$path" > "$WORK/base-$wf.yml" \
+		|| die "cannot read $path at origin/main"
+	retag_workflow_name "$WORK/base-$wf.yml"
+	blob=$(git -C "$WORK/repo" hash-object -w "$WORK/base-$wf.yml") \
+		|| die "cannot hash the retagged base $path"
+	GIT_INDEX_FILE="$BASE_INDEX" git -C "$WORK/repo" update-index --cacheinfo "100644,$blob,$path" \
+		|| die "cannot stage the retagged base $path"
+done
+BASE_TREE=$(GIT_INDEX_FILE="$BASE_INDEX" git -C "$WORK/repo" write-tree) \
+	|| die "cannot write the base tree"
+BASE_SHA=$(git -C "$WORK/repo" commit-tree "$BASE_TREE" -p "$BASE_SHA" \
+	-m "ci-local: mirror this run's unique workflow names onto the base, so path filters diff nothing but the real change") \
+	|| die "cannot create the synthetic base commit"
+git -C "$WORK/repo" update-ref "refs/remotes/origin/main" "$BASE_SHA" \
+	|| die "git update-ref failed"
+
+for wf in linked-issue feature-coverage terraform ci; do
+	f="$WORK/repo/.github/workflows/$wf.yml"
+	[ -f "$f" ] || continue
+	retag_workflow_name "$f"
+done
+git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \
+	commit -q --no-verify -am "Give this run's workflows a unique name, so act's job containers don't collide with another run's" \
+	|| die "could not commit the unique workflow names in the clone"
+HEAD_SHA=$(git -C "$WORK/repo" rev-parse HEAD) || die "cannot read the clone's HEAD"
+git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" \
+	|| die "git update-ref failed"
 
 # -------------------------------------------------- the bots' two commits --
 #

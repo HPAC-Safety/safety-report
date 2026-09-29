@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process"
 import { defineConfig, devices } from "@playwright/test"
 import { defineBddConfig } from "playwright-bdd"
 
@@ -5,6 +6,28 @@ import { defineBddConfig } from "playwright-bdd"
 // project, per the repo's per-tool-dir convention — see tools/gherkin), so
 // the web server installs and builds src/web itself rather than assuming
 // its node_modules already exist.
+
+// Every run serves and tests on its own port, never a fixed default (#675).
+// tools/ci-local.sh puts act's jobs on the Docker VM's host network, so two
+// concurrent runs (different worktrees, or a local `CI=1 npm test` next to
+// one) would otherwise collide on a fixed port, or one would test the
+// other's build. E2E_PORT lets a caller pin one; otherwise a free port is
+// picked here, once, synchronously, in this file's first evaluation — the
+// main process, before Playwright forks workers — by asking a throwaway
+// Node process to bind port 0 (the OS hands back a free one) and print it.
+// Workers re-evaluate this file but inherit process.env from the main
+// process that forked them, so E2E_PORT is already set by the time they
+// read it and they reuse it rather than picking their own; a port chosen
+// per evaluation would differ between workers, and each would serve and
+// test against a different build. Both webServer and baseURL use it below.
+if (!process.env.E2E_PORT) {
+	process.env.E2E_PORT = execSync(
+		"node -e \"const s=require('node:net').createServer();s.listen(0,()=>{process.stdout.write(String(s.address().port));s.close()})\"",
+	)
+		.toString()
+		.trim()
+}
+const E2E_PORT = process.env.E2E_PORT
 
 // @ui-tagged scenarios in features/**/*.feature execute here, not through
 // Reqnroll — see ADR-0053. playwright-bdd reads the same .feature files in
@@ -29,7 +52,7 @@ export default defineConfig({
 		// Vite's preview server binds the "localhost" hostname, which
 		// resolves to the IPv6 loopback here and refuses IPv4 connections on
 		// 127.0.0.1 — use the same hostname vite prints, not the IPv4 literal.
-		baseURL: "http://localhost:4173",
+		baseURL: `http://localhost:${E2E_PORT}`,
 		trace: "on-first-retry",
 	},
 	projects: [
@@ -56,9 +79,8 @@ export default defineConfig({
 		},
 	],
 	webServer: {
-		command:
-			"npm --prefix ../../src/web ci && npm --prefix ../../src/web run build && npm --prefix ../../src/web run preview -- --port 4173 --strictPort",
-		url: "http://localhost:4173",
+		command: `npm --prefix ../../src/web ci && npm --prefix ../../src/web run build && npm --prefix ../../src/web run preview -- --port ${E2E_PORT} --strictPort`,
+		url: `http://localhost:${E2E_PORT}`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
 	},

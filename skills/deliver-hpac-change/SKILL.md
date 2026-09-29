@@ -126,8 +126,11 @@ names and step numbers.
      `infra`, and every `ci.yml` job, coverage against main's last green
      artifact included. It stops at the first failure.
    - It runs committed `HEAD`: commit first. It refuses a dirty tree or a
-     `HEAD` without a fresh `origin/main`, and waits while another run holds
-     the machine's lock.
+     `HEAD` without a fresh `origin/main`.
+   - No lock: runs from different worktrees proceed in parallel, even at the
+     same time. Each gets its own throwaway clone, its own free port for the
+     browser suite, and its own act job container names, so one run can't
+     wait behind, or clobber, another.
    - No token: act gets none. The script downloads main's coverage baseline
      on the host with the `gh` login; without one, a run that includes
      `coverage` exits 2 ("run gh auth login").
@@ -138,8 +141,7 @@ names and step numbers.
    - One job: `--job <id>`, repeatable (a body edit: `--job linked-issue
      --job feature-coverage`).
    - Exit 0 passed, 1 a job failed (or coverage lost a per-project report),
-     2 a precondition or setup step failed, 3 the lock timed out. Full logs:
-     `artifacts/ci-local/`.
+     2 a precondition or setup step failed. Full logs: `artifacts/ci-local/`.
    - Local green is necessary, not sufficient; step 9 still applies.
 4. Relabel: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
    **Enable auto-merge: `gh pr merge <pr> --auto`**, with no `--squash` (the

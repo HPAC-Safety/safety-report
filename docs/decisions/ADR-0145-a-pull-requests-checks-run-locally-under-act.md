@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-26
 decision-makers: Chase Florell
-keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login, traceability matrix, pending translation, coverage parity
+keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login, traceability matrix, pending translation, coverage parity, parallel runs, no lock, E2E_PORT, container names
 ---
 
 # ADR-0145 — A pull request's checks run locally under act, against CI's own baseline
@@ -27,6 +27,12 @@ and "The baseline" below.
 CI sees on a same-repository pull request (the regenerated matrix, and the
 French under act's `i18n` job), and the coverage merge reads only the
 per-project attachment copies. See "The bots' commits" and "Coverage parity".
+
+**Amended 2026-09-29 (#675):** the per-machine lock is removed. Runs from
+different worktrees proceed in parallel, even at the same time, kept apart by
+per-run ports and container names instead of by queueing. See "The lock is
+removed" below, which replaces "Exit codes"' lock clause and the
+"Testcontainers" and "Consequences" sections' mentions of it.
 
 ## Context
 
@@ -191,9 +197,7 @@ and is the pre-pull-request gate.**
   `.act-checksums`, and installs it to `~/.local/bin`, again whenever the act
   on `PATH` is another version. No package manager installs an exact act.
 - **Exit codes**: 0 passed, 1 a job failed, 2 a precondition or setup step
-  failed, 3 the lock timed out. The lock records its holder's pid and start
-  time, reports whether that pid is alive, and is never cleared by another
-  run.
+  failed.
 - **Testcontainers** keep Ryuk on
   ([lesson 0008](../lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
   act puts each job on the Docker VM's host network. Under Docker Desktop a
@@ -226,6 +230,73 @@ no-op there.
   **Remove all four when act ships the fix**, in the pull request that moves
   `.act-version` to that release.
 
+## The lock is removed (#675)
+
+A full run held a per-machine `mkdir`-based lock, so only one ran at a time on
+a given machine, because port 4173 and the Docker VM were shared. With several
+agents working from different worktrees, runs queued for up to an hour behind
+each other, and a run killed while holding the lock blocked every other run
+until someone removed it by hand — which happened on 2026-09-29 (#666, #674).
+
+**Decision: there is no lock.** Every run is independent, even if that means
+several Docker containers at once; the owner accepts the resource cost. What
+the lock protected is now kept apart per run instead of serialized:
+
+- **Port 4173.** act puts jobs on the Docker VM's host network, so two
+  concurrent `e2e` jobs would otherwise collide on Vite's fixed preview port,
+  or one would test the other's build. `tests/e2e/playwright.config.ts` now
+  uses `E2E_PORT` when a caller sets it, or else picks one free port,
+  synchronously, the first time the file is evaluated — the Playwright main
+  process, before it forks test workers. Workers re-evaluate the same file but
+  inherit `process.env` from the process that forked them, so `E2E_PORT` is
+  already set by the time they read it; a port picked per evaluation would
+  instead differ between workers, which would serve and test against
+  different builds. Both `webServer` and `baseURL` read the same value, and
+  `tests/e2e/steps/locale.steps.ts`'s hostname navigations do too. `ci-local.sh`
+  needs nothing extra: it never named 4173 itself. GitHub CI may still land on
+  a shared default port, since nothing else runs on its runner.
+- **act's job container names.** act names a job container deterministically
+  from the workflow's top-level `name:` and the job's own name (act 0.2.89,
+  `pkg/runner/run_context.go`: `jobContainerName` hashes
+  `"<workflow name>/<job name>"`), so two concurrent runs of the same job
+  hashed to the same container name and either collided or removed each
+  other's container mid-run. `ci-local.sh` now tags every workflow file's
+  `name:` in its throwaway clone with this run's pid and the clone directory's
+  random suffix, so the hash is unique per run. The same tag is mirrored,
+  with git plumbing and never checked out, onto a synthetic copy of the base
+  commit the clone diffs against — otherwise every run would show
+  `.github/workflows/*.yml` as changed for a reason with nothing to do with
+  the pull request, and `ci.yml`'s `dorny/paths-filter` step names
+  `.github/workflows/ci.yml` as a trigger path for the `dotnet`, `web`, and
+  `e2e` filters; an untagged base would make every filter true on every run,
+  running the full suite even for a documentation-only change GitHub would
+  skip.
+- **Everything else audited and found already safe**: no workflow run by
+  `ci-local.sh` declares a `services:` container or another fixed port; none
+  uses `actions/cache`, so its random-by-default cache-server port is never
+  exercised; the artifact server never starts, because the wrapper passes it
+  no path, and the four `upload-artifact`/`download-artifact` steps already
+  skip under act 0.2.89 regardless (see "Artifacts" above); Testcontainers
+  already binds random host ports; `mktemp`'s random suffix keeps each run's
+  clone under its own `$TMPDIR` path; and the Dockerfile-hash image tag is
+  content-addressed, so two concurrent identical builds can't clobber each
+  other — only the unversioned `:local` convenience alias can be overwritten
+  by a concurrent run with a different Dockerfile hash, and nothing in
+  `ci-local.sh` reads that alias back, so a stale one only misleads a
+  hand-run `act`, never this script's own verdict. act's own action cache
+  (`--action-cache-path`, default `~/.cache/act`) stays shared machine-wide, a
+  known, accepted residual: it is a read-mostly cache keyed by action and ref,
+  and none of this repository's workflows contend on a single action that
+  isn't already cached from an earlier run.
+- `dev-up.sh` and the dev compose project are unchanged: they keep their
+  fixed ports on purpose, so the app is always at the same address in
+  development. This ADR's lock existed only for `ci-local.sh`'s test runs.
+
+**Proof**: two full `tools/ci-local.sh --body pr-body.md` runs, from two
+separate worktrees on the same branch, started together, both passed with
+correct verdicts, and neither tested the other's build (logs in the pull
+request that made this change).
+
 ## Rejected
 
 - **[wrkflw](https://github.com/bahdotsh/wrkflw)**: it emulates
@@ -246,7 +317,8 @@ no-op there.
 - Local green is necessary, not sufficient. GitHub stays the authority; the
   ruleset, `concurrency`, `environment:` protection, and the bot workflows do
   not run locally.
-- A full run holds a per-machine lock, because port 4173 and the Docker VM are
-  shared.
+- No lock (#675): runs from different worktrees proceed in parallel, even at
+  the same time, kept apart by per-run ports and container names. See "The
+  lock is removed".
 - Upgrading act is a pull request that changes `.act-version`;
   `init-dev.sh --check` reports a mismatch.

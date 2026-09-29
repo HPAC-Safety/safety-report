@@ -142,15 +142,16 @@ names and step numbers.
      `artifacts/ci-local/`.
    - Local green is necessary, not sufficient; step 9 still applies.
 4. Relabel: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
-   **Never run `gh pr merge`, or a `gh api graphql` call naming
-   `enablePullRequestAutoMerge` or `enqueuePullRequest`** — only the owner
-   enables auto-merge or enqueues a pull request, by hand
+   **Enable auto-merge: `gh pr merge <pr> --auto`**, with no `--squash` (the
+   queue sets the method and refuses the flag) and never `--admin`. Never
+   merge directly or run `enqueuePullRequest` or `mergePullRequest` — the
+   owner does that by hand
    ([ADR-0147](../../docs/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)
-   amendment; a repository-tracked `PreToolUse` hook,
+   second amendment; a repository-tracked `PreToolUse` hook,
    `tools/guard-pr-merge.mjs`, refuses it too). Get the pull request's own
-   required checks green and report it ready. `main` has a merge queue: once
-   the owner turns auto-merge on, the pull request queues once its required
-   checks pass, and the queue squash-merges it and deletes the branch. The
+   required checks green. `main` has a merge queue: with auto-merge on, the
+   pull request queues once its required checks pass, and the queue
+   squash-merges it and deletes the branch. The
    squash message is the pull request body, so the body is final once queued.
 6. Screenshots, for a user-visible `src/web` change:
    - browser tools: Playwright or Claude in Chrome;

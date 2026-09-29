@@ -184,6 +184,10 @@ A comment still awaiting translation shows its original text — *playwright-bdd
 
 A reviewer hides a comment from the report page — *playwright-bdd, Covered*
 
+### REQ-COM-021
+
+Leaving with an unposted comment is confirmed before it is discarded — *playwright-bdd, Covered*
+
 ## Claims: domain-and-lifecycle
 
 ### REQ-DOM-001
@@ -1198,6 +1202,18 @@ Leaving the report page with only refused private attachments staged does not wa
 
 There is no admin page left to edit an answer's translation by hand — *playwright-bdd, Covered*
 
+### REQ-MOD-185
+
+Leaving the summary editor with unsaved changes is confirmed before they are discarded — *playwright-bdd, Covered*
+
+### REQ-MOD-186
+
+Leaving the type-ahead value review queue with an uncorrected draft is confirmed — *playwright-bdd, Covered*
+
+### REQ-MOD-187
+
+Leaving with an unsaved private note is confirmed — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -1984,6 +2000,14 @@ Under a dependent type-ahead, a merged-away wording offers the survivor only und
 
 The type-ahead review page lists a value's aliases, chains included — *playwright-bdd, Covered*
 
+### REQ-QB-238
+
+Leaving the question editor with an unsaved draft is confirmed before it is discarded — *playwright-bdd, Covered*
+
+### REQ-QB-239
+
+Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -2425,6 +2449,18 @@ A second automatic translation is refused — *Reqnroll, Covered*
 ### REQ-SUB-120
 
 There is no API endpoint left to supply or correct an answer's translation by hand — *Reqnroll, Covered*
+
+### REQ-SUB-121
+
+Leaving the untouched report form never shows a confirmation — *playwright-bdd, Covered*
+
+### REQ-SUB-122
+
+Leaving the report form for another page while it holds unsubmitted answers is confirmed first — *playwright-bdd, Covered*
+
+### REQ-SUB-123
+
+Closing or reloading the tab while the report form holds unsubmitted answers triggers the browser's own prompt — *playwright-bdd, Covered*
 
 ## Claims: typeform-question-import-export
 

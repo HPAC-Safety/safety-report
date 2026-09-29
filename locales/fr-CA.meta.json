@@ -233,6 +233,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "feed.adminPage": {
+    "source_hash": "8523f515357e8b8680bd80367a51f766f3b8d8315fcc326f9482d1bb94acfd46",
+    "target_hash": "c7b6ce23c11e602f088a66f83a65a7352347db9daec406379689a0b4a8b3f7fc",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "feed.back": {
     "source_hash": "794c4284b285e3e653c26c073a37cac76e7994e1260818f80a6e02c2a0b84e41",
     "target_hash": "f3aae42188c82a7fd594e187460679e56c86af4f02ef746312b58127a7dbdc7a",

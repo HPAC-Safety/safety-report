@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 
 /*
  * The bilingual confirm dialog `useUnsavedChangesGuard` shows for an in-app
- * route change away from a form with unsaved changes (issue #659). A browser
+ * route change away from a form with unsaved changes (issue no. 659). A browser
  * unload cannot carry custom text, so only this in-app path gets one. Focus
  * starts on the choice that keeps the form, and Escape keeps it too — the
  * same pattern as `DiscardReportDialog`.

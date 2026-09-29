@@ -8,7 +8,7 @@ import { ThemeProvider } from "./theme/ThemeProvider"
 import { AuthProvider } from "./auth/AuthContext"
 import "./index.css"
 
-// A data router, not a plain `<BrowserRouter>` (issue #659): only a data
+// A data router, not a plain `<BrowserRouter>` (issue no. 659): only a data
 // router supports `useBlocker`, which `useUnsavedChangesGuard` needs to pause
 // an in-app route change away from a form with unsaved changes.
 const router = createBrowserRouter(routes)

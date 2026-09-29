@@ -225,7 +225,7 @@ export function ReportForm() {
 	const attachmentRoom = Math.max(0, MAX_ATTACHMENTS - attachedCount)
 
 	// Unsubmitted answers, even though they are also saved locally for 15
-	// days (ADR-0100) — the owner's decision for issue #659. Moving between
+	// days (ADR-0100) — the owner's decision for issue no. 659. Moving between
 	// the form's own steps stays within "/report" and is never blocked.
 	const dirty =
 		submit.status !== "submitted" &&

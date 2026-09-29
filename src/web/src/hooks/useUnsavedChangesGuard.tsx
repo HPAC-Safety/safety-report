@@ -4,7 +4,7 @@ import { useLocale } from "../i18n/useLocale"
 import { UnsavedChangesDialog } from "../components/UnsavedChangesDialog"
 
 /**
- * Warns before a person loses unsaved changes on a form (issue #659): a
+ * Warns before a person loses unsaved changes on a form (issue no. 659): a
  * browser unload (closing the tab, reloading, typing a new address) shows
  * the browser's own prompt, and an in-app route change shows a shared
  * bilingual confirm dialog instead.

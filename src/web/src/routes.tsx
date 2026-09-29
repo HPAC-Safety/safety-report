@@ -16,7 +16,7 @@ import { NotFoundPage } from "./routes/NotFoundPage"
 
 // Built from the same JSX Route tree the app used under `<Routes>`, so a data
 // router (`createBrowserRouter` in `main.tsx`) can give `useUnsavedChangesGuard`
-// (issue #659) a real `useBlocker` for in-app route changes — a plain
+// (issue no. 659) a real `useBlocker` for in-app route changes — a plain
 // `<BrowserRouter>` cannot support it.
 export const routes = createRoutesFromElements(
 	<Route element={<App />}>

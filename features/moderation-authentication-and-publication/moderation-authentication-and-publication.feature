@@ -1690,7 +1690,7 @@ Scenario: The search box sits at the top of the public feed, and its query is bo
   When the visitor goes back
   Then the search box is empty and the full feed is shown again
 
-@REQ-MOD-178
+@REQ-MOD-181
 @ui
 Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
   Given a safety officer is signed in and a pending report exists
@@ -1702,7 +1702,7 @@ Scenario: Leaving the summary editor with unsaved changes is confirmed before th
   When they confirm leaving
   Then the browser navigates to that page and the edit is gone
 
-@REQ-MOD-179
+@REQ-MOD-182
 @ui
 Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
   Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
@@ -1714,7 +1714,7 @@ Scenario: Leaving the type-ahead value review queue with an uncorrected draft is
   When they confirm leaving
   Then the browser navigates to that page and the correction is gone
 
-@REQ-MOD-180
+@REQ-MOD-183
 @ui
 Scenario: Leaving with an unsaved private note is confirmed
   Given a safety officer is signed in and a pending report exists

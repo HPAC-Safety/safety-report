@@ -110,9 +110,9 @@ Every editable form calls the hook with its own `dirty` condition:
 |---|---|---|
 | Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121..123 |
 | Question editor | `/admin/questions` | `question-bank-and-form.feature` REQ-QB-238, REQ-QB-239 |
-| Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-179 |
-| Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-178 |
-| Private notes composer | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-180 |
+| Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-182 |
+| Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-181 |
+| Private notes composer | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-183 |
 | Private-attachment staging area | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-177 |
 | Published-report comment composer | `/reports/:reportId` | `comments.feature` REQ-COM-021 |
 

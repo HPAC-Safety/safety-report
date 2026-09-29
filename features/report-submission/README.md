@@ -231,6 +231,25 @@ returns to the introduction with no answers.
   listed and not restored. If no saved answer is on the current form, there is
   nothing to continue: the saved report is removed and no dialog is shown.
 
+## Leaving the form with unsaved changes (#659)
+
+The form warns before it is left with any unsubmitted answer, attached file,
+or upload in flight — even though the browser already keeps those answers for
+15 days (`Discarding a report`, above; ADR-0100). Nothing is truly lost, but
+the person is asked before they leave anyway, because they may not remember
+that.
+
+- Closing the tab, reloading, or typing a new address triggers the browser's
+  own unload prompt, which cannot carry custom text.
+- Navigating in-app to another page pauses the navigation and shows a
+  bilingual confirm dialog (`UnsavedChangesDialog`), reusing the same
+  focus-on-keep, Escape-keeps pattern as `DiscardReportDialog`.
+- Moving between the form's own steps (`/report/<question-key>`) never
+  triggers either prompt — that stays within the form, not away from it.
+- The mechanism is the shared `useUnsavedChangesGuard` hook, used the same
+  way by every other editable form across the public and admin sites (see
+  [`web-localization-and-design/README.md`](../web-localization-and-design/README.md)).
+
 ## The page in the address (#366)
 
 Decided in [ADR-0099](../../docs/decisions/ADR-0099-a-report-page-is-addressed-by-its-question-key.md).
@@ -464,6 +483,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Opening a page straight from its address, a French or otherwise localized
   page slug, a page number in the address, or anything the reporter entered in
   the address. The address holds only an administrator-authored question key.
+- Custom text on the browser's own unload prompt — no browser lets a page
+  supply it. Anything beyond `beforeunload` and the in-app route blocker
+  (`Leaving the form with unsaved changes`, above), such as a server-side
+  draft that would make the warning unnecessary.
 - Keeping the saved page in `sessionStorage`. It would be gone when the tab
   closes, which is exactly when a reporter comes back to continue.
 - Recording who submitted a report — no subject, no user id, no audit line, no

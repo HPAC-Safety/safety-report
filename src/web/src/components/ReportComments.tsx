@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import {
 	COMMENT_MAX_LENGTH,
 	deleteComment,
@@ -270,6 +271,7 @@ function Composer({
 	const [saving, setSaving] = useState(false)
 	const blank = text.trim().length === 0
 	const tooLong = text.trim().length > COMMENT_MAX_LENGTH
+	useUnsavedChangesGuard(text !== initial)
 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault()

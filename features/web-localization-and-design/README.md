@@ -79,6 +79,62 @@ Use the existing restrained HPAC token system: Tailwind v4 via
 Poppins for interface/body copy. Target WCAG 2.2 AA across both themes and
 languages.
 
+## Leaving a form with unsaved changes (#659)
+
+Every editable form across the public and admin sites warns before it is left
+with unsaved changes, through one shared hook,
+`useUnsavedChangesGuard(dirty, withinPath?)`
+(`src/web/src/hooks/useUnsavedChangesGuard.tsx`): a `beforeunload` listener for
+closing the tab, reloading, or typing a new address (the browser's own
+prompt, which cannot carry custom text), and a React Router route-change
+block for an in-app navigation, which shows the shared bilingual
+`UnsavedChangesDialog` (`src/web/src/components/UnsavedChangesDialog.tsx`) —
+the same focus-on-keep, Escape-keeps pattern the report form's
+`DiscardReportDialog` already used.
+
+React Router allows only one active `useBlocker` per router, so the hook
+itself never calls it: `UnsavedChangesGuardRoot`, mounted once in `App.tsx`,
+owns the one `useBlocker` and the one dialog, and each form's
+`useUnsavedChangesGuard` call just registers its own dirty predicate with it
+(through context) and unregisters when it becomes clean or unmounts. The
+blocker checks every registered form's predicate on each navigation attempt
+and blocks if any one of them says to. `useBlocker` needs a data router, so
+`main.tsx` builds one with `createBrowserRouter`/`RouterProvider` from
+`routes.tsx`'s route config (`App.tsx` is that router's root layout,
+rendering each page into an `Outlet`) instead of the plain `<BrowserRouter>`
+it used before.
+
+Every editable form calls the hook with its own `dirty` condition:
+
+| Form | Route | Scenarios |
+|---|---|---|
+| Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-119..121 |
+| Question editor | `/admin/questions` | `question-bank-and-form.feature` REQ-QB-238 |
+| Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-174 |
+| Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-173 |
+| Private notes composer | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-175 |
+| Published-report comment composer | `/reports/:reportId` | `comments.feature` REQ-COM-021 |
+
+A multi-step form's own step navigation (the report form's
+`/report/<question-key>` addresses, ADR-0099) never counts as leaving: the
+hook's optional `withinPath` lets navigation within that prefix proceed
+without a prompt.
+
+Out of scope for this mechanism, decided with issue #659:
+
+- The private-attachment drop zone (`PrivateAttachments.tsx`, issue #658):
+  built separately; #658 adopts the shared hook rather than this pull request
+  editing that file.
+- The member sign-in form (`/login`): re-entering a username and password is
+  not the kind of loss this mechanism protects against, unlike free text a
+  person wrote.
+- The Typeform import dialog's review step: its state is re-derived by
+  re-uploading the same files, not authored content that is lost.
+- The "awaiting translation" admin answer page: removed by a concurrent
+  change (issue #666).
+- A server-side draft that would make the warning unnecessary — invariant 2
+  forbids one.
+
 ## Out of scope
 
 What not to build here. The global list in

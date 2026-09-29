@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { sortChoices } from "../lib/sortChoices"
 import { MultiSelectPicker } from "../report-form/MultiSelectPicker"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import {
 	DEFAULT_TRANSLATION_DIRECTION,
 	TranslationDirectionSwitch,
@@ -98,6 +99,9 @@ export function ReviewTypeAheadValuesPage() {
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [canTranslate, setCanTranslate] = useState(false)
+
+	const dirty = Object.values(drafts).some((draft) => draft.labelEn !== draft.baselineEn || draft.labelFr !== draft.baselineFr)
+	useUnsavedChangesGuard(dirty)
 
 	const report = useCallback(
 		(cause: unknown) => setError(cause instanceof ApiError ? cause.detail : t("typeAheadValues.error.unexpected")),

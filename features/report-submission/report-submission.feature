@@ -1064,3 +1064,26 @@ Scenario: A successful submission nudges the Worker
   Given the booted API records each nudge it sends the Worker, and a submission is ready to persist
   When the API responds
   Then the Worker is nudged once
+
+@REQ-SUB-119
+@ui
+Scenario: Leaving the report form for another page while it holds unsubmitted answers is confirmed first
+  Given a reporter is filling out the form
+  When the reporter activates a header navigation link away from the form
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When the reporter confirms leaving
+  Then the browser navigates to that page
+
+@REQ-SUB-120
+@ui
+Scenario: Closing or reloading the tab while the report form holds unsubmitted answers triggers the browser's own prompt
+  Given a reporter is filling out the form
+  When the reporter tries to close or reload the tab
+  Then the browser's own unload prompt appears, with no custom text
+
+@REQ-SUB-121
+@ui
+Scenario: Leaving the untouched report form never shows a confirmation
+  Given a reporter has not answered anything on the report form
+  When the reporter activates a header navigation link away from the form
+  Then the browser navigates to that page with no dialog shown

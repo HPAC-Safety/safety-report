@@ -1686,3 +1686,36 @@ Scenario: The search box sits at the top of the public feed, and its query is bo
   Then the search box still shows that search term, and only matching reports are listed
   When the visitor goes back
   Then the search box is empty and the full feed is shown again
+
+@REQ-MOD-173
+@ui
+Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer opens the summary editor
+  And types into the English text without saving
+  And navigates to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates to that page and the edit is gone
+
+@REQ-MOD-174
+@ui
+Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
+  Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
+  When they open the review-type-ahead-values page
+  And they begin correcting "Coopers"
+  And they edit its English wording to "Cooper's Hill"
+  And they navigate to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates to that page and the correction is gone
+
+@REQ-MOD-175
+@ui
+Scenario: Leaving with an unsaved private note is confirmed
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer starts writing a private note without saving it
+  And navigates to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay

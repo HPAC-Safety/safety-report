@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import {
 	addPrivateNote,
 	editPrivateNote,
@@ -305,6 +306,7 @@ function Composer({
 	const length = text.trim().length
 	const blank = length === 0
 	const tooLong = length > PRIVATE_NOTE_MAX_LENGTH
+	useUnsavedChangesGuard(text !== initial || attachmentId !== initialAttachment)
 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault()

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { SortableList } from "../components/SortableList"
 import { QuestionEditor, type QuestionDraft, blankDraft, draftFromImported, draftOf } from "../components/QuestionEditor"
 import { TypeformImportDialog } from "../components/TypeformImportDialog"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import {
 	ApiError,
 	createQuestion,
@@ -38,6 +39,17 @@ export function ManageQuestionsPage() {
 	const [editing, setEditing] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+
+	// The draft as it stood when the editor opened, whether blank or an
+	// existing question's — captured once per open, so it survives every
+	// later edit. `null` while no editor is open.
+	const openedDraft = useRef<QuestionDraft | null>(null)
+	useEffect(() => {
+		if (draft && !openedDraft.current) openedDraft.current = draft
+		if (!draft) openedDraft.current = null
+	}, [draft])
+	const dirty = draft !== null && JSON.stringify(draft) !== JSON.stringify(openedDraft.current)
+	useUnsavedChangesGuard(dirty)
 	const [importing, setImporting] = useState(false)
 	const [exporting, setExporting] = useState(false)
 

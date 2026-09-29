@@ -211,6 +211,12 @@
       "keep": "Non, gardez-le"
     }
   },
+  "unsavedChanges": {
+    "title": "#Leave without saving?",
+    "body": "#You have unsaved changes on this form. If you leave now, they will not be saved here.",
+    "leave": "#Leave",
+    "stay": "#Stay"
+  },
   "notFound": {
     "title": "Page introuvable",
     "body": "Il n'y a rien à cette adresse."

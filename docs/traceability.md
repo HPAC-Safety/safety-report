@@ -1130,26 +1130,6 @@ A published report page offers a same-tab link to its admin detail page for a re
 
 A published report page offers no admin link to a non-reviewer — *playwright-bdd, Covered*
 
-### REQ-MOD-173
-
-Several private attachments staged at once each upload independently — *playwright-bdd, Covered*
-
-### REQ-MOD-174
-
-Removing a staged private attachment before it is added leaves the others staged — *playwright-bdd, Covered*
-
-### REQ-MOD-175
-
-A too-large private attachment is refused on its own row while the others proceed — *playwright-bdd, Covered*
-
-### REQ-MOD-176
-
-"Add N attachments" is disabled until every staged private attachment has settled — *playwright-bdd, Covered*
-
-### REQ-MOD-177
-
-Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
-
 ### REQ-MOD-166
 
 A value written in both languages offers Translate only once its wording differs from what correction opened with — *playwright-bdd, Covered*
@@ -1177,6 +1157,26 @@ A failed translation says so on the value's row and drafts nothing — *playwrig
 ### REQ-MOD-172
 
 A translation overtaken by a direction flip is dropped, and Translate stops showing as working — *playwright-bdd, Covered*
+
+### REQ-MOD-173
+
+Several private attachments staged at once each upload independently — *playwright-bdd, Covered*
+
+### REQ-MOD-174
+
+Removing a staged private attachment before it is added leaves the others staged — *playwright-bdd, Covered*
+
+### REQ-MOD-175
+
+A too-large private attachment is refused on its own row while the others proceed — *playwright-bdd, Covered*
+
+### REQ-MOD-176
+
+"Add N attachments" is disabled until every staged private attachment has settled — *playwright-bdd, Covered*
+
+### REQ-MOD-177
+
+Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 

@@ -1055,6 +1055,18 @@ public class Question
 		return _choices.Single(choice => choice.Id == merged.MergedIntoChoiceId);
 	}
 
+	/// <summary>
+	///     Every value ever merged into <paramref name="choiceId" />: the wordings a
+	///     reporter typing them again should be offered this value for, with a hint
+	///     naming the alias that matched. Merges are flattened when made, so this
+	///     already includes a chained merge's every earlier value — nothing here
+	///     follows a chain (ADR-0129 amendment).
+	/// </summary>
+	public IReadOnlyList<QuestionChoice> AliasesOf(TinyId choiceId)
+	{
+		return [.. _choices.Where(choice => choice.MergedIntoChoiceId == choiceId)];
+	}
+
 	/// <summary>This type-ahead's value by identifier, removed ones included; any other question type refuses review.</summary>
 	private QuestionChoice ReviewedValue(TinyId choiceId)
 	{

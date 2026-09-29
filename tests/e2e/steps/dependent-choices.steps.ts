@@ -468,6 +468,10 @@ When("they open {string}'s list by clicking the field", async ({ page }, _child:
 })
 
 When("they type {string} in {string}", async ({ page }, typed: string, _child: string) => {
+	// Cleared first: Playwright's fill() is a no-op when the field already
+	// holds the requested text, which a scenario retyping the same words
+	// after the parent's answer changes relies on firing again.
+	await modelField(page).fill("")
 	await modelField(page).fill(typed)
 })
 
@@ -499,6 +503,34 @@ When("they type {string}, a value {string} does not offer, and change {string} t
 
 Then("{string} still holds {string}", async ({ page }, _child: string, typed: string) => {
 	await expect(modelField(page)).toHaveValue(typed)
+})
+
+// ---- A merged-away wording is offered only under its own parent choices (ADR-0129 amendment, issue #654) ----
+
+Given(
+	"the type-ahead {string} question's choices depend on the single-select {string} question, and its {string} under {string} was merged from {string}",
+	async ({ page }, _child: string, _parent: string, survivor: string, _parentChoice: string, alias: string) => {
+		const questions = wingForm("single_select", "autocomplete")
+		const model = questions[0].children[1] as StubQuestion
+		model.options = model.options.map((option) =>
+			option.labelEn === survivor ? { ...option, aliases: [{ labelEn: alias, labelFr: null }] } : option,
+		)
+		await openForm(page, questions)
+	},
+)
+
+Then("{string}'s list offers {string}, hinting {string}", async ({ page }, _child: string, label: string, hint: string) => {
+	const list = page.getByRole("listbox", { name: "Model" })
+	const options = list.getByRole("option")
+	await expect(options).toHaveCount(1)
+	const hintLocator = options.first().locator('[data-testid="choice-hint"]')
+	await expect(hintLocator).toHaveText(hint)
+	const ownLabel = await options.first().evaluate((element) => {
+		const clone = element.cloneNode(true) as HTMLElement
+		clone.querySelector('[data-testid="choice-hint"]')?.remove()
+		return (clone.textContent ?? "").trim()
+	})
+	expect(ownLabel).toBe(label)
 })
 
 Given("the type-ahead {string} question's choices depend on the type-ahead {string} question", async ({ page }, _child: string, _parent: string) => {

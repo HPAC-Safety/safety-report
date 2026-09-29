@@ -24,6 +24,8 @@ interface StubValue {
 	answerCount: number
 	addedAt: string | null
 	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null; pin?: string }[]
+	/** Every wording ever merged into this value; a fixture leaving it out means none (ADR-0129 amendment). */
+	aliases?: { labelEn: string | null; labelFr: string | null }[]
 	parent?: {
 		questionId: string
 		questionLabelEn: string
@@ -560,4 +562,36 @@ Then("its answer is dropped and Translate is no longer shown as working", async 
 	await expect(theValueRow(page).getByRole("button", { name: "Translating…" })).toHaveCount(0)
 	await expect(translateButton(theValueRow(page))).toBeVisible()
 	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue("")
+})
+
+// ------------------------ a value's aliases, chains included (ADR-0129 amendment, issue #654) --
+
+Given(
+	"a signed-in Safety Officer reviews a flagged value that two earlier wordings, one itself merged from a third, were merged into",
+	async ({ page }) => {
+		await reviewPage(page, [
+			{
+				...WHERE,
+				id: "value-coopers-hill",
+				labelEn: "Cooper's Hill",
+				labelFr: null,
+				typedIn: "en-CA",
+				isRemoved: false,
+				answerCount: 4,
+				addedAt: "2026-09-20T12:00:00Z",
+				mergeTargets: [],
+				aliases: [
+					{ labelEn: "Coopers", labelFr: null },
+					{ labelEn: "Cooper's", labelFr: null },
+				],
+			},
+		])
+	},
+)
+
+Then("the value shows its aliases {string} and {string}", async ({ page }, first: string, second: string) => {
+	const row = valueRow(page, "Cooper's Hill")
+	await expect(row.getByTestId("type-ahead-value-aliases")).toHaveText(`Also known as: ${first}, ${second}`)
+	// Read-only: no un-merge control is offered.
+	await expect(row.getByRole("button", { name: /unmerge/i })).toHaveCount(0)
 })

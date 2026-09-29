@@ -69,6 +69,13 @@ wording ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and
   flagged for review, offered at once in the language it was typed, and given
   its other language by the Worker. A Safety Officer or an Administrator
   reviews it ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+  A merged value's wording is not only resolved at submission: the survivor
+  carries it as an **alias**, so the form offers the survivor while a
+  reporter is still typing it, with a hint naming the alias, in either
+  language and following a chained merge with nothing for the client to
+  chase (`REQ-QB-233`–`REQ-QB-236`). The type-ahead review page lists each
+  value's aliases too, read-only — there is still no un-merge
+  (`REQ-QB-237`, ADR-0129 amendment).
 
 A single-select or multi-select question always keeps at least one live
 choice: one with none could not be answered, so saving it, retyping a question
@@ -224,6 +231,16 @@ as a place to type, not a dropdown to pick from
   list to the choices whose wording contains it anywhere, ignoring case and
   accents, in the reader's language (`REQ-QB-160`). The list keeps the order
   and separators above.
+- **A merged-away wording still finds its survivor.** A value the reporter
+  typed narrows the list to a choice that once had it, before it was merged
+  into another: the survivor is offered, in either official language,
+  whatever the form's own language, with a hint naming the alias that
+  matched — never the merged-away value itself, and never widening what a
+  dependent type-ahead offers under its parent's answer (`REQ-QB-233`,
+  `REQ-QB-234`, `REQ-QB-236`, ADR-0129 amendment). A chained merge is
+  flattened before the client ever sees it, so typing the first value in a
+  chain still offers only the final survivor, with no chain to follow
+  (`REQ-QB-235`).
 - **Keyboard and pointer.** At 3 or more characters, the down and up arrows
   move the highlighted choice through the list, and pointing at a choice
   highlights it. Enter takes the highlighted choice, Alt and the down arrow

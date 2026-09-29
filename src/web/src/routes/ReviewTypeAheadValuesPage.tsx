@@ -259,6 +259,17 @@ export function ReviewTypeAheadValuesPage() {
 												{value.isRemoved && ` · ${t("typeAheadValues.removedBadge")}`}
 											</p>
 
+											{(value.aliases ?? []).length > 0 && (
+												<p
+													data-testid="type-ahead-value-aliases"
+													className="font-sans text-sm text-ink-muted"
+												>
+													{t("typeAheadValues.aliases", {
+														aliases: value.aliases.map(wording).join(", "),
+													})}
+												</p>
+											)}
+
 											{value.parent && (
 												<ParentLink
 													valueId={value.id}

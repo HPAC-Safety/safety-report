@@ -20,6 +20,8 @@ export interface StubOption {
 	onlyIn: string | null
 	/** `first`, `last`, or `none`; the API always sends it, and a stub leaving it out means `none` (ADR-0136). */
 	pin?: string
+	/** Every wording ever merged into this choice; a stub leaving it out means none (ADR-0129 amendment). */
+	aliases?: { labelEn: string | null; labelFr: string | null }[]
 }
 
 export interface StubQuestion {

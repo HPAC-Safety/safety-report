@@ -241,6 +241,50 @@ public class TypeAheadReviewTests
 		Should.Throw<InvalidOperationException>(() => coopers.Resolved);
 	}
 
+	[Fact]
+	public void GivenNoMerge_WhenAliasesAreRead_ThenThereAreNone()
+	{
+		var question = TypeAhead();
+		var value = question.AddChoiceFromReporter("Cooper's", Locale.EnCa, Now);
+
+		question.AliasesOf(value.Id).ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenAMergedValue_WhenAliasesAreRead_ThenTheSurvivorListsTheMergedWording()
+	{
+		// Given
+		var question = TypeAhead();
+		var coopers = question.AddChoiceFromReporter("Coopers", Locale.EnCa, Now);
+		var target = question.AddChoiceFromReporter("Cooper's", Locale.EnCa, Now);
+
+		// When
+		question.MergeValue(coopers.Id, target.Id, Reviewer, Now);
+
+		// Then
+		question.AliasesOf(target.Id).ShouldBe([coopers]);
+		question.AliasesOf(coopers.Id).ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenAChainedMerge_WhenAliasesAreRead_ThenTheFinalSurvivorListsEveryEarlierWordingWithNoChainToFollow()
+	{
+		// Given — A merged into B, then B merged into C
+		var question = TypeAhead();
+		var a = question.AddChoiceFromReporter("A", Locale.EnCa, Now);
+		var b = question.AddChoiceFromReporter("B", Locale.EnCa, Now);
+		var c = question.AddChoiceFromReporter("C", Locale.EnCa, Now);
+		question.MergeValue(a.Id, b.Id, Reviewer, Now);
+
+		// When
+		question.MergeValue(b.Id, c.Id, Reviewer, Now);
+
+		// Then
+		question.AliasesOf(c.Id).ShouldBe([a, b], ignoreOrder: true);
+		question.AliasesOf(b.Id).ShouldBeEmpty();
+		a.MergedIntoChoiceId.ShouldBe(c.Id);
+	}
+
 	private static Question TypeAhead()
 	{
 		return Question.Create("site", QuestionType.Autocomplete, "Where?", "Où ?", Now, isActive: true);

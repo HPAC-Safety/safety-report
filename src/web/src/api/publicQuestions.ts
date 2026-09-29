@@ -23,6 +23,21 @@ export interface PublicOptionView {
 	pin: string
 	/** The parent question's choices the form offers this one under, when its question's choices depend on another's (ADR-0151). */
 	parentChoiceIds?: string[]
+	/**
+	 * Every wording ever merged into this choice — never the merged-away
+	 * choice itself, which the server never offers. Chains are already
+	 * flattened, so no client-side chain-following is needed (ADR-0129
+	 * amendment).
+	 */
+	aliases: PublicAliasView[]
+}
+
+/** One wording merged away into a live type-ahead value (ADR-0129 amendment). */
+export interface PublicAliasView {
+	/** Null while the merged value had no English wording. */
+	labelEn: string | null
+	/** Null while the merged value had no French wording. */
+	labelFr: string | null
 }
 
 /**

@@ -1277,3 +1277,56 @@ Then("the list scrolls within itself", async ({ page }) => {
 	await expect(list.getByRole("option", { name: "Launch site 30" })).toBeInViewport()
 })
 
+// ------------------- a merged-away wording is offered as an alias while typing (ADR-0129 amendment, issue #654) --
+
+function stubAlias(labelEn: string | null, labelFr: string | null = null): { labelEn: string | null; labelFr: string | null } {
+	return { labelEn, labelFr }
+}
+
+/**
+ * The one option's own label, separate from its hint span — so a match on
+ * the label can be told apart from a match found only through an alias.
+ */
+async function ownLabelAndHint(option: Locator): Promise<{ label: string; hint: string | null }> {
+	const hintLocator = option.locator('[data-testid="choice-hint"]')
+	const hint = (await hintLocator.count()) > 0 ? await hintLocator.innerText() : null
+	const label = await option.evaluate((element) => {
+		const clone = element.cloneNode(true) as HTMLElement
+		clone.querySelector('[data-testid="choice-hint"]')?.remove()
+		return (clone.textContent ?? "").trim()
+	})
+	return { label, hint }
+}
+
+Then(/^the list offers (".*"), hinting (".*")$/, async ({ page }, quotedLabel: string, quotedHint: string) => {
+	const options = typeAheadList(page).getByRole("option")
+	await expect(options).toHaveCount(1)
+	const { label, hint } = await ownLabelAndHint(options.first())
+	expect(label).toBe(quotedList(quotedLabel)[0])
+	expect(hint).toBe(quotedList(quotedHint)[0])
+})
+
+Given("a type-ahead question offers {string}, one merged from {string}", async ({ page }, survivor: string, alias: string) => {
+	const option = { ...stubChoice(survivor), aliases: [stubAlias(alias)] }
+	await openForm(page, choiceFormQuestions("autocomplete", [option]))
+})
+
+Given(
+	"a type-ahead question offers {string} \\/ {string}, one merged from {string}",
+	async ({ page }, survivorEn: string, survivorFr: string, alias: string) => {
+		const option = { ...stubChoice(survivorEn, survivorFr), aliases: [stubAlias(null, alias)] }
+		await openForm(page, choiceFormQuestions("autocomplete", [option]))
+	},
+)
+
+Given(
+	"a type-ahead question offers {string}, merged from {string}, itself merged from {string}",
+	async ({ page }, survivor: string, mid: string, first: string) => {
+		// Merges are flattened server-side: the survivor's aliases already name
+		// every earlier wording, with no chain for the client to follow
+		// (ADR-0129 amendment).
+		const option = { ...stubChoice(survivor), aliases: [stubAlias(first), stubAlias(mid)] }
+		await openForm(page, choiceFormQuestions("autocomplete", [option]))
+	},
+)
+

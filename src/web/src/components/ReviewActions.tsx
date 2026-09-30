@@ -3,6 +3,7 @@ import { useLocale } from "../i18n/useLocale"
 import { ApiError, translate } from "../api/adminQuestions"
 import type { ReportDetail, ReportListItem, ReportStatus, SummarySource } from "../api/adminReports"
 import { TranslateConfirmDialog } from "./TranslateConfirmDialog"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 
 type Language = "en" | "fr"
 
@@ -68,6 +69,11 @@ export function ReviewActions({
 	const [translating, setTranslating] = useState(false)
 	const [translateError, setTranslateError] = useState<string | null>(null)
 	const [note, setNote] = useState("")
+
+	const dirty =
+		(mode === "edit" && (draft.en !== original.en || draft.fr !== original.fr)) ||
+		(mode === "unpublish" && note.trim() !== "")
+	useUnsavedChangesGuard(dirty)
 
 	function openEditor() {
 		const opened = { en: report.summary?.aiSummaryEn ?? "", fr: report.summary?.aiSummaryFr ?? "" }

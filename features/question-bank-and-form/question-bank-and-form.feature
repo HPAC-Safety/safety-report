@@ -1873,3 +1873,22 @@ Scenario: Media consent names documents and says they are published as uploaded
   Given the consent_media question as seeded
   Then its wording in both languages asks about photos, videos, and documents
   And it says that documents are published exactly as they were uploaded and may contain personal details
+
+@REQ-QB-238
+@ui
+Scenario: Leaving the question editor with an unsaved draft is confirmed before it is discarded
+  Given a signed-in Administrator is authoring a new question
+  When they write the English wording without saving
+  And they navigate to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates to that page and the draft is gone
+
+@REQ-QB-239
+@ui
+Scenario: Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning
+  Given a signed-in Administrator opens the manage-questions page
+  When they open the first question for editing
+  And they open the second question for editing
+  And they navigate to another admin page
+  Then no confirmation of any kind appears

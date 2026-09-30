@@ -211,6 +211,12 @@
       "keep": "Non, gardez-le"
     }
   },
+  "unsavedChanges": {
+    "title": "Partir sans enregistrer?",
+    "body": "Vous avez des modifications non enregistrées dans ce formulaire. Si vous quittez maintenant, elles ne seront pas enregistrées ici.",
+    "leave": "Congé",
+    "stay": "Restez"
+  },
   "notFound": {
     "title": "Page introuvable",
     "body": "Il n'y a rien à cette adresse."
@@ -706,7 +712,6 @@
     "remove": "Supprimer",
     "keep": "Conserver",
     "confirmRemove": "Souhaitez-vous supprimer cette pièce jointe? Elle ne pourra pas être récupérée.",
-    "leaveWarning": "Ces pièces jointes privées n’ont pas encore été ajoutées. Si vous quittez maintenant, elles ne seront pas ajoutées au signalement.",
     "error": {
       "load": "Les pièces jointes privées n'ont pas pu être chargées. Veuillez actualiser la page pour réessayer.",
       "upload": "Ce fichier n'a pas pu être ajouté. Veuillez réessayer.",

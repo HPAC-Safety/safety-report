@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AttachmentDropZone } from "./AttachmentDropZone"
-import { useLeaveWarning } from "../hooks/useLeaveWarning"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import { useLocale } from "../i18n/useLocale"
 import {
 	addPrivateAttachment,
@@ -245,7 +245,9 @@ let nextStagedKey = 0
  * finished staged row calls no API; its bytes simply expire by the
  * quarantine lifecycle rule (ADR-0126). "Add N attachments" claims every
  * finished row, and stays disabled until every row has settled — finished or
- * failed. Leaving the page with staged, un-added rows warns.
+ * failed. Leaving the page while any un-added row still holds a real upload
+ * warns — a refused row has nothing to lose — through the shared
+ * `useUnsavedChangesGuard` (issue no. 659).
  */
 function PrivateAttachmentStaging({ reportId, onAdded }: { reportId: string; onAdded: () => void }) {
 	const { t } = useLocale()
@@ -265,7 +267,7 @@ function PrivateAttachmentStaging({ reportId, onAdded }: { reportId: string; onA
 		(row) => row.status === "uploaded" && row.description.trim().length > PRIVATE_ATTACHMENT_DESCRIPTION_MAX_LENGTH,
 	)
 
-	useLeaveWarning(hasUploads, t("privateAttachments.leaveWarning"))
+	useUnsavedChangesGuard(hasUploads)
 
 	// Leaving the page abandons anything still uploading.
 	useEffect(

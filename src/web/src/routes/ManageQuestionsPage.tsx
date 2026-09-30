@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { SortableList } from "../components/SortableList"
 import { QuestionEditor, type QuestionDraft, blankDraft, draftFromImported, draftOf } from "../components/QuestionEditor"
 import { TypeformImportDialog } from "../components/TypeformImportDialog"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import {
 	ApiError,
 	createQuestion,
@@ -38,6 +39,19 @@ export function ManageQuestionsPage() {
 	const [editing, setEditing] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+
+	// The draft as it stood when the editor opened, whether blank or an
+	// existing question's — captured at the moment it opened, alongside
+	// `setDraft`, so a direct switch from editing one question to another
+	// (no intervening close) compares the new draft against its own opening
+	// state, never the previous question's. `null` while no editor is open.
+	const openedDraft = useRef<QuestionDraft | null>(null)
+	function openDraft(next: QuestionDraft | null) {
+		openedDraft.current = next
+		setDraft(next)
+	}
+	const dirty = draft !== null && JSON.stringify(draft) !== JSON.stringify(openedDraft.current)
+	useUnsavedChangesGuard(dirty)
 	const [importing, setImporting] = useState(false)
 	const [exporting, setExporting] = useState(false)
 
@@ -77,7 +91,7 @@ export function ManageQuestionsPage() {
 				await createQuestion(value.request)
 			}
 
-			setDraft(null)
+			openDraft(null)
 			setEditing(null)
 			await load()
 		} catch (cause) {
@@ -174,7 +188,7 @@ export function ManageQuestionsPage() {
 					: setDraft(change)
 			}
 			onCancel={() => {
-				setDraft(null)
+				openDraft(null)
 				setEditing(null)
 			}}
 			onSave={save}
@@ -198,7 +212,7 @@ export function ManageQuestionsPage() {
 					className="touch-target inline-flex items-center rounded bg-brand-700 px-5 font-sans font-medium text-ink-inverse hover:bg-brand-600"
 					onClick={() => {
 						setEditing(null)
-						setDraft(blankDraft())
+						openDraft(blankDraft())
 						setImporting(false)
 					}}
 				>
@@ -208,7 +222,7 @@ export function ManageQuestionsPage() {
 					type="button"
 					className="touch-target inline-flex items-center rounded border border-rule px-5 font-sans text-ink hover:bg-surface-2"
 					onClick={() => {
-						setDraft(null)
+						openDraft(null)
 						setEditing(null)
 						setImporting(true)
 					}}
@@ -236,7 +250,7 @@ export function ManageQuestionsPage() {
 						const existing = questions.find((question) => question.key === imported.key)
 
 						setEditing(existing?.id ?? null)
-						setDraft(draftFromImported(imported, questions))
+						openDraft(draftFromImported(imported, questions))
 						setImporting(false)
 					}}
 					onClose={() => setImporting(false)}
@@ -271,7 +285,7 @@ export function ManageQuestionsPage() {
 									onEdit={() => {
 										setImporting(false)
 										setEditing(question.id)
-										setDraft(draftOf(question, locale))
+										openDraft(draftOf(question, locale))
 									}}
 									onDelete={() => void remove(question)}
 								/>

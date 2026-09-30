@@ -24,6 +24,7 @@ import {
 } from "./draft"
 import { QuestionField } from "./QuestionField"
 import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import { DEFAULT_PHONE_COUNTRY, toE164 } from "../lib/phoneNumber"
 import {
 	answerProblem,
@@ -222,6 +223,14 @@ export function ReportForm() {
 		.flat()
 		.filter((row) => row.status === "uploaded").length
 	const attachmentRoom = Math.max(0, MAX_ATTACHMENTS - attachedCount)
+
+	// Unsubmitted answers, even though they are also saved locally for 15
+	// days (ADR-0100) — the owner's decision for issue no. 659. Moving between
+	// the form's own steps stays within "/report" and is never blocked.
+	const dirty =
+		submit.status !== "submitted" &&
+		(Object.keys(answers).length > 0 || Object.values(attachments).some((rows) => rows.length > 0) || anyUploading)
+	useUnsavedChangesGuard(dirty, "/report")
 
 	const updateAttachments = useCallback((revisionId: string, update: (current: Attachment[]) => Attachment[]) => {
 		edited.current = true

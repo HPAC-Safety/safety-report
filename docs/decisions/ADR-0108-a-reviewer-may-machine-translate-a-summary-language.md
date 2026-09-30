@@ -13,7 +13,13 @@ keywords: translation, summary, DeepL, reviewer, provenance, diff, ADR-0062, ADR
 **Status:** Accepted. Amends the product invariant that machine translation
 "never touches a summary", and widens
 [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md)'s
-translation endpoint from administrators to reviewers.
+translation endpoint from administrators to reviewers. **Amended by
+[ADR-0177](ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md):**
+each language's source now lives on a summary revision (`summary_revisions.source_en`
+and `source_fr`), not on the one `summaries` row, and saving the pair adds a
+revision rather than clearing approval — a draft on a report that is not live, and
+approved by its author on a Published one. The rules below about which source a
+language records are unchanged.
 
 ## Context
 

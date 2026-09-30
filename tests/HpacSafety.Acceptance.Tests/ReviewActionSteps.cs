@@ -28,7 +28,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 [Binding]
 [Scope(Feature = "Moderation, authentication, and publication")]
-public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
+public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
@@ -50,7 +50,6 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
-	[Given(@"a reviewer edits either summary language")]
 	[Given(@"a report is published")]
 	public async Task GivenAPublishedReport()
 	{
@@ -112,15 +111,15 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		};
 
 		await SeedAndLoad(status, true);
+
+		if (action == "restore a summary version")
+		{
+			// There has to be an earlier revision to restore.
+			await EditThroughTheApi();
+		}
 	}
 
 	// ── When ────────────────────────────────────────────────────────────────
-
-	[When(@"the edit is saved")]
-	public async Task WhenTheEditIsSaved()
-	{
-		await Send("summary", new { version = _version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé fermement." });
-	}
 
 	[When(@"the publication is recorded")]
 	[When(@"a reviewer publishes the pair")]
@@ -203,8 +202,13 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		switch (_requestedAction)
 		{
 			case "edit the summary pair":
+				await Send("summary", new { version = _version, aiSummaryEn = EditedEn, aiSummaryFr = EditedFr });
+				break;
 			case "write a manual pair":
 				await Send("summary", new { version = _version, aiSummaryEn = "The pilot landed.", aiSummaryFr = "Le pilote s'est posé." });
+				break;
+			case "restore a summary version":
+				await Restore(FirstRevisionId(await ReadDetail()));
 				break;
 			case "publish the pair":
 				await Send("publish", new { version = _version });
@@ -226,13 +230,6 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	{
 		_result.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 		_result.GetProperty("summary").GetProperty("approvedBySubject").ValueKind.ShouldBe(JsonValueKind.Null);
-	}
-
-	[Then(@"a previously published report returns to Pending and leaves the public feed")]
-	public void ThenBackToPending()
-	{
-		_result.GetProperty("status").GetString().ShouldBe("pending");
-		_result.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
 	[Then(@"it applies to that pair as a whole, not to one language")]
@@ -496,16 +493,16 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 			case "the Worker produced the pair":
 				break;
 			case "a reviewer edited only the English text of a generated pair":
-				_sourcesReport.EditSummary("The pilot landed firmly.", _sourcesReport.Summary!.AiSummaryFr, at);
+				_sourcesReport.EditSummary("The pilot landed firmly.", _sourcesReport.Summary!.AiSummaryFr, "subject-officer", at);
 				break;
 			case "a reviewer edited the English text and accepted its French translation":
-				_sourcesReport.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", at, SummaryTextSource.Human, SummaryTextSource.Machine);
+				_sourcesReport.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-officer", at, SummaryTextSource.Human, SummaryTextSource.Machine);
 				break;
 			case "a reviewer wrote both texts by hand after summarization failed":
-				_sourcesReport.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", at);
+				_sourcesReport.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", "subject-officer", at);
 				break;
 			case "a reviewer wrote the French text by hand and accepted its English translation":
-				_sourcesReport.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", at, SummaryTextSource.Machine, SummaryTextSource.Human);
+				_sourcesReport.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", "subject-officer", at, SummaryTextSource.Machine, SummaryTextSource.Human);
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(_situation), _situation, "No such situation.");

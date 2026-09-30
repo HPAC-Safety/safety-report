@@ -15,6 +15,14 @@ public enum AuditAction
 	DeletedReport = 6,
 	ReopenedReport = 7,
 	UnpublishedReport = 8,
+
+	/// <summary>
+	///     A reviewer restored an earlier summary revision as a new one (ADR-0177).
+	///     Like <see cref="EditedSummary" />, it records the subject and the report,
+	///     never any text.
+	/// </summary>
+	RolledBackSummary = 9,
+
 	CreatedQuestion = 10,
 	RevisedQuestion = 11,
 	ReorderedQuestions = 12,

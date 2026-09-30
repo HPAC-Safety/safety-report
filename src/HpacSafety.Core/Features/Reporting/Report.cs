@@ -118,14 +118,15 @@ public class Report
 	///     (ADR-0055, ADR-0116); every public read goes through it, never through
 	///     this property. This is the domain-side mirror that tests assert on. The
 	///     view also requires both summary texts to be nonblank, which this
-	///     property does not repeat because the <c>Summary</c> type refuses a blank
-	///     text; the view's check guards rows written outside the domain.
+	///     property does not repeat because a revision refuses a blank text; the
+	///     view's check guards rows written outside the domain. What the public
+	///     reads is the latest approved revision (ADR-0177).
 	/// </remarks>
 	public bool IsPublishable =>
 		Deleted is null
 		&& ConsentPublish is true
 		&& Status is ReportStatus.Published
-		&& Summary is { IsApproved: true, Deleted: null };
+		&& Summary is { Deleted: null, LatestApproved: not null };
 
 	/// <summary>
 	///     A report whose reporter did not consent to publication, once the Worker
@@ -456,14 +457,19 @@ public class Report
 	}
 
 	/// <summary>
-	///     A reviewer saves both texts of the pair together. Approval is cleared and
-	///     the report returns to Pending, off the public feed if it was on it
-	///     (REQ-MOD-032, REQ-DOM-005). A language whose text did not change keeps how
-	///     it was produced; a changed one records <paramref name="sourceEn" /> or
-	///     <paramref name="sourceFr" /> (ADR-0108).
+	///     A reviewer saves both texts of the pair together as a new revision, with
+	///     themselves as its author (REQ-MOD-194). On a Published report the revision
+	///     is approved by the person who saved it and is public at once: the report
+	///     stays Published and keeps its first publish date (REQ-MOD-195). On a
+	///     Pending report it is a draft awaiting <see cref="Publish" />; on an
+	///     Unpublished one it is a draft and the report returns to Pending. A
+	///     language whose text did not change keeps how it was produced; a changed
+	///     one records <paramref name="sourceEn" /> or <paramref name="sourceFr" />
+	///     (ADR-0108, ADR-0177).
 	/// </summary>
 	public void EditSummary(string textEn,
 							string textFr,
+							string authorSubject,
 							DateTimeOffset at,
 							SummaryTextSource sourceEn = SummaryTextSource.Human,
 							SummaryTextSource sourceFr = SummaryTextSource.Human)
@@ -474,32 +480,59 @@ public class Report
 
 		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to edit.");
 
-		if (!string.Equals(textEn, summary.AiSummaryEn, StringComparison.Ordinal))
+		var revision = summary.Edit(textEn, textFr, authorSubject, at, sourceEn, sourceFr);
+		Saved(revision, authorSubject, at);
+	}
+
+	/// <summary>
+	///     A reviewer restores an earlier revision: a <em>new</em> revision copies its
+	///     text and sources and names it, and the earlier one is untouched
+	///     (REQ-MOD-196). It publishes or waits exactly as an edit does.
+	/// </summary>
+	public void RollBackSummary(TinyId revisionId,
+								string authorSubject,
+								DateTimeOffset at)
+	{
+		EnsureLive();
+		EnsureChangeable("restore a summary version");
+		EnsureIn("restore a summary version", ReportStatus.Pending, ReportStatus.Published, ReportStatus.Unpublished);
+
+		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to restore.");
+
+		var revision = summary.Restore(revisionId, authorSubject, at);
+		Saved(revision, authorSubject, at);
+	}
+
+	/// <summary>
+	///     What a saved revision does to the report. A live report publishes it at
+	///     once, approved by its author, and stays Published; any other report
+	///     holds it as a draft, and an Unpublished one goes back to Pending.
+	/// </summary>
+	private void Saved(SummaryRevision revision,
+					   string authorSubject,
+					   DateTimeOffset at)
+	{
+		if (Status is ReportStatus.Published)
 		{
-			summary.RewriteEn(textEn, at, sourceEn);
+			revision.Approve(authorSubject, at);
+			return;
 		}
 
-		if (!string.Equals(textFr, summary.AiSummaryFr, StringComparison.Ordinal))
-		{
-			summary.RewriteFr(textFr, at, sourceFr);
-		}
-
-		// Saving is a review decision even when nothing changed: approval always
-		// clears and the report always returns to Pending.
-		summary.ClearApproval();
 		UnpublishNote = null;
 		PublishedAt = null;
 		Status = ReportStatus.Pending;
 	}
 
 	/// <summary>
-	///     Summarization failed, so a reviewer writes the pair by hand. It carries
-	///     <see cref="ManualProvenance" /> as its model and prompt version, each
+	///     Summarization failed, so a reviewer writes the pair by hand. It is
+	///     revision 1, authored by that reviewer, and carries
+	///     <see cref="ManualProvenance" /> as its model and prompt version; each
 	///     language records whether it was typed or an accepted translation, and it
-	///     goes to review like any other pair (REQ-MOD-059, ADR-0108).
+	///     goes to review like any other pair (REQ-MOD-059, ADR-0108, ADR-0177).
 	/// </summary>
 	public void WriteManualSummary(string textEn,
 								   string textFr,
+								   string authorSubject,
 								   DateTimeOffset at,
 								   SummaryTextSource sourceEn = SummaryTextSource.Human,
 								   SummaryTextSource sourceFr = SummaryTextSource.Human)
@@ -507,9 +540,7 @@ public class Report
 		EnsureLive();
 		EnsureIn("write a manual pair", ReportStatus.SummaryFailed);
 
-		var summary = Summary.Generate(Id, textEn, textFr, ManualProvenance, ManualProvenance, at);
-		summary.RewriteEn(textEn, at, sourceEn);
-		summary.RewriteFr(textFr, at, sourceFr);
+		var summary = Summary.Write(Id, textEn, textFr, sourceEn, sourceFr, ManualProvenance, ManualProvenance, authorSubject, at);
 		AttachSummary(summary);
 		AwaitReview();
 	}

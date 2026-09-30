@@ -107,8 +107,10 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   never reach AI. One is public only as a short-lived forced download under a
   server-minted name, when validated, unhidden, and `consent_documents` is true
   (ADR-0119).
-- **Publication**: consent, non-deletion, and current pair approval are all
-  required; editing clears approval; soft deletion stops every flow.
+- **Publication**: consent, non-deletion, and an approved revision are all
+  required; an edit on a report that is not live is an unapproved draft, and one
+  on a Published report is approved and public at once (ADR-0177); soft deletion
+  stops every flow.
 - **Logs**: credentials, report content, model payloads, client filenames, and
   URLs never enter logs or exceptions.
 

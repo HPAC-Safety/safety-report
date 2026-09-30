@@ -64,7 +64,7 @@ Documents never reach the model — *Reqnroll, Covered*
 
 ### REQ-AI-017
 
-A valid response is persisted as one pair-level summary row — *Reqnroll, Covered*
+A valid response is persisted as revision 1 of one pair-level summary — *Reqnroll, Covered*
 
 ### REQ-AI-019
 
@@ -204,7 +204,7 @@ A report is not publishable when one invariant fails — *Reqnroll, Covered*
 
 ### REQ-DOM-005
 
-Editing a summary text unpublishes the report — *Reqnroll, Covered*
+Editing the summary of a Published report publishes the new revision at once — *Reqnroll, Covered*
 
 ### REQ-DOM-006
 
@@ -616,7 +616,7 @@ A report detail view exposes only what the reviewer needs — *Reqnroll, Covered
 
 ### REQ-MOD-032
 
-Editing a summary clears approval and returns the report to Pending — *Reqnroll, Covered*
+Editing a summary of a report that is not live saves a draft — *Reqnroll, Covered*
 
 ### REQ-MOD-033
 
@@ -728,7 +728,7 @@ The report view offers only the actions its state allows — *playwright-bdd, Co
 
 ### REQ-MOD-063
 
-Editing the summary pair saves both texts and clears approval — *playwright-bdd, Covered*
+Editing a pending report's summary pair saves a draft — *playwright-bdd, Covered*
 
 ### REQ-MOD-064
 
@@ -1229,6 +1229,62 @@ The translation label follows the header's language toggle without a reload — 
 ### REQ-MOD-193
 
 A published report's own page carries the language it was written in, and the feed does not — *Reqnroll, Covered*
+
+### REQ-MOD-194
+
+An edit saves a new revision that records its author — *Reqnroll, Covered*
+
+### REQ-MOD-195
+
+An edit to a live report stays published with the new text and the same publish date — *Reqnroll, Covered*
+
+### REQ-MOD-196
+
+A rollback saves a new revision equal to the old one — *Reqnroll, Covered*
+
+### REQ-MOD-197
+
+A rollback on a live report is published at once — *Reqnroll, Covered*
+
+### REQ-MOD-198
+
+A draft on a Pending report needs approval — *Reqnroll, Covered*
+
+### REQ-MOD-199
+
+The public never sees an unapproved revision — *Reqnroll, Covered*
+
+### REQ-MOD-200
+
+The history lists every revision with its author, time, and source — *Reqnroll, Covered*
+
+### REQ-MOD-201
+
+Only a reviewer edits or restores, and only to an earlier revision that exists — *Reqnroll, Covered*
+
+### REQ-MOD-202
+
+The report view lists the summary's revisions — *playwright-bdd, Covered*
+
+### REQ-MOD-203
+
+Any revision can be viewed without changing the current summary — *playwright-bdd, Covered*
+
+### REQ-MOD-204
+
+Restoring a version asks for confirmation first — *playwright-bdd, Covered*
+
+### REQ-MOD-205
+
+A save that changes neither language is refused — *Reqnroll, Covered*
+
+### REQ-MOD-206
+
+Editing a published report's summary keeps it Published — *playwright-bdd, Covered*
+
+### REQ-MOD-207
+
+Save is offered only once a language has changed — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 

@@ -73,7 +73,9 @@ One strict JSON object, exactly two nonblank strings:
 - Invalid output retries the same one-call operation within a bounded budget,
   then becomes `SummaryFailed` for manual bilingual entry.
 - Persist one English/French row with shared model/prompt provenance and pair
-  approval. Editing either text clears approval.
+  approval. A summary is an append-only list of revisions: an edit adds one, and
+  it is a draft until approved — except on a Published report, where the person
+  who saves it approves it and it is public at once (ADR-0177).
 - Human review and positive consent stay mandatory before publication.
 - Never log model input or output.
 

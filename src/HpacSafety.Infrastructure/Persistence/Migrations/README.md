@@ -65,6 +65,8 @@ erDiagram
     reports ||--o{ report_answers : "answers"
     reports ||--o{ report_files : "attachments"
     reports ||--|| summaries : "one summary"
+    summaries ||--|{ summary_revisions : "append-only revisions (ADR-0177)"
+    summary_revisions |o--o| summary_revisions : "restored from"
     question_revisions ||--o{ report_answers : "answered under"
     question_choices |o--o{ report_answers : "named by"
     report_answers ||--o{ report_files : "uploaded for"
@@ -201,9 +203,19 @@ erDiagram
     summaries {
         char(11) id PK
         char(11) report_id FK "unique: one summary per report"
+        timestamptz deleted
+    }
+
+    summary_revisions {
+        char(11) id PK
+        char(11) summary_id FK "unique with sequence"
+        int sequence "1, 2, 3; never repeated"
         text ai_summary_en
         text ai_summary_fr
-        text prompt_version
+        varchar(64) source_en "generated, human, or machine"
+        varchar(64) source_fr
+        varchar(256) author_subject "token subject; null for the Worker"
+        char(11) restored_from_id FK "a rollback names the revision it copies"
         timestamptz approved_at "one approval covers the pair"
         timestamptz deleted
     }
@@ -363,6 +375,8 @@ defines it, under [`Sql/`](../Sql/).
 | `20260928012335_AddPublicReportSearch` | No table change. `CREATE EXTENSION IF NOT EXISTS pg_trgm` and `unaccent` (shared with the admin search, #573, ADR-0156 — either pull request may create either first), and `search_public_reports(query, locale, after_id, limit)`: the public search's one read, over `public_reports` and `public_report_comments` only, so it can never surface a private answer, a name, or an unpublished report. Ranks by `GREATEST` of full-text rank (language by site locale) and trigram word-similarity, both wrapped in `unaccent` on query and text alike, over the summary and every visible comment shown in that locale; a multi-word query is OR'd by scoring each word's own `plainto_tsquery` rather than rewriting a tsquery's rendered text. No index backs it (ADR-0156 decided against one at this volume). Pages by report ID only, resolving a cursor's position by calling itself for that one row (#574, ADR-0157). The script is `Sql/20260928012335_AddPublicReportSearch.sql`; `Down` drops the function, leaving `pg_trgm` and `unaccent` installed. |
 | `20260928181012_AddAttachmentCounts` | No table change. Appends `public_attachment_count` (from `public_report_media`) and `full_attachment_count` (every non-deleted `report_files` row) to `public_reports`; appends `attachment_count` (the same full count) to `admin_report_queue`; and drops and recreates `search_public_reports` to return the same two counts, carried through unchanged from `public_reports`. The API reads whichever count fits the viewer's role — never `report_private_attachments` (ADR-0135), which neither view nor function ever joins (#427). The script is `Sql/20260928181012_AddAttachmentCounts.sql`; `Down` restores all three objects to their prior shape. |
 | `20260930011550_ShowReportLanguageOnPublicReports` | No table change. Appends `language` (the locale the reporter wrote the report in, `en-CA` or `fr-CA`) to `public_reports`, so a report's own page can say a summary was translated from it. Only the detail read selects it; the feed and `search_public_reports` do not (#682, ADR-0176). The script is `Sql/20260930011550_ShowReportLanguageOnPublicReports.sql`; `Down` drops and recreates `public_report_media` and `public_report_comments` with the view, since a view cannot lose a column in place. |
+||||||| parent of 2b69f34c (Summaries are append-only revisions: author recorded, rollback forward, a live edit publishes itself)
+| `20260930014051_AddSummaryRevisions` | Summaries become append-only revisions (#668, ADR-0177). Created `summary_revisions` (both texts, per-language sources, model and prompt version, author subject, created-at, optional restored-from revision, approval, row version, unique summary + sequence, checks on sequence, sources, and approval coherence); folded every `summaries` row into it as revision 1 (sources, provenance, and approval kept, author null, created-at from `generated_at`, deleted stamp carried); created the `latest_summary_revisions` and `latest_approved_summary_revisions` views; recreated `public_reports`, `admin_report_queue` (its version now ends in the latest revision's `xmin`), and `admin_report_search_document` to read them; then dropped the moved columns and their checks from `summaries`, leaving it as `id`, `report_id`, `deleted`. No row is deleted. The scripts are `Sql/20260930014051_AddSummaryRevisions.sql` and `.Down.sql`; `Down` restores the columns from each summary's latest revision, which loses every earlier revision. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

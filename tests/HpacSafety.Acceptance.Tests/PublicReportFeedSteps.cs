@@ -175,13 +175,13 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	[Given(@"the English or French summary text is blank")]
 	public async Task GivenASummaryTextIsBlank()
 	{
-		await Violate($"UPDATE summaries SET ai_summary_fr = '  ' WHERE report_id = {seeded.Id}");
+		await Violate($"UPDATE summary_revisions SET ai_summary_fr = '  ' WHERE summary_id IN (SELECT id FROM summaries WHERE report_id = {seeded.Id})");
 	}
 
 	[Given(@"the pair has no current human approval")]
 	public async Task GivenThePairHasNoApproval()
 	{
-		await Violate($"UPDATE summaries SET approved_at = NULL, approved_by_subject = NULL WHERE report_id = {seeded.Id}");
+		await Violate($"UPDATE summary_revisions SET approved_at = NULL, approved_by_subject = NULL WHERE summary_id IN (SELECT id FROM summaries WHERE report_id = {seeded.Id})");
 	}
 
 	[Given(@"the report is not Published")]

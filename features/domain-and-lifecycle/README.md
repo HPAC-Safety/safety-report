@@ -21,13 +21,13 @@ stateDiagram-v2
     Summarizing --> Pending: valid bilingual pair saved
     Summarizing --> SummaryFailed: bounded retries exhausted
     SummaryFailed --> Pending: officer writes both texts
-    Pending --> Pending: either text edited; approval cleared
+    Pending --> Pending: either text edited; a new draft revision
     Pending --> Published: officer publishes the pair
     Pending --> Unpublished: officer unpublishes (optional note)
-    Published --> Pending: either text edited
+    Published --> Published: either text edited or rolled back; the new revision is approved by its author and public at once
     Published --> Unpublished: officer unpublishes
     Unpublished --> Published: officer publishes, consent yes
-    Unpublished --> Pending: either text edited, consent yes
+    Unpublished --> Pending: either text edited, consent yes; a new draft revision
 ```
 
 A report is Pending, Published, or Unpublished once the Worker is done with
@@ -36,6 +36,16 @@ it; there is no Approved or Rejected status
 Review exists only to check a summary. Publishing approves the current pair
 and makes the report public at once, and unpublishing takes it off the public
 feed without deleting it; either can be done again later.
+
+A summary is an append-only list of revisions
+([ADR-0177](../../docs/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)).
+Each edit or rollback adds one; nothing saved is rewritten. Approval belongs to
+a revision. On a Published report a saved revision is approved by the person who
+saved it and is public at once, so the report never leaves the feed to be
+corrected and keeps its first publish date (REQ-DOM-005, REQ-MOD-195). On a
+Pending or Unpublished report a saved revision is a draft, and **Publish**
+approves the latest one (REQ-MOD-032, REQ-MOD-198). The public reads only the
+latest approved revision (REQ-MOD-199).
 
 A report whose reporter did not consent is never sent to the model: the Worker
 sets it Unpublished with no summary, and it stays that way for good. Nobody

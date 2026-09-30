@@ -261,9 +261,37 @@ Admin menu, and can only be deleted (REQ-DOM-015, REQ-MOD-090).
 **Publish** approves the current pair and makes the report public at once.
 **Unpublish** takes a report off the public feed, or declines a pending one,
 and takes an optional note that only reviewers see; **Publish** brings it back.
-**Edit summary** saves both texts together and returns the report to Pending,
-taking it off the public feed if it was there. A hand-written pair after a
-failed summarization carries `manual` as its model and prompt version.
+**Edit summary** saves both texts together as a new revision, with the
+reviewer as its author, and is refused when neither language changed (REQ-MOD-194,
+REQ-MOD-205); the editor offers **Save summary** only once a language differs
+(REQ-MOD-207). What the save does to the report depends on its state
+([ADR-0177](../../docs/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)):
+
+| Status | A saved revision |
+|---|---|
+| Published | Approved by the person who saved it and public at once. The report stays Published and keeps its first publish date (REQ-MOD-195). |
+| Pending | A draft, not public. **Publish** approves the latest revision (REQ-MOD-198). |
+| Unpublished (consented) | A draft, and the report returns to Pending (REQ-MOD-032). |
+
+A hand-written pair after a failed summarization is revision 1, authored by the
+reviewer, and carries `manual` as its model and prompt version.
+
+**Summary history.** Below the summary, the report view lists every revision
+newest first: who saved it (an opaque token subject, or "the AI" for the Worker's
+revision 1, or "an unknown author" for a revision written before authors were
+recorded), when, how each language was written, and which version it restored
+(REQ-MOD-202). **View this version** shows any revision's two texts without
+changing the current one (REQ-MOD-203). **Restore this version** asks for
+confirmation, then saves a **new** revision that copies the old one; the old one
+is untouched and versions only move forward. A Published report shows the
+restored text at once; any other report holds it as a draft (REQ-MOD-196,
+REQ-MOD-197, REQ-MOD-204). Restoring is audited as `RolledBackSummary`, and
+neither it nor an edit records any text in the audit log (REQ-MOD-061). A
+Safety Officer or an Administrator may edit and restore; a User may not
+(REQ-MOD-201).
+
+**Not built:** regenerating a summary with the model, and showing revision
+history publicly.
 
 Every action carries the version of the report the reviewer loaded. If another
 reviewer changed it since, the API answers `409` and nothing is saved; the page

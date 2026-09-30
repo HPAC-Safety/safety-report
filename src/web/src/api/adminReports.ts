@@ -94,6 +94,27 @@ export interface ReportSummary {
 }
 
 /**
+ * One saved version of the summary pair, as its history lists it (ADR-0177).
+ * `authorSubject` is an opaque token subject; null for the Worker's revision and
+ * for one written before authors were recorded.
+ */
+export interface SummaryRevision {
+	id: string
+	sequence: number
+	aiSummaryEn: string
+	aiSummaryFr: string
+	sourceEn: SummarySource
+	sourceFr: SummarySource
+	authorSubject: string | null
+	createdAt: string
+	/** The sequence number of the revision this one restores, when it is a rollback. */
+	restoredFromSequence: number | null
+	approvedBySubject: string | null
+	approvedAt: string | null
+	isCurrent: boolean
+}
+
+/**
  * Whether the published report shows a file (ADR-0117): public now, once the
  * report is published, hidden by a reviewer, not shared because the reporter
  * did not agree, or never public (a document, or no verified derivative).
@@ -119,6 +140,8 @@ export interface ReportDetail extends ReportListItem {
 	mediaConsent: ReportConsent
 	unpublishNote: string | null
 	publishedAt: string | null
+	/** Every revision of the summary, newest first (ADR-0177). */
+	summaryRevisions: SummaryRevision[]
 }
 
 /** A short-lived link to one attachment, minted by its own audited request. */
@@ -206,6 +229,14 @@ export function saveSummaryPair(
 		method: "PUT",
 		body: JSON.stringify({ version, aiSummaryEn, aiSummaryFr, sourceEn, sourceFr }),
 	})
+}
+
+/**
+ * Restores an earlier revision by saving a new one that copies it (ADR-0177). A
+ * published report shows it at once; any other holds it as a draft.
+ */
+export function rollBackSummary(id: string, version: string, revisionId: string): Promise<ReportDetail> {
+	return post(`${reportPath(id)}/summary/revisions/${encodeURIComponent(revisionId)}/rollback`, { version })
 }
 
 /** Approves the pair and makes the report public in one action (ADR-0125). */

@@ -555,11 +555,95 @@ Scenario: Opening a report's detail view is audited
   And the audit entry records no report content
 
 @REQ-MOD-032
-Scenario: Editing a summary clears approval and returns the report to Pending
-  Given a reviewer edits either summary language
-  When the edit is saved
-  Then the pair's approval is cleared
-  And a previously published report returns to Pending and leaves the public feed
+Scenario Outline: Editing a summary of a report that is not live saves a draft
+  Given a <from> report whose reporter consented to publication
+  When a reviewer edits either summary language
+  Then the new revision is not approved
+  And the report is Pending and not on the public feed
+
+Examples:
+  | from        |
+  | Pending     |
+  | Unpublished |
+
+@REQ-MOD-194
+Scenario: An edit saves a new revision that records its author
+  Given a Pending report whose reporter consented to publication
+  When a reviewer edits either summary language
+  Then the summary has 2 revisions
+  And the new revision records the reviewer's token subject and that its English text was written by a human
+  And the first revision is unchanged
+
+@REQ-MOD-195
+Scenario: An edit to a live report stays published with the new text and the same publish date
+  Given a Published report whose reporter consented to publication
+  When a reviewer edits either summary language
+  Then the report is still Published with the same publish date
+  And the new revision is approved by the reviewer who saved it
+  And the public feed shows the edited text
+
+@REQ-MOD-196
+Scenario: A rollback saves a new revision equal to the old one
+  Given a Pending report whose reporter consented to publication
+  And a reviewer has edited either summary language
+  When a reviewer restores the first revision
+  Then the summary has 3 revisions
+  And the new revision has the first revision's text and sources and names it as restored from
+  And the first and second revisions are unchanged
+  And the restoring is audited as RolledBackSummary without any text
+
+@REQ-MOD-197
+Scenario: A rollback on a live report is published at once
+  Given a Published report whose reporter consented to publication
+  And a reviewer has edited either summary language
+  When a reviewer restores the first revision
+  Then the report is still Published with the same publish date
+  And the public feed shows the first revision's text
+
+@REQ-MOD-198
+Scenario: A draft on a Pending report needs approval
+  Given a Pending report whose reporter consented to publication
+  And a reviewer has edited either summary language
+  Then the report is not on the public feed
+  When a reviewer publishes the pair
+  Then the latest revision is approved by that reviewer
+  And the public feed shows the edited text
+
+@REQ-MOD-199
+Scenario: The public never sees an unapproved revision
+  Given a Published report whose reporter consented to publication
+  And a newer revision that nobody has approved exists
+  When a visitor reads that report from the public feed
+  Then the visitor sees the latest approved revision's text and never the draft
+
+@REQ-MOD-200
+Scenario: The history lists every revision with its author, time, and source
+  Given a Pending report whose reporter consented to publication
+  And a reviewer has edited either summary language
+  And a reviewer has restored the first revision
+  When a reviewer reads the summary history
+  Then the history lists 3 revisions, newest first
+  And each carries its author, its time, and how each language was written
+  And the restored one names the revision it was restored from
+
+@REQ-MOD-201
+Scenario Outline: Only a reviewer edits or restores, and only to an earlier revision that exists
+  Given a Pending report whose reporter consented to publication
+  When <attempt>
+  Then the request is refused with <status> and saves nothing
+
+Examples:
+  | attempt                                          | status |
+  | a User edits the summary pair                    | 403    |
+  | a User restores the first revision               | 403    |
+  | a reviewer restores the current revision         | 400    |
+  | a reviewer restores a revision that does not exist | 404  |
+
+@REQ-MOD-205
+Scenario: A save that changes neither language is refused
+  Given a Pending report whose reporter consented to publication
+  When a reviewer saves the summary pair unchanged
+  Then the request is refused with 400 and saves nothing
 
 @REQ-MOD-033
 Scenario: Publishing approves the current bilingual pair once
@@ -1038,6 +1122,7 @@ Examples:
   | publish the pair      | PublishedReport   |
   | unpublish the report  | UnpublishedReport |
   | write a manual pair   | EditedSummary     |
+  | restore a summary version | RolledBackSummary |
 
 @REQ-MOD-062
 @ui
@@ -1056,12 +1141,61 @@ Examples:
 
 @REQ-MOD-063
 @ui
-Scenario: Editing the summary pair saves both texts and clears approval
-  Given a safety officer is signed in and a published report exists
+Scenario: Editing a pending report's summary pair saves a draft
+  Given a safety officer is signed in and a pending report exists
   When the safety officer opens that report
   And the safety officer edits the English summary and saves
   Then the report shows the "Pending" badge
   And the saved English text is shown
+
+@REQ-MOD-206
+@ui
+Scenario: Editing a published report's summary keeps it Published
+  Given a safety officer is signed in and a published report exists
+  When the safety officer opens that report
+  And the safety officer edits the English summary and saves
+  Then the report shows the "Published" badge
+  And the saved English text is shown
+
+@REQ-MOD-207
+@ui
+Scenario: Save is offered only once a language has changed
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer opens the summary editor
+  Then Save summary is not offered
+  When the safety officer changes the English text
+  Then Save summary is offered
+
+@REQ-MOD-202
+@ui
+Scenario: The report view lists the summary's revisions
+  Given a safety officer is signed in and a pending report with four summary revisions exists
+  When the safety officer opens that report
+  Then the revision history lists four revisions, newest first
+  And each shows its author, its time, and how each language was written
+  And the restored revision says which revision it was restored from
+
+@REQ-MOD-203
+@ui
+Scenario: Any revision can be viewed without changing the current summary
+  Given a safety officer is signed in and a pending report with four summary revisions exists
+  When the safety officer opens that report
+  And the safety officer views the first revision
+  Then that revision's English and French text is shown
+  And the current summary is unchanged
+
+@REQ-MOD-204
+@ui
+Scenario: Restoring a version asks for confirmation first
+  Given a safety officer is signed in and a pending report with four summary revisions exists
+  When the safety officer opens that report
+  And the safety officer chooses Restore this version on the first revision
+  Then a confirmation asks whether to restore that version
+  And nothing has been restored yet
+  When the safety officer confirms the restore
+  Then the browser asks the API to restore that revision
+  And the restored text is the current summary
 
 @REQ-MOD-064
 @ui

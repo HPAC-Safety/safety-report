@@ -280,8 +280,19 @@ contributor who never invokes one is unaffected.
      to wording that names documents
      ([ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 6. **Publication** requires positive consent, a non-deleted report, and human
-   approval of the current bilingual pair. Editing either language clears the
-   pair approval.
+   approval of the current bilingual pair.
+   - **A summary is an append-only list of revisions.** Each records its
+     author's opaque token subject and how each language was written. An edit
+     adds one; a rollback adds a new one that copies an earlier one; nothing
+     saved is rewritten.
+   - Approval belongs to a revision. Before a report is first published, an
+     edit is a draft and needs Approve & Publish.
+   - On a **Published** report, a saved revision (edit or rollback) is approved
+     by the person who saved it and is public at once. The report stays
+     Published, and `PublishedAt` keeps the first publish date.
+   - The public reads only the latest approved revision of a Published report,
+     through a SQL view
+     ([ADR-0177](docs/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)).
 7. **Identity is a validated JWT, and nothing is stored about members.**
    - The API reads the subject and the role claim, nothing else. The system
      never handles a member's password.

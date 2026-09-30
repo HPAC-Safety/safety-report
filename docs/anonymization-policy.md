@@ -52,6 +52,10 @@ consented to media under wording that names documents, the unchanged original
 is offered as a forced download
 ([ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
-A safety officer reviews and approves the current pair. Editing either language
-clears approval. Positive publication consent and a live report remain required
-for public visibility. Model inputs and outputs are never logged.
+A safety officer reviews and approves the current pair. A summary is an
+append-only list of revisions; approval belongs to a revision, and an edit to a
+report that is not yet published is a draft that needs approving. On a Published
+report, a saved edit is approved by its author and public at once
+([ADR-0177](decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)).
+Positive publication consent and a live report remain required for public
+visibility. Model inputs and outputs are never logged.

@@ -116,6 +116,9 @@ export function ReviewActions({
 		setProposal(null)
 	}
 
+	/** A revision holds a change: saving is offered only once a language differs from the current text (REQ-MOD-207). */
+	const edited = draft.en !== original.en || draft.fr !== original.fr
+
 	const savedSource = (language: Language): SummarySource =>
 		source[language] === "translated" ? "machine" : "human"
 
@@ -176,9 +179,11 @@ export function ReviewActions({
 						onKeep={() => setProposal(null)}
 					/>
 				)}
-				<p className="font-sans text-sm text-ink-muted">{t("reports.edit.clearsApproval")}</p>
+				<p className="font-sans text-sm text-ink-muted">
+					{t(report.status === "published" ? "reports.edit.publishesAtOnce" : "reports.edit.savesDraft")}
+				</p>
 				<div className="flex flex-wrap gap-3">
-					<button type="submit" className={PRIMARY} disabled={busy || !draft.en.trim() || !draft.fr.trim()}>
+					<button type="submit" className={PRIMARY} disabled={busy || !edited || !draft.en.trim() || !draft.fr.trim()}>
 						{t("reports.edit.save")}
 					</button>
 					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("view")}>

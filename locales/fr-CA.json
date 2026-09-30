@@ -522,7 +522,8 @@
       "label": "Modifier la paire de résumés",
       "en": "Résumé en anglais",
       "fr": "Résumé en français",
-      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le signalement repasse à l’état « En attente » et est retiré du fil d’actualité s’il a été publié.",
+      "publishesAtOnce": "#Saving publishes the new version at once.",
+      "savesDraft": "#Saving keeps a draft. Publishing approves it.",
       "save": "Enregistrer le résumé"
     },
     "unpublish": {
@@ -533,6 +534,31 @@
     "stale": {
       "message": "Un autre réviseur a modifié ce signalement depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",
       "reload": "Recharger le signalement"
+    },
+    "history": {
+      "title": "#Summary history",
+      "version": "#Version {n}",
+      "current": "#Current",
+      "saved": "#Saved {at} by {author}.",
+      "author": {
+        "worker": "#the AI",
+        "unknown": "#an unknown author"
+      },
+      "sources": "#English: {en}. French: {fr}.",
+      "restoredFrom": "#Restored from version {n}.",
+      "approved": "#Approved {at} by {by}.",
+      "view": "#View this version",
+      "hide": "#Hide this version",
+      "restore": "#Restore this version"
+    },
+    "restore": {
+      "title": "#Restore version {n}?",
+      "body": {
+        "live": "#A new version with the same text is saved and published at once. Version {n} stays in the history.",
+        "draft": "#A new version with the same text is saved as a draft. It is not public until you publish it. Version {n} stays in the history."
+      },
+      "confirm": "#Restore version",
+      "keep": "#Keep current version"
     },
     "delete": {
       "title": "Souhaitez-vous supprimer ce signalement?",

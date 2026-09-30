@@ -101,6 +101,37 @@ const DETAIL = {
 	},
 	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready", visibility: "private", format: "pdf" }],
 	mediaConsent: null,
+	summaryRevisions: [
+		{
+			id: "revisionaa1",
+			sequence: 1,
+			aiSummaryEn: "The pilot made a firm landing.",
+			aiSummaryFr: "Le pilote a fait un atterrissage ferme.",
+			sourceEn: "generated",
+			sourceFr: "generated",
+			authorSubject: null,
+			createdAt: "2026-09-20T15:35:00Z",
+			restoredFromSequence: null,
+			approvedBySubject: null,
+			approvedAt: null,
+			isCurrent: true,
+		} as SummaryRevisionStub,
+	],
+}
+
+interface SummaryRevisionStub {
+	id: string
+	sequence: number
+	aiSummaryEn: string
+	aiSummaryFr: string
+	sourceEn: string
+	sourceFr: string
+	authorSubject: string | null
+	createdAt: string
+	restoredFromSequence: number | null
+	approvedBySubject: string | null
+	approvedAt: string | null
+	isCurrent: boolean
 }
 
 const FILTERED: Record<string, (row: StubRow) => boolean> = {
@@ -378,6 +409,7 @@ interface ReviewStub {
 		version: string
 		unpublishNote: string | null
 		publishedAt: string | null
+		summaryRevisions: SummaryRevisionStub[]
 	}
 	stale: boolean
 	requests: string[]
@@ -395,11 +427,115 @@ function detailIn(status: StubStatus) {
 		publishedAt: status === "published" ? "2026-09-21T12:00:00Z" : null,
 		summaryError: status === "summary_failed" ? "The AI chat provider was unavailable." : null,
 		summary: status === "summary_failed" ? null : { ...DETAIL.summary },
+		summaryRevisions: status === "summary_failed" ? [] : DETAIL.summaryRevisions.map((revision) => ({ ...revision })),
+	}
+}
+
+/*
+ * A pending report whose summary has a history of four versions: the Worker's,
+ * a reviewer's edit, a restore of the first, and a later edit (the current one).
+ */
+function detailWithHistory() {
+	const detail = detailIn("pending")
+	const revisions: SummaryRevisionStub[] = [
+		{ ...DETAIL.summaryRevisions[0], isCurrent: false },
+		{
+			id: "revisionaa2",
+			sequence: 2,
+			aiSummaryEn: "The pilot made a firm landing in gusts.",
+			aiSummaryFr: "Le pilote a fait un atterrissage ferme dans les rafales.",
+			sourceEn: "human",
+			sourceFr: "machine",
+			authorSubject: "auth0|synthetic-editor",
+			createdAt: "2026-09-21T10:00:00Z",
+			restoredFromSequence: null,
+			approvedBySubject: null,
+			approvedAt: null,
+			isCurrent: false,
+		},
+		{
+			id: "revisionaa3",
+			sequence: 3,
+			aiSummaryEn: DETAIL.summary.aiSummaryEn,
+			aiSummaryFr: DETAIL.summary.aiSummaryFr,
+			sourceEn: "generated",
+			sourceFr: "generated",
+			authorSubject: "auth0|synthetic-restorer",
+			createdAt: "2026-09-22T10:00:00Z",
+			restoredFromSequence: 1,
+			approvedBySubject: null,
+			approvedAt: null,
+			isCurrent: false,
+		},
+		{
+			id: "revisionaa4",
+			sequence: 4,
+			aiSummaryEn: "The pilot made a firm landing after the collapse of the wind.",
+			aiSummaryFr: "Le pilote a fait un atterrissage ferme après la chute du vent.",
+			sourceEn: "human",
+			sourceFr: "human",
+			authorSubject: "auth0|synthetic-editor",
+			createdAt: "2026-09-23T10:00:00Z",
+			restoredFromSequence: null,
+			approvedBySubject: null,
+			approvedAt: null,
+			isCurrent: true,
+		},
+	]
+	const current = revisions[3]
+
+	return {
+		...detail,
+		summary: { ...detail.summary!, aiSummaryEn: current.aiSummaryEn, aiSummaryFr: current.aiSummaryFr, sourceEn: "human", sourceFr: "human" },
+		summaryRevisions: [...revisions].reverse(),
+	}
+}
+
+/** A new revision on top of the history, as the API answers an edit or a rollback (ADR-0177). */
+function withRevision(
+	detail: ReviewStub["detail"],
+	text: { en: string; fr: string },
+	sources: { en: string; fr: string },
+	restoredFromSequence: number | null,
+): ReviewStub["detail"] {
+	const isLive = detail.status === "published"
+	const sequence = detail.summaryRevisions[0].sequence + 1
+	const created: SummaryRevisionStub = {
+		id: `revisionaa${sequence}`,
+		sequence,
+		aiSummaryEn: text.en,
+		aiSummaryFr: text.fr,
+		sourceEn: sources.en,
+		sourceFr: sources.fr,
+		authorSubject: "auth0|synthetic-officer",
+		createdAt: "2026-09-24T10:00:00Z",
+		restoredFromSequence,
+		// A live report publishes what is saved, approved by whoever saved it.
+		approvedBySubject: isLive ? "auth0|synthetic-officer" : null,
+		approvedAt: isLive ? "2026-09-24T10:00:00Z" : null,
+		isCurrent: true,
+	}
+
+	return {
+		...detail,
+		version: `1.${sequence}`,
+		status: isLive ? "published" : "pending",
+		publishedAt: isLive ? detail.publishedAt : null,
+		summary: {
+			...detail.summary!,
+			aiSummaryEn: text.en,
+			aiSummaryFr: text.fr,
+			sourceEn: sources.en as "generated",
+			sourceFr: sources.fr as "generated",
+			approvedBySubject: created.approvedBySubject,
+			approvedAt: created.approvedAt,
+		},
+		summaryRevisions: [created, ...detail.summaryRevisions.map((revision) => ({ ...revision, isCurrent: false }))],
 	}
 }
 
 async function stubReview(page: Page, status: StubStatus, word = "") {
-	const detail = detailIn(status)
+	const detail = word === "history" ? detailWithHistory() : detailIn(status)
 	const stub: ReviewStub = {
 		// A report without consent is never summarized and stays unpublished (REQ-DOM-006, REQ-DOM-015).
 		detail: word.startsWith("private-")
@@ -457,9 +593,22 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 			next.publishedAt = "2026-09-23T12:00:00Z"
 			next.unpublishNote = null
 		} else if (path.endsWith("/summary")) {
-			next.status = "pending"
-			next.publishedAt = null
-			next.summary = { ...DETAIL.summary, aiSummaryEn: body.aiSummaryEn, aiSummaryFr: body.aiSummaryFr }
+			stub.detail = withRevision(
+				stub.detail,
+				{ en: body.aiSummaryEn, fr: body.aiSummaryFr },
+				{ en: body.sourceEn ?? "human", fr: body.sourceFr ?? "human" },
+				null,
+			)
+			return route.fulfill({ json: stub.detail })
+		} else if (path.endsWith("/rollback")) {
+			const target = stub.detail.summaryRevisions.find((revision) => path.includes(`/revisions/${revision.id}/`))!
+			stub.detail = withRevision(
+				stub.detail,
+				{ en: target.aiSummaryEn, fr: target.aiSummaryFr },
+				{ en: target.sourceEn, fr: target.sourceFr },
+				target.sequence,
+			)
+			return route.fulfill({ json: stub.detail })
 		}
 
 		stub.detail = next
@@ -469,6 +618,11 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 
 Given("a safety officer is signed in and a {word} report exists", async ({ page }, word: string) => {
 	await stubReview(page, STATUS_BY_WORD[word], word)
+	await signInAs(page, "safety_officer")
+})
+
+Given("a safety officer is signed in and a pending report with four summary revisions exists", async ({ page }) => {
+	await stubReview(page, "pending", "history")
 	await signInAs(page, "safety_officer")
 })
 
@@ -530,6 +684,91 @@ Then("the saved English text is shown", async ({ page }) => {
 	await expect(page.locator('[data-summary="en"]')).toHaveText("The pilot landed firmly after the collapse.")
 	const sent = reviewStubs.get(page)!.requests
 	expect(sent).toContain("PUT /api/admin/reports/reviewaaaaa/summary")
+})
+
+Then("Save summary is not offered", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Save summary" })).toBeDisabled()
+})
+
+Then("Save summary is offered", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Save summary" })).toBeEnabled()
+})
+
+Then("the revision history lists four revisions, newest first", async ({ page }) => {
+	const revisions = page.locator("[data-summary-history] [data-revision]")
+	await expect(revisions).toHaveCount(4)
+	await expect(revisions.evaluateAll((items) => items.map((item) => item.getAttribute("data-revision")))).resolves.toEqual([
+		"4",
+		"3",
+		"2",
+		"1",
+	])
+	await expect(revisions.first().locator("[data-current-revision]")).toBeVisible()
+})
+
+Then("each shows its author, its time, and how each language was written", async ({ page }) => {
+	const second = page.locator('[data-revision="2"]')
+	await expect(second.locator("[data-revision-saved]")).toContainText("auth0|synthetic-editor")
+	await expect(second.locator("[data-revision-saved]")).toContainText("2026")
+	await expect(second.locator("[data-revision-sources]")).toHaveText("English: Written by a reviewer. French: Machine-translated.")
+
+	// The Worker's version has no author, and says so.
+	const first = page.locator('[data-revision="1"]')
+	await expect(first.locator("[data-revision-saved]")).toContainText("by the AI")
+	await expect(first.locator("[data-revision-sources]")).toHaveText("English: Generated by the AI. French: Generated by the AI.")
+})
+
+Then("the restored revision says which revision it was restored from", async ({ page }) => {
+	await expect(page.locator('[data-revision="3"] [data-revision-restored-from]')).toHaveText("Restored from version 1.")
+	await expect(page.locator('[data-revision="2"] [data-revision-restored-from]')).toHaveCount(0)
+})
+
+When("the safety officer views the first revision", async ({ page }) => {
+	await page.locator('[data-revision="1"]').getByRole("button", { name: "View this version" }).click()
+})
+
+Then("that revision's English and French text is shown", async ({ page }) => {
+	const first = page.locator('[data-revision="1"]')
+	await expect(first.locator('[data-revision-text="en"]')).toHaveText(DETAIL.summaryRevisions[0].aiSummaryEn)
+	await expect(first.locator('[data-revision-text="fr"]')).toHaveText(DETAIL.summaryRevisions[0].aiSummaryFr)
+})
+
+Then("the current summary is unchanged", async ({ page }) => {
+	await expect(page.locator('[data-summary="en"]')).toHaveText("The pilot made a firm landing after the collapse of the wind.")
+	expect(reviewStubs.get(page)!.requests.filter((request) => !request.startsWith("GET"))).toEqual([])
+})
+
+When("the safety officer chooses Restore this version on the first revision", async ({ page }) => {
+	await page.locator('[data-revision="1"]').getByRole("button", { name: "Restore this version" }).click()
+})
+
+Then("a confirmation asks whether to restore that version", async ({ page }) => {
+	const dialog = page.getByRole("dialog", { name: "Restore version 1?" })
+	await expect(dialog).toBeVisible()
+	await expect(dialog).toContainText("saved as a draft")
+})
+
+Then("nothing has been restored yet", async ({ page }) => {
+	expect(reviewStubs.get(page)!.requests.some((request) => request.includes("/rollback"))).toBe(false)
+	await expect(page.locator("[data-summary-history] [data-revision]")).toHaveCount(4)
+})
+
+When("the safety officer confirms the restore", async ({ page }) => {
+	await page.getByRole("dialog").getByRole("button", { name: "Restore version" }).click()
+})
+
+Then("the browser asks the API to restore that revision", async ({ page }) => {
+	await expect
+		.poll(() => reviewStubs.get(page)!.requests)
+		.toContain("POST /api/admin/reports/reviewaaaaa/summary/revisions/revisionaa1/rollback")
+})
+
+Then("the restored text is the current summary", async ({ page }) => {
+	await expect(page.locator('[data-summary="en"]')).toHaveText(DETAIL.summaryRevisions[0].aiSummaryEn)
+	const newest = page.locator("[data-summary-history] [data-revision]").first()
+	await expect(newest).toHaveAttribute("data-revision", "5")
+	await expect(newest.locator("[data-current-revision]")).toBeVisible()
+	await expect(newest.locator("[data-revision-restored-from]")).toHaveText("Restored from version 1.")
 })
 
 Then("the note {string} is shown", async ({ page }, note: string) => {

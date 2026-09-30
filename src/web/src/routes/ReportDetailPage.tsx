@@ -7,6 +7,7 @@ import {
 	deleteReport,
 	getReport,
 	publishReport,
+	rollBackSummary,
 	saveSummaryPair,
 	STALE_REPORT,
 	unpublishReport,
@@ -17,6 +18,7 @@ import {
 import { AttachmentStrip } from "../components/AttachmentStrip"
 import { ReportBadges } from "../components/ReportBadges"
 import { ReviewActions } from "../components/ReviewActions"
+import { SummaryHistory } from "../components/SummaryHistory"
 import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
 import { sortChoices } from "../lib/sortChoices"
 import type { Locale } from "../i18n/locales"
@@ -232,6 +234,15 @@ export function ReportDetailPage() {
 										? t("reports.detail.approved", { at: at.format(new Date(report.summary.approvedAt)) })
 										: t("reports.detail.notApproved")}
 								</p>
+								<SummaryHistory
+									revisions={report.summaryRevisions}
+									isLive={report.status === "published"}
+									canRestore={["pending", "published", "unpublished"].includes(report.status)}
+									busy={busy}
+									onRestore={(revisionId) =>
+										run((current) => rollBackSummary(current.id, current.version, revisionId))
+									}
+								/>
 							</>
 						) : (
 							!report.summaryError && (

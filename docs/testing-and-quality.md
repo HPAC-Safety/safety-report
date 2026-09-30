@@ -124,7 +124,9 @@ REQ-MOD-035, REQ-MOD-036, REQ-DOM-007.*
 - the development token endpoint does not exist outside Development;
 - the three-role matrix is tested at every admin endpoint;
 - a submitted report contains no reference to the member who filed it;
-- editing either language clears pair approval and removes public visibility;
+- an edit to a report that is not live is an unapproved draft and is never
+  public; an edit to a Published report is approved by its author and public at
+  once, and the public reads only the latest approved revision (ADR-0177);
 - every positive publication prerequisite and every negative case is tested at
   both domain and public-query boundaries;
 - public DTO serialization is an exact allowlist;

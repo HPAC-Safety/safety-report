@@ -122,26 +122,45 @@ public class ReviewActionTests
 	}
 
 	[Theory]
-	[InlineData(ReportStatus.Pending)]
-	[InlineData(ReportStatus.Published)]
-	[InlineData(ReportStatus.Unpublished)]
-	public void GivenReviewableReport_WhenPairIsEdited_ThenBothTextsSavedApprovalClearedAndPending(ReportStatus from)
+	[InlineData(ReportStatus.Pending, ReportStatus.Pending)]
+	[InlineData(ReportStatus.Unpublished, ReportStatus.Pending)]
+	public void GivenDraftableReport_WhenPairIsEdited_ThenNewRevisionIsAnUnapprovedDraftOffTheFeed(ReportStatus from,
+																								   ReportStatus expected)
 	{
 		// Given
 		var report = In(from);
 
 		// When
-		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Later);
+		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-editor", Later);
 
 		// Then
-		report.Status.ShouldBe(ReportStatus.Pending);
+		report.Status.ShouldBe(expected);
 		report.PublishedAt.ShouldBeNull();
 		report.UnpublishNote.ShouldBeNull();
 		report.Summary!.AiSummaryEn.ShouldBe("The pilot landed firmly.");
 		report.Summary.AiSummaryFr.ShouldBe("Le pilote s'est posé fermement.");
 		report.Summary.UpdatedAt.ShouldBe(Later);
+		report.Summary.Latest.AuthorSubject.ShouldBe("subject-editor");
 		report.Summary.IsApproved.ShouldBeFalse();
 		report.IsPublishable.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenPublishedReport_WhenPairIsEdited_ThenNewRevisionIsApprovedByItsAuthorAndPublishedAtOnce()
+	{
+		// Given
+		var report = In(ReportStatus.Published);
+
+		// When
+		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-editor", Later);
+
+		// Then — no gap on the feed, and the first publish date stands
+		report.Status.ShouldBe(ReportStatus.Published);
+		report.PublishedAt.ShouldBe(Now);
+		report.Summary!.Latest.ApprovedBySubject.ShouldBe("subject-editor");
+		report.Summary.Latest.ApprovedAt.ShouldBe(Later);
+		report.Summary.LatestApproved!.AiSummaryEn.ShouldBe("The pilot landed firmly.");
+		report.IsPublishable.ShouldBeTrue();
 	}
 
 	[Fact]
@@ -151,7 +170,7 @@ public class ReviewActionTests
 		var report = Summarized(true);
 
 		// When
-		report.EditSummary("The pilot landed firmly.", report.Summary!.AiSummaryFr, Later);
+		report.EditSummary("The pilot landed firmly.", report.Summary!.AiSummaryFr, "subject-officer", Later);
 
 		// Then
 		report.Summary.SourceEn.ShouldBe(SummaryTextSource.Human);
@@ -166,28 +185,28 @@ public class ReviewActionTests
 		var report = Summarized(true);
 
 		// When
-		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Later, SummaryTextSource.Human, SummaryTextSource.Machine);
+		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-officer", Later, SummaryTextSource.Human, SummaryTextSource.Machine);
 
 		// Then
 		report.Summary!.SourceEn.ShouldBe(SummaryTextSource.Human);
 		report.Summary.SourceFr.ShouldBe(SummaryTextSource.Machine);
 	}
 
-	[Fact]
-	public void GivenUnchangedPair_WhenSaved_ThenSourcesAreKeptButApprovalStillClears()
+	[Theory]
+	[InlineData(ReportStatus.Pending)]
+	[InlineData(ReportStatus.Published)]
+	public void GivenUnchangedPair_WhenSaved_ThenRefusedAndNoRevisionIsAdded(ReportStatus from)
 	{
-		// Given — a published pair saved without a change is still a review decision
-		var report = In(ReportStatus.Published);
+		// Given — a revision holds a change; a save that changes nothing is not one
+		var report = In(from);
 		var summary = report.Summary!;
 
-		// When
-		report.EditSummary(summary.AiSummaryEn, summary.AiSummaryFr, Later, SummaryTextSource.Machine, SummaryTextSource.Machine);
-
-		// Then
-		summary.SourceEn.ShouldBe(SummaryTextSource.Generated);
-		summary.SourceFr.ShouldBe(SummaryTextSource.Generated);
-		summary.IsApproved.ShouldBeFalse();
-		report.Status.ShouldBe(ReportStatus.Pending);
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() =>
+			report.EditSummary(summary.AiSummaryEn, summary.AiSummaryFr, "subject-officer", Later, SummaryTextSource.Machine, SummaryTextSource.Machine))
+			.Message.ShouldContain("Nothing changed");
+		summary.Revisions.Count.ShouldBe(1);
+		report.Status.ShouldBe(from);
 	}
 
 	[Fact]
@@ -199,7 +218,7 @@ public class ReviewActionTests
 		report.FailSummarization("The provider was unavailable.");
 
 		// When
-		report.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", Later, SummaryTextSource.Machine, SummaryTextSource.Human);
+		report.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", "subject-officer", Later, SummaryTextSource.Machine, SummaryTextSource.Human);
 
 		// Then
 		report.Summary!.SourceEn.ShouldBe(SummaryTextSource.Machine);
@@ -214,7 +233,7 @@ public class ReviewActionTests
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() =>
-			report.EditSummary("Changed.", report.Summary!.AiSummaryFr, Later, SummaryTextSource.Generated));
+			report.EditSummary("Changed.", report.Summary!.AiSummaryFr, "subject-officer", Later, SummaryTextSource.Generated));
 	}
 
 	[Fact]
@@ -224,7 +243,7 @@ public class ReviewActionTests
 		var report = Summarized(true);
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => report.EditSummary("Text.", " ", Later));
+		Should.Throw<DomainRuleViolationException>(() => report.EditSummary("Text.", " ", "subject-officer", Later));
 	}
 
 	[Fact]
@@ -234,7 +253,7 @@ public class ReviewActionTests
 		var report = Failed();
 
 		// When
-		report.WriteManualSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Later);
+		report.WriteManualSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-officer", Later);
 
 		// Then
 		report.Status.ShouldBe(ReportStatus.Pending);
@@ -416,8 +435,8 @@ public class ReviewActionTests
 		{
 			"publish" => () => report.Publish(Officer, Later),
 			"unpublish" => () => report.Unpublish(),
-			"edit" => () => report.EditSummary("en", "fr", Later),
-			"manual" => () => report.WriteManualSummary("en", "fr", Later),
+			"edit" => () => report.EditSummary("en", "fr", "subject-officer", Later),
+			"manual" => () => report.WriteManualSummary("en", "fr", "subject-officer", Later),
 			_ => throw new ArgumentOutOfRangeException(nameof(action)),
 		};
 	}

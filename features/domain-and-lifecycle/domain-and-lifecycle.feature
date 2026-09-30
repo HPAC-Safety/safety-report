@@ -19,7 +19,7 @@ Examples:
   | Pending       | either summary text is edited                    | Pending       |
   | Pending       | an officer publishes the pair                    | Published     |
   | Pending       | an officer unpublishes the report                | Unpublished   |
-  | Published     | either summary text is edited                    | Pending       |
+  | Published     | either summary text is edited                    | Published     |
   | Published     | an officer unpublishes the report                | Unpublished   |
   | Unpublished   | an officer publishes the pair                    | Published     |
   | Unpublished   | either summary text is edited                    | Pending       |
@@ -82,11 +82,11 @@ Examples:
   | the report is not Published                 |
 
 @REQ-DOM-005
-Scenario: Editing a summary text unpublishes the report
+Scenario: Editing the summary of a Published report publishes the new revision at once
   Given a report is Published
   When either the English or French summary text is edited
-  Then the pair's approver subject and approval timestamp are cleared
-  And the report immediately stops satisfying the publication invariant
+  Then the new revision is approved by its editor at once
+  And the report still satisfies the publication invariant with the new text
 
 @REQ-DOM-006
 Scenario: A report without publication consent is never summarized

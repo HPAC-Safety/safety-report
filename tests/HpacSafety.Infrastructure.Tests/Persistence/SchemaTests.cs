@@ -30,6 +30,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		"report_private_notes",
 		"reports",
 		"summaries",
+		"summary_revisions",
 	];
 
 	[Fact]
@@ -69,6 +70,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// the viewer's role.
 		views.ShouldBe([
 			"admin_pending_counts", "admin_report_queue", "admin_report_search_document", "answers_awaiting_translation",
+			"latest_approved_summary_revisions", "latest_summary_revisions",
 			"public_report_comments", "public_report_media", "public_reports",
 		]);
 		columns.ShouldBe([
@@ -149,8 +151,38 @@ public sealed class SchemaTests(PostgresFixture postgres)
 			"SELECT indexdef FROM pg_indexes WHERE tablename = 'summaries' AND indexdef LIKE '%UNIQUE%'");
 
 		// Then — a reviewer never has to choose between two summaries of the
-		// same report; the bilingual pair lives in one row.
+		// same report; its revisions hang from that one row (ADR-0177).
 		definitions.ShouldContain(d => d.Contains("report_id", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public async Task GivenMigratedDatabase_WhenSummaryRevisionsAreRead_ThenSequenceIsUniquePerSummary()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+
+		// When
+		var definitions = await QueryStrings(
+			connectionString,
+			"SELECT indexdef FROM pg_indexes WHERE tablename = 'summary_revisions' AND indexdef LIKE '%UNIQUE%'");
+
+		// Then — two reviewers cannot both append the same next revision
+		definitions.ShouldContain(d => d.Contains("(summary_id, sequence)", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public async Task GivenMigratedDatabase_WhenSummariesColumnsAreRead_ThenTextAndApprovalLiveOnTheRevisions()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+
+		// When
+		var columns = await QueryStrings(
+			connectionString,
+			"SELECT column_name FROM information_schema.columns WHERE table_name = 'summaries' ORDER BY ordinal_position");
+
+		// Then — the row is only the identity its revisions hang from (ADR-0177)
+		columns.ShouldBe(["id", "report_id", "deleted"]);
 	}
 
 	[Fact]

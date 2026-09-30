@@ -9,7 +9,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     The report lifecycle as the domain enforces it: REQ-DOM-001's transitions,
 ///     REQ-DOM-014's refusals, REQ-DOM-015's unconsented report that stays
-///     unpublished, and REQ-DOM-005's unpublish-on-edit. These are rules
+///     unpublished, and REQ-DOM-005's live edit that publishes itself. These are rules
 ///     of the <see cref="Report" /> aggregate, so they run against it directly.
 /// </summary>
 [Binding]
@@ -52,10 +52,10 @@ public sealed class ReviewLifecycleSteps
 				_report.FailSummarization("The provider was unavailable.");
 				break;
 			case "an officer writes both texts":
-				_report.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", Now);
+				_report.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", "subject-officer", Now);
 				break;
 			case "either summary text is edited":
-				_report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Now);
+				_report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-officer", Now);
 				break;
 			case "an officer publishes the pair":
 				_report.Publish(Officer, Now);
@@ -80,9 +80,9 @@ public sealed class ReviewLifecycleSteps
 		Action attempt = action switch
 		{
 			"publish the pair" => () => _report.Publish(Officer, Now),
-			"edit a summary text" => () => _report.EditSummary("en", "fr", Now),
+			"edit a summary text" => () => _report.EditSummary("en", "fr", "subject-officer", Now),
 			"unpublish the report" => () => _report.Unpublish(),
-			"write a manual pair" => () => _report.WriteManualSummary("en", "fr", Now),
+			"write a manual pair" => () => _report.WriteManualSummary("en", "fr", "subject-officer", Now),
 			_ => throw new ArgumentOutOfRangeException(nameof(action), action, "No such review action."),
 		};
 
@@ -136,21 +136,23 @@ public sealed class ReviewLifecycleSteps
 	[When(@"either the English or French summary text is edited")]
 	public void WhenEitherTextIsEdited()
 	{
-		_report.EditSummary("The pilot landed firmly.", _report.Summary!.AiSummaryFr, Now);
+		_report.EditSummary("The pilot landed firmly.", _report.Summary!.AiSummaryFr, "subject-officer", Now);
 	}
 
-	[Then(@"the pair's approver subject and approval timestamp are cleared")]
-	public void ThenApprovalIsCleared()
+	[Then(@"the new revision is approved by its editor at once")]
+	public void ThenTheNewRevisionIsApprovedAtOnce()
 	{
-		_report.Summary!.ApprovedBySubject.ShouldBeNull();
-		_report.Summary.ApprovedAt.ShouldBeNull();
+		_report.Summary!.Revisions.Count.ShouldBe(2);
+		_report.Summary.Latest.ApprovedBySubject.ShouldBe("subject-officer");
+		_report.Summary.Latest.ApprovedAt.ShouldBe(Now);
 	}
 
-	[Then(@"the report immediately stops satisfying the publication invariant")]
-	public void ThenTheReportIsNoLongerPublishable()
+	[Then(@"the report still satisfies the publication invariant with the new text")]
+	public void ThenTheReportIsStillPublishableWithTheNewText()
 	{
-		_report.IsPublishable.ShouldBeFalse();
-		_report.PublishedAt.ShouldBeNull();
+		_report.IsPublishable.ShouldBeTrue();
+		_report.Status.ShouldBe(ReportStatus.Published);
+		_report.Summary!.LatestApproved!.AiSummaryEn.ShouldBe("The pilot landed firmly.");
 	}
 
 	/// <summary>Builds a report in <paramref name="status" /> through the lifecycle itself, never by setting it.</summary>

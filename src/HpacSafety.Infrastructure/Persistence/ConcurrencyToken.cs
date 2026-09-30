@@ -5,7 +5,7 @@ namespace HpacSafety.Infrastructure.Persistence;
 
 /// <summary>
 ///     The version a reviewer's view was loaded at, built from PostgreSQL's
-///     <c>xmin</c> on the report and its summary row (ADR-0105). Kept out of the
+///     <c>xmin</c> on the report and its latest summary revision (ADR-0105, ADR-0177). Kept out of the
 ///     domain: it is a persistence fact, mapped as a shadow property.
 /// </summary>
 public static class ConcurrencyToken
@@ -22,7 +22,7 @@ public static class ConcurrencyToken
 
 		var reportVersion = database.Entry(report).Property<uint>(PropertyName).CurrentValue;
 		var summaryVersion = report.Summary is { } summary
-			? database.Entry(summary).Property<uint>(PropertyName).CurrentValue
+			? database.Entry(summary.Latest).Property<uint>(PropertyName).CurrentValue
 			: 0u;
 
 		return $"{reportVersion}.{summaryVersion}";
@@ -36,7 +36,9 @@ public static class ConcurrencyToken
 	/// </summary>
 	/// <remarks>
 	///     EF checks the token only on a row it updates, so a command that writes the
-	///     report but not the summary would not see a concurrent summary edit here.
+	///     report but not the latest revision would not see a concurrent summary edit
+	///     here. A concurrent edit that adds the next revision is caught by the unique
+	///     (summary, sequence) index instead.
 	///     The caller therefore also compares <see cref="Of" /> with the version it was
 	///     sent before applying anything; this closes the remaining window between
 	///     that comparison and the save.
@@ -61,7 +63,7 @@ public static class ConcurrencyToken
 
 		if (report.Summary is { } summary)
 		{
-			database.Entry(summary).Property<uint>(PropertyName).OriginalValue = summaryVersion;
+			database.Entry(summary.Latest).Property<uint>(PropertyName).OriginalValue = summaryVersion;
 		}
 
 		return true;

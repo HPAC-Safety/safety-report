@@ -54,6 +54,8 @@ public sealed record ReportListPage(IReadOnlyList<ReportListItem> Items, string?
 ///     (REQ-MOD-058); <c>PublishedAt</c> is set while the report is public.
 ///     <c>Consent</c> and <c>MediaConsent</c> are <c>true</c>, <c>false</c>, or
 ///     <c>null</c> when unanswered, never words (ADR-0130, REQ-MOD-096).
+///     <c>SummaryRevisions</c> is the summary's whole history, newest first
+///     (REQ-MOD-199, ADR-0177); <c>Summary</c> is its latest revision.
 /// </summary>
 public sealed record ReportDetail(
 	string Id,
@@ -69,7 +71,8 @@ public sealed record ReportDetail(
 	IReadOnlyList<ReportAttachmentView> Attachments,
 	string Version,
 	string? UnpublishNote,
-	DateTimeOffset? PublishedAt);
+	DateTimeOffset? PublishedAt,
+	IReadOnlyList<SummaryRevisionView> SummaryRevisions);
 
 /// <summary>A review command that carries nothing but the version the reviewer loaded.</summary>
 public sealed record ReviewCommand(string? Version);
@@ -144,6 +147,36 @@ public sealed record ReportSummaryView(
 	DateTimeOffset? ApprovedAt,
 	string SourceEn,
 	string SourceFr);
+
+/// <summary>One saved version of the summary pair, as its history lists it (ADR-0177).</summary>
+/// <param name="Id">The revision, for a restore request.</param>
+/// <param name="Sequence">1 for the first, then one more for each after it.</param>
+/// <param name="AiSummaryEn">The English text.</param>
+/// <param name="AiSummaryFr">The French text.</param>
+/// <param name="SourceEn"><c>generated</c>, <c>human</c>, or <c>machine</c> (ADR-0108).</param>
+/// <param name="SourceFr"><c>generated</c>, <c>human</c>, or <c>machine</c> (ADR-0108).</param>
+/// <param name="AuthorSubject">
+///     Who saved it, as an opaque token subject (ADR-0065). Null for the Worker's
+///     revision and for one written before authors were recorded.
+/// </param>
+/// <param name="CreatedAt">When it was saved.</param>
+/// <param name="RestoredFromSequence">The sequence number of the revision this one restores, when it is a rollback.</param>
+/// <param name="ApprovedBySubject">Who approved it, when approved.</param>
+/// <param name="ApprovedAt">When it was approved.</param>
+/// <param name="IsCurrent">True for the latest revision, the one a restore would leave behind.</param>
+public sealed record SummaryRevisionView(
+	string Id,
+	int Sequence,
+	string AiSummaryEn,
+	string AiSummaryFr,
+	string SourceEn,
+	string SourceFr,
+	string? AuthorSubject,
+	DateTimeOffset CreatedAt,
+	int? RestoredFromSequence,
+	string? ApprovedBySubject,
+	DateTimeOffset? ApprovedAt,
+	bool IsCurrent);
 
 /// <summary>An attachment's kind, whether it can be opened now, and whether the public sees it.</summary>
 /// <param name="Id">The attachment, for its view or download request.</param>

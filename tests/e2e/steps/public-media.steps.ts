@@ -262,15 +262,25 @@ Then("the lightbox shows the video, playable with its controls and audio, labell
 
 // --- REQ-MED-033: an expired link is replaced and the video resumes ---
 
-Given("a visitor is part-way through a public video", async ({ page }) => {
+Given("a visitor has paused a public video part-way through", async ({ page }) => {
 	await stubReport(page, [VIDEO])
 	await page.goto(`/reports/${REPORT.id}`)
 	await thumbnail(page, "video").click()
 	await expect(lightbox(page)).toBeVisible()
 	await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.readyState)).toBeGreaterThan(0)
-	await video(page).evaluate((element: HTMLVideoElement) => {
-		element.currentTime = 1.2
-	})
+	// The lightbox autoplays a 2 s clip, so a playing video keeps moving and
+	// "where it was" is a moving target: under load it runs past 1.2 before the
+	// position is read (issue no. 680). Pause it part-way. The player records
+	// its position from media events, which fire after currentTime has changed,
+	// so wait for "seeked" before the link is allowed to expire.
+	await video(page).evaluate(
+		(element: HTMLVideoElement) =>
+			new Promise<void>((resolve) => {
+				element.addEventListener("seeked", () => resolve(), { once: true })
+				element.pause()
+				element.currentTime = 1.2
+			}),
+	)
 	await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.currentTime)).toBeCloseTo(1.2, 1)
 })
 
@@ -285,7 +295,11 @@ Then("the page fetches a new link", async ({ page }) => {
 	await expect(video(page)).toHaveAttribute("src", `${STORAGE}/${VIDEO.id}-2`)
 })
 
-Then("the video resumes from where it was", async ({ page }) => {
+Then("the video resumes from where it was, still paused", async ({ page }) => {
+	// Autoplay, if the replacement source were allowed it, starts once the
+	// element can play through, so look only after that.
+	await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.readyState)).toBeGreaterThan(2)
+	await expect(video(page)).toHaveJSProperty("paused", true)
 	await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.currentTime)).toBeCloseTo(1.2, 1)
 })
 

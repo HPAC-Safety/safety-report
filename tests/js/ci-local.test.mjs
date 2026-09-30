@@ -244,3 +244,56 @@ describe('the modes of tools/ci-local.sh', () => {
 		assert.match(code, /case " \$JOBS " in \*' coverage '\*\) NEED_BASELINE=1/)
 	})
 })
+
+// `test` runs the suites once, collecting coverage; `coverage` only merges and
+// gates what it handed over (#694). Under act the hand-over is the per-run
+// directory tools/ci-local.sh mounts, since act rejects the artifact actions.
+describe('the suites run once', () => {
+	const ci = readFileSync(join(REPO, '.github/workflows/ci.yml'), 'utf8')
+	const job = (id) => ci.match(new RegExp(`^ {2}${id}:\\n[\\s\\S]*?(?=^ {2}[a-z][a-z0-9-]*:\\n|(?![\\s\\S]))`, 'm'))?.[0] ?? ''
+	const steps = (id) =>
+		job(id)
+			.split('\n')
+			.filter((line) => !/^\s*#/.test(line))
+			.join('\n')
+
+	it('runs dotnet test in exactly one place, the test job, collecting coverage', () => {
+		assert.equal(steps('test').match(/\bdotnet test HpacSafety\.slnx/g)?.length, 1)
+		assert.match(steps('test'), /--collect:"XPlat Code Coverage"/)
+		assert.match(steps('test'), /--settings coverlet\.runsettings/)
+		assert.match(steps('test'), /--logger trx/)
+		assert.equal(ci.match(/^\s*dotnet test HpacSafety\.slnx/gm)?.length, 1)
+	})
+
+	it('runs node --test with coverage in the test job', () => {
+		assert.match(steps('test'), /node --test --experimental-test-coverage/)
+		assert.match(steps('test'), /--test-reporter=lcov --test-reporter-destination=\.\/artifacts\/coverage\/js\/lcov\.info/)
+	})
+
+	it('runs no test in the coverage job', () => {
+		const coverage = steps('coverage')
+		assert.ok(coverage.length > 0)
+		assert.doesNotMatch(coverage, /dotnet test|node --test/)
+	})
+
+	it('runs the test job on every change the coverage job gates', () => {
+		assert.match(job('test'), /needs\.changes\.outputs\.dotnet == 'true' \|\| needs\.changes\.outputs\.e2e == 'true'/)
+		assert.match(job('coverage'), /needs: \[changes, test, e2e\]/)
+		assert.match(job('coverage'), /needs\.test\.result == 'success'/)
+	})
+
+	it('hands the raw reports over as coverage-raw on GitHub', () => {
+		assert.match(steps('test'), /upload-artifact@\S+\n\s+if: "!env\.ACT"\n\s+with:\n\s+name: coverage-raw\n\s+path: \.\/artifacts\/coverage\n/)
+		assert.match(steps('coverage'), /download-artifact@\S+\n\s+with:\n\s+name: coverage-raw\n\s+path: \.\/artifacts\/coverage\n/)
+	})
+
+	it('hands them over through /ci-local-share under act', () => {
+		assert.match(steps('test'), /if: env\.ACT\n[\s\S]*cp -R \.\/artifacts\/coverage\/\. \/ci-local-share\/coverage\//)
+		assert.match(steps('coverage'), /if: env\.ACT\n[\s\S]*cp -R \/ci-local-share\/coverage\/\. \.\/artifacts\/coverage\//)
+	})
+
+	it('mounts a per-run directory, inside the run\'s work directory, at /ci-local-share', () => {
+		assert.match(code, /^SHARE="\$WORK\/share"$/m)
+		assert.match(code, /--container-options "\$LABELS -v \$SHARE:\/ci-local-share"/)
+	})
+})

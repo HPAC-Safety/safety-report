@@ -155,9 +155,14 @@ jobs:
             exit 1
           fi
 
+  # The one job that runs the .NET and JavaScript suites. It collects coverage
+  # as it runs them and hands the raw reports to `coverage`, which gates them
+  # without running a test (#694). So it runs whenever `coverage` needs a
+  # report: on a .NET change, and on an e2e-only change too, whose coverage
+  # comment carries the Playwright count.
   test:
     needs: changes
-    if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.dotnet == 'true')"
+    if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -191,8 +196,22 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
+      # coverlet.runsettings excludes generated code. Without it the API reports
+      # 4.8% while Program.cs is at 100%, because the OpenApi source generator
+      # emits ~440 lines into obj/ that no test will ever run.
+      # No explicit trx filename: dotnet test runs one vstest host per project,
+      # and a shared filename would make each one overwrite the last. Without
+      # one, each host gets a unique name and tools/test-count.mjs reads the
+      # project name back out of the trx's own `storage` attribute.
       - name: dotnet test
-        run: dotnet test HpacSafety.slnx --configuration Release --filter "Category!=ui"
+        run: >
+          dotnet test HpacSafety.slnx
+          --configuration Release
+          --filter "Category!=ui"
+          --collect:"XPlat Code Coverage"
+          --settings coverlet.runsettings
+          --logger trx
+          --results-directory ./artifacts/coverage
 
       # The suite is passed as an explicit file list rather than as a
       # directory: `node --test tests/js` resolves the path as a module and
@@ -201,11 +220,39 @@ jobs:
         run: |
           suite=$(find tests/js -name '*.test.mjs' -o -name '*.test.js' 2>/dev/null)
           if [ -n "$suite" ]; then
+            mkdir -p ./artifacts/coverage/js
             # shellcheck disable=SC2086
-            node --test $suite
+            node --test --experimental-test-coverage \
+              --test-reporter=spec --test-reporter-destination=stdout \
+              --test-reporter=lcov --test-reporter-destination=./artifacts/coverage/js/lcov.info \
+              $suite
           else
             echo "::notice::No JavaScript test suite yet — added by #8. Skipping."
           fi
+
+      # The raw reports, the trx files included, for `coverage` to merge and
+      # gate. Only this run reads them, so a day's retention is enough.
+      # Temporary: act's artifact server rejects upload-artifact@v7
+      # (nektos/act#6022), so under act the next step hands them over through
+      # the per-run directory tools/ci-local.sh mounts. Remove `&& !env.ACT`
+      # and that step when act ships the fix. ADR-0145.
+      - uses: actions/upload-artifact@v7
+        if: "!env.ACT"
+        with:
+          name: coverage-raw
+          path: ./artifacts/coverage
+          retention-days: 1
+          if-no-files-found: error
+
+      # a+rwX: the container writes as root, and on a Linux host the wrapper
+      # removing the run's directory afterwards is not root.
+      - name: Hand the raw reports to coverage under act
+        if: env.ACT
+        run: |
+          [ -d /ci-local-share ] || { echo "::error::/ci-local-share is not mounted; run this workflow through tools/ci-local.sh"; exit 1; }
+          mkdir -p /ci-local-share/coverage
+          cp -R ./artifacts/coverage/. /ci-local-share/coverage/
+          chmod -R a+rwX /ci-local-share/coverage
 
   # Parses every features/**/*.feature file with the official @cucumber/gherkin
   # parser (the same parser cucumber-js uses), pinned in
@@ -293,32 +340,37 @@ jobs:
           fi
 
   coverage:
-    # Depends on e2e (not just changes) so it can download that job's
-    # Playwright test count instead of reinstalling Playwright itself — see
-    # the "Count Playwright tests" step on the e2e job and #263. e2e is
-    # itself conditional, so `always()` plus the explicit result check is
-    # needed: a plain `needs: e2e` would skip this job whenever e2e does.
-    needs: [changes, e2e]
+    # Runs no test: `test` ran the suites once, collecting coverage, and this
+    # merges and gates the reports it handed over (#694). Depends on e2e (not
+    # just changes) so it can download that job's Playwright test count
+    # instead of reinstalling Playwright itself — see the "Count Playwright
+    # tests" step on the e2e job and #263. e2e is itself conditional, so
+    # `always()` plus the explicit result checks is needed: a plain
+    # `needs: e2e` would skip this job whenever e2e does. `test` runs on every
+    # change this job gates, so its success stands in for the path check. A
+    # failing `test` skips this job: there is no whole report to gate, and
+    # `test` failing already holds the pull request.
+    needs: [changes, test, e2e]
     if: >-
       always() &&
-      (needs.changes.result != 'success' || needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') &&
+      needs.test.result == 'success' &&
       (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # Reading the baseline artifact from main's last green run.
+      # Reading this run's coverage-raw and the baseline artifact from main's
+      # last green run.
       actions: read
       # Posting the summary comment. Fork pull requests get a read-only token,
       # so the comment step is skipped for them - see the step's condition.
       pull-requests: write
     steps:
-      # This job runs the repository's tests with a token that can write pull
-      # request comments. On pull_request a fork's token is read-only, but a
-      # merge group runs in this repository's own context whoever wrote the
-      # queued code: a maintainer's review and queuing is the trust boundary
-      # there (ADR-0147). So the token is never persisted into .git/config,
-      # where the code under test could read it; only the steps that need it
-      # get it, as GH_TOKEN.
+      # This job reads reports written by the repository's tests, with a token
+      # that can write pull request comments. On pull_request a fork's token is
+      # read-only, but a merge group runs in this repository's own context
+      # whoever wrote the queued code: a maintainer's review and queuing is the
+      # trust boundary there (ADR-0147). So the token is never persisted into
+      # .git/config; only the steps that need it get it, as GH_TOKEN.
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -332,47 +384,25 @@ jobs:
       - name: Restore tools
         run: dotnet tool restore
 
-      # coverlet.runsettings excludes generated code. Without it the API reports
-      # 4.8% while Program.cs is at 100%, because the OpenApi source generator
-      # emits ~440 lines into obj/ that no test will ever run.
-      # @ui-tagged scenarios execute via playwright-bdd, not Reqnroll — see
-      # ADR-0053/ADR-0073 and the matching filter on the `test` job's
-      # `dotnet test` step. Skipped scenarios would not move coverage either
-      # way; the filter keeps the two runs collecting the same set.
-      # No explicit trx filename: dotnet test runs one vstest host per project,
-      # and a shared filename would make each one overwrite the last. Without
-      # one, each host gets a unique name and tools/test-count.mjs reads the
-      # project name back out of the trx's own `storage` attribute.
-      # Video derivatives are produced by remuxing through ffmpeg (ADR-0094).
-      # Installed explicitly rather than relying on the runner image happening
-      # to carry it: FfmpegVideoRemuxerTests generates its fixtures with it and
-      # would otherwise fail for a reason that has nothing to do with the change
-      # under test.
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # The per-project Cobertura attachments, trx files, and JavaScript lcov
+      # `test` collected, at the paths it wrote them.
+      # Temporary: act's artifact server rejects download-artifact@v8
+      # (nektos/act#6022), so under act the next step reads them from the
+      # per-run directory tools/ci-local.sh mounts. Remove `&& !env.ACT` and
+      # that step when act ships the fix. ADR-0145.
+      - name: Download the raw reports
+        if: "!env.ACT"
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-raw
+          path: ./artifacts/coverage
 
-      - name: Collect .NET coverage
-        run: >
-          dotnet test HpacSafety.slnx
-          --configuration Release
-          --filter "Category!=ui"
-          --collect:"XPlat Code Coverage"
-          --settings coverlet.runsettings
-          --logger trx
-          --results-directory ./artifacts/coverage
-
-      - name: Collect JavaScript coverage
+      - name: The raw reports under act
+        if: env.ACT
         run: |
-          suite=$(find tests/js -name '*.test.mjs' -o -name '*.test.js' 2>/dev/null)
-          if [ -n "$suite" ]; then
-            mkdir -p ./artifacts/coverage/js
-            # shellcheck disable=SC2086
-            node --test --experimental-test-coverage \
-              --test-reporter=lcov --test-reporter-destination=./artifacts/coverage/js/lcov.info \
-              $suite
-          else
-            echo "::notice::No JavaScript test suite yet - added by #8. The merge below picks it up automatically once tests/js exists."
-          fi
+          [ -d /ci-local-share/coverage ] || { echo "::error::no raw reports in /ci-local-share/coverage; run this workflow through tools/ci-local.sh"; exit 1; }
+          mkdir -p ./artifacts/coverage
+          cp -R /ci-local-share/coverage/. ./artifacts/coverage/
 
       # ReportGenerator merges every Cobertura and lcov file it finds into one
       # report, so the JS half needs no wiring here beyond producing lcov.
@@ -391,8 +421,8 @@ jobs:
           "-reporttypes:Cobertura;MarkdownSummaryGithub;HtmlInline"
 
       # The ratchet compares against main's last green run rather than
-      # recomputing it, which would double this job's time and re-run the
-      # Testcontainers suite for a number that is already known. See ADR-0014.
+      # recomputing it, which would re-run main's Testcontainers suite for a
+      # number that is already known. See ADR-0014.
       # A merge group is ratcheted too: it is the tree that will become main.
       # The baseline is only ever a push run on main - never a merge-group run
       # (branch gh-readonly-queue/main/*) or a pull request run (ADR-0147).

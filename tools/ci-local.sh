@@ -273,6 +273,14 @@ BRANCH=$(git symbolic-ref --quiet --short HEAD || echo ci-local)
 ORIGIN_URL=$(git remote get-url origin) || die "no origin remote"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/hpac-ci-local.XXXXXX") || die "mktemp failed"
+# Mounted into every job container at /ci-local-share. It stands in for the
+# artifact ci.yml's `test` job hands `coverage` (the raw coverage reports),
+# because act's artifact server rejects upload/download-artifact
+# (nektos/act#6022). Per run, so parallel runs never read each other's; it
+# goes with $WORK at teardown. Temporary, with ci.yml's act-only steps that
+# use it (#694, ADR-0145).
+SHARE="$WORK/share"
+mkdir -p "$SHARE" || die "cannot create $SHARE"
 # The group: hpac-ci-<issue>-<run>. <issue> is the branch's issue number, or
 # its slug; <run> is a short random ID so two runs of one issue stay apart.
 ISSUE=$(printf '%s' "$BRANCH" | sed -nE 's#^issue-([0-9]+).*#\1#p')
@@ -493,7 +501,7 @@ run_act() {
 		# shellcheck disable=SC2086
 		if act pull_request -W "$WORKFLOWS/$1" ${2:+-j "$2"} \
 			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false --rm \
-			--network "$GROUP" --container-options "$LABELS" \
+			--network "$GROUP" --container-options "$LABELS -v $SHARE:/ci-local-share" \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
 			-s GITHUB_TOKEN= -e "$EVENT" $EXTRA; then
 			echo 0 > "$STATUS"

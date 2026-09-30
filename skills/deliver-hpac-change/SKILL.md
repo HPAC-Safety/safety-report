@@ -22,8 +22,8 @@ names and step numbers.
 - Sub-agent briefs: end with "if anything is ambiguous, stop and report the
   question; do not guess".
 - Sequencing: two issues that edit the same EF migration, SQL view under
-  `Persistence/Sql/`, or table are blocked-by each other in filing order, and
-  the second is not picked up until the first has merged. Migration timestamps
+  `Persistence/Sql/`, or table run in filing order: the second is filed as
+  blocked by the first, and is not picked up until the first has merged. Migration timestamps
   and view definitions do not survive being rebased across each other.
 
 ### File a new issue

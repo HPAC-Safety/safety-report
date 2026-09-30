@@ -91,8 +91,8 @@ Scenario: Only eligible, labeled fields reach the model
 Scenario: The Worker accepts only the exact two-field JSON response
   Given the model returns a response for a summarization attempt
   When the Worker validates the response
-  Then a response with exactly two nonblank string fields "ai_summary_en" and "ai_summary_fr" is accepted
-  And a response with a Markdown fence, commentary, an extra key, a null field, or only one language is rejected
+  Then a response with exactly two nonblank string fields "ai_summary_en" and "ai_summary_fr", each a summary written as Markdown, is accepted
+  And a response with a Markdown fence around the JSON, commentary, an extra key, a null field, or only one language is rejected
 
 @REQ-AI-016
 Scenario: Documents never reach the model
@@ -177,6 +177,67 @@ Examples:
   | "redacted", "caviardé", placeholders, and invented names are never written               |
   | every private marker is resolved and never appears literally                             |
   | the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object          |
+  | each expected section is a "## " heading with its exact label, in form order             |
+  | other public facts are woven into the section they fit                                   |
+  | each statement goes in the section whose question it best answers                        |
+  | a section with nothing to say reads "Not provided." / "Non fourni."                      |
+  | Markdown headings, bold, italic, and lists are allowed, and no other Markdown            |
+
+@REQ-AI-031
+Scenario: The model is told to write one section per public paragraph question, blank ones included
+  Given a consented report answered two public paragraph questions and one private paragraph question
+  And one of the public paragraph questions was left blank
+  When the Worker claims the message and builds the model input DTO
+  Then the expected sections name both public paragraph questions, the blank one included
+  And the private paragraph question has no expected section
+  And the expected sections are in the questions' display order
+
+@REQ-AI-032
+Scenario: Answers reach the model in form order
+  Given a consented report whose answers were recorded in a different order than their questions' display order
+  When the Worker claims the message and builds the model input DTO
+  Then report_content lists the answers in display order
+
+@REQ-AI-033
+Scenario: A section's headings are the label the reporter answered, in both languages, without a colon
+  Given a consented report answered a public paragraph question whose label has since been reworded
+  And the answered label was stored with a trailing colon
+  When the Worker claims the message and builds the model input DTO
+  Then the expected section carries the English and French labels of the revision the reporter answered
+  And neither label ends in a colon
+
+@REQ-AI-034
+Scenario Outline: The Worker accepts a summary only with exactly the expected headings
+  Given a report whose expected sections are "Description" and "Action and prevention" / "Action et prévention"
+  When the Worker validates a summary whose headings are <headings>
+  Then the summary is <outcome>
+
+Examples:
+  | headings                                                            | outcome  |
+  | both sections, in form order, in each language's own label          | accepted |
+  | both sections, each followed by "Not provided." or "Non fourni."    | accepted |
+  | only the first section                                              | rejected |
+  | the two sections in the other order                                 | rejected |
+  | both sections and an extra "## Notes" section                       | rejected |
+  | both sections, the first as a level-one "# " heading                | rejected |
+  | the first section reworded                                          | rejected |
+  | the French summary headed with the English labels                   | rejected |
+  | no headings at all                                                  | rejected |
+
+@REQ-AI-035
+Scenario: A report with no public paragraph question has a summary with no headings
+  Given a report with no public paragraph question
+  When the Worker validates a summary whose headings are a "## Description" heading
+  Then the summary is rejected
+
+@REQ-AI-036
+Scenario: A summary with the wrong headings is a failed attempt under the retry budget
+  Given a consented report with a public paragraph question is due for summarization
+  And the model answers every attempt with headings that do not match the expected sections
+  When the outbox retries the attempt until its budget is exhausted
+  Then each attempt fails and none saves a summary
+  And the report becomes SummaryFailed
+  And a human can author both summary texts manually and continue review
 
 @REQ-AI-027
 Scenario Outline: Only a report with publication consent reaches the model

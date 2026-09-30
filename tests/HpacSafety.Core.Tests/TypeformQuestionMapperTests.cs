@@ -64,8 +64,8 @@ public class TypeformQuestionMapperTests
 
 		// Then
 		var name = DraftFor(result, "name-ref");
-		name.LabelEn.ShouldBe("Name:");
-		name.LabelFr.ShouldBe("Nom :");
+		name.LabelEn.ShouldBe("Name");
+		name.LabelFr.ShouldBe("Nom");
 		name.FrenchDefaultedToEnglish.ShouldBeFalse();
 		name.HelpTextEn.ShouldBe("Your name.");
 		name.HelpTextFr.ShouldBe("Votre nom.");
@@ -83,8 +83,8 @@ public class TypeformQuestionMapperTests
 		var extra = DraftFor(result, "extra-ref");
 
 		// Then
-		extra.LabelEn.ShouldBe("Extra:");
-		extra.LabelFr.ShouldBe("Extra:");
+		extra.LabelEn.ShouldBe("Extra");
+		extra.LabelFr.ShouldBe("Extra");
 		extra.FrenchDefaultedToEnglish.ShouldBeTrue();
 	}
 
@@ -375,7 +375,7 @@ public class TypeformQuestionMapperTests
 	{
 		// Given
 		var at = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft:", "Aéronef:", at, isPrivate: false);
+		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft", "Aéronef", at, isPrivate: false);
 		var parent = Question.Create("country", QuestionType.YesNo, "Country?", "Pays?", at, isPrivate: false);
 		var child = Question.Create(
 			"model", QuestionType.ShortText, "Model", "Modèle", at, isPrivate: true, isRequired: true,
@@ -391,8 +391,8 @@ public class TypeformQuestionMapperTests
 		// Then
 		var groupDraft = DraftFor(result, "aircraft");
 		groupDraft.Type.ShouldBe(QuestionType.Group);
-		groupDraft.LabelEn.ShouldBe("Aircraft:");
-		groupDraft.LabelFr.ShouldBe("Aéronef:");
+		groupDraft.LabelEn.ShouldBe("Aircraft");
+		groupDraft.LabelFr.ShouldBe("Aéronef");
 
 		var childDraft = DraftFor(result, "model");
 		childDraft.Type.ShouldBe(QuestionType.ShortText);

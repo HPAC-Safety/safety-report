@@ -1241,6 +1241,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.error.labelColon": {
+    "source_hash": "b7e132ad78302416ad2d78d1e59e40e3cf347e824e46ed88d920d7b76f94a4c8",
+    "target_hash": "2fc810cc6f703820cebd3048ef74f5ab82e1db1c4bebdd11fd8588cb8be91f98",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
   "questions.error.unexpected": {
     "source_hash": "3ccd9d6586ef9143f1e1cc09831532fc2342c50ee76e5cb3c151190acbc50b51",
     "target_hash": "7291c62d97dd01a74c4198a969766a9a8d6a135ea83f77edff628ef987a82224",
@@ -2559,6 +2565,12 @@
     "source_hash": "d5909f4a27bb2a169e784586cf2344c0d258b30080cbb6737278992baba02258",
     "target_hash": "c147b26b8648fa02451f94c1fcba08a97ff66cb2ba9179c598d947c5f371dafb",
     "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "reports.detail.translationLabel": {
+    "source_hash": "3dca6555c3beb205c364b25e28efcbcd0a4c7b0d951082315c943b292d40d2a6",
+    "target_hash": "f9f21263e026cc2a4534aaed4d9d4be918906493a153da0f2231a84164eb8e5b",
+    "provider": "gemini:gemini-3.7-flash",
     "reviewed": false
   },
   "reports.detail.unpublishNote": {

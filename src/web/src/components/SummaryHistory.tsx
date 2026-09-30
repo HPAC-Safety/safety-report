@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import type { SummaryRevision } from "../api/adminReports"
+import { Markdown } from "./Markdown"
 import { RestoreVersionDialog } from "./RestoreVersionDialog"
 
 const SECONDARY =
@@ -122,12 +123,12 @@ export function SummaryHistory({
 							</div>
 							{open && (
 								<div id={`revision-text-${revision.sequence}`} className="mt-3 grid gap-3 md:grid-cols-2">
-									<p lang="en-CA" className="whitespace-pre-line font-sans text-ink" data-revision-text="en">
+									<Markdown lang="en-CA" headingOffset={3} className="font-sans text-ink" data-revision-text="en">
 										{revision.aiSummaryEn}
-									</p>
-									<p lang="fr-CA" className="whitespace-pre-line font-sans text-ink" data-revision-text="fr">
+									</Markdown>
+									<Markdown lang="fr-CA" headingOffset={3} className="font-sans text-ink" data-revision-text="fr">
 										{revision.aiSummaryFr}
-									</p>
+									</Markdown>
 								</div>
 							)}
 						</li>

@@ -15,6 +15,7 @@ import {
 } from "../api/adminQuestions"
 import type { ImportedQuestionDraftView } from "../api/adminTypeformImport"
 import type { Locale } from "../i18n/locales"
+import { endsWithColon } from "../lib/questionPrompt"
 import { sortChoices } from "../lib/sortChoices"
 import { MultiSelectPicker } from "../report-form/MultiSelectPicker"
 import {
@@ -388,9 +389,13 @@ export function QuestionEditor({
 	// administrator still edits and saves it deliberately (ADR-0062, ADR-0144). A
 	// single-select condition additionally needs its required option named,
 	// or the API rejects the save (ADR-0074).
+	const colonEn = endsWithColon(request.labelEn)
+	const colonFr = endsWithColon(request.labelFr)
 	const canSave =
 		hasEnglish &&
 		hasFrench &&
+		!colonEn &&
+		!colonFr &&
 		(dependsOnParent?.type !== "single_select" || request.dependsOnChoiceId !== null) &&
 		unlinked.length === 0
 	const wordingOffered = wordingFieldsToTranslate(wordingOf(request), wordingBaseline, wordingDirection).length > 0
@@ -604,8 +609,15 @@ export function QuestionEditor({
 						className={englishFieldClassName}
 						value={request.labelEn}
 						required
+						aria-invalid={colonEn || undefined}
+						aria-describedby={colonEn ? "question-label-en-colon" : undefined}
 						onChange={(event) => update({ labelEn: event.target.value })}
 					/>
+					{colonEn && (
+						<p id="question-label-en-colon" role="alert" className="mt-1 font-sans text-sm text-brand-700">
+							{t("questions.error.labelColon")}
+						</p>
+					)}
 				</div>
 
 				<div>
@@ -617,8 +629,15 @@ export function QuestionEditor({
 						className={frenchFieldClassName}
 						value={request.labelFr}
 						required
+						aria-invalid={colonFr || undefined}
+						aria-describedby={colonFr ? "question-label-fr-colon" : undefined}
 						onChange={(event) => update({ labelFr: event.target.value })}
 					/>
+					{colonFr && (
+						<p id="question-label-fr-colon" role="alert" className="mt-1 font-sans text-sm text-brand-700">
+							{t("questions.error.labelColon")}
+						</p>
+					)}
 				</div>
 
 				<div>

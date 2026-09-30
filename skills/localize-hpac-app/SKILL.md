@@ -40,6 +40,9 @@ description: Keep HPAC Safety application chrome, database questions, validation
 
 ## Database questions
 
+- A label is stored without its closing colon; the interface adds it in the
+  locale's style (`Label:` / `Label :`), and the editor and API refuse a label
+  that ends in one (ADR-0181).
 - Every immutable revision stores English and French label and help text. A
   question's choices live outside its revisions, one editable list per question
   (ADR-0095). Administrators author and review both.

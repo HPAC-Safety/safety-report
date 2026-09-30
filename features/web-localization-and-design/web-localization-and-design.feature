@@ -392,3 +392,21 @@ Scenario: A network failure preserves local state and explains retry
   When the browser detects the failure
   Then the browser keeps the local report state
   And explains to the reporter how to retry
+
+@REQ-WLD-045
+@ui
+Scenario Outline: A summary's Markdown renders as a safe subset
+  Given a published report whose summary contains <markdown>
+  When a visitor opens its page
+  Then the summary is rendered as <result>
+
+Examples:
+  | markdown                                   | result                                                        |
+  | a "## Description" heading                 | a level-two heading "Description"                             |
+  | two paragraphs                             | two separate paragraphs                                       |
+  | bold and italic words                      | the words in bold and in italic                               |
+  | a bulleted list of two items               | a list with two items                                         |
+  | a line break inside a paragraph            | a line break at that point                                    |
+  | raw HTML "<b>loud</b>"                     | the text "<b>loud</b>" as written, with nothing in bold       |
+  | a link "[club](https://example.test/club)" | the word "club" as plain text, not a link                     |
+  | an image "![map](https://example.test/a.png)" | no image, and no request for it                            |

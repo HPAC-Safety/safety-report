@@ -72,7 +72,7 @@ async function answerYesNo(page: Page, questionLabel: string, value: "Yes" | "No
 	await page.getByRole("group", { name: questionLabel }).getByRole("radio", { name: value }).click()
 }
 
-/** Advances from the intro to the group ("Aircraft:") page, answering "No" for injury along the way. */
+/** Advances from the intro to the group ("Aircraft") page, answering "No" for injury along the way. */
 async function reachGroupPage(page: Page) {
 	await goNext(page) // intro -> narrative
 	await goNext(page) // narrative -> injured
@@ -154,7 +154,7 @@ Given("the current form has more than one answer-producing question", async ({ p
 })
 
 Given("a group question has children grouped under it", async ({ page }) => {
-	await openForm(page) // The default fixture's "Aircraft:" group already has two children.
+	await openForm(page) // The default fixture's "Aircraft" group already has two children.
 })
 
 Given("the current page shows a required, unanswered question", async ({ page }) => {
@@ -351,7 +351,7 @@ Then("a Back control returns to the previous page without losing its answer", as
 })
 
 Then("the group heading and every child render together on one page", async ({ page }) => {
-	await expect(page.getByRole("group", { name: "Aircraft:" })).toBeVisible()
+	await expect(page.getByRole("group", { name: "Aircraft" })).toBeVisible()
 	await expect(page.getByRole("combobox", { name: "Type of aircraft" })).toBeVisible()
 	await expect(page.getByLabel("Model")).toBeVisible()
 })
@@ -371,7 +371,7 @@ Then("an inline, localized message explains that an answer is required", async (
 
 Then("the dependent question's page is skipped entirely", async ({ page }) => {
 	await expect(page.getByLabel("Describe the injury")).not.toBeVisible()
-	await expect(page.getByRole("group", { name: "Aircraft:" })).toBeVisible()
+	await expect(page.getByRole("group", { name: "Aircraft" })).toBeVisible()
 })
 
 Then("the dependent question's page appears in the sequence", async ({ page }) => {
@@ -451,7 +451,7 @@ Then("every control has a programmatic label and usable keyboard order", async (
 Then("groups use fieldset\\/legend", async ({ page }) => {
 	await resetToIntro(page)
 	await reachGroupPage(page)
-	await expect(page.locator("fieldset legend", { hasText: "Aircraft:" })).toBeVisible()
+	await expect(page.locator("fieldset legend", { hasText: "Aircraft" })).toBeVisible()
 })
 
 Then("errors are linked to their fields and summarized", async ({ page }) => {

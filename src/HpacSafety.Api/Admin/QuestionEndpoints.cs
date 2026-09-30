@@ -74,6 +74,11 @@ public static class QuestionEndpoints
 			return UnknownType(request.Type);
 		}
 
+		if (LabelEndsWithColon(request))
+		{
+			return LabelColon();
+		}
+
 		var at = clock.GetUtcNow();
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
 		var bank = await WithRetiredParents(database, questions, cancellationToken).ConfigureAwait(false);
@@ -168,6 +173,11 @@ public static class QuestionEndpoints
 		if (!EnumCode.TryParse<QuestionType>(request.Type, out var type))
 		{
 			return UnknownType(request.Type);
+		}
+
+		if (LabelEndsWithColon(request))
+		{
+			return LabelColon();
 		}
 
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -717,6 +727,30 @@ public static class QuestionEndpoints
 		{
 			return Problem("question-rule", "That change is not allowed.", cause.Message);
 		}
+	}
+
+	/// <summary>
+	///     A label is stored without a closing colon; the form draws it in the reader's
+	///     locale (ADR-0181, REQ-QB-244). Checked on both languages before anything is
+	///     built.
+	/// </summary>
+	private static bool LabelEndsWithColon(SaveQuestionRequest request)
+	{
+		return (request.LabelEn is not null && QuestionLabel.EndsWithColon(request.LabelEn))
+			   || (request.LabelFr is not null && QuestionLabel.EndsWithColon(request.LabelFr));
+	}
+
+	/// <summary>
+	///     The refusal says so in both languages: the API does not know which one the
+	///     administrator is reading.
+	/// </summary>
+	private static IResult LabelColon()
+	{
+		return Problem(
+			"label-colon",
+			"A question label cannot end in a colon.",
+			"A question label cannot end in a colon; the form adds it itself. / "
+			+ "Le libellé d'une question ne peut pas se terminer par deux-points; le formulaire l'ajoute lui-même.");
 	}
 
 	private static IResult UnknownType(string type)

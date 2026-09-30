@@ -18,6 +18,16 @@ public sealed record SummarizationField(string QuestionKey, string Label, string
 public sealed record ClassifiedReportField(SummarizationField Field, bool IsPrivate);
 
 /// <summary>
+///     One section the summary must contain: a public paragraph question on the
+///     report, with its wording in both languages from the revision the reporter
+///     answered, the trailing colon already absent (ADR-0180).
+/// </summary>
+/// <param name="QuestionKey">The question's stable key.</param>
+/// <param name="LabelEn">The English label: the exact text of the English heading.</param>
+/// <param name="LabelFr">The French label: the exact text of the French heading.</param>
+public sealed record SummarizationSection(string QuestionKey, string LabelEn, string LabelFr);
+
+/// <summary>
 ///     The only input shape accepted by a summarizer. Report content supplies facts
 ///     for the summary; private context supplies redaction hints and must not be
 ///     restated as facts.
@@ -26,11 +36,20 @@ public sealed class SummarizationInput
 {
 	private SummarizationInput(
 		IReadOnlyList<SummarizationField> reportContent,
-		IReadOnlyList<SummarizationField> privateContext)
+		IReadOnlyList<SummarizationField> privateContext,
+		IReadOnlyList<SummarizationSection> expectedSections)
 	{
 		ReportContent = reportContent;
 		PrivateContext = privateContext;
+		ExpectedSections = expectedSections;
 	}
+
+	/// <summary>
+	///     The sections the summary must have, in form order: one per public paragraph
+	///     question on the report, blank ones included. Empty when the report has none,
+	///     in which case the summary has no headings.
+	/// </summary>
+	public IReadOnlyList<SummarizationSection> ExpectedSections { get; }
 
 	/// <summary>Non-private fields eligible to contribute facts.</summary>
 	public IReadOnlyList<SummarizationField> ReportContent { get; }
@@ -39,7 +58,8 @@ public sealed class SummarizationInput
 	public IReadOnlyList<SummarizationField> PrivateContext { get; }
 
 	/// <summary>Partitions fields so callers cannot mix private values into report content.</summary>
-	public static SummarizationInput Partition(IEnumerable<ClassifiedReportField> fields)
+	public static SummarizationInput Partition(IEnumerable<ClassifiedReportField> fields,
+											   IEnumerable<SummarizationSection>? expectedSections = null)
 	{
 		ArgumentNullException.ThrowIfNull(fields);
 
@@ -53,7 +73,7 @@ public sealed class SummarizationInput
 			(classified.IsPrivate ? privateContext : reportContent).Add(classified.Field);
 		}
 
-		return new SummarizationInput(reportContent.AsReadOnly(), privateContext.AsReadOnly());
+		return new SummarizationInput(reportContent.AsReadOnly(), privateContext.AsReadOnly(), (expectedSections ?? []).ToList().AsReadOnly());
 	}
 
 	/// <summary>
@@ -69,6 +89,6 @@ public sealed class SummarizationInput
 		ArgumentNullException.ThrowIfNull(input);
 		ArgumentNullException.ThrowIfNull(reportContent);
 
-		return new SummarizationInput(reportContent, input.PrivateContext);
+		return new SummarizationInput(reportContent, input.PrivateContext, input.ExpectedSections);
 	}
 }

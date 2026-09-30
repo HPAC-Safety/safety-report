@@ -48,7 +48,7 @@ export interface StubQuestion {
 	children: StubQuestion[]
 }
 
-function question(overrides: Partial<StubQuestion> & { id: string; key: string; labelEn: string; type: string; displayOrder: number }): StubQuestion {
+export function question(overrides: Partial<StubQuestion> & { id: string; key: string; labelEn: string; type: string; displayOrder: number }): StubQuestion {
 	return {
 		role: "none",
 		revisionId: `rev-${overrides.id}`,
@@ -90,7 +90,7 @@ export function defaultFormQuestions(): StubQuestion[] {
 		question({
 			id: "aircraft",
 			key: "aircraft",
-			labelEn: "Aircraft:",
+			labelEn: "Aircraft",
 			type: "group",
 			displayOrder: 4,
 			children: [

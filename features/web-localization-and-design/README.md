@@ -168,12 +168,33 @@ Out of scope for this mechanism, decided with issue #659:
 - A server-side draft that would make the warning unnecessary — invariant 2
   forbids one.
 
+## Markdown
+
+A summary, and a reporter's paragraph answer with its Worker translation, are
+read as Markdown, through one shared component
+([ADR-0180](../../docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)):
+
+- **The safe subset.** Headings, paragraphs, bold, italic, lists, and line
+  breaks. Raw HTML is never rendered: it shows as written. A link shows as its
+  text only, and an image is dropped, so a summary can never send the reader's
+  browser anywhere or make it fetch anything (`REQ-WLD-045`). A single newline
+  is a line break, so a reporter's own breaks survive.
+- **Where.** The public report page; the admin review page and its revision
+  history (`REQ-MOD-208`); a long-text answer and its translation on the admin
+  report detail (`REQ-MOD-209`). The public feed shows the first section's body
+  as plain text (`REQ-MOD-210`).
+- **Hidden.** Nothing tells a person they may use Markdown: textareas stay
+  plain, with no editor, toolbar, preview, or hint (`REQ-MOD-211`).
+
 ## Out of scope
 
 What not to build here. The global list in
 [system overview](../../docs/system-overview.md) still holds; this narrows it
 to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
 
+- Markdown beyond the safe subset: links, images, tables, code blocks, or
+  embedded HTML. Markdown in member comments or in question help text.
+- A Markdown editor, toolbar, preview, or hint anywhere in the interface.
 - Loading a font, script, style, or icon from a third-party CDN at page load.
   Everything the site needs is committed and self-hosted
   ([ADR-0023](../../docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md)).

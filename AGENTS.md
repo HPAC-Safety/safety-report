@@ -156,6 +156,14 @@ contributor who never invokes one is unaffected.
      unanswered; reporter and pilot are never collapsed even when they name
      the same person
      ([ADR-0154](docs/decisions/ADR-0154-reporter-and-pilot-names-are-read-by-question-role.md)).
+   - **A label has no closing colon.** It is stored without one, and the
+     interface adds it after an answerable question's label in the locale's
+     style (`Label:` in en-CA, `Label :` in fr-CA; none after a statement, a
+     group, or a label ending in `?`). The editor and the API refuse a label
+     ending in `:`, and Typeform import strips it. One migration trimmed the
+     stored labels in place, creating no revision — a carved exception to the
+     rule above, argued in
+     [ADR-0181](docs/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md).
    - An administrator authors every other question's required state
      ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
    - An administrator authors both languages, may use machine translation as a
@@ -263,7 +271,11 @@ contributor who never invokes one is unaffected.
    - `report_content` supplies eligible facts. Labeled `private_context`,
      still sent in full, only helps recognize identifying text the marking pass
      missed.
-   - The response is one strict English/French summary pair.
+   - The response is one strict English/French summary pair, each a Markdown
+     text with one `## ` section per public paragraph question on the report,
+     headed by its label, in form order; the Worker rejects a response whose
+     headings differ, and the retry budget applies
+     ([ADR-0180](docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
 4. **Replace a private person's complete identity with a role.** A pilot's
    name repeated in eligible narrative becomes exactly “the pilot” /
    “le pilote,” with no fragment left. Private-only facts never become summary
@@ -337,6 +349,10 @@ contributor who never invokes one is unaffected.
        note, when an administrator resolves it
        ([ADR-0077](docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
    - Any future `DROP TABLE` needs its own argument on its own facts.
+   - Rewriting stored revision text is not a deletion but is as rare: the one
+     in-place trim of label colons
+     ([ADR-0181](docs/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md))
+     is the only one.
 
 ## Not built
 

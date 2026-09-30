@@ -105,6 +105,11 @@ order (which breaks the moment the two language forms diverge).
 - Never persists a `Question`/`QuestionRevision` row by itself. It produces
   drafts an Administrator reviews and saves through the ordinary authoring
   screen (`QuestionEditor`), one at a time.
+- Never keeps a title's trailing colon. A label is stored without one and the
+  form draws it, so import strips `:` or ` :` from each title, in both
+  languages, and leaves a title with none unchanged
+  ([ADR-0181](../../docs/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md),
+  `REQ-TF-024`).
 - Never fabricates a translation. The English file leads; a field or choice
   with no French counterpart by `ref` defaults its French side to the English
   text and is flagged for an administrator to author, and a French-only field

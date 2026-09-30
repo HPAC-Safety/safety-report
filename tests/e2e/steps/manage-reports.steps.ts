@@ -939,9 +939,10 @@ Then("no translation is shown beside it", async ({ page }) => {
 // REQ-MOD-078: a translation line only under an answer that has one (ADR-0112).
 
 Then("a translated narrative answer shows its translation beneath it", async ({ page }) => {
-	await expect(page.locator('[data-question-key="narrative"]')).toContainText(
-		"Translation: Un atterrissage ferme synthétique.",
-	)
+	// A paragraph answer's translation is Markdown like the answer itself, under its own label.
+	const translation = page.locator('[data-question-key="narrative"] [data-long-text-translation]')
+	await expect(translation).toContainText("Translation:")
+	await expect(translation).toContainText("Un atterrissage ferme synthétique.")
 })
 
 Then("a name or email answer shows no translation line", async ({ page }) => {

@@ -191,7 +191,7 @@ public static class TypeformQuestionMapper
 		QuestionType type,
 		string? groupedUnderKey)
 	{
-		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
+		var (labelEn, labelFr, defaulted) = PairTitle(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
 
 		var draft = new ImportedQuestionDraft(
@@ -207,7 +207,7 @@ public static class TypeformQuestionMapper
 		QuestionType type,
 		string? groupedUnderKey)
 	{
-		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
+		var (labelEn, labelFr, defaulted) = PairTitle(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
 
 		var draft = new ImportedQuestionDraft(
@@ -223,7 +223,7 @@ public static class TypeformQuestionMapper
 		QuestionType type,
 		string? groupedUnderKey)
 	{
-		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
+		var (labelEn, labelFr, defaulted) = PairTitle(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
 
 		var frenchChoicesByRef = (frenchField?.Properties.Choices ?? [])
@@ -288,6 +288,21 @@ public static class TypeformQuestionMapper
 															   string? french)
 	{
 		return string.IsNullOrWhiteSpace(french) ? (english, english, true) : (english, french, false);
+	}
+
+	/// <summary>
+	///     Pairs a question's title the way <see cref="Pair" /> does, after removing a
+	///     trailing colon from each side: a label is stored without one, and the form
+	///     draws it in the reader's locale (ADR-0181, REQ-TF-024). The French default
+	///     is decided on what Typeform sent, so a French title that was only a colon
+	///     still counts as missing.
+	/// </summary>
+	private static (string En, string Fr, bool Defaulted) PairTitle(string english,
+																	string? french)
+	{
+		var (en, fr, defaulted) = Pair(english, french);
+
+		return (QuestionLabel.WithoutTrailingColon(en), QuestionLabel.WithoutTrailingColon(fr), defaulted);
 	}
 
 	/// <summary>

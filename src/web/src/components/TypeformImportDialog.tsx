@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
+import { labelWithColon } from "../lib/questionPrompt"
 import { ApiError } from "../api/adminQuestions"
 import {
 	deletePendingImportLogic,
@@ -153,8 +154,12 @@ export function TypeformImportDialog({
 								className="flex flex-wrap items-center justify-between gap-3 rounded border border-rule bg-surface p-3"
 							>
 								<div className="min-w-0">
-									<p className="font-sans font-medium text-ink">{draft.labelEn}</p>
-									<p className="font-sans text-sm text-ink-muted">{draft.labelFr}</p>
+									<p className="font-sans font-medium text-ink" lang="en-CA">
+										{labelWithColon(draft.labelEn, draft.type, "en-CA")}
+									</p>
+									<p className="font-sans text-sm text-ink-muted" lang="fr-CA">
+										{labelWithColon(draft.labelFr, draft.type, "fr-CA")}
+									</p>
 									{draft.frenchDefaultedToEnglish && (
 										<p className="mt-1 font-sans text-xs text-ink-muted">
 											{t("questions.import.frenchDefaultedToEnglish")}

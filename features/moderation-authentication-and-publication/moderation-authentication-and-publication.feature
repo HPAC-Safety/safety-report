@@ -1904,3 +1904,36 @@ Scenario: Leaving with an unsaved private note is confirmed
   And the safety officer starts writing a private note without saving it
   And navigates to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-MOD-208
+@ui
+Scenario: The admin review page renders a summary and its revision history as Markdown
+  Given a signed-in Safety Officer and a report whose summary has a "## Description" section in each language
+  When they open that report
+  Then each language's summary shows a heading "Description" and its text as a paragraph
+  And opening a version in the history shows its sections the same way
+
+@REQ-MOD-209
+@ui
+Scenario: The admin report detail renders a long-text answer and its translation as Markdown
+  Given a signed-in Safety Officer and a report with a long-text answer written in Markdown and its Worker translation
+  When they open that report
+  Then the answer shows its bold text as bold and its list as a list
+  And its translation shows the same formatting
+  And a short-text answer with Markdown characters is shown as written
+
+@REQ-MOD-210
+@ui
+Scenario: The public feed previews the first section's text, without its heading
+  Given the public feed has a report whose summary has a "## Description" section and a second section
+  When a visitor opens the public feed
+  Then the report's preview shows the body of the first section as plain text
+  And it shows no heading and no Markdown characters
+
+@REQ-MOD-211
+@ui
+Scenario: Markdown support is not advertised to a reviewer editing a summary
+  Given a signed-in Safety Officer and a report whose summary is Markdown
+  When they start editing the summary
+  Then each language is a plain text area holding the Markdown as written
+  And no Markdown toolbar, preview, or hint appears

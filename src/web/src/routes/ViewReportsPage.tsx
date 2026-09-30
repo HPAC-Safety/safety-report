@@ -5,6 +5,7 @@ import { fetchPublicReports, summaryIn, type PublicReport } from "../api/publicR
 import { AttachmentCountBadge } from "../components/AttachmentCountBadge"
 import { InfiniteScrollStatus } from "../components/InfiniteScrollStatus"
 import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
+import { firstSectionPreview } from "../lib/markdownPreview"
 
 /** How long to wait, after the visitor stops typing, before searching (ms). */
 const SEARCH_DEBOUNCE_MS = 300
@@ -120,7 +121,7 @@ export function ViewReportsPage() {
 									<span className="font-sans text-sm text-ink-muted">
 										{t("feed.publishedAt", { at: published.format(new Date(report.publishedAt)) })}
 									</span>
-									<span className="line-clamp-3 whitespace-pre-line font-sans text-ink">{summaryIn(report, locale)}</span>
+									<span className="line-clamp-3 whitespace-pre-line font-sans text-ink">{firstSectionPreview(summaryIn(report, locale))}</span>
 									<span className="flex flex-wrap items-center gap-x-4 font-sans text-sm">
 										<span className="font-medium text-brand-700 underline">{t("feed.read")}</span>
 										<span data-comment-count={report.commentCount} className="text-ink-muted">

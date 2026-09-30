@@ -52,6 +52,19 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   - submit one JSON request naming the upload IDs; mark each upload it
     refuses as expired or invalid on its own row, and keep everything else.
 
+## Markdown and label colons
+
+- **One renderer.** `components/Markdown.tsx` is the only place Markdown becomes
+  markup: headings, paragraphs, bold, italic, lists, line breaks. Raw HTML shows
+  as text, a link as its text, an image not at all. Use it for a summary and for
+  a long-text answer with its translation; never `dangerouslySetInnerHTML`
+  (ADR-0180).
+- **Never advertise it.** No Markdown editor, toolbar, preview, or hint; a
+  textarea stays plain.
+- **The colon is the interface's.** A label is stored without one; show it with
+  `labelWithColon` (`lib/questionPrompt.ts`): `Label:` in en-CA, `Label :` in
+  fr-CA, none after a statement, a group, or a label ending in `?` (ADR-0181).
+
 ## Admin and authentication
 
 - Public and admin are routes in one application, build, and container

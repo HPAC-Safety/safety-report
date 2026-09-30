@@ -300,7 +300,7 @@ type-ahead's alone. Each keeps its own input type
 
 The seeded attachment question departs from Typeform on purpose. Typeform took
 one file and asked for the rest by email. This form takes several, so the
-question reads "Photos or videos:" and asks for photos, videos, or documents
+question reads "Photos or videos" and asks for photos, videos, or documents
 (`REQ-QB-104`).
 
 A database seeded before that change is corrected by a migration that follows
@@ -308,6 +308,25 @@ the same rule as an Administrator's edit. An unanswered question gets a new
 revision (`REQ-QB-105`), and an answered one forks (`REQ-QB-106`). The
 migration acts only while the question still carries the exact seeded wording,
 so it never overwrites an Administrator's own edit (`REQ-QB-107`).
+
+## A label has no closing colon
+
+A question's label is stored without a colon, and the interface draws it
+([ADR-0181](../../docs/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md)):
+
+- **Where and how.** After an answerable question's label: `Label:` in en-CA,
+  `Label :` in fr-CA, where French typography asks for a space before the
+  colon. None after a statement, a group, or a label that ends in `?`. It
+  shows on the reporter form, the admin report detail, and the question bank
+  previews, which show each language's label in that language's style
+  (`REQ-QB-240`, `REQ-QB-241`, `REQ-QB-242`).
+- **New labels.** The editor refuses a label ending in `:` (`REQ-QB-243`), and
+  so does the API, with a problem worded in both languages (`REQ-QB-244`).
+  Typeform import strips the colon from a title (`REQ-TF-024`).
+- **Stored labels.** One migration removed the trailing colon from every stored
+  label, in place, creating no revision (`REQ-QB-245`). A clean database holds
+  none (`REQ-QB-246`). This is the one exception to the rule that an answered
+  question forks instead of being revised.
 
 ## The group page contract
 
@@ -333,6 +352,13 @@ What not to build here. The global list in
 [system overview](../../docs/system-overview.md) still holds; this narrows it
 to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
 
+- A label colon stored in the wording, or configured per question. The colon is
+  drawn by the interface in the reader's locale, and no other punctuation is
+  added.
+- Markdown in a question's help text or a statement's description, or a
+  Markdown editor, toolbar, or hint in the form. A reporter's paragraph answer
+  is stored as typed and read as Markdown by reviewers
+  ([ADR-0180](../../docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
 - A general-purpose form builder: scoring, surveys, quizzes, form templates, or
   arbitrary branching. A question may be conditional on a yes/no question or on
   a single-select question naming a required option, and that is the whole of

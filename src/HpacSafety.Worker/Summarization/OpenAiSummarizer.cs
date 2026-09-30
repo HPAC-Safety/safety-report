@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.AiChatClient;
@@ -14,10 +15,10 @@ namespace HpacSafety.Worker.Summarization;
 ///     <c>AiChatClient:ReasoningEffort</c>, and strictly validates the response. It knows no
 ///     provider: the mediator picks the handler by the model's name (ADR-0104).
 /// </summary>
-public sealed class OpenAiSummarizer : ISummarizer
+public sealed partial class OpenAiSummarizer : ISummarizer
 {
 	/// <summary>The current prompt file under <c>Prompts/</c>. Bump on any behavior change.</summary>
-	public const string CurrentPromptFileName = "summarize-anonymize.v3.md";
+	public const string CurrentPromptFileName = "summarize-anonymize.v4.md";
 
 	/// <summary>The provenance value stamped on every summary this prompt produces.</summary>
 	public static readonly string CurrentPromptVersion = Path.GetFileNameWithoutExtension(CurrentPromptFileName);
@@ -82,7 +83,7 @@ public sealed class OpenAiSummarizer : ISummarizer
 			throw new SummarizationFailedException("The AI chat provider was unavailable for this summarization attempt.", exception);
 		}
 
-		var (textEn, textFr) = ParseStrictResponse(response);
+		var (textEn, textFr) = ParseStrictResponse(response, marked.ExpectedSections);
 		return new SummaryDraft(textEn, textFr, _model, CurrentPromptVersion);
 	}
 
@@ -95,7 +96,8 @@ public sealed class OpenAiSummarizer : ISummarizer
 	{
 		var payload = new SummarizationRequestPayload(
 			[.. input.ReportContent.Select(ToRequestField)],
-			[.. input.PrivateContext.Select(ToRequestField)]);
+			[.. input.PrivateContext.Select(ToRequestField)],
+			[.. input.ExpectedSections.Select(section => new SummarizationRequestSection(section.QuestionKey, section.LabelEn, section.LabelFr))]);
 
 		return JsonSerializer.Serialize(payload, RequestSerializerOptions);
 	}
@@ -105,7 +107,8 @@ public sealed class OpenAiSummarizer : ISummarizer
 		return new SummarizationRequestField(field.QuestionKey, field.Label, field.Value);
 	}
 
-	private static (string TextEn, string TextFr) ParseStrictResponse(string response)
+	private static (string TextEn, string TextFr) ParseStrictResponse(string response,
+																	  IReadOnlyList<SummarizationSection> expectedSections)
 	{
 		SummarizationResponsePayload? payload;
 		try
@@ -125,14 +128,82 @@ public sealed class OpenAiSummarizer : ISummarizer
 				"The AI chat provider's response did not contain two nonblank summary fields.");
 		}
 
+		// The summary is Markdown with exactly one `## ` heading per expected section,
+		// in form order, worded exactly as the label the reporter saw, and no other
+		// heading. A mismatch is a failed attempt like any other, so the outbox's
+		// retry budget applies (ADR-0180, REQ-AI-037).
+		if (!HasExactlyTheHeadings(payload.AiSummaryEn, [.. expectedSections.Select(section => section.LabelEn)])
+			|| !HasExactlyTheHeadings(payload.AiSummaryFr, [.. expectedSections.Select(section => section.LabelFr)]))
+		{
+			throw new SummarizationFailedException(
+				"The AI chat provider's summary did not have exactly the expected section headings in form order.");
+		}
+
 		return (payload.AiSummaryEn, payload.AiSummaryFr);
 	}
 
+	/// <summary>
+	///     Whether every heading in <paramref name="markdown" /> — ATX <c>#</c> headings
+	///     and underlined ones — is one of the expected <c>## </c> lines, in order, with
+	///     its label's exact text. A line in a code fence is not a heading.
+	/// </summary>
+	internal static bool HasExactlyTheHeadings(string markdown,
+											   IReadOnlyList<string> expectedLabels)
+	{
+		var found = new List<string>();
+		var inFence = false;
+		string? previous = null;
+
+		foreach (var rawLine in markdown.Split('\n'))
+		{
+			var line = rawLine.TrimEnd('\r');
+			var trimmed = line.Trim();
+
+			if (trimmed.StartsWith("```", StringComparison.Ordinal) || trimmed.StartsWith("~~~", StringComparison.Ordinal))
+			{
+				inFence = !inFence;
+				previous = null;
+				continue;
+			}
+
+			if (inFence)
+			{
+				continue;
+			}
+
+			if (AtxHeading().IsMatch(line))
+			{
+				found.Add(line.TrimEnd());
+				previous = null;
+				continue;
+			}
+			else if (previous is { Length: > 0 } && SetextUnderline().IsMatch(line))
+			{
+				// An underlined heading is never one of the `## ` lines expected.
+				found.Add(previous);
+				found.Add(line);
+			}
+
+			previous = trimmed.Length == 0 ? null : trimmed;
+		}
+
+		return found.SequenceEqual(expectedLabels.Select(label => $"## {label}"), StringComparer.Ordinal);
+	}
+
+	[GeneratedRegex(@"^ {0,3}#{1,6}(\s|$)")]
+	private static partial Regex AtxHeading();
+
+	[GeneratedRegex(@"^ {0,3}(=+|-+)\s*$")]
+	private static partial Regex SetextUnderline();
+
 	private sealed record SummarizationRequestField(string QuestionKey, string Label, string Value);
+
+	private sealed record SummarizationRequestSection(string QuestionKey, string LabelEn, string LabelFr);
 
 	private sealed record SummarizationRequestPayload(
 		IReadOnlyList<SummarizationRequestField> ReportContent,
-		IReadOnlyList<SummarizationRequestField> PrivateContext);
+		IReadOnlyList<SummarizationRequestField> PrivateContext,
+		IReadOnlyList<SummarizationRequestSection> ExpectedSections);
 
 	[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 	private sealed record SummarizationResponsePayload(string? AiSummaryEn, string? AiSummaryFr);

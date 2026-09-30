@@ -85,7 +85,7 @@ export function PublicReportPage() {
 							{t("feed.adminPage")}
 						</Link>
 					)}
-					<Markdown lang={locale} data-summary={locale} className="mt-6 font-sans text-lg text-ink">
+					<Markdown lang={locale} data-summary={locale} className="mt-6 font-sans text-ink-muted">
 						{summaryIn(loaded.report, locale)}
 					</Markdown>
 					<AttachmentStrip

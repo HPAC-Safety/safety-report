@@ -2934,6 +2934,10 @@ With no key, a translation model no provider handler claims leaves translation u
 
 A summary's Markdown renders as a safe subset — *playwright-bdd, Covered*
 
+### REQ-WLD-046
+
+A public summary is set in the same type as the other public pages, in the <theme> theme — *playwright-bdd, Covered*
+
 ## Constraints
 
 A constraint states something the system must be true of; the claims beside

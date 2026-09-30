@@ -10,6 +10,12 @@ keywords: translation, terminology, DeepL, custom_instructions, glossary, fr-CA,
 
 # ADR-0102 — A term list holds the French translator to a word
 
+**Status:** Accepted. The DeepL mechanism (`custom_instructions`, the 10-term and
+300-character ceilings) is superseded by [ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md):
+the same terms go inline in the one translation prompt, to Gemini, in CI and at
+runtime, and the server-side `ITranslator` is now held to the term list too.
+The list format, the `--check` rule, and the forbidden stems stand.
+
 ## Context
 
 DeepL, the CI translator (ADR-0022), rendered every "upload" in the UI

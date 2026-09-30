@@ -195,9 +195,11 @@ describe('expectationFor', () => {
 })
 
 describe('isExempt', () => {
-	it('exempts the Worker runtime prompts and nothing else', () => {
+	it('exempts the runtime prompts and nothing else', () => {
 		assert.equal(isExempt('src/HpacSafety.Worker/Prompts/summarize-anonymize.v1.md'), true)
+		assert.equal(isExempt('locales/translation-prompt.v1.md'), true)
 		assert.equal(isExempt('src/HpacSafety.Worker/README.md'), false)
+		assert.equal(isExempt('locales/README.md'), false)
 	})
 })
 

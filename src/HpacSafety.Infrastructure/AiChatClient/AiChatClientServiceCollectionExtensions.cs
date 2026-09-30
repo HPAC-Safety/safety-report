@@ -31,7 +31,7 @@ public static class AiChatClientServiceCollectionExtensions
 	///     summarization attempt fails closed rather than sending report content
 	///     anywhere. There is no Development stand-in — a summarization attempt has
 	///     nothing useful to fall back to. A key with an unusable configuration stops
-	///     the host at startup (<see cref="AiChatClientOptionsValidator" />).
+	///     the host at startup (<see cref="AiChatProviderOptionsValidator" /> and <see cref="AiChatClientOptionsValidator" />).
 	/// </remarks>
 	/// <param name="services">The container.</param>
 	/// <param name="configuration">Application configuration.</param>
@@ -41,9 +41,32 @@ public static class AiChatClientServiceCollectionExtensions
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);
 
+		services.AddSingleton<IValidateOptions<AiChatClientOptions>, AiChatClientOptionsValidator>();
+		services.AddHpacSafetyAiChatProvider(configuration);
+
+		return services;
+	}
+
+	/// <summary>
+	///     The provider half of <see cref="AddHpacSafetyAiChatClient" />: the options, the
+	///     strategy the configured provider names, and the check that the provider is one
+	///     this host knows. Translation (ADR-0179) registers this alone, because the API
+	///     shares the Worker's key and provider but has no summary model to validate.
+	///     Idempotent, so a host that registers both gets one client.
+	/// </summary>
+	/// <param name="services">The container.</param>
+	/// <param name="configuration">Application configuration.</param>
+	internal static IServiceCollection AddHpacSafetyAiChatProvider(this IServiceCollection services,
+																   IConfiguration configuration)
+	{
+		if (services.Any(descriptor => descriptor.ServiceType == typeof(IAiChatClient)))
+		{
+			return services;
+		}
+
 		var section = configuration.GetSection(AiChatClientOptions.SectionName);
 
-		services.AddSingleton<IValidateOptions<AiChatClientOptions>, AiChatClientOptionsValidator>();
+		services.AddSingleton<IValidateOptions<AiChatClientOptions>, AiChatProviderOptionsValidator>();
 		services.AddOptions<AiChatClientOptions>()
 			.Bind(section)
 			.ValidateOnStart();

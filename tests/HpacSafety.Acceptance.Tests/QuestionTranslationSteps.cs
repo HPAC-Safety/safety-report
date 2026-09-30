@@ -15,7 +15,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///         These assert the shape of the contract rather than a provider's output:
 ///         that translation is a port with one purpose, that it is reached through the
 ///         application's own API, and that an unconfigured server says so without
-///         leaking anything. The DeepL adapter's own behaviour is covered by
+///         leaking anything. The Gemini adapter's own behaviour is covered by
 ///         <c>HpacSafety.Infrastructure.Tests</c>, and the endpoint's by
 ///         <c>HpacSafety.Api.Tests</c>.
 ///     </para>
@@ -74,8 +74,8 @@ public sealed class QuestionTranslationSteps
 		{
 			var source = File.ReadAllText(file);
 
-			source.ShouldNotContain("deepl", Case.Insensitive, $"{file} must not name a translation provider.");
-			source.ShouldNotContain("DEEPL_API_KEY", Case.Insensitive, $"{file} must not carry a credential.");
+			source.ShouldNotContain("gemini", Case.Insensitive, $"{file} must not name a translation provider.");
+			source.ShouldNotContain("GEMINI_API_KEY", Case.Insensitive, $"{file} must not carry a credential.");
 		}
 	}
 
@@ -154,7 +154,7 @@ public sealed class QuestionTranslationSteps
 			.Concat(typeof(TranslationServiceCollectionExtensions).Assembly.GetTypes())
 			.Where(type => type is { IsClass: true, IsAbstract: false } && typeof(ITranslator).IsAssignableFrom(type))
 			.Select(type => type.Name)
-			.ShouldBe(["DeepLTranslator"]);
+			.ShouldBe(["AiChatTranslator"]);
 	}
 
 	/// <summary>The web application's source, found from the test binary.</summary>

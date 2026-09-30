@@ -34,7 +34,7 @@ name: Translate locales
 #
 # The job also reports its own outcome to every open issue labelled
 # `verify:translation-run` — an issue that can only be settled by a run that
-# actually calls the provider (e.g. #381: does DeepL accept the term list?).
+# actually calls the provider (e.g. #614: does Gemini follow the term list?).
 # When the run exercised the provider, it comments with what happened and
 # closes the issue if the result passed the i18n check; when the run failed,
 # it comments with the provider's error and leaves the issue open. Nothing has
@@ -117,23 +117,23 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.major }}
 
-      # DeepL, targeting FR-CA — the provider decided in ADR-0022, after GitHub
-      # Models (which ADR-0007 named) was retired on 30 July 2026. Only the key
-      # is required: the adapter picks the free or pro host from the key's ':fx'
-      # suffix, and defaults formality to prefer_more. Without DEEPL_API_KEY the
-      # tool reports which keys are waiting and changes nothing.
+      # Gemini, en-CA to fr-CA (ADR-0179), with the one versioned prompt in
+      # locales/translation-prompt.v1.md and the term list in locales/terms.json
+      # sent with every request. The key is the repository's existing
+      # GEMINI_API_KEY_DEV secret, the same paid key summaries use in
+      # development; there is no translation-only key. Without it the tool
+      # reports which keys are waiting and changes nothing.
       #
-      # The remaining variables exist so a second provider is a settings change
-      # rather than a code change. They are all unset by default.
+      # The variables are optional tuning, unset by default: the model defaults
+      # to gemini-3.7-flash and the reasoning effort to low.
       - name: Translate what changed
         id: translate
         env:
-          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
-          TRANSLATION_FORMALITY: ${{ vars.TRANSLATION_FORMALITY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_DEV }}
           TRANSLATION_PROVIDER: ${{ vars.TRANSLATION_PROVIDER }}
           TRANSLATION_ENDPOINT: ${{ vars.TRANSLATION_ENDPOINT }}
           TRANSLATION_MODEL: ${{ vars.TRANSLATION_MODEL }}
-          TRANSLATION_API_KEY: ${{ secrets.TRANSLATION_API_KEY }}
+          TRANSLATION_REASONING_EFFORT: ${{ vars.TRANSLATION_REASONING_EFFORT }}
         # The output is kept in a file as well as the log, so a failure can be
         # quoted to the issues waiting on this run. It holds UI strings and
         # the provider's status line, never a secret: the key travels in a
@@ -295,7 +295,7 @@ jobs:
           TRANSLATED: ${{ steps.translate.outputs.translated }}
           TRANSLATED_KEYS: ${{ steps.translate.outputs.translated_keys }}
           CHECK_OUTCOME: ${{ steps.verify.outcome }}
-          PROVIDER: ${{ vars.TRANSLATION_PROVIDER || 'deepl' }}
+          PROVIDER: ${{ vars.TRANSLATION_PROVIDER || 'gemini' }}
         run: |
           set -euo pipefail
 

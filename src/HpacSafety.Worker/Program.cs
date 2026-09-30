@@ -58,21 +58,10 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
 builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
 
-// Resolved once, here, the same way as AiChatClient's key above. Left unset
-// in Development and every test host, where the plain
-// Translation:ApiKey/DEEPL_API_KEY setting still applies. See #597.
-var translationSection = builder.Configuration.GetSection(DeepLOptions.SectionName);
-var deepLApiKey = await SecretArnResolver.ResolveAsync(
-	translationSection[nameof(DeepLOptions.ApiKey)] ?? builder.Configuration["DEEPL_API_KEY"],
-	translationSection[nameof(DeepLOptions.ApiKeySecretArn)]).ConfigureAwait(false);
-builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-{
-	[$"{DeepLOptions.SectionName}:{nameof(DeepLOptions.ApiKey)}"] = deepLApiKey,
-});
-
-// Same port and adapter question authoring uses. With no credential, in any
+// Same port and adapter question authoring uses, through the same Gemini key
+// resolved above and its own Translation:Model. With no key, in any
 // environment, translation is unavailable and the message backs off rather
-// than being marked done. See ADR-0080, ADR-0109.
+// than being marked done. See ADR-0080, ADR-0109, ADR-0179.
 builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 
 // Attachment derivatives are produced here, one outbox message per file, never

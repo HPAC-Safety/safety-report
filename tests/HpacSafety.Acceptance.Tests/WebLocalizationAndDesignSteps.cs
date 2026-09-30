@@ -197,7 +197,7 @@ public sealed class WebLocalizationAndDesignSteps
 				{
 					source_hash = Sha256(stampedEnglish),
 					target_hash = Sha256(stampedFrench),
-					provider = "deepl:FR-CA:prefer_more",
+					provider = "gemini:gemini-3.7-flash",
 					reviewed = false,
 				},
 			}));
@@ -286,7 +286,7 @@ public sealed class WebLocalizationAndDesignSteps
 	{
 		// Stamped exactly as a generate would leave it, so nothing but the term
 		// can be what verification objects to.
-		WriteTermFixture("deepl:FR-CA:prefer_more");
+		WriteTermFixture("gemini:gemini-3.7-flash");
 	}
 
 	private void WriteTermFixture(string provider)
@@ -331,11 +331,11 @@ public sealed class WebLocalizationAndDesignSteps
 		_verifyOutput.ShouldContain("'upload.cancel'");
 	}
 
-	[When(@"a translation request is built for DeepL or for a chat-completions provider")]
+	[When(@"a translation request is built for the CI translator")]
 	public void WhenATranslationRequestIsBuilt()
 	{
-		// The adapters' own request builders, fed the term list the way
-		// translate-locale.mjs feeds them. Nothing is sent anywhere.
+		// The adapter's own request builder, fed the term list the way
+		// translate-locale.mjs feeds it. Nothing is sent anywhere.
 		var tools = Path.Combine(RepositoryRoot(), "tools");
 		var script = Path.Combine(_correctionDir, "build-request.mjs");
 		File.WriteAllText(
@@ -348,30 +348,23 @@ public sealed class WebLocalizationAndDesignSteps
 			const instructions = termInstructions(JSON.parse(readFileSync(process.argv[2], 'utf8')))
 			const items = [{ key: 'a', text: 'Upload a photo' }]
 			const locales = { source: 'en-CA', target: 'fr-CA', instructions }
-			const deepl = createTranslator({ provider: 'deepl', apiKey: 'k' }).buildRequest(items, locales)
-			const chat = createTranslator({
-				provider: 'chat-completions', endpoint: 'https://example.invalid', model: 'm', apiKey: 'k',
-			}).buildRequest(items, locales)
-			console.log(JSON.stringify({ deepl: deepl.custom_instructions, chat: chat.messages[0].content }))
+			const request = createTranslator({ provider: 'gemini', apiKey: 'k' }).buildRequest(items, locales)
+			console.log(JSON.stringify({ prompt: request.messages[0].content }))
 			""");
 
 		RunNodeTool(script, true, out _requestOutput, _termsPath);
 	}
 
-	[Then(@"the request instructs the provider to render ""upload"" as ""téléverser"" and never ""télécharg…""")]
+	[Then(@"the request instructs the model to render ""upload"" as ""téléverser"" and never ""télécharg…""")]
 	public void ThenTheRequestCarriesTheRendering()
 	{
 		using var request = JsonDocument.Parse(_requestOutput.Trim());
 
-		var deepl = request.RootElement.GetProperty("deepl").EnumerateArray().Select(e => e.GetString()!).ToList();
-		var chat = request.RootElement.GetProperty("chat").GetString()!;
+		var prompt = request.RootElement.GetProperty("prompt").GetString()!;
 
-		foreach (var carried in new[] { string.Join('\n', deepl), chat })
-		{
-			carried.ShouldContain("\"upload\"");
-			carried.ShouldContain("\"téléverser\"");
-			carried.ShouldContain("never use \"télécharg…\"");
-		}
+		prompt.ShouldContain("\"upload\"");
+		prompt.ShouldContain("\"téléverser\"");
+		prompt.ShouldContain("Never \"télécharg…\"");
 	}
 
 	// --- REQ-WLD-021: assets are self-hosted, never loaded from third-party CDNs ---

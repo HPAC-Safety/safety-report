@@ -5,8 +5,8 @@ namespace HpacSafety.Infrastructure.Persistence;
 ///     one is configured, mirroring <see cref="DatabaseConnectionStringResolver" />'s
 ///     ARN pattern (#586) for a value that is already a plain string rather
 ///     than RDS's username/password JSON: the CloudFront origin-verification
-///     header value (API, ADR-0159/ADR-0163) and the Gemini and DeepL API
-///     keys (Worker, #597). Each caller reads its own ARN setting once, at
+///     header value (API, ADR-0159/ADR-0163) and the Gemini API key
+///     (Worker and API, #597, ADR-0179). Each caller reads its own ARN setting once, at
 ///     cold start, before the host builds.
 /// </summary>
 public static class SecretArnResolver

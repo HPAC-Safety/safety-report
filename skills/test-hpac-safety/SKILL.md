@@ -78,8 +78,8 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 
 ## External providers
 
-- Example: a DeepL language code. Exercise French to English as well as
-  English to French
+- Example: the language variant a translation request names. Exercise French
+  to English as well as English to French
   ([lesson 0019](../../docs/lessons/0019-a-language-code-the-provider-never-offered.md)).
 - Required phrases are the role phrases.
 

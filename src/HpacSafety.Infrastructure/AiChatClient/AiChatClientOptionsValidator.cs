@@ -3,10 +3,13 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Infrastructure.AiChatClient;
 
 /// <summary>
-///     Refuses a provider configuration that holds a key but could not make a usable
-///     call: an unknown provider, a blank model, or an undefined reasoning level
-///     (REQ-AI-023). Registered with <c>ValidateOnStart</c>, so the host fails before
-///     any report is claimed rather than sending an empty model name.
+///     Refuses a summarization configuration that holds a key but could not make a
+///     usable call: a blank model or an undefined reasoning level (REQ-AI-023).
+///     Registered with <c>ValidateOnStart</c> by <c>AddHpacSafetyAiChatClient</c>, so
+///     the Worker fails before any report is claimed rather than sending an empty model
+///     name. The provider check is <see cref="AiChatProviderOptionsValidator" />, which
+///     every host that holds the key runs; translation has its own model and effort
+///     (<c>TranslationOptions</c>, ADR-0179) and never reads these two.
 /// </summary>
 internal sealed class AiChatClientOptionsValidator : IValidateOptions<AiChatClientOptions>
 {
@@ -23,13 +26,6 @@ internal sealed class AiChatClientOptionsValidator : IValidateOptions<AiChatClie
 		}
 
 		var failures = new List<string>();
-
-		if (!AiChatClientServiceCollectionExtensions.IsKnownProvider(options.Provider))
-		{
-			failures.Add(
-				$"{AiChatClientOptions.SectionName}:Provider must name a registered provider "
-				+ $"({string.Join(", ", AiChatClientServiceCollectionExtensions.KnownProviders)}).");
-		}
 
 		if (string.IsNullOrWhiteSpace(options.Model))
 		{

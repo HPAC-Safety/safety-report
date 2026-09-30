@@ -15,7 +15,7 @@ namespace HpacSafety.Infrastructure.AiChatClient;
 ///     committed. Either way it is never sent to the browser, logged, or
 ///     included in a problem response. Without a key the fail-closed
 ///     <see cref="UnconfiguredAiChatClient" /> is registered and nothing else is
-///     checked; with one, <see cref="AiChatClientOptionsValidator" /> stops the host
+///     checked; with one, the validators stop the host
 ///     at startup unless every other setting is usable.
 /// </remarks>
 public sealed class AiChatClientOptions

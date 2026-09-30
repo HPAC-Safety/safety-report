@@ -249,7 +249,10 @@ contributor who never invokes one is unaffected.
    - One final request names those uploads. The API stores report, exact
      question revisions, answers, files, and outbox work atomically, then
      returns `202` without a model call.
-3. **One model call, only with consent.**
+3. **One model call, only with consent.** This governs the summary call and
+   nothing else; machine translation is a separate port
+   ([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),
+   "Machine translation" below).
    - The Worker owns one versioned prompt and makes exactly one model call per
      summary attempt, only for a report whose reporter consented to
      publication. A report without consent never reaches the model.
@@ -371,6 +374,17 @@ contributor who never invokes one is unaffected.
      [ADR-0057](docs/decisions/ADR-0057-same-repo-pull-requests-translate-in-pr.md)).
 - The Worker's generated pair comes only from its one anonymized model call,
   never a translation provider.
+- **Gemini translates, en-CA ⇄ fr-CA, in every environment and in CI**
+  ([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)):
+  - `ITranslator` is its own call, outside invariant 3. It receives the
+    strings and `locales/terms.json`, and nothing else: no report context, no
+    other answers. It runs for a report with or without publication consent.
+  - It reuses the summary's Gemini key — the ADR-0104 secret in each
+    environment, `GEMINI_API_KEY_DEV` in CI; no other key or secret exists —
+    with its own `Translation:Model` and `Translation:ReasoningEffort`.
+  - With no key it is unavailable in every environment; there is no stand-in.
+  - One versioned prompt, `locales/translation-prompt.v1.md`, serves runtime
+    and CI. A used version is never edited.
 - A reviewer's translation is a draft they confirm. Each saved language records
   whether it was generated, written by a human, or machine-translated
   ([ADR-0108](docs/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)).
@@ -411,6 +425,8 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 - Keep one current versioned prompt. Add a version when behavior changes,
   record the version with each summary, and remove obsolete active-pipeline
   machinery.
+- The one exception is the translation prompt, `locales/translation-prompt.v1.md`,
+  shared by the API, the Worker, and CI; see "Machine translation".
 
 ## Delivery
 

@@ -43,8 +43,9 @@ infrastructure differences.
 - Admin on [`HPAC-Safety/safety-report`](https://github.com/HPAC-Safety/safety-report).
 - The [GitHub CLI](https://cli.github.com/) signed in as that person
   (`gh auth status`).
-- A DeepL API key, for the interface translation workflow
-  ([ADR-0022](../docs/decisions/ADR-0022-translation-provider-is-configuration.md)).
+- A paid, billing-enabled Gemini API key, for the interface translation
+  workflow (the same development key summaries use,
+  [ADR-0179](../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 
 ### 1.1 Merge settings
 
@@ -91,20 +92,21 @@ Repository-level (not environment) settings, read by
 ([ADR-0021](../docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md)).
 
 - [Settings → Secrets and variables → Actions → **Secrets**](https://github.com/HPAC-Safety/safety-report/settings/secrets/actions):
-  - `DEEPL_API_KEY` — the DeepL key. Without it, translation reports what is
+  - `GEMINI_API_KEY_DEV` — the development Gemini key, which the translation
+    workflow also reads ([ADR-0179](../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)). Without it, translation reports what is
     waiting and changes nothing.
   - `TRANSLATION_PR_TOKEN` — a
     [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
     for this repository only, with **Contents: Read and write** and
     **Pull requests: Read and write**, nothing else. Without it, bot commits
     land but checks need a manual re-run. Note its expiry date.
-- **Variables** tab — optional, all unset by default; set only to switch
-  provider:
-  - `TRANSLATION_PROVIDER` (default `deepl`), `TRANSLATION_MODEL`,
-    `TRANSLATION_ENDPOINT`, `TRANSLATION_FORMALITY`;
-  - secret `TRANSLATION_API_KEY` for a non-DeepL provider.
+- **Variables** tab — optional, all unset by default; set only to tune
+  translation:
+  - `TRANSLATION_PROVIDER` (default `gemini`), `TRANSLATION_MODEL` (default
+    `gemini-3.7-flash`), `TRANSLATION_REASONING_EFFORT` (default `low`),
+    `TRANSLATION_ENDPOINT`.
 - Check it worked: `gh secret list --repo HPAC-Safety/safety-report` lists
-  `DEEPL_API_KEY` and `TRANSLATION_PR_TOKEN`.
+  `GEMINI_API_KEY_DEV` and `TRANSLATION_PR_TOKEN`.
 
 ### 1.5 The approvers team
 

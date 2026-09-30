@@ -68,7 +68,7 @@ Core has no runtime package dependency.
 | [`Persistence/Sql/`](../src/HpacSafety.Infrastructure/Persistence/Sql/) | Raw SQL the migrations load: data transforms and every view (ADR-0055, ADR-0116). |
 | [`Persistence/Views/`](../src/HpacSafety.Infrastructure/Persistence/Views/) | Read-only entities for the six views. |
 | [`Storage/`](../src/HpacSafety.Infrastructure/Storage/) | `S3BlobStore`, the one storage adapter: S3 in AWS, RustFS in development (ADR-0096, ADR-0110). |
-| [`Translation/`](../src/HpacSafety.Infrastructure/Translation/) | The DeepL translator behind `ITranslator` (ADR-0022, ADR-0115). |
+| [`Translation/`](../src/HpacSafety.Infrastructure/Translation/) | The Gemini translator behind `ITranslator`, its own model settings, and the prompt and term list it embeds from `locales/` (ADR-0022, ADR-0179). |
 | [`Worker/`](../src/HpacSafety.Infrastructure/Worker/) | `IWorkerNudge` and its Lambda-invoking and no-op implementations, and the `SaveChangesInterceptor` that nudges only when a save queues outbox work (ADR-0123). |
 
 ## HpacSafety.Worker — outbox processing

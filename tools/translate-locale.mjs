@@ -215,34 +215,18 @@ export function termViolations({ english, french = {}, terms = {} }) {
 	return violations
 }
 
-/** DeepL's ceiling on custom instructions per request, and on each one's length. */
-export const MAX_TERM_INSTRUCTIONS = 10
-export const MAX_TERM_INSTRUCTION_LENGTH = 300
-
 /**
  * One plain-language instruction per term, for the translator to follow.
  *
- * The same sentence goes to DeepL (as `custom_instructions`) and to a
- * chat-completions model (in its system prompt), so both providers are held
- * to exactly the wording the check enforces.
- *
- * @throws when there are more terms, or a longer instruction, than DeepL
- *   accepts. Silently dropping one would leave that term unprotected.
+ * The .NET translator builds the identical sentence from the same file
+ * (`TranslationPrompt.TermInstructions`), and both send it in the one translation prompt, so
+ * runtime and CI are held to exactly the wording the check enforces. The
+ * sentence states the term once and the prompt applies it in both directions.
  */
 export function termInstructions(terms = {}) {
-	const entries = termEntries(terms)
-	if (entries.length > MAX_TERM_INSTRUCTIONS) {
-		throw new Error(`terms.json has ${entries.length} terms; the translator accepts at most ${MAX_TERM_INSTRUCTIONS} instructions per request.`)
-	}
-
-	return entries.map(({ term, french, forbidden }) => {
-		const instruction =
-			`Translate the English "${term}" and its forms as "${french}", conjugated or as a noun to fit; ` +
-			`never use ${forbidden.map((form) => `"${form}…"`).join(' or ')}.`
-		if (instruction.length > MAX_TERM_INSTRUCTION_LENGTH) {
-			throw new Error(`The instruction for term '${term}' is ${instruction.length} characters; the translator accepts at most ${MAX_TERM_INSTRUCTION_LENGTH}.`)
-		}
-		return instruction
+	return termEntries(terms).map(({ term, french, forbidden }) => {
+		const never = forbidden.map((form) => `"${form}…"`).join(' or ')
+		return `"${term}" (English, in any form) is "${french}" in French, conjugated or as a noun to fit. Never ${never} in French.`
 	})
 }
 
@@ -690,10 +674,10 @@ async function main() {
 			translator = createTranslator(configFromEnv())
 		} catch (error) {
 			if (!(error instanceof TranslatorNotConfiguredError)) throw error
-			// Deliberately not a failure. The provider is decided — DeepL, in
-			// ADR-0022 — but the credential is added by a human in repository
-			// settings, and until it exists this job reports what it would have
-			// done and changes nothing. A red build on every push to main while
+			// Deliberately not a failure. The provider is decided — Gemini, in
+			// ADR-0179 — but the credential is a repository secret, and until
+			// this job can read it, it reports what it would have done and
+			// changes nothing. A red build on every push to main while
 			// someone gets round to adding a secret would just get muted, and
 			// then the next real failure is invisible too.
 			console.log(`::warning::${error.message}`)

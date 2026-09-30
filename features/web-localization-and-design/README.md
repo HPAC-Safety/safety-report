@@ -54,23 +54,46 @@ not be machine-translated.
 single words instead: for each English term, the French it must become and
 the forms it must never become. `upload` is *téléverser*, never *télécharger*,
 which Canadian French reads as download. The CI translator is told every term
-with each request (REQ-WLD-027). Verification fails on any French value, from
+with each request, and so is the runtime translator (REQ-WLD-027,
+REQ-WLD-035). Verification fails on any French value, from
 a machine or a person, that uses a forbidden form where the English has the
 term (REQ-WLD-026). A term is a correctness rule, not a provenance rule: a
 hand-edited value is recorded as a correction, but it still has to say the
 term correctly.
 
-## Which English a machine translation produces
+## Machine translation: Gemini, en-CA and fr-CA
 
-DeepL has no Canadian English. It rejects `EN-CA` with a 400, and plain `EN`
-is a deprecated alias for American English. The English variant is therefore
-configuration: `Translation:EnglishTarget` in both the API's and the Worker's
-`appsettings.json`, because both call DeepL. The Worker translates answers and
-comments, and the API serves authoring and reviewers' drafts. Today both are
-`EN-US`. `EN-GB` is the only other accepted value, and anything else stops the
-process at startup, so a bad value cannot become a stream of failed
-translations (REQ-WLD-028, REQ-WLD-029). French is always `FR-CA`, which
-DeepL does offer.
+Gemini does every machine translation, at runtime and in CI, between
+`en-CA` and `fr-CA`
+([ADR-0179](../../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
+French to English is written in Canadian spelling (colour, centre); English to
+French is Canadian French. The prompt names the variant, so there is no
+language code to configure and no `EnglishTarget` setting
+(REQ-WLD-033, REQ-WLD-034).
+
+- **A separate call.** `ITranslator` is not the summary call and is outside
+  the "one model call, only with consent" rule. It receives the strings and
+  the term list and nothing else, and comes back one translation per string,
+  in order (REQ-WLD-037). A reply with the wrong count, an empty translation, a
+  sentence instead of the JSON, or a changed `{placeholder}` or markup tag is
+  refused, and the failure carries none of the reply
+  (REQ-WLD-038, REQ-WLD-039).
+- **The term list goes with every request**, runtime and CI: the API's
+  authoring and reviewer drafts, the Worker's answers, labels, and comments,
+  and `tools/translator.mjs` (REQ-WLD-027, REQ-WLD-035).
+- **One versioned prompt**, `locales/translation-prompt.v1.md`, read by both
+  runtimes. A behavior change is a new version file.
+- **The summary's key, its own model.** No new key or secret exists. The
+  `Translation` settings hold only `Model` (`gemini-3.7-flash`) and
+  `ReasoningEffort` (`low`), tuned apart from summaries (REQ-WLD-040,
+  REQ-WLD-041).
+- **No key, no translation**, in every environment, Development included.
+  There is no stand-in that echoes the text (REQ-WLD-036).
+
+Not built: a second translation provider of any kind; a per-value
+record of the model or prompt version (a value keeps only its `auto` /
+`human` / `choice` source); re-translating existing values when the prompt or
+model changes; a language code chosen by configuration.
 
 ## Visual system
 

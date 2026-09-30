@@ -15,8 +15,8 @@ description: Keep HPAC Safety application chrome, database questions, validation
   `i18n-translate.yml` runs `translate-locale.mjs --generate` (ADR-0021,
   ADR-0057). Correcting an existing French value by hand is allowed: it is
   recorded as a human correction and never machine-translated again
-  (ADR-0070). A developer's `.env` holds a `DEEPL_API_KEY` for the API and
-  Worker (ADR-0109); no local tool uses it to write the catalogue.
+  (ADR-0070). A developer's `.env` holds a `GEMINI_API_KEY` for the API and
+  Worker (ADR-0109, ADR-0179); no local tool uses it to write the catalogue.
 - `npm run dev` / `npm run build` in `src/web` first run
   `tools/stub-missing-translations.mjs`: a key missing from either file gets
   the other's text prefixed `#` (`#Contact`), visibly untranslated instead of

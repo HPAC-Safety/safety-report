@@ -97,7 +97,7 @@ every skill, agent, and document against the accepted ADRs and the code on
 | HPAC conventions and delivery/testing workflow | Retained with canonical spec links and target test commands. |
 | Incident domain model | Complete question revisions, pair summaries, the consent projections (ADR-0117, ADR-0119), and soft deletion with its named exceptions. |
 | Anonymize HPAC reports | Collapsed to one concise skill covering the content/private partition, role replacement, one bilingual response, and human approval. Scrub/auditor/translator mechanics were removed. |
-| Localization | UI catalogues, administrator-authored bilingual questions, and the off-path machine translations the ADRs allow (ADR-0062, ADR-0108, ADR-0112, ADR-0114). |
+| Localization | UI catalogues, administrator-authored bilingual questions, and the off-path machine translations the ADRs allow (ADR-0062, ADR-0108, ADR-0112, ADR-0114), all by Gemini between en-CA and fr-CA (ADR-0179). |
 | Persistence | Rewritten for the target schema and managed encryption; application AES guidance was removed. |
 | Media handling | Uploads validated on attach and claimed by the JSON submission (ADR-0096), image and MP4 video derivatives (ADR-0122), and documents kept unchanged and published only under media consent (ADR-0119). |
 | Web UI | React/TypeScript/Vite, Tailwind, and accessibility rules, with product behavior delegated to this specification. |

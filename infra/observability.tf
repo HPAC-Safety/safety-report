@@ -151,7 +151,7 @@ resource "aws_cloudwatch_metric_alarm" "worker_errors" {
 # for the same underlying signal. Approved as is (#467, 2026-09-28).
 resource "aws_cloudwatch_metric_alarm" "nat_unhealthy" {
   alarm_name        = "${local.name}-nat-unhealthy"
-  alarm_description = "NAT instance down: outbound calls to the identity provider, Gemini, and DeepL are failing."
+  alarm_description = "NAT instance down: outbound calls to the identity provider and Gemini are failing."
 
   namespace   = "AWS/AutoScaling"
   metric_name = "GroupInServiceInstances"

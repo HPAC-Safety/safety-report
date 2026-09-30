@@ -152,8 +152,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Sending a document, an attachment, or extracted document text to the model.
 - Translating report prose with the summarization model, or as a stage of
   summarization. The one call returns both languages. Giving a marked free-text
-  answer its second language is a separate Worker job through DeepL
-  ([ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+  answer its second language is a separate Worker job through the Gemini
+  translator (`ITranslator`, its own call and outside this one-call rule,
+  [ADR-0179](../../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md);
+  [ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
 - Per-sentence or per-field redaction output. The result is one bilingual pair.

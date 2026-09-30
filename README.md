@@ -91,8 +91,10 @@ one report-flow diagram.
 Summarization makes one model call, with no second call, PII-audit call, or
 translation call. A deterministic marking pass runs before it
 ([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
-Answer and comment translation is a separate DeepL step in the Worker
-([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
+Answer and comment translation is a separate Gemini translation call in the
+Worker, outside the summary's one call
+([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),
+[ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
 [ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
 The system has no specialized aircraft processing, application-managed field
 encryption, email-notification pipeline, server-side draft, or external
@@ -150,18 +152,18 @@ To also render the graphify knowledge graph into a local Obsidian vault at
 ./init-dev.sh --obsidian
 ```
 
-`./init-dev.sh` also asks for the two private provider keys local development
-needs — `DEEPL_API_KEY` (translation) and `GEMINI_API_KEY` (summaries) — and
-writes them to a `.env` file at the root of the primary checkout. That file is
+`./init-dev.sh` also asks for the one private provider key local development
+needs — `GEMINI_API_KEY`, for summaries and every machine translation
+([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)) — and
+writes it to a `.env` file at the root of the primary checkout. That file is
 gitignored and never committed. `./dev-up.sh` passes it to the API and Worker
 containers, from the primary checkout and from every worktree:
 
 ```bash
-DEEPL_API_KEY=...
 GEMINI_API_KEY=...
 ```
 
-Without them, translation is unavailable and summaries fail. There is no
+Without it, translation is unavailable and summaries fail. There is no
 stand-in ([ADR-0109](docs/decisions/ADR-0109-no-translation-stand-in-in-any-environment.md)).
 
 Common verification commands:

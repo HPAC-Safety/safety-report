@@ -2,7 +2,7 @@
 title: The English machine-translation target is configuration
 description: DeepL has no Canadian English, so the English it writes is set by Translation:EnglishTarget in the API's and the Worker's appsettings.json, EN-US today, and startup fails on anything DeepL does not offer.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-24
 decision-makers: Chase Florell
 keywords: translation, DeepL, English, EN-US, EN-GB, configuration, ADR-0022
@@ -10,9 +10,11 @@ keywords: translation, DeepL, English, EN-US, EN-GB, configuration, ADR-0022
 
 # ADR-0115 — The English machine-translation target is configuration
 
-**Status:** Accepted. Amends
-[ADR-0022](ADR-0022-translation-provider-is-configuration.md) on one point:
-the English target code is no longer fixed in the adapter.
+**Status:** Superseded by
+[ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md). Gemini writes Canadian English, so
+the English target is no longer configuration and `Translation:EnglishTarget`
+is gone. REQ-WLD-028 and REQ-WLD-029 are deleted. What follows is the record of
+the DeepL-era stopgap.
 
 ## Context
 

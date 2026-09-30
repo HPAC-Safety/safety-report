@@ -36,9 +36,10 @@ public sealed record AiChatRequest(string Model,
 ///     (ADR-0104).
 /// </summary>
 /// <remarks>
-///     This is a transport-level port. The one caller in this codebase is the Worker's
-///     summarizer (see <c>ISummarizer</c>), which owns the prompt, the request content,
-///     and strict validation of the response — this interface only carries a request to
+///     This is a transport-level port. It has two callers, each owning its prompt, its
+///     request content, and strict validation of the response: the Worker's summarizer
+///     (see <c>ISummarizer</c>), and the translator (see <c>ITranslator</c>, ADR-0179),
+///     a separate call that is sent only the strings to translate. This interface only carries a request to
 ///     a provider and returns whatever text it answered with. A concretion leaves the
 ///     sampling temperature at the provider's default.
 /// </remarks>

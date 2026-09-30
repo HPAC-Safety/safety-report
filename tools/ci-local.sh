@@ -258,7 +258,7 @@ WORK=$(mktemp -d "${TMPDIR:-/tmp}/hpac-ci-local.XXXXXX") || die "mktemp failed"
 ISSUE=$(printf '%s' "$BRANCH" | sed -nE 's#^issue-([0-9]+).*#\1#p')
 [ -n "$ISSUE" ] || ISSUE=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-24 | sed -E 's/-+$//')
 [ -n "$ISSUE" ] || ISSUE=run
-RUN_ID=$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')
+RUN_ID=$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')
 GROUP="hpac-ci-$ISSUE-$RUN_ID"
 RUN_TAG="$GROUP"
 LABELS="--label com.docker.compose.project=$GROUP --label hpac.ci.pid=$$"

@@ -254,6 +254,54 @@ An operator requeues poisoned outbox work — *Reqnroll, Covered*
 
 A poison-requeue payload naming a time window only requeues messages poisoned within it — *Reqnroll, Covered*
 
+### REQ-DOM-018
+
+The database refuses a change to what a reporter answered — *Reqnroll, Covered*
+
+### REQ-DOM-019
+
+An answer's second language and its deletion stamp are written once — *Reqnroll, Covered*
+
+### REQ-DOM-020
+
+The database refuses a change to what an attachment arrived as — *Reqnroll, Covered*
+
+### REQ-DOM-021
+
+What the Worker and a reviewer record about an attachment stays writable — *Reqnroll, Covered*
+
+### REQ-DOM-022
+
+The database refuses a change to a report's language, submission time, or consent — *Reqnroll, Covered*
+
+### REQ-DOM-023
+
+A report's review state and its deletion stamp stay writable — *Reqnroll, Covered*
+
+### REQ-DOM-024
+
+The database refuses a change to a saved summary revision — *Reqnroll, Covered*
+
+### REQ-DOM-025
+
+A revision's approval may be set and cleared, and it may be stamped deleted — *Reqnroll, Covered*
+
+### REQ-DOM-026
+
+A revision's deletion stamp is written once — *Reqnroll, Covered*
+
+### REQ-DOM-027
+
+The database never deletes a report, an answer, a file, or a summary revision — *Reqnroll, Covered*
+
+### REQ-DOM-028
+
+A statement that leaves a locked column as it was is not a change — *Reqnroll, Covered*
+
+### REQ-DOM-029
+
+A migration that must change a locked column disables the trigger inside its own transaction — *Reqnroll, Covered*
+
 ## Claims: media
 
 ### REQ-MED-001
@@ -2808,6 +2856,22 @@ data-and-persistence.md — verified by `REQ-MOD-031`, `REQ-MOD-036`
 ### CON-DP-012
 
 data-and-persistence.md — verified by none — a startup property no running scenario observes; `MigrationRunner` and its tests are its check
+
+### CON-DP-013
+
+data-and-persistence.md — verified by `REQ-DOM-018`, `REQ-DOM-019`, `REQ-DOM-020`, `REQ-DOM-021`, `REQ-DOM-022`, `REQ-DOM-023`, `REQ-DOM-028`, `REQ-DOM-007`
+
+### CON-DP-014
+
+data-and-persistence.md — verified by `REQ-DOM-024`, `REQ-DOM-025`, `REQ-DOM-026`
+
+### CON-DP-015
+
+data-and-persistence.md — verified by `REQ-DOM-027`
+
+### CON-DP-016
+
+data-and-persistence.md — verified by `REQ-DOM-029`
 
 ### CON-IF-001
 

@@ -157,7 +157,8 @@ public sealed class PublicSearchSteps
 		// invariant-violation pattern PublicReportFeedSteps uses, so the row
 		// still carries the fixed matching summary text.
 		var reportId = await BootedReports.Seed(ReportStatus.Published, true);
-		await Violate($"UPDATE reports SET consent_publish = NULL WHERE id = {reportId}");
+		// A locked column: written the way a migration would (ADR-0178).
+		(await PastTheImmutabilityTriggers.Write("reports", $"UPDATE reports SET consent_publish = NULL WHERE id = {reportId}")).ShouldBe(1);
 		_reportIdsByLabel["report"] = reportId;
 	}
 

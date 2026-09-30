@@ -178,3 +178,180 @@ Scenario: A poison-requeue payload naming a time window only requeues messages p
   When the Worker is invoked with a requeue-poison payload naming that window
   Then only the message poisoned within the window is requeued
   And the message poisoned before the window is left poisoned
+
+@REQ-DOM-018
+Scenario Outline: The database refuses a change to what a reporter answered
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a report_answers row
+  Then Postgres refuses it, naming <column>
+  And the row is as it was
+
+Examples:
+  | column                              | assignment                                   |
+  | report_answers.id                   | id = 'xxxxxxxxxx1'                           |
+  | report_answers.report_id            | report_id = 'xxxxxxxxxx1'                    |
+  | report_answers.question_id          | question_id = 'xxxxxxxxxx1'                  |
+  | report_answers.question_revision_id | question_revision_id = 'xxxxxxxxxx1'         |
+  | report_answers.question_key         | question_key = 'another_key'                 |
+  | report_answers.is_private           | is_private = NOT is_private                  |
+  | report_answers.value                | value = 'A different account.'               |
+  | report_answers.value                | value = NULL                                 |
+  | report_answers.value_boolean        | value_boolean = true                         |
+  | report_answers.choice_id            | choice_id = 'xxxxxxxxxx1'                    |
+  | report_answers.locale               | locale = 'fr-CA'                             |
+  | report_answers.translation_mode     | translation_mode = 'machine'                 |
+  | report_answers.answered_at          | answered_at = answered_at + interval '1 day' |
+
+@REQ-DOM-019
+Scenario Outline: An answer's second language and its deletion stamp are written once
+  Given a submitted report with answers, a file, and a summary
+  And a statement has set <first> on a report_answers row
+  When a statement sets <second> on that row
+  Then Postgres refuses it, naming <column>
+  And the row is as it was
+
+Examples:
+  | column                            | first                               | second                                   |
+  | report_answers.translated_value   | translated_value = 'First.'         | translated_value = 'Second.'             |
+  | report_answers.translated_value   | translated_value = 'First.'         | translated_value = NULL                  |
+  | report_answers.translation_source | translation_source = 'auto'         | translation_source = 'human'             |
+  | report_answers.translation_source | translation_source = 'auto'         | translation_source = NULL                |
+  | report_answers.deleted            | deleted = now()                     | deleted = NULL                           |
+  | report_answers.deleted            | deleted = now()                     | deleted = now() + interval '1 day'       |
+
+@REQ-DOM-020
+Scenario Outline: The database refuses a change to what an attachment arrived as
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a report_files row
+  Then Postgres refuses it, naming <column>
+  And the row is as it was
+
+Examples:
+  | column                          | assignment                                   |
+  | report_files.id                 | id = 'xxxxxxxxxx1'                           |
+  | report_files.report_id          | report_id = 'xxxxxxxxxx1'                    |
+  | report_files.report_answer_id   | report_answer_id = 'xxxxxxxxxx1'             |
+  | report_files.kind               | kind = 'video'                               |
+  | report_files.blob_key           | blob_key = 'another/original/key'            |
+  | report_files.original_file_name | original_file_name = 'another.jpg'           |
+  | report_files.content_type       | content_type = 'image/png'                   |
+  | report_files.byte_size          | byte_size = byte_size + 1                    |
+  | report_files.uploaded_at        | uploaded_at = uploaded_at + interval '1 day' |
+
+@REQ-DOM-021
+Scenario Outline: What the Worker and a reviewer record about an attachment stays writable
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a report_files row
+  Then the write succeeds
+  And the row now reads differently
+
+Examples:
+  | assignment                                                            |
+  | stripped_blob_key = 'report/stripped/other', exif_stripped_at = now() |
+  | exif_stripped_at = NULL, stripped_blob_key = NULL                     |
+  | processing_error_code = 'unreadable'                                  |
+  | hidden_at = now(), hidden_by_subject = 'synthetic-officer'            |
+  | deleted = now()                                                       |
+
+@REQ-DOM-022
+Scenario Outline: The database refuses a change to a report's language, submission time, or consent
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a reports row
+  Then Postgres refuses it, naming <column>
+  And the row is as it was
+
+Examples:
+  | column                    | assignment                                     |
+  | reports.id                | id = 'xxxxxxxxxx1'                             |
+  | reports.language          | language = 'fr-CA'                             |
+  | reports.submitted_at      | submitted_at = submitted_at + interval '1 day' |
+  | reports.consent_publish   | consent_publish = NOT consent_publish          |
+  | reports.consent_publish   | consent_publish = NULL                         |
+  | reports.consent_media     | consent_media = true                           |
+  | reports.consent_documents | consent_documents = true                       |
+
+@REQ-DOM-023
+Scenario Outline: A report's review state and its deletion stamp stay writable
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a reports row
+  Then the write succeeds
+  And the row now reads differently
+
+Examples:
+  | assignment                          |
+  | status = 'unpublished'              |
+  | published_at = now()                |
+  | unpublish_note = 'Out of scope.'    |
+  | summary_error = 'Provider was down' |
+  | deleted = now()                     |
+
+@REQ-DOM-024
+Scenario Outline: The database refuses a change to a saved summary revision
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a summary_revisions row
+  Then Postgres refuses it, naming <column>
+  And the row is as it was
+
+Examples:
+  | column                             | assignment                                 |
+  | summary_revisions.id               | id = 'xxxxxxxxxx1'                         |
+  | summary_revisions.summary_id       | summary_id = 'xxxxxxxxxx1'                 |
+  | summary_revisions.sequence         | sequence = sequence + 1                    |
+  | summary_revisions.ai_summary_en    | ai_summary_en = 'Rewritten.'               |
+  | summary_revisions.ai_summary_fr    | ai_summary_fr = 'Réécrit.'                 |
+  | summary_revisions.source_en        | source_en = 'human'                        |
+  | summary_revisions.source_fr        | source_fr = 'human'                        |
+  | summary_revisions.model            | model = 'another-model'                    |
+  | summary_revisions.prompt_version   | prompt_version = 'another.v9'              |
+  | summary_revisions.author_subject   | author_subject = 'someone-else'            |
+  | summary_revisions.created_at       | created_at = created_at + interval '1 day' |
+  | summary_revisions.restored_from_id | restored_from_id = 'xxxxxxxxxx1'           |
+
+@REQ-DOM-025
+Scenario Outline: A revision's approval may be set and cleared, and it may be stamped deleted
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets <assignment> on a summary_revisions row
+  Then the write succeeds
+  And the row now reads differently
+
+Examples:
+  | assignment                                                    |
+  | approved_at = NULL, approved_by_subject = NULL                |
+  | approved_at = now(), approved_by_subject = 'another-approver' |
+  | deleted = now()                                               |
+
+@REQ-DOM-026
+Scenario: A revision's deletion stamp is written once
+  Given a submitted report with answers, a file, and a summary
+  And a statement has set deleted = now() on a summary_revisions row
+  When a statement sets deleted = NULL on that row
+  Then Postgres refuses it, naming summary_revisions.deleted
+  And the row is as it was
+
+@REQ-DOM-027
+Scenario Outline: The database never deletes a report, an answer, a file, or a summary revision
+  Given a submitted report with answers, a file, and a summary
+  When a statement deletes a <table> row
+  Then Postgres refuses it, saying <table> rows are never deleted
+  And the row is as it was
+
+Examples:
+  | table             |
+  | reports           |
+  | report_answers    |
+  | report_files      |
+  | summary_revisions |
+
+@REQ-DOM-028
+Scenario: A statement that leaves a locked column as it was is not a change
+  Given a submitted report with answers, a file, and a summary
+  When a statement sets language = language, submitted_at = submitted_at, status = 'unpublished' on a reports row
+  Then the write succeeds
+
+@REQ-DOM-029
+Scenario: A migration that must change a locked column disables the trigger inside its own transaction
+  Given a submitted report with answers, a file, and a summary
+  When a migration disables the reports trigger, sets language = 'fr-CA', and enables it again in one transaction
+  Then the write succeeds
+  And the report's language is fr-CA
+  And a later statement setting language = 'en-CA' on a reports row is refused, naming reports.language

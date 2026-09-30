@@ -111,6 +111,57 @@ equivalent explicit unfiltered query). Database cascades do not implement
 soft-delete timestamps because all dependent rows must receive one application
 timestamp and the audit entry must share the transaction.
 
+### Immutability the database enforces
+
+Column-scoped `BEFORE UPDATE OR DELETE` triggers make PostgreSQL refuse a
+rewrite the domain already forbids
+([ADR-0178](decisions/ADR-0178-the-database-refuses-changes-to-the-reporters-account-and-to-summary-revisions.md)).
+A refusal is `SQLSTATE 23000`, names the table and column, and never a value.
+An `UPDATE` that names a locked column but leaves its value as it was is not a
+change and passes.
+
+**CON-DP-013** `report_answers`, `report_files`, and `reports` refuse an update
+to the reporter's account; every other column stays writable.
+*Verified by: REQ-DOM-018, REQ-DOM-019, REQ-DOM-020, REQ-DOM-021, REQ-DOM-022,
+REQ-DOM-023, REQ-DOM-028, REQ-DOM-007.*
+
+- `report_answers`: every reporter column is locked — `id`, `report_id`,
+  `question_id`, `question_revision_id`, `question_key`, `is_private`, `value`,
+  `value_boolean`, `choice_id`, `locale`, `translation_mode`, and
+  `answered_at`. `translated_value` and `translation_source` change only from
+  null to a value, once (ADR-0174), and `deleted` only from null to a value.
+- `report_files`: what arrived is locked — `id`, `report_id`,
+  `report_answer_id`, `kind`, `blob_key`, `original_file_name`, `content_type`,
+  `byte_size`, and `uploaded_at`. `stripped_blob_key`, `exif_stripped_at`,
+  `validated_at`, `processing_error_code`, `hidden_at`, `hidden_by_subject`, and
+  `deleted` stay writable.
+- `reports`: `id`, `language`, `submitted_at`, `consent_publish`,
+  `consent_media`, and `consent_documents` are locked. `status`, `published_at`,
+  `unpublish_note`, `summary_error`, and `deleted` stay writable.
+- A report's soft-delete cascade stamps `deleted` on every owned row and
+  commits under these triggers.
+
+**CON-DP-014** `summary_revisions` refuses an update to a saved revision.
+*Verified by: REQ-DOM-024, REQ-DOM-025, REQ-DOM-026.*
+
+- Locked: `id`, `summary_id`, `sequence`, `ai_summary_en`, `ai_summary_fr`,
+  `source_en`, `source_fr`, `model`, `prompt_version`, `author_subject`,
+  `created_at`, and `restored_from_id`.
+- `approved_at` and `approved_by_subject` may be set, and cleared back to null,
+  because Unpublish clears the latest revision's approval (ADR-0177). `deleted`
+  changes only from null to a value.
+
+**CON-DP-015** No row of `reports`, `report_answers`, `report_files`, or
+`summary_revisions` is ever deleted: the database refuses `DELETE`. Retirement
+is the `deleted` stamp.
+*Verified by: REQ-DOM-027.*
+
+**CON-DP-016** A migration that must change a locked column disables the table's
+trigger inside its own transaction and enables it again before the transaction
+ends, and needs its own ADR argument. There is no session setting, role, or
+runtime flag that bypasses a trigger.
+*Verified by: REQ-DOM-029.*
+
 ## Write transactions
 
 **CON-DP-008** Final submission writes the report, answer snapshot, file metadata, and all

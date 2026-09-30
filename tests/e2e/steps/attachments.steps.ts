@@ -282,7 +282,7 @@ Given("a file on the current page is still uploading", async ({ page }) => {
 	await expect(page.getByRole("progressbar", { name: "Uploading launch-site.png" })).toBeVisible()
 	// The bar shows while the upload is still being minted. Wait until its PUT
 	// is actually held at storage, or a later release() finds nothing to resume
-	// and the PUT, arriving afterwards, is held for good (issue no. 679).
+	// and the PUT, arriving afterwards, is held for good (issue no. 672).
 	await expect.poll(() => stub.puts.length).toBe(1)
 })
 

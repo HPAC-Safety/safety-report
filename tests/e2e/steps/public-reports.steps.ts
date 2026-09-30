@@ -239,7 +239,7 @@ When("a visitor scrolls to the end of the list", async ({ page }) => {
 	// Scroll the window to the bottom, as a visitor does. A short synthetic list
 	// may already sit within the viewport and auto-load first, unmounting the
 	// sentinel; waiting on the sentinel itself would then wait out the whole
-	// test timeout for an element that never returns (issue no. 679).
+	// test timeout for an element that never returns (issue no. 672).
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 })
 

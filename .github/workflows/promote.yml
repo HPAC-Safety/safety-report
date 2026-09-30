@@ -118,6 +118,6 @@ jobs:
       tag: ${{ needs.locate.outputs.tag }}
       sha: ${{ needs.locate.outputs.sha }}
       artifacts_run_id: ${{ needs.locate.outputs.run_id }}
-    # `inherit`: GEMINI_API_KEY is an environment secret,
+    # `inherit`: GEMINI_API_KEY and DEEPL_API_KEY are environment secrets,
     # resolved inside deploy-environment.yml's own job (see release.yml).
     secrets: inherit

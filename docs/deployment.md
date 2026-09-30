@@ -97,7 +97,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
    from an image ECR does not yet hold, #623), untaints any resource carrying
    `prevent_destroy` that a failed apply left tainted (#640), runs
    `terraform apply -var-file=infra/staging.tfvars`, re-plans and fails the job
-   on drift, replaces the NAT instance, refreshes `GEMINI_API_KEY` in
+   on drift, replaces the NAT instance, refreshes `GEMINI_API_KEY`/`DEEPL_API_KEY` in
    staging's Secrets Manager, updates both Lambda functions to the pushed
    image digests, syncs the web bundle to the site bucket, invalidates
    CloudFront, and smoke-tests `/api/health`. The release ends there: it
@@ -161,7 +161,7 @@ Set once per account by following [`infra/SETUP.md`](../infra/SETUP.md)
 | `AWS_DEPLOY_ROLE_ARN` | variable | `hpac-safety-staging` / `hpac-safety-production` environment | `release.yml` → `deploy-environment.yml` (OIDC role assumed by the deploy job) |
 | `TF_STATE_BUCKET` | variable | `hpac-safety-staging` / `hpac-safety-production` environment | same — Terraform backend bucket |
 | `AWS_ACCOUNT_ID` | variable | `hpac-safety-staging` / `hpac-safety-production` environment | same — `require-config` only; not otherwise read by the workflow |
-| `GEMINI_API_KEY` | secret | `hpac-safety-staging` / `hpac-safety-production` environment | same — copied into that account's Secrets Manager on every release, never logged |
+| `GEMINI_API_KEY`, `DEEPL_API_KEY` | secret | `hpac-safety-staging` / `hpac-safety-production` environment | same — copied into that account's Secrets Manager on every release, never logged |
 | `AWS_PLAN_ROLE_ARN_STAGING`, `AWS_PLAN_ROLE_ARN_PRODUCTION` | variable | repository | `terraform.yml`'s `plan` job — read-only OIDC role per account, one matrix leg each |
 | `TF_STATE_BUCKET_STAGING`, `TF_STATE_BUCKET_PRODUCTION` | variable | repository | same — Terraform backend bucket per account, read-only |
 
@@ -196,7 +196,7 @@ request, not by #464 or #591 — `infra/bootstrap.sh` was extended in this pull
 request to print it.
 
 Every step that reads an AWS resource name — the Lambda function names, the
-site and uploads buckets, the CloudFront distribution, the NAT instance's Auto Scaling group, the Gemini secret id — comes
+site and uploads buckets, the CloudFront distribution, the NAT instance's Auto Scaling group, the Gemini/DeepL secret ids — comes
 from `terraform output`, never a GitHub variable, so `infra/` stays the one
 place those names are decided: `deploy_variables`, and the standalone
 outputs `nat_autoscaling_group_arn`, `secret_entries`, `site_urls`, and
@@ -258,7 +258,7 @@ real deploy, per issue #30's acceptance criteria.
 | RDS automated backup storage | ~US$0 (1-day retention, within the free allowance) | ~US$1–2 (7-day retention) | Backup storage beyond the free allowance equal to the database's own size |
 | NAT instance (`t4g.nano`) | ~US$3 | ~US$3 | On-demand instance-hour rate × 730 h |
 | NAT instance's Elastic IP | ~US$4 | ~US$4 | A public IPv4 address is billed hourly whether or not attached |
-| Secrets Manager (Gemini, origin-verify; the RDS master password is billed separately) | ~US$0.80 | ~US$0.80 | US$0.40/secret/month × 2 |
+| Secrets Manager (Gemini, DeepL, origin-verify; the RDS master password is billed separately) | ~US$1.20 | ~US$1.20 | US$0.40/secret/month × 3 |
 | Lambda (API + Worker) | ~US$0–1 | ~US$1–3 | Dozens of reports a year; well within the perpetual free tier's request and compute allowances outside a burst of video remuxing |
 | S3 (site + uploads) | <US$1 | ~US$1–3 | Storage plus PUT/GET requests; grows with attachment volume |
 | CloudFront | <US$1 | ~US$1–2 | PriceClass_100, low request volume |

@@ -51,6 +51,8 @@ on:
       # that a same-named secret is passed through at all.
       GEMINI_API_KEY:
         required: true
+      DEEPL_API_KEY:
+        required: true
 
 permissions:
   contents: read
@@ -82,6 +84,7 @@ jobs:
         with:
           secrets: |
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            DEEPL_API_KEY=${{ secrets.DEEPL_API_KEY }}
           variables: |
             AWS_DEPLOY_ROLE_ARN=${{ vars.AWS_DEPLOY_ROLE_ARN }}
             TF_STATE_BUCKET=${{ vars.TF_STATE_BUCKET }}
@@ -303,16 +306,18 @@ jobs:
 
       # secrets.tf's `secret_entries` output is one map holding every entry
       # Terraform created (issue #597 covers the Lambdas reading each by ARN
-      # at startup — this step only ever supplies the vendor key's value,
-      # never sets anything on either function). One key: Gemini serves the
-      # summary call and every translation (ADR-0179).
+      # at startup — this step only ever supplies the vendor keys' values,
+      # never sets anything on either function).
       - name: Copy vendor keys into Secrets Manager
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
         run: |
           set -euo pipefail
           gemini_secret_id=$(terraform -chdir=infra output -json secret_entries | jq -r '.gemini_api_key')
+          deepl_secret_id=$(terraform -chdir=infra output -json secret_entries | jq -r '.deepl_api_key')
           aws secretsmanager put-secret-value --secret-id "$gemini_secret_id" --secret-string "$GEMINI_API_KEY" >/dev/null
+          aws secretsmanager put-secret-value --secret-id "$deepl_secret_id" --secret-string "$DEEPL_API_KEY" >/dev/null
           echo "Vendor keys refreshed in Secrets Manager. Values are never echoed."
 
       # The temporary interim issuer's one signing key (issue #648, ADR-0172,

@@ -202,8 +202,8 @@ jobs:
       state_key: hpac-safety/staging.tfstate
       tag: ${{ needs.release.outputs.tag }}
       sha: ${{ needs.build.outputs.sha }}
-    # `inherit`, not a named list: GEMINI_API_KEY is an
-    # environment secret (H4), one value per environment under the same
+    # `inherit`, not a named list: GEMINI_API_KEY and DEEPL_API_KEY are
+    # environment secrets (H4), one value per environment under the same
     # name, and only resolve to the right one inside deploy-environment.yml's
     # own job, which sets `environment: ${{ inputs.environment_name }}`.
     # Naming them here would resolve against *this* job's (non-)environment

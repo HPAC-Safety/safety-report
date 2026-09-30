@@ -23,6 +23,12 @@ function hostnameIn(text: string): string | undefined {
 	return text.match(/visiting ([\w.-]+)/)?.[1]
 }
 
+// playwright.config.ts sets E2E_PORT before this file is imported, either to
+// the caller's pinned value or to a free port it picked itself (#675) — never
+// a fixed default, so a hostname navigation here lands on the same port
+// baseURL and webServer use.
+const e2ePort = process.env.E2E_PORT
+
 Given(/^a visitor has ((?:an explicit stored language choice|no stored choice).+)$/, async ({}, signal: string) => {
 	const hostname = hostnameIn(signal)
 	if (signal.startsWith("an explicit stored language choice of")) {
@@ -48,11 +54,11 @@ When("the page loads", async ({ page, context }) => {
 		},
 		[storedLocale ?? null, browserLanguages ?? null] as const,
 	)
-	await page.goto(hostname ? `http://${hostname}:4173/` : "/")
+	await page.goto(hostname ? `http://${hostname}:${e2ePort}/` : "/")
 })
 
 Given(/^a visitor loads the page at ([\w.-]+)$/, async ({ page }, hostname: string) => {
-	await page.goto(`http://${hostname}:4173/`)
+	await page.goto(`http://${hostname}:${e2ePort}/`)
 })
 
 Then(/^the browser stays on ([\w.-]+)$/, async ({ page }, hostname: string) => {

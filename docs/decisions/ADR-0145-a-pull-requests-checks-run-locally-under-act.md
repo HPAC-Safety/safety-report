@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-26
 decision-makers: Chase Florell
-keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login, traceability matrix, pending translation, coverage parity
+keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login, traceability matrix, pending translation, coverage parity, parallel runs, no lock, E2E_PORT, container names
 ---
 
 # ADR-0145 — A pull request's checks run locally under act, against CI's own baseline
@@ -27,6 +27,15 @@ and "The baseline" below.
 CI sees on a same-repository pull request (the regenerated matrix, and the
 French under act's `i18n` job), and the coverage merge reads only the
 per-project attachment copies. See "The bots' commits" and "Coverage parity".
+
+**Amended 2026-09-29 (#675):** the per-machine lock is removed. Runs from
+different worktrees proceed in parallel, even at the same time, kept apart by
+per-run ports and container names instead of by queueing. See "The lock is
+removed" below, which replaces "Exit codes"' lock clause and the
+"Testcontainers" and "Consequences" sections' mentions of it.
+
+**Amended 2026-09-29 (#675):** each run is its own Docker group with its own
+network, and everything it creates is deleted when it ends, pass or fail. See "Each run is its own group" and "Teardown is try/finally" below.
 
 ## Context
 
@@ -191,9 +200,7 @@ and is the pre-pull-request gate.**
   `.act-checksums`, and installs it to `~/.local/bin`, again whenever the act
   on `PATH` is another version. No package manager installs an exact act.
 - **Exit codes**: 0 passed, 1 a job failed, 2 a precondition or setup step
-  failed, 3 the lock timed out. The lock records its holder's pid and start
-  time, reports whether that pid is alive, and is never cleared by another
-  run.
+  failed.
 - **Testcontainers** keep Ryuk on
   ([lesson 0008](../lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
   act puts each job on the Docker VM's host network. Under Docker Desktop a
@@ -226,6 +233,173 @@ no-op there.
   **Remove all four when act ships the fix**, in the pull request that moves
   `.act-version` to that release.
 
+## The lock is removed (#675)
+
+A full run held a per-machine `mkdir`-based lock, so only one ran at a time on
+a given machine, because port 4173 and the Docker VM were shared. With several
+agents working from different worktrees, runs queued for up to an hour behind
+each other, and a run killed while holding the lock blocked every other run
+until someone removed it by hand — which happened on 2026-09-29 (#666, #674).
+
+**Decision: there is no lock.** Every run is independent, even if that means
+several Docker containers at once; the owner accepts the resource cost. What
+the lock protected is now kept apart per run instead of serialized:
+
+- **Port 4173.** act put jobs on the Docker VM's host network, so two
+  concurrent `e2e` jobs would otherwise collide on Vite's fixed preview port,
+  or one would test the other's build (each run now has its own bridge
+  network, see "Each run is its own group", but a port is still never fixed).
+  `tests/e2e/playwright.config.ts` now
+  uses `E2E_PORT` when a caller sets it, or else picks one free port,
+  synchronously, the first time the file is evaluated — the Playwright main
+  process, before it forks test workers. Workers re-evaluate the same file but
+  inherit `process.env` from the process that forked them, so `E2E_PORT` is
+  already set by the time they read it; a port picked per evaluation would
+  instead differ between workers, which would serve and test against
+  different builds. Both `webServer` and `baseURL` read the same value, and
+  `tests/e2e/steps/locale.steps.ts`'s hostname navigations do too. `ci-local.sh`
+  needs nothing extra: it never named 4173 itself. GitHub CI may still land on
+  a shared default port, since nothing else runs on its runner.
+- **act's job container names.** act names a job container deterministically
+  from the workflow's top-level `name:` and the job's own name (act 0.2.89,
+  `pkg/runner/run_context.go`: `jobContainerName` hashes
+  `"<workflow name>/<job name>"`), so two concurrent runs of the same job
+  hashed to the same container name and either collided or removed each
+  other's container mid-run. `ci-local.sh` now writes a retagged copy of each
+  workflow file — its `name:` line suffixed with this run's pid and the clone
+  directory's random suffix — to a directory *outside* the clone, and points
+  act's `-W` at that copy instead of the clone's own `.github/workflows/`.
+  act's `-W` accepts a file anywhere; the directory act is invoked from (the
+  clone) is a separate concept from the file `-W` names, and still supplies
+  the checkout act copies into each job container, so nothing else about what
+  runs changes (verified: `act -l -W <external file>` reports the retagged
+  name, and a full run against an external `-W` succeeds with the tag in its
+  container name). The clone's git history is never touched.
+  - **An earlier version of this fix committed the retag onto the clone's
+    HEAD instead**, and was caught in review before merging: `linked-issue.yml`
+    (`git diff --name-only "$BASE_SHA"...HEAD`), `feature-coverage.yml`
+    (`check "$BASE_SHA...HEAD"`), and `ci.yml`'s `changes` job (dorny's
+    `paths-filter`, reading `pull_request.base.sha`) all diff with `...`
+    (from the merge-base), not a plain two-dot diff. Committing the retag onto
+    HEAD alone left `merge-base(origin/main, HEAD)` at the untagged upstream
+    commit, so every one of those diffs still saw all four workflow files as
+    changed on every run, regardless of what the pull request touched — a
+    manifest-only or documentation-only change would have failed
+    `feature-coverage` or `linked-issue` locally while GitHub passed it. A
+    second attempt mirrored the same retag onto a synthetic copy of the base
+    commit, built with plumbing and never checked out, so a plain two-dot diff
+    against that synthetic base showed nothing extra — but `merge-base` finds
+    the *real* upstream commit as the common ancestor regardless, since the
+    synthetic base is the real base's child and HEAD does not descend from it,
+    so the same `...` diffs were unaffected. Writing the retagged copies
+    outside the clone and leaving `BASE_SHA` and `HEAD_SHA` exactly as they
+    were removes the problem instead of working around it: nothing in the
+    clone's history differs from the real branch, so every diff any job or
+    filter computes — two-dot or three-dot — is the one CI would compute.
+- **Everything else audited and found already safe**: no workflow run by
+  `ci-local.sh` declares a `services:` container or another fixed port; none
+  uses `actions/cache`, so its random-by-default cache-server port is never
+  exercised; the artifact server never starts, because the wrapper passes it
+  no path, and the four `upload-artifact`/`download-artifact` steps already
+  skip under act 0.2.89 regardless (see "Artifacts" above); Testcontainers
+  already binds random host ports; `mktemp`'s random suffix keeps each run's
+  clone under its own `$TMPDIR` path; and the Dockerfile-hash image tag is
+  content-addressed, so two concurrent identical builds can't clobber each
+  other — only the unversioned `:local` convenience alias can be overwritten
+  by a concurrent run with a different Dockerfile hash, and nothing in
+  `ci-local.sh` reads that alias back, so a stale one only misleads a
+  hand-run `act`, never this script's own verdict. act's own action cache
+  (`--action-cache-path`, default `~/.cache/act`) stays shared machine-wide, a
+  known, accepted residual: it is a read-mostly cache keyed by action and ref,
+  and none of this repository's workflows contend on a single action that
+  isn't already cached from an earlier run.
+- `dev-up.sh` and the dev compose project are unchanged: they keep their
+  fixed ports on purpose, so the app is always at the same address in
+  development. This ADR's lock existed only for `ci-local.sh`'s test runs.
+
+**Proof**: two full `tools/ci-local.sh --body pr-body.md` runs, from two
+separate worktrees on the same branch, started together, both passed with
+correct verdicts, and neither tested the other's build (logs in the pull
+request that made this change).
+
+## Each run is its own group, with its own network (#675)
+
+A run shows in Docker the way the dev stack's `safety-report` group does: one
+named group per run, `hpac-ci-<issue>-<run>`, for example `hpac-ci-675-a1b2`.
+
+- **The name**: `<issue>` is the branch's issue number (`issue-675/…`), or the
+  branch's slug when it has none; `<run>` is a short random ID, so two runs of
+  the same issue, such as the proof pair, stay two groups. The group name
+  replaces the earlier `ci-local-<pid>-<suffix>` in the retagged workflow
+  names, so act's container and volume names carry it:
+  `act-CI-hpac-ci-675-a1b2-<job>-<hash>` and its `-env` volume.
+- **The label** `com.docker.compose.project=<group>`, which Docker Desktop
+  groups by, is on every act job container (through act's `--container-options`)
+  and on the network, with `hpac.ci.pid=<pid>` beside it for the dead-run sweep.
+- **The network**: a bridge network named after the group is created at the
+  start, and act runs with `--network <group>` instead of `host`. act leaves an
+  existing network alone between jobs (verified with two act invocations on
+  one network), so one network serves the whole run.
+  - Testcontainers and Ryuk still work through `host.docker.internal`
+    (lesson 0008): from a bridge container it resolves and a published port
+    answers, as from the host network. The proof round runs the full `test`
+    job on the bridge, and its result is recorded in the pull request.
+  - A native Linux engine has no `host.docker.internal`; Testcontainers on a
+    custom bridge there is not verified. This repository's developers run
+    Docker Desktop, and the wrapper only sets the override there.
+- **Sizing**: a machine running N parallel full runs needs about 7 GB of Docker
+  memory per run, plus the dev stack. The proof pair ran at 23.4 GiB and 9 CPUs.
+  At 7.75 GiB the same pair starved: Postgres connection timeouts, a timing
+  assertion off by seconds, and dozens of unrelated e2e failures.
+- **Not grouped**: Testcontainers' containers are built by the .NET tests with
+  their own labels; Ryuk removes them. The proof counts them and the anonymous
+  volumes. A host-side `CI=1 npm test` keeps its temporary `E2E_PORT`. The dev
+  stack is untouched.
+
+## Teardown is try/finally (#675)
+
+> try: do work; finally: tear down, even if it failed.
+
+Parallel runs multiply what a failed run leaves behind: exited `act-CI-*`
+containers, their `act-CI-*-env` volumes, anonymous volumes, and now a network.
+So everything a run creates is deleted when that run ends, whether it passed or
+failed.
+
+- **Registered first.** `ci-local.sh` registers its `EXIT` trap before anything
+  can create a container or the network. `INT` and `TERM` route to it
+  (`exit 130`, `exit 143`), so success, a failing job, a `die`, Ctrl-C, and
+  `TERM` all run it once.
+- **What it removes**, in order, each best-effort (`|| true`): containers
+  carrying the group's label (`docker rm -fv`, so their anonymous volumes go
+  too), volumes whose names carry the group name, then the network. One failed
+  `docker rm` never skips the volumes, and the teardown never changes the run's
+  exit code. It never matches another run's group, and the dev stack's
+  containers (`<worktree>-api-1`, `safety-report-*`) carry no `hpac-ci-` label.
+- **act runs with `--rm`**, so its own job containers and volumes go after a
+  failed job, as they already did after a passing one (`--reuse` is never
+  passed).
+- **Signals reach it at once.** act runs in the background and the script
+  `wait`s, because a shell defers a trap until its foreground child returns
+  (a `TERM` sent to the script otherwise waited out the whole job). The
+  teardown also signals this run's own act, found by the unique `-W` path.
+- **`kill -9` cannot run a trap.** So each run starts by removing every group
+  whose `hpac.ci.pid` is no longer alive. It never touches a live pid's group.
+- **Testcontainers** (the Postgres and S3 containers under `test`) carry no
+  group label. Ryuk removes them, with their volumes, when the test process
+  ends, as in lesson 0008; the proof compares the total volume count and the
+  `org.testcontainers`-labelled containers before and after.
+- **The one deliberate exception is `act-toolcache`**, act's tool cache, shared
+  by every run. It is keyed by tool and version, so it is reused, not
+  regrown, and holds about 200 MB. If it ever grows without bound, this
+  exception is reconsidered.
+- **Not touched**: `dev-up.sh` and every dev compose stack, and leftovers from
+  runs before this change, which the owner removes.
+
+**Proof**: counts of the group's containers, volumes, and networks after a
+passing run, a forced-failure run, a run interrupted mid-job by `INT` and by
+`TERM`, and a run killed with `-9` (swept by the next run). The pull request
+holds the counts.
+
 ## Rejected
 
 - **[wrkflw](https://github.com/bahdotsh/wrkflw)**: it emulates
@@ -246,7 +420,8 @@ no-op there.
 - Local green is necessary, not sufficient. GitHub stays the authority; the
   ruleset, `concurrency`, `environment:` protection, and the bot workflows do
   not run locally.
-- A full run holds a per-machine lock, because port 4173 and the Docker VM are
-  shared.
+- No lock (#675): runs from different worktrees proceed in parallel, even at
+  the same time, kept apart by per-run ports and container names. See "The
+  lock is removed".
 - Upgrading act is a pull request that changes `.act-version`;
   `init-dev.sh --check` reports a mismatch.

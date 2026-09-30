@@ -195,6 +195,24 @@ installs from the release, checked against `.act-checksums`. `--job <id>`
 runs one job. GitHub stays the authority: a local pass is necessary, not
 sufficient.
 
+There is no lock: runs from different worktrees may proceed at the same time.
+Each gets its own throwaway clone, its own free port for the browser suite,
+and its own act job container names, so one run can't wait behind, or
+clobber, another. `dev-up.sh` and the dev compose stack are unaffected — they
+keep their fixed ports, so the app is always at the same address in
+development.
+
+Each run is its own Docker group, `hpac-ci-<issue>-<run>`, with its own
+network, so two runs of one issue show as two groups. Everything a run creates
+(containers, volumes, network) is deleted when it ends, whether it passed,
+failed, was interrupted, or died early: an `EXIT` trap, registered first, removes
+the group. A run killed with `kill -9` is swept by the next run. The dev stack
+and `act-toolcache` (a shared tool cache) are never touched.
+
+A machine running N parallel full runs needs about 7 GB of Docker memory per
+run, plus the dev stack (the proof pair ran at 23.4 GiB); below that, parallel
+runs starve and fail for unrelated reasons.
+
 It needs no token. act gets none, and every job runs anonymously, since the
 repository is public. The one exception is the coverage baseline: GitHub
 serves no artifact to an anonymous caller, so the script downloads main's last

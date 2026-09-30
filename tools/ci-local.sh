@@ -48,8 +48,28 @@
 #
 # Exit codes: 0 every job passed; 1 a job failed; 2 a precondition or setup
 # step failed (usage, gh login, act version, dirty tree, branch behind
-# origin/main, Docker down, clone, baseline, image); 3 another run held the
-# lock past HPAC_CI_LOCAL_WAIT seconds (default 3600).
+# origin/main, Docker down, clone, baseline, image).
+#
+# There is no lock: runs from different worktrees proceed in parallel, even at
+# the same time. Each run gets its own throwaway clone, its own free e2e port
+# (tests/e2e/playwright.config.ts picks one when E2E_PORT is unset), and its
+# own act job container names (see "unique job names" below), so one run
+# can't wait behind, or clobber, another. The dev stack (dev-up.sh, dev
+# compose) is unaffected: it keeps its fixed ports, on purpose, so the app is
+# always at the same address in development.
+#
+# Each run is one Docker group, hpac-ci-<issue>-<run> (the issue number from the
+# branch, a slug if there is none, and a short random run ID), like the dev
+# stack's `safety-report` group: its own bridge network, and every act job
+# container labelled com.docker.compose.project=<group> so Docker Desktop lists
+# them together. Two runs of one issue are two groups.
+#
+# Teardown, "try: work; finally: tear down": the group's containers, volumes,
+# and network are deleted when the run ends, on success, failure, die, INT, and
+# TERM alike (an EXIT trap registered first; see "the teardown" below). It only
+# matches this run's group, and a run also sweeps groups whose pid (label
+# hpac.ci.pid) is dead, a kill -9. The dev stack and act-toolcache are never
+# touched.
 #
 # Full logs land in artifacts/ci-local/<workflow>[-<job>].log (gitignored).
 
@@ -63,7 +83,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,54p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,74p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -141,54 +161,83 @@ git fetch -q origin main || die "git fetch origin main failed"
 git merge-base --is-ancestor origin/main HEAD \
 	|| die "HEAD does not contain origin/main; rebase onto it first"
 
-# ---------------------------------------------------------------- the lock --
+# ---------------------------------------------------------- the teardown --
 #
-# Port 4173 and the Docker VM are shared by every checkout on this machine, so
-# one run at a time. mkdir is atomic. The holder writes its pid and start time
-# inside. A run releases only a lock it acquired and never clears another's: a
-# lock left by a killed run is removed by hand.
+# "try: do work; finally: tear down even if failed." Every container, volume,
+# and network this run creates is deleted when it ends, whether it passed,
+# failed, died on a precondition, or was interrupted. The finally is the EXIT
+# trap, registered here, before anything can create a container. INT and TERM
+# route to it (exit 130 / 143), so every way out of the script runs it once.
+#
+# A run is one Docker group, hpac-ci-<issue>-<run>, the way the dev stack is
+# one `safety-report` group: its network and every act job container carry the
+# label com.docker.compose.project=<group> (which Docker Desktop groups by) and
+# hpac.ci.pid=<pid>; act's volume names carry the group name because the
+# workflow name does (see "unique job names").
+#
+# The teardown removes, best-effort per item, in this order: the group's
+# containers (docker rm -fv, so anonymous volumes go too), its volumes, its
+# network. No step can abort it or change the run's exit status (the shell keeps
+# the status `exit` was given). It only matches THIS run's group: never another
+# parallel run's, never the dev stack's containers (<worktree>-api-1,
+# safety-report-*), which carry no hpac-ci- label.
+# Testcontainers' own containers (the Postgres and S3 under `test`) carry no
+# group label: Ryuk removes them, with their volumes, when the test process ends.
+#
+# act-toolcache, act's tool cache shared across runs, is the one deliberate
+# exception: it is a cache, keyed by tool and version, that later runs reuse.
+#
+# A signal reaches this shell at once only while it waits (the `wait` in
+# run_act); the run's act is signalled here too, so it stops first.
+#
+# kill -9 cannot run a trap. So the next run starts with sweep_dead(): every
+# group whose hpac.ci.pid is no longer alive is removed before its own work.
 
-LOCK=${HPAC_CI_LOCAL_LOCK:-${TMPDIR:-/tmp}/hpac-ci-local.lock}
-WAIT=${HPAC_CI_LOCAL_WAIT:-3600}
 WORK=''
-LOCKED=0
+GROUP=''
+WORKFLOWS=''
+
+# remove_group <group>: containers, then volumes, then the network.
+remove_group() {
+	case "$1" in hpac-ci-[a-z0-9]*) ;; *) return 0 ;; esac
+	for c in $(docker ps -aq --filter "label=com.docker.compose.project=$1" 2>/dev/null); do
+		docker rm -fv "$c" >/dev/null 2>&1 || true
+	done
+	for v in $(docker volume ls -q --filter "name=$1-" 2>/dev/null); do
+		docker volume rm -f "$v" >/dev/null 2>&1 || true
+	done
+	docker network rm "$1" >/dev/null 2>&1 || true
+}
 
 cleanup() {
-	[ -z "$WORK" ] || rm -rf "$WORK"
-	if [ "$LOCKED" -eq 1 ]; then
-		rm -f "$LOCK/holder"
-		rmdir "$LOCK" 2>/dev/null || true
+	set +e
+	trap '' INT TERM
+	if [ -n "$WORKFLOWS" ]; then
+		pkill -TERM -f "act pull_request -W $WORKFLOWS" 2>/dev/null
+		sleep 1
 	fi
+	[ -z "$GROUP" ] || remove_group "$GROUP"
+	[ -z "$WORK" ] || rm -rf "$WORK"
+	return 0
 }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-holder() {
-	h=$(cat "$LOCK/holder" 2>/dev/null || true)
-	pid=${h%% *}
-	if [ -z "$h" ]; then
-		echo "an unknown holder"
-	elif kill -0 "$pid" 2>/dev/null; then
-		echo "pid $pid (alive), started ${h#* }"
-	else
-		echo "pid $pid (not running — remove $LOCK by hand if no run is left), started ${h#* }"
-	fi
+# sweep_dead: remove what a run killed with SIGKILL left. A group is dead when
+# the pid in its hpac.ci.pid label is gone; a live pid's group is never touched.
+sweep_dead() {
+	{
+		docker network ls --format '{{.Name}} {{.Label "hpac.ci.pid"}}' 2>/dev/null
+		docker ps -a --filter label=hpac.ci.pid \
+			--format '{{.Label "com.docker.compose.project"}} {{.Label "hpac.ci.pid"}}' 2>/dev/null
+	} | while read -r group pid; do
+		case "$group" in hpac-ci-*) ;; *) continue ;; esac
+		[ -n "$pid" ] || continue
+		kill -0 "$pid" 2>/dev/null || remove_group "$group"
+	done
 }
-
-waited=0
-until mkdir "$LOCK" 2>/dev/null; do
-	if [ "$waited" -ge "$WAIT" ]; then
-		printf 'ci-local: %s was held for %ss by %s\n' "$LOCK" "$WAIT" "$(holder)" >&2
-		exit 3
-	fi
-	[ "$waited" -gt 0 ] || say "Waiting for ${LOCK}, held by $(holder)."
-	sleep 10
-	waited=$((waited + 10))
-done
-LOCKED=1
-printf '%s %s\n' "$$" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/holder" \
-	|| die "cannot write $LOCK/holder"
+sweep_dead
 
 # ------------------------------------------------------------ the checkout --
 #
@@ -204,6 +253,18 @@ BRANCH=$(git symbolic-ref --quiet --short HEAD || echo ci-local)
 ORIGIN_URL=$(git remote get-url origin) || die "no origin remote"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/hpac-ci-local.XXXXXX") || die "mktemp failed"
+# The group: hpac-ci-<issue>-<run>. <issue> is the branch's issue number, or
+# its slug; <run> is a short random ID so two runs of one issue stay apart.
+ISSUE=$(printf '%s' "$BRANCH" | sed -nE 's#^issue-([0-9]+).*#\1#p')
+[ -n "$ISSUE" ] || ISSUE=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-24 | sed -E 's/-+$//')
+[ -n "$ISSUE" ] || ISSUE=run
+RUN_ID=$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')
+GROUP="hpac-ci-$ISSUE-$RUN_ID"
+RUN_TAG="$GROUP"
+LABELS="--label com.docker.compose.project=$GROUP --label hpac.ci.pid=$$"
+# shellcheck disable=SC2086
+docker network create $LABELS "$GROUP" >/dev/null || die "cannot create the network $GROUP"
+say "Run group: $GROUP (its own network; containers and volumes carry it)"
 git bundle create -q "$WORK/head.bundle" HEAD || die "git bundle failed"
 git clone -q --no-tags "$WORK/head.bundle" "$WORK/repo" || die "git clone failed"
 git -C "$WORK/repo" checkout -q -B "$BRANCH" "$HEAD_SHA" || die "git checkout failed"
@@ -212,6 +273,43 @@ git -C "$WORK/repo" update-ref "refs/remotes/origin/main" "$BASE_SHA" || die "gi
 git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" || die "git update-ref failed"
 rm -f "$WORK/head.bundle"
 REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+
+# ------------------------------------------------------- unique job names --
+#
+# act derives a job's container name deterministically from the workflow's
+# top-level `name:` and the job's own name (act 0.2.89,
+# pkg/runner/run_context.go: jobContainerName -> createContainerName hashes
+# "<workflow name>/<job name>"; verified by reading that source, since nothing
+# in act --help offers a container-name flag). Two concurrent runs of the same
+# job therefore hash to the same container name and either collide or remove
+# each other's container mid-run.
+#
+# So each run reads its workflows from retagged copies written OUTSIDE the
+# clone, under $WORK/workflows/, never inside $WORK/repo — act's `-W` accepts
+# a file anywhere; the directory it is invoked from (the clone) is a separate
+# concept and still supplies the checkout it copies into each job container
+# (verified: `act -l -W <external file>` reports the retagged name, and a full
+# run against an external `-W` succeeds with the tag in its container name).
+# The clone's git history is never touched. That matters because
+# linked-issue.yml, feature-coverage.yml, and ci.yml's `changes` job all diff
+# with `...` (merge-base) rather than a plain two-dot diff: an earlier version
+# of this fix committed the retag onto the clone's HEAD, which made
+# merge-base(origin/main, HEAD) still the untagged upstream commit, so every
+# one of those `...` diffs saw all four workflow files as changed on every
+# run, regardless of what the pull request actually touched. Writing the
+# retagged copies elsewhere and leaving BASE_SHA and HEAD_SHA exactly as they
+# were removes the problem instead of working around it: nothing in the
+# clone's history differs from the real branch, so every diff any job or
+# filter computes is the one CI would compute.
+WORKFLOWS="$WORK/workflows"
+mkdir -p "$WORKFLOWS" || die "cannot create $WORKFLOWS"
+for wf in linked-issue feature-coverage terraform ci; do
+	src="$WORK/repo/.github/workflows/$wf.yml"
+	[ -f "$src" ] || continue
+	head -n 1 "$src" | grep -q '^name: ' || die "$src: expected its first line to be the workflow name"
+	sed -E "1s/^name: (.*)\$/name: \\1 ($RUN_TAG)/" "$src" > "$WORKFLOWS/$wf.yml" \
+		|| die "cannot write $WORKFLOWS/$wf.yml"
+done
 
 # -------------------------------------------------- the bots' two commits --
 #
@@ -327,11 +425,13 @@ docker tag "$IMAGE" hpac-safety-act:local || die "docker tag failed"
 
 # ------------------------------------------------------------------ the run --
 #
-# act puts each job on the Docker VM's host network. Under Docker Desktop a
-# published port reaches that network a moment after the container starts, so
-# Testcontainers' first connection to Ryuk or Postgres on the gateway is
-# refused. host.docker.internal answers at once. Ryuk stays on (lesson 0008).
-# A native Linux engine needs none of this.
+# act puts each job on this run's own bridge network (--network "$GROUP", made
+# above), not the Docker VM's host network. Under Docker Desktop a published
+# port reaches a container a moment after it starts, so Testcontainers' first
+# connection to Ryuk or Postgres on the gateway is refused. host.docker.internal
+# answers at once from a bridge container too (verified). Ryuk stays on
+# (lesson 0008). A native Linux engine has no host.docker.internal; there
+# Testcontainers has not been verified on the bridge (see ADR-0145).
 
 EXTRA=''
 if [ "$(docker info --format '{{.OperatingSystem}}' 2>/dev/null)" = 'Docker Desktop' ]; then
@@ -348,6 +448,9 @@ run_act() {
 	log="$LOGS/${1%.yml}${2:+-$2}.log"
 	say "▶ $1${2:+ -j $2}"
 	rm -f "$STATUS"
+	# Run in the background and wait: a signal to this shell then interrupts
+	# `wait` at once and reaches the EXIT trap, instead of queueing behind act.
+	{
 	(
 		cd "$WORK/repo" || exit 1
 		# EXTRA is empty or one flag and its value, so it must split. -P and the
@@ -361,9 +464,16 @@ run_act() {
 		# are unset too, so nothing act starts can read one from the environment.
 		# --use-gitignore=false copies the gitignored .ci-local/baseline/.
 		unset GITHUB_TOKEN GH_TOKEN GH_ENTERPRISE_TOKEN GITHUB_ENTERPRISE_TOKEN
+		# --rm removes the job's containers and volumes after a failure too; act
+		# already removes them after a success (never pass --reuse).
+		# -W reads the retagged copy under $WORKFLOWS (see "unique job names"
+		# above), not the clone's own .github/workflows/$1: the invocation
+		# directory ($WORK/repo, via cd above) still supplies the checkout act
+		# copies into the job container, so nothing else about what runs changes.
 		# shellcheck disable=SC2086
-		if act pull_request -W ".github/workflows/$1" ${2:+-j "$2"} \
-			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false \
+		if act pull_request -W "$WORKFLOWS/$1" ${2:+-j "$2"} \
+			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false --rm \
+			--network "$GROUP" --container-options "$LABELS" \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
 			-s GITHUB_TOKEN= -e "$EVENT" $EXTRA; then
 			echo 0 > "$STATUS"
@@ -373,6 +483,8 @@ run_act() {
 	) 2>&1 | if [ "$VERBOSE" -eq 1 ]; then tee "$log"; else
 		tee "$log" | grep -a --line-buffered -E '🏁|❌' || true
 	fi
+	} &
+	wait "$!" || true
 	# Anything but a written 0 is a failure, including no status at all.
 	if [ "$(cat "$STATUS" 2>/dev/null)" != 0 ]; then
 		say "✗ $1${2:+ -j $2} failed; full log: $log"

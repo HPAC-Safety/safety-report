@@ -571,8 +571,8 @@
     "error": "Les signalements publiés n'ont pas pu être chargés. Veuillez réessayer.",
     "publishedAt": "Publié le {at}",
     "translatedFrom": {
-      "en-CA": "#Translated from English",
-      "fr-CA": "#Translated from French"
+      "en-CA": "Traduit de l'anglais",
+      "fr-CA": "Traduit du français"
     },
     "adminPage": "Ouvrez le signalement d'administration",
     "read": "Lisez le signalement complet",

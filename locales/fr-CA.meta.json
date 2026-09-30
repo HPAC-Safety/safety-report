@@ -287,6 +287,18 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "feed.translatedFrom.en-CA": {
+    "source_hash": "93825fe0a642c515850ae87e4a704d30b5db350de58d3e41f2ea959a6943c8db",
+    "target_hash": "20db475eaec0211ebe03805030bafbda94d7f5132a5948ffad0262ffcd109297",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "feed.translatedFrom.fr-CA": {
+    "source_hash": "ccee197983f4e67e797c419c16a44a62c155a4be7a6ec9e4b5381bf18eb1aa89",
+    "target_hash": "8b5bf69e8518ea54fe15f47fac7728acdbcd58a964843514697e22e9638db2e7",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "footer.copyright": {
     "source_hash": "9cee5ec2702c7908e839099047ddbd0a2b08a790b79704d503e0f31e4204a65f",
     "target_hash": "3b7a367d02c505b59a1e58d9b95ecfcddccab76e2a66ee139569f42126617846",

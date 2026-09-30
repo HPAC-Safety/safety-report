@@ -177,23 +177,27 @@ npm --prefix src/web ci && npm --prefix src/web run build
 Integration tests require Docker. See [`tests/README.md`](tests/README.md) and
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Before opening a pull request, run its checks locally. Commit first, write
-the draft pull request body to a file, then:
+Before opening a pull request, run the tests for the code you changed
+natively (a filtered `dotnet test`, and `CI=1 npm test` for a touched e2e
+spec), then its fast checks. Commit first, write the draft pull request body
+to a file, then:
 
 ```bash
 tools/ci-local.sh --body pr-body.md
 ```
 
-It runs the pull request workflows themselves — `linked-issue.yml`,
-`feature-coverage.yml`, terraform `infra`, and every `ci.yml` job, including
-the coverage ratchet against main's last green run — under
+By default it runs the pull request workflows' fast checks themselves —
+`linked-issue.yml`, `feature-coverage.yml`, and the cheap `ci.yml` jobs
+(`build`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`) — under
 [act](https://github.com/nektos/act), in an Ubuntu 24.04 container
 ([ADR-0145](docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)).
-It needs Docker with at least 7 GB of memory (a full run peaks at about
-5 GiB) and act at the version in `.act-version`, which `./init-dev.sh`
-installs from the release, checked against `.act-checksums`. `--job <id>`
-runs one job. GitHub stays the authority: a local pass is necessary, not
-sufficient.
+It skips `test`, `coverage`, `e2e`, and terraform: GitHub CI, the coverage
+ratchet included, is the full gate. `--full` runs every job, coverage against
+main's last green run too (it needs `gh auth login`); `--job <id>` runs one
+job. It needs Docker and act at the version in `.act-version`, which
+`./init-dev.sh` installs from the release, checked against `.act-checksums`;
+a full run peaks at about 5 GiB of Docker memory, so give Docker at least 7 GB
+for `--full`. A local pass is necessary, not sufficient.
 
 There is no lock: runs from different worktrees may proceed at the same time.
 Each gets its own throwaway clone, its own free port for the browser suite,
@@ -209,7 +213,7 @@ failed, was interrupted, or died early: an `EXIT` trap, registered first, remove
 the group. A run killed with `kill -9` is swept by the next run. The dev stack
 and `act-toolcache` (a shared tool cache) are never touched.
 
-A machine running N parallel full runs needs about 7 GB of Docker memory per
+A machine running N parallel `--full` runs needs about 7 GB of Docker memory per
 run, plus the dev stack (the proof pair ran at 23.4 GiB); below that, parallel
 runs starve and fail for unrelated reasons.
 

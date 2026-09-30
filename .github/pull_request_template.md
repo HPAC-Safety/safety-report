@@ -47,10 +47,10 @@ Required when this changes a rendered web file (a .tsx or .css under
 src/web/src, not a test). The screenshots check fails the pull request
 otherwise (ADR-0142).
 
-A changed page or component: a before shot, taken from a build of origin/main,
-and an after shot. A new one: an after shot. Commit them under
-docs/screenshots/<dir>/, named before-* and after-*, and show each as an image
-linked by a raw URL pinned to the commit that added it:
+An after shot alone satisfies this check, for a new page or a changed one; a
+before shot, taken from a build of origin/main, is optional. Commit it under
+docs/screenshots/<dir>/, named after-* (and before-* if you add one), and show
+each as an image linked by a raw URL pinned to the commit that added it:
 
     ![after](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/docs/screenshots/<dir>/after-<name>.png)
 
@@ -79,7 +79,7 @@ this comment:
 
 - [ ] UI copy is localized and English/French catalogue keys remain in parity
 - [ ] .NET assertions use Shouldly and tests use Given/When/Then structure
-- [ ] A rendered web change links before and after screenshots (after only for a new page), or says `No screenshot needed:` and why
+- [ ] A rendered web change links an after screenshot (before is optional), or says `No screenshot needed:` and why
 - [ ] Generated files were regenerated with their owning tool
 - [ ] Every markdown file added or changed declares its title, description, and type
 - [ ] Documentation and issue acceptance criteria were updated where needed

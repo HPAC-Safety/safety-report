@@ -3,15 +3,30 @@
 # ci-local.sh — run this pull request's GitHub checks locally, under act, before
 # the pull request is opened (ADR-0145).
 #
-#     tools/ci-local.sh --body <pr-body.md> [--job <id>]... [--verbose]
+#     tools/ci-local.sh --body <pr-body.md> [--full | --job <id>...] [--verbose]
 #
 #   --body <file>      the draft pull request body; linked-issue,
 #                      no-session-link, screenshots, and feature-coverage judge
 #                      it as CI will
+#   --full             run every job GitHub runs, tests, coverage, e2e, and
+#                      terraform included: the full run, under act
 #   --job <id>         run only this job (repeatable); one of the allowed jobs
 #   --verbose          stream act's full output instead of one line per job
 #
-# Without --job it runs, stopping at the first failure:
+# By default it runs only the fast checks, stopping at the first failure:
+#
+#   linked-issue.yml      linked-issue, no-session-link, screenshots
+#   feature-coverage.yml  feature-coverage
+#   ci.yml                build, web, i18n, docs, cucumber, agent-config
+#
+# It skips test, coverage, e2e, and terraform. Those are the slow ones, and
+# GitHub CI, the coverage ratchet included, is the full gate. So before opening
+# a pull request, run the tests for the code you changed natively: a filtered
+# `dotnet test`, and `CI=1 npm test` for a touched e2e spec. --full is for
+# whoever wants the whole GitHub suite locally anyway (ADR-0145, amended for
+# #687).
+#
+# --full runs, stopping at the first failure:
 #
 #   linked-issue.yml      linked-issue, no-session-link, screenshots
 #   feature-coverage.yml  feature-coverage
@@ -19,7 +34,7 @@
 #   ci.yml                every job, coverage included
 #
 # The cheap body checks go first so a missing `Closes #N` fails in seconds, not
-# after the .NET suite. It never runs traceability.yml, i18n-translate.yml,
+# after the .NET build. It never runs traceability.yml, i18n-translate.yml,
 # terraform plan or apply, deploy-*, or terraform-relock: those write to the
 # repository or to AWS, and nothing here can name them. What two of them would
 # commit onto the branch is stood in for: the clone gets the regenerated
@@ -83,7 +98,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,74p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,89p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -91,11 +106,13 @@ usage() {
 
 BODY=''
 JOBS=''
+FULL=0
 VERBOSE=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--body) [ $# -ge 2 ] || die "--body needs a file"; BODY=$2; shift 2 ;;
 		--job) [ $# -ge 2 ] || die "--job needs a job id"; JOBS="$JOBS $2"; shift 2 ;;
+		--full) FULL=1; shift ;;
 		--verbose) VERBOSE=1; shift ;;
 		-h|--help) usage 0 ;;
 		*) printf 'ci-local: unknown option: %s\n' "$1" >&2; usage 2 >&2 ;;
@@ -103,6 +120,7 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$BODY" ] || die "--body <pr-body.md> is required: the body checks judge it"
 [ -f "$BODY" ] || die "no such body file: $BODY"
+[ "$FULL" -eq 0 ] || [ -z "$JOBS" ] || die "--full and --job are exclusive: --full runs every job"
 BODY=$(CDPATH='' cd -- "$(dirname -- "$BODY")" && pwd)/$(basename -- "$BODY") \
 	|| die "cannot resolve $BODY"
 
@@ -123,11 +141,13 @@ done
 # ------------------------------------------------------------- the gh login --
 #
 # Checked before anything slow. Only the coverage job needs it, for main's
-# baseline artifact, which GitHub serves to no anonymous caller. The login
-# stays on the host: it never enters act, a container, or an action.
+# baseline artifact, which GitHub serves to no anonymous caller, so only
+# --full or --job coverage does. The login stays on the host: it never enters
+# act, a container, or an action.
 
 NEED_BASELINE=0
-case " ${JOBS:- coverage} " in *' coverage '*) NEED_BASELINE=1 ;; esac
+[ "$FULL" -eq 0 ] || NEED_BASELINE=1
+case " $JOBS " in *' coverage '*) NEED_BASELINE=1 ;; esac
 if [ "$NEED_BASELINE" -eq 1 ]; then
 	command -v gh >/dev/null 2>&1 \
 		|| die "the coverage ratchet needs main's baseline artifact, which only an authenticated download can fetch; install gh (https://cli.github.com), then run gh auth login"
@@ -520,14 +540,27 @@ check_coverage() {
 	fi
 }
 
+# The cheap ci.yml jobs the default run covers. Not test, coverage, e2e, or
+# infra: GitHub CI runs those (ADR-0145, amended for #687).
+FAST_CI_JOBS='build web i18n docs cucumber agent-config'
+
 FAILED=0
 if [ -n "$JOBS" ]; then
 	for job in $JOBS; do
 		run_act "$(workflow_of "$job")" "$job" || { FAILED=1; break; }
 	done
-else
+elif [ "$FULL" -eq 1 ]; then
 	run_act linked-issue.yml && run_act feature-coverage.yml && run_act terraform.yml infra \
 		&& run_act ci.yml || FAILED=1
+else
+	# The fast set: each cheap ci.yml job on its own (act -j takes one job;
+	# `changes` runs as the dependency of the ones that need it).
+	run_act linked-issue.yml && run_act feature-coverage.yml || FAILED=1
+	if [ "$FAILED" -eq 0 ]; then
+		for job in $FAST_CI_JOBS; do
+			run_act ci.yml "$job" || { FAILED=1; break; }
+		done
+	fi
 fi
 check_coverage || FAILED=1
 

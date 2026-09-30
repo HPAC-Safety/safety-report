@@ -44,7 +44,7 @@ describe('judge', () => {
 		assert.equal(judge({ changed: ['src/HpacSafety.Api/Program.cs', 'src/web/src/lib/format.ts'], body: '' }).ok, true)
 	})
 
-	it('passes a rendered change whose body links a pinned screenshot', () => {
+	it('passes a rendered change whose body links a pinned after screenshot alone (before is optional)', () => {
 		const verdict = judge({ changed: [COMPONENT], body: `## Screenshots\n\n![after](${SHOT})\n` })
 
 		assert.equal(verdict.ok, true)

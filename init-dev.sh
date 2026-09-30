@@ -389,14 +389,14 @@ docker_running() { have docker && docker info >/dev/null 2>&1; }
 
 if docker_running; then
 	ok "Docker $(docker version --format '{{.Server.Version}}' 2>/dev/null || echo '') is running"
-	# A full tools/ci-local.sh run peaked at about 5 GiB of container memory,
+	# A tools/ci-local.sh --full run peaked at about 5 GiB of container memory,
 	# with the .NET, Testcontainers, and browser jobs side by side, so the VM
 	# wants DOCKER_MEM_RECOMMENDED_GB (ADR-0145).
 	DOCKER_MEM_MIB=$(( $(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0) / 1048576 ))
 	if [ "$DOCKER_MEM_MIB" -lt $((DOCKER_MEM_RECOMMENDED_GB * 1024)) ]; then
-		note "Docker has ${DOCKER_MEM_MIB} MiB of memory; tools/ci-local.sh recommends ${DOCKER_MEM_RECOMMENDED_GB} GB (Docker Desktop: Settings → Resources)"
+		note "Docker has ${DOCKER_MEM_MIB} MiB of memory; tools/ci-local.sh --full recommends ${DOCKER_MEM_RECOMMENDED_GB} GB (Docker Desktop: Settings → Resources)"
 	else
-		ok "Docker has ${DOCKER_MEM_MIB} MiB of memory (tools/ci-local.sh recommends ${DOCKER_MEM_RECOMMENDED_GB} GB)"
+		ok "Docker has ${DOCKER_MEM_MIB} MiB of memory (tools/ci-local.sh --full recommends ${DOCKER_MEM_RECOMMENDED_GB} GB)"
 	fi
 	if docker compose version >/dev/null 2>&1; then
 		ok "docker compose plugin"
@@ -514,8 +514,8 @@ fi
 
 # ----------------------------------------------------------------------- act --
 #
-# tools/ci-local.sh runs the pull request workflows under act before a pull
-# request is opened (ADR-0145). The version is pinned in .act-version, and the
+# tools/ci-local.sh runs the pull request workflows' fast checks under act
+# before a pull request is opened, and every job with --full (ADR-0145). The version is pinned in .act-version, and the
 # SHA-256 of each platform's release asset in .act-checksums beside it. No
 # package manager installs an exact act, so this downloads the pinned release,
 # checks it against the committed checksum, and installs it to ~/.local/bin —
@@ -597,9 +597,9 @@ heading "GitHub CLI (optional)"
 if have gh; then
 	ok "$(gh --version 2>/dev/null | head -n 1)"
 	if gh auth status >/dev/null 2>&1; then
-		ok "gh is logged in; tools/ci-local.sh uses it only to download main's coverage baseline"
+		ok "gh is logged in; tools/ci-local.sh --full uses it only to download main's coverage baseline"
 	else
-		note "gh is not logged in — run: gh auth login (tools/ci-local.sh needs it to download main's coverage baseline)"
+		note "gh is not logged in — run: gh auth login (tools/ci-local.sh --full needs it to download main's coverage baseline)"
 	fi
 elif [ "$CHECK_ONLY" -eq 1 ]; then
 	note "gh is not installed — https://cli.github.com"

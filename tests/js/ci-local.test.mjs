@@ -83,10 +83,23 @@ describe('tools/ci-local.sh without a gh login', () => {
 			env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, GH_TOKEN: '', GITHUB_TOKEN: '' },
 		})
 
-	it('stops before act, naming gh auth login, when the run includes coverage', () => {
-		const result = run()
+	it('stops before act, naming gh auth login, when the run includes coverage (--full)', () => {
+		const result = run('--full')
 		assert.equal(result.status, 2)
 		assert.match(result.stderr, /coverage ratchet needs main's baseline artifact.*run gh auth login/)
+	})
+
+	it('needs no login for the default fast run, which skips coverage', () => {
+		const result = run()
+		assert.equal(result.status, 2)
+		assert.doesNotMatch(result.stderr, /gh auth login/)
+		assert.match(result.stderr, /act 0\.0\.0-stub is installed/)
+	})
+
+	it('refuses --full together with --job', () => {
+		const result = run('--full', '--job', 'docs')
+		assert.equal(result.status, 2)
+		assert.match(result.stderr, /--full and --job are exclusive/)
 	})
 
 	it('stops the same way for --job coverage', () => {
@@ -187,5 +200,47 @@ describe('the coverage merge', () => {
 	it('reads only the per-project attachment copies', () => {
 		assert.match(ci, /"-reports:\.\/artifacts\/coverage\/\*\/coverage\.cobertura\.xml;/)
 		assert.doesNotMatch(ci, /-reports:\.\/artifacts\/coverage\/\*\*\/coverage\.cobertura\.xml/)
+	})
+})
+
+// The default run is the fast checks; --full is the whole GitHub suite (#687,
+// ADR-0145).
+describe('the modes of tools/ci-local.sh', () => {
+	const fast = code.match(/^FAST_CI_JOBS='([^']*)'/m)?.[1].split(/\s+/) ?? []
+	const ci = readFileSync(join(REPO, '.github/workflows/ci.yml'), 'utf8')
+	const ciJobs = [...ci.matchAll(/^ {2}([a-z][a-z0-9-]*):$/gm)].map((m) => m[1])
+	const branches = code.match(/^if \[ -n "\$JOBS" \][\s\S]*?\nfi\n/m)?.[0] ?? ''
+	const [, fullBranch = '', fastBranch = ''] = branches.split(/\nelif |\nelse\n/)
+
+	it('runs build, web, i18n, docs, cucumber, and agent-config by default', () => {
+		assert.deepEqual(fast, ['build', 'web', 'i18n', 'docs', 'cucumber', 'agent-config'])
+	})
+
+	it('runs only ci.yml jobs that exist', () => {
+		for (const job of fast) assert.ok(ciJobs.includes(job), `${job} is not a job in ci.yml`)
+	})
+
+	it('skips test, coverage, e2e, and terraform by default', () => {
+		for (const job of ['test', 'coverage', 'e2e', 'infra']) assert.ok(!fast.includes(job))
+		assert.ok(fastBranch.length > 0)
+		assert.match(fastBranch, /run_act linked-issue\.yml && run_act feature-coverage\.yml/)
+		assert.match(fastBranch, /FAST_CI_JOBS/)
+		assert.doesNotMatch(fastBranch, /terraform|infra/)
+		assert.doesNotMatch(fastBranch, /run_act ci\.yml\s*\|\|/)
+	})
+
+	it('--full runs every workflow, terraform and all of ci.yml included', () => {
+		assert.match(fullBranch, /"\$FULL" -eq 1/)
+		assert.match(fullBranch, /run_act terraform\.yml infra/)
+		assert.match(fullBranch, /run_act ci\.yml \|\| FAILED=1/)
+	})
+
+	it('--job runs exactly the jobs named, whatever the default is', () => {
+		assert.match(branches, /^if \[ -n "\$JOBS" \]; then\n\tfor job in \$JOBS; do\n\t\trun_act "\$\(workflow_of "\$job"\)" "\$job"/)
+	})
+
+	it('needs main\'s baseline only for --full or --job coverage', () => {
+		assert.match(code, /\[ "\$FULL" -eq 0 \] \|\| NEED_BASELINE=1/)
+		assert.match(code, /case " \$JOBS " in \*' coverage '\*\) NEED_BASELINE=1/)
 	})
 })

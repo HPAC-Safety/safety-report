@@ -37,6 +37,14 @@ removed" below, which replaces "Exit codes"' lock clause and the
 **Amended 2026-09-29 (#675):** each run is its own Docker group with its own
 network, and everything it creates is deleted when it ends, pass or fail. See "Each run is its own group" and "Teardown is try/finally" below.
 
+**Amended 2026-09-29 (#687):** the default run is only the fast checks. Bare
+`tools/ci-local.sh --body <file>` runs the body checks (`linked-issue`,
+`no-session-link`, `screenshots`), `feature-coverage`, and the cheap `ci.yml`
+jobs (`build`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`). It skips
+`test`, `coverage`, `e2e`, and terraform `infra`. `--full` runs everything as
+before, and `--job` is unchanged. See "The default run is the fast checks"
+below, which replaces "What runs" for a run without `--full`.
+
 ## Context
 
 Two scripts, `tools/coverage-check.sh`
@@ -399,6 +407,32 @@ failed.
 passing run, a forced-failure run, a run interrupted mid-job by `INT` and by
 `TERM`, and a run killed with `-9` (swept by the next run). The pull request
 holds the counts.
+
+## The default run is the fast checks (#687)
+
+Measured on seven issues (#663, #664, #671, #676, #678, #685, #686), the time
+from `in progress` to an open pull request was 50 minutes to 8 hours, while
+the pull request itself took 17 to 36 minutes from open to merged. The full
+local run was the slowest of the three times the suite runs (locally, on
+GitHub, in the merge queue), and it was repeated after every fix or rebase.
+
+**Decision (owner, 2026-09-29): the local gate runs only the fast checks.**
+
+- **Default**: `linked-issue.yml`, `feature-coverage.yml`, and the `ci.yml`
+  jobs `build`, `web`, `i18n`, `docs`, `cucumber`, and `agent-config`, each
+  run on its own with `act -j`. Not `test`, `coverage`, `e2e`, or `infra`.
+- **`--full`**: today's full run, terraform and coverage included; it needs
+  the `gh` login for the baseline, as before. `--full` with `--job` is a usage
+  error. A bare run needs no `gh` login.
+- **`--job <id>`**: unchanged.
+- **The author runs the tests for the code they changed, natively**, before
+  opening the pull request: a filtered `dotnet test`, and `CI=1 npm test` on
+  the touched e2e specs.
+- **GitHub CI is the full gate**, the coverage ratchet included. A local pass
+  was never sufficient; it is now also not the whole suite.
+
+Rejected: keeping the full run as the default and telling authors to skip it.
+An instruction that fights the default gets ignored on the day it matters.
 
 ## Rejected
 

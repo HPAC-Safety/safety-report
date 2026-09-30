@@ -299,7 +299,7 @@ jobs:
           TRANSLATED: ${{ steps.translate.outputs.translated }}
           TRANSLATED_KEYS: ${{ steps.translate.outputs.translated_keys }}
           CHECK_OUTCOME: ${{ steps.verify.outcome }}
-          PROVIDER: ${{ vars.TRANSLATION_PROVIDER || 'gemini' }}
+          PROVIDER: ${{ vars.TRANSLATION_PROVIDER || vars.TRANSLATION_MODEL || 'gemini-3.7-flash' }}
         run: |
           set -euo pipefail
 

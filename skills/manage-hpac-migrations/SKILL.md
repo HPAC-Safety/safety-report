@@ -72,6 +72,19 @@ plus:
      becomes a view, mapped read-only under `Persistence/Views/` with
      `ToView` (ADR-0116). A pure projection stays LINQ.
    - Existing inline SQL in past migrations is not rewritten.
+9. **Four tables refuse changes to locked columns, and every `DELETE`.**
+   `reports`, `report_answers`, `report_files`, and `summary_revisions` carry
+   `BEFORE UPDATE OR DELETE` triggers (ADR-0178). A migration that must change a
+   locked column:
+   - disables the table's trigger inside its own transaction
+     (`ALTER TABLE … DISABLE TRIGGER <table>_immutable`), makes the one change,
+     and enables it again before the transaction ends;
+   - carries its own ADR argument for why a reporter's account or a saved
+     revision may change. There is no session setting, role, or runtime flag
+     that bypasses a trigger, and none may be added;
+   - a new column on one of these tables is unguarded until it is added to that
+     table's function and trigger column list, so decide locked or writable in
+     the migration that adds it.
 
 ## Generate
 
@@ -122,9 +135,9 @@ Not yet sanctioned here. Before squashing:
 
 Carry forward, in their final form:
 
-- the `.sql` files under `Persistence/Sql/` that define views and functions
-  (not the ones that transformed rows), merged into one set loaded by the
-  baseline;
+- the `.sql` files under `Persistence/Sql/` that define views, functions, and
+  the immutability triggers of rule 9 (not the ones that transformed rows),
+  merged into one set loaded by the baseline;
 - the seed from `Persistence/Seeding/` (`QuestionBankSeed`, `SeedIds`). Not
   `DevelopmentAdminSeed`: it seeds `admin_users`, which the baseline never
   creates;

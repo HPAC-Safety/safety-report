@@ -169,13 +169,16 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	[Given(@"ConsentPublish is not exactly true")]
 	public async Task GivenConsentIsNotExactlyTrue()
 	{
-		await Violate($"UPDATE reports SET consent_publish = NULL WHERE id = {seeded.Id}");
+		// A locked column: written the way a migration would (ADR-0178).
+		(await PastTheImmutabilityTriggers.Write("reports", $"UPDATE reports SET consent_publish = NULL WHERE id = {seeded.Id}")).ShouldBe(1);
 	}
 
 	[Given(@"the English or French summary text is blank")]
 	public async Task GivenASummaryTextIsBlank()
 	{
-		await Violate($"UPDATE summary_revisions SET ai_summary_fr = '  ' WHERE summary_id IN (SELECT id FROM summaries WHERE report_id = {seeded.Id})");
+		(await PastTheImmutabilityTriggers.Write(
+			"summary_revisions",
+			$"UPDATE summary_revisions SET ai_summary_fr = '  ' WHERE summary_id IN (SELECT id FROM summaries WHERE report_id = {seeded.Id})")).ShouldBe(1);
 	}
 
 	[Given(@"the pair has no current human approval")]

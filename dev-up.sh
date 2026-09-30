@@ -18,15 +18,17 @@
 #     ./dev-up.sh          build and start everything
 #     ./dev-up.sh --down   stop and remove the containers
 #
-# The provider key lives in the primary checkout's .env (gitignored, never
+# Provider keys live in the primary checkout's .env (gitignored, never
 # committed), which ./init-dev.sh asks for and writes once:
 #
 #     GEMINI_API_KEY=...   report summaries (ADR-0104) and every machine
 #                          translation (ADR-0179)
+#     DEEPL_API_KEY=...    kept, dormant: nothing uses it while Gemini
+#                          translates (ADR-0179)
 #
 # Compose only reads a .env beside the compose file, and every worktree is its
 # own directory, so this script passes the primary checkout's file explicitly.
-# Without the key, summaries and translations fail after their retries.
+# Without the Gemini key, summaries and translations fail after their retries.
 
 set -eu
 
@@ -141,9 +143,10 @@ elif [ -f "$MAIN_ROOT/.env" ]; then
 fi
 
 # GEMINI_API_KEY reaches the API (translation) and the Worker (summaries and
-# translation) (docker-compose.yml). A missing one is named rather than
-# discovered later as a failed translation or summary.
-for KEY in GEMINI_API_KEY; do
+# translation), and the dormant DEEPL_API_KEY both (docker-compose.yml). A
+# missing one is named rather than discovered later as a failed translation or
+# summary.
+for KEY in DEEPL_API_KEY GEMINI_API_KEY; do
 	if [ -z "$ENV_FILE" ] || [ -z "$(sed -n "s/^$KEY=//p" "$ENV_FILE" | tail -n 1)" ]; then
 		echo "warning: $KEY is not set in the primary checkout's .env — run ./init-dev.sh to enter it" >&2
 	fi

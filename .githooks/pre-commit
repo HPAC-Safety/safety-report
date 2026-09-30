@@ -30,7 +30,7 @@
 #    hash for re-translation exactly as it queues a missing key. ADR-0057 has
 #    i18n-translate.yml commit the French straight onto a same-repo pull
 #    request's branch, so the stub is a known, temporary state that a workflow
-#    resolves — and with no translation credential locally there is nothing a
+#    resolves — and with no translation credential (GEMINI_API_KEY) locally there is nothing a
 #    developer could do to satisfy the old rule except `--no-verify`, which
 #    also skipped the formatting check for a reason that had nothing to do
 #    with formatting. On main the stub is still fatal, and CI never passes

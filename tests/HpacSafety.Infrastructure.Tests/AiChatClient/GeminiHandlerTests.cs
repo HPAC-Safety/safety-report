@@ -12,20 +12,19 @@ namespace HpacSafety.Infrastructure.Tests.AiChatClient;
 ///     The Gemini adapter, against a stubbed transport. Nothing here reaches the
 ///     network, and no real credential is used.
 /// </summary>
-public class GeminiChatClientTests
+public class GeminiHandlerTests
 {
 	private const string Key = "test-key";
 
 	[Fact]
-	public async Task GivenNoCredential_WhenACompletionIsRequested_ThenReportsUnconfigured()
+	public async Task GivenNoCredential_WhenACompletionIsRequested_ThenRefused()
 	{
 		// Given
 		var (client, _) = Client(apiKey: null);
 
-		// Then
-		client.IsConfigured.ShouldBeFalse();
-
-		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
+		// When / Then
+		client.ModelPrefix.ShouldBe("gemini-");
+		await Should.ThrowAsync<AiMediatorUnavailableException>(() =>
 			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 	}
 
@@ -79,6 +78,23 @@ public class GeminiChatClientTests
 		var sent = transport.LastBody();
 		sent.GetProperty("response_format").GetProperty("type").GetString().ShouldBe("json_object");
 		sent.TryGetProperty("temperature", out _).ShouldBeFalse();
+	}
+
+	[Fact]
+	public async Task GivenNoReasoningLevelAndTextFormat_WhenSent_ThenNeitherIsSent()
+	{
+		// Given — both are optional on the mediator's request
+		var (client, transport) = Client(Responds("ok"));
+
+		// When
+		await client.Complete(
+			new AiChatRequest("gemini-3.7-flash", null, [new ChatMessage(ChatRole.User, "hello")], AiResponseFormat.Text),
+			CancellationToken.None);
+
+		// Then
+		var sent = transport.LastBody();
+		sent.TryGetProperty("reasoning_effort", out _).ShouldBeFalse();
+		sent.TryGetProperty("response_format", out _).ShouldBeFalse();
 	}
 
 	[Fact]
@@ -158,7 +174,7 @@ public class GeminiChatClientTests
 			}));
 
 		// When
-		var cause = await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
+		var cause = await Should.ThrowAsync<AiMediatorUnavailableException>(() =>
 			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 
 		// Then
@@ -174,7 +190,7 @@ public class GeminiChatClientTests
 		var (client, _) = Client(new StubTransport(new HttpRequestException("no route to host")));
 
 		// When
-		var cause = await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
+		var cause = await Should.ThrowAsync<AiMediatorUnavailableException>(() =>
 			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 
 		// Then
@@ -193,7 +209,7 @@ public class GeminiChatClientTests
 			}));
 
 		// When / Then
-		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
+		await Should.ThrowAsync<AiMediatorUnavailableException>(() =>
 			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 	}
 
@@ -205,7 +221,7 @@ public class GeminiChatClientTests
 			new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("not json at all") }));
 
 		// When / Then
-		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
+		await Should.ThrowAsync<AiMediatorUnavailableException>(() =>
 			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 	}
 
@@ -226,7 +242,7 @@ public class GeminiChatClientTests
 		});
 	}
 
-	private static (GeminiChatClient Client, StubTransport Transport) Client(
+	private static (GeminiHandler Client, StubTransport Transport) Client(
 		StubTransport? transport = null,
 		string? apiKey = Key,
 		string? endpoint = null)
@@ -239,7 +255,7 @@ public class GeminiChatClientTests
 			Endpoint = endpoint,
 		});
 
-		return (new GeminiChatClient(new StubClientFactory(transport), options), transport);
+		return (new GeminiHandler(new StubClientFactory(transport), () => options.Value), transport);
 	}
 
 	/// <summary>Captures what was sent and replays a canned response.</summary>

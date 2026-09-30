@@ -24,9 +24,10 @@ public sealed class WorkerConfigurationTests
 
 		// Then
 		options.ShouldNotBeNull();
-		options.Provider.ShouldBe("Gemini");
 		options.Model.ShouldBe("gemini-3.7-flash");
 		options.ReasoningEffort.ShouldBe(ReasoningEffort.Low);
+		configuration.GetSection(AiChatClientOptions.SectionName).GetChildren()
+			.Select(child => child.Key).ShouldNotContain("Provider");
 		options.ApiKey.ShouldBeNullOrEmpty();
 	}
 

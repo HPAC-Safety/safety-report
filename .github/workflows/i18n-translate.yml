@@ -130,6 +130,10 @@ jobs:
         id: translate
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_DEV }}
+          # Kept, dormant (ADR-0179): read only when TRANSLATION_PROVIDER is
+          # set to deepl, so DeepL can be switched back.
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          TRANSLATION_FORMALITY: ${{ vars.TRANSLATION_FORMALITY }}
           TRANSLATION_PROVIDER: ${{ vars.TRANSLATION_PROVIDER }}
           TRANSLATION_ENDPOINT: ${{ vars.TRANSLATION_ENDPOINT }}
           TRANSLATION_MODEL: ${{ vars.TRANSLATION_MODEL }}

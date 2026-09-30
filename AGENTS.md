@@ -376,12 +376,21 @@ contributor who never invokes one is unaffected.
   never a translation provider.
 - **Gemini translates, en-CA ⇄ fr-CA, in every environment and in CI**
   ([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)):
+  - `ITranslator` has two implementations: `OpenAiTranslator`, registered,
+    and `DeepLTranslator`, kept dormant — code, tests, secret, IAM, and deploy
+    step — so DeepL can be switched back. Nothing registers DeepL.
+  - `OpenAiTranslator` and the Worker's `OpenAiSummarizer` are the two callers
+    of `IAiMediator`, which picks the provider handler by the request's model
+    name and is the only place that tells providers apart. `GeminiHandler`
+    claims `gemini-*`; there is no provider setting, and a model no handler
+    claims stops startup while a key is held.
   - `ITranslator` is its own call, outside invariant 3. It receives the
     strings and `locales/terms.json`, and nothing else: no report context, no
     other answers. It runs for a report with or without publication consent.
   - It reuses the summary's Gemini key — the ADR-0104 secret in each
-    environment, `GEMINI_API_KEY_DEV` in CI; no other key or secret exists —
-    with its own `Translation:Model` and `Translation:ReasoningEffort`.
+    environment, `GEMINI_API_KEY_DEV` in CI — with its own `Translation:Model`
+    and `Translation:ReasoningEffort`. Translation needs no key of its own;
+    the DeepL key and secret are kept dormant and nothing reads them.
   - With no key it is unavailable in every environment; there is no stand-in.
   - One versioned prompt, `locales/translation-prompt.v1.md`, serves runtime
     and CI. A used version is never edited.

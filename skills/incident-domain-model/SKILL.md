@@ -106,7 +106,7 @@ Three tiers drive access control, logging, and what may reach a model:
 1. **Restricted** — reporter and pilot names, phone, email, member number, raw
    narrative, original uploaded media. Admin-only and never logged.
    - The one translation service it reaches is the Worker's answer translation
-     (Gemini, a separate call outside the summary's one, ADR-0179), for free
+     (the OpenAI-compatible translator, Gemini, a separate call outside the summary's one, ADR-0179; DeepL is kept dormant), for free
      text marked Auto-translate answer, written exactly once and never by a
      human (ADR-0112, ADR-0174).
    - The one original that can become public is a validated document on a

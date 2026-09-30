@@ -11,7 +11,7 @@ keywords: translation provider, DeepL, configuration
 # ADR-0022 — DeepL, behind a one-file adapter, after GitHub Models was retired
 
 **Status:** The DeepL clause, the CI translation provider, is superseded by
-[ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md): Gemini translates the UI catalogue in CI too. The one-file adapter design
+[ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md): Gemini translates the UI catalogue in CI too, and the DeepL adapter stays beside it, dormant. The one-file adapter design
 and the `stub` provider stand. Formerly: accepted only for application UI catalogue generation. Runtime
 question and summary translation clauses are superseded by the
 [localization specification](../../features/web-localization-and-design/web-localization-and-design.feature).

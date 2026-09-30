@@ -10,7 +10,7 @@ keywords: translation, DeepL, ITranslator, worker, answers, provenance, immutabi
 
 # ADR-0080 — Every answer gets a Worker-translated second language; the submitted value is immutable
 
-**Provider:** DeepL, where named below, is replaced by Gemini ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
+**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 
 **Status:** Narrowed by
 [ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md): only

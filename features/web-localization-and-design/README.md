@@ -63,13 +63,24 @@ term correctly.
 
 ## Machine translation: Gemini, en-CA and fr-CA
 
-Gemini does every machine translation, at runtime and in CI, between
-`en-CA` and `fr-CA`
+An OpenAI-compatible translator (`OpenAiTranslator`) does every machine
+translation, at runtime and in CI, between `en-CA` and `fr-CA`. It sends its
+own model to the `IAiMediator`, which picks the provider handler by the
+model's name (`gemini-*` goes to Gemini, REQ-WLD-042); there is no provider
+setting, and a model no handler claims stops startup while a key is held
+(REQ-WLD-043, REQ-WLD-044)
 ([ADR-0179](../../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 French to English is written in Canadian spelling (colour, centre); English to
-French is Canadian French. The prompt names the variant, so there is no
-language code to configure and no `EnglishTarget` setting
+French is Canadian French. The prompt names the variant, so the running system
+has no language code to configure and no `EnglishTarget` setting
 (REQ-WLD-033, REQ-WLD-034).
+
+DeepL is kept, dormant: `DeepLTranslator`, `DeepLOptions`, their tests, and
+the `tools/translator.mjs` adapter stay, but nothing registers or selects them,
+so it can be switched back. DeepL has no Canadian English, so that adapter
+still asks for `EN-US` or `EN-GB` by `Translation:EnglishTarget`, and anything
+else stops it at startup (REQ-WLD-028, REQ-WLD-029;
+[ADR-0115](../../docs/decisions/ADR-0115-the-english-translation-target-is-configuration.md)).
 
 - **A separate call.** `ITranslator` is not the summary call and is outside
   the "one model call, only with consent" rule. It receives the strings and
@@ -90,7 +101,8 @@ language code to configure and no `EnglishTarget` setting
 - **No key, no translation**, in every environment, Development included.
   There is no stand-in that echoes the text (REQ-WLD-036).
 
-Not built: a second translation provider of any kind; a per-value
+Not built: a second translation provider in use at once (DeepL is kept, not
+running); a per-value
 record of the model or prompt version (a value keeps only its `auto` /
 `human` / `choice` source); re-translating existing values when the prompt or
 model changes; a language code chosen by configuration.

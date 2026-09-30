@@ -14,7 +14,7 @@ keywords: translation, terminology, DeepL, custom_instructions, glossary, fr-CA,
 300-character ceilings) is superseded by [ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md):
 the same terms go inline in the one translation prompt, to Gemini, in CI and at
 runtime, and the server-side `ITranslator` is now held to the term list too.
-The list format, the `--check` rule, and the forbidden stems stand.
+DeepL's adapter and its ceilings are kept, dormant. The list format, the `--check` rule, and the forbidden stems stand.
 
 ## Context
 

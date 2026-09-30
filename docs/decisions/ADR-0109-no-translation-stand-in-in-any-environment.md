@@ -12,7 +12,7 @@ keywords: translation, DeepL, EchoTranslator, stand-in, development, ITranslator
 
 **Status:** Accepted. Supersedes the Development stand-in in
 [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md).
-The rest of ADR-0062 stands. The credential is now the Gemini key, not DeepL's
+The rest of ADR-0062 stands. The credential is now the Gemini key; DeepL's is kept, dormant
 ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)); the no-stand-in rule stands unchanged.
 
 ## Context

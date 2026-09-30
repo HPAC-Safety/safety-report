@@ -239,7 +239,7 @@ describe('the locale translation command', () => {
 
 			// When — the endpoint is deliberately unroutable: --check must never reach it
 			const { code, output } = run(['--locales', dir, '--check'], {
-				TRANSLATION_PROVIDER: 'gemini',
+				TRANSLATION_MODEL: 'gemini-3.7-flash',
 				TRANSLATION_ENDPOINT: 'https://translation.invalid/chat/completions',
 				GEMINI_API_KEY: 'not-a-real-key',
 			})

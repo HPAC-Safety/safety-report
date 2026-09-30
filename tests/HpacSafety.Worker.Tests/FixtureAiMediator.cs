@@ -3,15 +3,15 @@ using HpacSafety.Core;
 namespace HpacSafety.Worker.Tests;
 
 /// <summary>
-///     A deterministic, controlled <see cref="IAiChatClient" /> double for tests —
+///     A deterministic, controlled <see cref="IAiMediator" /> double for tests —
 ///     issue #20's "deterministic controlled provider fixtures for tests." Returns
 ///     one canned response per instance and records what it was called with.
 /// </summary>
-internal sealed class FixtureAiChatClient : IAiChatClient
+internal sealed class FixtureAiMediator : IAiMediator
 {
 	private readonly string _response;
 
-	public FixtureAiChatClient(string response,
+	public FixtureAiMediator(string response,
 							   bool isConfigured = true)
 	{
 		_response = response;
@@ -38,7 +38,7 @@ internal sealed class FixtureAiChatClient : IAiChatClient
 
 		if (!IsConfigured)
 		{
-			throw new AiChatClientUnavailableException("Fixture is not configured.");
+			throw new AiMediatorUnavailableException("Fixture is not configured.");
 		}
 
 		return Task.FromResult(_response);

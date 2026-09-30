@@ -7,7 +7,7 @@ namespace HpacSafety.Infrastructure.Translation;
 ///     <c>Translation</c> configuration section (ADR-0179).
 /// </summary>
 /// <remarks>
-///     Translation reuses the Gemini key and provider the summary call already holds
+///     Translation reuses the key and provider (Gemini today) the summary call already holds
 ///     (<see cref="HpacSafety.Infrastructure.AiChatClient.AiChatClientOptions" />,
 ///     ADR-0104): no second key, secret, or Secrets Manager entry exists. What it
 ///     owns is these two settings, so a literal translation can be tuned apart from

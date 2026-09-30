@@ -8,11 +8,13 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Worker.Summarization;
 
 /// <summary>
-///     The one concrete <see cref="ISummarizer" />: loads the current versioned prompt,
-///     applies the deterministic marking pass, makes exactly one
-///     <see cref="IAiChatClient" /> call, and strictly validates the response.
+///     The one concrete <see cref="ISummarizer" />, an OpenAI-compatible caller: loads the
+///     current versioned prompt, applies the deterministic marking pass, makes exactly one
+///     <see cref="IAiMediator" /> call with <c>AiChatClient:Model</c> and
+///     <c>AiChatClient:ReasoningEffort</c>, and strictly validates the response. It knows no
+///     provider: the mediator picks the handler by the model's name (ADR-0104).
 /// </summary>
-public sealed class PromptDrivenSummarizer : ISummarizer
+public sealed class OpenAiSummarizer : ISummarizer
 {
 	/// <summary>The current prompt file under <c>Prompts/</c>. Bump on any behavior change.</summary>
 	public const string CurrentPromptFileName = "summarize-anonymize.v3.md";
@@ -30,19 +32,19 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
 	};
 
-	private readonly IAiChatClient _aiChatClient;
+	private readonly IAiMediator _mediator;
 	private readonly string? _model;
 	private readonly ReasoningEffort? _reasoningEffort;
 	private readonly string _promptsDirectory;
 	private string? _cachedPrompt;
 
-	public PromptDrivenSummarizer(IAiChatClient aiChatClient,
+	public OpenAiSummarizer(IAiMediator mediator,
 								  IOptions<AiChatClientOptions> options)
 	{
-		ArgumentNullException.ThrowIfNull(aiChatClient);
+		ArgumentNullException.ThrowIfNull(mediator);
 		ArgumentNullException.ThrowIfNull(options);
 
-		_aiChatClient = aiChatClient;
+		_mediator = mediator;
 		_model = options.Value.Model;
 		_reasoningEffort = options.Value.ReasoningEffort;
 		_promptsDirectory = Path.Combine(AppContext.BaseDirectory, "Prompts");
@@ -68,14 +70,14 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 		string response;
 		try
 		{
-			response = await _aiChatClient.Complete(
+			response = await _mediator.Complete(
 				new AiChatRequest(
 					_model,
 					reasoningEffort,
 					[new ChatMessage(ChatRole.System, systemPrompt), new ChatMessage(ChatRole.User, userMessage)]),
 				cancellationToken).ConfigureAwait(false);
 		}
-		catch (AiChatClientUnavailableException exception)
+		catch (AiMediatorUnavailableException exception)
 		{
 			throw new SummarizationFailedException("The AI chat provider was unavailable for this summarization attempt.", exception);
 		}

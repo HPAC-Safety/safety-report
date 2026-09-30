@@ -9,9 +9,9 @@
 #     ./init-dev.sh --obsidian  also hydrate obsidian-vault/ from the graphify graph
 #     ./init-dev.sh --help
 #
-# It also asks, once, for the private provider key local development needs
-# (GEMINI_API_KEY) and keeps it in the primary checkout's gitignored .env,
-# which ./dev-up.sh passes to the containers.
+# It also asks, once, for the private provider keys local development needs
+# (GEMINI_API_KEY, and the dormant DEEPL_API_KEY) and keeps them in the primary
+# checkout's gitignored .env, which ./dev-up.sh passes to the containers.
 #
 # macOS and Linux run it natively. Windows runs it under Git Bash, which every
 # contributor here already has — CONTRIBUTING.md requires Git for Windows with
@@ -872,12 +872,14 @@ fi
 # ------------------------------------------------------------- provider keys ---
 #
 # Gemini writes report summaries and does every machine translation (ADR-0104,
-# ADR-0179). There is no stand-in (ADR-0109), so without the key a local report
-# is never translated or summarized. The key is private: it is written to
+# ADR-0179). DeepL is kept, dormant (ADR-0179): nothing calls it, but its key is
+# still asked for so it can be switched back without a setup step. There is no
+# stand-in (ADR-0109), so without the Gemini key a local report is never
+# translated or summarized. The keys are private: they are written to
 # the primary checkout's .env, which is gitignored and never committed, and
 # ./dev-up.sh hands that file to the API and Worker containers — from the
 # primary checkout and from every worktree alike. A key already in .env is not
-# asked for again; Enter skips it.
+# asked for again; Enter skips one.
 
 heading "provider keys"
 
@@ -908,6 +910,14 @@ set_env_value() {
 # How to get each key, printed wherever one is asked for or reported missing.
 key_help() {
 	case "$1" in
+		DEEPL_API_KEY)
+			say "    How to get it:"
+			say "      1. Sign up for a DeepL API plan at https://www.deepl.com/pro-api —"
+			say "         API Free is enough for development. It is the API plan you need,"
+			say "         not a DeepL Translator subscription."
+			say "      2. Open https://www.deepl.com/your-account/keys and copy the key."
+			say "         A Free key ends in :fx; the API picks the right host from that."
+			;;
 		GEMINI_API_KEY)
 			say "    How to get it:"
 			say "      1. Open https://aistudio.google.com/apikey and create a key in a"
@@ -957,6 +967,7 @@ ask_key() {
 	KEY_VALUE=''
 }
 
+ask_key DEEPL_API_KEY "dormant DeepL translation (kept so it can be switched back; nothing uses it now)"
 ask_key GEMINI_API_KEY "report summaries and machine translation, with a paid, billing-enabled key"
 
 # ------------------------------------------------------------------ summary ---

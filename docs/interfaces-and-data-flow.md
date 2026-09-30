@@ -89,8 +89,8 @@ it is enforced in review and by the conventions skill.*
   ([ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md));
 - an attachment detector/processor for controlled image/video derivatives and
   document validation;
-- a machine translator (`ITranslator`, Gemini through its own call, never the
-  summary's) for drafting question wording, the Worker's answer and comment
+- a machine translator (`ITranslator`: the OpenAI-compatible translator,
+  Gemini through its own call never the summary's, with DeepL kept dormant) for drafting question wording, the Worker's answer and comment
   translations, and a reviewer's summary draft
   ([ADR-0022](decisions/ADR-0022-translation-provider-is-configuration.md),
   [ADR-0179](decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),

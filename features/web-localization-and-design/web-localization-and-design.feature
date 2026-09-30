@@ -162,6 +162,29 @@ Scenario: The CI translator is told the required rendering of every listed term
   When a translation request is built for the CI translator
   Then the request instructs the model to render "upload" as "téléverser" and never "télécharg…"
 
+@REQ-WLD-028
+Scenario Outline: The kept, dormant DeepL adapter translates French into the English the configuration names
+  Given the translation settings name <setting> as the English target
+  When French text is sent to DeepL to be translated into English
+  Then the request asks DeepL for French to <code>
+
+Examples:
+  | setting | code  |
+  | en-US   | EN-US |
+  | EN-GB   | EN-GB |
+
+@REQ-WLD-029
+Scenario Outline: The kept, dormant DeepL adapter with no usable English target refuses to start
+  Given the translation settings name <setting> as the English target
+  When the translator's settings are validated at startup
+  Then startup fails, naming the Translation:EnglishTarget setting
+
+Examples:
+  | setting |
+  | nothing |
+  | EN-CA   |
+  | EN      |
+
 @REQ-WLD-033
 Scenario: French is machine-translated into Canadian English
   Given a Gemini key is configured
@@ -243,9 +266,33 @@ Examples:
 @REQ-WLD-041
 Scenario: Translation uses the same Gemini key as summaries
   Given the summary call's Gemini key is configured
-  And no other key exists
+  And no translation-only key exists
   When the API or the Worker translates text
   Then the request is authorized with that key
+
+@REQ-WLD-042
+Scenario: Translation's model name picks its provider, apart from the summary's
+  Given a Gemini key is configured
+  And the Translation settings name gemini-3.5-pro as the model and low as the reasoning effort
+  When text is translated
+  Then the request goes to Gemini's OpenAI-compatible endpoint
+  And translation asks for gemini-3.5-pro at low reasoning
+  And no setting names a provider
+
+@REQ-WLD-043
+Scenario: A translation model no provider handler claims stops startup when a key is held
+  Given a Gemini key is configured
+  And the Translation settings name claude-x as the model and low as the reasoning effort
+  When the host starts
+  Then startup fails, naming the Translation:Model setting
+
+@REQ-WLD-044
+Scenario: With no key, a translation model no provider handler claims leaves translation unavailable
+  Given no Gemini key is configured, in Development or anywhere else
+  And the Translation settings name claude-x as the model and low as the reasoning effort
+  When the host starts
+  Then translation is refused
+  And no request is sent to any provider
 
 @REQ-WLD-014
 Scenario: Question content comes from the bilingual database revision

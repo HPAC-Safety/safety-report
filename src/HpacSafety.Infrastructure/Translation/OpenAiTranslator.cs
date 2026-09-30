@@ -7,9 +7,12 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Infrastructure.Translation;
 
 /// <summary>
-///     The one <see cref="ITranslator" />: Gemini, asked through the same
-///     <see cref="IAiChatClient" /> strategy and key the summary call uses, with its own
-///     model and reasoning level (ADR-0179).
+///     The registered <see cref="ITranslator" />: an OpenAI-compatible translator. It sends
+///     its instructions and strings, with its own model and reasoning level, to the
+///     <see cref="IAiMediator" />, which picks the handler by the model's name and uses the
+///     key the summary call uses (ADR-0179). It knows no provider: today <c>gemini-*</c> is
+///     served by the Gemini handler, and any other OpenAI-compatible handler works unchanged. <see cref="DeepLTranslator" /> is the kept, dormant
+///     second implementation.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -31,26 +34,26 @@ namespace HpacSafety.Infrastructure.Translation;
 ///         the CI locale job.
 ///     </para>
 /// </remarks>
-public sealed partial class AiChatTranslator : ITranslator
+public sealed partial class OpenAiTranslator : ITranslator
 {
-	private readonly IAiChatClient _chat;
+	private readonly IAiMediator _mediator;
 	private readonly TranslationOptions _options;
 
 	/// <summary>Creates the translator.</summary>
-	/// <param name="chat">The provider strategy, which holds the key.</param>
+	/// <param name="mediator">The AI mediator, which holds the key and picks the handler by model.</param>
 	/// <param name="options">Translation's own model and reasoning level.</param>
-	public AiChatTranslator(IAiChatClient chat,
+	public OpenAiTranslator(IAiMediator mediator,
 							IOptions<TranslationOptions> options)
 	{
-		ArgumentNullException.ThrowIfNull(chat);
+		ArgumentNullException.ThrowIfNull(mediator);
 		ArgumentNullException.ThrowIfNull(options);
 
-		_chat = chat;
+		_mediator = mediator;
 		_options = options.Value;
 	}
 
 	/// <inheritdoc />
-	public bool IsConfigured => _chat.IsConfigured;
+	public bool IsConfigured => _mediator.IsConfigured;
 
 	/// <inheritdoc />
 	public async Task<IReadOnlyList<string>> Translate(
@@ -90,9 +93,9 @@ public sealed partial class AiChatTranslator : ITranslator
 
 		try
 		{
-			reply = await _chat.Complete(request, cancellationToken).ConfigureAwait(false);
+			reply = await _mediator.Complete(request, cancellationToken).ConfigureAwait(false);
 		}
-		catch (AiChatClientUnavailableException cause)
+		catch (AiMediatorUnavailableException cause)
 		{
 			// The cause's message is written to be safe to show: a status, or a
 			// fixed sentence. Never the provider's body.

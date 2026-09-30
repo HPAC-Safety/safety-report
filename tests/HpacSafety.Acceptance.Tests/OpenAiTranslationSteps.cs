@@ -19,7 +19,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 [Binding]
 [Scope(Feature = "Web, localization, and design")]
-public sealed class GeminiTranslationSteps : IDisposable
+public sealed class OpenAiTranslationSteps : IDisposable
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
@@ -39,7 +39,6 @@ public sealed class GeminiTranslationSteps : IDisposable
 	public void GivenAGeminiKeyIsConfigured()
 	{
 		_settings["AiChatClient:ApiKey"] = SyntheticKey;
-		_settings["AiChatClient:Provider"] = "Gemini";
 	}
 
 	[Given(@"^the summary call's Gemini key is configured$")]
@@ -48,7 +47,7 @@ public sealed class GeminiTranslationSteps : IDisposable
 		GivenAGeminiKeyIsConfigured();
 	}
 
-	[Given(@"^no other key exists$")]
+	[Given(@"^no translation-only key exists$")]
 	public void GivenNoOtherKeyExists()
 	{
 		// The retired translation-only names configure nothing.
@@ -331,11 +330,24 @@ public sealed class GeminiTranslationSteps : IDisposable
 		body.RootElement.GetProperty("reasoning_effort").GetString().ShouldBe(effort);
 	}
 
-	[Then(@"^startup fails, naming the (Translation:\w+) setting$")]
+	[Then(@"^startup fails, naming the (Translation:Model|Translation:ReasoningEffort) setting$")]
 	public void ThenStartupFails(string setting)
 	{
 		_startupFailure.ShouldNotBeNull().Message.ShouldContain(setting);
 		_transport.Bodies.ShouldBeEmpty();
+	}
+
+	[Then(@"^the request goes to Gemini's OpenAI-compatible endpoint$")]
+	public void ThenTheRequestGoesToGemini()
+	{
+		_transport.Uri.ShouldNotBeNull().ToString()
+			.ShouldBe("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+	}
+
+	[Then(@"^no setting names a provider$")]
+	public void ThenNoSettingNamesAProvider()
+	{
+		_settings.Keys.ShouldNotContain(key => key.Contains("Provider", StringComparison.OrdinalIgnoreCase));
 	}
 
 	[Then(@"^the request is authorized with that key$")]
@@ -415,6 +427,8 @@ public sealed class GeminiTranslationSteps : IDisposable
 
 		public string? Authorization { get; private set; }
 
+		public Uri? Uri { get; private set; }
+
 		/// <summary>What the model says. Left empty, it translates each string it is sent.</summary>
 		public string? Reply { get; set; }
 
@@ -424,6 +438,7 @@ public sealed class GeminiTranslationSteps : IDisposable
 			var body = await request.Content!.ReadAsStringAsync(cancellationToken);
 			Bodies.Add(body);
 			Authorization = request.Headers.Authorization?.ToString();
+			Uri = request.RequestUri;
 
 			var content = Reply ?? Echo(body);
 			var completion = JsonSerializer.Serialize(new { choices = new[] { new { message = new { content } } } });

@@ -34,18 +34,21 @@
  *
  * ## Providers
  *
- * | name | what it is |
+ * | adapter | what it is |
  * |---|---|
- * | `gemini` | **The default.** Google Gemini through its OpenAI-compatible endpoint, `en-CA` to `fr-CA`. See ADR-0179. |
+ * | `gemini-…` model | **The default**, chosen by the model name, not a setting: Google Gemini through its OpenAI-compatible endpoint, `en-CA` to `fr-CA`. See ADR-0179. |
+ * | `deepl` | **Kept, dormant** (ADR-0179). DeepL, targeting `FR-CA`; used only when `TRANSLATION_PROVIDER=deepl`, so it can be switched back. |
  * | `stub` | Offline stand-in for the test suite. Stamps `provider: "stub"`, which `--check` rejects, so its output can never reach `main`. |
  *
  * Configuration comes from the environment:
  *
  *   GEMINI_API_KEY               the paid Gemini key (the workflow passes GEMINI_API_KEY_DEV)
- *   TRANSLATION_MODEL            model; defaults to gemini-3.7-flash
+ *   TRANSLATION_MODEL            model; its prefix picks the provider, gemini- is Gemini; defaults to gemini-3.7-flash
  *   TRANSLATION_REASONING_EFFORT low (default) | medium | high
  *   TRANSLATION_ENDPOINT         overrides the endpoint
- *   TRANSLATION_PROVIDER         gemini (default) | stub
+ *   TRANSLATION_PROVIDER         only deepl (dormant) | stub; the model name picks any other provider
+ *   DEEPL_API_KEY                the dormant DeepL adapter's key. Free keys end in ":fx".
+ *   TRANSLATION_FORMALITY        the dormant DeepL adapter's formality; defaults to prefer_more
  */
 
 import { readFileSync } from 'node:fs'
@@ -82,6 +85,9 @@ export function configFromEnv(env = process.env) {
 		model: env.TRANSLATION_MODEL,
 		reasoningEffort: env.TRANSLATION_REASONING_EFFORT,
 		apiKey: env.GEMINI_API_KEY,
+		// Kept, dormant (ADR-0179): read only when the provider is 'deepl'.
+		deeplApiKey: env.DEEPL_API_KEY,
+		formality: env.TRANSLATION_FORMALITY,
 	}
 }
 
@@ -173,7 +179,7 @@ export function parseTranslations(content, items) {
 function geminiTranslator({ endpoint, model, reasoningEffort, apiKey }) {
 	if (!apiKey) {
 		throw new TranslatorNotConfiguredError(
-			'The Gemini translator needs GEMINI_API_KEY (the workflow passes the GEMINI_API_KEY_DEV secret). See ADR-0179.',
+			'The Gemini CI translator needs GEMINI_API_KEY (the workflow passes the GEMINI_API_KEY_DEV secret). See ADR-0179.',
 		)
 	}
 
@@ -244,25 +250,218 @@ function stubTranslator() {
 	}
 }
 
+// --- DeepL ------------------------------------------------------------------
+
+/**
+ * This system's locale codes, mapped to DeepL's.
+ *
+ * `FR-CA` is a real DeepL target language — verified against their
+ * supported-languages table, where it is listed as "French (Canadian),
+ * Translation: Target Only". So `locales/fr-CA.json` really does get Canadian
+ * French, not metropolitan French under a Canadian name. That was worth
+ * checking; `FR` would have been the quiet wrong answer.
+ *
+ * "Target Only" means FR-CA cannot be a *source* language. It never is here:
+ * English is the source of truth for UI chrome.
+ */
+/** DeepL's ceiling on custom instructions per request, and on each one's length. */
+export const DEEPL_MAX_INSTRUCTIONS = 10
+export const DEEPL_MAX_INSTRUCTION_LENGTH = 300
+
+const DEEPL_CODES = {
+	'en-CA': 'EN',
+	'fr-CA': 'FR-CA',
+}
+
+/**
+ * Wraps each `{placeholder}` in a tag DeepL is told to leave untouched, so
+ * "Showing {count} reports" cannot come back as "Showing {compte} reports".
+ * `tag_handling: 'xml'` makes DeepL parse the string as XML, so any literal
+ * `&`, `<`, `>` outside a placeholder is escaped first — otherwise it would
+ * be read as markup rather than text.
+ */
+function protectPlaceholders(text) {
+	const escaped = String(text)
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+	return escaped.replace(/\{[^{}]*\}/g, (placeholder) => `<ph>${placeholder}</ph>`)
+}
+
+/** Reverses {@link protectPlaceholders} on a translated string. */
+function unprotectPlaceholders(text) {
+	return String(text)
+		.replace(/<ph>([^<]*)<\/ph>/g, '$1')
+		.replaceAll('&lt;', '<')
+		.replaceAll('&gt;', '>')
+		.replaceAll('&amp;', '&')
+}
+
+/**
+ * DeepL: kept, dormant (ADR-0179). Gemini is the provider; this adapter is
+ * selected only by an explicit `TRANSLATION_PROVIDER=deepl`, so DeepL can be
+ * switched back without a rewrite. It keeps DeepL's own ceilings on custom
+ * instructions, which the Gemini path does not have.
+ */
+function deeplTranslator({ apiKey, endpoint, formality }) {
+	if (!apiKey) {
+		throw new TranslatorNotConfiguredError(
+			'The DeepL translator needs DEEPL_API_KEY. Add it as a repository secret. Kept, dormant: see ADR-0179.',
+		)
+	}
+
+	// DeepL identifies Free-tier keys by a ':fx' suffix, and the two tiers have
+	// different hosts. Getting this wrong is a 403 that reads like a bad key.
+	const resolved =
+		endpoint || (apiKey.endsWith(':fx')
+			? 'https://api-free.deepl.com/v2/translate'
+			: 'https://api.deepl.com/v2/translate')
+
+	// 'more' and 'less' fail with HTTP 400 on a target language that does not
+	// support formality; the 'prefer_' variants degrade to default instead. FR
+	// supports formality, FR-CA is not documented as doing so, and a whole run
+	// lost to a 400 over a nicety is not a trade worth making.
+	//
+	// Formal is the right default regardless: a national safety authority
+	// addressing pilots uses "vous". Override with TRANSLATION_FORMALITY.
+	const chosenFormality = formality || 'prefer_more'
+
+	const codeFor = (locale) => {
+		const code = DEEPL_CODES[locale]
+		if (!code) {
+			throw new Error(`DeepL has no configured language code for '${locale}'.`)
+		}
+		return code
+	}
+
+	const buildRequest = (items, { source, target, instructions = [] }) => {
+		// Refused rather than dropped: silently losing one would leave that
+		// term unprotected.
+		if (instructions.length > DEEPL_MAX_INSTRUCTIONS) {
+			throw new Error(
+				`${instructions.length} term instructions; DeepL accepts at most ${DEEPL_MAX_INSTRUCTIONS} per request.`,
+			)
+		}
+		const tooLong = instructions.find((line) => line.length > DEEPL_MAX_INSTRUCTION_LENGTH)
+		if (tooLong !== undefined) {
+			throw new Error(
+				`A term instruction is ${tooLong.length} characters; DeepL accepts at most ${DEEPL_MAX_INSTRUCTION_LENGTH}.`,
+			)
+		}
+		return {
+		text: items.map(({ text }) => protectPlaceholders(text)),
+		source_lang: codeFor(source),
+		target_lang: codeFor(target),
+		formality: chosenFormality,
+		// These are interface labels. DeepL "correcting" the capitalisation or
+		// the trailing space of a label is a change nobody asked for.
+		preserve_formatting: true,
+		// Required for `ignore_tags` to take effect. The `<ph>` tags come from
+		// protectPlaceholders above, wrapping every `{placeholder}` token.
+		tag_handling: 'xml',
+		ignore_tags: ['ph'],
+		// The required rendering of each term in locales/terms.json (ADR-0102).
+		// Inline rather than a stored DeepL glossary: DeepL documents custom
+		// instructions for French "and its variants", but documents glossary
+		// variant support only for EN, PT, and ZH, and a stored glossary is
+		// account state this job would have to create, find, and clean up.
+		// Omitted when empty, so a run with no terms sends what it always did.
+		...(instructions.length > 0 ? { custom_instructions: instructions } : {}),
+		}
+	}
+
+	/**
+	 * DeepL returns translations positionally, with no keys, so position is the
+	 * only thing tying a translation to its key. A length mismatch would shift
+	 * every key by one and stamp each with a hash that says it is correct —
+	 * silently wrong French on every label after the gap.
+	 */
+	const parseResponse = (payload, items) => {
+		const translations = payload?.translations
+		if (!Array.isArray(translations)) {
+			throw new Error('DeepL returned no translations array.')
+		}
+		if (translations.length !== items.length) {
+			throw new Error(
+				`DeepL returned ${translations.length} translations for ${items.length} strings. ` +
+					'Position is what maps a translation to its key, so this is not recoverable.',
+			)
+		}
+		return new Map(
+			items.map(({ key }, index) => [key, unprotectPlaceholders(translations[index].text)]),
+		)
+	}
+
+	return {
+		// DeepL has no model id, so the provenance records what actually
+		// determines the output instead: the target variant and the formality.
+		name: `deepl:${DEEPL_CODES['fr-CA']}:${chosenFormality}`,
+		endpoint: resolved,
+		buildRequest,
+		parseResponse,
+		async translate(items, locales) {
+			const response = await fetch(resolved, {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json',
+					authorization: `DeepL-Auth-Key ${apiKey}`,
+				},
+				body: JSON.stringify(buildRequest(items, locales)),
+			})
+
+			if (!response.ok) {
+				// Status only, never the body — see the note in the adapter above.
+				throw new Error(`DeepL answered ${response.status} ${response.statusText}.`)
+			}
+
+			return parseResponse(await response.json(), items)
+		},
+	}
+}
+
+/**
+ * The OpenAI-compatible adapters, by the model-name prefix each claims. The model
+ * is the only thing that picks one (ADR-0179, as in the .NET translator): a new
+ * OpenAI-compatible provider is one adapter and one entry here.
+ */
+const MODEL_ADAPTERS = [{ prefix: 'gemini-', create: geminiTranslator }]
+
 /**
  * Builds the translator the environment asks for.
  *
- * @throws {TranslatorNotConfiguredError} when the key is missing or a setting
- *   is unusable. Gemini is the decided provider (ADR-0179), so defaulting to it
- *   is a recorded decision rather than a guess; what can still be missing is
- *   the credential, and that failure names it.
+ * The adapter follows the model name: `TRANSLATION_MODEL` (default
+ * `gemini-3.7-flash`) is matched to an adapter by prefix, and `gemini-` is the
+ * Gemini OpenAI-compatible endpoint. `TRANSLATION_PROVIDER` does not choose among
+ * those; it exists only to select the offline `stub` or the dormant `deepl`
+ * adapter explicitly.
+ *
+ * @throws {TranslatorNotConfiguredError} when the key is missing, a setting is
+ *   unusable, or no adapter claims the model. Gemini is the decided provider
+ *   (ADR-0179), so its default model is a recorded decision rather than a guess;
+ *   what can still be missing is the credential, and that failure names it.
  */
 export function createTranslator(config = {}) {
-	const provider = config.provider || 'gemini'
-
-	switch (provider) {
-		case 'gemini':
-			return geminiTranslator(config)
+	switch (config.provider) {
 		case 'stub':
 			return stubTranslator()
+		case 'deepl':
+			return deeplTranslator({ ...config, apiKey: config.deeplApiKey })
+		case undefined:
+		case '':
+			break
 		default:
 			throw new TranslatorNotConfiguredError(
-				`Unknown TRANSLATION_PROVIDER '${provider}'. Known providers: gemini, stub.`,
+				`Unknown TRANSLATION_PROVIDER '${config.provider}'. It only selects the dormant deepl adapter or the offline stub; the model name picks the provider.`,
 			)
 	}
+
+	const model = config.model || DEFAULT_MODEL
+	const adapter = MODEL_ADAPTERS.find(({ prefix }) => model.toLowerCase().startsWith(prefix))
+	if (!adapter) {
+		throw new TranslatorNotConfiguredError(
+			`TRANSLATION_MODEL '${model}' names no provider. A model name must start with: ${MODEL_ADAPTERS.map(({ prefix }) => `'${prefix}'`).join(', ')}.`,
+		)
+	}
+
+	return adapter.create(config)
 }

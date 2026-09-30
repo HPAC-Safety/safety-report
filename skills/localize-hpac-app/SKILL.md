@@ -16,7 +16,9 @@ description: Keep HPAC Safety application chrome, database questions, validation
   ADR-0057). Correcting an existing French value by hand is allowed: it is
   recorded as a human correction and never machine-translated again
   (ADR-0070). A developer's `.env` holds a `GEMINI_API_KEY` for the API and
-  Worker (ADR-0109, ADR-0179); no local tool uses it to write the catalogue.
+  Worker (ADR-0109, ADR-0179), and a dormant `DEEPL_API_KEY` that nothing
+  reads while DeepL is unregistered; no local tool uses either to write the
+  catalogue.
 - `npm run dev` / `npm run build` in `src/web` first run
   `tools/stub-missing-translations.mjs`: a key missing from either file gets
   the other's text prefixed `#` (`#Contact`), visibly untranslated instead of

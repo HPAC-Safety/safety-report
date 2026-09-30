@@ -54,7 +54,6 @@ public sealed class SummarizationProviderSteps
 
 	private readonly Dictionary<string, string?> _settings = new()
 	{
-		["AiChatClient:Provider"] = "Gemini",
 		["AiChatClient:Model"] = "gemini-3.7-flash",
 		["AiChatClient:ReasoningEffort"] = "low",
 	};
@@ -62,6 +61,7 @@ public sealed class SummarizationProviderSteps
 	private readonly List<(string Response, Exception? Failure)> _validations = [];
 
 	private string? _requestBody;
+	private Uri? _requestUri;
 	private Exception? _startupFailure;
 	private bool _claimLoopStarted;
 	private string _prompt = string.Empty;
@@ -110,7 +110,7 @@ public sealed class SummarizationProviderSteps
 
 	// ── REQ-AI-022 ──────────────────────────────────────────────────────────
 
-	[Given(@"the Worker is configured with a provider, a model, and a reasoning level")]
+	[Given(@"the Worker is configured with a model and a reasoning level")]
 	public void GivenTheWorkerIsConfigured()
 	{
 		_settings["AiChatClient:ApiKey"] = "synthetic-test-key";
@@ -121,6 +121,25 @@ public sealed class SummarizationProviderSteps
 	public async Task WhenTheWorkerMakesTheCall()
 	{
 		(await Attempt(ValidResponse)).ShouldBeNull();
+	}
+
+	[Given(@"the model's name starts with ""gemini-""")]
+	public void GivenTheModelNameStartsWithGemini()
+	{
+		_settings["AiChatClient:Model"].ShouldNotBeNull().ShouldStartWith("gemini-");
+	}
+
+	[Then(@"the call goes to Gemini's OpenAI-compatible endpoint")]
+	public void ThenTheCallGoesToGemini()
+	{
+		_requestUri.ShouldNotBeNull().ToString()
+			.ShouldBe("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+	}
+
+	[Then(@"no setting names a provider")]
+	public void ThenNoSettingNamesAProvider()
+	{
+		_settings.Keys.ShouldNotContain(key => key.Contains("Provider", StringComparison.OrdinalIgnoreCase));
 	}
 
 	[Then(@"the call names the configured model and asks for the configured reasoning level")]
@@ -151,19 +170,19 @@ public sealed class SummarizationProviderSteps
 		_settings["AiChatClient:ApiKey"] = "synthetic-test-key";
 	}
 
-	[Given(@"its provider configuration has a provider no strategy is registered for")]
-	public void GivenAnUnknownProvider()
+	[Given(@"its model configuration has a model no provider handler claims")]
+	public void GivenAnUnclaimedModel()
 	{
-		_settings["AiChatClient:Provider"] = "NoSuchProvider";
+		_settings["AiChatClient:Model"] = "no-such-provider-model";
 	}
 
-	[Given(@"its provider configuration has a blank model")]
+	[Given(@"its model configuration has a blank model")]
 	public void GivenABlankModel()
 	{
 		_settings["AiChatClient:Model"] = "";
 	}
 
-	[Given(@"its provider configuration has a reasoning level other than low, medium, high")]
+	[Given(@"its model configuration has a reasoning level other than low, medium, high")]
 	public void GivenAnInvalidReasoningLevel()
 	{
 		_settings["AiChatClient:ReasoningEffort"] = "minimal";
@@ -175,7 +194,7 @@ public sealed class SummarizationProviderSteps
 		var builder = Host.CreateApplicationBuilder();
 		builder.Configuration.Sources.Clear();
 		builder.Configuration.AddInMemoryCollection(_settings);
-		builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
+		builder.Services.AddHpacSafetyAiSummarization(builder.Configuration);
 		builder.Services.AddHostedService(_ => new ClaimLoopProbe(() => _claimLoopStarted = true));
 
 		using var host = builder.Build();
@@ -203,14 +222,14 @@ public sealed class SummarizationProviderSteps
 	[Given(@"the prompt version the Worker currently sends")]
 	public void GivenTheCurrentPrompt()
 	{
-		PromptDrivenSummarizer.CurrentPromptVersion.ShouldBe("summarize-anonymize.v3");
+		OpenAiSummarizer.CurrentPromptVersion.ShouldBe("summarize-anonymize.v3");
 	}
 
 	[When(@"the prompt is read")]
 	public void WhenThePromptIsRead()
 	{
 		_prompt = Collapse(File.ReadAllText(
-			Path.Combine(AppContext.BaseDirectory, "Prompts", PromptDrivenSummarizer.CurrentPromptFileName)));
+			Path.Combine(AppContext.BaseDirectory, "Prompts", OpenAiSummarizer.CurrentPromptFileName)));
 	}
 
 	[Then(@"it states the rule that (.*)")]
@@ -234,10 +253,10 @@ public sealed class SummarizationProviderSteps
 		_requestBody = null;
 		var configuration = new ConfigurationBuilder().AddInMemoryCollection(_settings).Build();
 
-		var services = new ServiceCollection().AddHpacSafetyAiChatClient(configuration);
-		services.AddHttpClient(GeminiChatClient.HttpClientName)
-			.ConfigurePrimaryHttpMessageHandler(() => new RecordingTransport(completion, body => _requestBody = body));
-		services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
+		var services = new ServiceCollection().AddHpacSafetyAiSummarization(configuration);
+		services.AddHttpClient(GeminiHandler.HttpClientName)
+			.ConfigurePrimaryHttpMessageHandler(() => new RecordingTransport(completion, (body, uri) => { _requestBody = body; _requestUri = uri; }));
+		services.AddScoped<ISummarizer, OpenAiSummarizer>();
 
 		await using var provider = services.BuildServiceProvider();
 		var summarizer = provider.GetRequiredService<ISummarizer>();
@@ -269,12 +288,12 @@ public sealed class SummarizationProviderSteps
 
 	/// <summary>Replies with one OpenAI-shaped completion and keeps the request body.</summary>
 	private sealed class RecordingTransport(string completion,
-											Action<string> recordBody) : HttpMessageHandler
+											Action<string, Uri?> record) : HttpMessageHandler
 	{
 		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
 																	 CancellationToken cancellationToken)
 		{
-			recordBody(await request.Content!.ReadAsStringAsync(cancellationToken));
+			record(await request.Content!.ReadAsStringAsync(cancellationToken), request.RequestUri);
 
 			return new HttpResponseMessage(HttpStatusCode.OK)
 			{

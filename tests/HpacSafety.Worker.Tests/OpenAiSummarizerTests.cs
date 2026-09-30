@@ -7,7 +7,7 @@ using Shouldly;
 
 namespace HpacSafety.Worker.Tests;
 
-public sealed class PromptDrivenSummarizerTests
+public sealed class OpenAiSummarizerTests
 {
 	private static SummarizationInput SampleInput()
 	{
@@ -17,11 +17,11 @@ public sealed class PromptDrivenSummarizerTests
 		]);
 	}
 
-	private static PromptDrivenSummarizer BuildSummarizer(FixtureAiChatClient client,
+	private static OpenAiSummarizer BuildSummarizer(FixtureAiMediator client,
 														  string? model = "fixture-model",
 														  ReasoningEffort? reasoningEffort = ReasoningEffort.Low)
 	{
-		return new PromptDrivenSummarizer(
+		return new OpenAiSummarizer(
 			client,
 			Options.Create(new AiChatClientOptions { Model = model, ReasoningEffort = reasoningEffort }));
 	}
@@ -30,7 +30,7 @@ public sealed class PromptDrivenSummarizerTests
 	public async Task GivenConfiguredModelAndReasoningLevel_WhenTheProviderIsCalled_ThenBothAreRequested()
 	{
 		// Given
-		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var client = new FixtureAiMediator("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
 		var summarizer = BuildSummarizer(client, "gemini-3.7-flash", ReasoningEffort.Medium);
 
 		// When
@@ -45,7 +45,7 @@ public sealed class PromptDrivenSummarizerTests
 	public async Task GivenASummarizationAttempt_WhenTheProviderIsCalled_ThenTheCurrentV3PromptIsTheSystemMessage()
 	{
 		// Given
-		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var client = new FixtureAiMediator("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
 		var summarizer = BuildSummarizer(client);
 
 		// When
@@ -66,7 +66,7 @@ public sealed class PromptDrivenSummarizerTests
 																									   ReasoningEffort? reasoningEffort)
 	{
 		// Given
-		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var client = new FixtureAiMediator("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
 		var summarizer = BuildSummarizer(client, model, reasoningEffort);
 
 		// When
@@ -81,7 +81,7 @@ public sealed class PromptDrivenSummarizerTests
 	public async Task GivenAValidTwoFieldResponse_WhenSummarized_ThenBothTextsAreReturnedWithProvenance()
 	{
 		// Given
-		var client = new FixtureAiChatClient("""{"ai_summary_en":"The pilot reported a hard landing.","ai_summary_fr":"Le pilote a signalé un atterrissage brutal."}""");
+		var client = new FixtureAiMediator("""{"ai_summary_en":"The pilot reported a hard landing.","ai_summary_fr":"Le pilote a signalé un atterrissage brutal."}""");
 		var summarizer = BuildSummarizer(client);
 
 		// When
@@ -91,14 +91,14 @@ public sealed class PromptDrivenSummarizerTests
 		draft.TextEn.ShouldBe("The pilot reported a hard landing.");
 		draft.TextFr.ShouldBe("Le pilote a signalé un atterrissage brutal.");
 		draft.Model.ShouldBe("fixture-model");
-		draft.PromptVersion.ShouldBe(PromptDrivenSummarizer.CurrentPromptVersion);
+		draft.PromptVersion.ShouldBe(OpenAiSummarizer.CurrentPromptVersion);
 	}
 
 	[Fact]
 	public async Task GivenASummarizationAttempt_WhenTheProviderIsCalled_ThenExactlyOneCallIsMade()
 	{
 		// Given
-		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var client = new FixtureAiMediator("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
 		var summarizer = BuildSummarizer(client);
 
 		// When
@@ -112,7 +112,7 @@ public sealed class PromptDrivenSummarizerTests
 	public async Task GivenReportContentWithAMatchingPrivateValue_WhenTheProviderIsCalled_ThenTheUserMessageContainsTheMarker()
 	{
 		// Given
-		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var client = new FixtureAiMediator("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
 		var summarizer = BuildSummarizer(client);
 
 		// When
@@ -135,7 +135,7 @@ public sealed class PromptDrivenSummarizerTests
 	public async Task GivenAnInvalidResponse_WhenSummarized_ThenRejected(string response)
 	{
 		// Given
-		var client = new FixtureAiChatClient(response);
+		var client = new FixtureAiMediator(response);
 		var summarizer = BuildSummarizer(client);
 
 		// When
@@ -149,7 +149,7 @@ public sealed class PromptDrivenSummarizerTests
 	public async Task GivenAnUnconfiguredProvider_WhenSummarized_ThenFailsClosedWithoutLeakingReportContent()
 	{
 		// Given
-		var client = new FixtureAiChatClient(response: "unused", isConfigured: false);
+		var client = new FixtureAiMediator(response: "unused", isConfigured: false);
 		var summarizer = BuildSummarizer(client);
 
 		// When

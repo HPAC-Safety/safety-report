@@ -25,7 +25,7 @@ public class TranslationRegistrationTests
 
 		// Then — registration never fails for a missing credential; the
 		// endpoint reports unavailability instead. See ADR-0062.
-		translator.ShouldBeOfType<AiChatTranslator>();
+		translator.ShouldBeOfType<OpenAiTranslator>();
 		translator.IsConfigured.ShouldBeFalse();
 	}
 
@@ -36,7 +36,6 @@ public class TranslationRegistrationTests
 		using var provider = Provider(new Dictionary<string, string?>
 		{
 			["AiChatClient:ApiKey"] = "gemini-key",
-			["AiChatClient:Provider"] = "Gemini",
 		});
 
 		// When
@@ -44,7 +43,7 @@ public class TranslationRegistrationTests
 
 		// Then
 		translator.IsConfigured.ShouldBeTrue();
-		provider.GetRequiredService<IAiChatClient>().ShouldBeOfType<GeminiChatClient>();
+		provider.GetRequiredService<IAiMediator>().ShouldBeOfType<AiMediator>();
 	}
 
 	[Fact]
@@ -62,20 +61,31 @@ public class TranslationRegistrationTests
 	}
 
 	[Fact]
-	public void GivenKeyWithUnknownProvider_WhenStartupValidates_ThenStartupFailsNamingProvider()
+	public void GivenKeyAndATranslationModelNoStrategyClaims_WhenStartupValidates_ThenStartupFailsNamingTheSetting()
 	{
-		// Given — the API validates the provider too, though it has no summary model
+		// Given — the model name alone picks the provider, so an unclaimed one is refused
 		using var provider = Provider(new Dictionary<string, string?>
 		{
 			["AiChatClient:ApiKey"] = "gemini-key",
-			["AiChatClient:Provider"] = "Anthropic",
+			["Translation:Model"] = "claude-x",
 		});
 
 		// When
 		var failure = Record.Exception(() => provider.GetRequiredService<IStartupValidator>().Validate());
 
 		// Then
-		failure.ShouldBeOfType<OptionsValidationException>().Message.ShouldContain("AiChatClient:Provider");
+		failure.ShouldBeOfType<OptionsValidationException>().Message.ShouldContain("Translation:Model");
+	}
+
+	[Fact]
+	public void GivenNoKeyAndATranslationModelNoStrategyClaims_WhenStartupValidates_ThenPassesAndStaysUnavailable()
+	{
+		// Given — with no key the call is unavailable, as before, whatever the model
+		using var provider = Provider(new Dictionary<string, string?> { ["Translation:Model"] = "claude-x" });
+
+		// When / Then
+		Should.NotThrow(() => provider.GetRequiredService<IStartupValidator>().Validate());
+		provider.GetRequiredService<ITranslator>().IsConfigured.ShouldBeFalse();
 	}
 
 	[Fact]
@@ -85,7 +95,6 @@ public class TranslationRegistrationTests
 		using var provider = Provider(new Dictionary<string, string?>
 		{
 			["AiChatClient:ApiKey"] = "gemini-key",
-			["AiChatClient:Provider"] = "Gemini",
 		});
 
 		// When / Then
@@ -152,7 +161,6 @@ public class TranslationRegistrationTests
 		var settings = new Dictionary<string, string?>
 		{
 			["AiChatClient:ApiKey"] = "gemini-key",
-			["AiChatClient:Provider"] = "Gemini",
 			["AiChatClient:Model"] = "gemini-3.7-flash",
 			["AiChatClient:ReasoningEffort"] = "low",
 		};
@@ -164,19 +172,19 @@ public class TranslationRegistrationTests
 
 			if (translationFirst)
 			{
-				services.AddHpacSafetyTranslation(configuration).AddHpacSafetyAiChatClient(configuration);
+				services.AddHpacSafetyTranslation(configuration).AddHpacSafetyAiSummarization(configuration);
 			}
 			else
 			{
-				services.AddHpacSafetyAiChatClient(configuration).AddHpacSafetyTranslation(configuration);
+				services.AddHpacSafetyAiSummarization(configuration).AddHpacSafetyTranslation(configuration);
 			}
 
 			// When
 			using var provider = services.BuildServiceProvider();
 
 			// Then
-			services.Count(descriptor => descriptor.ServiceType == typeof(IAiChatClient)).ShouldBe(1);
-			provider.GetRequiredService<IAiChatClient>().ShouldBeOfType<GeminiChatClient>();
+			services.Count(descriptor => descriptor.ServiceType == typeof(IAiMediator)).ShouldBe(1);
+			provider.GetRequiredService<IAiMediator>().ShouldBeOfType<AiMediator>();
 			Should.NotThrow(() => provider.GetRequiredService<IStartupValidator>().Validate());
 		}
 	}

@@ -10,8 +10,9 @@ namespace HpacSafety.Infrastructure.Translation;
 public static class TranslationServiceCollectionExtensions
 {
 	/// <summary>
-	///     Adds <see cref="ITranslator" />, backed by Gemini through the <c>AiChatClient</c>
-	///     strategy (ADR-0179).
+	///     Adds <see cref="ITranslator" />, backed by <see cref="OpenAiTranslator" />, which sends
+	///     its own model to the <see cref="IAiMediator" />, whose handler for that model name
+	///     (Gemini's, for <c>gemini-*</c>) does the call (ADR-0179).
 	/// </summary>
 	/// <remarks>
 	///     A translator is always registered, so the endpoint, the authoring
@@ -39,8 +40,52 @@ public static class TranslationServiceCollectionExtensions
 			.Bind(configuration.GetSection(TranslationOptions.SectionName))
 			.ValidateOnStart();
 
-		services.AddHpacSafetyAiChatProvider(configuration);
-		services.AddScoped<ITranslator, AiChatTranslator>();
+		services.AddHpacSafetyAiMediator(configuration);
+		services.AddScoped<ITranslator, OpenAiTranslator>();
+
+		return services;
+	}
+
+	/// <summary>
+	///     Adds <see cref="ITranslator" />, backed by DeepL. Kept, dormant: nothing
+	///     calls it, because the OpenAI-compatible translator is registered (ADR-0179), but the adapter, its
+	///     options, and their validation stay compiled and tested so the provider
+	///     can be switched back by calling this in place of
+	///     <see cref="AddHpacSafetyTranslation" />.
+	/// </summary>
+	/// <remarks>
+	///     Never call both: each registers <see cref="ITranslator" />. The key is
+	///     <c>Translation:ApiKey</c> or <c>DEEPL_API_KEY</c>; the English target is
+	///     checked at startup (REQ-WLD-029).
+	/// </remarks>
+	/// <param name="services">The container.</param>
+	/// <param name="configuration">Application configuration.</param>
+	/// <returns>The same container, for chaining.</returns>
+	public static IServiceCollection AddHpacSafetyDeepLTranslation(this IServiceCollection services,
+																   IConfiguration configuration)
+	{
+		ArgumentNullException.ThrowIfNull(services);
+		ArgumentNullException.ThrowIfNull(configuration);
+
+		services.AddOptions<DeepLOptions>().Configure(options =>
+		{
+			configuration.GetSection(DeepLOptions.SectionName).Bind(options);
+
+			// `DEEPL_API_KEY` is the name the credential already has — in
+			// repository settings, in the deploy workflow, and in
+			// tools/translator.mjs.
+			options.ApiKey ??= configuration["DEEPL_API_KEY"];
+		})
+			// Checked at startup, key or no key: an unsupported English target is
+			// a 400 on every French-to-English translation (REQ-WLD-029).
+			.Validate(
+				options => options.HasSupportedEnglishTarget,
+				$"{DeepLOptions.SectionName}:{nameof(DeepLOptions.EnglishTarget)} must be one of "
+				+ $"{string.Join(", ", DeepLOptions.SupportedEnglishTargets)}. DeepL has no Canadian English.")
+			.ValidateOnStart();
+
+		services.AddHttpClient(DeepLTranslator.HttpClientName);
+		services.AddScoped<ITranslator, DeepLTranslator>();
 
 		return services;
 	}

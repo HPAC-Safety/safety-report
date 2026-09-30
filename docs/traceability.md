@@ -84,7 +84,7 @@ The Worker requests the configured model at the configured reasoning level — *
 
 ### REQ-AI-023
 
-A Worker holding a key refuses to start with an unusable provider configuration — *Reqnroll, Covered*
+A Worker holding a key refuses to start with an unusable model configuration — *Reqnroll, Covered*
 
 ### REQ-AI-024
 
@@ -101,6 +101,10 @@ A private yes/no answer is never a marking candidate — *Reqnroll, Covered*
 ### REQ-AI-029
 
 A yes/no answer reaches the model as true or false, never as words — *Reqnroll, Covered*
+
+### REQ-AI-030
+
+The summary's model name picks the provider — *Reqnroll, Covered*
 
 ## Claims: comments
 
@@ -2786,6 +2790,14 @@ French that renders a listed term the forbidden way fails verification — *Reqn
 
 The CI translator is told the required rendering of every listed term — *Reqnroll, Covered*
 
+### REQ-WLD-028
+
+The kept, dormant DeepL adapter translates French into the English the configuration names — *Reqnroll, Covered*
+
+### REQ-WLD-029
+
+The kept, dormant DeepL adapter with no usable English target refuses to start — *Reqnroll, Covered*
+
 ### REQ-WLD-030
 
 A production hostname sets a first-time visitor's default language, but a saved choice still wins — *playwright-bdd, Covered*
@@ -2833,6 +2845,18 @@ Translation has its own model and reasoning setting — *Reqnroll, Covered*
 ### REQ-WLD-041
 
 Translation uses the same Gemini key as summaries — *Reqnroll, Covered*
+
+### REQ-WLD-042
+
+Translation's model name picks its provider, apart from the summary's — *Reqnroll, Covered*
+
+### REQ-WLD-043
+
+A translation model no provider handler claims stops startup when a key is held — *Reqnroll, Covered*
+
+### REQ-WLD-044
+
+With no key, a translation model no provider handler claims leaves translation unavailable — *Reqnroll, Covered*
 
 ## Constraints
 

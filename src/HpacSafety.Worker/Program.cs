@@ -55,8 +55,8 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 {
 	[$"{AiChatClientOptions.SectionName}:{nameof(AiChatClientOptions.ApiKey)}"] = aiChatClientApiKey,
 });
-builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
-builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
+builder.Services.AddHpacSafetyAiSummarization(builder.Configuration);
+builder.Services.AddScoped<ISummarizer, OpenAiSummarizer>();
 
 // Same port and adapter question authoring uses, through the same Gemini key
 // resolved above and its own Translation:Model. With no key, in any

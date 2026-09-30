@@ -7,10 +7,10 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Translation;
 
 /// <summary>
-///     The Gemini translator, against a stubbed chat client. Nothing here reaches the
+///     The OpenAI-compatible translator, against a stubbed mediator. Nothing here reaches the
 ///     network, and no real credential is used.
 /// </summary>
-public class AiChatTranslatorTests
+public class OpenAiTranslatorTests
 {
 	[Fact]
 	public async Task GivenNoKey_WhenTranslationIsRequested_ThenReportsUnconfiguredAndCallsNothing()
@@ -293,10 +293,10 @@ public class AiChatTranslatorTests
 	[Fact]
 	public async Task GivenProviderRefuses_WhenAnswers_ThenFailureCarriesOnlyTheStatus()
 	{
-		// Given — the chat client's message is already the status alone
+		// Given — the mediator's message is already the status alone
 		var (translator, _) = Translator(new StubChat
 		{
-			Failure = new AiChatClientUnavailableException("The AI chat provider answered 403."),
+			Failure = new AiMediatorUnavailableException("The AI chat provider answered 403."),
 		});
 
 		// When
@@ -306,7 +306,7 @@ public class AiChatTranslatorTests
 		// Then
 		cause.Message.ShouldContain("403");
 		cause.Message.ShouldNotContain("Were you injured?");
-		cause.InnerException.ShouldBeOfType<AiChatClientUnavailableException>();
+		cause.InnerException.ShouldBeOfType<AiMediatorUnavailableException>();
 	}
 
 	[Fact]
@@ -322,7 +322,7 @@ public class AiChatTranslatorTests
 		return new StubChat { Reply = JsonSerializer.Serialize(new { translations }) };
 	}
 
-	private static (AiChatTranslator Translator, StubChat Chat) Translator(
+	private static (OpenAiTranslator Translator, StubChat Chat) Translator(
 		StubChat? chat = null,
 		bool configured = true,
 		TranslationOptions? options = null)
@@ -330,11 +330,11 @@ public class AiChatTranslatorTests
 		chat ??= Replies("Un");
 		chat.Configured = configured;
 
-		return (new AiChatTranslator(chat, Options.Create(options ?? new TranslationOptions())), chat);
+		return (new OpenAiTranslator(chat, Options.Create(options ?? new TranslationOptions())), chat);
 	}
 
 	/// <summary>Captures what was asked and replays a canned reply.</summary>
-	private sealed class StubChat : IAiChatClient
+	private sealed class StubChat : IAiMediator
 	{
 		public bool Configured { get; set; } = true;
 

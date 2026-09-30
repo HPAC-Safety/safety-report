@@ -348,7 +348,7 @@ public sealed class WebLocalizationAndDesignSteps
 			const instructions = termInstructions(JSON.parse(readFileSync(process.argv[2], 'utf8')))
 			const items = [{ key: 'a', text: 'Upload a photo' }]
 			const locales = { source: 'en-CA', target: 'fr-CA', instructions }
-			const request = createTranslator({ provider: 'gemini', apiKey: 'k' }).buildRequest(items, locales)
+			const request = createTranslator({ apiKey: 'k' }).buildRequest(items, locales)
 			console.log(JSON.stringify({ prompt: request.messages[0].content }))
 			""");
 

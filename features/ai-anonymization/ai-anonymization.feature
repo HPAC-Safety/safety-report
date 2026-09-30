@@ -132,24 +132,32 @@ Scenario: Sensitive summarization data is never logged
 
 @REQ-AI-022
 Scenario: The Worker requests the configured model at the configured reasoning level
-  Given the Worker is configured with a provider, a model, and a reasoning level
+  Given the Worker is configured with a model and a reasoning level
   When the Worker makes the summarization call
   Then the call names the configured model and asks for the configured reasoning level
   And the call asks the provider for a JSON object response
   And the call leaves the sampling temperature at the provider's default
 
 @REQ-AI-023
-Scenario Outline: A Worker holding a key refuses to start with an unusable provider configuration
+Scenario Outline: A Worker holding a key refuses to start with an unusable model configuration
   Given the Worker has a model provider key
-  And its provider configuration has <problem>
+  And its model configuration has <problem>
   When the Worker starts
   Then startup fails before any report is claimed
 
 Examples:
   | problem                                        |
-  | a provider no strategy is registered for       |
+  | a model no provider handler claims             |
   | a blank model                                  |
   | a reasoning level other than low, medium, high |
+
+@REQ-AI-030
+Scenario: The summary's model name picks the provider
+  Given the Worker is configured with a model and a reasoning level
+  And the model's name starts with "gemini-"
+  When the Worker makes the summarization call
+  Then the call goes to Gemini's OpenAI-compatible endpoint
+  And no setting names a provider
 
 @REQ-AI-024
 Scenario Outline: The current prompt carries every anonymization and accuracy rule

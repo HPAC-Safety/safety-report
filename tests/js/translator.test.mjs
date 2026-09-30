@@ -2,6 +2,8 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+	DEEPL_MAX_INSTRUCTIONS,
+	DEEPL_MAX_INSTRUCTION_LENGTH,
 	DEFAULT_MODEL,
 	PROMPT_FILE,
 	TranslatorNotConfiguredError,
@@ -12,7 +14,7 @@ import {
 	renderPrompt,
 } from '../../tools/translator.mjs'
 
-const gemini = (extra = {}) => createTranslator({ provider: 'gemini', apiKey: 'k', ...extra })
+const gemini = (extra = {}) => createTranslator({ apiKey: 'k', ...extra })
 const locales = { source: 'en-CA', target: 'fr-CA' }
 const two = [
 	{ key: 'form.submit', text: 'Submit' },
@@ -50,6 +52,30 @@ describe('the translator adapter', () => {
 		it('when one is created then it refuses rather than falling back', () => {
 			// Given / When / Then
 			assert.throws(() => createTranslator({ provider: 'deep-thought' }), /deep-thought/)
+		})
+	})
+
+	describe('given a model name', () => {
+		it('when it starts with gemini- then the Gemini endpoint is used, with no provider named', () => {
+			// Given / When
+			const translator = createTranslator({ apiKey: 'k', model: 'Gemini-3.5-Pro' })
+
+			// Then
+			assert.equal(translator.endpoint, 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions')
+			assert.equal(translator.name, 'gemini:Gemini-3.5-Pro')
+		})
+
+		it('when no adapter claims it then it refuses, naming the setting and not falling back', () => {
+			// Given / When / Then
+			assert.throws(
+				() => createTranslator({ apiKey: 'k', model: 'claude-x' }),
+				(error) => error instanceof TranslatorNotConfiguredError && /TRANSLATION_MODEL/.test(error.message),
+			)
+		})
+
+		it('when the provider is named gemini then it is refused, because the model name picks the provider', () => {
+			// Given / When / Then
+			assert.throws(() => createTranslator({ provider: 'gemini', apiKey: 'k' }), /gemini/)
 		})
 	})
 
@@ -279,6 +305,270 @@ describe('the translator adapter', () => {
 
 			// Then
 			assert.equal(out.get('a'), 'Altitude < 500 pieds & en descente')
+		})
+	})
+})
+
+
+describe('the dormant DeepL adapter (ADR-0179)', () => {
+	describe('given a DeepL free-tier key', () => {
+		it('when one is created then it targets the free endpoint, by the :fx suffix', () => {
+			// Given — DeepL identifies Free keys by a ':fx' suffix
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'abc-123:fx' })
+
+			// Then
+			assert.equal(translator.endpoint, 'https://api-free.deepl.com/v2/translate')
+		})
+	})
+
+	describe('given a DeepL paid key', () => {
+		it('when one is created then it targets the pro endpoint', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'abc-123' })
+
+			// Then
+			assert.equal(translator.endpoint, 'https://api.deepl.com/v2/translate')
+		})
+	})
+
+	describe('given DeepL and the two official locales', () => {
+		it('when the request is built then it asks for Canadian French, not metropolitan', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+
+			// When
+			const body = translator.buildRequest(
+				[
+					{ key: 'form.submit', text: 'Submit' },
+					{ key: 'form.cancel', text: 'Cancel' },
+				],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then — FR-CA is a real DeepL target language, verified against their
+			// supported-languages table. FR would be metropolitan French.
+			assert.equal(body.target_lang, 'FR-CA')
+			assert.equal(body.source_lang, 'EN')
+			assert.deepEqual(body.text, ['Submit', 'Cancel'])
+			assert.equal(body.preserve_formatting, true)
+		})
+	})
+
+	describe('given DeepL and the default formality', () => {
+		it('when the request is built then it prefers formal and can never 400 for it', () => {
+			// Given / When
+			const body = createTranslator({ provider: 'deepl', deeplApiKey: 'k' }).buildRequest(
+				[{ key: 'a', text: 'A' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then — 'more' would fail with HTTP 400 on a target that does not
+			// support formality. 'prefer_more' degrades to default instead.
+			assert.equal(body.formality, 'prefer_more')
+		})
+	})
+
+	describe('given a DeepL response', () => {
+		it('when it is parsed then translations map back to keys by position', () => {
+			// Given — DeepL returns translations in the order requested, with no keys
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+			const items = [
+				{ key: 'form.submit', text: 'Submit' },
+				{ key: 'form.cancel', text: 'Cancel' },
+			]
+
+			// When
+			const out = translator.parseResponse(
+				{ translations: [{ text: 'Envoyer' }, { text: 'Annuler' }] },
+				items,
+			)
+
+			// Then
+			assert.equal(out.get('form.submit'), 'Envoyer')
+			assert.equal(out.get('form.cancel'), 'Annuler')
+		})
+	})
+
+	describe('given a DeepL response with the wrong number of translations', () => {
+		it('when it is parsed then it refuses rather than mapping keys to the wrong French', () => {
+			// Given — position is the only thing tying a translation to its key, so a
+			// length mismatch silently shifts every key by one
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+			const items = [
+				{ key: 'form.submit', text: 'Submit' },
+				{ key: 'form.cancel', text: 'Cancel' },
+			]
+
+			// When / Then
+			assert.throws(() => translator.parseResponse({ translations: [{ text: 'Envoyer' }] }, items), /2.*1|1.*2/)
+		})
+	})
+
+	describe('given a DeepL translator', () => {
+		it('when it names itself then the provenance says variant and formality', () => {
+			// Given / When — DeepL has no model id, so the things that actually
+			// determine the output are what get recorded
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+
+			// Then
+			assert.equal(translator.name, 'deepl:FR-CA:prefer_more')
+		})
+	})
+
+	describe('given a string carrying a {placeholder}', () => {
+		it('when the request is built then the placeholder is wrapped in a tag DeepL is told to ignore', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+
+			// When
+			const body = translator.buildRequest(
+				[{ key: 'footer.copyright', text: '© {year} HPAC Safety' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then — DeepL translated the bare token to "{année}" once, in production
+			// against real DeepL. Wrapping it in an ignored tag is what stops that.
+			assert.deepEqual(body.text, ['© <ph>{year}</ph> HPAC Safety'])
+			assert.equal(body.tag_handling, 'xml')
+			assert.deepEqual(body.ignore_tags, ['ph'])
+		})
+	})
+
+	describe('given a string with characters that are meaningful in XML', () => {
+		it('when the request is built then they are escaped so tag_handling never misreads them as markup', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+
+			// When
+			const body = translator.buildRequest(
+				[{ key: 'a', text: 'A < B & C > D {count}' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then
+			assert.deepEqual(body.text, ['A &lt; B &amp; C &gt; D <ph>{count}</ph>'])
+		})
+	})
+
+	describe('given a DeepL response with a wrapped placeholder', () => {
+		it('when it is parsed then the tag is stripped and the placeholder comes back bare', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+			const items = [{ key: 'footer.copyright', text: '© {year} HPAC Safety' }]
+
+			// When
+			const out = translator.parseResponse(
+				{ translations: [{ text: '© <ph>{year}</ph> HPAC Safety' }] },
+				items,
+			)
+
+			// Then
+			assert.equal(out.get('footer.copyright'), '© {year} HPAC Safety')
+		})
+	})
+
+	describe('given DeepL and a required rendering for a term', () => {
+		it('when the request is built then the rendering travels as a custom instruction', () => {
+			// Given
+			const instructions = ['Translate the English "upload" and its forms as "téléverser"; never use "télécharg…".']
+
+			// When
+			const body = createTranslator({ provider: 'deepl', deeplApiKey: 'k' }).buildRequest(
+				[{ key: 'a', text: 'Upload a photo' }],
+				{ source: 'en-CA', target: 'fr-CA', instructions },
+			)
+
+			// Then — inline, so no DeepL glossary is created or left behind (ADR-0102)
+			assert.deepEqual(body.custom_instructions, instructions)
+			assert.equal(body.glossary_id, undefined)
+		})
+
+		it('when there is no term then the request is exactly what it was before', () => {
+			// Given / When
+			const body = createTranslator({ provider: 'deepl', deeplApiKey: 'k' }).buildRequest(
+				[{ key: 'a', text: 'A' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then
+			assert.equal(Object.hasOwn(body, 'custom_instructions'), false)
+		})
+	})
+
+
+	describe('given a locale DeepL has no code for', () => {
+		it('when the request is built then it refuses rather than guessing a code', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+
+			// When / Then
+			assert.throws(
+				() => translator.buildRequest([{ key: 'a', text: 'A' }], { source: 'en-CA', target: 'de-DE' }),
+				/de-DE/,
+			)
+		})
+	})
+
+	describe('given DeepL without its key', () => {
+		it('when one is created then it names DEEPL_API_KEY and does not borrow the Gemini key', () => {
+			// Given / When / Then
+			assert.throws(() => createTranslator({ provider: 'deepl', apiKey: 'gemini-key' }), TranslatorNotConfiguredError)
+			assert.throws(() => createTranslator({ provider: 'deepl' }), /DEEPL_API_KEY/)
+		})
+	})
+
+	describe('given more term instructions than DeepL accepts', () => {
+		it('when the request is built then it refuses rather than dropping one silently', () => {
+			// Given
+			const instructions = Array.from({ length: DEEPL_MAX_INSTRUCTIONS + 1 }, (_, index) => `Term ${index}.`)
+
+			// When / Then
+			assert.throws(
+				() => createTranslator({ provider: 'deepl', deeplApiKey: 'k' }).buildRequest([{ key: 'a', text: 'A' }], {
+					source: 'en-CA',
+					target: 'fr-CA',
+					instructions,
+				}),
+				/at most 10/,
+			)
+		})
+	})
+
+	describe('given a term instruction longer than DeepL accepts', () => {
+		it('when the request is built then it refuses', () => {
+			// Given
+			const instructions = ['x'.repeat(DEEPL_MAX_INSTRUCTION_LENGTH + 1)]
+
+			// When / Then
+			assert.throws(
+				() => createTranslator({ provider: 'deepl', deeplApiKey: 'k' }).buildRequest([{ key: 'a', text: 'A' }], {
+					source: 'en-CA',
+					target: 'fr-CA',
+					instructions,
+				}),
+				/at most 300/,
+			)
+		})
+	})
+
+	describe('given the environment', () => {
+		it('when the configuration is read then the DeepL key and formality are kept apart from the Gemini key', () => {
+			// Given / When
+			const config = configFromEnv({ DEEPL_API_KEY: 'd:fx', GEMINI_API_KEY: 'g', TRANSLATION_FORMALITY: 'prefer_less' })
+
+			// Then
+			assert.equal(config.deeplApiKey, 'd:fx')
+			assert.equal(config.apiKey, 'g')
+			assert.equal(config.formality, 'prefer_less')
+			assert.equal(createTranslator({ ...config, provider: 'deepl' }).name, 'deepl:FR-CA:prefer_less')
+		})
+
+		it('when no provider is named then Gemini is used even if a DeepL key is present', () => {
+			// Given / When
+			const translator = createTranslator(configFromEnv({ DEEPL_API_KEY: 'd:fx', GEMINI_API_KEY: 'g' }))
+
+			// Then
+			assert.match(translator.name, /^gemini:/)
 		})
 	})
 })

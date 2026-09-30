@@ -175,7 +175,7 @@ resource "aws_lambda_function" "worker" {
         # app-metric alarm reads.
         Metrics__Namespace = local.metric_namespace
 
-        # ARNs only — AddHpacSafetyAiChatClient and AddHpacSafetyTranslation
+        # ARNs only — AddHpacSafetyAiSummarization and AddHpacSafetyTranslation
         # each resolve their own secret's current value from Secrets Manager
         # themselves, at cold start (#597); see this file's header comment.
         AiChatClient__ApiKeySecretArn = aws_secretsmanager_secret.this["gemini_api_key"].arn

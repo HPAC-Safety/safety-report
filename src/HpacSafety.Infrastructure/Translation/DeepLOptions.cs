@@ -1,0 +1,70 @@
+namespace HpacSafety.Infrastructure.Translation;
+
+/// <summary>
+///     Configuration for <see cref="DeepLTranslator" />, bound from the
+///     <c>Translation</c> configuration section.
+/// </summary>
+/// <remarks>
+///     The key is the same DeepL credential the CI translation workflow uses
+///     (ADR-0022). In every deployed environment it is resolved from
+///     <see cref="ApiKeySecretArn" /> at cold start (#597), not read from
+///     configuration directly — the Lambda environment never carries the
+///     key's own value. Everywhere else (Development, every test host) it is
+///     the plain <c>Translation__ApiKey</c>/<c>DEEPL_API_KEY</c> environment
+///     variable. Either way it is never sent to the browser, never logged,
+///     and never included in a problem response.
+/// </remarks>
+public sealed class DeepLOptions
+{
+	/// <summary>The configuration section this binds from.</summary>
+	public const string SectionName = "Translation";
+
+	/// <summary>
+	///     The DeepL auth key. Absent in an ordinary local checkout, which is why
+	///     <see cref="DeepLTranslator.IsConfigured" /> exists rather than a startup
+	///     failure.
+	/// </summary>
+	public string? ApiKey { get; set; }
+
+	/// <summary>
+	///     The Secrets Manager ARN Terraform sets in every deployed environment
+	///     (<c>infra/lambda.tf</c>). When present, <see cref="ApiKey" /> is
+	///     resolved from this secret's current value at cold start instead of
+	///     from <see cref="ApiKey" />'s own configured value (#597).
+	/// </summary>
+	public string? ApiKeySecretArn { get; set; }
+
+	/// <summary>
+	///     Overrides the API host. Normally left unset: DeepL marks Free-tier keys
+	///     with a <c>:fx</c> suffix and the two tiers have different hosts, so the
+	///     host is derived from the key. Getting that wrong is a 403 that reads
+	///     like a bad credential.
+	/// </summary>
+	public string? Endpoint { get; set; }
+
+	/// <summary>
+	///     DeepL formality. Defaults to <c>prefer_more</c>: a national safety
+	///     association addressing pilots uses "vous", and the <c>prefer_</c>
+	///     variants degrade to the default on a target language that does not
+	///     support formality rather than failing the request outright.
+	/// </summary>
+	public string Formality { get; set; } = "prefer_more";
+
+	/// <summary>
+	///     The English DeepL writes when it translates into English: <c>EN-US</c>
+	///     or <c>EN-GB</c>, in any case. DeepL has no Canadian English (it answers
+	///     <c>EN-CA</c> with a 400) and treats plain <c>EN</c> as a deprecated alias,
+	///     so this is chosen per deployment in <c>appsettings.json</c> rather than
+	///     derived from <c>en-CA</c>. Required: startup fails without a supported
+	///     value (REQ-WLD-029).
+	/// </summary>
+	public string? EnglishTarget { get; set; }
+
+	/// <summary>The English targets DeepL offers.</summary>
+	public static IReadOnlyList<string> SupportedEnglishTargets { get; } = ["EN-US", "EN-GB"];
+
+	/// <summary>Whether <see cref="EnglishTarget" /> names an English DeepL offers.</summary>
+	public bool HasSupportedEnglishTarget =>
+		EnglishTarget is not null
+		&& SupportedEnglishTargets.Contains(EnglishTarget.Trim().ToUpperInvariant(), StringComparer.Ordinal);
+}

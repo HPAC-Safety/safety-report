@@ -86,6 +86,9 @@ services:
       # the Translate control is disabled; there is no stand-in. See
       # ADR-0062, ADR-0109.
       AiChatClient__ApiKey: "${GEMINI_API_KEY:-}"
+      # Kept, dormant (ADR-0179): DeepLTranslator is not registered, so
+      # nothing reads this while Gemini translates.
+      Translation__ApiKey: "${DEEPL_API_KEY:-}"
     ports:
       - "8080:8080"
 
@@ -111,6 +114,8 @@ services:
       # retries and is then marked failed; attachment processing is
       # unaffected. See ADR-0109.
       AiChatClient__ApiKey: "${GEMINI_API_KEY:-}"
+      # Kept, dormant (ADR-0179), as for the API.
+      Translation__ApiKey: "${DEEPL_API_KEY:-}"
 
   web:
     image: node:24-alpine

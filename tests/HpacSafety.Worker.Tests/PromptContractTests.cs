@@ -30,7 +30,7 @@ public sealed class PromptContractTests
 	/// <summary>The current prompt as the Worker loads it from its output directory.</summary>
 	internal static string CurrentPrompt()
 	{
-		return File.ReadAllText(PromptPath(PromptDrivenSummarizer.CurrentPromptFileName));
+		return File.ReadAllText(PromptPath(OpenAiSummarizer.CurrentPromptFileName));
 	}
 
 	[Theory]
@@ -53,8 +53,8 @@ public sealed class PromptContractTests
 	public void GivenCurrentPrompt_WhenNamed_ThenItIsVersionThree()
 	{
 		// Given / When / Then
-		PromptDrivenSummarizer.CurrentPromptFileName.ShouldBe("summarize-anonymize.v3.md");
-		PromptDrivenSummarizer.CurrentPromptVersion.ShouldBe("summarize-anonymize.v3");
+		OpenAiSummarizer.CurrentPromptFileName.ShouldBe("summarize-anonymize.v3.md");
+		OpenAiSummarizer.CurrentPromptVersion.ShouldBe("summarize-anonymize.v3");
 	}
 
 	[Fact]

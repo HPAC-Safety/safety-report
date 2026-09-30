@@ -21,7 +21,7 @@
 		<PackageVersion Include="AWSSDK.S3" Version="4.0.103.4" />
 		<!-- The API's async nudge to the Worker's Lambda function after a commit
 		     that queues outbox work (ADR-0123, #443). Infrastructure only. -->
-		<PackageVersion Include="AWSSDK.Lambda" Version="4.0.108.1" />
+		<PackageVersion Include="AWSSDK.Lambda" Version="4.0.108.2" />
 		<!-- Reads the RDS-managed master-user secret at cold start, to assemble
 		     the connection string without ever putting the password in
 		     Terraform state (#443, coordinated with #465). Infrastructure only. -->

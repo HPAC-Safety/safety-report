@@ -251,6 +251,7 @@
     "editorTitleNew": "Nouvelle question",
     "editorTitleEdit": "Modifier la question",
     "error": {
+      "labelColon": "#The form adds the colon itself. Remove it from the end of this label.",
       "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     },
     "field": {
@@ -472,6 +473,7 @@
       "private": "Privé",
       "notAnswered": "Sans réponse",
       "translation": "Traduction : {text}",
+      "translationLabel": "#Translation:",
       "unpublishNote": "Note relative au retrait de la publication : {note}",
       "source": {
         "generated": "Généré par l'IA",

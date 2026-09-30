@@ -34,7 +34,7 @@ async function reachGroupPage(page: Page) {
 	await page.getByRole("button", { name: "Next" }).click() // injured -> aircraft group
 }
 
-Given("a group question exists as a section heading", async () => {}) // The synthetic fixture's "Aircraft:" question already is one.
+Given("a group question exists as a section heading", async () => {}) // The synthetic fixture's "Aircraft" question already is one.
 
 Given("another question is grouped under it", async () => {}) // Its two children are already grouped under it.
 
@@ -43,7 +43,7 @@ When("a reporter is shown the form", async ({ page }) => {
 })
 
 Then("that question renders together with the group heading and its other children", async ({ page }) => {
-	await expect(page.getByRole("group", { name: "Aircraft:" })).toBeVisible()
+	await expect(page.getByRole("group", { name: "Aircraft" })).toBeVisible()
 	await expect(page.getByRole("combobox", { name: "Type of aircraft" })).toBeVisible()
 	await expect(page.getByLabel("Model")).toBeVisible()
 })

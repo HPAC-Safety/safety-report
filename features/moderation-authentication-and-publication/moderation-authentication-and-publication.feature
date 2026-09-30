@@ -1910,7 +1910,7 @@ Scenario: Leaving with an unsaved private note is confirmed
 Scenario: The admin review page renders a summary and its revision history as Markdown
   Given a signed-in Safety Officer and a report whose summary has a "## Description" section in each language
   When they open that report
-  Then each language's summary shows a level-two heading "Description" and its text as a paragraph
+  Then each language's summary shows a heading "Description" and its text as a paragraph
   And opening a version in the history shows its sections the same way
 
 @REQ-MOD-209

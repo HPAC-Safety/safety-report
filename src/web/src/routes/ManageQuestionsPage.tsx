@@ -4,6 +4,7 @@ import { SortableList } from "../components/SortableList"
 import { QuestionEditor, type QuestionDraft, blankDraft, draftFromImported, draftOf } from "../components/QuestionEditor"
 import { TypeformImportDialog } from "../components/TypeformImportDialog"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
+import { labelWithColon } from "../lib/questionPrompt"
 import {
 	ApiError,
 	createQuestion,
@@ -319,8 +320,12 @@ function QuestionRow({
 	return (
 		<div className="flex flex-wrap items-start justify-between gap-4">
 			<div className="min-w-0">
-				<p className="font-sans font-medium text-ink">{question.labelEn}</p>
-				<p className="font-sans text-sm text-ink-muted">{question.labelFr}</p>
+				<p className="font-sans font-medium text-ink" lang="en-CA" data-label="en">
+					{labelWithColon(question.labelEn, question.type, "en-CA")}
+				</p>
+				<p className="font-sans text-sm text-ink-muted" lang="fr-CA" data-label="fr">
+					{labelWithColon(question.labelFr, question.type, "fr-CA")}
+				</p>
 				<p className="mt-2 font-sans text-xs text-ink-muted">
 					{t(`questions.type.${question.type}`)} · {t("questions.revisionNumber", { number: String(question.revisionNumber) })}
 					{question.isRequired ? ` · ${t("questions.required")}` : ` · ${t("questions.optional")}`}

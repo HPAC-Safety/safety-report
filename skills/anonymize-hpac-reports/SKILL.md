@@ -22,8 +22,13 @@ The contract is `AGENTS.md` invariants 3 and 4. This skill is its detail.
 
 ## Input
 
-Two labeled sections:
+Three labeled parts, answers in form order (the display order of the revision
+each was answered under):
 
+- `expected_sections` — one entry per public paragraph (`LongText`) question on
+  the report, blank ones included, in form order: its key and its English and
+  French labels from the revision the reporter answered, trailing colon removed.
+  It carries no facts (ADR-0180).
 - `report_content` — answered non-private questions; the only eligible facts.
 - `private_context` — answered private questions, used only to recognize
   identifying material repeated in eligible content.
@@ -54,6 +59,12 @@ One strict JSON object, exactly two nonblank strings:
 {"ai_summary_en":"...","ai_summary_fr":"..."}
 ```
 
+- Each is Markdown (headings, paragraphs, bold, italic, lists, line breaks) with
+  one `## <label>` section per expected section, in order. Other public facts
+  are woven into the section they fit; a statement goes in the section whose
+  question it best answers; a section with nothing is `Not provided.` /
+  `Non fourni.`. The Worker rejects any other heading set, which is a failed
+  attempt under the retry budget (ADR-0180, REQ-AI-034 to REQ-AI-036).
 - Both carry the same safety lesson.
 - Resolve every `[PRIVATE:<question-key>]` marker.
 - Remove identities, contact or account details, precise identifying

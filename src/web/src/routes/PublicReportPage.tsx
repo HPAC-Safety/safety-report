@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
+import { Markdown } from "../components/Markdown"
 import { useAuth } from "../auth/useAuth"
 import { AttachmentStrip } from "../components/AttachmentStrip"
 import { ReportComments } from "../components/ReportComments"
@@ -84,9 +85,9 @@ export function PublicReportPage() {
 							{t("feed.adminPage")}
 						</Link>
 					)}
-					<p lang={locale} data-summary={locale} className="mt-6 whitespace-pre-line font-sans text-lg text-ink">
+					<Markdown lang={locale} data-summary={locale} className="mt-6 font-sans text-lg text-ink">
 						{summaryIn(loaded.report, locale)}
-					</p>
+					</Markdown>
 					<AttachmentStrip
 						reportId={loaded.report.id}
 						media={loaded.report.media}

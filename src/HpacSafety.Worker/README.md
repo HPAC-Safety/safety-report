@@ -49,7 +49,12 @@ value found in `report_content` (see
 [ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md))
 before `OpenAiSummarizer` loads the current prompt from
 [`Prompts/`](Prompts/), makes exactly one model call, and validates strict
-English/French JSON. A successful attempt persists one summary row with
+English/French JSON. Answers go in form order, and the request names the
+`expected_sections`: one per public paragraph question on the report, blank ones
+included, worded as the revision the reporter answered. Each language must come
+back as Markdown with exactly those `## ` headings, in order, and no other; a
+mismatch is a failed attempt like any invalid response
+([ADR-0180](../../docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)). A successful attempt persists one summary row with
 shared provenance and moves the report to `PendingReview`; a failure lets
 `OutboxClaimer` record it on the outbox message and, once retries are
 exhausted, moves the report to `SummaryFailed` with a content-free error for

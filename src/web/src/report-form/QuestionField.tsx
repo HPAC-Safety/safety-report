@@ -8,7 +8,7 @@ import { MultiSelectPicker } from "./MultiSelectPicker"
 import { PhoneField } from "./PhoneField"
 import { SingleSelectField } from "./SingleSelectField"
 import { TypeAheadField } from "./TypeAheadField"
-import { optionFor, optionGroups, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
+import { optionFor, optionGroups, optionLabel, questionHelp, questionLabel, questionPlaceholder, questionPrompt } from "./steps"
 
 const fieldClassName =
 	"mt-1 w-full rounded border border-rule bg-surface px-3 py-2 font-sans text-ink placeholder:text-ink-muted"
@@ -69,7 +69,7 @@ export function QuestionField({
 
 	const label = (
 		<label className={labelClassName} htmlFor={question.type === "yes_no" ? undefined : fieldId}>
-			{questionLabel(question, locale)}
+			{questionPrompt(question, locale)}
 			{question.isRequired && (
 				<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
 			)}
@@ -110,7 +110,7 @@ export function QuestionField({
 		return (
 			<fieldset className="mb-6" aria-describedby={describedBy}>
 				<legend className={labelClassName}>
-					{questionLabel(question, locale)}
+					{questionPrompt(question, locale)}
 					{question.isRequired && (
 						<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
 					)}
@@ -201,7 +201,7 @@ export function QuestionField({
 					fieldId={fieldId}
 					label={
 						<>
-							{questionLabel(question, locale)}
+							{questionPrompt(question, locale)}
 							{question.isRequired && (
 								<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
 							)}

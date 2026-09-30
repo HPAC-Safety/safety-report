@@ -398,7 +398,7 @@ Scenario: A network failure preserves local state and explains retry
 Scenario Outline: A summary's Markdown renders as a safe subset
   Given a published report whose summary contains <markdown>
   When a visitor opens its page
-  Then the page shows <result>
+  Then the summary is rendered as <result>
 
 Examples:
   | markdown                                   | result                                                        |

@@ -75,7 +75,8 @@ When("they import a Typeform English and French export pair", async ({ page }) =
 })
 
 Then("the imported drafts are listed", async ({ page }) => {
-	await expect(page.getByText(IMPORTED_DRAFT.labelEn, { exact: true })).toBeVisible()
+	// The preview draws the closing colon the stored label leaves out (ADR-0181).
+	await expect(page.getByText(`${IMPORTED_DRAFT.labelEn}:`, { exact: true })).toBeVisible()
 })
 
 When("they choose to review the first imported draft", async ({ page }) => {

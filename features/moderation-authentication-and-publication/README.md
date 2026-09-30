@@ -426,6 +426,15 @@ that report's own page — and never a timestamp. The API resolves that ID's
 submission time itself, server-side, to find where the next page starts;
 submission time never appears in a response and never travels in a cursor.
 
+A summary is Markdown with a section per paragraph question
+([ADR-0180](../../docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
+The report's own page renders it (headings, paragraphs, bold, italic, lists, and
+line breaks only, see `REQ-WLD-045`); the feed's three-line preview shows the
+body of the first section as plain text, without its heading or any Markdown
+characters (`REQ-MOD-210`). The admin review page renders both languages and
+every version in the revision history the same way (`REQ-MOD-208`), and the
+summary editor stays a plain text area with no Markdown hint (`REQ-MOD-211`).
+
 The API reads both pages from the `public_reports` database view. The view
 holds the whole publication invariant, so it is the only place the public
 side decides what is public

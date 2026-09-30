@@ -18,8 +18,10 @@ import {
 import { AttachmentStrip } from "../components/AttachmentStrip"
 import { ReportBadges } from "../components/ReportBadges"
 import { ReviewActions } from "../components/ReviewActions"
+import { Markdown } from "../components/Markdown"
 import { SummaryHistory } from "../components/SummaryHistory"
 import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
+import { labelWithColon } from "../lib/questionPrompt"
 import { sortChoices } from "../lib/sortChoices"
 import type { Locale } from "../i18n/locales"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
@@ -113,7 +115,7 @@ export function ReportDetailPage() {
 	}, [reportId, t, reloads])
 
 	const at = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
-	const label = (answer: ReportAnswer) => (locale === "fr-CA" ? answer.labelFr : answer.labelEn)
+	const label = (answer: ReportAnswer) => labelWithColon(locale === "fr-CA" ? answer.labelFr : answer.labelEn, answer.type, locale)
 
 	return (
 		<main className="mx-auto max-w-4xl px-6 py-12">
@@ -206,9 +208,9 @@ export function ReportDetailPage() {
 										<p className="mt-1 font-sans text-xs text-ink-muted" data-source="en">
 											{t(`reports.detail.source.${report.summary.sourceEn}`)}
 										</p>
-										<p className="mt-2 whitespace-pre-line font-sans text-ink" data-summary="en">
+										<Markdown headingOffset={2} className="mt-2 font-sans text-ink" data-summary="en">
 											{report.summary.aiSummaryEn}
-										</p>
+										</Markdown>
 									</article>
 									<article lang="fr-CA" className="rounded border border-rule bg-surface p-4">
 										<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
@@ -217,9 +219,9 @@ export function ReportDetailPage() {
 										<p className="mt-1 font-sans text-xs text-ink-muted" data-source="fr">
 											{t(`reports.detail.source.${report.summary.sourceFr}`)}
 										</p>
-										<p className="mt-2 whitespace-pre-line font-sans text-ink" data-summary="fr">
+										<Markdown headingOffset={2} className="mt-2 font-sans text-ink" data-summary="fr">
 											{report.summary.aiSummaryFr}
-										</p>
+										</Markdown>
 									</article>
 								</div>
 								<p className="mt-3 font-sans text-sm text-ink-muted" data-provenance>
@@ -283,12 +285,29 @@ export function ReportDetailPage() {
 											<dd key={index} className="mt-1 font-sans text-ink">
 												{isLanguageNeutral(answer.type) ? (
 													<span className="whitespace-pre-line">{formatAnswer(answer.type, value.value, locale, t)}</span>
+												) : answer.type === "long_text" ? (
+													// A paragraph answer, and its Worker translation, read as Markdown (ADR-0180).
+													<Markdown lang={value.locale} headingOffset={2} data-long-text-answer="">
+														{String(value.value)}
+													</Markdown>
 												) : (
 													<span lang={value.locale} className="whitespace-pre-line">
 														{value.value}
 													</span>
 												)}
-												{value.translatedValue && !isLanguageNeutral(answer.type) && (
+												{value.translatedValue && !isLanguageNeutral(answer.type) && answer.type === "long_text" && (
+													<div
+														lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
+														className="mt-2 border-l-2 border-rule pl-3 text-sm text-ink-muted"
+														data-long-text-translation=""
+													>
+														<p className="font-medium">{t("reports.detail.translationLabel")}</p>
+														<Markdown headingOffset={2} className="mt-1">
+															{value.translatedValue}
+														</Markdown>
+													</div>
+												)}
+												{value.translatedValue && !isLanguageNeutral(answer.type) && answer.type !== "long_text" && (
 													<span
 														lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
 														className="mt-1 block whitespace-pre-line text-sm text-ink-muted"

@@ -9,6 +9,7 @@ import type { Locale } from "../i18n/locales"
 import type { PublicOptionView, PublicQuestionView } from "../api/publicQuestions"
 import { localToday, parseIsoDate } from "../lib/calendarDate"
 import { isValidEmail } from "../lib/emailAddress"
+import { labelWithColon } from "../lib/questionPrompt"
 import { DEFAULT_PHONE_COUNTRY, isValidPhone } from "../lib/phoneNumber"
 import { choiceGroups } from "../lib/sortChoices"
 import type { DraftAnswer } from "./draft"
@@ -27,6 +28,11 @@ export function collectsNoAnswer(question: PublicQuestionView): boolean {
 
 export function questionLabel(question: PublicQuestionView, locale: Locale): string {
 	return locale === "fr-CA" ? question.labelFr : question.labelEn
+}
+
+/** The label as it is shown above the answer: with the locale's closing colon where the question is asked (ADR-0181). */
+export function questionPrompt(question: PublicQuestionView, locale: Locale): string {
+	return labelWithColon(questionLabel(question, locale), question.type, locale)
 }
 
 export function questionHelp(question: PublicQuestionView, locale: Locale): string | null {

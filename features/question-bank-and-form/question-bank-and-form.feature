@@ -1787,7 +1787,7 @@ Scenario: The migration merges no pair whose wording matches in one language onl
 Scenario: A new installation asks for several attachments
   Given a new, empty database
   When the migrations run
-  Then the seeded attachment question is labelled "Photos or videos:" and "Photos ou vidéos:"
+  Then the seeded attachment question is labelled "Photos or videos" and "Photos ou vidéos"
   And its help text asks for photos, videos, or documents in both languages
 
 @REQ-QB-105
@@ -1892,3 +1892,81 @@ Scenario: Switching from one open question editor straight to another starts cle
   And they open the second question for editing
   And they navigate to another admin page
   Then no confirmation of any kind appears
+
+@REQ-QB-240
+@ui
+Scenario Outline: The form adds the colon after an answerable question's label, in the locale's style
+  Given the form asks a <kind> question labelled "<label>"
+  When a reporter opens the form in <locale>
+  Then the question is labelled "<shown>"
+
+Examples:
+  | kind          | label        | locale  | shown         |
+  | short text    | Date         | English | Date:         |
+  | short text    | Date         | French  | Date :        |
+  | single-select | Province     | English | Province:     |
+  | multi-select  | Injuries     | French  | Injuries :    |
+  | yes/no        | Injured?     | English | Injured?      |
+  | yes/no        | Blessé ?     | French  | Blessé ?      |
+  | statement     | Tell us more | English | Tell us more  |
+  | group         | From         | French  | From          |
+
+@REQ-QB-241
+@ui
+Scenario Outline: The admin report detail adds the colon after an answerable question's label, in the locale's style
+  Given a signed-in Safety Officer and a report with a short-text answer labelled "Date", a yes/no answer labelled "Injured?" and a long-text answer labelled "Description"
+  When they open that report in <locale>
+  Then the answers are labelled <labels>
+
+Examples:
+  | locale  | labels                          |
+  | English | "Date:", "Injured?", "Description:" |
+  | French  | "Date :", "Injured?", "Description :" |
+
+@REQ-QB-242
+@ui
+Scenario: The question bank list shows each language's label with its own colon style
+  Given a signed-in Administrator and a question labelled "Date" in English and "Date" in French
+  And a statement labelled "Tell us more" in both languages
+  When they open the manage-questions page
+  Then the question's English label reads "Date:" and its French label reads "Date :"
+  And the statement's labels have no colon
+
+@REQ-QB-243
+@ui
+Scenario: The question editor refuses a label that ends in a colon
+  Given a signed-in Administrator is authoring a new question
+  When they write "Date:" as the English wording and "Date" as the French wording
+  Then a message says the form adds the colon itself
+  And Save stays disabled
+  When they remove the colon
+  Then the message goes away and Save is enabled
+
+@REQ-QB-244
+Scenario Outline: The API refuses a question whose label ends in a colon, in either language
+  Given a signed-in Administrator
+  When they <action> a question whose <language> label is "<label>"
+  Then the API refuses it with a problem that says, in English and French, that the form adds the colon itself
+  And no question or revision is stored
+
+Examples:
+  | action | language | label    |
+  | create | English  | Date:    |
+  | create | French   | Date :   |
+  | revise | English  | Date:    |
+  | revise | French   | Date :   |
+
+@REQ-QB-245
+Scenario: A migration removes a trailing colon from every stored question label, in place
+  Given a database holding questions whose labels end in ":" or " :" in English and in French
+  And a report answered under one of them
+  When the migration that trims label colons runs
+  Then every label has no trailing colon, and a label that had none is unchanged
+  And no question or revision was created or deleted
+  And the answer still names the same revision
+
+@REQ-QB-246
+Scenario: The seeded question bank has no label ending in a colon
+  Given a clean database
+  When the migrations have run
+  Then no question revision's English or French label ends in a colon

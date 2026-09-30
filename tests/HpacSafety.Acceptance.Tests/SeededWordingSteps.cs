@@ -50,10 +50,20 @@ public sealed class SeededWordingSteps
 	}
 
 	[When(@"the migrations run")]
-	[When(@"the attachment rewording migration runs")]
 	public async Task WhenTheMigrationsRun()
 	{
 		await MigrateTo(null);
+	}
+
+	/// <summary>
+	///     Stops at the rewording migration itself: the migration that trims a label's
+	///     closing colon (ADR-0181) runs after it, and would trim the wording these
+	///     scenarios compare.
+	/// </summary>
+	[When(@"the attachment rewording migration runs")]
+	public async Task WhenTheRewordingMigrationRuns()
+	{
+		await MigrateTo("WordAttachmentQuestionForSeveralFiles");
 	}
 
 	[Then(@"the seeded attachment question is labelled ""(.*)"" and ""(.*)""")]

@@ -17,7 +17,7 @@ public class TypeformExportBuilderTests
 	public void GivenLiveQuestions_WhenBuilt_ThenEachProducesAnEnglishAndFrenchField()
 	{
 		// Given
-		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft:", "Aéronef:", At, isPrivate: false);
+		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft", "Aéronef", At, isPrivate: false);
 		var child = Question.Create(
 			"model", QuestionType.ShortText, "Model", "Modèle", At,
 			groupedUnderQuestionId: group.Id, isPrivate: false);
@@ -36,7 +36,7 @@ public class TypeformExportBuilderTests
 	public void GivenAQuestionGroupedUnderAnother_WhenBuilt_ThenTheHpacExtensionNamesTheParentByKey()
 	{
 		// Given
-		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft:", "Aéronef:", At, isPrivate: false);
+		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft", "Aéronef", At, isPrivate: false);
 		var child = Question.Create(
 			"model", QuestionType.ShortText, "Model", "Modèle", At,
 			groupedUnderQuestionId: group.Id, isPrivate: false);
@@ -208,7 +208,7 @@ public class TypeformExportBuilderTests
 	{
 		// Given
 		var statement = Question.Create("intro", QuestionType.Statement, "Welcome", "Bienvenue", At, isPrivate: false);
-		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft:", "Aéronef:", At, isPrivate: false);
+		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft", "Aéronef", At, isPrivate: false);
 
 		// When
 		var (english, _) = TypeformExportBuilder.Build([statement, group]);

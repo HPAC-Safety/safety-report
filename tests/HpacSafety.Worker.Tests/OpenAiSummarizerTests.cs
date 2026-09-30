@@ -42,7 +42,7 @@ public sealed class OpenAiSummarizerTests
 	}
 
 	[Fact]
-	public async Task GivenASummarizationAttempt_WhenTheProviderIsCalled_ThenTheCurrentV3PromptIsTheSystemMessage()
+	public async Task GivenASummarizationAttempt_WhenTheProviderIsCalled_ThenTheCurrentV4PromptIsTheSystemMessage()
 	{
 		// Given
 		var client = new FixtureAiMediator("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
@@ -52,7 +52,7 @@ public sealed class OpenAiSummarizerTests
 		var draft = await summarizer.Summarize(SampleInput(), CancellationToken.None);
 
 		// Then
-		draft.PromptVersion.ShouldBe("summarize-anonymize.v3");
+		draft.PromptVersion.ShouldBe("summarize-anonymize.v4");
 		var messages = client.LastMessages.ShouldNotBeNull();
 		messages[0].Role.ShouldBe(ChatRole.System);
 		messages[0].Content.ShouldBe(PromptContractTests.CurrentPrompt());
@@ -136,6 +136,118 @@ public sealed class OpenAiSummarizerTests
 	{
 		// Given
 		var client = new FixtureAiMediator(response);
+		var summarizer = BuildSummarizer(client);
+
+		// When
+		var act = async () => await summarizer.Summarize(SampleInput(), CancellationToken.None);
+
+		// Then
+		await act.ShouldThrowAsync<SummarizationFailedException>();
+	}
+
+	private static SummarizationInput SectionedInput()
+	{
+		return SummarizationInput.Partition(
+			[
+				new ClassifiedReportField(new SummarizationField("description", "Description", "A synthetic hard landing."), false),
+			],
+			[
+				new SummarizationSection("description", "Description", "Description"),
+				new SummarizationSection("action_and_prevention", "Action and prevention", "Action et prévention"),
+			]);
+	}
+
+	private static string SectionedResponse(string english,
+											string french)
+	{
+		return System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string> { ["ai_summary_en"] = english, ["ai_summary_fr"] = french });
+	}
+
+	[Fact]
+	public async Task GivenExpectedSections_WhenTheProviderIsCalled_ThenTheUserMessageListsThemInOrderWithBothLabels()
+	{
+		// Given
+		var client = new FixtureAiMediator(SectionedResponse(
+			"## Description\nA landing.\n\n## Action and prevention\nNot provided.",
+			"## Description\nUn atterrissage.\n\n## Action et prévention\nNon fourni."));
+		var summarizer = BuildSummarizer(client);
+
+		// When
+		await summarizer.Summarize(SectionedInput(), CancellationToken.None);
+
+		// Then
+		var userMessage = client.LastMessages.ShouldNotBeNull()[^1].Content;
+		var sections = System.Text.Json.JsonDocument.Parse(userMessage).RootElement.GetProperty("expected_sections");
+		sections.GetArrayLength().ShouldBe(2);
+		sections[0].GetProperty("question_key").GetString().ShouldBe("description");
+		sections[0].GetProperty("label_en").GetString().ShouldBe("Description");
+		sections[0].GetProperty("label_fr").GetString().ShouldBe("Description");
+		sections[1].GetProperty("question_key").GetString().ShouldBe("action_and_prevention");
+		sections[1].GetProperty("label_en").GetString().ShouldBe("Action and prevention");
+		sections[1].GetProperty("label_fr").GetString().ShouldBe("Action et prévention");
+	}
+
+	[Fact]
+	public async Task GivenExactlyTheExpectedHeadings_WhenSummarized_ThenBothMarkdownTextsAreReturned()
+	{
+		// Given
+		var client = new FixtureAiMediator(SectionedResponse(
+			"## Description\nA landing.\n\n## Action and prevention\nNot provided.",
+			"## Description\nUn atterrissage.\n\n## Action et prévention\nNon fourni."));
+		var summarizer = BuildSummarizer(client);
+
+		// When
+		var draft = await summarizer.Summarize(SectionedInput(), CancellationToken.None);
+
+		// Then
+		draft.TextEn.ShouldStartWith("## Description");
+		draft.TextFr.ShouldContain("## Action et prévention\nNon fourni.");
+	}
+
+	[Theory]
+	[InlineData("## Description\nA landing.", "## Description\nUn atterrissage.\n\n## Action et prévention\nNon fourni.")]
+	[InlineData("## Action and prevention\nNone.\n\n## Description\nA landing.", "## Description\nUn.\n\n## Action et prévention\nNon fourni.")]
+	[InlineData("## Description\nA.\n\n## Action and prevention\nB.\n\n## Notes\nC.", "## Description\nUn.\n\n## Action et prévention\nNon fourni.")]
+	[InlineData("# Description\nA.\n\n## Action and prevention\nB.", "## Description\nUn.\n\n## Action et prévention\nNon fourni.")]
+	[InlineData("## Description:\nA.\n\n## Action and prevention\nB.", "## Description\nUn.\n\n## Action et prévention\nNon fourni.")]
+	[InlineData("## Description\nA.\n\n## Action and prevention\nB.", "## Description\nUn.\n\n## Action and prevention\nNon fourni.")]
+	[InlineData("Description\n===\nA.\n\n## Action and prevention\nB.", "## Description\nUn.\n\n## Action et prévention\nNon fourni.")]
+	[InlineData("A landing with no headings at all.", "Un atterrissage sans aucun titre.")]
+	public async Task GivenHeadingsThatDiffer_WhenSummarized_ThenRejectedAsAFailedAttempt(string english,
+																						   string french)
+	{
+		// Given
+		var client = new FixtureAiMediator(SectionedResponse(english, french));
+		var summarizer = BuildSummarizer(client);
+
+		// When
+		var act = async () => await summarizer.Summarize(SectionedInput(), CancellationToken.None);
+
+		// Then
+		await act.ShouldThrowAsync<SummarizationFailedException>();
+	}
+
+	[Fact]
+	public async Task GivenAHeadingInsideACodeFence_WhenSummarized_ThenItIsNotAHeading()
+	{
+		// Given
+		var client = new FixtureAiMediator(SectionedResponse(
+			"## Description\nA.\n\n```\n# not a heading\n```\n\n## Action and prevention\nB.",
+			"## Description\nUn.\n\n## Action et prévention\nNon fourni."));
+		var summarizer = BuildSummarizer(client);
+
+		// When
+		var draft = await summarizer.Summarize(SectionedInput(), CancellationToken.None);
+
+		// Then
+		draft.TextEn.ShouldContain("# not a heading");
+	}
+
+	[Fact]
+	public async Task GivenNoExpectedSections_WhenTheSummaryHasAHeading_ThenRejected()
+	{
+		// Given
+		var client = new FixtureAiMediator(SectionedResponse("## Description\nA landing.", "## Description\nUn atterrissage."));
 		var summarizer = BuildSummarizer(client);
 
 		// When

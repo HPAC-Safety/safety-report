@@ -147,6 +147,39 @@ public sealed class TypeformImportSteps
 		_frenchFields.Add(Field(_focusRef, "Champ", "short_text"));
 	}
 
+	// --- REQ-TF-024: a trailing colon is stripped from a title (ADR-0181) ---
+
+	[Given(@"a Typeform file whose question titles are ""Date:"" and ""Date :"" in English and French")]
+	public void GivenATitleWithATrailingColon()
+	{
+		_englishFields.Add(Field("date-ref", "Date:", "short_text"));
+		_frenchFields.Add(Field("date-ref", "Date :", "short_text"));
+		_englishFields.Add(Field("notes-ref", "Notes", "short_text"));
+		_frenchFields.Add(Field("notes-ref", "Remarques", "short_text"));
+	}
+
+	[When(@"an Administrator imports it")]
+	public void WhenAnAdministratorImportsIt()
+	{
+		WhenThePairIsMapped();
+	}
+
+	[Then(@"the drafts' labels are ""Date"" in both languages")]
+	public void ThenTheLabelsAreWithoutTheColon()
+	{
+		var draft = _result!.Drafts.Single(candidate => candidate.Key == QuestionKey.Normalize("date-ref"));
+		draft.LabelEn.ShouldBe("Date");
+		draft.LabelFr.ShouldBe("Date");
+	}
+
+	[Then(@"a title with no trailing colon is imported unchanged")]
+	public void ThenAPlainTitleIsUnchanged()
+	{
+		var draft = _result!.Drafts.Single(candidate => candidate.Key == QuestionKey.Normalize("notes-ref"));
+		draft.LabelEn.ShouldBe("Notes");
+		draft.LabelFr.ShouldBe("Remarques");
+	}
+
 	[When(@"the pair is mapped")]
 	public void WhenThePairIsMapped()
 	{

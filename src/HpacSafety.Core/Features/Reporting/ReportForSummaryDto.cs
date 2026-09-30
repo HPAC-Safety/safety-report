@@ -6,6 +6,10 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     against the exact revision it was answered under, and classified private or
 ///     not. Excludes consent, skipped answers, file-upload answers, and deleted
 ///     content; nothing here carries attachment bytes, storage keys, or admin/audit
-///     data.
+///     data. <paramref name="Sections" /> are its public paragraph questions in form
+///     order, blank ones included (ADR-0180).
 /// </summary>
-public sealed record ReportForSummaryDto(TinyId ReportId, Locale Language, IReadOnlyList<ClassifiedReportField> Fields);
+public sealed record ReportForSummaryDto(TinyId ReportId,
+										 Locale Language,
+										 IReadOnlyList<ClassifiedReportField> Fields,
+										 IReadOnlyList<SummarizationSection> Sections);

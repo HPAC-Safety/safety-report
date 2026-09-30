@@ -59,7 +59,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		report.BeginSummarizing();
 
 		var dto = await LoadForSummary(report.Id, report.Language, cancellationToken).ConfigureAwait(false);
-		var input = SummarizationInput.Partition(dto.Fields);
+		var input = SummarizationInput.Partition(dto.Fields, dto.Sections);
 
 		try
 		{
@@ -156,14 +156,19 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 					 revision.Type,
 					 revision.LabelEn,
 					 revision.LabelFr,
+					 revision.DisplayOrder,
 				 })
 			.Where(row => row.Type != QuestionType.FileUpload)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
 		// A yes/no reaches the model as `true` or `false`, never as words in either
-		// language (ADR-0130).
+		// language (ADR-0130). Answers go in form order — the display order of the
+		// revision each was answered under — so the summary can follow the form; a
+		// key breaks a tie so the order is the same on every attempt (ADR-0180).
 		var fields = rows
+			.OrderBy(row => row.DisplayOrder)
+			.ThenBy(row => row.QuestionKey, StringComparer.Ordinal)
 			.Select(row => new ClassifiedReportField(
 				new SummarizationField(
 					row.QuestionKey,
@@ -177,6 +182,52 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 				row.IsPrivate))
 			.ToList();
 
-		return new ReportForSummaryDto(reportId, language, fields);
+		var sections = await LoadSections(reportId, cancellationToken).ConfigureAwait(false);
+
+		return new ReportForSummaryDto(reportId, language, fields, sections);
+	}
+
+	/// <summary>
+	///     One section per public paragraph question on the report, blank ones
+	///     included, in form order. The wording is the revision the reporter answered,
+	///     in both languages, without its trailing colon. A private paragraph question
+	///     has none (ADR-0180).
+	/// </summary>
+	private async Task<IReadOnlyList<SummarizationSection>> LoadSections(TinyId reportId,
+																		 CancellationToken cancellationToken)
+	{
+		var rows = await database.ReportAnswers
+			.Where(answer => answer.ReportId == reportId
+							 && !answer.IsPrivate
+							 && !database.Questions.IgnoreQueryFilters()
+								 .Any(question => question.Id == answer.QuestionId && question.Role != QuestionRole.None))
+			.Join(
+				database.QuestionRevisions,
+				answer => answer.QuestionRevisionId,
+				revision => revision.Id,
+				(answer,
+				 revision) => new
+				 {
+					 answer.QuestionKey,
+					 revision.Type,
+					 revision.LabelEn,
+					 revision.LabelFr,
+					 revision.DisplayOrder,
+				 })
+			.Where(row => row.Type == QuestionType.LongText)
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		return
+		[
+			.. rows
+				.DistinctBy(row => row.QuestionKey, StringComparer.Ordinal)
+				.OrderBy(row => row.DisplayOrder)
+				.ThenBy(row => row.QuestionKey, StringComparer.Ordinal)
+				.Select(row => new SummarizationSection(
+					row.QuestionKey,
+					QuestionLabel.WithoutTrailingColon(row.LabelEn),
+					QuestionLabel.WithoutTrailingColon(row.LabelFr))),
+		];
 	}
 }

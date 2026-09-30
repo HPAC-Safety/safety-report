@@ -20,7 +20,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     database, not the domain in isolation. See <see cref="WorkerDatabase" />.
 /// </summary>
 [Binding]
-public sealed class SummarizationOutboxSteps : IAsyncDisposable
+public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 

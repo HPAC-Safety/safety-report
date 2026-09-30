@@ -164,3 +164,10 @@ Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role
   When that member attempts to import or export
   Then the API rejects both attempts
+
+@REQ-TF-024
+Scenario: Importing a question strips a trailing colon from its title
+  Given a Typeform file whose question titles are "Date:" and "Date :" in English and French
+  When an Administrator imports it
+  Then the drafts' labels are "Date" in both languages
+  And a title with no trailing colon is imported unchanged

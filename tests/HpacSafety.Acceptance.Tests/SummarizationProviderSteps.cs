@@ -25,7 +25,7 @@ public sealed class SummarizationProviderSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
-	private const string ValidResponse = """{"ai_summary_en":"The pilot landed safely.","ai_summary_fr":"Le pilote s'est posé sans incident."}""";
+	private const string ValidResponse = """{"ai_summary_en":"The pilot landed **safely**.","ai_summary_fr":"Le pilote s'est posé *sans incident*."}""";
 
 	/// <summary>Each REQ-AI-024 example row, and the words the prompt must use to state it.</summary>
 	private static readonly Dictionary<string, string[]> PromptRules = new(StringComparer.Ordinal)
@@ -50,6 +50,16 @@ public sealed class SummarizationProviderSteps
 			["Resolve every marker", "must never appear in a summary"],
 		["the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object"] =
 			["{\"ai_summary_en\":\"...\",\"ai_summary_fr\":\"...\"}", "no additional key"],
+		["each expected section is a \"## \" heading with its exact label, in form order"] =
+			["`## ` followed by the exact `label_en`", "exact `label_fr`", "Write no other heading of any kind", "in the order given"],
+		["other public facts are woven into the section they fit"] =
+			["Weave the other facts of `report_content`", "no separate section for facts"],
+		["each statement goes in the section whose question it best answers"] =
+			["Put each statement in the section whose question it best answers", "even when the reporter typed it in a different answer"],
+		["a section with nothing to say reads \"Not provided.\" / \"Non fourni.\""] =
+			["exactly `Not provided.`", "exactly `Non fourni.`", "A section that received content from another answer is not empty"],
+		["Markdown headings, bold, italic, and lists are allowed, and no other Markdown"] =
+			["bold, italic, and lists or line breaks", "no other headings, links, images, tables, code, or raw HTML"],
 	};
 
 	private readonly Dictionary<string, string?> _settings = new()
@@ -93,13 +103,13 @@ public sealed class SummarizationProviderSteps
 		}
 	}
 
-	[Then(@"a response with exactly two nonblank string fields ""ai_summary_en"" and ""ai_summary_fr"" is accepted")]
+	[Then(@"a response with exactly two nonblank string fields ""ai_summary_en"" and ""ai_summary_fr"", each a summary written as Markdown, is accepted")]
 	public void ThenTheExactResponseIsAccepted()
 	{
 		_validations[0].Failure.ShouldBeNull();
 	}
 
-	[Then(@"a response with a Markdown fence, commentary, an extra key, a null field, or only one language is rejected")]
+	[Then(@"a response with a Markdown fence around the JSON, commentary, an extra key, a null field, or only one language is rejected")]
 	public void ThenEveryOtherShapeIsRejected()
 	{
 		foreach (var (response, failure) in _validations.Skip(1))
@@ -222,7 +232,7 @@ public sealed class SummarizationProviderSteps
 	[Given(@"the prompt version the Worker currently sends")]
 	public void GivenTheCurrentPrompt()
 	{
-		OpenAiSummarizer.CurrentPromptVersion.ShouldBe("summarize-anonymize.v3");
+		OpenAiSummarizer.CurrentPromptVersion.ShouldBe("summarize-anonymize.v4");
 	}
 
 	[When(@"the prompt is read")]

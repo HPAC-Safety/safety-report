@@ -20,7 +20,10 @@ version control; they do not need parallel active pipelines.
 ## Input DTO fields
 
 The Worker queries a purpose-built DTO containing the report ID, source
-locale, and the two labeled `report_content`/`private_context` arrays.
+locale, the two labeled `report_content`/`private_context` arrays, and the
+`expected_sections` (see "Summary sections"). Answers are ordered by the display
+order of the revision each was answered under, so the model reads them in form
+order ([REQ-AI-032](ai-anonymization.feature)).
 
 Each field in `report_content` and `private_context` includes the stable
 question key, the label in the reporter's language, and its rendered answer.
@@ -43,8 +46,44 @@ yes/no would otherwise mark every literal `true` in the narrative
 ```
 
 Both texts summarize the same eligible facts; they are not expected to be
-word-for-word translations. The Worker validates syntax, field set, length,
-and types before persisting anything.
+word-for-word translations. Each is Markdown: headings, paragraphs, bold,
+italic, lists, and line breaks, and no other feature. The Worker validates
+syntax, field set, length, types, and headings before persisting anything.
+
+## Summary sections
+
+A summary has one section for each public paragraph (`LongText`) question on
+the report, in form order
+([ADR-0180](../../docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
+Today that is Description and Action and prevention.
+
+- **Which.** The `expected_sections` the Worker sends are every public paragraph
+  question on the report, blank ones included, ordered by display order. A
+  private paragraph question has no section
+  ([REQ-AI-031](ai-anonymization.feature)).
+- **Heading.** The heading is `## ` and the question's label in that summary's
+  language, without the colon, from the revision the reporter answered, not the
+  current one ([REQ-AI-033](ai-anonymization.feature)).
+- **Content.** Other public facts (date, time of day, province, aircraft type,
+  damage) are woven into the section they fit. There is no facts section. Each
+  statement goes in the section whose question it best answers, even when the
+  reporter typed it in the other box. A section with nothing to say from
+  anywhere in the report reads `Not provided.` / `Non fourni.`; content moved
+  in from another answer makes a section not empty.
+- **Validation.** The Worker rejects a summary unless each language has exactly
+  the expected `## ` headings, worded exactly, in order, and no other heading. A
+  rejection is a failed attempt under the outbox retry budget; at the end of the
+  budget the report is `SummaryFailed` and a reviewer writes the summary
+  ([REQ-AI-034](ai-anonymization.feature), [REQ-AI-035](ai-anonymization.feature),
+  [REQ-AI-036](ai-anonymization.feature), REQ-MOD-059).
+- **Worked example.** A report filed in English answers Description with the
+  launch, the collapse, and a thought that it flew too close to the ridge, and
+  Action and prevention with the club and the shop. The English summary has
+  `## Description` (weaving in July 2026, the afternoon, British Columbia, the
+  paraglider, and the torn lines) and `## Action and prevention` (the report to
+  the club, the shop, and the pilot's belief about the ridge, moved there from
+  Description), and the French summary has `## Description` and
+  `## Action et prévention`. The prompt carries this example in full.
 
 ## Anonymization policy notes
 
@@ -157,6 +196,12 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   translator (`ITranslator`, its own call and outside this one-call rule,
   [ADR-0179](../../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md);
   [ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+- A separate "facts" section, or a section for a question that is not a public
+  paragraph question. Facts go into the sections that exist.
+- Markdown in a summary beyond headings, paragraphs, bold, italic, lists, and
+  line breaks: no links, images, tables, or code.
+- A shipped "regenerate summary" feature. Re-summarizing existing reports after
+  this change is done by hand on the development database, not built.
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
 - Per-sentence or per-field redaction output. The result is one bilingual pair.

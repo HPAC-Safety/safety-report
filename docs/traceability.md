@@ -106,6 +106,30 @@ A yes/no answer reaches the model as true or false, never as words — *Reqnroll
 
 The summary's model name picks the provider — *Reqnroll, Covered*
 
+### REQ-AI-031
+
+The model is told to write one section per public paragraph question, blank ones included — *Reqnroll, Covered*
+
+### REQ-AI-032
+
+Answers reach the model in form order — *Reqnroll, Covered*
+
+### REQ-AI-033
+
+A section's headings are the label the reporter answered, in both languages, without a colon — *Reqnroll, Covered*
+
+### REQ-AI-034
+
+The Worker accepts a summary only with exactly the expected headings — *Reqnroll, Covered*
+
+### REQ-AI-035
+
+A report with no public paragraph question has a summary with no headings — *Reqnroll, Covered*
+
+### REQ-AI-036
+
+A summary with the wrong headings is a failed attempt under the retry budget — *Reqnroll, Covered*
+
 ## Claims: comments
 
 ### REQ-COM-001
@@ -1342,6 +1366,22 @@ Editing a published report's summary keeps it Published — *playwright-bdd, Cov
 
 Save is offered only once a language has changed — *playwright-bdd, Covered*
 
+### REQ-MOD-208
+
+The admin review page renders a summary and its revision history as Markdown — *playwright-bdd, Covered*
+
+### REQ-MOD-209
+
+The admin report detail renders a long-text answer and its translation as Markdown — *playwright-bdd, Covered*
+
+### REQ-MOD-210
+
+The public feed previews the first section's text, without its heading — *playwright-bdd, Covered*
+
+### REQ-MOD-211
+
+Markdown support is not advertised to a reviewer editing a summary — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -2136,6 +2176,34 @@ Leaving the question editor with an unsaved draft is confirmed before it is disc
 
 Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning — *playwright-bdd, Covered*
 
+### REQ-QB-240
+
+The form adds the colon after an answerable question's label, in the locale's style — *playwright-bdd, Covered*
+
+### REQ-QB-241
+
+The admin report detail adds the colon after an answerable question's label, in the locale's style — *playwright-bdd, Covered*
+
+### REQ-QB-242
+
+The question bank list shows each language's label with its own colon style — *playwright-bdd, Covered*
+
+### REQ-QB-243
+
+The question editor refuses a label that ends in a colon — *playwright-bdd, Covered*
+
+### REQ-QB-244
+
+The API refuses a question whose label ends in a colon, in either language — *Reqnroll, Covered*
+
+### REQ-QB-245
+
+A migration removes a trailing colon from every stored question label, in place — *Reqnroll, Covered*
+
+### REQ-QB-246
+
+The seeded question bank has no label ending in a colon — *Reqnroll, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -2680,6 +2748,10 @@ A date question's Allow future dates setting survives an export and reimport —
 
 A choice dependency survives an export and reimport — *Reqnroll, Covered*
 
+### REQ-TF-024
+
+Importing a question strips a trailing colon from its title — *Reqnroll, Covered*
+
 ## Claims: web-localization-and-design
 
 ### REQ-WLD-001
@@ -2857,6 +2929,10 @@ A translation model no provider handler claims stops startup when a key is held 
 ### REQ-WLD-044
 
 With no key, a translation model no provider handler claims leaves translation unavailable — *Reqnroll, Covered*
+
+### REQ-WLD-045
+
+A summary's Markdown renders as a safe subset — *playwright-bdd, Covered*
 
 ## Constraints
 

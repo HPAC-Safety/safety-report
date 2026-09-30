@@ -12,6 +12,14 @@ keywords: screenshots, pull request template, pull request body, web UI, review,
 
 **Status:** Accepted.
 
+**Amended 2026-09-29 (#687):** an `after` shot alone satisfies a web change;
+a `before` shot is optional. The check never required one (it counts any
+pinned screenshot), but the template, the skills, and the check's failure
+message asked for a pair. A `before` shot stays welcome where it helps a
+reviewer see what moved; it is no longer expected of every change. #682, a
+one-line label, touched 27 files, several of them screenshots and pages the
+change did not alter.
+
 ## Context
 
 A reviewer judges a web UI change by looking at it. The `deliver-change` and

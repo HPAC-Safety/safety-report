@@ -3,9 +3,9 @@
 // says why it has none (ADR-0142).
 //
 // The check reads only the pull-request body and the changed-file list. It
-// cannot judge whether the shots are the right ones or whether a before/after
-// pair is complete — review does that. What it can do is refuse a web change
-// that reaches review with neither a screenshot nor a reason for its absence:
+// cannot judge whether the shots are the right ones — review does that. What it can do is refuse a web change
+// that reaches review with neither a screenshot nor a reason for its absence.
+// An `after` shot alone satisfies it; a `before` shot is optional (#687):
 //
 //     ![after](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/docs/screenshots/<dir>/after-form.png)
 //
@@ -129,9 +129,9 @@ export function main(input) {
 	console.error('Changed files that render:')
 	for (const path of verdict.rendered) console.error(`  ${path}`)
 	console.error('')
-	console.error('Commit the shots under docs/screenshots/<dir>/ — before-* and after-* for a')
-	console.error('changed page, after-* for a new one — and show each in the body as an image')
-	console.error('linked by a raw.githubusercontent.com URL pinned to the commit that added it.')
+	console.error('Commit an after-* shot under docs/screenshots/<dir>/ (a before-* shot is')
+	console.error('optional) and show it in the body as an image linked by a')
+	console.error('raw.githubusercontent.com URL pinned to the commit that added it.')
 	console.error('')
 	console.error('If nothing on screen changed, say so on its own line:')
 	console.error('')

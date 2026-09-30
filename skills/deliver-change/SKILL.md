@@ -30,6 +30,22 @@ and wins where they differ.
   - It stays while a pull request is open; closing the issue takes it off the
     board.
 
+### Settle the requirement before building
+
+- **Put every open question to the person, and record the answers in the
+  issue, before writing any code.** A gap, an ambiguity, or a choice between
+  two plausible readings is a question, not a decision for you to make. Ask
+  it directly, wait for the answer, and write the answer into the issue (see
+  "Keep the issue true while you work"). Code built on a guess is thrown away
+  when the guess is wrong.
+- **A sub-agent brief says to stop and ask.** Any brief handed to another
+  agent tells it to stop and report a question rather than build on a guess,
+  and the briefing agent has put its own open questions to the person first.
+- **Sequence dependent issues.** Issues that edit the same migration, view,
+  or table run one after another, never side by side: the second starts from
+  the first's merged result, so neither rebases onto the other's schema.
+  Record the order as a blocked-by relation when the issues are filed.
+
 ### File a new issue
 
 **Milestone and labels are mandatory — no exceptions.** Pass both on
@@ -153,6 +169,9 @@ stronger one:
   draws a new boundary writes it there, not only in the pull request.
 - Component READMEs describe scope and implementation status without
   duplicating the specification.
+- **Size the documentation to the change.** Update only the pages whose
+  content the change actually alters. A one-line change does not touch a
+  dozen pages.
 
 ### Exemptions from scenario coverage
 
@@ -183,9 +202,13 @@ stronger one:
 
 ### ADRs
 
-- One ADR per durable architectural decision (technology choice, rejected
-  alternative, durable trade-off), in the same pull request — mandatory. A
-  routine detail with no rejected alternative needs none.
+- One ADR per real decision, in the same pull request — mandatory. A real
+  decision is a new rule, a reversed rule, a privacy or data boundary, or an
+  architecture choice (technology, rejected alternative, durable trade-off).
+  UI polish, a bug fix, and a routine detail with no rejected alternative need
+  none.
+- A decision that changes an existing ADR amends it with a dated paragraph
+  rather than adding a new one.
 - Number it after rebasing (see "Commit, rebase, claim identifiers"). Keep the
   filename and the `# ADR-NNNN` heading in step.
 - Keep rationale and requirements apart: never restate a scenario's acceptance
@@ -241,9 +264,15 @@ issue, not this conversation.
 The step numbers are stable; the project skill adds its commands under the
 same numbers.
 
-1. **Test, then pass the local CI gate.** Run focused tests, then the
+1. **Test, then pass the local CI gate.** First run, natively, the tests for
+   the code you changed: the focused subset, not the whole suite. Then run the
    project's local CI runner with the draft pull request body. No pull request
-   is opened until it passes.
+   is opened until both pass.
+   - The runner's default is the fast checks: the body checks and the cheap
+     jobs. The slow jobs (the full test suite, coverage, the browser suite)
+     run on GitHub, and the pull request's required checks, the coverage
+     ratchet included, are the full gate. The runner has a flag for the full
+     run; use it only when the full result is worth the wait.
    - It runs the pull request's own workflow files, not a copy of their
      commands: a re-implemented check drifts from the one CI runs.
    - A green test run is not a passing gate; the coverage ratchet and the
@@ -280,16 +309,16 @@ same numbers.
    the specification or the change exceeded its scope.
 6. **Screenshots** for any user-visible web change:
    - captured from the real running app by a browser tool, not a mockup;
-   - a new page or component: an after shot; a changed one: before and after;
-   - the before shot comes from a build of `origin/main`, taken before the code
-     changes, so there is always something to compare against;
+   - an after shot alone satisfies a change, new page or changed;
+   - a before shot is optional. Take one, from a build of `origin/main` before
+     the code changes, only where it helps a reviewer see what moved;
    - state the page cannot capture (a native popup, an OS picker, a hover, a
      toast) is captured at OS level against a headed browser window. "It can't
      be captured" is not grounds to skip a shot;
    - taken after entry animations settle;
    - light and dark when the issue asks for both;
    - in the project's primary language;
-   - committed in the repository, named `before-*` / `after-*`, and referenced
+   - committed in the repository, named `after-*` (and `before-*` if taken), and referenced
      from the body or a comment, not only pasted inline;
    - referenced by a `raw.githubusercontent.com` URL pinned to the adding
      commit. A relative path or `github.com/…/blob/…` URL renders broken;

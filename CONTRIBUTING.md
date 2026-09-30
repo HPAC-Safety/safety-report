@@ -41,10 +41,13 @@ in `~/.claude/settings.json` for every project.
 1. Find or open a focused issue.
 2. Branch from current `main` using `issue-<number>/<short-description>`.
 3. Implement the smallest change that satisfies `/features` and the issue.
-4. Run the checks relevant to the changed surface, then
-   `tools/ci-local.sh --body <pr-body.md>`: it runs the pull request's own
-   workflows under act, coverage ratchet included, so a failure is caught
-   before the PR rather than in it (see the README).
+4. Run the tests for the code you changed, natively (a filtered `dotnet test`,
+   and `CI=1 npm test` for a touched e2e spec), then
+   `tools/ci-local.sh --body <pr-body.md>`: it runs the pull request's fast
+   checks under act (body checks, `feature-coverage`, and the cheap `ci.yml`
+   jobs), so a failure is caught before the PR rather than in it. GitHub CI,
+   the coverage ratchet included, is the full gate; `--full` runs all of it
+   locally (see the README).
 5. Open a pull request with a squash-ready title and `Closes #<number>` on its
    own line in the body.
 6. Address review and CI until every required check is green; squash merge only.

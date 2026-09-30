@@ -10,6 +10,12 @@ keywords: specification-driven development, SDD, Gherkin, agents, artifact chain
 
 # ADR-0083 — Specification-driven development is how this repository works
 
+**Amended 2026-09-29 (#687):** an ADR records a real decision, meaning a new
+rule, a reversed rule, a privacy or data boundary, or an architecture choice.
+UI polish and a bug fix need none, and neither does a routine detail with no
+rejected alternative. The same sizing applies to the rest of the chain's
+ceremony: update only the pages whose content the change actually alters.
+
 ## Context
 
 The repository already behaves this way without saying so.

@@ -11,6 +11,21 @@ names and step numbers.
 
 ## Start
 
+### Settle the requirement before building
+
+- Asking: put the question to the owner directly; for genuinely ambiguous
+  product behavior also read
+  [`clarify-requirements`](../clarify-requirements/SKILL.md). Record the
+  answer in the issue, and in the specification where it changes behavior,
+  before any code
+  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+- Sub-agent briefs: end with "if anything is ambiguous, stop and report the
+  question; do not guess".
+- Sequencing: two issues that edit the same EF migration, SQL view under
+  `Persistence/Sql/`, or table are blocked-by each other in filing order, and
+  the second is not picked up until the first has merged. Migration timestamps
+  and view definitions do not survive being rebased across each other.
+
 ### File a new issue
 
 - **Labels**:
@@ -118,13 +133,24 @@ names and step numbers.
 
 ## Verify and publish
 
-1. The gate is `tools/ci-local.sh --body pr-body.md`, for every pull request
+1. Run the tests for the code you changed, natively, then the gate:
+   `tools/ci-local.sh --body pr-body.md`, for every pull request
    ([ADR-0145](../../docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md),
    [lesson 0025](../../docs/lessons/0025-a-local-gate-that-re-implemented-ci-disagreed-with-it.md)).
-   - It runs the workflow files themselves under act (version in
-     `.act-version`): `linked-issue.yml`, `feature-coverage.yml`, terraform
-     `infra`, and every `ci.yml` job, coverage against main's last green
-     artifact included. It stops at the first failure.
+   - Native tests first: a filtered `dotnet test` (for example
+     `dotnet test <project> --filter <name>`) for the changed .NET code, and
+     `CI=1 npm test` in `tests/e2e` for each touched e2e spec. Not the whole
+     suite.
+   - The gate runs the workflow files themselves under act (version in
+     `.act-version`). By default only the fast checks: `linked-issue.yml`,
+     `feature-coverage.yml`, and the `ci.yml` jobs `build`, `web`, `i18n`,
+     `docs`, `cucumber`, and `agent-config`. It skips `test`, `coverage`,
+     `e2e`, and terraform `infra`, and needs no `gh` login. It stops at the
+     first failure.
+   - GitHub CI is the full gate, the coverage ratchet included. `--full` runs
+     every job locally as the gate once did, coverage against main's last
+     green artifact included; do it only when the full result is worth the
+     wait, such as chasing a coverage failure.
    - It runs committed `HEAD`: commit first. It refuses a dirty tree or a
      `HEAD` without a fresh `origin/main`.
    - No lock: runs from different worktrees proceed in parallel, even at the
@@ -136,15 +162,15 @@ names and step numbers.
      volumes, and network are deleted when it ends, pass or fail, `INT` and
      `TERM` included; a `kill -9` is swept by the next run. Never touch a dev
      stack.
-   - No token: act gets none. The script downloads main's coverage baseline
-     on the host with the `gh` login; without one, a run that includes
-     `coverage` exits 2 ("run gh auth login").
+   - No token: act gets none. For `--full` or `--job coverage` the script
+     downloads main's coverage baseline on the host with the `gh` login;
+     without one, such a run exits 2 ("run gh auth login").
    - The bots' commits: it regenerates and commits the traceability matrix in
      its own clone, and under act `i18n` accepts French still pending as a `#`
      stub. A scenario change or a new English key passes locally as it will
      after the bots run; never hand-write French to pass it.
    - One job: `--job <id>`, repeatable (a body edit: `--job linked-issue
-     --job feature-coverage`).
+     --job feature-coverage`). It is exclusive with `--full`.
    - Exit 0 passed, 1 a job failed (or coverage lost a per-project report),
      2 a precondition or setup step failed. Full logs: `artifacts/ci-local/`.
    - Local green is necessary, not sufficient; step 9 still applies.
@@ -160,7 +186,8 @@ names and step numbers.
    pull request queues once its required checks pass, and the queue
    squash-merges it and deletes the branch. The
    squash message is the pull request body, so the body is final once queued.
-6. Screenshots, for a user-visible `src/web` change:
+6. Screenshots, for a user-visible `src/web` change (an `after` shot alone
+   satisfies it; `before` is optional):
    - browser tools: Playwright or Claude in Chrome;
    - set the locale to English first — a French shot reads as broken;
    - commit under `docs/screenshots/<short-description>/`; attach with
@@ -184,7 +211,7 @@ names and step numbers.
      `tools/pr-screenshots.mjs`: it fails a change to a `.tsx` or `.css` under
      `src/web/src/` (not a test) whose body has neither a pinned
      `raw.githubusercontent.com/…/docs/screenshots/…` image nor that line. It
-     does not judge whether the pair is complete; review does
+     does not judge the shots; review does
      ([ADR-0142](../../docs/decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md),
      [lesson 0023](../../docs/lessons/0023-a-rule-the-template-never-asks-for.md)).
      Step 1 runs it; alone,

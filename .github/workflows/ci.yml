@@ -42,6 +42,12 @@ jobs:
   # set — the ruleset keeps waiting on a name nothing reports. Moving a job to
   # another workflow file keeps its context, which is how `feature-coverage`
   # and `linked-issue` live in their own files while staying required.
+  #
+  # tools/ci-local.sh runs only the cheap jobs by default: build, web, i18n,
+  # docs, cucumber, agent-config (with the linked-issue and feature-coverage
+  # workflows). test, coverage, and e2e run under act only with --full; GitHub
+  # CI, here, is the full gate (ADR-0145, amended for #687). A new job is
+  # cheap or not: add it to FAST_CI_JOBS in that script if it is.
 
   # NOT a `paths:` filter on the trigger above — that is the trap ADR-0011 and
   # terraform.yml document: a required context whose *workflow* never runs

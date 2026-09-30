@@ -311,6 +311,43 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenManyReviewersSendingTheSameNextEditAtOnce_WhenSaved_ThenExactlyOneWinsAndTheRestAreToldToReload()
+	{
+		// Given — every one of them loaded the same view
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		var clients = new List<HttpClient>();
+
+		for (var index = 0; index < 8; index++)
+		{
+			clients.Add(await SignedInClient.As(_factory, MemberRole.SafetyOfficer));
+		}
+
+		try
+		{
+			// When
+			var responses = await Task.WhenAll(clients.Select((client, index) =>
+				Send(client, id, "summary", new { version, aiSummaryEn = $"Edit {index}.", aiSummaryFr = $"Modification {index}." })));
+
+			// Then — never two revisions with the same sequence, never a 500
+			responses.Count(response => response.StatusCode == HttpStatusCode.OK).ShouldBe(1);
+			responses.Count(response => response.StatusCode == HttpStatusCode.Conflict).ShouldBe(7);
+			var detail = await clients[0].GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+			detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(2);
+			foreach (var response in responses)
+			{
+				response.Dispose();
+			}
+		}
+		finally
+		{
+			foreach (var client in clients)
+			{
+				client.Dispose();
+			}
+		}
+	}
+
+	[Fact]
 	public async Task GivenTwoReviewersLoadedTheSameView_WhenBothEdit_ThenTheSecondIsToldToReload()
 	{
 		// Given

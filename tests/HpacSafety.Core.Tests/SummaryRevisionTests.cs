@@ -245,6 +245,63 @@ public class SummaryRevisionTests
 		report.Summary.Latest.SourceEn.ShouldBe(SummaryTextSource.Generated);
 	}
 
+	[Theory]
+	[InlineData("edit")]
+	[InlineData("rollback")]
+	[InlineData("manual")]
+	public void GivenBlankAuthor_WhenASummaryIsSaved_ThenRefused(string action)
+	{
+		// Given — every revision names who saved it
+		var report = action == "manual" ? Failed() : Pending();
+
+		// When
+		Action saving = action switch
+		{
+			"edit" => () => report.EditSummary("Edited.", "Modifié.", " ", Later),
+			"rollback" => () => report.RollBackSummary(TinyId.New(), " ", Later),
+			_ => () => report.WriteManualSummary("Text.", "Texte.", " ", Later),
+		};
+
+		// Then
+		Should.Throw<ArgumentException>(saving);
+	}
+
+	[Fact]
+	public void GivenGeneratedClaimedForManualPair_WhenWritten_ThenRefused()
+	{
+		// Given
+		var report = Failed();
+
+		// When / Then — only the Worker's call produces generated text
+		Should.Throw<DomainRuleViolationException>(() =>
+			report.WriteManualSummary("Text.", "Texte.", "subject-writer", Later, SummaryTextSource.Generated, SummaryTextSource.Human));
+	}
+
+	[Fact]
+	public void GivenUnpublishedReport_WhenRolledBack_ThenItIsADraftAndReturnsToPending()
+	{
+		// Given
+		var report = Pending();
+		report.EditSummary("Edited.", report.Summary!.AiSummaryFr, "subject-a", Later);
+		report.Unpublish("Not yet.");
+
+		// When
+		report.RollBackSummary(report.Summary.Revisions[0].Id, "subject-b", Latest);
+
+		// Then
+		report.Status.ShouldBe(ReportStatus.Pending);
+		report.UnpublishNote.ShouldBeNull();
+		report.Summary.IsApproved.ShouldBeFalse();
+	}
+
+	private static Report Failed()
+	{
+		var report = new Report(Locale.EnCa, Now);
+		report.BeginSummarizing();
+		report.FailSummarization("The provider was unavailable.");
+		return report;
+	}
+
 	private static Report Pending()
 	{
 		var report = new Report(Locale.EnCa, Now);

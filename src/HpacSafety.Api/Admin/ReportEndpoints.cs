@@ -529,7 +529,7 @@ public static class ReportEndpoints
 					EnumCode.Of(revision.SourceFr),
 					revision.AuthorSubject,
 					revision.CreatedAt,
-					revision.RestoredFromId is { } from && sequenceOf.TryGetValue(from, out var sequence) ? sequence : null,
+					revision.RestoredFromId is { } from ? sequenceOf[from] : null,
 					revision.ApprovedBySubject,
 					revision.ApprovedAt,
 					revision.Id == current)),

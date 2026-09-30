@@ -522,8 +522,8 @@
       "label": "Modifier la paire de résumés",
       "en": "Résumé en anglais",
       "fr": "Résumé en français",
-      "publishesAtOnce": "#Saving publishes the new version at once.",
-      "savesDraft": "#Saving keeps a draft. Publishing approves it.",
+      "publishesAtOnce": "En enregistrant, la nouvelle version est publiée immédiatement.",
+      "savesDraft": "En cliquant sur « Enregistrer », vous conservez un brouillon. En cliquant sur « Publier », vous le validez.",
       "save": "Enregistrer le résumé"
     },
     "unpublish": {
@@ -536,29 +536,29 @@
       "reload": "Recharger le signalement"
     },
     "history": {
-      "title": "#Summary history",
-      "version": "#Version {n}",
-      "current": "#Current",
-      "saved": "#Saved {at} by {author}.",
+      "title": "Bref historique",
+      "version": "Version {n}",
+      "current": "Actuel",
+      "saved": "Source : {at} par {author}.",
       "author": {
-        "worker": "#the AI",
-        "unknown": "#an unknown author"
+        "worker": "l'IA",
+        "unknown": "un auteur inconnu"
       },
-      "sources": "#English: {en}. French: {fr}.",
-      "restoredFrom": "#Restored from version {n}.",
-      "approved": "#Approved {at} by {by}.",
-      "view": "#View this version",
-      "hide": "#Hide this version",
-      "restore": "#Restore this version"
+      "sources": "Anglais : {en}. Français : {fr}.",
+      "restoredFrom": "Récupéré à partir de la version {n}.",
+      "approved": "{at}, approuvée par {by}.",
+      "view": "Consultez cette version",
+      "hide": "Masquer cette version",
+      "restore": "Rétablir cette version"
     },
     "restore": {
-      "title": "#Restore version {n}?",
+      "title": "Restaurer la version « {n} »?",
       "body": {
-        "live": "#A new version with the same text is saved and published at once. Version {n} stays in the history.",
-        "draft": "#A new version with the same text is saved as a draft. It is not public until you publish it. Version {n} stays in the history."
+        "live": "Une nouvelle version contenant le même texte est enregistrée et publiée immédiatement. La version {n} reste dans l’historique.",
+        "draft": "Une nouvelle version contenant le même texte est enregistrée comme ébauche. Elle n’est pas accessible au public tant que vous ne l’avez pas publiée. La version {n} reste dans l’historique."
       },
-      "confirm": "#Restore version",
-      "keep": "#Keep current version"
+      "confirm": "Restaurer la version",
+      "keep": "Conserver la version actuelle"
     },
     "delete": {
       "title": "Souhaitez-vous supprimer ce signalement?",

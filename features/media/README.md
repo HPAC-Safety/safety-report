@@ -120,7 +120,8 @@ The bytes are never on the CDN. The page asks
 `GET /api/v1/public/reports/{id}/media/{fileId}` for each file and gets back a
 pre-signed GET to the derivative that lives at most fifteen minutes and is
 served inline. When an image or video errors, the page asks again — a video
-resumes where it was — and removes the file if the answer is 404. So a hide or
+resumes where it was, paused if it was paused and playing if it was playing —
+and removes the file if the answer is 404. So a hide or
 an unpublish reaches every open page within fifteen minutes.
 
 Moderation happens after publication. A safety officer or administrator hides

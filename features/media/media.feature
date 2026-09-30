@@ -322,10 +322,10 @@ Scenario: The report page shows a thumbnail strip, and activating a thumbnail op
 @REQ-MED-033
 @ui
 Scenario: An expired link is replaced and the video resumes where it was
-  Given a visitor is part-way through a public video
+  Given a visitor has paused a public video part-way through
   When the video's link stops working
   Then the page fetches a new link
-  And the video resumes from where it was
+  And the video resumes from where it was, still paused
 
 @REQ-MED-034
 @ui

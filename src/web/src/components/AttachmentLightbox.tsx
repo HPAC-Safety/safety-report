@@ -242,6 +242,10 @@ function LightboxMedia({
 			element.currentTime = from.at
 			if (from.playing) {
 				void element.play().catch(() => undefined)
+			} else {
+				// The element autoplays every source it loads, the replacement
+				// included; a video the visitor had paused stays paused.
+				element.pause()
 			}
 		}
 	}

@@ -177,3 +177,37 @@ CREATE TRIGGER summary_revisions_immutable
     ON summary_revisions
     FOR EACH ROW
 EXECUTE FUNCTION enforce_summary_revisions_immutability();
+
+-- TRUNCATE removes every row at once, below any row trigger, so each of the four
+-- tables also refuses it with a statement-level trigger (owner, 2026-09-30). A
+-- TRUNCATE ... CASCADE from another table fires these too, for every table it
+-- would empty. A migration that must truncate disables the trigger in its own
+-- transaction, like any other.
+CREATE FUNCTION refuse_truncate_of_reporters_account() RETURNS trigger
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RAISE EXCEPTION '% rows are never deleted', TG_TABLE_NAME USING ERRCODE = '23000';
+END
+$$;
+
+CREATE TRIGGER report_answers_never_truncated
+    BEFORE TRUNCATE ON report_answers
+    FOR EACH STATEMENT
+EXECUTE FUNCTION refuse_truncate_of_reporters_account();
+
+CREATE TRIGGER report_files_never_truncated
+    BEFORE TRUNCATE ON report_files
+    FOR EACH STATEMENT
+EXECUTE FUNCTION refuse_truncate_of_reporters_account();
+
+CREATE TRIGGER reports_never_truncated
+    BEFORE TRUNCATE ON reports
+    FOR EACH STATEMENT
+EXECUTE FUNCTION refuse_truncate_of_reporters_account();
+
+CREATE TRIGGER summary_revisions_never_truncated
+    BEFORE TRUNCATE ON summary_revisions
+    FOR EACH STATEMENT
+EXECUTE FUNCTION refuse_truncate_of_reporters_account();

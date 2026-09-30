@@ -302,6 +302,10 @@ A statement that leaves a locked column as it was is not a change — *Reqnroll,
 
 A migration that must change a locked column disables the trigger inside its own transaction — *Reqnroll, Covered*
 
+### REQ-DOM-030
+
+The database never truncates a report, an answer, a file, or a summary revision — *Reqnroll, Covered*
+
 ## Claims: media
 
 ### REQ-MED-001
@@ -2867,7 +2871,7 @@ data-and-persistence.md — verified by `REQ-DOM-024`, `REQ-DOM-025`, `REQ-DOM-0
 
 ### CON-DP-015
 
-data-and-persistence.md — verified by `REQ-DOM-027`
+data-and-persistence.md — verified by `REQ-DOM-027`, `REQ-DOM-030`
 
 ### CON-DP-016
 

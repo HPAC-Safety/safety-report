@@ -30,9 +30,13 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 	private static readonly string[] Triggers =
 	[
 		"report_answers_immutable",
+		"report_answers_never_truncated",
 		"report_files_immutable",
+		"report_files_never_truncated",
 		"reports_immutable",
+		"reports_never_truncated",
 		"summary_revisions_immutable",
+		"summary_revisions_never_truncated",
 	];
 
 	[Fact]
@@ -72,6 +76,7 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 		// Then — removed, with their functions, and a locked column is writable again
 		(await Scalar(connection, TriggerNames)).ShouldBeNull();
 		(await Scalar(connection, "SELECT count(*)::text FROM pg_proc WHERE proname LIKE 'enforce\\_%\\_immutability'")).ShouldBe("0");
+		(await Scalar(connection, "SELECT count(*)::text FROM pg_proc WHERE proname = 'refuse_truncate_of_reporters_account'")).ShouldBe("0");
 		await Execute(connection, "UPDATE reports SET language = 'fr-CA' WHERE id = 'rprior00001'");
 	}
 
@@ -117,7 +122,7 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 	}
 
 	private const string TriggerNames =
-		"SELECT string_agg(tgname, ',' ORDER BY tgname) FROM pg_trigger WHERE NOT tgisinternal AND tgname LIKE '%\\_immutable'";
+		"SELECT string_agg(tgname, ',' ORDER BY tgname) FROM pg_trigger WHERE NOT tgisinternal AND (tgname LIKE '%\\_immutable' OR tgname LIKE '%\\_never\\_truncated')";
 
 	private static async Task MigrateTo(HpacSafetyDbContext context,
 										string? targetMigration)

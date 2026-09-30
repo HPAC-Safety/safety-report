@@ -44,7 +44,10 @@ the table and the column, never a value.
   write to an unguarded column (a report's status, a file's `hidden_at`) never
   runs it. An `UPDATE` that names a guarded column but leaves its value as it
   was is not a change, and passes.
-- **`DELETE` is refused on all four tables.** Retirement is the `deleted` stamp.
+- **`DELETE` and `TRUNCATE` are refused on all four tables.** Retirement is the
+  `deleted` stamp. `TRUNCATE` empties a table below any row trigger, so each
+  table also has a statement-level `BEFORE TRUNCATE` trigger, which a
+  `TRUNCATE … CASCADE` from another table fires too (owner, 2026-09-30).
   The report's soft-delete cascade stamps `deleted` and nothing else, so it
   commits.
 - **No metadata table.** A report's metadata stays on `reports` and stays
@@ -91,8 +94,6 @@ their own transaction.
 - Row-level security, `REVOKE`, or a separate database role. The trigger's owner
   is the role that runs migrations; a guard against a hostile superuser is not the
   goal here.
-- A `BEFORE TRUNCATE` trigger. Nothing in the application truncates; a statement
-  that does is an operator's, not a stray `UPDATE`.
 - A guard on any other table. Questions and choices have their own revision rules
   ([ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md),
   [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).

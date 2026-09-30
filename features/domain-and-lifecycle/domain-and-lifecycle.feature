@@ -342,6 +342,20 @@ Examples:
   | report_files      |
   | summary_revisions |
 
+@REQ-DOM-030
+Scenario Outline: The database never truncates a report, an answer, a file, or a summary revision
+  Given a submitted report with answers, a file, and a summary
+  When a statement truncates <table>
+  Then Postgres refuses it, saying <table> rows are never deleted
+  And the row is as it was
+
+Examples:
+  | table             |
+  | reports           |
+  | report_answers    |
+  | report_files      |
+  | summary_revisions |
+
 @REQ-DOM-028
 Scenario: A statement that leaves a locked column as it was is not a change
   Given a submitted report with answers, a file, and a summary

@@ -152,9 +152,9 @@ REQ-DOM-023, REQ-DOM-028, REQ-DOM-007.*
   changes only from null to a value.
 
 **CON-DP-015** No row of `reports`, `report_answers`, `report_files`, or
-`summary_revisions` is ever deleted: the database refuses `DELETE`. Retirement
-is the `deleted` stamp.
-*Verified by: REQ-DOM-027.*
+`summary_revisions` is ever deleted: the database refuses `DELETE` and
+`TRUNCATE`. Retirement is the `deleted` stamp.
+*Verified by: REQ-DOM-027, REQ-DOM-030.*
 
 **CON-DP-016** A migration that must change a locked column disables the table's
 trigger inside its own transaction and enables it again before the transaction

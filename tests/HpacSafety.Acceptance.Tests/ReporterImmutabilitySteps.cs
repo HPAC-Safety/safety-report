@@ -10,7 +10,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The database refuses changes to the reporter's account and to summary
-///     revisions — REQ-DOM-018 to REQ-DOM-029 (#669, ADR-0178). Every statement
+///     revisions — REQ-DOM-018 to REQ-DOM-030 (#669, ADR-0178). Every statement
 ///     is real SQL against the booted host's real PostgreSQL, past the domain, so
 ///     what is proven is the trigger and not the entity's <c>private init</c>. A
 ///     report's own soft-delete cascade is REQ-DOM-007 in
@@ -59,6 +59,15 @@ public sealed class ReporterImmutabilitySteps
 	public async Task WhenAStatementDeletes(string table)
 	{
 		await Run(table, $"DELETE FROM {table} WHERE id = @id");
+	}
+
+	[When(@"^a statement truncates (report_answers|report_files|reports|summary_revisions)$")]
+	public async Task WhenAStatementTruncates(string table)
+	{
+		// CASCADE, so a foreign key cannot refuse it before the trigger does. It
+		// runs in a transaction that is always rolled back: should the trigger
+		// ever be missing, the shared test database still keeps every row.
+		await Run(table, $"TRUNCATE {table} CASCADE", rollBack: true);
 	}
 
 	[When(@"a migration disables the reports trigger, sets language = 'fr-CA', and enables it again in one transaction")]
@@ -123,7 +132,8 @@ public sealed class ReporterImmutabilitySteps
 	}
 
 	private async Task Run(string table,
-						   string sql)
+						   string sql,
+						   bool rollBack = false)
 	{
 		if (_table != table)
 		{
@@ -139,6 +149,7 @@ public sealed class ReporterImmutabilitySteps
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
+		await using var transaction = rollBack ? await database.Database.BeginTransactionAsync() : null;
 		try
 		{
 			_rows = await database.Database.ExecuteSqlRawAsync(sql, new NpgsqlParameter("id", _rowId));
@@ -146,6 +157,13 @@ public sealed class ReporterImmutabilitySteps
 		catch (PostgresException refused)
 		{
 			_refusal = refused;
+		}
+		finally
+		{
+			if (transaction is not null)
+			{
+				await transaction.RollbackAsync();
+			}
 		}
 	}
 

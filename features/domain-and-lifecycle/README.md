@@ -85,9 +85,9 @@ through column-scoped `BEFORE UPDATE OR DELETE` triggers on `reports`,
 CON-DP-013 to CON-DP-016 in
 [data and persistence](../../docs/data-and-persistence.md)). REQ-DOM-018 to
 REQ-DOM-025 read the locked and writable columns; REQ-DOM-026 the once-only
-deletion stamp; REQ-DOM-027 the refused `DELETE`; REQ-DOM-028 that an unchanged
-value is not a change; REQ-DOM-029 the one way past a trigger, which is a
-migration's own transaction. A refusal is `SQLSTATE 23000` and names the table
+deletion stamp; REQ-DOM-027 the refused `DELETE`; REQ-DOM-030 the refused
+`TRUNCATE`; REQ-DOM-028 that an unchanged value is not a change; REQ-DOM-029 the
+one way past a trigger, which is a migration's own transaction. A refusal is `SQLSTATE 23000` and names the table
 and column, never a value.
 
 ## Identity and time
@@ -108,7 +108,7 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - A session setting, role, or runtime flag that bypasses an immutability trigger.
   A migration that must change a locked column disables the trigger in its own
   transaction and argues it in its own ADR (ADR-0178).
-- Row-level security, `REVOKE`, a separate database role, or a `TRUNCATE` guard.
+- Row-level security, `REVOKE`, or a separate database role.
 - Undelete, restore, or any path back from a soft deletion.
 - Physical deletion of an application record, or a cascade that removes rows
   rather than stamping them.

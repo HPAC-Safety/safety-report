@@ -280,6 +280,10 @@ Given("a file on the current page is still uploading", async ({ page }) => {
 	await reachAttachmentsPage(page)
 	await attach(page, "launch-site.png")
 	await expect(page.getByRole("progressbar", { name: "Uploading launch-site.png" })).toBeVisible()
+	// The bar shows while the upload is still being minted. Wait until its PUT
+	// is actually held at storage, or a later release() finds nothing to resume
+	// and the PUT, arriving afterwards, is held for good (issue no. 679).
+	await expect.poll(() => stub.puts.length).toBe(1)
 })
 
 Then("the Next or Submit control is disabled", async ({ page }) => {

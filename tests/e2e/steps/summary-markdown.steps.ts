@@ -146,6 +146,73 @@ Then("the summary is rendered as {}", async ({ page }, result: string) => {
 	await check!(page.locator('[data-summary="en-CA"]'))
 })
 
+// --- REQ-WLD-046: the same type as the other public pages ---
+
+Given("the visitor's system prefers the {word} theme", async ({ page }, theme: string) => {
+	await page.emulateMedia({ colorScheme: theme as "light" | "dark" })
+})
+
+Given('a published report whose summary has a "## Description" section', async ({ page }) => {
+	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?$/, (route) => route.fulfill({ json: [] }))
+	await page.route(new RegExp(`/api/v1/public/reports/${PUBLIC_ID}$`), (route) =>
+		route.fulfill({
+			json: {
+				id: PUBLIC_ID,
+				aiSummaryEn: "## Description\n\nThe pilot launched in a gusting wind.",
+				aiSummaryFr: "## Description\n\nLe pilote a décollé par vent en rafales.",
+				language: "en-CA",
+				publishedAt: "2026-09-20T15:30:00Z",
+				commentCount: 0,
+				attachmentCount: 0,
+				media: [],
+			},
+		}),
+	)
+})
+
+async function typeOf(element: Locator) {
+	await expect(element).toBeVisible()
+	return element.evaluate((el) => {
+		const style = getComputedStyle(el)
+		return { color: style.color, fontSize: style.fontSize, fontWeight: style.fontWeight }
+	})
+}
+
+/** The type of one element of the summary, then of its counterpart on the home page. */
+async function summaryAndHome(page: Page, inSummary: (summary: Locator) => Locator, onHome: string) {
+	await page.goto(`/reports/${PUBLIC_ID}`)
+	const summary = await typeOf(inSummary(page.locator('[data-summary="en-CA"]')).first())
+	await page.goto("/")
+	const home = await typeOf(page.locator(onHome).first())
+	return { summary, home }
+}
+
+Then(
+	"the summary's paragraph matches the home page's section prose in color, size, and weight",
+	async ({ page }) => {
+		const { summary, home } = await summaryAndHome(page, (s) => s.locator("p"), "main section h2 + p")
+		expect(summary).toEqual(home)
+	},
+)
+
+Then(
+	"the summary's section heading matches the home page's section heading in color, size, and weight",
+	async ({ page }) => {
+		const { summary, home } = await summaryAndHome(
+			page,
+			(s) => s.getByRole("heading", { name: "Description" }),
+			"main section h2",
+		)
+		expect(summary).toEqual(home)
+	},
+)
+
+Then("the summary's section heading is still a level-two heading", async ({ page }) => {
+	await page.goto(`/reports/${PUBLIC_ID}`)
+	await expect(page.locator('[data-summary="en-CA"]').getByRole("heading", { level: 2, name: "Description" })).toBeVisible()
+	await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1)
+})
+
 // --- The admin pages ---
 
 Given(

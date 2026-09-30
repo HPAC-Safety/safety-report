@@ -19,7 +19,7 @@ const ALLOWED_ELEMENTS = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "strong", "em
 
 const HEADING_CLASSES = [
 	"mt-6 font-display text-2xl font-bold text-ink first:mt-0",
-	"mt-6 font-display text-xl font-bold text-ink first:mt-0",
+	"mt-6 font-display text-2xl font-bold text-ink first:mt-0",
 	"mt-5 font-display text-lg font-semibold text-ink first:mt-0",
 	"mt-4 font-sans text-base font-semibold text-ink first:mt-0",
 	"mt-4 font-sans text-base font-semibold text-ink first:mt-0",

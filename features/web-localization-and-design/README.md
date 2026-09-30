@@ -179,6 +179,12 @@ read as Markdown, through one shared component
   text only, and an image is dropped, so a summary can never send the reader's
   browser anywhere or make it fetch anything (`REQ-WLD-045`). A single newline
   is a line break, so a reporter's own breaks survive.
+- **Public typography.** On the public report page a summary is set like the
+  prose of the other public pages: body `text-ink-muted` at the default size,
+  and a section heading in the home page's section-heading style
+  (`font-display text-2xl font-bold`), still an `h2` under the page's `h1`.
+  The same in the light and dark themes (`REQ-WLD-046`). The admin pages'
+  rendering is unchanged.
 - **Where.** The public report page; the admin review page and its revision
   history (`REQ-MOD-208`); a long-text answer and its translation on the admin
   report detail (`REQ-MOD-209`). The public feed shows the first section's body

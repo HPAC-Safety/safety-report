@@ -410,3 +410,18 @@ Examples:
   | raw HTML "<b>loud</b>"                     | the text "<b>loud</b>" as written, with nothing in bold       |
   | a link "[club](https://example.test/club)" | the word "club" as plain text, not a link                     |
   | an image "![map](https://example.test/a.png)" | no image, and no request for it                            |
+
+@REQ-WLD-046
+@ui
+Scenario Outline: A public summary is set in the same type as the other public pages, in the <theme> theme
+  Given the visitor's system prefers the <theme> theme
+  And a published report whose summary has a "## Description" section
+  When a visitor opens its page
+  Then the summary's paragraph matches the home page's section prose in color, size, and weight
+  And the summary's section heading matches the home page's section heading in color, size, and weight
+  And the summary's section heading is still a level-two heading
+
+Examples:
+  | theme |
+  | light |
+  | dark  |

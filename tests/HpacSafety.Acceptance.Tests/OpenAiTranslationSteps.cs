@@ -241,6 +241,51 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		}
 	}
 
+	[Then(@"^the prompt instructs the model to localize place names into the target language$")]
+	public void ThenThePromptLocalizesPlaces()
+	{
+		_transport.Bodies.Count.ShouldBe(2);
+
+		foreach (var body in _transport.Bodies)
+		{
+			var prompt = PromptOf(body);
+			prompt.ShouldContain("Place names are localized, never copied");
+			prompt.ShouldContain("Nova Scotia ↔ Nouvelle-Écosse");
+			prompt.ShouldContain("Mount Yamaska ↔ mont Yamaska");
+		}
+	}
+
+	[Then(@"^the prompt gives the Canadian abbreviation of every province and territory in both languages$")]
+	public void ThenThePromptGivesEveryAbbreviation()
+	{
+		string[] pairs =
+		[
+			"BC ↔ C.-B.", "AB ↔ Alb.", "SK ↔ Sask.", "MB ↔ Man.", "ON ↔ Ont.", "QC ↔ Qc", "NB ↔ N.-B.",
+			"NS ↔ N.-É.", "PE ↔ Î.-P.-É.", "NL ↔ T.-N.-L.", "YT ↔ Yn", "NT ↔ T.N.-O.", "NU ↔ Nt.",
+		];
+
+		foreach (var body in _transport.Bodies)
+		{
+			var prompt = PromptOf(body);
+
+			foreach (var pair in pairs)
+			{
+				prompt.ShouldContain(pair);
+			}
+		}
+	}
+
+	[Then(@"^the prompt does not tell the model to copy place names unchanged$")]
+	public void ThenThePromptDoesNotCopyPlaces()
+	{
+		foreach (var body in _transport.Bodies)
+		{
+			var prompt = PromptOf(body);
+			prompt.ShouldContain("the names of people, aircraft, and\n  organizations");
+			prompt.ShouldNotContain("people, places");
+		}
+	}
+
 	[Then(@"^translation is refused rather than echoed back$")]
 	public void ThenTranslationIsRefused()
 	{

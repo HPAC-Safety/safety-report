@@ -118,7 +118,7 @@ jobs:
           node-version: ${{ steps.node.outputs.major }}
 
       # Gemini, en-CA to fr-CA (ADR-0179), with the one versioned prompt in
-      # locales/translation-prompt.v1.md and the term list in locales/terms.json
+      # locales/translation-prompt.v2.md and the term list in locales/terms.json
       # sent with every request. The key is the repository's existing
       # GEMINI_API_KEY_DEV secret, the same paid key summaries use in
       # development; there is no translation-only key. Without it the tool

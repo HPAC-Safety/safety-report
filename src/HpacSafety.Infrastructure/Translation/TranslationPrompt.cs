@@ -19,7 +19,7 @@ namespace HpacSafety.Infrastructure.Translation;
 public static class TranslationPrompt
 {
 	/// <summary>The current prompt file under <c>locales/</c>. Bump on any behavior change.</summary>
-	public const string CurrentFileName = "translation-prompt.v1.md";
+	public const string CurrentFileName = "translation-prompt.v2.md";
 
 	/// <summary>The term list file under <c>locales/</c>.</summary>
 	public const string TermsFileName = "terms.json";

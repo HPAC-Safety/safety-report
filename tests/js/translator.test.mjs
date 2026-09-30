@@ -160,6 +160,21 @@ describe('the translator adapter', () => {
 		})
 	})
 
+	describe('given a place name to translate', () => {
+		it('when the request is built in either direction then the prompt localizes places rather than copying them', () => {
+			for (const direction of [locales, { source: 'fr-CA', target: 'en-CA' }]) {
+				// Given / When
+				const prompt = gemini().buildRequest(two, direction).messages[0].content
+
+				// Then
+				assert.match(prompt, /Place names are localized, never copied/)
+				assert.match(prompt, /BC ↔ C\.-B\., AB ↔ Alb\./)
+				assert.match(prompt, /Mount Yamaska ↔ mont Yamaska/)
+				assert.doesNotMatch(prompt, /people, places/)
+			}
+		})
+	})
+
 	describe('given a locale nothing is configured for', () => {
 		it('when the request is built then it refuses rather than guessing', () => {
 			// Given / When / Then
@@ -194,7 +209,7 @@ describe('the translator adapter', () => {
 			const template = readPromptTemplate()
 
 			// Then
-			assert.equal(PROMPT_FILE, 'translation-prompt.v1.md')
+			assert.equal(PROMPT_FILE, 'translation-prompt.v2.md')
 			for (const slot of ['[[source_language]]', '[[target_language]]', '[[terms]]']) {
 				assert.ok(template.includes(slot), `${slot} is missing from ${PROMPT_FILE}`)
 			}

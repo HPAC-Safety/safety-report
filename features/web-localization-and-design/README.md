@@ -92,8 +92,13 @@ else stops it at startup (REQ-WLD-028, REQ-WLD-029;
 - **The term list goes with every request**, runtime and CI: the API's
   authoring and reviewer drafts, the Worker's answers, labels, and comments,
   and `tools/translator.mjs` (REQ-WLD-027, REQ-WLD-035).
-- **One versioned prompt**, `locales/translation-prompt.v1.md`, read by both
+- **One versioned prompt**, `locales/translation-prompt.v2.md`, read by both
   runtimes. A behavior change is a new version file.
+- **Places are localized, never copied.** A place takes its established name
+  in the target language, the Canadian province or territory abbreviation
+  (BC ↔ C.-B.), and a translated generic word (Mount ↔ mont), keeping the
+  specific part and a municipality's official name. The names of people,
+  aircraft, and organizations are copied (REQ-WLD-047).
 - **The summary's key, its own model.** No new key or secret exists. The
   `Translation` settings hold only `Model` (`gemini-3.7-flash`) and
   `ReasoningEffort` (`low`), tuned apart from summaries (REQ-WLD-040,

@@ -139,12 +139,19 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 
 		// A choice answer names its choice, which is never erased while an answer
 		// names it (ADR-0128). The choice is loaded with the answer wherever its
-		// wording is read.
+		// current official wording is read.
 		builder.HasOne(answer => answer.Choice)
 			.WithMany()
 			.HasForeignKey(answer => answer.ChoiceId)
 			.OnDelete(DeleteBehavior.Restrict);
 		builder.HasIndex(answer => answer.ChoiceId);
+
+		// The exact wording the reporter saw and chose, kept beside the choice it
+		// names and never touched by a later fix, replace, or merge (ADR-0175).
+		builder.Property(answer => answer.SubmittedWording);
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_answers_submitted_wording_needs_choice",
+			"(choice_id IS NULL) = (submitted_wording IS NULL)"));
 	}
 }
 

@@ -115,6 +115,45 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	[Fact]
+	public async Task GivenAChoiceAnswerFixedInPlaceAfterSubmission_WhenProcessed_ThenTheModelSeesTheSubmittedWordingNotTheFix()
+	{
+		// Given — ADR-0175: report_content reads a choice answer's own submitted
+		// wording, never its choice's current official value
+		var connectionString = await postgres.CreateMigratedDatabase();
+		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
+
+		var consent = await SeededConsentQuestion(context);
+		var wing = Question.Create(
+			"wing", QuestionType.SingleSelect, "Wing", "Aile", At, isActive: true, isPrivate: false,
+			options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+		context.Questions.Add(wing);
+		await context.SaveChangesAsync();
+
+		var report = new Report(Locale.EnCa, At);
+		report.Answer(consent, true, At);
+		report.AnswerChoices(wing, wing.CurrentRevision, [wing.Choices.Single().Id], At);
+		report.EnsureReadyForSubmission();
+		context.Reports.Add(report);
+		context.OutboxMessages.Add(new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, report.Id.Value, At));
+		await context.SaveChangesAsync();
+
+		// A fix lands after submission but before the Worker processes it.
+		wing.ReplaceChoices([new QuestionOptionInput("paraglider", "Paraglider (solo)", "Parapente (solo)")], At);
+		await context.SaveChangesAsync();
+
+		var summarizer = new FakeSummarizer(("en", "fr"));
+		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
+
+		// When
+		await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
+
+		// Then
+		var input = summarizer.LastInput.ShouldNotBeNull();
+		var field = input.ReportContent.Single(f => f.QuestionKey == "wing");
+		field.Value.ShouldBe("Paraglider");
+	}
+
+	[Fact]
 	public async Task GivenAPrivateAnswer_WhenProcessed_ThenItReachesOnlyPrivateContext()
 	{
 		// Given

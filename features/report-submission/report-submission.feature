@@ -554,7 +554,7 @@ Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead
   When the API commits the submission
   Then no translation provider is called
-  And no choice answer stores a copy of either of its choice's labels
+  And each choice answer keeps only its own submitted wording, never its choice's other-language label
   And a new type-ahead value is queued for the Worker to translate, on the value itself
 
 @REQ-SUB-081

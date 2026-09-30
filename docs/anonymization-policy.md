@@ -16,6 +16,13 @@ private questions form labeled `private_context`, which may only help recognize
 identifying material repeated in eligible content. Consent, skipped answers,
 attachments, and document text are excluded.
 
+A choice answer (single-select, multi-select, type-ahead) contributes only the
+wording the reporter submitted, in both `report_content` and
+`private_context` — never its choice's current official value, which a later
+fix, replace, or merge could make read differently from what the reporter was
+shown
+([ADR-0175](decisions/ADR-0175-a-choice-answer-keeps-its-submitted-wording.md)).
+
 Before the call, the Worker deterministically marks any exact or token-level
 occurrence of a private value found in `report_content` with a
 `[PRIVATE:<question-key>]` marker

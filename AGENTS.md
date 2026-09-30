@@ -167,22 +167,36 @@ contributor who never invokes one is unaffected.
      forks the question; a fork copies every choice; a removed choice is
      hidden, never erased. No shared choice lists
      ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-   - **An answer names its choice by ID** and copies none of its wording. A
-     choice any answer names is never erased; removed, it only stops being
-     offered ([ADR-0128](docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+   - **An answer names its choice by ID**, which resolves to the choice's
+     current official value — used only for grouping: search, filters,
+     counts, and dependent-choice checks. A choice any answer names is never
+     erased; removed, it only stops being offered
+     ([ADR-0128](docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+     **The reporter's own account is a separate, immutable copy of the exact
+     wording they saw and chose, set once at submission**
+     (`ReportAnswer.SubmittedWording`) — never the choice's current official
+     value. Every read of that account — admin detail, the Worker's
+     `report_content`/`private_context` and the ADR-0082 marking pass, and
+     any future export — reads this, not the choice; the resolved choice is
+     shown only as secondary context, beside it, when they now differ
+     ([ADR-0175](docs/decisions/ADR-0175-a-choice-answer-keeps-its-submitted-wording.md)).
    - **Picker options** (single-select, multi-select): changing one's wording,
-     an administrator fixes it in place (every answer reads the fix) or
+     an administrator fixes it in place (every answer reads the fix in its
+     resolved, official value only — not in its submitted wording) or
      replaces it (the old choice is retired under its earlier answers; a
      condition follows the replacement) ([ADR-0128](docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
    - **Type-ahead values**: a reporter may add a missing one — only to a
      type-ahead. It is recorded at submission in the language typed, flagged
      for review, offered at once, and given its other language by the Worker.
      A Safety Officer or administrator reviews it: approves, corrects in place
-     for every answer, merges (answers are never rewritten; they read the
-     value merged into), or removes it ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
-   - **Answers**: immutable. A choice answer names its choice; a yes/no or
-     checkbox answer is a boolean; every other answer is one string, in the
-     reporter's own words and language.
+     for every answer's resolved value, merges (answers are never rewritten;
+     they resolve to the value merged into, but still show their own
+     submitted wording as their account), or removes it
+     ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md),
+     [ADR-0175](docs/decisions/ADR-0175-a-choice-answer-keeps-its-submitted-wording.md)).
+   - **Answers**: immutable. A choice answer names its choice and keeps its
+     own submitted wording; a yes/no or checkbox answer is a boolean; every
+     other answer is one string, in the reporter's own words and language.
    - **Second language, only where needed**
      ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)):
      - free text an administrator marked as needing translation: filled off
@@ -252,7 +266,9 @@ contributor who never invokes one is unaffected.
 3. **One model call, only with consent.**
    - The Worker owns one versioned prompt and makes exactly one model call per
      summary attempt, only for a report whose reporter consented to
-     publication. A report without consent never reaches the model.
+     publication. A report without consent never reaches the model. A choice
+     answer contributes only its own submitted wording (ADR-0175), never its
+     choice's current official value.
    - First, a deterministic marking pass replaces every exact or token-level
      occurrence of a private answer's value in `report_content` with
      `[PRIVATE:<question-key>]`

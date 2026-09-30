@@ -105,10 +105,11 @@ public sealed record ReportAnswerView(
 
 /// <summary>One answer as read and its second-language counterpart, when one exists.</summary>
 /// <param name="Value">
-///     The reporter's own words, in <paramref name="Locale" /> — a JSON string, and
-///     for a choice answer its choice's label in that language (ADR-0128) — or,
-///     for a yes/no or checkbox question, a JSON <c>true</c> or <c>false</c> that
-///     the interface renders in the reader's language (ADR-0130).
+///     The reporter's own account, in <paramref name="Locale" /> — a JSON string, and
+///     for a choice answer the exact wording they saw and chose, immutable since
+///     submission (ADR-0175) — or, for a yes/no or checkbox question, a JSON
+///     <c>true</c> or <c>false</c> that the interface renders in the reader's
+///     language (ADR-0130).
 /// </param>
 /// <param name="Locale">The language <paramref name="Value" /> is written in.</param>
 /// <param name="TranslatedValue">
@@ -121,12 +122,19 @@ public sealed record ReportAnswerView(
 ///     <c>none</c> — so a multi-select answer's values are listed as the form lists
 ///     its choices (ADR-0136). Null for any other answer.
 /// </param>
+/// <param name="OfficialValue">
+///     For a choice answer, the choice's current official label in
+///     <paramref name="Locale" /> — shown only when a fix, replace, or merge since
+///     submission makes it read differently from <paramref name="Value" />
+///     (ADR-0175). Null for any other answer, and null when they read the same.
+/// </param>
 public sealed record ReportAnswerValueView(
 	object Value,
 	string Locale,
 	string? TranslatedValue,
 	string? TranslationSource,
-	string? Pin = null);
+	string? Pin = null,
+	string? OfficialValue = null);
 
 /// <summary>The bilingual summary pair with its shared provenance and approval.</summary>
 /// <remarks>

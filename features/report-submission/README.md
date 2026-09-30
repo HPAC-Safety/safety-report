@@ -109,9 +109,14 @@ it nor leaves the form.
 multi-select, or type-ahead answer names; the API accepts only live choices of
 that question. A type-ahead answer naming a value the question does not offer
 carries the reporter's typed text in `value` instead, and becomes a new
-reporter-added value. No answer carries a choice's wording or code
+reporter-added value. No answer carries a choice's code, and none of the
+submission's JSON carries the choice's wording either — but the server
+records, on the answer itself, the exact wording the choice read at that
+moment (or the type-ahead text as typed), immutably, as the reporter's own
+account, separate from the choice it names
 ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md),
-[ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+[ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md),
+[ADR-0175](../../docs/decisions/ADR-0175-a-choice-answer-keeps-its-submitted-wording.md)).
 
 When a question's choices depend on another question on the form, the API
 checks each against the other's answer before writing anything:
@@ -138,16 +143,17 @@ answer while the reporter works and sends the boolean when it submits, so
 switching language mid-form loses nothing. The report language is exactly
 `en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080, ADR-0112, ADR-0128, ADR-0129, ADR-0130, ADR-0174)
+## Bilingual answers (ADR-0080, ADR-0112, ADR-0128, ADR-0129, ADR-0130, ADR-0174, ADR-0175)
 
-`value`, `value_boolean`, and `locale` are written once, here, and never again — no endpoint
-ever updates either column after this one inserts them. How an answer gets
-its second language depends on its question:
+`value`, `value_boolean`, `locale`, and — for a choice answer —
+`submitted_wording` are written once, here, and never again — no endpoint
+ever updates any of these columns after this one inserts them. How an answer
+gets its second language depends on its question:
 
 | Question | Second language |
 |---|---|
 | Long or short text marked **Auto-translate answer** | The Worker, mechanically, via `ITranslator` |
-| Single-select, multi-select | The named choice's other label, read from the choice whenever the answer is read (`choice`); nothing is copied onto the answer |
+| Single-select, multi-select | The named choice's other label, read from the choice whenever the answer is read (`choice`); this is a live lookup and can drift from the choice's own-language label, which the answer keeps its own immutable copy of (`submitted_wording`, ADR-0175) |
 | Type-ahead | As a picker. A new reporter-added value gets its other label from the Worker, on the value itself, not on the answer |
 | Yes/no, checkbox | None, ever: a boolean holds no words; the interface renders it in the reader's language |
 | Text not marked, email, phone, date, time, number, file | None, ever |

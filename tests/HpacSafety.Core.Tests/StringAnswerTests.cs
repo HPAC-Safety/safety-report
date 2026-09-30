@@ -17,7 +17,7 @@ public class StringAnswerTests
 	private static readonly DateTimeOffset Now = new(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
 
 	[Fact]
-	public void GivenPickerAnswer_WhenRecorded_ThenNamesItsChoiceAndCopiesNoWording()
+	public void GivenPickerAnswer_WhenRecorded_ThenNamesItsChoiceAndKeepsOnlyItsOwnSubmittedWording()
 	{
 		// Given
 		var question = Province();
@@ -26,15 +26,16 @@ public class StringAnswerTests
 		// When
 		var answer = report.Answer(question, "Alberta", Now);
 
-		// Then — ADR-0128
+		// Then — ADR-0128, ADR-0175
 		answer.ChoiceId.ShouldBe(question.Choices.Single().Id);
 		answer.Value.ShouldBeNull();
+		answer.SubmittedWording.ShouldBe("Alberta");
 		answer.Text.ShouldBe("Alberta");
 		answer.Locale.ShouldBe(Locale.EnCa);
 	}
 
 	[Fact]
-	public void GivenPickerAnswer_WhenOptionIsFixedInPlaceAfterwards_ThenAnswerReadsTheFix()
+	public void GivenPickerAnswer_WhenOptionIsFixedInPlaceAfterwards_ThenTheAnswerKeepsItsOwnAccountButShowsTheFixAsOfficial()
 	{
 		// Given
 		var question = Province();
@@ -44,9 +45,12 @@ public class StringAnswerTests
 		// When — the same choice is reworded in place
 		question.ReplaceChoices([new QuestionOptionInput("alberta", "Province of Alberta", "Province de l'Alberta")], Now);
 
-		// Then — the answer still names that choice, and reads its wording
+		// Then — the answer still names that choice, but its own account (ADR-0175)
+		// never moves; only the choice's current official wording does
 		answer.ChoiceId.ShouldBe(question.Choices.Single().Id);
-		answer.Text.ShouldBe("Province of Alberta");
+		answer.SubmittedWording.ShouldBe("Alberta");
+		answer.Text.ShouldBe("Alberta");
+		answer.OfficialText.ShouldBe("Province of Alberta");
 		answer.ValueIn(Locale.FrCa).ShouldBe("Province de l'Alberta");
 	}
 

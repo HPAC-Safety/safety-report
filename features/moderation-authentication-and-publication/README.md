@@ -365,6 +365,13 @@ already reads in the reviewer's language, the view shows no second-language
 translation beside it. A stored value that is not a real date or time is
 shown exactly as stored.
 
+A single-select, multi-select, or type-ahead answer shows the reporter's own
+account — the exact wording they saw and chose, immutable since submission —
+never the choice's current official value. Only when a later fix, replace, or
+merge makes the choice's current wording read differently does the view also
+carry it, beside the reporter's account, never in its place
+([ADR-0175](../../docs/decisions/ADR-0175-a-choice-answer-keeps-its-submitted-wording.md)).
+
 
 While editing a pair, a reviewer who changed one language may draft the other
 from it by machine translation

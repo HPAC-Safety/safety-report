@@ -44,6 +44,15 @@ ADR decides how any choice answer is stored and how a picker option changes.
 Amended by [ADR-0132](ADR-0132-a-condition-follows-its-parent-through-a-fork.md): a condition follows its parent's fork, as it
 follows a replaced choice.
 
+**Amended by [ADR-0175](ADR-0175-a-choice-answer-keeps-its-submitted-wording.md):**
+"stores no label" and "copies none of its wording", below, are superseded. An
+answer still names its choice by ID and both languages are still read from
+the choice — but only for the choice's current *official* value, which is now
+secondary context. The answer separately keeps its own immutable
+`SubmittedWording`, and every read of the reporter's own account (admin
+detail, the Worker's model input, the marking pass) reads that, not the
+choice.
+
 ## Context
 
 ADR-0072 stored a picker answer as the label the reporter saw, so that a
@@ -68,13 +77,22 @@ option a reporter answered is kept, with its original identity, forever.
 ### An answer names its choice by ID
 
 - **A single-select, multi-select, or type-ahead answer references one row of
-  its question's `question_choices` by ID.** It stores no label. A multi-select
+  its question's `question_choices` by ID.** ~~It stores no label.~~
+  **Superseded by [ADR-0175](ADR-0175-a-choice-answer-keeps-its-submitted-wording.md):**
+  it also keeps its own immutable `SubmittedWording`. A multi-select
   stores one answer row per chosen choice, as today.
-- **Both languages are read from the choice.** The label in the reporter's
-  language and the one in the other language come from the choice row whenever
-  the answer is read: reviewer view, Worker model input and marking pass,
-  conditional checks, and export. Nothing is copied at submission, and no
-  translation provider is involved.
+- **Both languages are read from the choice.** ~~The label in the reporter's
+  language and the one in the other language come from the choice row
+  whenever the answer is read: reviewer view, Worker model input and marking
+  pass, conditional checks, and export.~~ **Superseded by
+  [ADR-0175](ADR-0175-a-choice-answer-keeps-its-submitted-wording.md):** the
+  choice still supplies both languages of its own *current* wording — read
+  for grouping (search, filters, counts, conditional checks) — but the
+  reporter's own account (reviewer view, Worker model input and marking pass,
+  export) reads `SubmittedWording` instead. The other language of a choice
+  answer is still a lookup on the choice (ADR-0112), unaffected. Nothing is
+  copied at submission beyond that one immutable snapshot, and no translation
+  provider is involved.
 - **A choice an answer names is never erased.** Removing it is a soft delete
   (ADR-0095): it stops being offered, and every answer that names it still
   resolves to it and shows its label.

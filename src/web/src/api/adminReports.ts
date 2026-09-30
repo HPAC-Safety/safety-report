@@ -58,13 +58,15 @@ export interface ReportListPage {
 }
 
 export interface ReportAnswerValue {
-	/** A boolean for a yes/no or checkbox answer (ADR-0130); the reporter's words otherwise. */
+	/** A boolean for a yes/no or checkbox answer (ADR-0130); the reporter's own account otherwise — for a choice answer, the exact wording they saw and chose (ADR-0175). */
 	value: string | boolean
 	locale: string
 	translatedValue: string | null
 	translationSource: string | null
 	/** For a choice answer, its choice's pin — `first`, `last`, or `none` (ADR-0136); null otherwise. */
 	pin: string | null
+	/** For a choice answer, the choice's current official label, only when it now reads differently from `value` (ADR-0175); null otherwise. */
+	officialValue: string | null
 }
 
 export interface ReportAnswer {

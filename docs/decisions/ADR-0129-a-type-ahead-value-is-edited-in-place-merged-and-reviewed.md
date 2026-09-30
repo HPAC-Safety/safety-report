@@ -58,6 +58,18 @@ reviewer sees a value's aliases. The owner ruled this stays an amendment to
 this ADR rather than a new one, since it extends the same matching rule
 without changing it.
 
+**Amended by [ADR-0175](ADR-0175-a-choice-answer-keeps-its-submitted-wording.md):**
+"Answers are not rewritten. An answer naming B resolves to A wherever it is
+read... and shows A's labels", in "Two values merge into one" below, is
+superseded for the reporter's own account. An answer naming a merged value
+still resolves through the merge for grouping (search, filters, counts,
+dependent choices) exactly as before, but it shows its own
+`SubmittedWording`, not A's labels, as its account. This is independent of
+"Aliases while typing" above: an alias is the merged-away wording as a
+property of the *choice*, offered to a later reporter while typing;
+`SubmittedWording` is the wording as a property of one *answer*, fixed at
+the moment it was given.
+
 ## Context
 
 A type-ahead is where reporters name things the form cannot list in advance:
@@ -98,7 +110,10 @@ the people who read reports, safety officers, curate these values.
 - A Safety Officer or an Administrator may merge value B into value A of the
   same type-ahead question. B is removed and records that it was merged into A.
 - **Answers are not rewritten.** An answer naming B resolves to A wherever it
-  is read, following merges in a chain, and shows A's labels.
+  is read, following merges in a chain, for grouping. ~~and shows A's
+  labels~~ **Superseded by [ADR-0175](ADR-0175-a-choice-answer-keeps-its-submitted-wording.md):**
+  the answer shows its own immutable `SubmittedWording` as its account, never
+  A's current labels.
 - **A later reporter typing B's wording gets A.** The new answer names A
   directly.
 - A merge cannot form a cycle, and a value cannot merge into a removed value.

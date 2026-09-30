@@ -906,7 +906,7 @@ Scenario Outline: An answer names the choice it was given under
   Given a reporter answering in English is shown a <type> question whose choices are written in both official languages
   When the reporter chooses one of its choices and submits
   Then the stored answer references that choice by its identifier
-  And it stores no copy of the choice's wording
+  And it keeps its own copy of the wording it was submitted under, and nothing else
   And the answer reads as the choice's English label, with its French label as the second language
 
 Examples:
@@ -916,11 +916,12 @@ Examples:
   | autocomplete  |
 
 @REQ-QB-123
-Scenario: Fixing a picker option in place corrects every answer that named it
+Scenario: Fixing a picker option in place corrects its current wording, but not an earlier answer's own account
   Given a single-select question has been answered with its option "Cooprs"
   When an Administrator fixes that option's wording in place to "Coopers"
   Then the option keeps its identifier
-  And the earlier answer now reads "Coopers"
+  And the option's current wording is "Coopers"
+  And the earlier answer's own account still reads "Cooprs"
   And the question keeps its identifier and its current revision
 
 @REQ-QB-124
@@ -993,11 +994,12 @@ Examples:
   | French   | Élévation Sainte-Anne  |
 
 @REQ-QB-129
-Scenario: A type-ahead value is corrected in place for every answer that names it
+Scenario: A type-ahead value is corrected in place, but each answer keeps its own submitted wording
   Given two reports answered a type-ahead question with the value "coopers"
   When a Safety Officer corrects that value's wording to "Cooper's"
   Then the value keeps its identifier
-  And both answers now read "Cooper's"
+  And both answers still read "coopers" as their own account
+  And the value's current wording is "Cooper's"
   And the next reporter is offered "Cooper's"
 
 @REQ-QB-130
@@ -1013,7 +1015,7 @@ Scenario: Merging one type-ahead value into another leaves every answer untouche
   Given reports answered a type-ahead question with "Coopers" and with "Cooper's", two separate values
   When a Safety Officer merges "Coopers" into "Cooper's"
   Then "Coopers" is removed and records that it was merged into "Cooper's"
-  And the answers that named "Coopers" still name it, and read "Cooper's"
+  And the answers that named "Coopers" still name it, still show "Coopers" as their own account, and resolve to "Cooper's"
   And the form offers "Cooper's" only
   When a reporter later submits "coopers" for that question
   Then the new answer names "Cooper's"
@@ -1022,7 +1024,7 @@ Scenario: Merging one type-ahead value into another leaves every answer untouche
 Scenario: Merges resolve in a chain and never form a cycle
   Given the type-ahead value "A" was merged into "B"
   When a Safety Officer merges "B" into "C"
-  Then an answer naming "A" reads "C"
+  Then an answer naming "A" resolves to "C", and still shows "A" as its own account
   And merging "C" into "A" is refused
 
 @REQ-QB-133

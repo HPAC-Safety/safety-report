@@ -339,6 +339,7 @@
   "reports.detail.private": "Private",
   "reports.detail.notAnswered": "Not answered",
   "reports.detail.translation": "Translation: {text}",
+  "reports.detail.officialValue": "Now reads: {text}",
   "reports.attachment.kind.image": "Image",
   "reports.attachment.kind.video": "Video",
   "reports.attachment.kind.document": "Document",

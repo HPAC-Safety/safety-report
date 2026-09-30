@@ -259,6 +259,25 @@ public sealed class AdminSearchSteps
 					break;
 				}
 
+			case "choice label fixed after submission":
+				{
+					// ADR-0175: search still resolves through the choice's
+					// current official value, never an answer's own submitted
+					// wording — so a fix made after submission is still found.
+					var site = Question.Create(
+						$"site_{suffix}",
+						QuestionType.SingleSelect,
+						"Site",
+						"Site",
+						now,
+						options: [new QuestionOptionInput($"site_{suffix}", "Original site name", "Nom de site original")]);
+					database.Questions.Add(site);
+					var choice = site.Choice($"site_{suffix}")!;
+					report.AnswerChoices(site, site.CurrentRevision, [choice.Id], now);
+					site.ReplaceChoices([new QuestionOptionInput(choice.Code, $"Site {word}", $"Lieu {word}")], now.AddMinutes(1));
+					break;
+				}
+
 			case "summary pair":
 				{
 					report.BeginSummarizing();

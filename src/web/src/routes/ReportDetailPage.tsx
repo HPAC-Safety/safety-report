@@ -285,6 +285,15 @@ export function ReportDetailPage() {
 														{t("reports.detail.translation", { text: value.translatedValue })}
 													</span>
 												)}
+												{value.officialValue && (
+													<span
+														lang={value.locale}
+														className="mt-1 block whitespace-pre-line text-sm text-ink-muted"
+														data-official-value
+													>
+														{t("reports.detail.officialValue", { text: value.officialValue })}
+													</span>
+												)}
 											</dd>
 										))
 									)}
@@ -311,8 +320,13 @@ export function ReportDetailPage() {
  */
 function listedValues(answer: ReportAnswer, locale: Locale): ReportAnswerValue[] {
 	if (answer.type !== "multi_select") return answer.values
+	// Sorted by the choice's current official wording, even though what is shown
+	// is the reporter's own account (ADR-0175) — order tracks the form's live list,
+	// not what any one reporter happened to see.
 	const inReadersLanguage = (value: ReportAnswerValue) =>
-		String(value.locale === locale ? value.value : (value.translatedValue ?? value.value))
+		String(
+			value.officialValue ?? (value.locale === locale ? value.value : (value.translatedValue ?? value.value)),
+		)
 	return sortChoices(
 		answer.values.map((value, index) => ({ ...value, id: String(index).padStart(4, "0") })),
 		locale,

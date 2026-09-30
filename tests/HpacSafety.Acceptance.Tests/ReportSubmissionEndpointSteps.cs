@@ -356,7 +356,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"no choice answer stores a copy of either of its choice's labels")]
+	[Then(@"each choice answer keeps only its own submitted wording, never its choice's other-language label")]
 	public async Task ThenNoChoiceAnswerStoresALabel()
 	{
 		var choiceAnswers = (await StoredAnswersOfThisReport())
@@ -365,7 +365,11 @@ public sealed class ReportSubmissionEndpointSteps
 			.ToList();
 
 		choiceAnswers.Count.ShouldBe(2);
-		choiceAnswers.ShouldAllBe(answer => answer.ChoiceId != null && answer.Value == null && answer.TranslatedValue == null);
+		choiceAnswers.ShouldAllBe(answer =>
+			answer.ChoiceId != null
+			&& answer.Value == null
+			&& answer.TranslatedValue == null
+			&& !string.IsNullOrEmpty(answer.SubmittedWording));
 	}
 
 	[Then(@"a new type-ahead value is queued for the Worker to translate, on the value itself")]

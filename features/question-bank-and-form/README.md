@@ -48,16 +48,24 @@ at once. The editor re-sorts its options when it opens, never while the
 Administrator is typing
 ([ADR-0136](../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
 
-An answer names its choice by identifier and copies none of its wording; both
-languages are read from the choice. A removed choice is hidden from the form,
-never erased, and every answer that named it still names it and reads its
-wording ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+An answer names its choice by identifier, which resolves to the choice's
+current official value; both languages are read from the choice there. **The
+answer also keeps its own immutable copy of the exact wording it was
+submitted under** — the reporter's account, read everywhere a report's
+answers are shown as the reporter gave them: admin detail, the Worker's model
+input and marking pass, and any future export. A fix, replace, or merge
+changes only what the choice resolves to, never that account
+([ADR-0175](../../docs/decisions/ADR-0175-a-choice-answer-keeps-its-submitted-wording.md)).
+A removed choice is hidden from the form, never erased, and every answer
+that named it still names it and still shows its own account
+([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
 
 - **Picker options** (single-select, multi-select) are authored by an
   Administrator in both languages. Changing an option's wording, they choose
-  to **fix it in place** (same choice; every answer reads the fix) or
-  **replace it** (the old choice is retired, still named by every earlier
-  answer, and a new choice takes its place). A condition naming a replaced
+  to **fix it in place** (same choice; every answer's official value reads
+  the fix, but each answer's own account is unchanged) or **replace it** (the
+  old choice is retired, still named by every earlier answer, and a new
+  choice takes its place). A condition naming a replaced
   choice follows it to its replacement ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
   A condition also follows its parent when the parent forks: the dependent
   question is not revised, and the form and the editor name the live question
@@ -65,7 +73,8 @@ wording ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and
   ([ADR-0132](../../docs/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
 - **Type-ahead values** are corrected in place for every answer that names
   them, removed by soft delete, and merged: merging B into A retires B, and
-  answers naming B read A without being rewritten. A value a reporter adds is
+  answers naming B resolve to A without being rewritten — each still shows
+  its own submitted account, not A's. A value a reporter adds is
   flagged for review, offered at once in the language it was typed, and given
   its other language by the Worker. A Safety Officer or an Administrator
   reviews it ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).

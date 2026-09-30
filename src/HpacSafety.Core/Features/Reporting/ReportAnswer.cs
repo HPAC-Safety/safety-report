@@ -10,9 +10,16 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <remarks>
 ///     <para>
 ///         A single-select, multi-select, or type-ahead answer names its
-///         <see cref="QuestionChoice" /> by <see cref="ChoiceId" /> and stores none of
-///         its wording: both languages are read from the choice (ADR-0128). A choice an
-///         answer names is never erased, so the answer always resolves.
+///         <see cref="QuestionChoice" /> by <see cref="ChoiceId" /> — which resolves to
+///         the choice's current official wording, fixed, replaced, or merged since — and
+///         separately keeps the exact label the reporter saw and chose, in their own
+///         language, as <see cref="SubmittedWording" />: immutable, set once at
+///         submission, and never touched by a later fix, replace, or merge (ADR-0175).
+///         For a type-ahead value the reporter added, that is exactly what they typed.
+///         The reporter's account is always read from <see cref="SubmittedWording" />;
+///         the choice it resolves to is secondary context, offered beside it when they
+///         differ. A choice an answer names is never erased, so the answer always
+///         resolves.
 ///     </para>
 ///     <para>
 ///         A yes/no or checkbox answer holds no words at all: it is
@@ -24,8 +31,8 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     <para>
 ///         Every answer is recorded in the reporter's language, and is immutable once
 ///         written — nothing on the submission path, or anywhere else, ever
-///         overwrites <see cref="Value" />, <see cref="ChoiceId" />, or
-///         <see cref="Locale" />. Whether it has a second language at all is decided
+///         overwrites <see cref="Value" />, <see cref="ChoiceId" />,
+///         <see cref="SubmittedWording" />, or <see cref="Locale" />. Whether it has a second language at all is decided
 ///         when it is recorded (<see cref="TranslationMode" />, ADR-0112): a choice
 ///         answer reads its choice's other label (<see cref="TranslationSource.Choice" />);
 ///         free text marked for translation is filled later, off the submission
@@ -37,7 +44,13 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     <para>
 ///         A select answer stored before ADR-0128 keeps the label it copied in
 ///         <see cref="Value" />, and names its choice as well: the migration linked it
-///         without rewriting it. The choice wins wherever the answer is read.
+///         without rewriting it. That copied label is exactly what the reporter was
+///         shown, so the ADR-0175 migration backfills <see cref="SubmittedWording" />
+///         from it. A select answer stored between ADR-0128 and ADR-0175, with no
+///         surviving record of what the reporter saw, is backfilled from the
+///         choice's current label in the answer's own language instead — the best
+///         record available, and possibly already drifted from what was actually
+///         shown.
 ///     </para>
 ///     <para>
 ///         A multi-select produces one of these per chosen choice.
@@ -127,6 +140,17 @@ public class ReportAnswer
 	/// </summary>
 	public QuestionChoice? Choice { get; private set; }
 
+	/// <summary>
+	///     The exact label the reporter saw and chose, in <see cref="Locale" />, for a
+	///     single-select, multi-select, or type-ahead answer; null for every other
+	///     type and for a skipped answer. Set once, at submission, and never touched by
+	///     a later fix, replace, or merge of the choice it names (ADR-0175). This is the
+	///     reporter's account: every read of it — admin detail, the Worker's model
+	///     input, and the deterministic marking pass — reads this, never
+	///     <see cref="Choice" />'s current wording.
+	/// </summary>
+	public string? SubmittedWording { get; private init; }
+
 	/// <summary>Whether the reporter gave this answer at all: it names a choice, holds a boolean, or holds a value.</summary>
 	public bool IsAnswered => ChoiceId is not null || BooleanValue is not null || Value is not null;
 
@@ -174,11 +198,20 @@ public class ReportAnswer
 				: TranslatedValue;
 
 	/// <summary>
-	///     The answer's words in the language it was given in: its choice's label in
-	///     that language (or the one language the choice has), or its value. Null for
-	///     a skipped answer and for a yes/no or checkbox, which has no words.
+	///     The answer's words in the language it was given in: the reporter's own
+	///     submitted wording for a choice answer (ADR-0175), or its value. Null for a
+	///     skipped answer and for a yes/no or checkbox, which has no words.
 	/// </summary>
-	public string? Text => ChoiceId is not null ? NamedChoice.Label(Locale) : Value;
+	public string? Text => ChoiceId is not null ? SubmittedWording : Value;
+
+	/// <summary>
+	///     For a choice answer, the choice's current official label in
+	///     <see cref="Locale" /> — secondary context beside <see cref="Text" />, shown
+	///     only when a fix, replace, or merge since submission makes it read
+	///     differently from what the reporter chose (ADR-0175). Null for every other
+	///     answer type.
+	/// </summary>
+	public string? OfficialText => ChoiceId is not null ? NamedChoice.Label(Locale) : null;
 
 	/// <summary>When the answer was given.</summary>
 	public DateTimeOffset AnsweredAt { get; private init; }
@@ -193,7 +226,9 @@ public class ReportAnswer
 	public string? ValueIn(Locale locale)
 	{
 		return ChoiceId is not null
-			? NamedChoice.Label(locale)
+			? locale == Locale
+				? SubmittedWording
+				: DisplayedTranslation ?? SubmittedWording
 			: locale == Locale
 				? Value
 				: DisplayedTranslation ?? Value;
@@ -258,7 +293,8 @@ public class ReportAnswer
 
 		if (revision.StoresLocalizedValue)
 		{
-			return Naming(reportId, question, revision, ChoiceWorded(question, revision, value, locale, at, parentChoiceId), locale, at);
+			var choice = ChoiceWorded(question, revision, value, locale, at, parentChoiceId);
+			return Naming(reportId, question, revision, choice, value, locale, at);
 		}
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
@@ -324,7 +360,7 @@ public class ReportAnswer
 		var choice = question.OfferedChoice(choiceId)
 					 ?? throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
 
-		return Naming(reportId, question, revision, choice, locale, at);
+		return Naming(reportId, question, revision, choice, choice.Label(locale), locale, at);
 	}
 
 	/// <summary>
@@ -355,14 +391,15 @@ public class ReportAnswer
 	}
 
 	/// <summary>
-	///     A choice answer: the choice named, no wording copied, both languages read
-	///     from it. A null choice is a skip, which the caller has already checked the
-	///     question allows.
+	///     A choice answer: the choice named, and the exact wording the reporter saw
+	///     and chose kept alongside it, immutably (ADR-0175). A null choice is a skip,
+	///     which the caller has already checked the question allows.
 	/// </summary>
 	private static ReportAnswer Naming(TinyId reportId,
 									   Question question,
 									   QuestionRevision revision,
 									   QuestionChoice? choice,
+									   string? submittedWording,
 									   Locale locale,
 									   DateTimeOffset at)
 	{
@@ -370,6 +407,7 @@ public class ReportAnswer
 		{
 			ChoiceId = choice?.Id,
 			Choice = choice,
+			SubmittedWording = choice is null ? null : submittedWording,
 			TranslationMode = TranslationMode.Choice,
 			TranslationSource = choice is null ? null : Reporting.TranslationSource.Choice,
 		};

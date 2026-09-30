@@ -845,6 +845,7 @@ Examples:
   | source                          |
   | private answer                  |
   | choice label                    |
+  | choice label fixed after submission |
   | summary pair                    |
   | private note                    |
   | member comment                  |
@@ -1180,6 +1181,21 @@ Scenario: The report detail view gives a second language only for an answer that
   When a reviewer opens the report's detail view
   Then the picker and the narrative each carry their second language
   And the first name, the email, and the date carry none, even if one was stored before this rule
+
+@REQ-MOD-188
+Scenario: The report detail view shows the reporter's own account, and the choice's current wording only when it now differs
+  Given a submitted report answered a picker question
+  When a reviewer opens the report's detail view
+  Then the picker's answer shows the reporter's own account, and no official value beside it
+  When an Administrator fixes that picker option's wording in place
+  And a reviewer opens the report's detail view again
+  Then the picker's answer still shows the reporter's own account, and now the option's current wording beside it
+
+@REQ-MOD-189
+@ui
+Scenario: Opening a report shows a choice answer's official value only when it differs from the reporter's account
+  Given a signed-in Safety Officer opens a report whose picker answer was fixed to a different wording since submission
+  Then the answer shows the reporter's own account, and beside it the option's current wording
 
 @REQ-MOD-078
 @ui

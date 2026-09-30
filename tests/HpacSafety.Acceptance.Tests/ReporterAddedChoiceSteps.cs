@@ -175,11 +175,20 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.Choices.ShouldContain(choice => choice.Id == _named!.Id);
 	}
 
-	[Then(@"the earlier answer now reads ""(.*)""")]
+	[Then(@"the option's current wording is ""(.*)""")]
+	public void ThenTheOptionsCurrentWordingIs(string wording)
+	{
+		_named!.LabelEn.ShouldBe(wording);
+	}
+
+	[Then(@"the earlier answer's own account still reads ""(.*)""")]
 	public void ThenTheEarlierAnswerNowReads(string wording)
 	{
+		// ADR-0175: fixing a picker option in place changes what it resolves to,
+		// never the answer's own submitted wording.
 		_answer!.ChoiceId.ShouldBe(_named!.Id);
 		_answer.Text.ShouldBe(wording);
+		_answer.SubmittedWording.ShouldBe(wording);
 	}
 
 	[Then(@"the form offers ""(.*)"", ""(.*)"", and ""(.*)""")]
@@ -311,10 +320,19 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_answers.ShouldAllBe(answer => answer.ChoiceId == _valueId);
 	}
 
-	[Then(@"both answers now read ""(.*)""")]
-	public void ThenBothAnswersRead(string corrected)
+	[Then(@"both answers still read ""(.*)"" as their own account")]
+	public void ThenBothAnswersRead(string original)
 	{
-		_answers.Select(answer => answer.Text).ShouldBe([corrected, corrected]);
+		// ADR-0175: correcting a type-ahead value in place changes what it
+		// resolves to, never an earlier answer's own submitted wording.
+		_answers.Select(answer => answer.Text).ShouldBe([original, original]);
+		_answers.Select(answer => answer.SubmittedWording).ShouldBe([original, original]);
+	}
+
+	[Then(@"the value's current wording is ""(.*)""")]
+	public void ThenTheValuesCurrentWordingIs(string corrected)
+	{
+		_question.AllChoices.Single(choice => choice.Id == _valueId).LabelEn.ShouldBe(corrected);
 	}
 
 	[Then(@"the next reporter is offered ""(.*)""")]
@@ -425,13 +443,18 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		merged.MergedIntoChoiceId.ShouldBe(ValueReading(target).Id);
 	}
 
-	[Then(@"the answers that named ""(.*)"" still name it, and read ""(.*)""")]
+	[Then(@"the answers that named ""(.*)"" still name it, still show ""(.*)"" as their own account, and resolve to ""(.*)""")]
 	public void ThenTheAnswersStillNameIt(string source,
-										  string target)
+										  string ownAccount,
+										  string resolvedTo)
 	{
+		// ADR-0175: a merge changes what an answer resolves to (grouping),
+		// never its own submitted wording.
 		var answer = _answersByValue[source];
 		answer.ChoiceId.ShouldBe(_question.AllChoices.Single(choice => choice.MergedIntoChoiceId is not null).Id);
-		answer.Text.ShouldBe(target);
+		answer.Text.ShouldBe(ownAccount);
+		answer.SubmittedWording.ShouldBe(ownAccount);
+		answer.OfficialText.ShouldBe(resolvedTo);
 	}
 
 	[Then(@"the form offers ""(.*)"" only")]
@@ -443,8 +466,11 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	[Then(@"the new answer names ""(.*)""")]
 	public void ThenTheNewAnswerNames(string target)
 	{
+		// ADR-0175: naming (ChoiceId, and its resolved official value) points at
+		// the merge target; the answer's own account is still the words this
+		// reporter actually typed.
 		_answer!.ChoiceId.ShouldBe(ValueReading(target).Id);
-		_answer.Text.ShouldBe(target);
+		_answer.OfficialText.ShouldBe(target);
 	}
 
 	[Given(@"the type-ahead value ""(.*)"" was merged into ""(.*)""")]
@@ -460,11 +486,15 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.MergeValue(ValueReading(source).Id, ValueReading(target).Id, Reviewer, Noon);
 	}
 
-	[Then(@"an answer naming ""(.*)"" reads ""(.*)""")]
+	[Then(@"an answer naming ""(.*)"" resolves to ""(.*)"", and still shows ""(.*)"" as its own account")]
 	public void ThenAnAnswerNamingReads(string source,
-										string target)
+										string target,
+										string ownAccount)
 	{
-		_answersByValue[source].Text.ShouldBe(target);
+		// ADR-0175: a chained merge changes what the answer resolves to, never
+		// its own submitted wording.
+		_answersByValue[source].OfficialText.ShouldBe(target);
+		_answersByValue[source].Text.ShouldBe(ownAccount);
 		_question.AllChoices.Single(choice => choice.Id == _answersByValue[source].ChoiceId).MergedIntoChoiceId
 			.ShouldBe(ValueReading(target).Id);
 	}

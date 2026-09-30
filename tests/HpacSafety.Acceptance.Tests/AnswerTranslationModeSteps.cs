@@ -283,6 +283,83 @@ public sealed class AnswerTranslationModeSteps
 		(await TranslationShownFor("date")).ShouldBeNull();
 	}
 
+	// ── REQ-MOD-188: the detail view shows the reporter's account, and the
+	// choice's current wording only when a fix since submission changed it
+	// (ADR-0175) ─────────────────────────────────────────────────────────────
+
+	private string? _pickerQuestionId;
+
+	[Given(@"a submitted report answered a picker question")]
+	public async Task GivenASubmittedReportAnsweredAPickerQuestion()
+	{
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var response = await _admin.PostAsJsonAsync(AdminQuestions, new
+		{
+			key = $"synthetic_{Guid.NewGuid():N}"[..40],
+			type = "single_select",
+			labelEn = "A synthetic question",
+			labelFr = "Une question synthétique",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+			options = new[] { new { code = (string?)null, labelEn = "Paraglider", labelFr = "Parapente" } },
+		});
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		var created = await response.Content.ReadFromJsonAsync<JsonElement>();
+		_pickerQuestionId = created.GetProperty("id").GetString();
+		_answers["single_select"] = (created.GetProperty("revisionId").GetString()!, "Paraglider", null);
+
+		await SubmitInEnglish();
+	}
+
+	[Then(@"the picker's answer shows the reporter's own account, and no official value beside it")]
+	public async Task ThenThePickersAnswerShowsTheReportersAccountAndNoOfficialValue()
+	{
+		var value = await SinglePickerValue();
+		value.GetProperty("value").GetString().ShouldBe("Paraglider");
+		(!value.TryGetProperty("officialValue", out var official) || official.ValueKind == JsonValueKind.Null).ShouldBeTrue();
+	}
+
+	[When(@"an Administrator fixes that picker option's wording in place")]
+	public async Task WhenAnAdministratorFixesThatPickerOptionsWordingInPlace()
+	{
+		using var response = await _admin!.PutAsJsonAsync(
+			new Uri($"{AdminQuestions}/{_pickerQuestionId}", UriKind.Relative), new
+			{
+				key = (string?)null,
+				type = "single_select",
+				labelEn = "A synthetic question",
+				labelFr = "Une question synthétique",
+				isRequired = false,
+				isPrivate = false,
+				isActive = true,
+				options = new[] { new { code = "paraglider", labelEn = "Paraglider (solo)", labelFr = "Parapente (solo)" } },
+			});
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	[When(@"a reviewer opens the report's detail view again")]
+	public async Task WhenAReviewerOpensTheDetailViewAgain()
+	{
+		await OpenTheDetailView();
+	}
+
+	[Then(@"the picker's answer still shows the reporter's own account, and now the option's current wording beside it")]
+	public async Task ThenThePickersAnswerStillShowsTheAccountAndNowTheFix()
+	{
+		var value = await SinglePickerValue();
+		value.GetProperty("value").GetString().ShouldBe("Paraglider");
+		value.GetProperty("officialValue").GetString().ShouldBe("Paraglider (solo)");
+	}
+
+	private async Task<JsonElement> SinglePickerValue()
+	{
+		var key = (await StoredFor("single_select")).First().QuestionKey;
+		return _detail.GetProperty("answers").EnumerateArray()
+			.Single(answer => answer.GetProperty("questionKey").GetString() == key)
+			.GetProperty("values").EnumerateArray().Single();
+	}
+
 	// ── REQ-QB-108: only free text can need translation, by default ─────────
 
 	[Given(@"^an Administrator authors an? (\w+) question without saying whether it needs translation$")]

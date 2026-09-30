@@ -104,6 +104,50 @@ public class ChoicePinEndpointTests(ApiPostgresFixture fixture)
 			.GetProperty("pin").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
+	[Fact]
+	public async Task GivenAPickerAnswer_WhenItsOptionIsFixedInPlaceAfterSubmission_ThenTheDetailShowsBothTexts()
+	{
+		// Given — ADR-0175: admin detail shows the reporter's own account as
+		// `value`, and the choice's current official label as `officialValue`
+		// only when a later fix, replace, or merge makes it read differently
+		TinyId reportId;
+		Question question;
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			question = Question.Create(
+				$"wing_{Guid.NewGuid():N}"[..20], QuestionType.SingleSelect, "Wing?", "Aile ?", At, isActive: true,
+				options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+			database.Questions.Add(question);
+			var report = new Report(Locale.EnCa, At);
+			report.AnswerChoices(question, question.CurrentRevision, [question.Choices.Single().Id], At);
+			database.Reports.Add(report);
+			await database.SaveChangesAsync();
+			reportId = report.Id;
+		}
+
+		using var admin = await SignedInClient.As(_factory, MemberRole.Administrator);
+
+		// When — the wording is fixed in place, after submission
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var reloaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question.Id);
+			reloaded.ReplaceChoices([new QuestionOptionInput("paraglider", "Paraglider (solo)", "Parapente (solo)")], At);
+			await database.SaveChangesAsync();
+		}
+
+		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var detail = await officer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+
+		// Then
+		var value = detail.GetProperty("answers").EnumerateArray()
+			.Single(answer => answer.GetProperty("type").GetString() == "single_select")
+			.GetProperty("values")[0];
+		value.GetProperty("value").GetString().ShouldBe("Paraglider");
+		value.GetProperty("officialValue").GetString().ShouldBe("Paraglider (solo)");
+	}
+
 	[Theory]
 	[InlineData("first")]
 	[InlineData("last")]

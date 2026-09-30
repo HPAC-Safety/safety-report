@@ -1198,6 +1198,14 @@ Leaving the report page with only refused private attachments staged does not wa
 
 There is no admin page left to edit an answer's translation by hand — *playwright-bdd, Covered*
 
+### REQ-MOD-188
+
+The report detail view shows the reporter's own account, and the choice's current wording only when it now differs — *Reqnroll, Covered*
+
+### REQ-MOD-189
+
+Opening a report shows a choice answer's official value only when it differs from the reporter's account — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -1558,7 +1566,7 @@ An answer names the choice it was given under — *Reqnroll, Covered*
 
 ### REQ-QB-123
 
-Fixing a picker option in place corrects every answer that named it — *Reqnroll, Covered*
+Fixing a picker option in place corrects its current wording, but not an earlier answer's own account — *Reqnroll, Covered*
 
 ### REQ-QB-124
 
@@ -1582,7 +1590,7 @@ A reporter's new type-ahead value is flagged for review and offered at once — 
 
 ### REQ-QB-129
 
-A type-ahead value is corrected in place for every answer that names it — *Reqnroll, Covered*
+A type-ahead value is corrected in place, but each answer keeps its own submitted wording — *Reqnroll, Covered*
 
 ### REQ-QB-130
 

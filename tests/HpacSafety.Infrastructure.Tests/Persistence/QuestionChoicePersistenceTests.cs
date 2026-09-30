@@ -81,9 +81,11 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 	}
 
 	[Fact]
-	public async Task GivenChoiceAnswer_WhenReloaded_ThenItsWordingIsReadThroughTheChoiceLoadedWithIt()
+	public async Task GivenChoiceAnswer_WhenReloaded_ThenItsOwnAccountReadsWithoutTheChoiceButItsOfficialValueDoesNot()
 	{
-		// Given — ADR-0128: the answer stores the choice, not its words
+		// Given — ADR-0175: the answer keeps its own submitted wording as a plain
+		// column, readable without its choice; the choice's current official value
+		// and the second language are still read through the loaded choice
 		var connectionString = await postgres.CreateMigratedDatabase();
 		var question = Question.Create(
 			"synthetic_wing", QuestionType.SingleSelect, "Wing", "Aile", At, isActive: true,
@@ -103,11 +105,20 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 		var withChoice = await reader.ReportAnswers.AsNoTracking().Include(a => a.Choice).SingleAsync(a => a.Id == answer.Id);
 		var withoutChoice = await reader.ReportAnswers.AsNoTracking().SingleAsync(a => a.Id == answer.Id);
 
-		// Then — read through its choice, or refused rather than shown as skipped
+		// Then
 		withChoice.Value.ShouldBeNull();
 		withChoice.Text.ShouldBe("Paraglider");
+		withChoice.OfficialText.ShouldBe("Paraglider");
 		withChoice.DisplayedTranslation.ShouldBe("Parapente");
+
+		// The reporter's own account is a plain column: it reads without the choice.
 		withoutChoice.IsAnswered.ShouldBeTrue();
-		Should.Throw<InvalidOperationException>(() => withoutChoice.Text);
+		withoutChoice.Text.ShouldBe("Paraglider");
+		withoutChoice.SubmittedWording.ShouldBe("Paraglider");
+
+		// Its current official value and second language still need the choice —
+		// refused rather than shown as skipped or silently blank.
+		Should.Throw<InvalidOperationException>(() => withoutChoice.OfficialText);
+		Should.Throw<InvalidOperationException>(() => withoutChoice.DisplayedTranslation);
 	}
 }

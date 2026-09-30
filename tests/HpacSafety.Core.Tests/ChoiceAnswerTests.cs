@@ -103,6 +103,105 @@ public class ChoiceAnswerTests
 	}
 
 	[Fact]
+	public void GivenAChoiceAnswer_WhenRecorded_ThenItKeepsTheChoicesSubmittedLabelAsItsOwnWording()
+	{
+		// Given
+		var question = Conditions();
+		var gusty = question.Choice("gusty")!;
+
+		// When
+		var answer = new Report(Locale.EnCa, Now).AnswerChoices(question, question.CurrentRevision, [gusty.Id], Now)[0];
+
+		// Then — ADR-0175: the answer keeps its own copy, separate from the choice
+		answer.SubmittedWording.ShouldBe("Gusty");
+		answer.Text.ShouldBe("Gusty");
+		answer.OfficialText.ShouldBe("Gusty");
+	}
+
+	[Fact]
+	public void GivenAChoiceAnswer_WhenItsPickerOptionIsFixedInPlace_ThenTheAnswerKeepsWhatItWasGivenUnder()
+	{
+		// Given
+		var question = Conditions();
+		var gusty = question.Choice("gusty")!;
+		var answer = new Report(Locale.EnCa, Now).AnswerChoices(question, question.CurrentRevision, [gusty.Id], Now)[0];
+
+		// When — an administrator fixes the option's wording in place (ADR-0128)
+		question.ReplaceChoices(
+			[
+				new QuestionOptionInput(gusty.Code, "Gusty winds", "Rafales"),
+				new QuestionOptionInput(question.Choice("thermic")!.Code, "Thermic", "Thermique"),
+			],
+			Now);
+
+		// Then — the answer's own account never moves; only the official value does
+		answer.SubmittedWording.ShouldBe("Gusty");
+		answer.Text.ShouldBe("Gusty");
+		answer.OfficialText.ShouldBe("Gusty winds");
+	}
+
+	[Fact]
+	public void GivenAChoiceAnswer_WhenItsPickerOptionIsReplaced_ThenTheAnswerKeepsWhatItWasGivenUnder()
+	{
+		// Given
+		var question = Question.Create(
+			"wing", QuestionType.SingleSelect, "Wing", "Aile", Now, isActive: true,
+			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"), new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+		var paraglider = question.Choice("paraglider")!;
+		var answer = new Report(Locale.EnCa, Now).AnswerChoices(question, question.CurrentRevision, [paraglider.Id], Now)[0];
+
+		// When — replaced rather than fixed (ADR-0128): the retired choice, which
+		// this answer still names, keeps its own wording forever
+		question.ReplaceChoices(
+			[
+				new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
+				new QuestionOptionInput("paraglider", "Paraglider (solo)", "Parapente (solo)", Replace: true),
+			],
+			Now);
+
+		// Then — a replace does not change what an old answer reads at all: both
+		// its submitted wording and the choice it names still read "Paraglider"
+		answer.SubmittedWording.ShouldBe("Paraglider");
+		answer.Text.ShouldBe("Paraglider");
+		answer.OfficialText.ShouldBe("Paraglider");
+	}
+
+	[Fact]
+	public void GivenATypeAheadAnswer_WhenItsValueIsCorrectedInPlace_ThenTheAnswerKeepsWhatWasTyped()
+	{
+		// Given
+		var question = Question.Create("launch", QuestionType.Autocomplete, "Launch", "Décollage", Now, isActive: true);
+		var choice = question.AddChoiceFromReporter("Coopers Hill", Locale.EnCa);
+		var answer = new Report(Locale.EnCa, Now).AnswerChoices(question, question.CurrentRevision, [choice.Id], Now)[0];
+
+		// When — a Safety Officer corrects the value's wording in place (ADR-0129)
+		question.CorrectValue(choice.Id, "Cooper's Hill", null, "officer@example.test", Now);
+
+		// Then
+		answer.SubmittedWording.ShouldBe("Coopers Hill");
+		answer.OfficialText.ShouldBe("Cooper's Hill");
+	}
+
+	[Fact]
+	public void GivenATypeAheadAnswer_WhenItsValueIsMergedIntoAnother_ThenTheAnswerStillShowsItsOwnAccountNotTheSurvivors()
+	{
+		// Given
+		var question = Question.Create("launch", QuestionType.Autocomplete, "Launch", "Décollage", Now, isActive: true);
+		var coopers = question.AddChoiceFromReporter("Coopers", Locale.EnCa);
+		var cSurvivor = question.AddChoiceFromReporter("Cooper's Hill", Locale.EnCa);
+		var answer = new Report(Locale.EnCa, Now).AnswerChoices(question, question.CurrentRevision, [coopers.Id], Now)[0];
+
+		// When
+		question.MergeValue(coopers.Id, cSurvivor.Id, "officer@example.test", Now);
+
+		// Then — the answer's own account is untouched; only what it resolves to changes
+		answer.SubmittedWording.ShouldBe("Coopers");
+		answer.Text.ShouldBe("Coopers");
+		answer.OfficialText.ShouldBe("Cooper's Hill");
+		answer.ChoicePin.ShouldNotBeNull(); // resolution still follows the merge
+	}
+
+	[Fact]
 	public void GivenAFrenchOnlyChoice_WhenItsOtherLabelIsAskedFor_ThenNone()
 	{
 		// Given

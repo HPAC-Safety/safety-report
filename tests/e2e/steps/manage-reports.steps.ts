@@ -755,6 +755,43 @@ Then("the answer is listed {string}, {string}, {string}", async ({ page }, first
 	await expect(page.locator('[data-question-key="conditions"] dd > span:first-child')).toHaveText([first, second, third])
 })
 
+// ── A choice answer's own account, and its choice's official value only when
+// they differ (REQ-MOD-189, ADR-0175) ──────────────────────────────────────
+
+Given("a signed-in Safety Officer opens a report whose picker answer was fixed to a different wording since submission", async ({ page }) => {
+	const detail = {
+		...DETAIL,
+		id: "fixedaaaaaa",
+		answers: [
+			{
+				questionKey: "wing",
+				labelEn: "Wing",
+				labelFr: "Aile",
+				type: "single_select",
+				isPrivate: false,
+				values: [
+					{
+						value: "Paraglider",
+						locale: "en-CA",
+						translatedValue: null,
+						translationSource: null,
+						officialValue: "Paraglider (solo)",
+					},
+				],
+			},
+		],
+	}
+	await page.route(/\/api\/admin\/reports\/[^/?]+$/, (route) => route.fulfill({ json: detail }))
+	await signInAs(page, "safety_officer")
+	await page.goto("/admin/reports/fixedaaaaaa")
+})
+
+Then("the answer shows the reporter's own account, and beside it the option's current wording", async ({ page }) => {
+	const answer = page.locator('[data-question-key="wing"]')
+	await expect(answer).toContainText("Paraglider")
+	await expect(answer.locator("[data-official-value]")).toContainText("Now reads: Paraglider (solo)")
+})
+
 
 // ── Quick actions on each row of Manage reports (REQ-MOD-120..123) ──
 

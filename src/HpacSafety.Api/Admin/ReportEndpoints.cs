@@ -485,7 +485,10 @@ public static class ReportEndpoints
 							answer.DisplayedTranslation is not null && answer.TranslationSource is { } source
 								? EnumCode.Of(source)
 								: null,
-							answer.ChoicePin is { } pin ? EnumCode.Of(pin) : null)),
+							answer.ChoicePin is { } pin ? EnumCode.Of(pin) : null,
+							answer.ChoiceId is not null && answer.OfficialText != answer.SubmittedWording
+								? answer.OfficialText
+								: null)),
 				]))
 			.ToList();
 	}

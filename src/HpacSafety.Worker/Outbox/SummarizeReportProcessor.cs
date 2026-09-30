@@ -131,8 +131,10 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		// question's role, not its key: a question seeded from the Typeform form
 		// keeps the key the import gave it, and a key is an Administrator's to
 		// choose. Privacy is the second guard (ADR-0082), never the first. A
-		// choice answer's words are its choice's (ADR-0128), in the report's
-		// language — which a private choice's marking then matches too.
+		// choice answer contributes only the wording the reporter submitted
+		// (ADR-0175), never its choice's current official value — a later fix,
+		// replace, or merge must not change what the model, or the marking pass,
+		// reads for an old report.
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
 							 && (answer.Value != null || answer.BooleanValue != null || answer.ChoiceId != null)
@@ -148,9 +150,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 					 answer.QuestionKey,
 					 answer.Value,
 					 answer.BooleanValue,
-					 // A merged value reads as the one it was merged into (ADR-0129).
-					 ChoiceEn = answer.Choice!.MergedInto != null ? answer.Choice.MergedInto.LabelEn : answer.Choice.LabelEn,
-					 ChoiceFr = answer.Choice.MergedInto != null ? answer.Choice.MergedInto.LabelFr : answer.Choice.LabelFr,
+					 answer.SubmittedWording,
 					 HasChoice = answer.ChoiceId != null,
 					 answer.IsPrivate,
 					 revision.Type,
@@ -171,7 +171,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 					row.BooleanValue is { } boolean
 						? (boolean ? "true" : "false")
 						: row.HasChoice
-							? (language == Locale.FrCa ? row.ChoiceFr ?? row.ChoiceEn : row.ChoiceEn ?? row.ChoiceFr)!
+							? row.SubmittedWording!
 							: row.Value!,
 					row.BooleanValue is not null),
 				row.IsPrivate))

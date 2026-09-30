@@ -112,12 +112,13 @@ public sealed class StoredAnswerSteps
 		(await StoredChoiceAnswer()).ChoiceId.ShouldBe(TinyId.Parse(_chosenId));
 	}
 
-	[Then(@"it stores no copy of the choice's wording")]
+	[Then(@"it keeps its own copy of the wording it was submitted under, and nothing else")]
 	public async Task ThenItStoresNoCopyOfTheWording()
 	{
 		var stored = await StoredChoiceAnswer();
 		stored.Value.ShouldBeNull();
 		stored.TranslatedValue.ShouldBeNull();
+		stored.SubmittedWording.ShouldNotBeNullOrWhiteSpace();
 	}
 
 	[Then(@"the answer reads as the choice's English label, with its French label as the second language")]

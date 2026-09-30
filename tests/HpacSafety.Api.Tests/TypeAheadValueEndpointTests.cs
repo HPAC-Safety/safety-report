@@ -83,7 +83,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAFlaggedValue_WhenCorrected_ThenEveryAnswerReadsTheCorrection()
+	public async Task GivenAFlaggedValue_WhenCorrected_ThenTheChoiceReadsTheCorrectionButEachAnswerKeepsItsOwnAccount()
 	{
 		// Given
 		var (_, value) = await TypeAheadWithReporterValue("coopers", answers: 2);
@@ -100,7 +100,12 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		var answers = await database.ReportAnswers.AsNoTracking().Include(answer => answer.Choice)
 			.Where(answer => answer.ChoiceId == value).ToListAsync();
 		answers.Count.ShouldBe(2);
-		answers.ShouldAllBe(answer => answer.Text == "Cooper's");
+
+		// ADR-0175: the correction changes the choice's current official value —
+		// what OfficialText shows — but never the answer's own submitted wording.
+		answers.ShouldAllBe(answer => answer.OfficialText == "Cooper's");
+		answers.ShouldAllBe(answer => answer.Text == "coopers");
+		answers.ShouldAllBe(answer => answer.SubmittedWording == "coopers");
 		(await Audited(value, AuditAction.CorrectedTypeAheadValue)).ShouldBeTrue();
 	}
 
@@ -126,7 +131,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenTwoValues_WhenOneIsMergedIntoTheOther_ThenItsAnswersReadTheTargetAndItIsAudited()
+	public async Task GivenTwoValues_WhenOneIsMergedIntoTheOther_ThenItsAnswersResolveToTheTargetButKeepTheirOwnAccountAndItIsAudited()
 	{
 		// Given
 		var (question, coopers) = await TypeAheadWithReporterValue("Coopers", answers: 2);
@@ -162,7 +167,12 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 			.Include(answer => answer.Choice).ThenInclude(choice => choice!.MergedInto)
 			.Where(answer => answer.ChoiceId == coopers).ToListAsync();
 		answers.Count.ShouldBe(2);
-		answers.ShouldAllBe(answer => answer.Text == "Cooper's");
+
+		// ADR-0175: a merge changes what each answer resolves to (grouping) —
+		// what OfficialText shows — never its own submitted wording.
+		answers.ShouldAllBe(answer => answer.OfficialText == "Cooper's");
+		answers.ShouldAllBe(answer => answer.Text == "Coopers");
+		answers.ShouldAllBe(answer => answer.SubmittedWording == "Coopers");
 	}
 
 	[Fact]

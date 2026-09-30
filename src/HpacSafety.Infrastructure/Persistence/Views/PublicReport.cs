@@ -46,4 +46,12 @@ public sealed class PublicReport
 	///     private attachment (ADR-0135). See issue #427, decisions 1-2.
 	/// </summary>
 	public int FullAttachmentCount { get; private init; }
+
+	/// <summary>
+	///     The language the reporter wrote the report in, as a locale code
+	///     (<c>en-CA</c> or <c>fr-CA</c>). Public only on a report's own page, so
+	///     the page can say a summary was translated from it (#682, ADR-0176);
+	///     the feed never carries it.
+	/// </summary>
+	public string Language { get; private init; } = string.Empty;
 }

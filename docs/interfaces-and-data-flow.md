@@ -23,7 +23,7 @@ capability boundaries are normative.
 | `DELETE /api/v1/uploads/{id}` | Remove an unclaimed upload | `204`, idempotent; erases every version of the quarantine object. |
 | `POST /api/v1/reports` | Submit final report JSON naming its upload IDs; validates each claimed upload | `202` with opaque report ID/status, or `400` naming each expired or refused upload ID. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
 | `GET /api/v1/public/reports?after=<cursor>` | Paginated public feed, newest published first | Only publishable public DTO fields, plus the opaque cursor for the next page (`null` on the last). Anonymous. |
-| `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. Anonymous. |
+| `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, plus the language the reporter wrote it in (`en-CA` or `fr-CA`, ADR-0176), otherwise `404`. Anonymous. |
 | `GET /api/v1/public/reports/{id}/comments` | A published report's visible comments, oldest first | Each comment's ID, current text and language, machine translation, timestamps, whether it was edited, and `isMine` for a signed-in reader. Never an author. `404` unless the report is public. Anonymous; a bearer token is read only to compute `isMine`. |
 | `POST /api/v1/public/reports/{id}/comments` | Post a comment | `201` with the comment. Requires a member token of any role. `404` unless the report is public. Queues its translation; calls no provider. |
 | `PUT /api/v1/public/reports/{id}/comments/{commentId}` | Edit one's own comment | `200` with the comment as a new revision; `403` for anyone but its author. |

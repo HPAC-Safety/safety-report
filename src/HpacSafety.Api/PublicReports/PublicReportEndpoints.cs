@@ -185,7 +185,7 @@ public static class PublicReportEndpoints
 		var report = await database.PublicReports
 			.AsNoTracking()
 			.Where(candidate => candidate.Id == reportId)
-			.Select(candidate => new { candidate.Id, candidate.AiSummaryEn, candidate.AiSummaryFr, candidate.PublishedAt, candidate.CommentCount, candidate.PublicAttachmentCount, candidate.FullAttachmentCount })
+			.Select(candidate => new { candidate.Id, candidate.AiSummaryEn, candidate.AiSummaryFr, candidate.PublishedAt, candidate.CommentCount, candidate.PublicAttachmentCount, candidate.FullAttachmentCount, candidate.Language })
 			.SingleOrDefaultAsync(cancellationToken)
 			.ConfigureAwait(false);
 
@@ -232,6 +232,7 @@ public static class PublicReportEndpoints
 		return Results.Ok(new PublicReportDetail(
 			report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount,
 			isStaff ? report.FullAttachmentCount : report.PublicAttachmentCount,
+			report.Language,
 			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind), ReportEndpoints.FormatOf(file.Kind, file.ContentType)))],
 			staffAttachments));
 	}

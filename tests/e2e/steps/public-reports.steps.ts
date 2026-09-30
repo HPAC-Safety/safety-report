@@ -6,7 +6,7 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for the public feed and each report's own page
- * (REQ-MOD-079..082, REQ-WLD-019, issue no. 28).
+ * (REQ-MOD-079..082, REQ-MOD-190..192, REQ-WLD-019, issue no. 28, issue no. 682).
  *
  * The public API is stubbed at the network boundary: what these assert is what
  * the browser shows and what the address bar says. The feed's order, its
@@ -470,4 +470,54 @@ Then("the browser opens the report's admin detail page, in the same tab", async 
 
 Then("the page offers no link to the admin detail page", async ({ page }) => {
 	await expect(adminLink(page)).toHaveCount(0)
+})
+
+// ── The translation label (issue no. 682, REQ-MOD-190..192, ADR-0176) ──
+
+const WRITTEN_IN: Record<string, "en-CA" | "fr-CA"> = { English: "en-CA", French: "fr-CA" }
+
+/**
+ * What the label reads in each site language, keyed by the report's language.
+ * The French wording comes from CI's translation of the English catalogue
+ * (ADR-0057); on a branch that has not been translated yet the catalogue holds
+ * the `#`-prefixed stub of the English instead, so that is accepted too.
+ */
+const TRANSLATED_FROM: Record<string, RegExp> = {
+	"Translated from French": /^Translated from French$/,
+	"Translated from English": /^Translated from English$/,
+	"Traduit de l'anglais": /^(Traduit de l['\u2019]anglais|#Translated from English)$/,
+	"Traduit du français": /^(Traduit du français|#Translated from French)$/,
+}
+
+Given(/^a report written in (English|French) is published$/, async ({ page }, written: string) => {
+	await stubFeed(page)
+	// Registered after stubFeed's own, so it answers first.
+	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, async (route) => {
+		await route.fulfill({ json: { ...FIRST, language: WRITTEN_IN[written], media: [] } })
+	})
+})
+
+async function openPageInSiteLanguage(page: Page, shown: string) {
+	await page.addInitScript((code) => localStorage.setItem("hpac.locale", code), WRITTEN_IN[shown])
+	await page.goto(`/reports/${FIRST.id}`)
+}
+
+When(/^a visitor opens its page with the site in (English|French)$/, async ({ page }, shown: string) => {
+	await openPageInSiteLanguage(page, shown)
+})
+
+Given(/^a visitor has its page open with the site in (English|French)$/, async ({ page }, shown: string) => {
+	await openPageInSiteLanguage(page, shown)
+	await expect(page.locator("[data-summary]")).toBeVisible()
+})
+
+Then(/^the page shows the muted label "(.+)"$/, async ({ page }, label: string) => {
+	const line = page.locator("[data-translated-from]")
+	await expect(line).toBeVisible()
+	await expect(line).toHaveText(TRANSLATED_FROM[label])
+})
+
+Then("the page shows no translation label", async ({ page }) => {
+	await expect(page.locator("[data-summary]")).toBeVisible()
+	await expect(page.locator("[data-translated-from]")).toHaveCount(0)
 })

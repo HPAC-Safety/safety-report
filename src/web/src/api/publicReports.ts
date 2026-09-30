@@ -45,6 +45,12 @@ export interface PublicMedia {
 
 /** A report's own page: the feed item plus its public media. */
 export interface PublicReportDetail extends PublicReport {
+	/**
+	 * The locale the reporter wrote the report in, `en-CA` or `fr-CA`. Only on a
+	 * report's own page, never in the feed: the page uses it to say a summary was
+	 * translated from that language (issue no. 682, ADR-0176).
+	 */
+	language: "en-CA" | "fr-CA"
 	media: PublicMedia[]
 	/**
 	 * Every attachment, public or not, each marked with its state and public

@@ -409,6 +409,8 @@
   "feed.empty": "No safety reports have been published yet.",
   "feed.error": "The published reports could not be loaded. Try again.",
   "feed.publishedAt": "Published {at}",
+  "feed.translatedFrom.en-CA": "Translated from English",
+  "feed.translatedFrom.fr-CA": "Translated from French",
   "feed.adminPage": "Open the admin report",
   "feed.read": "Read the full report",
   "list.loadMore": "Load more",

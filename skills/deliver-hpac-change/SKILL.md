@@ -131,6 +131,9 @@ names and step numbers.
      same time. Each gets its own throwaway clone, its own free port for the
      browser suite, and its own act job container names, so one run can't
      wait behind, or clobber, another.
+   - Teardown, "try: work; finally: tear down": every container and volume the
+     run created is deleted when it ends, pass or fail, `INT` and `TERM`
+     included; a `kill -9` is swept by the next run. Never touch a dev stack.
    - No token: act gets none. The script downloads main's coverage baseline
      on the host with the `gh` login; without one, a run that includes
      `coverage` exits 2 ("run gh auth login").

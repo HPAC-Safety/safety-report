@@ -58,6 +58,13 @@
 # compose) is unaffected: it keeps its fixed ports, on purpose, so the app is
 # always at the same address in development.
 #
+# Teardown, "try: work; finally: tear down": every container and volume this
+# run's act creates is deleted when the run ends, on success, failure, die,
+# INT, and TERM alike (an EXIT trap registered first; see "the teardown"
+# below). It only matches this run's ci-local-<pid>-<suffix> tag, and a run
+# also sweeps tags whose pid is dead (a kill -9). The dev stack and
+# act-toolcache are never touched.
+#
 # Full logs land in artifacts/ci-local/<workflow>[-<job>].log (gitignored).
 
 set -eu
@@ -70,7 +77,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,61p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,68p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 

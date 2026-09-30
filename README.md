@@ -202,6 +202,12 @@ clobber, another. `dev-up.sh` and the dev compose stack are unaffected — they
 keep their fixed ports, so the app is always at the same address in
 development.
 
+Every container and volume a run creates is deleted when it ends, whether it
+passed or failed, was interrupted, or died early: an `EXIT` trap, registered
+first, removes those carrying this run's `ci-local-<pid>-<suffix>` tag. A run
+killed with `kill -9` is swept by the next run. The dev stack and
+`act-toolcache` (a shared tool cache) are never touched.
+
 It needs no token. act gets none, and every job runs anonymously, since the
 repository is public. The one exception is the coverage baseline: GitHub
 serves no artifact to an anonymous caller, so the script downloads main's last

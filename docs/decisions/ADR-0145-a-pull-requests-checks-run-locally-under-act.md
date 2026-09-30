@@ -34,6 +34,9 @@ per-run ports and container names instead of by queueing. See "The lock is
 removed" below, which replaces "Exit codes"' lock clause and the
 "Testcontainers" and "Consequences" sections' mentions of it.
 
+**Amended 2026-09-29 (#675):** every test container and volume is deleted when
+its run ends, pass or fail. See "Teardown is try/finally" below.
+
 ## Context
 
 Two scripts, `tools/coverage-check.sh`
@@ -316,6 +319,53 @@ the lock protected is now kept apart per run instead of serialized:
 separate worktrees on the same branch, started together, both passed with
 correct verdicts, and neither tested the other's build (logs in the pull
 request that made this change).
+
+## Teardown is try/finally (#675)
+
+> try: do work; finally: tear down, even if it failed.
+
+Parallel runs multiply what a failed run leaves behind: exited `act-CI-*`
+containers, their `act-CI-*-env` volumes, and anonymous volumes. So every
+container and volume a run creates is deleted when that run ends, whether it
+passed or failed.
+
+- **Registered first.** `ci-local.sh` registers its `EXIT` trap before anything
+  can create a container. `INT` and `TERM` route to it (`exit 130`, `exit 143`),
+  so success, a failing job, a `die`, Ctrl-C, and `TERM` all run it once.
+- **What it removes**: containers (`docker rm -fv`, so their anonymous volumes
+  go too) and named volumes whose names carry this run's tag
+  `ci-local-<pid>-<suffix>`. act builds a job container's name from the
+  workflow name, which the wrapper already suffixes with that tag, so
+  `act-CI-ci-local-<pid>-<suffix>-<job>-<hash>` and its `-env` volume match.
+  It never matches another run's tag, and the dev stack's containers
+  (`<worktree>-api-1`, `safety-report-*`) carry none.
+- **Best-effort, never the verdict.** Each removal is `|| true`, so one failed
+  `docker rm` never skips the volumes, and the teardown never changes the
+  run's exit code.
+- **act runs with `--rm`**, so its own job containers and volumes go after a
+  failed job, as they already did after a passing one (`--reuse` is never
+  passed).
+- **Signals reach it at once.** act runs in the background and the script
+  `wait`s, because a shell defers a trap until its foreground child returns
+  (a `TERM` sent to the script otherwise waited out the whole job). The
+  teardown also signals this run's own act, found by the unique `-W` path.
+- **`kill -9` cannot run a trap.** So each run starts by removing containers
+  and volumes tagged `ci-local-<pid>-…` whose pid is no longer alive. It never
+  touches a live pid's tag.
+- **Testcontainers** (the Postgres and S3 containers under `test`) carry no
+  tag. Ryuk removes them, with their volumes, when the test process ends, as
+  in lesson 0008; the proof below checks that none is left.
+- **The one deliberate exception is `act-toolcache`**, act's tool cache, shared
+  by every run. It is keyed by tool and version, so it is reused, not
+  regrown, and holds about 200 MB. If it ever grows without bound, this
+  exception is reconsidered.
+- **Not touched**: `dev-up.sh` and every dev compose stack, and leftovers from
+  runs before this change, which the owner removes.
+
+**Proof** (counts of tagged containers / volumes after each run; before each
+run there were none): a passing run, a forced-failure run, a run interrupted
+mid-job by `INT` and by `TERM`, and a run killed with `-9` (swept by the next
+run) each left zero. The pull request holds the counts.
 
 ## Rejected
 

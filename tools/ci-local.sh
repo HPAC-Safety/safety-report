@@ -148,13 +148,72 @@ git fetch -q origin main || die "git fetch origin main failed"
 git merge-base --is-ancestor origin/main HEAD \
 	|| die "HEAD does not contain origin/main; rebase onto it first"
 
+# ---------------------------------------------------------- the teardown --
+#
+# "try: do work; finally: tear down even if failed." Every test container this
+# run creates is deleted when it ends, volumes included, whether it passed,
+# failed, died on a precondition, or was interrupted. The finally is the EXIT
+# trap, registered here, before anything can create a container. INT and TERM
+# route to it (exit 130 / 143), so every way out of the script runs it once.
+#
+# It is best-effort per item: no step can abort it or change the run's exit
+# status (the shell keeps the status `exit` was given). It only ever matches
+# THIS run's tag, `ci-local-$RUN_TAG`, which act puts in every job container
+# and volume name because the workflow name carries it (see "unique job
+# names"): never another parallel run's, never the dev stack's containers
+# (<worktree>-api-1, safety-report-*), which carry no such tag.
+# Testcontainers' own containers (the Postgres and S3 under `test`) carry no
+# tag: Ryuk removes them, with their volumes, when the test process ends.
+#
+# act-toolcache, act's tool cache shared across runs, is the one deliberate
+# exception: it is a cache, keyed by tool and version, that later runs reuse.
+#
+# A signal reaches this shell at once only while it waits (the `wait` in
+# run_act); the run's act is signalled here too, so it stops first.
+#
+# kill -9 cannot run a trap. So the next run starts with sweep_dead(): anything
+# tagged for a pid that is no longer alive is removed before its own work.
+
 WORK=''
+RUN_TAG=''
+WORKFLOWS=''
+
+# remove_tagged <tag>: containers, then volumes, whose names carry ci-local-<tag>.
+remove_tagged() {
+	for c in $(docker ps -aq --filter "name=ci-local-$1-" 2>/dev/null); do
+		docker rm -fv "$c" >/dev/null 2>&1 || true
+	done
+	for v in $(docker volume ls -q --filter "name=ci-local-$1-" 2>/dev/null); do
+		docker volume rm -f "$v" >/dev/null 2>&1 || true
+	done
+}
+
 cleanup() {
+	set +e
+	trap '' INT TERM
+	if [ -n "$WORKFLOWS" ]; then
+		pkill -TERM -f "act pull_request -W $WORKFLOWS" 2>/dev/null
+		sleep 1
+	fi
+	[ -z "$RUN_TAG" ] || remove_tagged "$RUN_TAG"
 	[ -z "$WORK" ] || rm -rf "$WORK"
+	return 0
 }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+# sweep_dead: remove what a run killed with SIGKILL left. Tags look like
+# ci-local-<pid>-<suffix>; a live pid's tag is never touched.
+sweep_dead() {
+	{
+		docker ps -a --format '{{.Names}}' 2>/dev/null
+		docker volume ls -q 2>/dev/null
+	} | sed -nE 's/^act-.*ci-local-([0-9]+-[A-Za-z0-9]+)-.*$/\1/p' | sort -u | while read -r tag; do
+		kill -0 "${tag%%-*}" 2>/dev/null || remove_tagged "$tag"
+	done
+}
+sweep_dead
 
 # ------------------------------------------------------------ the checkout --
 #
@@ -170,6 +229,7 @@ BRANCH=$(git symbolic-ref --quiet --short HEAD || echo ci-local)
 ORIGIN_URL=$(git remote get-url origin) || die "no origin remote"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/hpac-ci-local.XXXXXX") || die "mktemp failed"
+RUN_TAG="$$-${WORK##*.}"
 git bundle create -q "$WORK/head.bundle" HEAD || die "git bundle failed"
 git clone -q --no-tags "$WORK/head.bundle" "$WORK/repo" || die "git clone failed"
 git -C "$WORK/repo" checkout -q -B "$BRANCH" "$HEAD_SHA" || die "git checkout failed"
@@ -206,7 +266,6 @@ REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git
 # were removes the problem instead of working around it: nothing in the
 # clone's history differs from the real branch, so every diff any job or
 # filter computes is the one CI would compute.
-RUN_TAG="$$-${WORK##*.}"
 WORKFLOWS="$WORK/workflows"
 mkdir -p "$WORKFLOWS" || die "cannot create $WORKFLOWS"
 for wf in linked-issue feature-coverage terraform ci; do
@@ -352,6 +411,9 @@ run_act() {
 	log="$LOGS/${1%.yml}${2:+-$2}.log"
 	say "▶ $1${2:+ -j $2}"
 	rm -f "$STATUS"
+	# Run in the background and wait: a signal to this shell then interrupts
+	# `wait` at once and reaches the EXIT trap, instead of queueing behind act.
+	{
 	(
 		cd "$WORK/repo" || exit 1
 		# EXTRA is empty or one flag and its value, so it must split. -P and the
@@ -365,13 +427,15 @@ run_act() {
 		# are unset too, so nothing act starts can read one from the environment.
 		# --use-gitignore=false copies the gitignored .ci-local/baseline/.
 		unset GITHUB_TOKEN GH_TOKEN GH_ENTERPRISE_TOKEN GITHUB_ENTERPRISE_TOKEN
+		# --rm removes the job's containers and volumes after a failure too; act
+		# already removes them after a success (never pass --reuse).
 		# -W reads the retagged copy under $WORKFLOWS (see "unique job names"
 		# above), not the clone's own .github/workflows/$1: the invocation
 		# directory ($WORK/repo, via cd above) still supplies the checkout act
 		# copies into the job container, so nothing else about what runs changes.
 		# shellcheck disable=SC2086
 		if act pull_request -W "$WORKFLOWS/$1" ${2:+-j "$2"} \
-			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false \
+			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false --rm \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
 			-s GITHUB_TOKEN= -e "$EVENT" $EXTRA; then
 			echo 0 > "$STATUS"
@@ -381,6 +445,8 @@ run_act() {
 	) 2>&1 | if [ "$VERBOSE" -eq 1 ]; then tee "$log"; else
 		tee "$log" | grep -a --line-buffered -E '🏁|❌' || true
 	fi
+	} &
+	wait "$!" || true
 	# Anything but a written 0 is a failure, including no status at all.
 	if [ "$(cat "$STATUS" 2>/dev/null)" != 0 ]; then
 		say "✗ $1${2:+ -j $2} failed; full log: $log"

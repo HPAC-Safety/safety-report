@@ -34,8 +34,8 @@ per-run ports and container names instead of by queueing. See "The lock is
 removed" below, which replaces "Exit codes"' lock clause and the
 "Testcontainers" and "Consequences" sections' mentions of it.
 
-**Amended 2026-09-29 (#675):** every test container and volume is deleted when
-its run ends, pass or fail. See "Teardown is try/finally" below.
+**Amended 2026-09-29 (#675):** each run is its own Docker group with its own
+network, and everything it creates is deleted when it ends, pass or fail. See "Each run is its own group" and "Teardown is try/finally" below.
 
 ## Context
 
@@ -245,9 +245,11 @@ until someone removed it by hand — which happened on 2026-09-29 (#666, #674).
 several Docker containers at once; the owner accepts the resource cost. What
 the lock protected is now kept apart per run instead of serialized:
 
-- **Port 4173.** act puts jobs on the Docker VM's host network, so two
+- **Port 4173.** act put jobs on the Docker VM's host network, so two
   concurrent `e2e` jobs would otherwise collide on Vite's fixed preview port,
-  or one would test the other's build. `tests/e2e/playwright.config.ts` now
+  or one would test the other's build (each run now has its own bridge
+  network, see "Each run is its own group", but a port is still never fixed).
+  `tests/e2e/playwright.config.ts` now
   uses `E2E_PORT` when a caller sets it, or else picks one free port,
   synchronously, the first time the file is evaluated — the Playwright main
   process, before it forks test workers. Workers re-evaluate the same file but
@@ -320,28 +322,55 @@ separate worktrees on the same branch, started together, both passed with
 correct verdicts, and neither tested the other's build (logs in the pull
 request that made this change).
 
+## Each run is its own group, with its own network (#675)
+
+A run shows in Docker the way the dev stack's `safety-report` group does: one
+named group per run, `hpac-ci-<issue>-<run>`, for example `hpac-ci-675-a1b2`.
+
+- **The name**: `<issue>` is the branch's issue number (`issue-675/…`), or the
+  branch's slug when it has none; `<run>` is a short random ID, so two runs of
+  the same issue, such as the proof pair, stay two groups. The group name
+  replaces the earlier `ci-local-<pid>-<suffix>` in the retagged workflow
+  names, so act's container and volume names carry it:
+  `act-CI-hpac-ci-675-a1b2-<job>-<hash>` and its `-env` volume.
+- **The label** `com.docker.compose.project=<group>`, which Docker Desktop
+  groups by, is on every act job container (through act's `--container-options`)
+  and on the network, with `hpac.ci.pid=<pid>` beside it for the dead-run sweep.
+- **The network**: a bridge network named after the group is created at the
+  start, and act runs with `--network <group>` instead of `host`. act leaves an
+  existing network alone between jobs (verified with two act invocations on
+  one network), so one network serves the whole run.
+  - Testcontainers and Ryuk still work through `host.docker.internal`
+    (lesson 0008): from a bridge container it resolves and a published port
+    answers, as from the host network. The proof round runs the full `test`
+    job on the bridge, and its result is recorded in the pull request.
+  - A native Linux engine has no `host.docker.internal`; Testcontainers on a
+    custom bridge there is not verified. This repository's developers run
+    Docker Desktop, and the wrapper only sets the override there.
+- **Not grouped**: Testcontainers' containers are built by the .NET tests with
+  their own labels; Ryuk removes them. The proof counts them and the anonymous
+  volumes. A host-side `CI=1 npm test` keeps its temporary `E2E_PORT`. The dev
+  stack is untouched.
+
 ## Teardown is try/finally (#675)
 
 > try: do work; finally: tear down, even if it failed.
 
 Parallel runs multiply what a failed run leaves behind: exited `act-CI-*`
-containers, their `act-CI-*-env` volumes, and anonymous volumes. So every
-container and volume a run creates is deleted when that run ends, whether it
-passed or failed.
+containers, their `act-CI-*-env` volumes, anonymous volumes, and now a network.
+So everything a run creates is deleted when that run ends, whether it passed or
+failed.
 
 - **Registered first.** `ci-local.sh` registers its `EXIT` trap before anything
-  can create a container. `INT` and `TERM` route to it (`exit 130`, `exit 143`),
-  so success, a failing job, a `die`, Ctrl-C, and `TERM` all run it once.
-- **What it removes**: containers (`docker rm -fv`, so their anonymous volumes
-  go too) and named volumes whose names carry this run's tag
-  `ci-local-<pid>-<suffix>`. act builds a job container's name from the
-  workflow name, which the wrapper already suffixes with that tag, so
-  `act-CI-ci-local-<pid>-<suffix>-<job>-<hash>` and its `-env` volume match.
-  It never matches another run's tag, and the dev stack's containers
-  (`<worktree>-api-1`, `safety-report-*`) carry none.
-- **Best-effort, never the verdict.** Each removal is `|| true`, so one failed
-  `docker rm` never skips the volumes, and the teardown never changes the
-  run's exit code.
+  can create a container or the network. `INT` and `TERM` route to it
+  (`exit 130`, `exit 143`), so success, a failing job, a `die`, Ctrl-C, and
+  `TERM` all run it once.
+- **What it removes**, in order, each best-effort (`|| true`): containers
+  carrying the group's label (`docker rm -fv`, so their anonymous volumes go
+  too), volumes whose names carry the group name, then the network. One failed
+  `docker rm` never skips the volumes, and the teardown never changes the run's
+  exit code. It never matches another run's group, and the dev stack's
+  containers (`<worktree>-api-1`, `safety-report-*`) carry no `hpac-ci-` label.
 - **act runs with `--rm`**, so its own job containers and volumes go after a
   failed job, as they already did after a passing one (`--reuse` is never
   passed).
@@ -349,12 +378,12 @@ passed or failed.
   `wait`s, because a shell defers a trap until its foreground child returns
   (a `TERM` sent to the script otherwise waited out the whole job). The
   teardown also signals this run's own act, found by the unique `-W` path.
-- **`kill -9` cannot run a trap.** So each run starts by removing containers
-  and volumes tagged `ci-local-<pid>-…` whose pid is no longer alive. It never
-  touches a live pid's tag.
+- **`kill -9` cannot run a trap.** So each run starts by removing every group
+  whose `hpac.ci.pid` is no longer alive. It never touches a live pid's group.
 - **Testcontainers** (the Postgres and S3 containers under `test`) carry no
-  tag. Ryuk removes them, with their volumes, when the test process ends, as
-  in lesson 0008; the proof below checks that none is left.
+  group label. Ryuk removes them, with their volumes, when the test process
+  ends, as in lesson 0008; the proof compares the total volume count and the
+  `org.testcontainers`-labelled containers before and after.
 - **The one deliberate exception is `act-toolcache`**, act's tool cache, shared
   by every run. It is keyed by tool and version, so it is reused, not
   regrown, and holds about 200 MB. If it ever grows without bound, this
@@ -362,10 +391,10 @@ passed or failed.
 - **Not touched**: `dev-up.sh` and every dev compose stack, and leftovers from
   runs before this change, which the owner removes.
 
-**Proof** (counts of tagged containers / volumes after each run; before each
-run there were none): a passing run, a forced-failure run, a run interrupted
-mid-job by `INT` and by `TERM`, and a run killed with `-9` (swept by the next
-run) each left zero. The pull request holds the counts.
+**Proof**: counts of the group's containers, volumes, and networks after a
+passing run, a forced-failure run, a run interrupted mid-job by `INT` and by
+`TERM`, and a run killed with `-9` (swept by the next run). The pull request
+holds the counts.
 
 ## Rejected
 

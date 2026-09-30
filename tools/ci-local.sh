@@ -58,12 +58,18 @@
 # compose) is unaffected: it keeps its fixed ports, on purpose, so the app is
 # always at the same address in development.
 #
-# Teardown, "try: work; finally: tear down": every container and volume this
-# run's act creates is deleted when the run ends, on success, failure, die,
-# INT, and TERM alike (an EXIT trap registered first; see "the teardown"
-# below). It only matches this run's ci-local-<pid>-<suffix> tag, and a run
-# also sweeps tags whose pid is dead (a kill -9). The dev stack and
-# act-toolcache are never touched.
+# Each run is one Docker group, hpac-ci-<issue>-<run> (the issue number from the
+# branch, a slug if there is none, and a short random run ID), like the dev
+# stack's `safety-report` group: its own bridge network, and every act job
+# container labelled com.docker.compose.project=<group> so Docker Desktop lists
+# them together. Two runs of one issue are two groups.
+#
+# Teardown, "try: work; finally: tear down": the group's containers, volumes,
+# and network are deleted when the run ends, on success, failure, die, INT, and
+# TERM alike (an EXIT trap registered first; see "the teardown" below). It only
+# matches this run's group, and a run also sweeps groups whose pid (label
+# hpac.ci.pid) is dead, a kill -9. The dev stack and act-toolcache are never
+# touched.
 #
 # Full logs land in artifacts/ci-local/<workflow>[-<job>].log (gitignored).
 
@@ -77,7 +83,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,68p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,74p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -157,20 +163,26 @@ git merge-base --is-ancestor origin/main HEAD \
 
 # ---------------------------------------------------------- the teardown --
 #
-# "try: do work; finally: tear down even if failed." Every test container this
-# run creates is deleted when it ends, volumes included, whether it passed,
+# "try: do work; finally: tear down even if failed." Every container, volume,
+# and network this run creates is deleted when it ends, whether it passed,
 # failed, died on a precondition, or was interrupted. The finally is the EXIT
 # trap, registered here, before anything can create a container. INT and TERM
 # route to it (exit 130 / 143), so every way out of the script runs it once.
 #
-# It is best-effort per item: no step can abort it or change the run's exit
-# status (the shell keeps the status `exit` was given). It only ever matches
-# THIS run's tag, `ci-local-$RUN_TAG`, which act puts in every job container
-# and volume name because the workflow name carries it (see "unique job
-# names"): never another parallel run's, never the dev stack's containers
-# (<worktree>-api-1, safety-report-*), which carry no such tag.
+# A run is one Docker group, hpac-ci-<issue>-<run>, the way the dev stack is
+# one `safety-report` group: its network and every act job container carry the
+# label com.docker.compose.project=<group> (which Docker Desktop groups by) and
+# hpac.ci.pid=<pid>; act's volume names carry the group name because the
+# workflow name does (see "unique job names").
+#
+# The teardown removes, best-effort per item, in this order: the group's
+# containers (docker rm -fv, so anonymous volumes go too), its volumes, its
+# network. No step can abort it or change the run's exit status (the shell keeps
+# the status `exit` was given). It only matches THIS run's group: never another
+# parallel run's, never the dev stack's containers (<worktree>-api-1,
+# safety-report-*), which carry no hpac-ci- label.
 # Testcontainers' own containers (the Postgres and S3 under `test`) carry no
-# tag: Ryuk removes them, with their volumes, when the test process ends.
+# group label: Ryuk removes them, with their volumes, when the test process ends.
 #
 # act-toolcache, act's tool cache shared across runs, is the one deliberate
 # exception: it is a cache, keyed by tool and version, that later runs reuse.
@@ -178,21 +190,23 @@ git merge-base --is-ancestor origin/main HEAD \
 # A signal reaches this shell at once only while it waits (the `wait` in
 # run_act); the run's act is signalled here too, so it stops first.
 #
-# kill -9 cannot run a trap. So the next run starts with sweep_dead(): anything
-# tagged for a pid that is no longer alive is removed before its own work.
+# kill -9 cannot run a trap. So the next run starts with sweep_dead(): every
+# group whose hpac.ci.pid is no longer alive is removed before its own work.
 
 WORK=''
-RUN_TAG=''
+GROUP=''
 WORKFLOWS=''
 
-# remove_tagged <tag>: containers, then volumes, whose names carry ci-local-<tag>.
-remove_tagged() {
-	for c in $(docker ps -aq --filter "name=ci-local-$1-" 2>/dev/null); do
+# remove_group <group>: containers, then volumes, then the network.
+remove_group() {
+	case "$1" in hpac-ci-[a-z0-9]*) ;; *) return 0 ;; esac
+	for c in $(docker ps -aq --filter "label=com.docker.compose.project=$1" 2>/dev/null); do
 		docker rm -fv "$c" >/dev/null 2>&1 || true
 	done
-	for v in $(docker volume ls -q --filter "name=ci-local-$1-" 2>/dev/null); do
+	for v in $(docker volume ls -q --filter "name=$1-" 2>/dev/null); do
 		docker volume rm -f "$v" >/dev/null 2>&1 || true
 	done
+	docker network rm "$1" >/dev/null 2>&1 || true
 }
 
 cleanup() {
@@ -202,7 +216,7 @@ cleanup() {
 		pkill -TERM -f "act pull_request -W $WORKFLOWS" 2>/dev/null
 		sleep 1
 	fi
-	[ -z "$RUN_TAG" ] || remove_tagged "$RUN_TAG"
+	[ -z "$GROUP" ] || remove_group "$GROUP"
 	[ -z "$WORK" ] || rm -rf "$WORK"
 	return 0
 }
@@ -210,14 +224,17 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# sweep_dead: remove what a run killed with SIGKILL left. Tags look like
-# ci-local-<pid>-<suffix>; a live pid's tag is never touched.
+# sweep_dead: remove what a run killed with SIGKILL left. A group is dead when
+# the pid in its hpac.ci.pid label is gone; a live pid's group is never touched.
 sweep_dead() {
 	{
-		docker ps -a --format '{{.Names}}' 2>/dev/null
-		docker volume ls -q 2>/dev/null
-	} | sed -nE 's/^act-.*ci-local-([0-9]+-[A-Za-z0-9]+)-.*$/\1/p' | sort -u | while read -r tag; do
-		kill -0 "${tag%%-*}" 2>/dev/null || remove_tagged "$tag"
+		docker network ls --format '{{.Name}} {{.Label "hpac.ci.pid"}}' 2>/dev/null
+		docker ps -a --filter label=hpac.ci.pid \
+			--format '{{.Label "com.docker.compose.project"}} {{.Label "hpac.ci.pid"}}' 2>/dev/null
+	} | while read -r group pid; do
+		case "$group" in hpac-ci-*) ;; *) continue ;; esac
+		[ -n "$pid" ] || continue
+		kill -0 "$pid" 2>/dev/null || remove_group "$group"
 	done
 }
 sweep_dead
@@ -236,7 +253,18 @@ BRANCH=$(git symbolic-ref --quiet --short HEAD || echo ci-local)
 ORIGIN_URL=$(git remote get-url origin) || die "no origin remote"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/hpac-ci-local.XXXXXX") || die "mktemp failed"
-RUN_TAG="$$-${WORK##*.}"
+# The group: hpac-ci-<issue>-<run>. <issue> is the branch's issue number, or
+# its slug; <run> is a short random ID so two runs of one issue stay apart.
+ISSUE=$(printf '%s' "$BRANCH" | sed -nE 's#^issue-([0-9]+).*#\1#p')
+[ -n "$ISSUE" ] || ISSUE=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-24 | sed -E 's/-+$//')
+[ -n "$ISSUE" ] || ISSUE=run
+RUN_ID=$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')
+GROUP="hpac-ci-$ISSUE-$RUN_ID"
+RUN_TAG="$GROUP"
+LABELS="--label com.docker.compose.project=$GROUP --label hpac.ci.pid=$$"
+# shellcheck disable=SC2086
+docker network create $LABELS "$GROUP" >/dev/null || die "cannot create the network $GROUP"
+say "Run group: $GROUP (its own network; containers and volumes carry it)"
 git bundle create -q "$WORK/head.bundle" HEAD || die "git bundle failed"
 git clone -q --no-tags "$WORK/head.bundle" "$WORK/repo" || die "git clone failed"
 git -C "$WORK/repo" checkout -q -B "$BRANCH" "$HEAD_SHA" || die "git checkout failed"
@@ -279,7 +307,7 @@ for wf in linked-issue feature-coverage terraform ci; do
 	src="$WORK/repo/.github/workflows/$wf.yml"
 	[ -f "$src" ] || continue
 	head -n 1 "$src" | grep -q '^name: ' || die "$src: expected its first line to be the workflow name"
-	sed -E "1s/^name: (.*)\$/name: \\1 (ci-local $RUN_TAG)/" "$src" > "$WORKFLOWS/$wf.yml" \
+	sed -E "1s/^name: (.*)\$/name: \\1 ($RUN_TAG)/" "$src" > "$WORKFLOWS/$wf.yml" \
 		|| die "cannot write $WORKFLOWS/$wf.yml"
 done
 
@@ -397,11 +425,13 @@ docker tag "$IMAGE" hpac-safety-act:local || die "docker tag failed"
 
 # ------------------------------------------------------------------ the run --
 #
-# act puts each job on the Docker VM's host network. Under Docker Desktop a
-# published port reaches that network a moment after the container starts, so
-# Testcontainers' first connection to Ryuk or Postgres on the gateway is
-# refused. host.docker.internal answers at once. Ryuk stays on (lesson 0008).
-# A native Linux engine needs none of this.
+# act puts each job on this run's own bridge network (--network "$GROUP", made
+# above), not the Docker VM's host network. Under Docker Desktop a published
+# port reaches a container a moment after it starts, so Testcontainers' first
+# connection to Ryuk or Postgres on the gateway is refused. host.docker.internal
+# answers at once from a bridge container too (verified). Ryuk stays on
+# (lesson 0008). A native Linux engine has no host.docker.internal; there
+# Testcontainers has not been verified on the bridge (see ADR-0145).
 
 EXTRA=''
 if [ "$(docker info --format '{{.OperatingSystem}}' 2>/dev/null)" = 'Docker Desktop' ]; then
@@ -443,6 +473,7 @@ run_act() {
 		# shellcheck disable=SC2086
 		if act pull_request -W "$WORKFLOWS/$1" ${2:+-j "$2"} \
 			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false --rm \
+			--network "$GROUP" --container-options "$LABELS" \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
 			-s GITHUB_TOKEN= -e "$EVENT" $EXTRA; then
 			echo 0 > "$STATUS"

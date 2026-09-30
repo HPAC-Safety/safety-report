@@ -45,6 +45,11 @@ jobs (`build`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`). It skips
 before, and `--job` is unchanged. See "The default run is the fast checks"
 below, which replaces "What runs" for a run without `--full`.
 
+**Amended 2026-09-30 (#694):** `ci.yml`'s `test` job runs the suites once,
+collecting coverage, and `coverage` only gates what it hands over. Under act
+the hand-over is a per-run directory the wrapper mounts at `/ci-local-share`,
+so `--full` also runs the suites once. See "The coverage hand-over" below.
+
 ## Context
 
 Two scripts, `tools/coverage-check.sh`
@@ -433,6 +438,34 @@ GitHub, in the merge queue), and it was repeated after every fix or rebase.
 
 Rejected: keeping the full run as the default and telling authors to skip it.
 An instruction that fights the default gets ignored on the day it matters.
+
+## The coverage hand-over (#694)
+
+`ci.yml` ran the .NET and JavaScript suites twice per pull request: once in
+`test`, and again in `coverage` to collect coverage.
+
+**Decision (owner, 2026-09-30): the suites run once.**
+
+- **On GitHub**: `test` runs `dotnet test` with coverlet and trx, and
+  `node --test` with lcov, then uploads `./artifacts/coverage` as the
+  `coverage-raw` artifact. `coverage` needs `test` and `e2e`, runs no test,
+  downloads it to the same path, and merges, gates, counts, and comments as
+  before.
+- **When `test` runs**: on a .NET or an e2e change, which is when `coverage`
+  runs. The work is unchanged; those tests ran in `coverage` before.
+- **A failing `test`** skips `coverage`: there is no whole report to gate,
+  and `test` failing already holds the pull request.
+- **Under act**: act's artifact server rejects the artifact actions
+  (nektos/act#6022), so the wrapper bind-mounts `$WORK/share` into every job
+  container at `/ci-local-share`. `test` copies its reports there and
+  `coverage` reads them. One directory per run, inside the run's work
+  directory, so parallel runs never read each other's and teardown removes it.
+  The per-project report count check reads the same paths as before.
+- **Temporary**, with the other act-only steps: when act ships the fix, the
+  mount and both `env.ACT` steps go, and the artifact steps run under act too.
+
+Rejected: re-running the suites in `coverage` under act only. It is simpler,
+but `--full` would keep running the suites twice.
 
 ## Rejected
 

@@ -18,6 +18,13 @@ run, and the ratchet also runs on each merge group. Further narrowed by
 that run is not always `main`'s newest, because the `coverage` job itself is
 sometimes skipped.
 
+**Amended 2026-09-30 (#694):** the `coverage` job runs no test. The `test`
+job collects the coverage as it runs the suites, once, and hands the raw
+reports over; `coverage` merges and gates them. The exclusions, the floor, the
+ratchet, and the baseline are unchanged. See
+[ADR-0145](ADR-0145-a-pull-requests-checks-run-locally-under-act.md) "The
+coverage hand-over".
+
 ## Context
 
 Coverage was documented and never measured. The `coverage` CI job existed as a

@@ -2483,6 +2483,12 @@
     "provider": "human",
     "reviewed": true
   },
+  "reports.detail.officialValue": {
+    "source_hash": "ceb79c448334f9858949cdda9b8def27fac5009b0ddbbfb82f06119fb42ec25e",
+    "target_hash": "882e4fb5b0ac8abed6e1c949c30b4aa77c643f117f60e7376db098503c05360a",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "reports.detail.private": {
     "source_hash": "c63eb6720c6e88493897548d3620d45e539d18574465f7b26fdddcbade044ee2",
     "target_hash": "15d4543db06f1805834fd2b26e782bd1d35249cfabbddf25f5bb58d5b89b1b8a",

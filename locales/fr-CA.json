@@ -466,7 +466,7 @@
       "private": "Privé",
       "notAnswered": "Sans réponse",
       "translation": "Traduction : {text}",
-      "officialValue": "#Now reads: {text}",
+      "officialValue": "Se lit désormais comme suit : {text}",
       "unpublishNote": "Note relative au retrait de la publication : {note}",
       "source": {
         "generated": "Généré par l'IA",

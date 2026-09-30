@@ -29,7 +29,7 @@ public sealed class InterimIssuerOptions
 	///     <see cref="SigningKeySecretArn" /> at cold start when one is
 	///     configured (the same <c>SecretArnResolver</c> pattern
 	///     <c>Program.cs</c> uses for the CloudFront origin secret and the
-	///     DeepL key); set directly only by a test.
+	///     Gemini key); set directly only by a test.
 	/// </summary>
 	public string? SigningKeyPem { get; set; }
 

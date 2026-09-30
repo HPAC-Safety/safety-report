@@ -87,7 +87,10 @@ resource "aws_lambda_function" "api" {
         # value from Secrets Manager themselves, at cold start (#597); see
         # this file's header comment.
         HpacSafety__Security__OriginVerification__SecretArn = aws_secretsmanager_secret.cloudfront_origin_secret.arn
-        Translation__ApiKeySecretArn                        = aws_secretsmanager_secret.this["deepl_api_key"].arn
+        # Gemini translates (ADR-0179); the DeepL key stays wired but dormant,
+        # kept so the translator can be switched back (issue #614).
+        AiChatClient__ApiKeySecretArn = aws_secretsmanager_secret.this["gemini_api_key"].arn
+        Translation__ApiKeySecretArn  = aws_secretsmanager_secret.this["deepl_api_key"].arn
       },
 
       # The temporary interim issuer (issue #648, ADR-0172) — staging only.
@@ -172,7 +175,7 @@ resource "aws_lambda_function" "worker" {
         # app-metric alarm reads.
         Metrics__Namespace = local.metric_namespace
 
-        # ARNs only — AddHpacSafetyAiChatClient and AddHpacSafetyTranslation
+        # ARNs only — AddHpacSafetyAiSummarization and AddHpacSafetyTranslation
         # each resolve their own secret's current value from Secrets Manager
         # themselves, at cold start (#597); see this file's header comment.
         AiChatClient__ApiKeySecretArn = aws_secretsmanager_secret.this["gemini_api_key"].arn

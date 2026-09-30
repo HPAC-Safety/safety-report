@@ -41,7 +41,7 @@ Core has no runtime package dependency.
 
 | Directory | Holds |
 |---|---|
-| [`src/HpacSafety.Core`](../src/HpacSafety.Core/) | Shared value types (`TinyId`, `UploadId`, `BlobKey`, `Locale`, `EnumCode`) and the ports `IBlobStore`, `IAiChatClient`, and `ITranslator`. |
+| [`src/HpacSafety.Core`](../src/HpacSafety.Core/) | Shared value types (`TinyId`, `UploadId`, `BlobKey`, `Locale`, `EnumCode`) and the ports `IBlobStore`, `IAiMediator`, and `ITranslator`. |
 | [`Features/Comments/`](../src/HpacSafety.Core/Features/Comments/) | A member's comment and its immutable revisions (ADR-0114). |
 | [`Features/Moderation/`](../src/HpacSafety.Core/Features/Moderation/) | Roles, the token identity, and the append-only audit entry (ADR-0064, ADR-0065). |
 | [`Features/Outbox/`](../src/HpacSafety.Core/Features/Outbox/) | Outbox messages and their four types (ADR-0002). |
@@ -56,7 +56,7 @@ Core has no runtime package dependency.
 | Directory | Holds |
 |---|---|
 | [`src/HpacSafety.Infrastructure`](../src/HpacSafety.Infrastructure/) | Persistence service registration. |
-| [`AiChatClient/`](../src/HpacSafety.Infrastructure/AiChatClient/) | The Gemini client and the fail-closed unconfigured client (ADR-0104). |
+| [`AiChatClient/`](../src/HpacSafety.Infrastructure/AiChatClient/) | The `IAiMediator` implementation, which picks a provider handler by the model's name, and its one handler, `GeminiHandler` for `gemini-*` models (ADR-0104, ADR-0179). |
 | [`Media/`](../src/HpacSafety.Infrastructure/Media/) | Sniffers, the Magick.NET image stripper (ADR-0025), and the ffmpeg remuxer and its verification (ADR-0094, ADR-0122). |
 | [`Observability/`](../src/HpacSafety.Infrastructure/Observability/) | `IMetricsPublisher`, writing `OutboxOldestAgeSeconds` as a CloudWatch Embedded Metric Format log line — no AWS SDK call, the one application metric this system emits (issue #467). |
 | [`Persistence/`](../src/HpacSafety.Infrastructure/Persistence/) | The `DbContext`, `MigrationRunner` (ADR-0055), the outbox claimer, and the concurrency token. |
@@ -68,7 +68,7 @@ Core has no runtime package dependency.
 | [`Persistence/Sql/`](../src/HpacSafety.Infrastructure/Persistence/Sql/) | Raw SQL the migrations load: data transforms and every view (ADR-0055, ADR-0116). |
 | [`Persistence/Views/`](../src/HpacSafety.Infrastructure/Persistence/Views/) | Read-only entities for the six views. |
 | [`Storage/`](../src/HpacSafety.Infrastructure/Storage/) | `S3BlobStore`, the one storage adapter: S3 in AWS, RustFS in development (ADR-0096, ADR-0110). |
-| [`Translation/`](../src/HpacSafety.Infrastructure/Translation/) | The DeepL translator behind `ITranslator` (ADR-0022, ADR-0115). |
+| [`Translation/`](../src/HpacSafety.Infrastructure/Translation/) | The OpenAI-compatible translator behind `ITranslator` (Gemini is the configured provider), the kept, dormant DeepL translator, the translator's own model settings, and the prompt and term list it embeds from `locales/` (ADR-0022, ADR-0179). |
 | [`Worker/`](../src/HpacSafety.Infrastructure/Worker/) | `IWorkerNudge` and its Lambda-invoking and no-op implementations, and the `SaveChangesInterceptor` that nudges only when a save queues outbox work (ADR-0123). |
 
 ## HpacSafety.Worker — outbox processing

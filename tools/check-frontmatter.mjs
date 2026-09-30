@@ -19,9 +19,10 @@ import { join, relative, sep } from 'node:path'
 const ROOT = process.cwd()
 
 // Runtime model payload. A prompt version is immutable once it has been used
-// for a summary, and frontmatter would either change what the model receives
-// or put a stripping parser on the privacy-sensitive path. ADR-0087.
-export const EXEMPT_PREFIXES = ['src/HpacSafety.Worker/Prompts/']
+// for a summary or a translation, and frontmatter would either change what the
+// model receives or put a stripping parser on the privacy-sensitive path.
+// ADR-0087; the translation prompt beside the term list, ADR-0179.
+export const EXEMPT_PREFIXES = ['src/HpacSafety.Worker/Prompts/', 'locales/translation-prompt.']
 
 export const CORE_KEYS = ['title', 'description', 'type']
 

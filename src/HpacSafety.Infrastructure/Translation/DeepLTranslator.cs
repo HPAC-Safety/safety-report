@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Infrastructure.Translation;
 
 /// <summary>
-///     DeepL, the translation provider decided in ADR-0022 and already used by the
+///     DeepL, kept dormant (ADR-0179): not registered, but compiled and tested so it can be switched back. It was the translation provider decided in ADR-0022 and used by the
 ///     CI locale workflow.
 /// </summary>
 /// <remarks>

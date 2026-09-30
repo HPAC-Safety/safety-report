@@ -37,7 +37,7 @@ export const FORBIDDEN = [
 	{ pattern: /safety-report/i, why: 'names the repository' },
 	{ pattern: /aviation|occurrence|\bpilot|pilote/i, why: 'names the product domain' },
 	{ pattern: /safety ?officer|\breporter/i, why: 'names a product role' },
-	{ pattern: /typeform|deepl|gemini|graphify|reqnroll/i, why: 'names a tool or provider this repository chose' },
+	{ pattern: /typeform|gemini|graphify|reqnroll/i, why: 'names a tool or provider this repository chose' },
 	{ pattern: /\bADR-\d/i, why: 'cites a decision record by number' },
 	{ pattern: /\blesson \d/i, why: 'cites a lesson by number' },
 	{ pattern: /\b(REQ|CON)-[A-Z]+-\d/, why: 'cites a claim by ID' },

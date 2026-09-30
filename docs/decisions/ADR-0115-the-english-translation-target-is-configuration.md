@@ -2,7 +2,7 @@
 title: The English machine-translation target is configuration
 description: DeepL has no Canadian English, so the English it writes is set by Translation:EnglishTarget in the API's and the Worker's appsettings.json, EN-US today, and startup fails on anything DeepL does not offer.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-24
 decision-makers: Chase Florell
 keywords: translation, DeepL, English, EN-US, EN-GB, configuration, ADR-0022
@@ -10,9 +10,16 @@ keywords: translation, DeepL, English, EN-US, EN-GB, configuration, ADR-0022
 
 # ADR-0115 — The English machine-translation target is configuration
 
-**Status:** Accepted. Amends
-[ADR-0022](ADR-0022-translation-provider-is-configuration.md) on one point:
-the English target code is no longer fixed in the adapter.
+**Status:** Partially superseded by
+[ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md). The `EN-US` / `EN-GB` target no longer
+governs the running system: Gemini, which is registered, writes Canadian
+English and has no English target to configure, so the API's and the Worker's
+`appsettings.json` no longer carry `Translation:EnglishTarget`. The decision
+still holds, unchanged, for the kept, dormant DeepL adapter:
+`DeepLOptions.EnglishTarget` and its startup check stay, and REQ-WLD-028 and
+REQ-WLD-029 still assert them on that adapter. Switching DeepL back means
+registering it (`AddHpacSafetyDeepLTranslation`) and putting
+`Translation:EnglishTarget` back in both `appsettings.json` files.
 
 ## Context
 

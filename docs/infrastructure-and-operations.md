@@ -83,7 +83,7 @@ flowchart LR
         nat["NAT instance<br/>fck-nat · t4g.nano<br/>1-instance ASG · recreated every release"]
     end
 
-    outside["Outside AWS<br/>identity provider · Google Gemini · DeepL"]
+    outside["Outside AWS<br/>identity provider · Google Gemini"]
 
     api -->|"report + outbox, one transaction"| rds
     api -->|"async nudge"| worker
@@ -104,9 +104,9 @@ The outbound calls, all over HTTPS through the NAT instance:
 | Caller | Calls | For |
 |---|---|---|
 | API | the identity provider's published signing keys | validating a member's token ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)) |
-| API | DeepL | an administrator's or reviewer's Translate draft ([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md), [ADR-0108](decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)) |
+| API | Google Gemini | an administrator's or reviewer's Translate draft, a separate translation call ([ADR-0179](decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md), [ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md), [ADR-0108](decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)) |
 | Worker | Google Gemini | the one summarization call per attempt ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
-| Worker | DeepL | an answer's or a comment's second language ([ADR-0112](decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md), [ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)) |
+| Worker | Google Gemini | an answer's or a comment's second language, a separate translation call ([ADR-0179](decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md), [ADR-0112](decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md), [ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)) |
 
 ### 3. How it is deployed and operated
 
@@ -191,7 +191,7 @@ How the pieces connect:
     [ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
     [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 - **Outbound calls** leave through the NAT instance: the identity provider's
-  signing keys, Gemini, and DeepL. S3 traffic stays in the VPC through the
+  signing keys and Gemini. S3 traffic stays in the VPC through the
   gateway endpoint. The NAT instance is the only resource this system ever
   deletes and recreates; every other resource is created once and updated in
   place.
@@ -386,16 +386,18 @@ supplies the value out of band, and the Lambda function's environment carries
 only that secret's ARN — a non-secret identifier — which the application
 reads itself, resolving the current value from Secrets Manager at cold start
 (`SecretArnResolver`, #597; Lambda has no built-in resolve-this-ARN mechanism
-the way the ECS agent did). Two entries exist, in both environments: the
-summarization provider's key, `AiChatClient__ApiKey`, read by the Worker via
-`AiChatClient__ApiKeySecretArn`
+the way the ECS agent did). Two entries exist, in both environments. The
+Gemini key, `AiChatClient__ApiKey`, is read by the API and the Worker via
+`AiChatClient__ApiKeySecretArn`: the Worker uses it for the summary call
 ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)),
-and DeepL's key, `Translation__ApiKey`, read by both the API and the Worker
-via `Translation__ApiKeySecretArn`
-([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-Each Lambda role may read only its own secrets: the API's role can read
-DeepL's entry and the CloudFront origin-verify secret below; the Worker's can
-read DeepL's and Gemini's (`infra/iam.tf`). The identity provider is an
+and both use it for every machine translation
+([ADR-0179](decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
+DeepL's key, `Translation__ApiKey`, stays wired to both via
+`Translation__ApiKeySecretArn` but is dormant: kept so translation can be
+switched back (issue #614).
+Each Lambda role may read only its own secrets: the API's role can read the
+Gemini and DeepL entries and the CloudFront origin-verify secret below; the
+Worker's can read the Gemini and DeepL entries (`infra/iam.tf`). The identity provider is an
 external dependency the Terraform in this directory does not create a secret
 for yet
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)

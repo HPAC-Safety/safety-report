@@ -30,7 +30,7 @@
 #    hash for re-translation exactly as it queues a missing key. ADR-0057 has
 #    i18n-translate.yml commit the French straight onto a same-repo pull
 #    request's branch, so the stub is a known, temporary state that a workflow
-#    resolves — and with no DeepL credential locally there is nothing a
+#    resolves — and with no translation credential (GEMINI_API_KEY) locally there is nothing a
 #    developer could do to satisfy the old rule except `--no-verify`, which
 #    also skipped the formatting check for a reason that had nothing to do
 #    with formatting. On main the stub is still fatal, and CI never passes
@@ -40,8 +40,8 @@
 #
 # 2. Markdown frontmatter: every tracked .md/.mdc declares its title,
 #    description, and type (ADR-0087). Only the staged markdown is checked,
-#    and the Worker's runtime prompts are exempt because their bytes are the
-#    model payload. CI's "docs" job re-checks the whole tree as a backstop for
+#    and the runtime prompts (the Worker's, and the translation prompt in
+#    locales/) are exempt because their bytes are the model payload. CI's "docs" job re-checks the whole tree as a backstop for
 #    anyone who skipped this hook — but a rule that lives only in CI is not a
 #    rule (ADR-0073), which is why it is here first.
 #    When a skill or agent is staged, the generic ones are also checked for

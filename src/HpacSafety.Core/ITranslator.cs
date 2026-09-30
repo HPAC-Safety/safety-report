@@ -20,9 +20,11 @@ namespace HpacSafety.Core;
 ///         model call, not from here.
 ///     </para>
 ///     <para>
-///         The port exists because the provider is expected to change: DeepL today,
-///         something else later, without a change reaching any caller
-///         (ADR-0033, ADR-0022).
+///         The port exists because the provider is expected to change: an
+///         OpenAI-compatible model, Gemini today (ADR-0179), with DeepL kept dormant, or something else later, without a change reaching any
+///         caller (ADR-0033, ADR-0022). It is its own call, outside the summary's
+///         "one model call, only with consent", and it receives the strings to
+///         translate and nothing else.
 ///     </para>
 /// </remarks>
 public interface ITranslator

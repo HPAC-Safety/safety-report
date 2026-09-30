@@ -44,7 +44,7 @@ public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITra
 
 		// Every answer on a report is written in the report's one submitted
 		// locale (ADR-0080), so this is one group in practice; grouping stays
-		// defensive rather than assumed, and turns N answers into one DeepL
+		// defensive rather than assumed, and turns N answers into one translation
 		// call per group instead of N.
 		foreach (var group in untranslated.GroupBy(answer => answer.Locale))
 		{

@@ -239,10 +239,9 @@ describe('the locale translation command', () => {
 
 			// When — the endpoint is deliberately unroutable: --check must never reach it
 			const { code, output } = run(['--locales', dir, '--check'], {
-				TRANSLATION_PROVIDER: 'chat-completions',
+				TRANSLATION_MODEL: 'gemini-3.7-flash',
 				TRANSLATION_ENDPOINT: 'https://translation.invalid/chat/completions',
-				TRANSLATION_MODEL: 'vendor/a-model',
-				TRANSLATION_API_KEY: 'not-a-real-key',
+				GEMINI_API_KEY: 'not-a-real-key',
 			})
 
 			// Then
@@ -407,7 +406,7 @@ describe('the command, when a listed term is rendered the forbidden way', () => 
 		'upload.cancel': {
 			source_hash: hashOf(en.upload.cancel),
 			target_hash: hashOf(fr.upload.cancel),
-			provider: 'deepl:FR-CA:prefer_more',
+			provider: 'gemini:gemini-3.7-flash',
 			reviewed: false,
 		},
 	}

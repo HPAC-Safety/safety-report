@@ -91,8 +91,10 @@ one report-flow diagram.
 Summarization makes one model call, with no second call, PII-audit call, or
 translation call. A deterministic marking pass runs before it
 ([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
-Answer and comment translation is a separate DeepL step in the Worker
-([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
+Answer and comment translation is a separate Gemini translation call in the
+Worker, outside the summary's one call (DeepL is kept, dormant)
+([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),
+[ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
 [ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
 The system has no specialized aircraft processing, application-managed field
 encryption, email-notification pipeline, server-side draft, or external
@@ -106,7 +108,7 @@ publication channel.
 | Database | PostgreSQL with EF Core |
 | Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite`; `@dnd-kit` for reordering, behind one owned component ([ADR-0059](docs/decisions/ADR-0059-dnd-kit-for-reordering.md)) |
 | Authentication | Bearer JWT from an external OAuth/OIDC provider — Auth0 or AWS Cognito, not yet chosen — with three roles read from a claim and no user records stored ([ADR-0064](docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md), [ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)). Development signs its own tokens ([ADR-0066](docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)) |
-| Summarization model | Google Gemini `gemini-3.7-flash` at reasoning `low`, paid key, behind a provider strategy chosen by the Worker's `AiChatClient:Provider` setting ([ADR-0104](docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
+| Summarization model | Google Gemini `gemini-3.7-flash` at reasoning `low`, paid key, through the `IAiMediator`, which picks the provider handler by the model's name, with no provider setting ([ADR-0104](docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
 | Attachment processing | Magick.NET re-encodes images ([ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md)); ffmpeg remuxes video as a child process, installed from Ubuntu's archive in the Worker's Dockerfile-built image ([ADR-0094](docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md), [ADR-0118](docs/decisions/ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md)) |
 | Tests | xUnit, Shouldly, Testcontainers, `node:test`, Playwright |
 | Hosting target | AWS `ca-central-1`. API and Worker on Lambda, website on S3 + CloudFront ([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)); deployed through GitHub OIDC |
@@ -150,18 +152,20 @@ To also render the graphify knowledge graph into a local Obsidian vault at
 ./init-dev.sh --obsidian
 ```
 
-`./init-dev.sh` also asks for the two private provider keys local development
-needs — `DEEPL_API_KEY` (translation) and `GEMINI_API_KEY` (summaries) — and
+`./init-dev.sh` also asks for the private provider keys local development
+needs — `GEMINI_API_KEY`, for summaries and every machine translation
+([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)),
+and `DEEPL_API_KEY`, kept dormant so DeepL can be switched back — and
 writes them to a `.env` file at the root of the primary checkout. That file is
 gitignored and never committed. `./dev-up.sh` passes it to the API and Worker
 containers, from the primary checkout and from every worktree:
 
 ```bash
-DEEPL_API_KEY=...
 GEMINI_API_KEY=...
+DEEPL_API_KEY=...
 ```
 
-Without them, translation is unavailable and summaries fail. There is no
+Without `GEMINI_API_KEY`, translation is unavailable and summaries fail. There is no
 stand-in ([ADR-0109](docs/decisions/ADR-0109-no-translation-stand-in-in-any-environment.md)).
 
 Common verification commands:

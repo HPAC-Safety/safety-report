@@ -5,6 +5,7 @@ using HpacSafety.Api.PublicReports;
 using HpacSafety.Api.RateLimiting;
 using HpacSafety.Api.Reports;
 using HpacSafety.Api.Security;
+using HpacSafety.Infrastructure.AiChatClient;
 using HpacSafety.Infrastructure.Media;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
@@ -59,23 +60,23 @@ builder.Services.AddDbContext<HpacSafetyDbContext>((provider, options) =>
 	options.AddInterceptors(provider.GetRequiredService<OutboxNudgeInterceptor>());
 });
 
-// Resolved once, here, from Secrets Manager when Terraform supplies an ARN —
-// every deployed environment; the Lambda environment carries only the ARN,
-// never the key's value. Left unset in Development and every test host,
-// where the plain Translation:ApiKey/DEEPL_API_KEY setting still applies.
-// See #597.
-var translationSection = builder.Configuration.GetSection(DeepLOptions.SectionName);
-var deepLApiKey = await SecretArnResolver.ResolveAsync(
-	translationSection[nameof(DeepLOptions.ApiKey)] ?? builder.Configuration["DEEPL_API_KEY"],
-	translationSection[nameof(DeepLOptions.ApiKeySecretArn)]).ConfigureAwait(false);
+// The Gemini key translation shares with the Worker's summary call (ADR-0104,
+// ADR-0179), resolved once, here, from Secrets Manager when Terraform supplies
+// an ARN — every deployed environment; the Lambda environment carries only the
+// ARN, never the key's value. Left unset in Development and every test host,
+// where the plain AiChatClient:ApiKey setting still applies. See #597.
+var aiChatClientSection = builder.Configuration.GetSection(AiChatClientOptions.SectionName);
+var aiChatClientApiKey = await SecretArnResolver.ResolveAsync(
+	aiChatClientSection[nameof(AiChatClientOptions.ApiKey)],
+	aiChatClientSection[nameof(AiChatClientOptions.ApiKeySecretArn)]).ConfigureAwait(false);
 builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 {
-	[$"{DeepLOptions.SectionName}:{nameof(DeepLOptions.ApiKey)}"] = deepLApiKey,
+	[$"{AiChatClientOptions.SectionName}:{nameof(AiChatClientOptions.ApiKey)}"] = aiChatClientApiKey,
 });
 
-// Machine translation for the question-authoring screen. With no credential
-// the API reports translation unavailable, in Development as everywhere else.
-// See ADR-0062, ADR-0109.
+// Machine translation for the question-authoring screen and reviewers' summary
+// drafts. With no key the API reports translation unavailable, in Development
+// as everywhere else. See ADR-0062, ADR-0109, ADR-0179.
 builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 
 // The temporary interim issuer's RSA private key (issue #648, ADR-0172):
@@ -83,7 +84,7 @@ builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 // staging only, and only when HpacSafety:Authentication:InterimIssuer:Enabled
 // is set. Left unset in Development, every test host, and production, where
 // AddHpacSafetyAuthentication never reads it. Mirrors the origin-verification
-// secret and the DeepL key above (#597).
+// secret and the Gemini key above (#597).
 var interimIssuerSection = builder.Configuration.GetSection(
 	$"{HpacAuthenticationOptions.SectionName}:InterimIssuer");
 var interimIssuerSigningKeyPem = await SecretArnResolver.ResolveAsync(

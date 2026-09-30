@@ -77,12 +77,13 @@ Only a report whose reporter consented to publication is summarized. A report
 without consent is never sent to the model, so its content never leaves Canada
 ([REQ-AI-027](ai-anonymization.feature), REQ-DOM-006).
 
-The Worker's `AiChatClient` configuration section holds the provider, its key,
-the model, and the reasoning level together. The provider is Google Gemini,
-the model `gemini-3.7-flash`, the reasoning level `low`, called with a paid key
-in every environment
+The Worker's `AiChatClient` configuration section holds the key, the model, and
+the reasoning level together, with no provider setting: the model's name picks
+the provider handler (`gemini-*` goes to Gemini, REQ-AI-030). The model is
+`gemini-3.7-flash`, the reasoning level `low`, called with a paid key in every
+environment
 ([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
-The key is never committed. An unknown provider, a blank model, or an invalid
+The key is never committed. A model no handler claims, a blank model, or an invalid
 reasoning level stops the Worker at startup rather than sending report content
 anywhere ([REQ-AI-023](ai-anonymization.feature)).
 
@@ -152,17 +153,19 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Sending a document, an attachment, or extracted document text to the model.
 - Translating report prose with the summarization model, or as a stage of
   summarization. The one call returns both languages. Giving a marked free-text
-  answer its second language is a separate Worker job through DeepL
-  ([ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+  answer its second language is a separate Worker job through the Gemini
+  translator (`ITranslator`, its own call and outside this one-call rule,
+  [ADR-0179](../../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md);
+  [ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
 - Per-sentence or per-field redaction output. The result is one bilingual pair.
 - A deterministic check of the model's output for leaked names, markers, or
   the word "redacted". The reviewer owns the final privacy decision
   ([ADR-0004](../../docs/decisions/ADR-0004-human-review-required.md)).
-- Live-model evaluation in the test suite. Every test uses a fixture client;
+- Live-model evaluation in the test suite. Every test uses a fixture mediator;
   what the model actually writes is judged by the reviewer.
-- A second provider concretion (Claude, OpenAI), a fallback provider, or a
-  Canadian-region endpoint. The provider is a strategy selected by
-  configuration, and adding one is its own decision.
+- A second provider handler (Claude, OpenAI), a fallback provider, or a
+  Canadian-region endpoint. The provider is picked by the model's name through
+  the mediator, and adding a handler is its own decision.
 - Setting a sampling temperature. Gemini 3 is run at its default.

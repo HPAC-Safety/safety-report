@@ -47,7 +47,7 @@ them into eligible `report_content` and recognition-only `private_context`
 deterministically marks any exact or token-level occurrence of a private
 value found in `report_content` (see
 [ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md))
-before `PromptDrivenSummarizer` loads the current prompt from
+before `OpenAiSummarizer` loads the current prompt from
 [`Prompts/`](Prompts/), makes exactly one model call, and validates strict
 English/French JSON. A successful attempt persists one summary row with
 shared provenance and moves the report to `PendingReview`; a failure lets
@@ -55,16 +55,17 @@ shared provenance and moves the report to `PendingReview`; a failure lets
 exhausted, moves the report to `SummaryFailed` with a content-free error for
 manual bilingual entry.
 
-The model call goes through `IAiChatClient`, a provider strategy chosen by the
-`AiChatClient` section of `appsettings.json`, which holds the provider, key,
-model, and reasoning level together: today Gemini, `gemini-3.7-flash`,
+The model call goes through `IAiMediator`, which hands it to the provider
+handler whose model-name prefix matches: `GeminiHandler` claims `gemini-*`.
+The `AiChatClient` section of `appsettings.json` holds the key, model, and
+reasoning level together, with no provider setting: today `gemini-3.7-flash`,
 reasoning `low`
 ([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 The key is never committed; set `AiChatClient__ApiKey` (docker-compose maps an
-exported `GEMINI_API_KEY` to it). With no key the fail-closed
-`UnconfiguredAiChatClient` runs and every attempt retries and then fails; with
-a key, an unknown provider, blank model, or invalid reasoning level stops the
-Worker at startup.
+exported `GEMINI_API_KEY` to it). With no key the mediator
+reports itself unconfigured, and every attempt retries and then fails; with a
+key, a model no handler claims, a blank model, or an invalid reasoning level
+stops the Worker at startup.
 
 ## Target work
 

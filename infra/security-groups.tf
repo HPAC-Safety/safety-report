@@ -17,7 +17,7 @@ resource "aws_security_group" "api" {
 
 resource "aws_vpc_security_group_egress_rule" "api_all" {
   security_group_id = aws_security_group.api.id
-  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, the identity provider, DeepL."
+  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, the identity provider, Gemini."
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }

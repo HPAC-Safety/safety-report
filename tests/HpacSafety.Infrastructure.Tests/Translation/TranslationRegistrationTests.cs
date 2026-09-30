@@ -1,4 +1,5 @@
 using HpacSafety.Core;
+using HpacSafety.Infrastructure.AiChatClient;
 using HpacSafety.Infrastructure.Translation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,17 +25,17 @@ public class TranslationRegistrationTests
 
 		// Then — registration never fails for a missing credential; the
 		// endpoint reports unavailability instead. See ADR-0062.
-		translator.ShouldBeOfType<DeepLTranslator>();
+		translator.ShouldBeOfType<OpenAiTranslator>();
 		translator.IsConfigured.ShouldBeFalse();
 	}
 
 	[Fact]
-	public void GivenKeyInTranslationSection_WhenRegistered_ThenConfigured()
+	public void GivenSummaryGeminiKey_WhenRegistered_ThenTranslationIsConfiguredByIt()
 	{
-		// Given
+		// Given — the one key of ADR-0104; there is no translation-only key
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["Translation:ApiKey"] = "abc:fx",
+			["AiChatClient:ApiKey"] = "gemini-key",
 		});
 
 		// When
@@ -42,70 +43,150 @@ public class TranslationRegistrationTests
 
 		// Then
 		translator.IsConfigured.ShouldBeTrue();
+		provider.GetRequiredService<IAiMediator>().ShouldBeOfType<AiMediator>();
 	}
 
 	[Fact]
-	public void GivenOnlyBareEnvironmentName_WhenRegistered_ThenKeyIsUsed()
+	public void GivenOnlyAKeyUnderTheOldTranslationName_WhenRegistered_ThenStillUnconfigured()
 	{
-		// Given — DEEPL_API_KEY is the name the credential already has, in
-		// repository settings and in tools/translator.mjs
+		// Given — a stale environment that still carries the retired name
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["DEEPL_API_KEY"] = "abc:fx",
+			["Translation:ApiKey"] = "abc:fx",
+			["OLD_TRANSLATION_API_KEY"] = "abc:fx",
+		});
+
+		// When / Then
+		provider.GetRequiredService<ITranslator>().IsConfigured.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenKeyAndATranslationModelNoStrategyClaims_WhenStartupValidates_ThenStartupFailsNamingTheSetting()
+	{
+		// Given — the model name alone picks the provider, so an unclaimed one is refused
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["AiChatClient:ApiKey"] = "gemini-key",
+			["Translation:Model"] = "claude-x",
 		});
 
 		// When
-		var options = provider.GetRequiredService<IOptions<DeepLOptions>>().Value;
+		var failure = Record.Exception(() => provider.GetRequiredService<IStartupValidator>().Validate());
 
 		// Then
-		options.ApiKey.ShouldBe("abc:fx");
-		provider.GetRequiredService<ITranslator>().IsConfigured.ShouldBeTrue();
+		failure.ShouldBeOfType<OptionsValidationException>().Message.ShouldContain("Translation:Model");
 	}
 
 	[Fact]
-	public void GivenBothNames_WhenRegistered_ThenExplicitSectionWins()
+	public void GivenNoKeyAndATranslationModelNoStrategyClaims_WhenStartupValidates_ThenPassesAndStaysUnavailable()
+	{
+		// Given — with no key the call is unavailable, as before, whatever the model
+		using var provider = Provider(new Dictionary<string, string?> { ["Translation:Model"] = "claude-x" });
+
+		// When / Then
+		Should.NotThrow(() => provider.GetRequiredService<IStartupValidator>().Validate());
+		provider.GetRequiredService<ITranslator>().IsConfigured.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenKeyAndNoSummaryModel_WhenStartupValidates_ThenTranslationStillStarts()
+	{
+		// Given — the API's appsettings names no summary model or reasoning level
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["AiChatClient:ApiKey"] = "gemini-key",
+		});
+
+		// When / Then
+		Should.NotThrow(() => provider.GetRequiredService<IStartupValidator>().Validate());
+	}
+
+	[Fact]
+	public void GivenNoSettings_WhenBound_ThenDefaultsToGeminiFlashAtLowReasoning()
 	{
 		// Given
-		using var provider = Provider(new Dictionary<string, string?>
-		{
-			["Translation:ApiKey"] = "explicit",
-			["DEEPL_API_KEY"] = "fallback",
-		});
-
-		// When
-		var options = provider.GetRequiredService<IOptions<DeepLOptions>>().Value;
-
-		// Then
-		options.ApiKey.ShouldBe("explicit");
-	}
-
-	[Fact]
-	public void GivenConfiguredFormality_WhenRegistered_ThenOverridesDefault()
-	{
-		// Given
-		using var provider = Provider(new Dictionary<string, string?>
-		{
-			["Translation:Formality"] = "prefer_less",
-		});
-
-		// When
-		var options = provider.GetRequiredService<IOptions<DeepLOptions>>().Value;
-
-		// Then
-		options.Formality.ShouldBe("prefer_less");
-	}
-
-	[Fact]
-	public void GivenNoFormality_WhenRegistered_ThenDefaultsToFormalForm()
-	{
-		// Given — a national association addressing pilots uses "vous"
 		using var provider = Provider(new Dictionary<string, string?>());
 
 		// When
-		var options = provider.GetRequiredService<IOptions<DeepLOptions>>().Value;
+		var options = provider.GetRequiredService<IOptions<TranslationOptions>>().Value;
 
 		// Then
-		options.Formality.ShouldBe("prefer_more");
+		options.Model.ShouldBe("gemini-3.7-flash");
+		options.ParsedReasoningEffort.ShouldBe(ReasoningEffort.Low);
+		Should.NotThrow(() => provider.GetRequiredService<IStartupValidator>().Validate());
+	}
+
+	[Fact]
+	public void GivenOwnSettings_WhenBound_ThenTheyAreRead()
+	{
+		// Given
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["Translation:Model"] = "gemini-3.5-pro",
+			["Translation:ReasoningEffort"] = "High",
+		});
+
+		// When
+		var options = provider.GetRequiredService<IOptions<TranslationOptions>>().Value;
+
+		// Then
+		options.Model.ShouldBe("gemini-3.5-pro");
+		options.ParsedReasoningEffort.ShouldBe(ReasoningEffort.High);
+	}
+
+	[Theory]
+	[InlineData("Translation:Model", "", "Translation:Model")]
+	[InlineData("Translation:Model", "   ", "Translation:Model")]
+	[InlineData("Translation:ReasoningEffort", "extreme", "Translation:ReasoningEffort")]
+	[InlineData("Translation:ReasoningEffort", "", "Translation:ReasoningEffort")]
+	[InlineData("Translation:ReasoningEffort", "7", "Translation:ReasoningEffort")]
+	public void GivenUnusableSetting_WhenStartupValidates_ThenStartupFailsNamingIt(string key,
+																				   string value,
+																				   string named)
+	{
+		// Given — key or no key: a bad model is a stream of failed translations
+		using var provider = Provider(new Dictionary<string, string?> { [key] = value });
+
+		// When
+		var failure = Record.Exception(() => provider.GetRequiredService<IStartupValidator>().Validate());
+
+		// Then
+		failure.ShouldBeOfType<OptionsValidationException>().Message.ShouldContain(named);
+	}
+
+	[Fact]
+	public void GivenWorkerRegistersBothInEitherOrder_WhenResolved_ThenOneClientIsUsed()
+	{
+		// Given
+		var settings = new Dictionary<string, string?>
+		{
+			["AiChatClient:ApiKey"] = "gemini-key",
+			["AiChatClient:Model"] = "gemini-3.7-flash",
+			["AiChatClient:ReasoningEffort"] = "low",
+		};
+		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+
+		foreach (var translationFirst in new[] { true, false })
+		{
+			var services = new ServiceCollection();
+
+			if (translationFirst)
+			{
+				services.AddHpacSafetyTranslation(configuration).AddHpacSafetyAiSummarization(configuration);
+			}
+			else
+			{
+				services.AddHpacSafetyAiSummarization(configuration).AddHpacSafetyTranslation(configuration);
+			}
+
+			// When
+			using var provider = services.BuildServiceProvider();
+
+			// Then
+			services.Count(descriptor => descriptor.ServiceType == typeof(IAiMediator)).ShouldBe(1);
+			provider.GetRequiredService<IAiMediator>().ShouldBeOfType<AiMediator>();
+			Should.NotThrow(() => provider.GetRequiredService<IStartupValidator>().Validate());
+		}
 	}
 
 	[Fact]
@@ -135,9 +216,6 @@ public class TranslationRegistrationTests
 
 	private static ServiceProvider Provider(Dictionary<string, string?> settings)
 	{
-		// Every appsettings.json names the English target (REQ-WLD-029); these
-		// tests are about the key, so they supply the committed value.
-		settings.TryAdd("Translation:EnglishTarget", "EN-US");
 		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 
 		return new ServiceCollection()
@@ -178,7 +256,7 @@ public class TranslationUnavailableExceptionTests
 	public void GivenUnderlyingFailure_WhenWrapped_ThenCauseIsKeptButNotMessage()
 	{
 		// Given
-		var underlying = new HttpRequestException("connection refused to api.deepl.com with key abc:fx");
+		var underlying = new HttpRequestException("connection refused to the provider with key abc:fx");
 
 		// When
 		var cause = new TranslationUnavailableException("The translation service could not be reached.", underlying);

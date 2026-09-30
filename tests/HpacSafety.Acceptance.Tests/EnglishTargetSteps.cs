@@ -16,7 +16,9 @@ namespace HpacSafety.Acceptance.Tests;
 ///     Canadian English, so the target comes from <c>Translation:EnglishTarget</c>
 ///     and anything DeepL does not offer stops startup. Translation goes through
 ///     the same registration the API and the Worker use, with DeepL itself
-///     replaced by a transport that records the request.
+///     replaced by a transport that records the request. DeepL is kept, dormant
+///     (ADR-0179): the API and the Worker register Gemini, so this goes through
+///     the DeepL registration that is kept beside it.
 /// </summary>
 [Binding]
 [Scope(Feature = "Web, localization, and design")]
@@ -78,7 +80,7 @@ public sealed class EnglishTargetSteps : IDisposable
 		}
 
 		var services = new ServiceCollection()
-			.AddHpacSafetyTranslation(new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
+			.AddHpacSafetyDeepLTranslation(new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
 		services.AddSingleton<IHttpClientFactory>(new TransportFactory(_transport));
 		return services.BuildServiceProvider();
 	}

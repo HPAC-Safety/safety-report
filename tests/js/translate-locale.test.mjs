@@ -17,7 +17,6 @@ import {
 	termEntries,
 	termInstructions,
 	termViolations,
-	MAX_TERM_INSTRUCTIONS,
 } from '../../tools/translate-locale.mjs'
 
 /** The smallest English set that still has a nested shape. */
@@ -590,7 +589,7 @@ describe('placeholders in a translated string', () => {
 						meta: {},
 						plan,
 						translations: new Map([['admin.queue', 'Affichage des rapports']]),
-						provider: 'deepl:FR-CA:prefer_more',
+						provider: 'gemini:gemini-3.7-flash',
 					}),
 				/\{count\}/,
 			)
@@ -609,7 +608,7 @@ describe('placeholders in a translated string', () => {
 				meta: {},
 				plan,
 				translations: new Map([['admin.queue', 'sur {total}, {count}']]),
-				provider: 'deepl:FR-CA:prefer_more',
+				provider: 'gemini:gemini-3.7-flash',
 			})
 
 			// Then
@@ -622,7 +621,7 @@ describe('given an English value edited after it was translated', () => {
 	it('when the problems are classified then it is pending, because a workflow re-translates it (ADR-0057)', () => {
 		// Given — French is present and looks current, but the English moved
 		const source = { nav: { contact: 'Contact us' } }
-		const meta = { 'nav.contact': { source_hash: 'a-hash-of-the-old-english', provider: 'deepl:FR-CA:prefer_more' } }
+		const meta = { 'nav.contact': { source_hash: 'a-hash-of-the-old-english', provider: 'gemini:gemini-3.7-flash' } }
 
 		// When
 		const result = verifyLocales({ english: source, french: { nav: { contact: 'Nous joindre' } }, meta, glossary: {} })
@@ -707,7 +706,7 @@ describe('a French value edited by hand', () => {
 	const french = { nav: { contact: 'Nous joindre' } }
 
 	/** A stamp as a real generate would leave it. */
-	const stampFor = (en, fr, provider = 'deepl:FR-CA:prefer_more') => ({
+	const stampFor = (en, fr, provider = 'gemini:gemini-3.7-flash') => ({
 		'nav.contact': { source_hash: hashOf(en), target_hash: hashOf(fr), provider, reviewed: false },
 	})
 
@@ -810,7 +809,7 @@ describe('a French value edited by hand', () => {
 		it('when the key is classified then it is unknown, so nothing new is asserted about it', () => {
 			// Given — every key in the repository looked like this before #215
 			const state = classifyKey({
-				stamp: { source_hash: hashOf('Contact us'), provider: 'deepl:FR-CA:prefer_more' },
+				stamp: { source_hash: hashOf('Contact us'), provider: 'gemini:gemini-3.7-flash' },
 				english: 'Contact us',
 				french: 'anything at all',
 			})
@@ -824,7 +823,7 @@ describe('a French value edited by hand', () => {
 			const result = verifyLocales({
 				english,
 				french,
-				meta: { 'nav.contact': { source_hash: hashOf('Contact us'), provider: 'deepl:FR-CA:prefer_more' } },
+				meta: { 'nav.contact': { source_hash: hashOf('Contact us'), provider: 'gemini:gemini-3.7-flash' } },
 				glossary: {},
 			})
 
@@ -843,7 +842,7 @@ describe('recording a correction', () => {
 			'nav.contact': {
 				source_hash: hashOf('Contact us'),
 				target_hash: hashOf('Nous joindre'),
-				provider: 'deepl:FR-CA:prefer_more',
+				provider: 'gemini:gemini-3.7-flash',
 				reviewed: false,
 			},
 		}
@@ -1020,33 +1019,37 @@ describe('the instructions a translator is given', () => {
 			// Given / When
 			const [instruction, ...rest] = termInstructions(uploadTerm())
 
-			// Then
+			// Then — the exact sentence the .NET translator builds from the same file
 			assert.deepEqual(rest, [])
-			assert.match(instruction, /"upload"/)
-			assert.match(instruction, /"téléverser"/)
-			assert.match(instruction, /never use "télécharg…"/)
+			assert.equal(
+				instruction,
+				'"upload" (English, in any form) is "téléverser" in French, conjugated or as a noun to fit. Never "télécharg…" in French.',
+			)
 		})
 	})
 
-	describe('given an instruction longer than the translator accepts', () => {
-		it('when they are built then it refuses rather than sending one the provider would reject', () => {
+	describe('given a term with several forbidden forms', () => {
+		it('when they are built then every one is named', () => {
 			// Given
-			const terms = { upload: { 'fr-CA': 'téléverser', forbidden: Array.from({ length: 40 }, (_, index) => `forme${index}`) } }
+			const terms = { report: { 'fr-CA': 'signalement', forbidden: ['rapport', 'article'] } }
 
-			// When / Then
-			assert.throws(() => termInstructions(terms), /at most 300/)
+			// When
+			const [instruction] = termInstructions(terms)
+
+			// Then
+			assert.match(instruction, /Never "rapport…" or "article…" in French\./)
 		})
 	})
 
-	describe('given more terms than the translator accepts', () => {
-		it('when they are built then it refuses rather than dropping one silently', () => {
+	describe('given many long terms', () => {
+		it('when they are built then none is dropped, because Gemini has no ceiling', () => {
 			// Given
 			const terms = Object.fromEntries(
-				Array.from({ length: MAX_TERM_INSTRUCTIONS + 1 }, (_, index) => [`term${index}`, { 'fr-CA': 'x', forbidden: ['y'] }]),
+				Array.from({ length: 25 }, (_, index) => [`term${index}`, { 'fr-CA': 'x', forbidden: Array.from({ length: 40 }, (_, n) => `forme${n}`) }]),
 			)
 
 			// When / Then
-			assert.throws(() => termInstructions(terms), /at most 10/)
+			assert.equal(termInstructions(terms).length, 25)
 		})
 	})
 })

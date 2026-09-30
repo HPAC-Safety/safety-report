@@ -445,7 +445,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[When(@"that member requests a translation")]
 	public async Task WhenThatMemberRequestsATranslation()
 	{
-		// The booted host has no DeepL key, and there is no stand-in
+		// The booted host has no Gemini key, and there is no stand-in
 		// (ADR-0109), so a stub answers in the provider's place. This scenario
 		// is about who may ask, not about the provider.
 		await using var host = (await BootedApi.Factory()).WithWebHostBuilder(builder =>

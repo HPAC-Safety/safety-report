@@ -62,8 +62,8 @@ resource "aws_subnet" "private" {
 # URL, API to RDS) keeps working because none of that path traverses it.
 #
 # Egress is needed at all because the API validates a member's token against
-# the identity provider's published signing keys and calls DeepL, and the
-# Worker calls Gemini and DeepL. The S3 gateway endpoint below covers uploads
+# the identity provider's published signing keys and calls Gemini to
+# translate, and the Worker calls Gemini to summarize and translate. The S3 gateway endpoint below covers uploads
 # traffic; there is no endpoint for somebody else's public API.
 #
 # fck-nat (t4g.nano) instead of aws_nat_gateway: roughly $4/month — the

@@ -157,13 +157,13 @@ Scenario: French that renders a listed term the forbidden way fails verification
   And it fails whether a machine or a person wrote that French
 
 @REQ-WLD-027
-Scenario: The machine translator is told the required rendering of every listed term
+Scenario: The CI translator is told the required rendering of every listed term
   Given the term list requires "upload" to be rendered "téléverser", never "télécharg…"
-  When a translation request is built for DeepL or for a chat-completions provider
-  Then the request instructs the provider to render "upload" as "téléverser" and never "télécharg…"
+  When a translation request is built for the CI translator
+  Then the request instructs the model to render "upload" as "téléverser" and never "télécharg…"
 
 @REQ-WLD-028
-Scenario Outline: French is machine-translated into the English the configuration names
+Scenario Outline: The kept, dormant DeepL adapter translates French into the English the configuration names
   Given the translation settings name <setting> as the English target
   When French text is sent to DeepL to be translated into English
   Then the request asks DeepL for French to <code>
@@ -174,7 +174,7 @@ Examples:
   | EN-GB   | EN-GB |
 
 @REQ-WLD-029
-Scenario Outline: A translator with no usable English target refuses to start
+Scenario Outline: The kept, dormant DeepL adapter with no usable English target refuses to start
   Given the translation settings name <setting> as the English target
   When the translator's settings are validated at startup
   Then startup fails, naming the Translation:EnglishTarget setting
@@ -184,6 +184,115 @@ Examples:
   | nothing |
   | EN-CA   |
   | EN      |
+
+@REQ-WLD-033
+Scenario: French is machine-translated into Canadian English
+  Given a Gemini key is configured
+  When French text is translated into English
+  Then the prompt asks for Canadian English, with Canadian spelling
+  And the request names no American or British English
+
+@REQ-WLD-034
+Scenario: English is machine-translated into Canadian French
+  Given a Gemini key is configured
+  When English text is translated into French
+  Then the prompt asks for Canadian French
+
+@REQ-WLD-035
+Scenario: Every runtime translation is told the required rendering of every listed term
+  Given a Gemini key is configured
+  And the committed term list requires "upload" to be rendered "téléverser", never "télécharg…"
+  When text is translated in either direction
+  Then the prompt instructs the model to render "upload" as "téléverser" and never "télécharg…"
+
+@REQ-WLD-036
+Scenario: With no Gemini key translation is unavailable, in every environment
+  Given no Gemini key is configured, in Development or anywhere else
+  When text is translated
+  Then translation is refused rather than echoed back
+  And no request is sent to any provider
+  And the translator reports itself unconfigured
+
+@REQ-WLD-037
+Scenario: A translation request carries the strings and nothing else, and they come back in order
+  Given a Gemini key is configured
+  And three strings to translate
+  When they are translated
+  Then one request is sent, and its only report-derived content is those three strings
+  And the translations come back in the order given, one for each string
+
+@REQ-WLD-038
+Scenario Outline: A reply that is not one clean translation per string is refused
+  Given a Gemini key is configured
+  And the model replies with <reply>
+  When two strings are translated
+  Then translation is refused
+  And the failure carries nothing the model replied with
+
+Examples:
+  | reply                           |
+  | one translation                 |
+  | three translations              |
+  | an empty translation            |
+  | a sentence instead of the JSON  |
+
+@REQ-WLD-039
+Scenario Outline: Placeholders and markup survive the round trip, or the reply is refused
+  Given a Gemini key is configured
+  And a string with a {count} placeholder and a <b>bold</b> tag
+  When the model replies with a translation that <change>
+  Then the result is <result>
+
+Examples:
+  | change                    | result                                |
+  | keeps both                | the translation, with both intact     |
+  | renames the placeholder   | a refusal that carries no reply text  |
+  | drops the bold tag        | a refusal that carries no reply text  |
+
+@REQ-WLD-040
+Scenario Outline: Translation has its own model and reasoning setting
+  Given a Gemini key is configured
+  And the Translation settings name <model> as the model and <effort> as the reasoning effort
+  When the host starts
+  Then <outcome>
+
+Examples:
+  | model            | effort  | outcome                                                       |
+  | nothing          | nothing | translation asks for gemini-3.7-flash at low reasoning        |
+  | gemini-3.5-pro   | high    | translation asks for gemini-3.5-pro at high reasoning         |
+  | blank            | low     | startup fails, naming the Translation:Model setting           |
+  | gemini-3.7-flash | extreme | startup fails, naming the Translation:ReasoningEffort setting |
+
+@REQ-WLD-041
+Scenario: Translation uses the same Gemini key as summaries
+  Given the summary call's Gemini key is configured
+  And no translation-only key exists
+  When the API or the Worker translates text
+  Then the request is authorized with that key
+
+@REQ-WLD-042
+Scenario: Translation's model name picks its provider, apart from the summary's
+  Given a Gemini key is configured
+  And the Translation settings name gemini-3.5-pro as the model and low as the reasoning effort
+  When text is translated
+  Then the request goes to Gemini's OpenAI-compatible endpoint
+  And translation asks for gemini-3.5-pro at low reasoning
+  And no setting names a provider
+
+@REQ-WLD-043
+Scenario: A translation model no provider handler claims stops startup when a key is held
+  Given a Gemini key is configured
+  And the Translation settings name claude-x as the model and low as the reasoning effort
+  When the host starts
+  Then startup fails, naming the Translation:Model setting
+
+@REQ-WLD-044
+Scenario: With no key, a translation model no provider handler claims leaves translation unavailable
+  Given no Gemini key is configured, in Development or anywhere else
+  And the Translation settings name claude-x as the model and low as the reasoning effort
+  When the host starts
+  Then translation is refused
+  And no request is sent to any provider
 
 @REQ-WLD-014
 Scenario: Question content comes from the bilingual database revision

@@ -84,7 +84,7 @@ The Worker requests the configured model at the configured reasoning level — *
 
 ### REQ-AI-023
 
-A Worker holding a key refuses to start with an unusable provider configuration — *Reqnroll, Covered*
+A Worker holding a key refuses to start with an unusable model configuration — *Reqnroll, Covered*
 
 ### REQ-AI-024
 
@@ -101,6 +101,10 @@ A private yes/no answer is never a marking candidate — *Reqnroll, Covered*
 ### REQ-AI-029
 
 A yes/no answer reaches the model as true or false, never as words — *Reqnroll, Covered*
+
+### REQ-AI-030
+
+The summary's model name picks the provider — *Reqnroll, Covered*
 
 ## Claims: comments
 
@@ -2784,15 +2788,15 @@ French that renders a listed term the forbidden way fails verification — *Reqn
 
 ### REQ-WLD-027
 
-The machine translator is told the required rendering of every listed term — *Reqnroll, Covered*
+The CI translator is told the required rendering of every listed term — *Reqnroll, Covered*
 
 ### REQ-WLD-028
 
-French is machine-translated into the English the configuration names — *Reqnroll, Covered*
+The kept, dormant DeepL adapter translates French into the English the configuration names — *Reqnroll, Covered*
 
 ### REQ-WLD-029
 
-A translator with no usable English target refuses to start — *Reqnroll, Covered*
+The kept, dormant DeepL adapter with no usable English target refuses to start — *Reqnroll, Covered*
 
 ### REQ-WLD-030
 
@@ -2805,6 +2809,54 @@ Switching the language toggle never changes the host — *playwright-bdd, Covere
 ### REQ-WLD-032
 
 Following a link to another page starts that page at its top, on every page — *playwright-bdd, Covered*
+
+### REQ-WLD-033
+
+French is machine-translated into Canadian English — *Reqnroll, Covered*
+
+### REQ-WLD-034
+
+English is machine-translated into Canadian French — *Reqnroll, Covered*
+
+### REQ-WLD-035
+
+Every runtime translation is told the required rendering of every listed term — *Reqnroll, Covered*
+
+### REQ-WLD-036
+
+With no Gemini key translation is unavailable, in every environment — *Reqnroll, Covered*
+
+### REQ-WLD-037
+
+A translation request carries the strings and nothing else, and they come back in order — *Reqnroll, Covered*
+
+### REQ-WLD-038
+
+A reply that is not one clean translation per string is refused — *Reqnroll, Covered*
+
+### REQ-WLD-039
+
+Placeholders and markup survive the round trip, or the reply is refused — *Reqnroll, Covered*
+
+### REQ-WLD-040
+
+Translation has its own model and reasoning setting — *Reqnroll, Covered*
+
+### REQ-WLD-041
+
+Translation uses the same Gemini key as summaries — *Reqnroll, Covered*
+
+### REQ-WLD-042
+
+Translation's model name picks its provider, apart from the summary's — *Reqnroll, Covered*
+
+### REQ-WLD-043
+
+A translation model no provider handler claims stops startup when a key is held — *Reqnroll, Covered*
+
+### REQ-WLD-044
+
+With no key, a translation model no provider handler claims leaves translation unavailable — *Reqnroll, Covered*
 
 ## Constraints
 

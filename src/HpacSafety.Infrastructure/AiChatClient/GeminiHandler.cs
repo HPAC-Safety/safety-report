@@ -8,19 +8,21 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Infrastructure.AiChatClient;
 
 /// <summary>
-///     Google Gemini, the first reviewed <see cref="IAiChatClient" /> concretion,
-///     reached through its OpenAI-compatible chat-completions endpoint rather than
-///     a Gemini-specific SDK — the port is already shaped to that spec, so no
-///     translation layer sits between the two.
+///     The handler for Google Gemini models (<c>gemini-*</c>), the first reviewed
+///     <see cref="IAiHandler" />, reached through Gemini's OpenAI-compatible
+///     chat-completions endpoint rather than a Gemini-specific SDK — the request is
+///     already shaped to that spec, so no translation layer sits between the two.
 /// </summary>
 /// <remarks>
-///     This is the only type in the repository that talks to Gemini. Everything
-///     above it depends on <see cref="IAiChatClient" />. It sends the reasoning level
-///     as <c>reasoning_effort</c>, which Gemini maps to its thinking level, and asks
-///     for a JSON object response; it never sends a temperature, because Google
-///     recommends leaving Gemini 3 at its default (ADR-0104).
+///     This is the only type in the repository that talks to Gemini. Everything above
+///     it depends on <see cref="IAiMediator" />. It sends the reasoning level, when one is
+///     given, as <c>reasoning_effort</c>, which Gemini maps to its thinking level, and a JSON
+///     object response format when one is asked for; it never sends a temperature, because
+///     Google recommends leaving Gemini 3 at its default (ADR-0104). The key is the one
+///     <c>AiChatClient:ApiKey</c> every handler shares; <c>AiChatClient:Endpoint</c>
+///     overrides the default endpoint.
 /// </remarks>
-public sealed class GeminiChatClient : IAiChatClient
+public sealed class GeminiHandler : IAiHandler
 {
 	/// <summary>The named <see cref="HttpClient" /> this resolves.</summary>
 	public const string HttpClientName = "gemini";
@@ -28,22 +30,28 @@ public sealed class GeminiChatClient : IAiChatClient
 	private const string DefaultEndpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 	private readonly IHttpClientFactory _clients;
-	private readonly AiChatClientOptions _options;
+	private readonly Func<AiChatClientOptions> _options;
 
-	/// <summary>Creates the client.</summary>
+	/// <summary>Creates the handler.</summary>
 	/// <param name="clients">Supplies the named HTTP client.</param>
-	/// <param name="options">Provider configuration.</param>
-	public GeminiChatClient(IHttpClientFactory clients,
-							IOptions<AiChatClientOptions> options)
+	/// <param name="options">
+	///     Reads the provider configuration when a call is made, not at construction, so the
+	///     startup validators can ask which models this handler claims while the options
+	///     are still being bound.
+	/// </param>
+	public GeminiHandler(IHttpClientFactory clients,
+						 Func<AiChatClientOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
 		_clients = clients;
-		_options = options.Value;
+		_options = options;
 	}
 
 	/// <inheritdoc />
-	public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
+	public string ModelPrefix => "gemini-";
+
+	private bool IsConfigured => !string.IsNullOrWhiteSpace(_options().ApiKey);
 
 	/// <inheritdoc />
 	public async Task<string> Complete(AiChatRequest request,
@@ -53,21 +61,21 @@ public sealed class GeminiChatClient : IAiChatClient
 
 		if (!IsConfigured)
 		{
-			throw new AiChatClientUnavailableException("No AI chat provider is configured and approved for use.");
+			throw new AiMediatorUnavailableException("No AI chat provider is configured and approved for use.");
 		}
 
 		var body = new GeminiRequest(
 			request.Model,
 			[.. request.Messages.Select(ToGeminiMessage)],
-			ToReasoningEffort(request.ReasoningEffort),
-			new GeminiResponseFormat("json_object"));
+			request.ReasoningEffort is { } effort ? ToReasoningEffort(effort) : null,
+			request.ResponseFormat == AiResponseFormat.JsonObject ? new GeminiResponseFormat("json_object") : null);
 
 		GeminiResponse? payload;
 
 		try
 		{
 			using var client = _clients.CreateClient(HttpClientName);
-			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options().ApiKey);
 
 			using var response = await client
 				.PostAsJsonAsync(ResolvedEndpoint(), body, cancellationToken)
@@ -77,8 +85,8 @@ public sealed class GeminiChatClient : IAiChatClient
 			{
 				// The status only. A provider error body is not something this
 				// exception's message is a safe place to carry — see
-				// AiChatClientUnavailableException's own remarks.
-				throw new AiChatClientUnavailableException(
+				// AiMediatorUnavailableException's own remarks.
+				throw new AiMediatorUnavailableException(
 					$"The AI chat provider answered {(int)response.StatusCode}.");
 			}
 
@@ -88,11 +96,11 @@ public sealed class GeminiChatClient : IAiChatClient
 		}
 		catch (HttpRequestException cause)
 		{
-			throw new AiChatClientUnavailableException("The AI chat provider could not be reached.", cause);
+			throw new AiMediatorUnavailableException("The AI chat provider could not be reached.", cause);
 		}
 		catch (JsonException cause)
 		{
-			throw new AiChatClientUnavailableException("The AI chat provider returned something unreadable.", cause);
+			throw new AiMediatorUnavailableException("The AI chat provider returned something unreadable.", cause);
 		}
 
 		var choices = payload?.Choices;
@@ -100,7 +108,7 @@ public sealed class GeminiChatClient : IAiChatClient
 
 		if (string.IsNullOrWhiteSpace(content))
 		{
-			throw new AiChatClientUnavailableException("The AI chat provider returned no completion.");
+			throw new AiMediatorUnavailableException("The AI chat provider returned no completion.");
 		}
 
 		return content;
@@ -109,7 +117,8 @@ public sealed class GeminiChatClient : IAiChatClient
 	/// <summary>The configured host, unless the default OpenAI-compatible endpoint applies.</summary>
 	private string ResolvedEndpoint()
 	{
-		return string.IsNullOrWhiteSpace(_options.Endpoint) ? DefaultEndpoint : _options.Endpoint;
+		var endpoint = _options().Endpoint;
+		return string.IsNullOrWhiteSpace(endpoint) ? DefaultEndpoint : endpoint;
 	}
 
 	private static GeminiMessage ToGeminiMessage(ChatMessage message)
@@ -132,10 +141,10 @@ public sealed class GeminiChatClient : IAiChatClient
 		[property: JsonPropertyName("model")] string Model,
 		[property: JsonPropertyName("messages")]
 		IReadOnlyList<GeminiMessage> Messages,
-		[property: JsonPropertyName("reasoning_effort")]
-		string ReasoningEffort,
-		[property: JsonPropertyName("response_format")]
-		GeminiResponseFormat ResponseFormat);
+		[property: JsonPropertyName("reasoning_effort"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+		string? ReasoningEffort,
+		[property: JsonPropertyName("response_format"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+		GeminiResponseFormat? ResponseFormat);
 
 	private sealed record GeminiResponseFormat(
 		[property: JsonPropertyName("type")] string Type);

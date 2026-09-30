@@ -12,10 +12,12 @@ The contract is `AGENTS.md` invariants 3 and 4. This skill is its detail.
 - One versioned prompt, exactly one model call per attempt, only when the
   reporter consented to publication. A report without consent never reaches the
   model (REQ-AI-027).
-- The call goes through `IAiChatClient`, a provider strategy chosen by the
-  Worker's `AiChatClient` section (`Provider`, `ApiKey`, `Model`,
-  `ReasoningEffort`). Today: Gemini at reasoning `low`, temperature at its
-  default
+- `OpenAiSummarizer` makes the call through `IAiMediator`, which picks the
+  provider handler by the model's name; the Worker's `AiChatClient` section
+  holds `ApiKey`, `Model`, and `ReasoningEffort`, and no provider. Today:
+  `gemini-*` goes to `GeminiHandler` at reasoning `low`, temperature at its
+  default. Translation is the mediator's other caller, a separate call outside
+  this one-call rule (ADR-0179)
   ([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 
 ## Input

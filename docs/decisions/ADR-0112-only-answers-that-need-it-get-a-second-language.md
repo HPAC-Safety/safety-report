@@ -10,6 +10,8 @@ keywords: translation, answers, DeepL, ITranslator, worker, choices, question ba
 
 # ADR-0112 — Only answers that need it get a second language; a picker's comes from its choice
 
+**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
+
 **Status:** Accepted; partially superseded by
 [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md),
 under which a yes/no or checkbox answer takes its fixed counterpart at

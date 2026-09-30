@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
-import { useLocale } from "../i18n/useLocale"
-import { ApiError } from "../api/adminQuestions"
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useLocale } from "../i18n/useLocale";
+import { ApiError } from "../api/adminQuestions";
 import {
 	consentKey,
 	deleteReport,
@@ -13,16 +13,19 @@ import {
 	type ReportAnswer,
 	type ReportAnswerValue,
 	type ReportDetail,
-} from "../api/adminReports"
-import { AttachmentStrip } from "../components/AttachmentStrip"
-import { ReportBadges } from "../components/ReportBadges"
-import { ReviewActions } from "../components/ReviewActions"
-import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
-import { sortChoices } from "../lib/sortChoices"
-import type { Locale } from "../i18n/locales"
-import { DeleteReportDialog } from "../components/DeleteReportDialog"
-import { PrivateNotes } from "../components/PrivateNotes"
-import { PrivateAttachments, usePrivateAttachments } from "../components/PrivateAttachments"
+} from "../api/adminReports";
+import { AttachmentStrip } from "../components/AttachmentStrip";
+import { ReportBadges } from "../components/ReportBadges";
+import { ReviewActions } from "../components/ReviewActions";
+import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer";
+import { sortChoices } from "../lib/sortChoices";
+import type { Locale } from "../i18n/locales";
+import { DeleteReportDialog } from "../components/DeleteReportDialog";
+import { PrivateNotes } from "../components/PrivateNotes";
+import {
+	PrivateAttachments,
+	usePrivateAttachments,
+} from "../components/PrivateAttachments";
 
 /*
  * One report as a reviewer judges it: every question as it was asked, with
@@ -33,65 +36,72 @@ import { PrivateAttachments, usePrivateAttachments } from "../components/Private
  * (ADR-0105). Loading this page is an audited read.
  */
 export function ReportDetailPage() {
-	const { t, locale } = useLocale()
-	const { reportId = "" } = useParams()
-	const navigate = useNavigate()
-	const [report, setReport] = useState<ReportDetail | null>(null)
-	const [error, setError] = useState<string | null>(null)
-	const [stale, setStale] = useState(false)
-	const [busy, setBusy] = useState(false)
-	const [confirmingDelete, setConfirmingDelete] = useState(false)
-	const [reloads, setReloads] = useState(0)
-	const privateAttachments = usePrivateAttachments(reportId)
+	const { t, locale } = useLocale();
+	const { reportId = "" } = useParams();
+	const navigate = useNavigate();
+	const [report, setReport] = useState<ReportDetail | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const [stale, setStale] = useState(false);
+	const [busy, setBusy] = useState(false);
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
+	const [reloads, setReloads] = useState(0);
+	const privateAttachments = usePrivateAttachments(reportId);
 
 	const reload = useCallback(() => {
-		setStale(false)
-		setError(null)
-		setReloads((count) => count + 1)
-	}, [])
+		setStale(false);
+		setError(null);
+		setReloads((count) => count + 1);
+	}, []);
 
 	/** Runs one review command and shows its result; false when it was refused. */
 	async function run(
-		command: (current: ReportDetail) =>
-			Promise<ReportDetail>,
+		command: (current: ReportDetail) => Promise<ReportDetail>,
 	): Promise<boolean> {
-		if (!report) return false
-		setBusy(true)
-		setError(null)
+		if (!report) return false;
+		setBusy(true);
+		setError(null);
 		try {
-			setReport(await command(report))
-			return true
+			setReport(await command(report));
+			return true;
 		} catch (cause) {
 			if (cause instanceof ApiError && cause.type === STALE_REPORT) {
-				setStale(true)
+				setStale(true);
 			} else {
-				setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
+				setError(
+					cause instanceof ApiError
+						? cause.detail
+						: t("reports.error.unexpected"),
+				);
 			}
-			return false
+			return false;
 		} finally {
-			setBusy(false)
+			setBusy(false);
 		}
 	}
 
 	async function remove() {
-		setConfirmingDelete(false)
-		setBusy(true)
+		setConfirmingDelete(false);
+		setBusy(true);
 		try {
-			await deleteReport(reportId)
-			navigate("/admin/reports")
+			await deleteReport(reportId);
+			navigate("/admin/reports");
 		} catch (cause) {
-			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
+			setError(
+				cause instanceof ApiError
+					? cause.detail
+					: t("reports.error.unexpected"),
+			);
 		} finally {
-			setBusy(false)
+			setBusy(false);
 		}
 	}
 
 	useEffect(() => {
-		let current = true
+		let current = true;
 		getReport(reportId)
 			.then((loaded) => {
 				if (current) {
-					setReport(loaded)
+					setReport(loaded);
 				}
 			})
 			.catch((cause: unknown) => {
@@ -102,32 +112,47 @@ export function ReportDetailPage() {
 							: cause instanceof ApiError
 								? cause.detail
 								: t("reports.error.unexpected"),
-					)
+					);
 				}
-			})
+			});
 		return () => {
-			current = false
-		}
-	}, [reportId, t, reloads])
+			current = false;
+		};
+	}, [reportId, t, reloads]);
 
-	const at = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
-	const label = (answer: ReportAnswer) => (locale === "fr-CA" ? answer.labelFr : answer.labelEn)
+	const at = new Intl.DateTimeFormat(locale, {
+		dateStyle: "medium",
+		timeStyle: "short",
+	});
+	const label = (answer: ReportAnswer) =>
+		locale === "fr-CA" ? answer.labelFr : answer.labelEn;
 
 	return (
 		<main className="mx-auto max-w-4xl px-6 py-12">
-			<Link to="/admin/reports" className="font-sans text-sm text-ink underline">
+			<Link
+				to="/admin/reports"
+				className="font-sans text-sm text-ink underline"
+			>
 				{t("reports.detail.back")}
 			</Link>
-			<h1 className="mt-4 font-display text-3xl font-bold">{t("reports.detail.title")}</h1>
+			<h1 className="mt-4 font-display text-3xl font-bold">
+				{t("reports.detail.title")}
+			</h1>
 
 			{error && (
-				<p role="alert" className="mt-6 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
+				<p
+					role="alert"
+					className="mt-6 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink"
+				>
 					{error}
 				</p>
 			)}
 
 			{stale && (
-				<div role="alert" className="mt-6 flex flex-wrap items-center gap-3 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
+				<div
+					role="alert"
+					className="mt-6 flex flex-wrap items-center gap-3 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink"
+				>
 					<p>{t("reports.stale.message")}</p>
 					<button
 						type="button"
@@ -139,34 +164,60 @@ export function ReportDetailPage() {
 				</div>
 			)}
 
-			{confirmingDelete && <DeleteReportDialog onConfirm={() => void remove()} onKeep={() => setConfirmingDelete(false)} />}
+			{confirmingDelete && (
+				<DeleteReportDialog
+					onConfirm={() => void remove()}
+					onKeep={() => setConfirmingDelete(false)}
+				/>
+			)}
 
-			{!report && !error && <p className="mt-8 font-sans text-ink-muted">{t("reports.loading")}</p>}
+			{!report && !error && (
+				<p className="mt-8 font-sans text-ink-muted">{t("reports.loading")}</p>
+			)}
 
 			{report && (
 				<>
 					<div className="mt-4 flex flex-col gap-2">
-						<ReportBadges status={report.status} consent={report.consent} isStuck={report.isStuck} />
+						<ReportBadges
+							status={report.status}
+							consent={report.consent}
+							isStuck={report.isStuck}
+						/>
 						{report.status === "published" && (
-							<Link to={`/reports/${report.id}`} className="font-sans text-sm text-ink underline" data-public-link>
+							<Link
+								to={`/reports/${report.id}`}
+								className="font-sans text-sm text-ink underline"
+								data-public-link
+							>
 								{t("reports.detail.publicPage")}
 							</Link>
 						)}
 						<p className="font-sans text-sm text-ink-muted">
-							{t("reports.submittedAt", { at: at.format(new Date(report.submittedAt)) })}
+							{t("reports.submittedAt", {
+								at: at.format(new Date(report.submittedAt)),
+							})}
 						</p>
 						<p className="font-sans text-sm text-ink-muted">
 							{t(`reports.detail.language.${report.language}`)}
 						</p>
-						<p className="font-sans text-sm text-ink-muted">{t(`reports.detail.consent.${consentKey(report.consent)}`)}</p>
+						<p className="font-sans text-sm text-ink-muted">
+							{t(`reports.detail.consent.${consentKey(report.consent)}`)}
+						</p>
 						{report.attachments.length > 0 && (
-							<p className="font-sans text-sm text-ink-muted" data-media-consent>
-								{t(`reports.detail.mediaConsent.${consentKey(report.mediaConsent)}`)}
+							<p
+								className="font-sans text-sm text-ink-muted"
+								data-media-consent
+							>
+								{t(
+									`reports.detail.mediaConsent.${consentKey(report.mediaConsent)}`,
+								)}
 							</p>
 						)}
 						{report.unpublishNote && (
 							<p className="font-sans text-sm text-ink" data-unpublish-note>
-								{t("reports.detail.unpublishNote", { note: report.unpublishNote })}
+								{t("reports.detail.unpublishNote", {
+									note: report.unpublishNote,
+								})}
 							</p>
 						)}
 					</div>
@@ -176,75 +227,121 @@ export function ReportDetailPage() {
 						report={report}
 						busy={busy}
 						onSave={(en, fr, sourceEn, sourceFr) =>
-							run((current) => saveSummaryPair(current.id, current.version, en, fr, sourceEn, sourceFr))
+							run((current) =>
+								saveSummaryPair(
+									current.id,
+									current.version,
+									en,
+									fr,
+									sourceEn,
+									sourceFr,
+								),
+							)
 						}
-						onPublish={() => void run((current) => publishReport(current.id, current.version))}
-						onUnpublish={(note) => run((current) => unpublishReport(current.id, current.version, note))}
+						onPublish={() =>
+							void run((current) => publishReport(current.id, current.version))
+						}
+						onUnpublish={(note) =>
+							run((current) =>
+								unpublishReport(current.id, current.version, note),
+							)
+						}
 						onDelete={() => setConfirmingDelete(true)}
 					/>
 
 					{/* A report without consent is never summarized, so it has no summary panel (REQ-DOM-006). */}
 					{report.consent === true && (
-					<section aria-labelledby="summary-heading" className="mt-10">
-						<h2 id="summary-heading" className="font-display text-2xl font-bold">
-							{t("reports.detail.summary")}
-						</h2>
-						{report.summaryError && (
-							<p className="mt-4 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
-								{t("reports.detail.summaryFailed", { error: report.summaryError })}
-							</p>
-						)}
-						{report.summary ? (
-							<>
-								<div className="mt-4 grid gap-4 md:grid-cols-2">
-									<article lang="en-CA" className="rounded border border-rule bg-surface p-4">
-										<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
-											{t("reports.detail.summaryEn")}
-										</h3>
-										<p className="mt-1 font-sans text-xs text-ink-muted" data-source="en">
-											{t(`reports.detail.source.${report.summary.sourceEn}`)}
-										</p>
-										<p className="mt-2 whitespace-pre-line font-sans text-ink" data-summary="en">
-											{report.summary.aiSummaryEn}
-										</p>
-									</article>
-									<article lang="fr-CA" className="rounded border border-rule bg-surface p-4">
-										<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
-											{t("reports.detail.summaryFr")}
-										</h3>
-										<p className="mt-1 font-sans text-xs text-ink-muted" data-source="fr">
-											{t(`reports.detail.source.${report.summary.sourceFr}`)}
-										</p>
-										<p className="mt-2 whitespace-pre-line font-sans text-ink" data-summary="fr">
-											{report.summary.aiSummaryFr}
-										</p>
-									</article>
-								</div>
-								<p className="mt-3 font-sans text-sm text-ink-muted" data-provenance>
-									{t("reports.detail.provenance", {
-										model: report.summary.model,
-										prompt: report.summary.promptVersion,
-										at: at.format(new Date(report.summary.generatedAt)),
+						<section aria-labelledby="summary-heading" className="mt-10">
+							<h2
+								id="summary-heading"
+								className="font-display text-2xl font-bold"
+							>
+								{t("reports.detail.summary")}
+							</h2>
+							{report.summaryError && (
+								<p className="mt-4 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
+									{t("reports.detail.summaryFailed", {
+										error: report.summaryError,
 									})}
 								</p>
-								<p className="font-sans text-sm text-ink-muted">
-									{report.summary.approvedAt
-										? t("reports.detail.approved", { at: at.format(new Date(report.summary.approvedAt)) })
-										: t("reports.detail.notApproved")}
-								</p>
-							</>
-						) : (
-							!report.summaryError && (
-								<p className="mt-4 font-sans text-ink-muted" data-no-summary>
-									{t("reports.detail.noSummary")}
-								</p>
-							)
-						)}
-					</section>
+							)}
+							{report.summary ? (
+								<>
+									<div className="mt-4 grid gap-4 md:grid-cols-2">
+										<article
+											lang="en-CA"
+											className="rounded border border-rule bg-surface p-4"
+										>
+											<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
+												{t("reports.detail.summaryEn")}
+											</h3>
+											<p
+												className="mt-1 font-sans text-xs text-ink-muted"
+												data-source="en"
+											>
+												{t(`reports.detail.source.${report.summary.sourceEn}`)}
+											</p>
+											<p
+												className="mt-2 whitespace-pre-line font-sans text-ink"
+												data-summary="en"
+											>
+												{report.summary.aiSummaryEn}
+											</p>
+										</article>
+										<article
+											lang="fr-CA"
+											className="rounded border border-rule bg-surface p-4"
+										>
+											<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
+												{t("reports.detail.summaryFr")}
+											</h3>
+											<p
+												className="mt-1 font-sans text-xs text-ink-muted"
+												data-source="fr"
+											>
+												{t(`reports.detail.source.${report.summary.sourceFr}`)}
+											</p>
+											<p
+												className="mt-2 whitespace-pre-line font-sans text-ink"
+												data-summary="fr"
+											>
+												{report.summary.aiSummaryFr}
+											</p>
+										</article>
+									</div>
+									<p
+										className="mt-3 font-sans text-sm text-ink-muted"
+										data-provenance
+									>
+										{t("reports.detail.provenance", {
+											model: report.summary.model,
+											prompt: report.summary.promptVersion,
+											at: at.format(new Date(report.summary.generatedAt)),
+										})}
+									</p>
+									<p className="font-sans text-sm text-ink-muted">
+										{report.summary.approvedAt
+											? t("reports.detail.approved", {
+													at: at.format(new Date(report.summary.approvedAt)),
+												})
+											: t("reports.detail.notApproved")}
+									</p>
+								</>
+							) : (
+								!report.summaryError && (
+									<p className="mt-4 font-sans text-ink-muted" data-no-summary>
+										{t("reports.detail.noSummary")}
+									</p>
+								)
+							)}
+						</section>
 					)}
 
 					<section aria-labelledby="answers-heading" className="mt-10">
-						<h2 id="answers-heading" className="font-display text-2xl font-bold">
+						<h2
+							id="answers-heading"
+							className="font-display text-2xl font-bold"
+						>
 							{t("reports.detail.answers")}
 						</h2>
 						<dl className="mt-4 flex flex-col gap-4">
@@ -266,32 +363,46 @@ export function ReportDetailPage() {
 										)}
 									</dt>
 									{answer.values.length === 0 ? (
-										<dd className="mt-1 font-sans text-ink-muted">{t("reports.detail.notAnswered")}</dd>
+										<dd className="mt-1 font-sans text-ink-muted">
+											{t("reports.detail.notAnswered")}
+										</dd>
 									) : (
 										listedValues(answer, locale).map((value, index) => (
 											<dd key={index} className="mt-1 font-sans text-ink">
 												{isLanguageNeutral(answer.type) ? (
-													<span className="whitespace-pre-line">{formatAnswer(answer.type, value.value, locale, t)}</span>
+													<span className="whitespace-pre-line">
+														{formatAnswer(answer.type, value.value, locale, t)}
+													</span>
 												) : (
-													<span lang={value.locale} className="whitespace-pre-line">
+													<span
+														lang={value.locale}
+														className="whitespace-pre-line"
+													>
 														{value.value}
 													</span>
 												)}
-												{value.translatedValue && !isLanguageNeutral(answer.type) && (
-													<span
-														lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
-														className="mt-1 block whitespace-pre-line text-sm text-ink-muted"
-													>
-														{t("reports.detail.translation", { text: value.translatedValue })}
-													</span>
-												)}
+												{value.translatedValue &&
+													!isLanguageNeutral(answer.type) && (
+														<span
+															lang={
+																value.locale === "fr-CA" ? "en-CA" : "fr-CA"
+															}
+															className="mt-1 block whitespace-pre-line text-sm text-ink-muted"
+														>
+															{t("reports.detail.translation", {
+																text: value.translatedValue,
+															})}
+														</span>
+													)}
 												{value.officialValue && (
 													<span
 														lang={value.locale}
 														className="mt-1 block whitespace-pre-line text-sm text-ink-muted"
 														data-official-value
 													>
-														{t("reports.detail.officialValue", { text: value.officialValue })}
+														{t("reports.detail.officialValue", {
+															text: value.officialValue,
+														})}
 													</span>
 												)}
 											</dd>
@@ -302,14 +413,22 @@ export function ReportDetailPage() {
 						</dl>
 					</section>
 
-					<AttachmentStrip reportId={report.id} media={[]} staffAttachments={report.attachments} onChanged={reload} />
+					<AttachmentStrip
+						reportId={report.id}
+						media={[]}
+						staffAttachments={report.attachments}
+						onChanged={reload}
+					/>
 
 					<PrivateAttachments reportId={report.id} state={privateAttachments} />
-					<PrivateNotes reportId={report.id} attachments={privateAttachments.attachments ?? []} />
+					<PrivateNotes
+						reportId={report.id}
+						attachments={privateAttachments.attachments ?? []}
+					/>
 				</>
 			)}
 		</main>
-	)
+	);
 }
 
 /**
@@ -318,18 +437,27 @@ export function ReportDetailPage() {
  * reader's language, then pinned last (ADR-0136). Any other answer's are kept
  * as stored.
  */
-function listedValues(answer: ReportAnswer, locale: Locale): ReportAnswerValue[] {
-	if (answer.type !== "multi_select") return answer.values
+function listedValues(
+	answer: ReportAnswer,
+	locale: Locale,
+): ReportAnswerValue[] {
+	if (answer.type !== "multi_select") return answer.values;
 	// Sorted by the choice's current official wording, even though what is shown
 	// is the reporter's own account (ADR-0175) — order tracks the form's live list,
-	// not what any one reporter happened to see.
+	// not what any one reporter happened to see. The official value is in the
+	// answer's own language, so it only stands in when that is the reader's.
 	const inReadersLanguage = (value: ReportAnswerValue) =>
 		String(
-			value.officialValue ?? (value.locale === locale ? value.value : (value.translatedValue ?? value.value)),
-		)
+			value.locale === locale
+				? (value.officialValue ?? value.value)
+				: (value.translatedValue ?? value.value),
+		);
 	return sortChoices(
-		answer.values.map((value, index) => ({ ...value, id: String(index).padStart(4, "0") })),
+		answer.values.map((value, index) => ({
+			...value,
+			id: String(index).padStart(4, "0"),
+		})),
 		locale,
 		inReadersLanguage,
-	)
+	);
 }

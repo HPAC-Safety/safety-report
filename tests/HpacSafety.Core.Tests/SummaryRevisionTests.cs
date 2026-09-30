@@ -294,6 +294,44 @@ public class SummaryRevisionTests
 		report.Summary.IsApproved.ShouldBeFalse();
 	}
 
+	[Fact]
+	public void GivenOnlyFrenchEdited_WhenSaved_ThenFrenchIsHumanAndEnglishStaysGenerated()
+	{
+		// Given
+		var report = Pending();
+
+		// When
+		report.EditSummary(report.Summary!.AiSummaryEn, "Le pilote s'est posé fermement.", "subject-a", Later);
+
+		// Then
+		report.Summary.Latest.SourceEn.ShouldBe(SummaryTextSource.Generated);
+		report.Summary.Latest.SourceFr.ShouldBe(SummaryTextSource.Human);
+	}
+
+	[Fact]
+	public void GivenBlankEnglish_WhenSaved_ThenRefusedAndNoRevisionIsAdded()
+	{
+		// Given
+		var report = Pending();
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => report.EditSummary(" ", "Texte.", "subject-a", Later));
+		report.Summary!.Revisions.Count.ShouldBe(1);
+	}
+
+	[Fact]
+	public void GivenPendingReportWithNoSummary_WhenRolledBack_ThenRefusedBecauseThereIsNothingToRestore()
+	{
+		// Given
+		var report = new Report(Locale.EnCa, Now);
+		report.BeginSummarizing();
+		report.AwaitReview();
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => report.RollBackSummary(TinyId.New(), "subject-a", Later))
+			.Message.ShouldContain("no summary pair");
+	}
+
 	private static Report Failed()
 	{
 		var report = new Report(Locale.EnCa, Now);

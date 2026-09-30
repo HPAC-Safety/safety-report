@@ -29,8 +29,8 @@ data "aws_iam_policy_document" "lambda_assume" {
 }
 
 # Scoped to each function's OWN secrets, not every entry in secrets.tf's map:
-# DeepL is read by both the API (translation drafts) and the Worker (an
-# answer's or a comment's second language); Gemini only by the Worker; the
+# Gemini is read by both the API (translation drafts) and the Worker (the
+# summary call, and an answer's or a comment's second language, ADR-0179); the
 # CloudFront origin-verify secret only by the API (secrets.tf). Each function
 # resolves its own value itself, by ARN, at cold start (SecretArnResolver,
 # #597) — granting a function read access to a secret it never opens would
@@ -43,7 +43,7 @@ data "aws_iam_policy_document" "api_function_secrets_read" {
     actions = ["secretsmanager:GetSecretValue"]
     resources = concat(
       [
-        aws_secretsmanager_secret.this["deepl_api_key"].arn,
+        aws_secretsmanager_secret.this["gemini_api_key"].arn,
         aws_secretsmanager_secret.cloudfront_origin_secret.arn,
       ],
       # The temporary interim issuer's signing key (issue #648, ADR-0172) —
@@ -59,7 +59,6 @@ data "aws_iam_policy_document" "worker_function_secrets_read" {
     effect  = "Allow"
     actions = ["secretsmanager:GetSecretValue"]
     resources = [
-      aws_secretsmanager_secret.this["deepl_api_key"].arn,
       aws_secretsmanager_secret.this["gemini_api_key"].arn,
     ]
   }

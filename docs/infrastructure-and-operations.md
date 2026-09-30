@@ -386,16 +386,16 @@ supplies the value out of band, and the Lambda function's environment carries
 only that secret's ARN — a non-secret identifier — which the application
 reads itself, resolving the current value from Secrets Manager at cold start
 (`SecretArnResolver`, #597; Lambda has no built-in resolve-this-ARN mechanism
-the way the ECS agent did). Two entries exist, in both environments: the
-summarization provider's key, `AiChatClient__ApiKey`, read by the Worker via
-`AiChatClient__ApiKeySecretArn`
+the way the ECS agent did). One vendor entry exists, in both environments:
+the Gemini key, `AiChatClient__ApiKey`, read by the API and the Worker via
+`AiChatClient__ApiKeySecretArn`. The Worker uses it for the summary call
 ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)),
-and DeepL's key, `Translation__ApiKey`, read by both the API and the Worker
-via `Translation__ApiKeySecretArn`
-([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-Each Lambda role may read only its own secrets: the API's role can read
-DeepL's entry and the CloudFront origin-verify secret below; the Worker's can
-read DeepL's and Gemini's (`infra/iam.tf`). The identity provider is an
+and both use it for every machine translation
+([ADR-0179](decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
+The DeepL entry is retired by a `removed` block in `infra/secrets.tf`.
+Each Lambda role may read only its own secrets: the API's role can read the
+Gemini entry and the CloudFront origin-verify secret below; the Worker's can
+read the Gemini entry (`infra/iam.tf`). The identity provider is an
 external dependency the Terraform in this directory does not create a secret
 for yet
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)
@@ -412,7 +412,7 @@ routing token is the sole value this system lets Terraform both originate
 (with `random_password`) and hold in Terraform state
 ([ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
 [ADR-0163](decisions/ADR-0163-the-cloudfront-origin-secret-is-terraform-generated.md)).
-Gemini, DeepL, and the database credentials above are unaffected and stay out
+Gemini and the database credentials above are unaffected and stay out
 of state, exactly as this constraint otherwise requires. The exception is
 narrow for three reasons: CloudFront's own distribution configuration holds
 this value in its `origin.custom_header` argument regardless of how the value

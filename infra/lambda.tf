@@ -13,7 +13,7 @@
 # itself, by ARN, at cold start, exactly the way DatabaseConnectionStringResolver
 # reads the RDS-managed master-user secret (#443/#465): SecretArnResolver in
 # HpacSafety.Infrastructure does the same for the CloudFront origin-verify
-# secret (API) and the Gemini and DeepL keys (Worker), so none of their
+# secret (API) and the Gemini key (API and Worker), so none of their
 # VALUES ever touches Terraform state, a GitHub secret beyond the one human
 # puts into Secrets Manager once, or the Lambda environment (#597). Nothing
 # else writes `environment` any more — the deploy workflow only ever updates
@@ -83,11 +83,11 @@ resource "aws_lambda_function" "api" {
         HpacSafety__Worker__Nudge__FunctionName = aws_lambda_function.worker.function_name
 
         # ARNs only — OriginVerificationServiceCollectionExtensions and
-        # AddHpacSafetyTranslation each resolve their own secret's current
-        # value from Secrets Manager themselves, at cold start (#597); see
-        # this file's header comment.
+        # Program.cs (the Gemini key translation reuses, ADR-0179) each
+        # resolve their own secret's current value from Secrets Manager
+        # themselves, at cold start (#597); see this file's header comment.
         HpacSafety__Security__OriginVerification__SecretArn = aws_secretsmanager_secret.cloudfront_origin_secret.arn
-        Translation__ApiKeySecretArn                        = aws_secretsmanager_secret.this["deepl_api_key"].arn
+        AiChatClient__ApiKeySecretArn                       = aws_secretsmanager_secret.this["gemini_api_key"].arn
       },
 
       # The temporary interim issuer (issue #648, ADR-0172) — staging only.
@@ -172,11 +172,10 @@ resource "aws_lambda_function" "worker" {
         # app-metric alarm reads.
         Metrics__Namespace = local.metric_namespace
 
-        # ARNs only — AddHpacSafetyAiChatClient and AddHpacSafetyTranslation
-        # each resolve their own secret's current value from Secrets Manager
-        # themselves, at cold start (#597); see this file's header comment.
+        # ARN only — Program.cs resolves the Gemini key's current value from
+        # Secrets Manager itself, at cold start (#597), for the summary call
+        # and for translation alike (ADR-0179); see this file's header comment.
         AiChatClient__ApiKeySecretArn = aws_secretsmanager_secret.this["gemini_api_key"].arn
-        Translation__ApiKeySecretArn  = aws_secretsmanager_secret.this["deepl_api_key"].arn
       }
     )
   }

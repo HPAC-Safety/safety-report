@@ -76,12 +76,27 @@ locals {
   secret_entries = {
     gemini_api_key = {
       name        = "${local.name}/gemini-api-key"
-      description = "AiChatClient__ApiKey, read by the Worker itself at cold start via AiChatClient__ApiKeySecretArn (#597). The paid Gemini key it uses for the one summarization model call per attempt (ADR-0104). Same value in both environments for now (issue #30)."
+      description = "AiChatClient__ApiKey, read by the API and the Worker themselves at cold start via AiChatClient__ApiKeySecretArn (#597). The paid Gemini key used for the Worker's one summarization model call per attempt (ADR-0104) and for every machine translation, API and Worker alike (ADR-0179). Same value in both environments for now (issue #30)."
     }
-    deepl_api_key = {
-      name        = "${local.name}/deepl-api-key"
-      description = "Translation__ApiKey, read by the API and the Worker themselves at cold start via Translation__ApiKeySecretArn (#597). Used for question/summary translation drafts (ADR-0062, ADR-0108) and an answer's or a comment's second language (ADR-0080, ADR-0114). Same value in both environments for now (issue #30)."
-    }
+  }
+}
+
+# The DeepL key's entry is retired (issue #614, ADR-0179): Gemini translates
+# with the key above. prevent_destroy on aws_secretsmanager_secret.this refuses
+# a plain removal from secret_entries, so the entry is first moved out of the
+# for_each resource, then removed with destroy = true. Where the entry was
+# never created, both blocks are no-ops. Delete both once every environment has
+# applied them.
+moved {
+  from = aws_secretsmanager_secret.this["deepl_api_key"]
+  to   = aws_secretsmanager_secret.retired_deepl_api_key
+}
+
+removed {
+  from = aws_secretsmanager_secret.retired_deepl_api_key
+
+  lifecycle {
+    destroy = true
   }
 }
 

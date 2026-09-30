@@ -133,8 +133,8 @@ Repository-level (not environment) settings, read by
 - Admin on the GitHub repository.
 - The Gemini API key (paid,
   [ADR-0104](../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md))
-  and a DeepL API key. Staging uses its own copies; for now they hold the same
-  values as production's.
+  (it serves summaries and every translation, ADR-0179). Staging uses its own
+  copy; for now it holds the same value as production's.
 - Nothing else: staging needs no DNS, no certificate, and no alarm inbox.
 
 ### 2.1 GitHub environment
@@ -193,13 +193,12 @@ Repository-level (not environment) settings, read by
 - [Environments → `hpac-safety-staging` → Environment secrets](https://github.com/HPAC-Safety/safety-report/settings/environments):
   ```sh
   gh secret set GEMINI_API_KEY --repo HPAC-Safety/safety-report --env hpac-safety-staging
-  gh secret set DEEPL_API_KEY  --repo HPAC-Safety/safety-report --env hpac-safety-staging
   ```
-- Each release copies them into the account's Secrets Manager; never enter
-  them in AWS by hand.
+- Each release copies it into the account's Secrets Manager; never enter
+  it in AWS by hand.
 - Check it worked:
   `gh secret list --repo HPAC-Safety/safety-report --env hpac-safety-staging`
-  lists both.
+  lists it.
 
 ### 2.5 First staging release
 
@@ -229,7 +228,7 @@ Repository-level (not environment) settings, read by
 - Someone who can edit DNS at the **hpac.ca** host, and someone who can at the
   **acvl.ca** host. They may be different organisations; allow days.
 - Access to the `safety@hpac.ca` inbox.
-- The Gemini and DeepL keys for production.
+- The Gemini key for production.
 
 ### 3.1 GitHub environment
 
@@ -275,11 +274,10 @@ Repository-level (not environment) settings, read by
 
 - ```sh
   gh secret set GEMINI_API_KEY --repo HPAC-Safety/safety-report --env hpac-safety-production
-  gh secret set DEEPL_API_KEY  --repo HPAC-Safety/safety-report --env hpac-safety-production
   ```
 - Check it worked:
   `gh secret list --repo HPAC-Safety/safety-report --env hpac-safety-production`
-  lists both.
+  lists it.
 
 ### 3.5 First production deploy
 

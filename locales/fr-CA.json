@@ -212,10 +212,10 @@
     }
   },
   "unsavedChanges": {
-    "title": "#Leave without saving?",
-    "body": "#You have unsaved changes on this form. If you leave now, they will not be saved here.",
-    "leave": "#Leave",
-    "stay": "#Stay"
+    "title": "Partir sans enregistrer?",
+    "body": "Vous avez des modifications non enregistrées dans ce formulaire. Si vous quittez maintenant, elles ne seront pas enregistrées ici.",
+    "leave": "Congé",
+    "stay": "Restez"
   },
   "notFound": {
     "title": "Page introuvable",

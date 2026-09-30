@@ -236,11 +236,11 @@ async function disableAutoLoad(page: Page) {
 When("a visitor scrolls to the end of the list", async ({ page }) => {
 	await page.goto("/reports")
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
-	const sentinel = page.locator("[data-infinite-scroll-sentinel]")
-	// A short synthetic list may already sit within the viewport, so the
-	// sentinel can auto-load before this ever scrolls it into view — that is
-	// still the behaviour under test, so a sentinel already gone is fine.
-	await sentinel.scrollIntoViewIfNeeded().catch(() => {})
+	// Scroll the window to the bottom, as a visitor does. A short synthetic list
+	// may already sit within the viewport and auto-load first, unmounting the
+	// sentinel; waiting on the sentinel itself would then wait out the whole
+	// test timeout for an element that never returns (issue no. 672).
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 })
 
 Then("the older reports load without a page change or an address change", async ({ page }) => {

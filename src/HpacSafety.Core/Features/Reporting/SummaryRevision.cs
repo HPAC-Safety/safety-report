@@ -111,7 +111,7 @@ public class SummaryRevision
 
 	internal void Delete(DateTimeOffset at)
 	{
-		Deleted ??= at;
+		Deleted = at;
 	}
 
 	private static string NotBlank(string text)

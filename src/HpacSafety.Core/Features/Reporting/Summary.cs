@@ -201,7 +201,7 @@ public class Summary
 	/// <summary>Stamps this summary and its revisions deleted, as part of its report's soft deletion (REQ-DOM-007).</summary>
 	internal void Delete(DateTimeOffset at)
 	{
-		Deleted ??= at;
+		Deleted = at;
 
 		foreach (var revision in _revisions)
 		{

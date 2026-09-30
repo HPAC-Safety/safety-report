@@ -155,8 +155,10 @@ The public report DTO is read from the `public_reports` view, never from the
 tables. The view states the whole publication invariant in SQL, including
 nonblank summary texts. Its columns are the allowlist plus three non-public
 columns: `id`, `ai_summary_en`, `ai_summary_fr`, `published_at`,
-`comment_count`, `submitted_at`, `public_attachment_count`, and
-`full_attachment_count`. So a public query cannot reach a column the view does
+`comment_count`, `submitted_at`, `public_attachment_count`,
+`full_attachment_count`, and `language` — the locale the reporter wrote the
+report in, which only a report's own page serializes, never the feed
+(ADR-0176). So a public query cannot reach a column the view does
 not carry. The API picks whichever attachment count fits the viewer's role —
 `public_attachment_count` mirrors `public_report_media`'s own predicate
 directly, rather than joining that view, to avoid a circular view reference

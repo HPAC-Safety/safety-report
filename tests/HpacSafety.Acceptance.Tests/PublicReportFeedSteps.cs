@@ -40,7 +40,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	private const string Feed = "/api/v1/public/reports";
 
 	private static readonly string[] Allowlist =
-		["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount", "attachmentCount", "media", "staffAttachments"];
+		["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount", "attachmentCount", "language", "media", "staffAttachments"];
 
 	private readonly List<string> _publishable = [];
 	private readonly List<string> _hidden = [];
@@ -61,6 +61,15 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			ReportStatus.Published,
 			true,
 			report => report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, DateTimeOffset.UtcNow));
+	}
+
+	[Given(@"^a report written in (French|English) has been published$")]
+	public async Task GivenAReportWrittenInALanguageHasBeenPublished(string written)
+	{
+		seeded.Id = await BootedReports.Seed(
+			ReportStatus.Published,
+			true,
+			language: written == "French" ? Locale.FrCa : Locale.EnCa);
 	}
 
 	[Given(@"a published report has one public attachment and one attachment only staff may see")]
@@ -302,7 +311,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer")]
+	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer")]
 	public async Task ThenTheResponseIsExactlyTheAllowlist()
 	{
 		var body = await Body();
@@ -318,7 +327,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			.ShouldAllBe(item => item.GetProperty("format").ValueKind == JsonValueKind.Null);
 	}
 
-	[Then(@"it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records")]
+	[Then(@"it never contains question keys, labels, answers, consent values, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records")]
 	public async Task ThenItNeverContainsAnythingElse()
 	{
 		var raw = (await Body()).GetRawText();
@@ -330,11 +339,24 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		raw.ShouldNotContain("synthetic-approver");
 		raw.ShouldNotContain("gemini");
 		raw.ShouldNotContain("summarize-anonymize");
-		raw.ShouldNotContain("en-CA");
 		raw.ShouldNotContain("image/");
 		raw.ShouldNotContain("launch-site");
 		raw.ShouldNotContain("stripped");
 		raw.ShouldNotContain("original");
+	}
+
+	[Then(@"the response's language is ""(.*)""")]
+	public async Task ThenTheResponsesLanguageIs(string code)
+	{
+		(await Body()).GetProperty("language").GetString().ShouldBe(code);
+	}
+
+	[Then(@"no feed item carries a language")]
+	public void ThenNoFeedItemCarriesALanguage()
+	{
+		var items = _pages.SelectMany(page => page.GetProperty("items").EnumerateArray()).ToList();
+		items.ShouldNotBeEmpty();
+		items.Any(item => item.EnumerateObject().Any(property => property.Name == "language")).ShouldBeFalse();
 	}
 
 	[Then(@"the response is a deterministic paginated list containing only publishable reports")]

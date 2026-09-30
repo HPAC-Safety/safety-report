@@ -579,8 +579,8 @@ Scenario: Publication requires every guard to pass, with no bypass
 Scenario: The public DTO exposes only the approved summary and its metadata
   Given a report is published
   When the public API returns it
-  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
-  And it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
+  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
+  And it never contains question keys, labels, answers, consent values, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-150
 Scenario: The feed's attachment count is the public count for a visitor and the full count for staff
@@ -1214,6 +1214,54 @@ Scenario: A report's address opens it directly and survives a reload
   Then the page shows that report's full summary
   When the page reloads
   Then the page still shows that report's full summary
+
+@REQ-MOD-190
+@ui
+Scenario Outline: A published report page says its summary was translated from the other language the report was written in
+  Given a report written in <written> is published
+  When a visitor opens its page with the site in <shown>
+  Then the page shows the muted label "<label>"
+
+Examples:
+  | written | shown   | label                     |
+  | French  | English | Translated from French    |
+  | English | French  | Traduit de l'anglais      |
+
+@REQ-MOD-191
+@ui
+Scenario Outline: A published report page shows no translation label when the site's language is the one the report was written in
+  Given a report written in <written> is published
+  When a visitor opens its page with the site in <shown>
+  Then the page shows no translation label
+
+Examples:
+  | written | shown   |
+  | English | English |
+  | French  | French  |
+
+@REQ-MOD-192
+@ui
+Scenario: The translation label follows the header's language toggle without a reload
+  Given a report written in French is published
+  And a visitor has its page open with the site in English
+  Then the page shows the muted label "Translated from French"
+  When the visitor switches the site's language
+  Then the page shows no translation label
+  When the visitor switches the site's language
+  Then the page shows the muted label "Translated from French"
+
+@REQ-MOD-193
+Scenario Outline: A published report's own page carries the language it was written in, and the feed does not
+  Given a report written in <written> has been published
+  When the public API returns the report
+  Then the response's language is "<code>"
+  When the public feed is queried
+  Then no feed item carries a language
+
+Examples:
+  | written | code  |
+  | French  | fr-CA |
+  | English | en-CA |
 
 @REQ-MOD-081
 @ui

@@ -17,7 +17,10 @@ type Loaded = { state: "loading" } | { state: "ready"; report: PublicReportDetai
  * agreed to share them, follow the summary (ADR-0117). A signed-in
  * Administrator or Safety Officer sees a same-tab link to this report's admin
  * detail page, next to the published date; the public payload carries nothing
- * for it — only the token's role decides (REQ-MOD-164, REQ-MOD-165).
+ * for it — only the token's role decides (REQ-MOD-164, REQ-MOD-165). When the
+ * report was written in the other official language than the one showing, a
+ * muted label says the summary was translated from it; it follows the header's
+ * language toggle and is absent when the two match (REQ-MOD-190..192, ADR-0176).
  */
 export function PublicReportPage() {
 	const { t, locale } = useLocale()
@@ -67,6 +70,11 @@ export function PublicReportPage() {
 					<p className="mt-2 font-sans text-sm text-ink-muted">
 						{t("feed.publishedAt", { at: published.format(new Date(loaded.report.publishedAt)) })}
 					</p>
+					{loaded.report.language !== locale && (
+						<p className="mt-1 font-sans text-sm text-ink-muted" data-translated-from={loaded.report.language}>
+							{t(`feed.translatedFrom.${loaded.report.language}`)}
+						</p>
+					)}
 					{isReviewer && (
 						<Link
 							to={`/admin/reports/${loaded.report.id}`}

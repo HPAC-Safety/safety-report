@@ -414,6 +414,18 @@ own. To read the other language, the visitor switches the site's language.
 The locale is edge state, not extra report data. The admin report view links to a published report's public
 address.
 
+A report's own page also says when its summary was translated: a muted line
+under the published date, "Translated from French" or "Translated from
+English" (French: "Traduit du français" or "Traduit de l'anglais"), shown only
+when the language the reporter wrote the report in differs from the site's
+current language. It follows the header's language toggle without a reload and
+is absent when the two match (#682, REQ-MOD-190 to REQ-MOD-193,
+[ADR-0176](../../docs/decisions/ADR-0176-a-published-report-page-shows-the-language-it-was-written-in.md)).
+The owner accepted that publishing the reporter's language is a slight
+identifying hint in a small community. The language travels only on a report's
+own page, from the `public_reports` view's `language` column; the feed and its
+search never carry it. Not built: labelling comments or attachments.
+
 A signed-in Administrator or Safety Officer sees a same-tab link, next to the
 published date, from a report's public page to that same report's admin
 detail page (`/admin/reports/<id>`, #657). The public payload is unchanged —

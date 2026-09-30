@@ -63,7 +63,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
 
 		// Then — the view's columns are the public DTO's allowlist (CON-DP-011)
 		// plus submitted_at, the feed's sort and keyset cursor key (#570,
-		// ADR-0153), and the two viewer-scoped attachment counts (#427), none of
+		// ADR-0153), the two viewer-scoped attachment counts (#427), and language
+		// (#682, ADR-0176; the detail read only, never the feed), none of
 		// which the API serializes as-is — it reads only whichever count fits
 		// the viewer's role.
 		views.ShouldBe([
@@ -72,7 +73,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		]);
 		columns.ShouldBe([
 			"id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count", "submitted_at",
-			"public_attachment_count", "full_attachment_count",
+			"public_attachment_count", "full_attachment_count", "language",
 		]);
 	}
 

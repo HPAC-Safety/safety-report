@@ -32,7 +32,11 @@ public sealed record PublicReportView(
 ///     vocabulary the admin report page uses (issue #427, decisions 1, 4, 14); it
 ///     is null for anyone else. Either way the page asks for each file's link
 ///     separately, so a link is minted only when it is about to be used and
-///     expires on its own (ADR-0117).
+///     expires on its own (ADR-0117). Only here, never in the feed,
+///     <see cref="Language" /> is the locale code the reporter wrote the report in
+///     (<c>en-CA</c> or <c>fr-CA</c>), so the page can say a summary was translated
+///     from it; the owner accepted that this is a slight identifying hint
+///     (#682, ADR-0176).
 /// </summary>
 public sealed record PublicReportDetail(
 	string Id,
@@ -41,6 +45,7 @@ public sealed record PublicReportDetail(
 	DateTimeOffset PublishedAt,
 	int CommentCount,
 	int AttachmentCount,
+	string Language,
 	IReadOnlyList<PublicMediaView> Media,
 	IReadOnlyList<ReportAttachmentView>? StaffAttachments);
 

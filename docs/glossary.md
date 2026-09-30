@@ -25,7 +25,7 @@ type: guide
 | Managed encryption | Encryption at rest provided by AWS for RDS, backups, S3, logs, and secrets, combined with TLS in transit; no application ciphertext fields. |
 | Outbox | Database rows committed atomically with state changes so asynchronous work cannot be lost between saving a report and notifying the Worker. |
 | Private context | Labeled private answers sent to the one summary call only to recognize identifying material repeated in eligible content. They may not contribute facts. |
-| Public DTO | The strict allowlist returned by public endpoints: report ID, both summary texts, publication timestamp, and visible comment count; a report's own page adds each public file's opaque id, kind, and a document's format (ADR-0114, ADR-0117, ADR-0119). |
+| Public DTO | The strict allowlist returned by public endpoints: report ID, both summary texts, publication timestamp, and visible comment count; a report's own page adds the language the reporter wrote it in and each public file's opaque id, kind, and a document's format (ADR-0114, ADR-0117, ADR-0119, ADR-0176). |
 | Quarantine | Private object-storage prefix where the API stores an upload it has already validated, the moment it is attached, until a submission claims it or it expires after 15 days (ADR-0096, ADR-0100). |
 | Question key | Stable non-localized logical identifier joining the immutable revisions of the same question. |
 | Question revision | Exact immutable form record referenced by an answer, including bilingual copy and all behavior/display flags. Choices are not part of a revision; they belong to the question (ADR-0095). |

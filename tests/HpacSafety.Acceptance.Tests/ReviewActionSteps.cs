@@ -665,7 +665,8 @@ internal static class BootedReports
 										  Action<Report>? arrange = null,
 										  DateTimeOffset? at = null,
 										  bool? mediaConsent = null,
-										  bool mediaConsentToEarlierWording = false)
+										  bool mediaConsentToEarlierWording = false,
+										  Locale? language = null)
 	{
 		var factory = await BootedApi.Factory();
 
@@ -682,7 +683,7 @@ internal static class BootedReports
 		var pilot = Question.Create($"pilot_{Guid.NewGuid():n}"[..24], QuestionType.ShortText, "Pilot name", "Nom du pilote", now, isPrivate: true);
 		database.Questions.Add(pilot);
 
-		var report = new Report(Locale.EnCa, now);
+		var report = new Report(language ?? Locale.EnCa, now);
 		report.Answer(consentQuestion, consent, now);
 		report.Answer(pilot, PilotName, now);
 

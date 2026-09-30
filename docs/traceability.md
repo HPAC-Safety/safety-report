@@ -1214,6 +1214,22 @@ Leaving the type-ahead value review queue with an uncorrected draft is confirmed
 
 Leaving with an unsaved private note is confirmed — *playwright-bdd, Covered*
 
+### REQ-MOD-190
+
+A published report page says its summary was translated from the other language the report was written in — *playwright-bdd, Covered*
+
+### REQ-MOD-191
+
+A published report page shows no translation label when the site's language is the one the report was written in — *playwright-bdd, Covered*
+
+### REQ-MOD-192
+
+The translation label follows the header's language toggle without a reload — *playwright-bdd, Covered*
+
+### REQ-MOD-193
+
+A published report's own page carries the language it was written in, and the feed does not — *Reqnroll, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

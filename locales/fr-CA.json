@@ -522,7 +522,8 @@
       "label": "Modifier la paire de résumés",
       "en": "Résumé en anglais",
       "fr": "Résumé en français",
-      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le signalement repasse à l’état « En attente » et est retiré du fil d’actualité s’il a été publié.",
+      "publishesAtOnce": "En enregistrant, la nouvelle version est publiée immédiatement.",
+      "savesDraft": "En cliquant sur « Enregistrer », vous conservez un brouillon. En cliquant sur « Publier », vous le validez.",
       "save": "Enregistrer le résumé"
     },
     "unpublish": {
@@ -533,6 +534,31 @@
     "stale": {
       "message": "Un autre réviseur a modifié ce signalement depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",
       "reload": "Recharger le signalement"
+    },
+    "history": {
+      "title": "Bref historique",
+      "version": "Version {n}",
+      "current": "Actuel",
+      "saved": "Source : {at} par {author}.",
+      "author": {
+        "worker": "l'IA",
+        "unknown": "un auteur inconnu"
+      },
+      "sources": "Anglais : {en}. Français : {fr}.",
+      "restoredFrom": "Récupéré à partir de la version {n}.",
+      "approved": "{at}, approuvée par {by}.",
+      "view": "Consultez cette version",
+      "hide": "Masquer cette version",
+      "restore": "Rétablir cette version"
+    },
+    "restore": {
+      "title": "Restaurer la version « {n} »?",
+      "body": {
+        "live": "Une nouvelle version contenant le même texte est enregistrée et publiée immédiatement. La version {n} reste dans l’historique.",
+        "draft": "Une nouvelle version contenant le même texte est enregistrée comme ébauche. Elle n’est pas accessible au public tant que vous ne l’avez pas publiée. La version {n} reste dans l’historique."
+      },
+      "confirm": "Restaurer la version",
+      "keep": "Conserver la version actuelle"
     },
     "delete": {
       "title": "Souhaitez-vous supprimer ce signalement?",

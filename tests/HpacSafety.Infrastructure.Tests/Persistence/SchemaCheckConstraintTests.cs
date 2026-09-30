@@ -54,21 +54,22 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 	}
 
 	[Fact]
-	public async Task GivenSummaryWithOnlyOneOfApprovedBySubjectAndApprovedAtSet_WhenInserted_ThenRefused()
+	public async Task GivenSummaryRevisionWithOnlyOneOfApprovedBySubjectAndApprovedAtSet_WhenInserted_ThenRefused()
 	{
-		// Given — Summary.Approve/ClearApproval always set or clear both together
+		// Given — SummaryRevision.Approve/ClearApproval always set or clear both together
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await Execute(
 			connectionString,
 			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr3', 'en-CA', 'pending', @at)");
+		await Execute(connectionString, "INSERT INTO summaries (id, report_id) VALUES ('ssssssssss1', 'rrrrrrrrrr3')");
 
 		// When
 		Task inserting()
 		{
 			return Execute(
 				connectionString,
-				"INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by_subject, approved_at, generated_at, updated_at) " +
-				"VALUES ('ssssssssss1', 'rrrrrrrrrr3', 'en', 'fr', 'model', 'v1', 'auth0|synthetic-approver', NULL, @at, @at)");
+				"INSERT INTO summary_revisions (id, summary_id, sequence, ai_summary_en, ai_summary_fr, source_en, source_fr, model, prompt_version, created_at, approved_by_subject, approved_at) " +
+				"VALUES ('vvvvvvvvvv1', 'ssssssssss1', 1, 'en', 'fr', 'generated', 'generated', 'model', 'v1', @at, 'auth0|synthetic-approver', NULL)");
 		}
 
 		// Then

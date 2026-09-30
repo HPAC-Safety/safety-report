@@ -15,7 +15,7 @@ and purpose-built query DTO. The normative target is
 - Complete immutable question revisions contain all bilingual render,
   validation, order, privacy, active, system, and required state.
 - Reports store revision-bound answers; only consent projects onto `reports`.
-- One summary row stores both texts, shared provenance, and one approval.
+- One summary row per report holds an append-only list of revisions; each stores both texts, per-language provenance, its author, and its own approval (ADR-0177).
 - Final submission stores report, answers, files, and outbox messages atomically.
 - Every application table except append-only `audit_log` has an irreversible
   `deleted timestamptz` and a default live-row filter.

@@ -102,10 +102,11 @@ Scenario: Documents never reach the model
   And document text is not extracted, summarized, translated, or anonymized
 
 @REQ-AI-017
-Scenario: A valid response is persisted as one pair-level summary row
+Scenario: A valid response is persisted as revision 1 of one pair-level summary
   Given the model returns a valid two-field response
   When the Worker persists it
-  Then one summary row is created or replaced with AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and creation/update timestamps
+  Then one summary row is created whose revision 1 holds AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and its creation timestamp
+  And revision 1 records no author and both languages as generated
   And no separate row is created per locale
 
 @REQ-AI-019

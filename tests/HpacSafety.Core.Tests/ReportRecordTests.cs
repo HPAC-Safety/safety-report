@@ -114,49 +114,6 @@ public class ReportRecordTests
 	}
 
 	[Fact]
-	public void GivenApprovedSummary_WhenEnglishTextIsRewrittenByHand_ThenApprovalIsWithdrawn()
-	{
-		// Given
-		var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		summary.Approve("subject-officer", Now);
-
-		// When
-		summary.RewriteEn("A pilot landed hard in gusty conditions.", Now);
-
-		// Then — editing after approval must not carry the approval forward
-		summary.IsApproved.ShouldBeFalse();
-		summary.AiSummaryEn.ShouldBe("A pilot landed hard in gusty conditions.");
-	}
-
-	[Fact]
-	public void GivenApprovedSummary_WhenFrenchTextIsRewrittenByHand_ThenApprovalIsWithdrawn()
-	{
-		// Given
-		var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		summary.Approve("subject-officer", Now);
-
-		// When
-		summary.RewriteFr("Un pilote a atterri durement, dans des conditions venteuses.", Now);
-
-		// Then
-		summary.IsApproved.ShouldBeFalse();
-		summary.AiSummaryFr.ShouldBe("Un pilote a atterri durement, dans des conditions venteuses.");
-	}
-
-	[Fact]
-	public void GivenSummary_WhenEnglishTextIsRewrittenBlank_ThenRefused()
-	{
-		// Given
-		var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-
-		// When
-		var rewriting = () => summary.RewriteEn("   ", Now);
-
-		// Then
-		rewriting.ShouldThrow<DomainRuleViolationException>();
-	}
-
-	[Fact]
 	public void GivenFailedSummarization_WhenLaterSucceeds_ThenErrorIsCleared()
 	{
 		// Given

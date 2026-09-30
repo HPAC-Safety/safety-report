@@ -72,8 +72,11 @@ stateDiagram-v2
 - `reports.language` is that locale. The Worker makes one model call in it and
   gets both official languages back — no separate translation step, row, or
   per-language approval.
-- `AiSummaryEn` and `AiSummaryFr` both come from that call; editing either
-  clears the pair's shared approval.
+- `AiSummaryEn` and `AiSummaryFr` both come from that call, and are revision 1
+  of the summary. A summary is an append-only list of revisions (ADR-0177): an
+  edit or a rollback adds one, approval belongs to a revision, and on a
+  Published report the saved revision is approved by its author and public at
+  once.
 
 ```mermaid
 flowchart LR

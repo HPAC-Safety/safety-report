@@ -132,21 +132,237 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenPublishedReport_WhenPairIsEdited_ThenPendingApprovalClearedAndAudited()
+	public async Task GivenPublishedReport_WhenPairIsEdited_ThenStaysPublishedWithNewTextApprovedByEditorAndAudited()
 	{
 		// Given
 		var (id, version) = await Seed(ReportStatus.Published, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var before = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
 
 		// When
 		var detail = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé fermement." }));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("pending");
-		detail.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
+		detail.GetProperty("status").GetString().ShouldBe("published");
+		detail.GetProperty("publishedAt").GetDateTimeOffset().ShouldBe(before.GetProperty("publishedAt").GetDateTimeOffset());
 		detail.GetProperty("summary").GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed firmly.");
-		detail.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.Null);
+		detail.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.String);
+		detail.GetProperty("summary").GetProperty("approvedBySubject").GetString().ShouldNotBe("synthetic-approver");
 		(await Audits(id)).ShouldBe([AuditAction.EditedSummary]);
+
+		using var visitor = _factory.CreateClient();
+		var published = await visitor.GetFromJsonAsync<JsonElement>(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative));
+		published.GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed firmly.");
+	}
+
+	[Fact]
+	public async Task GivenPendingReport_WhenPairIsEdited_ThenRevisionIsAnUnapprovedDraftWithItsAuthor()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var detail = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé." }));
+
+		// Then
+		detail.GetProperty("status").GetString().ShouldBe("pending");
+		detail.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.Null);
+		var revisions = detail.GetProperty("summaryRevisions");
+		revisions.GetArrayLength().ShouldBe(2);
+		revisions[0].GetProperty("sequence").GetInt32().ShouldBe(2);
+		revisions[0].GetProperty("isCurrent").GetBoolean().ShouldBeTrue();
+		revisions[0].GetProperty("authorSubject").GetString().ShouldNotBeNullOrWhiteSpace();
+		revisions[0].GetProperty("sourceEn").GetString().ShouldBe("human");
+		revisions[0].GetProperty("sourceFr").GetString().ShouldBe("generated");
+		revisions[1].GetProperty("authorSubject").ValueKind.ShouldBe(JsonValueKind.Null);
+		revisions[1].GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed.");
+
+		using var visitor = _factory.CreateClient();
+		using var notPublic = await visitor.GetAsync(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative));
+		notPublic.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenPairSavedUnchanged_WhenSent_ThenBadRequestAndNoRevisionIsAdded()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed.", aiSummaryFr = "Le pilote s'est posé." });
+
+		// Then
+		await ProblemOf(response, HttpStatusCode.BadRequest, "invalid-review");
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(1);
+		(await Audits(id)).ShouldBeEmpty();
+	}
+
+	[Fact]
+	public async Task GivenEditedPair_WhenAnEarlierRevisionIsRestored_ThenANewRevisionCopiesItAndTheRestoreIsAudited()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var edited = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé fermement.", sourceFr = "machine" }));
+		var first = edited.GetProperty("summaryRevisions")[1];
+
+		// When
+		var restored = await Ok(await Restore(client, id, edited.GetProperty("version").GetString(), first.GetProperty("id").GetString()!));
+
+		// Then — versions only move forward
+		var revisions = restored.GetProperty("summaryRevisions");
+		revisions.GetArrayLength().ShouldBe(3);
+		revisions[0].GetProperty("sequence").GetInt32().ShouldBe(3);
+		revisions[0].GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed.");
+		revisions[0].GetProperty("aiSummaryFr").GetString().ShouldBe("Le pilote s'est posé.");
+		revisions[0].GetProperty("sourceEn").GetString().ShouldBe("generated");
+		revisions[0].GetProperty("sourceFr").GetString().ShouldBe("generated");
+		revisions[0].GetProperty("restoredFromSequence").GetInt32().ShouldBe(1);
+		revisions[1].GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed firmly.");
+		revisions[2].GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed.");
+		restored.GetProperty("status").GetString().ShouldBe("pending");
+		(await Audits(id)).ShouldBe([AuditAction.EditedSummary, AuditAction.RolledBackSummary]);
+	}
+
+	[Fact]
+	public async Task GivenPublishedReportWithAnEdit_WhenAnEarlierRevisionIsRestored_ThenItIsPublishedAtOnce()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Published, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var edited = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "Regretted text.", aiSummaryFr = "Texte regretté." }));
+		var first = edited.GetProperty("summaryRevisions")[1];
+
+		// When
+		var restored = await Ok(await Restore(client, id, edited.GetProperty("version").GetString(), first.GetProperty("id").GetString()!));
+
+		// Then
+		restored.GetProperty("status").GetString().ShouldBe("published");
+		restored.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.String);
+		using var visitor = _factory.CreateClient();
+		var published = await visitor.GetFromJsonAsync<JsonElement>(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative));
+		published.GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed.");
+	}
+
+	[Fact]
+	public async Task GivenUserRole_WhenARevisionIsRestored_ThenApiForbids()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.User);
+
+		// When
+		using var response = await Restore(client, id, version, TinyId.New().Value);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	[Fact]
+	public async Task GivenNoBearerToken_WhenARevisionIsRestored_ThenApiRefuses()
+	{
+		// Given
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await Restore(client, TinyId.New().Value, "1.1", TinyId.New().Value);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
+	[Fact]
+	public async Task GivenCurrentOrUnknownRevision_WhenRestored_ThenRefusedAndNothingChanges()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var current = detail.GetProperty("summaryRevisions")[0].GetProperty("id").GetString()!;
+
+		// When / Then — the current revision is a 400; one that is not this summary's, or a malformed id, is a 404
+		using var sameRevision = await Restore(client, id, version, current);
+		await ProblemOf(sameRevision, HttpStatusCode.BadRequest, "invalid-review");
+
+		using var otherRevision = await Restore(client, id, version, TinyId.New().Value);
+		otherRevision.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+
+		using var malformed = await Restore(client, id, version, "not a tiny id!");
+		malformed.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+
+		(await Audits(id)).ShouldBeEmpty();
+	}
+
+	[Fact]
+	public async Task GivenFailedReport_WhenARevisionIsRestored_ThenInvalidTransition()
+	{
+		// Given — there is no summary yet to restore from
+		var (id, version) = await Seed(ReportStatus.SummaryFailed, true);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await Restore(client, id, version, TinyId.New().Value);
+
+		// Then
+		await ProblemOf(response, HttpStatusCode.Conflict, "invalid-transition");
+	}
+
+	[Fact]
+	public async Task GivenManyReviewersSendingTheSameNextEditAtOnce_WhenSaved_ThenExactlyOneWinsAndTheRestAreToldToReload()
+	{
+		// Given — every one of them loaded the same view
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		var clients = new List<HttpClient>();
+
+		for (var index = 0; index < 8; index++)
+		{
+			clients.Add(await SignedInClient.As(_factory, MemberRole.SafetyOfficer));
+		}
+
+		try
+		{
+			// When
+			var responses = await Task.WhenAll(clients.Select((client, index) =>
+				Send(client, id, "summary", new { version, aiSummaryEn = $"Edit {index}.", aiSummaryFr = $"Modification {index}." })));
+
+			// Then — never two revisions with the same sequence, never a 500
+			responses.Count(response => response.StatusCode == HttpStatusCode.OK).ShouldBe(1);
+			responses.Count(response => response.StatusCode == HttpStatusCode.Conflict).ShouldBe(7);
+			var detail = await clients[0].GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+			detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(2);
+			foreach (var response in responses)
+			{
+				response.Dispose();
+			}
+		}
+		finally
+		{
+			foreach (var client in clients)
+			{
+				client.Dispose();
+			}
+		}
+	}
+
+	[Fact]
+	public async Task GivenTwoReviewersLoadedTheSameView_WhenBothEdit_ThenTheSecondIsToldToReload()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.Pending, true);
+		using var first = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		using var second = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		await Ok(await Send(first, id, "summary", new { version, aiSummaryEn = "First.", aiSummaryFr = "Premier." }));
+		using var response = await Send(second, id, "summary", new { version, aiSummaryEn = "Second.", aiSummaryFr = "Second." });
+
+		// Then
+		await ProblemOf(response, HttpStatusCode.Conflict, "stale-report");
+		var detail = await first.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(2);
 	}
 
 	[Fact]
@@ -414,6 +630,14 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		return command == "summary"
 			? await client.PutAsJsonAsync($"/api/admin/reports/{id}/summary", body)
 			: await client.PostAsJsonAsync($"/api/admin/reports/{id}/{command}", body);
+	}
+
+	private static Task<HttpResponseMessage> Restore(HttpClient client,
+													 string id,
+													 string? version,
+													 string revisionId)
+	{
+		return client.PostAsJsonAsync($"/api/admin/reports/{id}/summary/revisions/{Uri.EscapeDataString(revisionId)}/rollback", new { version });
 	}
 
 	private static async Task<JsonElement> Ok(HttpResponseMessage response)

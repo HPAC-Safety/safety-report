@@ -376,16 +376,26 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		await ClaimAndProcess(_db!, _summarizer!);
 	}
 
-	[Then(@"one summary row is created or replaced with AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and creation\/update timestamps")]
+	[Then(@"one summary row is created whose revision 1 holds AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and its creation timestamp")]
 	public async Task ThenOneSummaryRowWithProvenance()
 	{
 		var summary = await _db!.Summaries.SingleAsync(s => s.ReportId == _report!.Id);
-		summary.AiSummaryEn.ShouldNotBeNullOrWhiteSpace();
-		summary.AiSummaryFr.ShouldNotBeNullOrWhiteSpace();
-		summary.Model.ShouldBe("fixture-model");
-		summary.PromptVersion.ShouldBe("fixture-v1");
-		summary.GeneratedAt.ShouldNotBe(default);
-		summary.UpdatedAt.ShouldNotBe(default);
+		var revision = summary.Revisions.ShouldHaveSingleItem();
+		revision.Sequence.ShouldBe(1);
+		revision.AiSummaryEn.ShouldNotBeNullOrWhiteSpace();
+		revision.AiSummaryFr.ShouldNotBeNullOrWhiteSpace();
+		revision.Model.ShouldBe("fixture-model");
+		revision.PromptVersion.ShouldBe("fixture-v1");
+		revision.CreatedAt.ShouldNotBe(default);
+	}
+
+	[Then(@"revision 1 records no author and both languages as generated")]
+	public async Task ThenRevisionOneHasNoAuthor()
+	{
+		var revision = (await _db!.Summaries.SingleAsync(s => s.ReportId == _report!.Id)).Revisions.ShouldHaveSingleItem();
+		revision.AuthorSubject.ShouldBeNull();
+		revision.SourceEn.ShouldBe(SummaryTextSource.Generated);
+		revision.SourceFr.ShouldBe(SummaryTextSource.Generated);
 	}
 
 	[Then(@"no separate row is created per locale")]

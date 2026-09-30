@@ -58,6 +58,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>The bilingual summary, one row per report.</summary>
 	public DbSet<Summary> Summaries => Set<Summary>();
 
+	/// <summary>A summary's append-only revisions (ADR-0177).</summary>
+	public DbSet<SummaryRevision> SummaryRevisions => Set<SummaryRevision>();
+
 	/// <summary>The question bank.</summary>
 	public DbSet<Question> Questions => Set<Question>();
 
@@ -238,6 +241,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new ReportAnswerConfiguration());
 		modelBuilder.ApplyConfiguration(new ReportFileConfiguration());
 		modelBuilder.ApplyConfiguration(new SummaryConfiguration());
+		modelBuilder.ApplyConfiguration(new SummaryRevisionConfiguration());
 
 		modelBuilder.ApplyConfiguration(new QuestionConfiguration());
 		modelBuilder.ApplyConfiguration(new QuestionRevisionConfiguration());

@@ -216,8 +216,10 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 }
 
 /// <summary>
-///     The <c>summaries</c> table. Exactly one bilingual row per report, with shared
-///     provenance and one approval covering both languages.
+///     The <c>summaries</c> table: exactly one row per report, holding nothing but
+///     the identity its <c>summary_revisions</c> hang from and its soft deletion.
+///     The text, sources, provenance, and approval all live on the revisions
+///     (ADR-0177).
 /// </summary>
 public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 {
@@ -229,40 +231,82 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 		builder.ToTable("summaries");
 		builder.HasKey(summary => summary.Id);
 
-		builder.Property(summary => summary.AiSummaryEn).IsRequired();
-		builder.Property(summary => summary.AiSummaryFr).IsRequired();
-
-		// Every published sentence traces back to exactly what produced it.
-		builder.Property(summary => summary.Model).HasMaxLength(200).IsRequired();
-		builder.Property(summary => summary.PromptVersion).HasMaxLength(50).IsRequired();
-
 		// Exactly one summary row per report.
 		builder.HasIndex(summary => summary.ReportId).IsUnique();
 
+		builder.HasMany(summary => summary.Revisions)
+			.WithOne()
+			.HasForeignKey(revision => revision.SummaryId)
+			.OnDelete(DeleteBehavior.Cascade);
+
+		// Every read of a summary wants its revisions: the domain's Latest and
+		// LatestApproved are computed from them.
+		builder.Navigation(summary => summary.Revisions).AutoInclude();
+		builder.Metadata.FindNavigation(nameof(Summary.Revisions))!.SetPropertyAccessMode(PropertyAccessMode.Field);
+	}
+}
+
+/// <summary>
+///     The <c>summary_revisions</c> table: an append-only list of a summary's
+///     saved versions. A stored row's text, sources, author, and lineage never
+///     change; only its approval is set and cleared, and its deletion stamped
+///     with its report's (ADR-0177).
+/// </summary>
+public sealed class SummaryRevisionConfiguration : IEntityTypeConfiguration<SummaryRevision>
+{
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<SummaryRevision> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
+
+		builder.ToTable("summary_revisions");
+		builder.HasKey(revision => revision.Id);
+
+		builder.Property(revision => revision.AiSummaryEn).IsRequired();
+		builder.Property(revision => revision.AiSummaryFr).IsRequired();
+
+		// Every published sentence traces back to exactly what produced it.
+		builder.Property(revision => revision.Model).HasMaxLength(200).IsRequired();
+		builder.Property(revision => revision.PromptVersion).HasMaxLength(50).IsRequired();
+
 		// How each language was produced (ADR-0108).
-		builder.Property(summary => summary.SourceEn).IsRequired();
-		builder.Property(summary => summary.SourceFr).IsRequired();
+		builder.Property(revision => revision.SourceEn).IsRequired();
+		builder.Property(revision => revision.SourceFr).IsRequired();
 
 		builder.ToTable(t => t.HasCheckConstraint(
-			"ck_summaries_source_en",
+			"ck_summary_revisions_source_en",
 			"source_en IN ('generated', 'human', 'machine')"));
 
 		builder.ToTable(t => t.HasCheckConstraint(
-			"ck_summaries_source_fr",
+			"ck_summary_revisions_source_fr",
 			"source_fr IN ('generated', 'human', 'machine')"));
 
-		// Edits land on this row, not the report's, so it carries its own token.
-		builder.Property<uint>(ConcurrencyToken.PropertyName).HasColumnName("xmin").IsRowVersion();
+		// The author and approver are token subjects, not keys. There is no user
+		// table to point a foreign key at — see ADR-0065. A null author is the
+		// Worker, or a revision written before authors were recorded.
+		builder.Property(revision => revision.AuthorSubject).HasMaxLength(256);
+		builder.Property(revision => revision.ApprovedBySubject).HasMaxLength(256);
 
-		// IsApproved reads ApprovedAt alone, but a row with one of the pair
-		// set and not the other is not a state the domain can represent —
-		// Approve()/ClearApproval() always set or clear both together.
+		// The sequence orders revisions, and its uniqueness is what refuses two
+		// reviewers appending the same next revision at once.
+		builder.HasIndex(revision => new { revision.SummaryId, revision.Sequence }).IsUnique();
+		builder.ToTable(t => t.HasCheckConstraint("ck_summary_revisions_sequence", "sequence >= 1"));
+
+		// A rollback names the earlier revision it copies. Never cascades: an
+		// earlier revision is never deleted.
+		builder.HasOne<SummaryRevision>()
+			.WithMany()
+			.HasForeignKey(revision => revision.RestoredFromId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+		// Approval is set and cleared, never half-set: Approve()/ClearApproval()
+		// always change both together.
 		builder.ToTable(t => t.HasCheckConstraint(
-			"ck_summaries_approval_coherence",
+			"ck_summary_revisions_approval_coherence",
 			"(approved_by_subject IS NULL) = (approved_at IS NULL)"));
 
-		// The approver is a token subject, not a key. There is no user table
-		// to point a foreign key at — see ADR-0065.
-		builder.Property(summary => summary.ApprovedBySubject).HasMaxLength(256);
+		// Approval lands on this row, so it carries its own token: a stale
+		// approve or unpublish is refused rather than overwriting (ADR-0105).
+		builder.Property<uint>(ConcurrencyToken.PropertyName).HasColumnName("xmin").IsRowVersion();
 	}
 }

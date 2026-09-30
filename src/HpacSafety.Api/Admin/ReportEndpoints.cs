@@ -50,6 +50,7 @@ public static class ReportEndpoints
 		group.MapGet("/", List);
 		group.MapGet("/{id}", Detail);
 		group.MapPut("/{id}/summary", SaveSummary);
+		group.MapPost("/{id}/summary/revisions/{revisionId}/rollback", RollBackSummaryRevision);
 		group.MapPost("/{id}/publish", Publish);
 		group.MapPost("/{id}/unpublish", Unpublish);
 		group.MapDelete("/{id}", Delete);
@@ -246,18 +247,52 @@ public static class ReportEndpoints
 				type: "https://hpac.ca/problems/invalid-review"));
 		}
 
-		return Act(id, request.Version, database, clock, context, (report, _, at) =>
+		return Act(id, request.Version, database, clock, context, (report, subject, at) =>
 		{
 			if (report.Status == ReportStatus.SummaryFailed)
 			{
-				report.WriteManualSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at, sourceEn, sourceFr);
+				report.WriteManualSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, subject, at, sourceEn, sourceFr);
 			}
 			else
 			{
-				report.EditSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at, sourceEn, sourceFr);
+				report.EditSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, subject, at, sourceEn, sourceFr);
 			}
 
 			return AuditAction.EditedSummary;
+		}, cancellationToken);
+	}
+
+	/// <summary>
+	///     Restores an earlier summary revision by saving a new revision that copies
+	///     it (REQ-MOD-196, ADR-0177). A live report publishes it at once, exactly as
+	///     an edit does. The earlier revision is untouched; the audit entry records
+	///     who and which report, never the text.
+	/// </summary>
+	private static Task<IResult> RollBackSummaryRevision(string id,
+														string revisionId,
+														ReviewCommand request,
+														HpacSafetyDbContext database,
+														TimeProvider clock,
+														HttpContext context,
+														CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		if (!TinyId.TryParse(revisionId, out var revision))
+		{
+			return Task.FromResult(Results.NotFound());
+		}
+
+		return Act(id, request.Version, database, clock, context, (report, subject, at) =>
+		{
+			// A revision that is not this summary's is not found, whoever asks.
+			if (report.Summary is { } summary && summary.Revisions.All(candidate => candidate.Id != revision))
+			{
+				throw new KeyNotFoundException();
+			}
+
+			report.RollBackSummary(revision, subject, at);
+			return AuditAction.RolledBackSummary;
 		}, cancellationToken);
 	}
 
@@ -346,6 +381,10 @@ public static class ReportEndpoints
 		{
 			action = command(report, subject, at);
 		}
+		catch (KeyNotFoundException)
+		{
+			return Results.NotFound();
+		}
 		catch (ReviewTransitionException refusal)
 		{
 			return Results.Problem(
@@ -373,8 +412,19 @@ public static class ReportEndpoints
 		{
 			return Stale();
 		}
+		catch (DbUpdateException failure) when (IsSameNextRevision(failure))
+		{
+			// Another reviewer saved the next revision first: the unique
+			// (summary, sequence) index is what stops two from both winning.
+			return Stale();
+		}
 
 		return Results.Ok(await DetailOf(database, report, cancellationToken).ConfigureAwait(false));
+	}
+
+	private static bool IsSameNextRevision(DbUpdateException failure)
+	{
+		return failure.InnerException is Npgsql.PostgresException { SqlState: "23505", ConstraintName: "ix_summary_revisions_summary_id_sequence" };
 	}
 
 	private static IResult Stale()
@@ -456,7 +506,34 @@ public static class ReportEndpoints
 			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file), FormatOf(file.Kind, file.ContentType)))],
 			ConcurrencyToken.Of(database, report),
 			report.UnpublishNote,
-			report.PublishedAt);
+			report.PublishedAt,
+			report.Summary is { } history ? RevisionsOf(history) : []);
+	}
+
+	/// <summary>Every revision, newest first, each naming the revision it restores by sequence number.</summary>
+	private static List<SummaryRevisionView> RevisionsOf(Summary summary)
+	{
+		var sequenceOf = summary.Revisions.ToDictionary(revision => revision.Id, revision => revision.Sequence);
+		var current = summary.Latest.Id;
+
+		return
+		[
+			.. summary.Revisions
+				.OrderByDescending(revision => revision.Sequence)
+				.Select(revision => new SummaryRevisionView(
+					revision.Id.Value,
+					revision.Sequence,
+					revision.AiSummaryEn,
+					revision.AiSummaryFr,
+					EnumCode.Of(revision.SourceEn),
+					EnumCode.Of(revision.SourceFr),
+					revision.AuthorSubject,
+					revision.CreatedAt,
+					revision.RestoredFromId is { } from ? sequenceOf[from] : null,
+					revision.ApprovedBySubject,
+					revision.ApprovedAt,
+					revision.Id == current)),
+		];
 	}
 
 	/// <summary>Groups answers by question, in form order, under the revision each was given against.</summary>

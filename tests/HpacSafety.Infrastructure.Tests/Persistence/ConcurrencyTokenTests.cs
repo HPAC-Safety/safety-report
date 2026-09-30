@@ -3,6 +3,7 @@ using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
@@ -83,7 +84,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 
 		// When
 		ConcurrencyToken.Expect(context, report, before).ShouldBeTrue();
-		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", At);
+		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-officer", At);
 		await context.SaveChangesAsync();
 
 		// Then
@@ -91,7 +92,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 	}
 
 	[Fact]
-	public async Task GivenAnotherSaveSinceTheViewLoaded_WhenSavedWithTheOldVersion_ThenRefusedAsAConcurrencyConflict()
+	public async Task GivenAnotherSaveSinceTheViewLoaded_WhenApprovedWithTheOldVersion_ThenRefusedAsAConcurrencyConflict()
 	{
 		// Given — a first reviewer's view, then a second reviewer's saved edit
 		var connectionString = await postgres.CreateMigratedDatabase();
@@ -103,20 +104,44 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 		await using (var second = PostgresFixture.ContextFor(connectionString))
 		{
 			var theirs = await Load(second, id);
-			theirs.EditSummary("Second reviewer.", "Second réviseur.", At);
+			theirs.EditSummary("Second reviewer.", "Second réviseur.", "subject-officer", At);
 			await second.SaveChangesAsync();
 		}
 
-		// When — the save itself refuses a stale edit to the same row, even past
-		// the API's own before-save comparison of the whole version
+		// When — the save itself refuses an approval of a revision that is no
+		// longer the one the view loaded, even past the API's own before-save
+		// comparison of the whole version
 		await using var third = PostgresFixture.ContextFor(connectionString);
 		var current = await Load(third, id);
 		ConcurrencyToken.Of(third, current).ShouldNotBe(stale);
 		ConcurrencyToken.Expect(third, current, stale).ShouldBeTrue();
-		current.EditSummary("Third reviewer.", "Troisième réviseur.", At);
+		current.Publish("subject-officer", At);
 
 		// Then
 		await Should.ThrowAsync<DbUpdateConcurrencyException>(() => third.SaveChangesAsync());
+	}
+
+	[Fact]
+	public async Task GivenTwoReviewersLoadedTheSameRevision_WhenBothSaveAnEdit_ThenTheSecondIsRefusedByTheSequenceIndex()
+	{
+		// Given — both loaded revision 1, so both mean to append revision 2
+		var connectionString = await postgres.CreateMigratedDatabase();
+		var id = await SeedPending(connectionString, withSummary: true);
+		await using var first = PostgresFixture.ContextFor(connectionString);
+		await using var second = PostgresFixture.ContextFor(connectionString);
+		var firstView = await Load(first, id);
+		var secondView = await Load(second, id);
+
+		firstView.EditSummary("First reviewer.", "Premier réviseur.", "subject-officer", At);
+		await first.SaveChangesAsync();
+
+		// When
+		secondView.EditSummary("Second reviewer.", "Second réviseur.", "subject-officer", At);
+		var saving = () => second.SaveChangesAsync();
+
+		// Then — nothing is overwritten: the (summary, sequence) unique index refuses it
+		var refusal = await Should.ThrowAsync<DbUpdateException>(saving);
+		refusal.InnerException.ShouldBeOfType<PostgresException>().ConstraintName.ShouldBe("ix_summary_revisions_summary_id_sequence");
 	}
 
 	[Fact]

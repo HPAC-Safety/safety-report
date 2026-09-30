@@ -45,7 +45,8 @@ REQ-QB-131.*
 | `questions` | ID, stable key, system marker, role, nullable `choices_depend_on_question_id` — the single-select or type-ahead whose answer decides which of this one's choices the form offers, outside the revision chain (ADR-0146, ADR-0151) — created timestamp, Deleted. Unique key **among live rows only** — a retired question keeps its key so a fork chain shares one (ADR-0071). |
 | `report_answers` | ID, report ID, question ID, exact question revision ID, privacy snapshot, nullable choice ID (single-select, multi-select, type-ahead; ADR-0128), nullable string value, nullable boolean value (`value_boolean`, yes/no and checkbox only; ADR-0130), the locale it was given in, nullable second-language value and its source (`auto` or `choice`; `human` is retired, ADR-0174, and kept only on rows an administrator wrote before it), the translation mode fixed at submission (`none`, `choice`, or `machine`, ADR-0112), answered/recorded timestamp, Deleted. **Every answer that is neither a choice nor a boolean is one string**; a choice answer names its choice and stores no wording, reading both labels from it (ADR-0128). A yes/no or checkbox answer is `true`/`false` in `value_boolean`, with `value` null and no second language (ADR-0130); a date/time holds ISO 8601 (ADR-0072). Includes skipped shown questions, including file-upload controls. |
 | `report_files` | ID, report ID, file-upload report-answer ID, attachment kind, server-minted original and nullable derivative keys, detected/safe types and sizes, processing timestamps (derivative written, document validated, ADR-0119), safe error code, nullable reviewer hide timestamp and subject (ADR-0117), Deleted. The answer identifies the exact revision. Documents normally have no derivative. The reporter's sanitized original filename, nullable, used only as a reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)); never in a key. No extracted document text. |
-| `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, how each language was produced (`source_en`, `source_fr`, ADR-0108), generated/updated timestamps, nullable ApprovedBySubject/ApprovedAt, row version (`xmin`), Deleted. One row per report. |
+| `summaries` | ID, report ID (unique), Deleted. One row per report: the identity its revisions hang from and the carrier of its soft deletion ([ADR-0177](decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)). |
+| `summary_revisions` | ID, summary ID, sequence (unique with the summary), `ai_summary_en` and `ai_summary_fr` (both, always together), how each language was produced (`source_en`, `source_fr`, ADR-0108), model and prompt version of the text it descends from, nullable author token subject (opaque; null for the Worker's revision and for one written before authors were recorded, ADR-0065), created timestamp, nullable restored-from revision ID (a rollback names the earlier revision it copies), nullable approved-by subject and approved-at (set together or not at all), row version (`xmin`), Deleted. **Append-only:** a stored row's text, sources, author, and lineage never change; only its approval is set and cleared, and Deleted is stamped with its report's. Never physically deleted (ADR-0177). |
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
 | `report_comments` | ID, report ID, the author's token subject (opaque, no foreign key), created timestamp, nullable hidden timestamp and hiding reviewer's subject, Deleted. A member's comment on a published report ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | `report_comment_revisions` | ID, comment ID, revision number (unique per comment), text, the locale it was written in, nullable machine translation and its source (`auto`), created timestamp, Deleted. Immutable once written, except that its translation is filled in once. The comment's current text is its highest revision. |
@@ -93,7 +94,8 @@ those rows ever had.
 - answers indexed by report + question, deliberately not unique: a
   multi-select writes one row per chosen value (ADR-0072);
 - each report file belongs to exactly one file-upload answer on the same report;
-- exactly one summary row per report;
+- exactly one summary row per report, holding an append-only list of revisions
+  numbered from 1 without a repeat (ADR-0177);
 - indexes for latest-revision lookup and active/live filtering, the
   translation-pending answer queue, the live review
   queue, live public reports,
@@ -153,7 +155,11 @@ positive allowlists rather than entity projections with fields removed later.
 
 The public report DTO is read from the `public_reports` view, never from the
 tables. The view states the whole publication invariant in SQL, including
-nonblank summary texts. Its columns are the allowlist plus three non-public
+nonblank summary texts, and reads the summary from the
+`latest_approved_summary_revisions` view: the newest approved revision of a live
+summary, so an unapproved draft is never public (ADR-0177). Its sibling,
+`latest_summary_revisions`, is the newest revision whatever its approval; the
+admin list's version and the admin search read it. Its columns are the allowlist plus three non-public
 columns: `id`, `ai_summary_en`, `ai_summary_fr`, `published_at`,
 `comment_count`, `submitted_at`, `public_attachment_count`,
 `full_attachment_count`, and `language` — the locale the reporter wrote the

@@ -209,6 +209,10 @@ failed, was interrupted, or died early: an `EXIT` trap, registered first, remove
 the group. A run killed with `kill -9` is swept by the next run. The dev stack
 and `act-toolcache` (a shared tool cache) are never touched.
 
+A machine running N parallel full runs needs about 7 GB of Docker memory per
+run, plus the dev stack (the proof pair ran at 23.4 GiB); below that, parallel
+runs starve and fail for unrelated reasons.
+
 It needs no token. act gets none, and every job runs anonymously, since the
 repository is public. The one exception is the coverage baseline: GitHub
 serves no artifact to an anonymous caller, so the script downloads main's last

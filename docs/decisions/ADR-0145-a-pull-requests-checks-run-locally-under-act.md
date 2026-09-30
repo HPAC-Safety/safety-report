@@ -347,6 +347,10 @@ named group per run, `hpac-ci-<issue>-<run>`, for example `hpac-ci-675-a1b2`.
   - A native Linux engine has no `host.docker.internal`; Testcontainers on a
     custom bridge there is not verified. This repository's developers run
     Docker Desktop, and the wrapper only sets the override there.
+- **Sizing**: a machine running N parallel full runs needs about 7 GB of Docker
+  memory per run, plus the dev stack. The proof pair ran at 23.4 GiB and 9 CPUs.
+  At 7.75 GiB the same pair starved: Postgres connection timeouts, a timing
+  assertion off by seconds, and dozens of unrelated e2e failures.
 - **Not grouped**: Testcontainers' containers are built by the .NET tests with
   their own labels; Ryuk removes them. The proof counts them and the anonymous
   volumes. A host-side `CI=1 npm test` keeps its temporary `E2E_PORT`. The dev

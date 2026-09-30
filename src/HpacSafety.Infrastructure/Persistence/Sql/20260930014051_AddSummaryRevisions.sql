@@ -89,7 +89,8 @@ WHERE revision.deleted IS NULL
   AND revision.approved_at IS NOT NULL
 ORDER BY revision.summary_id, revision.sequence DESC;
 
--- public_reports reads the latest approved revision. Its columns are unchanged,
+-- public_reports reads the latest approved revision. Its columns are unchanged
+-- (language, added by ShowReportLanguageOnPublicReports, stays last),
 -- so every view and function built on it (public_report_media,
 -- public_report_comments, search_public_reports) is untouched.
 CREATE OR REPLACE VIEW public_reports AS
@@ -124,7 +125,8 @@ SELECT report.id COLLATE "C" AS id,
        (SELECT count(*)::integer
         FROM report_files AS file
         WHERE file.report_id = report.id
-          AND file.deleted IS NULL) AS full_attachment_count
+          AND file.deleted IS NULL) AS full_attachment_count,
+       report.language
 FROM reports AS report
          JOIN latest_approved_summary_revisions AS summary ON summary.report_id = report.id
 WHERE report.deleted IS NULL

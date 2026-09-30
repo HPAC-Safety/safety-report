@@ -54,7 +54,8 @@ SELECT report.id COLLATE "C" AS id,
        (SELECT count(*)::integer
         FROM report_files AS file
         WHERE file.report_id = report.id
-          AND file.deleted IS NULL) AS full_attachment_count
+          AND file.deleted IS NULL) AS full_attachment_count,
+       report.language
 FROM reports AS report
          JOIN summaries AS summary ON summary.report_id = report.id
 WHERE report.deleted IS NULL

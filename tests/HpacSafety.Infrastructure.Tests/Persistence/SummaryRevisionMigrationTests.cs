@@ -17,7 +17,7 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 [Collection(SharedPostgres.Name)]
 public sealed class SummaryRevisionMigrationTests(PostgresFixture postgres)
 {
-	private const string PriorMigration = "AddAttachmentCounts";
+	private const string PriorMigration = "ShowReportLanguageOnPublicReports";
 
 	[Fact]
 	public async Task GivenExistingSummaries_WhenMigrationRuns_ThenEachBecomesRevisionOneKeepingItsSourcesAndApproval()

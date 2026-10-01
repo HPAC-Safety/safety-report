@@ -343,6 +343,8 @@
   "reports.detail.notApproved": "Not approved yet.",
   "reports.detail.answers": "Answers",
   "reports.detail.private": "Private",
+  "reports.detail.privateAnswers": "Private answers",
+  "reports.detail.status": "Processing and approval",
   "reports.detail.notAnswered": "Not answered",
   "reports.detail.translation": "Translation: {text}",
   "reports.detail.translationLabel": "Translation:",

@@ -472,6 +472,8 @@
       "notApproved": "Pas encore approuvé.",
       "answers": "Réponses",
       "private": "Privé",
+      "privateAnswers": "#Private answers",
+      "status": "#Processing and approval",
       "notAnswered": "Sans réponse",
       "translation": "Traduction : {text}",
       "translationLabel": "Traduction :",

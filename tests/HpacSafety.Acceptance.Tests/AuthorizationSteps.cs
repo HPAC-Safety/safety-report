@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
@@ -124,10 +125,79 @@ public sealed class AuthorizationSteps
 		_response.ShouldNotBeNull();
 	}
 
-	[When(@"that member attempts to create a question revision")]
-	public async Task WhenMemberAttemptsToCreateRevision()
+	[When(@"^that member attempts to (submit an occurrence report|list the review queue|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|soft-delete a report|create a question revision|edit a question's choices)$")]
+	public async Task WhenMemberAttemptsCapability(string capability)
 	{
-		_response = await _client!.PostAsJsonAsync(
+		// One representative endpoint call per capability, each on its own fresh
+		// synthetic row so a call is judged on its own and none depends on another's
+		// side effect. Rows are seeded straight into the database; only the call
+		// under test is made as the member.
+		_response = capability switch
+		{
+			"submit an occurrence report" => await Submit(),
+			"list the review queue" => await _client!.GetAsync(new Uri("/api/admin/reports", UriKind.Relative)),
+			"read a report's private detail" => await _client!.GetAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
+			"obtain an attachment link" => await ObtainAttachmentLink(),
+			"edit a report's summary" => await EditSummary(),
+			"publish a report" => await Review(ReportStatus.Pending, "publish", version => new { version }),
+			"unpublish a report" => await Review(ReportStatus.Published, "unpublish", version => new { version, note = "Synthetic note: duplicate." }),
+			"soft-delete a report" => await _client!.DeleteAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
+			"create a question revision" => await CreateQuestion(),
+			"edit a question's choices" => await EditChoices(),
+			_ => throw new ArgumentOutOfRangeException(nameof(capability), capability, "Not a capability the role outlines name."),
+		};
+	}
+
+	private async Task<HttpResponseMessage> Submit()
+	{
+		return await _client!.PostAsJsonAsync(
+			new Uri("/api/v1/reports", UriKind.Relative),
+			new
+			{
+				language = "en-CA",
+				answers = new object[] { new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)false } },
+			});
+	}
+
+	private async Task<HttpResponseMessage> ObtainAttachmentLink()
+	{
+		TinyId fileId = default;
+		var reportId = await BootedReports.Seed(ReportStatus.Pending, true, report => fileId = BootedReports.AddProcessedImage(report).Id);
+
+		return await _client!.GetAsync(new Uri($"/api/admin/reports/{reportId}/attachments/{fileId}/view", UriKind.Relative));
+	}
+
+	private async Task<HttpResponseMessage> EditSummary()
+	{
+		var reportId = await BootedReports.Seed(ReportStatus.Pending, true);
+
+		return await _client!.PutAsJsonAsync(
+			new Uri($"/api/admin/reports/{reportId}/summary", UriKind.Relative),
+			new { version = await VersionOf(reportId), aiSummaryEn = "An edited English summary.", aiSummaryFr = "Un résumé français modifié." });
+	}
+
+	private async Task<HttpResponseMessage> Review(ReportStatus from,
+												   string command,
+												   Func<string, object> body)
+	{
+		var reportId = await BootedReports.Seed(from, true);
+
+		return await _client!.PostAsJsonAsync(
+			new Uri($"/api/admin/reports/{reportId}/{command}", UriKind.Relative), body(await VersionOf(reportId)));
+	}
+
+	/// <summary>The report's current version, read as a SafetyOfficer so a stale one is never the reason for a refusal.</summary>
+	private static async Task<string> VersionOf(string reportId)
+	{
+		using var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var detail = await officer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+
+		return detail.GetProperty("version").GetString()!;
+	}
+
+	private async Task<HttpResponseMessage> CreateQuestion()
+	{
+		return await _client!.PostAsJsonAsync(
 			Questions,
 			new
 			{
@@ -139,6 +209,28 @@ public sealed class AuthorizationSteps
 				isRequired = false,
 				isActive = true,
 			});
+	}
+
+	private async Task<HttpResponseMessage> EditChoices()
+	{
+		static object Request(params string[] choices) => new
+		{
+			key = (string?)null,
+			type = "single_select",
+			labelEn = "Where did you launch?",
+			labelFr = "D'où avez-vous décollé?",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+			options = choices.Select(choice => new { code = (string?)null, labelEn = choice, labelFr = choice }),
+		};
+
+		using var administrator = await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var created = await administrator.PostAsJsonAsync(Questions, Request("North ridge"));
+		created.StatusCode.ShouldBe(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+		var id = (await created.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+
+		return await _client!.PutAsJsonAsync(new Uri($"{Questions}/{id}", UriKind.Relative), Request("North ridge", "South ridge"));
 	}
 
 	[When(@"that member approves, corrects, merges, relinks, or removes a reporter-added type-ahead value")]
@@ -204,7 +296,7 @@ public sealed class AuthorizationSteps
 	}
 
 	[Then(@"the API {word} the attempt")]
-	public void ThenApiOutcome(string outcome)
+	public async Task ThenApiOutcome(string outcome)
 	{
 		if (_reviews.Count > 0)
 		{
@@ -223,10 +315,10 @@ public sealed class AuthorizationSteps
 			return;
 		}
 
-		if (outcome == "accepts")
+		if (outcome is "accepts" or "allows")
 		{
 			_response!.IsSuccessStatusCode.ShouldBeTrue(
-				$"an {_role} should be able to author a question, but the API answered {_response.StatusCode}.");
+				$"a {_role} should be allowed, but the API answered {_response.StatusCode}: {await _response.Content.ReadAsStringAsync()}");
 			return;
 		}
 

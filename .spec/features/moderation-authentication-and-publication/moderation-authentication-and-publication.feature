@@ -254,7 +254,6 @@ Scenario: The temporary interim issuer's JWKS publishes only a public key
 Rule: Role capabilities
 
 @REQ-MOD-025
-@ignore
 Scenario Outline: A User may only submit a report
   Given a member has the User role
   When that member attempts to <capability>
@@ -274,7 +273,6 @@ Examples:
   | edit a question's choices      | forbids |
 
 @REQ-MOD-026
-@ignore
 Scenario Outline: A SafetyOfficer reviews and publishes but does not author questions
   Given a member has the SafetyOfficer role
   When that member attempts to <capability>
@@ -294,7 +292,6 @@ Examples:
   | edit a question's choices      | forbids |
 
 @REQ-MOD-027
-@ignore
 Scenario Outline: An Administrator has every SafetyOfficer capability and authors questions
   Given a member has the Administrator role
   When that member attempts to <capability>

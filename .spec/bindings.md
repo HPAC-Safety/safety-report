@@ -740,41 +740,14 @@ definition matches; a built claim may never have one.
 ### REQ-MOD-025
 
 - [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs)
-- Unbound: `When that member attempts to submit an occurrence report`
-- Unbound: `When that member attempts to list the review queue`
-- Unbound: `When that member attempts to read a report's private detail`
-- Unbound: `When that member attempts to obtain an attachment link`
-- Unbound: `When that member attempts to edit a report's summary`
-- Unbound: `When that member attempts to publish a report`
-- Unbound: `When that member attempts to unpublish a report`
-- Unbound: `When that member attempts to soft-delete a report`
-- Unbound: `When that member attempts to edit a question's choices`
 
 ### REQ-MOD-026
 
 - [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs)
-- Unbound: `When that member attempts to submit an occurrence report`
-- Unbound: `When that member attempts to list the review queue`
-- Unbound: `When that member attempts to read a report's private detail`
-- Unbound: `When that member attempts to obtain an attachment link`
-- Unbound: `When that member attempts to edit a report's summary`
-- Unbound: `When that member attempts to publish a report`
-- Unbound: `When that member attempts to unpublish a report`
-- Unbound: `When that member attempts to soft-delete a report`
-- Unbound: `When that member attempts to edit a question's choices`
 
 ### REQ-MOD-027
 
 - [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs)
-- Unbound: `When that member attempts to submit an occurrence report`
-- Unbound: `When that member attempts to list the review queue`
-- Unbound: `When that member attempts to read a report's private detail`
-- Unbound: `When that member attempts to obtain an attachment link`
-- Unbound: `When that member attempts to edit a report's summary`
-- Unbound: `When that member attempts to publish a report`
-- Unbound: `When that member attempts to unpublish a report`
-- Unbound: `When that member attempts to soft-delete a report`
-- Unbound: `When that member attempts to edit a question's choices`
 
 ### REQ-MOD-028
 

@@ -664,15 +664,15 @@ Every operation is authorized by the API, not just the UI — *Reqnroll, Covered
 
 ### REQ-MOD-025
 
-A User may only submit a report — *Reqnroll, Planned*
+A User may only submit a report — *Reqnroll, Covered*
 
 ### REQ-MOD-026
 
-A SafetyOfficer reviews and publishes but does not author questions — *Reqnroll, Planned*
+A SafetyOfficer reviews and publishes but does not author questions — *Reqnroll, Covered*
 
 ### REQ-MOD-027
 
-An Administrator has every SafetyOfficer capability and authors questions — *Reqnroll, Planned*
+An Administrator has every SafetyOfficer capability and authors questions — *Reqnroll, Covered*
 
 ### REQ-MOD-028
 

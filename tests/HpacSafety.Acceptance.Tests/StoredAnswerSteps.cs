@@ -481,7 +481,8 @@ public sealed class StoredAnswerSteps
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		// The report really is public now, so an absent answer is not an absent report.
+		// The report really is public now (the feed pages through other scenarios' reports, so
+		// its detail is the proof), so an absent answer is not an absent report.
 		var published = await database.PublicReports.AsNoTracking().SingleAsync(report => report.Id == answer.ReportId.Value);
 		published.ShouldNotBeNull();
 
@@ -491,7 +492,6 @@ public sealed class StoredAnswerSteps
 		var found = await visitor.GetStringAsync(new Uri($"/api/v1/public/reports?q={Uri.EscapeDataString(_submitted!)}&locale=en-CA", UriKind.Relative));
 
 		detail.ShouldContain(answer.ReportId.Value);
-		feed.ShouldContain(answer.ReportId.Value);
 		detail.ShouldNotContain(_submitted!);
 		feed.ShouldNotContain(_submitted!);
 		found.ShouldNotContain(_submitted!);

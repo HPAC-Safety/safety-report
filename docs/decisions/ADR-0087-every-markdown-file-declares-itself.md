@@ -10,6 +10,10 @@ keywords: frontmatter, YAML, markdown, documentation, validation, pre-commit, CI
 
 # ADR-0087 — Every markdown file declares what it is
 
+**Status:** Accepted. Amended by
+[ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md): an
+`agents/*.md` carries `name`, `description`, `model`, and `effort`.
+
 ## Context
 
 The repository tracks 142 markdown files. Eighty-nine carry YAML frontmatter:
@@ -111,3 +115,10 @@ command line is typed is not a guard
 - [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)
 - [ADR-0083](ADR-0083-specification-driven-development.md)
 - [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
+
+## Amendment (2026-09-30)
+
+An `agents/*.md` carries `name`, `description`, `model`, and `effort`, and may
+carry the other keys Claude Code reads on an agent; any other key is refused
+([ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md)). A
+`skills/*/SKILL.md` still carries exactly `name` and `description`.

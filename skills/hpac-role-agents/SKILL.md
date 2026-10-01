@@ -24,6 +24,21 @@ roles and why each trusts only the artifact before it:
   [ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md).
 - Browser tag: `@ui`. Not built yet: `@ignore`.
 - Every example and fixture is synthetic: never real report content.
+- Model and effort, declared in each agent's frontmatter
+  ([ADR-0182](../../docs/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)):
+
+  | Role | model | effort | Why |
+  |---|---|---|---|
+  | spec-author | opus | high | Judgement: reads widely, decides what to build |
+  | spec-reviewer | opus | high | Judgement: weighs a diff against claims and ADRs |
+  | database-administrator | opus | high | Judgement: schema mistakes outlive the code |
+  | implementer | sonnet | medium | Build: executes claims already settled |
+  | test-writer | sonnet | medium | Build: binds a written scenario |
+  | ai-author | sonnet | medium | Build: rewrites wording, never rules |
+
+- `skillfile install` copies each agent verbatim into `.claude/agents/`. An
+  orchestrator spawns a role by its `name` and gets these settings, unless it
+  overrides `model` for one call.
 
 ## spec-author
 
@@ -114,6 +129,8 @@ Generic and project files:
   [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md) "Lessons".
 - Product behavior lives in `/features`
   ([ADR-0085](../../docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+- An agent's frontmatter keys: [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md)
+  "Markdown".
 - Checks:
   - `node tools/check-frontmatter.mjs` (rules:
     [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md) "Markdown");

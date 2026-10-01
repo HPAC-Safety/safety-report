@@ -33,6 +33,8 @@ artifact from the step before it
 The fifth, `ai-author`, maintains the agent instructions and sits outside the
 chain
 ([ADR-0121](decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
+Each declares the model and reasoning effort it runs on
+([ADR-0182](decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
 They are definitions an operator invokes, not a pipeline: the repository's
 gates remain the enforcement.
 

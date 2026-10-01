@@ -35,7 +35,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	private QuestionChoice? _added;
 	private ReportAnswer? _answer;
 	private Exception? _refusal;
-	private IReadOnlyList<QuestionOptionInput> _edited = [];
 	private Question? _dependent;
 	private QuestionChoice? _named;
 
@@ -57,12 +56,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	{
 		GivenATypeAheadOffersChoices();
 		_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
-	}
-
-	[Given(@"a type-ahead question has a reporter-added choice typed only in English")]
-	public void GivenAnEnglishOnlyReporterChoice()
-	{
-		GivenAReporterAlreadyAddedASite();
 	}
 
 	[Given(@"a (.*) question has been answered on at least one report")]
@@ -228,12 +221,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheDependentKeepsItsRevision()
 	{
 		_dependent!.Revisions.Count.ShouldBe(1);
-	}
-
-	[When(@"a reporter submits an answer naming a site the question does not offer")]
-	public void WhenAReporterNamesANewSite()
-	{
-		_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 	}
 
 	[When(@"^a reporter answering in (English|French) submits ""(.*)"", which the question does not offer$")]
@@ -569,19 +556,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 			QuestionDependencies.EnsureChoicesRemovable([_question, _dependent!], _question, ["hang_glider"]));
 	}
 
-	[Then(@"the question gains the site as a reporter-added choice")]
-	public void ThenTheQuestionGainsTheSite()
-	{
-		_added!.AddedByReporter.ShouldBeTrue();
-		_question.Choices.ShouldContain(_added);
-	}
-
-	[Then(@"the next reporter is offered it")]
-	public void ThenTheNextReporterIsOfferedIt()
-	{
-		_question.OfferedChoiceLabelled("Mount 7", Locale.EnCa).ShouldNotBeNull();
-	}
-
 	[Then(@"the existing choice is reused rather than duplicated")]
 	public void ThenTheExistingChoiceIsReused()
 	{
@@ -592,13 +566,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheWordingIsNotReplaced()
 	{
 		_added!.LabelEn.ShouldBe("Mount 7");
-	}
-
-	[Then(@"the choice stays removed from the question")]
-	public void ThenItStaysRemoved()
-	{
-		_question.Choices.Select(choice => choice.Code).ShouldNotContain("mount_7");
-		_added!.Deleted.ShouldNotBeNull();
 	}
 
 	[Then(@"the report is accepted and the question gains the value")]
@@ -633,14 +600,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheRemovedChoiceStaysRemoved()
 	{
 		_live.AllChoices.Single(choice => choice.Code == "woodside").Deleted.ShouldNotBeNull();
-	}
-
-	[Then(@"the question offers the edited choices")]
-	public void ThenItOffersTheEditedChoices()
-	{
-		_question.Choices.Select(choice => choice.Code).ShouldBe(_edited.Select(option => option.Code), ignoreOrder: true);
-		_question.Choices.Select(choice => choice.LabelEn)
-			.ShouldBe(_edited.Select(option => option.LabelEn), ignoreOrder: true);
 	}
 
 	[Then(@"the question keeps its identifier and its current revision")]
@@ -708,13 +667,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheChoiceIsStillOffered()
 	{
 		_question.Choice("paraglider").ShouldNotBeNull();
-	}
-
-	[Then(@"the question offers that choice in its English wording")]
-	public void ThenOfferedInEnglishToAFrenchReporter()
-	{
-		_question.Choice("mount_7")!.Label(Locale.FrCa).ShouldBe("Mount 7");
-		_question.OfferedChoiceLabelled("Mount 7", Locale.FrCa).ShouldNotBeNull();
 	}
 
 	/// <summary>An Administrator's save of the whole question, choices included, as the editor sends it.</summary>

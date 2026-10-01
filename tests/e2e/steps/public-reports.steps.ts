@@ -146,12 +146,6 @@ When("a visitor opens \\/reports\\/ followed by that ID", async ({ page }) => {
 	await page.goto(`/reports/${HIDDEN_ID}`)
 })
 
-When("a visitor moves to the next page", async ({ page }) => {
-	await page.goto("/reports")
-	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
-	await page.getByRole("link", { name: "Older reports" }).click()
-})
-
 When("a visitor views it in a given locale", async ({ page, context }) => {
 	await context.addInitScript(() => localStorage.setItem("hpac.locale", "fr-CA"))
 	await page.goto(`/reports/${FIRST.id}`)
@@ -184,18 +178,6 @@ Then("it says nothing about whether such a report exists", async ({ page }) => {
 	for (const hint of ["deleted", "unpublished", "private", "rejected", "consent", "review"]) {
 		expect(text).not.toContain(hint)
 	}
-})
-
-Then("the address bar carries that page's cursor", async ({ page }) => {
-	await expect(page).toHaveURL(new RegExp(`/reports\\?after=${CURSOR}$`))
-	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
-	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toHaveCount(0)
-})
-
-Then("going back returns the visitor to the first page", async ({ page }) => {
-	await page.goBack()
-	await expect(page).toHaveURL(/\/reports$/)
-	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
 })
 
 Then("only that locale's text is shown, with no language control on the report itself", async ({ page }) => {

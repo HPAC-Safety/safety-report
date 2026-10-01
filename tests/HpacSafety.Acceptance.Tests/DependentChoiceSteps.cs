@@ -340,10 +340,11 @@ public sealed class DependentChoiceSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
 	}
 
-	[When(@"an Administrator adds {string} offered under {string} and {string}")]
-	public async Task WhenAddingOneOtherUnderBoth(string wording,
-												  string firstParent,
-												  string secondParent)
+	// Adds an English-only choice under two parents; the arrangement behind the
+	// Given steps that need one, not a step of its own.
+	private async Task WhenAddingOneOtherUnderBoth(string wording,
+												   string firstParent,
+												   string secondParent)
 	{
 		var model = await View(_childName!);
 		var make = await View("Make");
@@ -507,7 +508,6 @@ public sealed class DependentChoiceSteps
 	}
 
 	[When(@"an Administrator saving the question removes {string}")]
-	[When(@"an Administrator saving the question removes {string} again")]
 	public async Task WhenAnAdministratorRemovesTheParentChoice(string parentChoice)
 	{
 		var make = await View("Make");
@@ -518,7 +518,6 @@ public sealed class DependentChoiceSteps
 	}
 
 	[When(@"a Safety Officer on the type-ahead review page removes {string}")]
-	[When(@"a Safety Officer on the type-ahead review page removes {string} again")]
 	public async Task WhenASafetyOfficerRemovesTheParentValue(string parentChoice)
 	{
 		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);

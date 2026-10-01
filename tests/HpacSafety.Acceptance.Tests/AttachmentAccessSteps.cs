@@ -104,7 +104,6 @@ public sealed class AttachmentAccessSteps
 		}
 	}
 
-	[Then(@"the reviewer receives a short-lived read URL to the derivative")]
 	[Then(@"the reviewer receives a short-lived URL to the private original")]
 	public void ThenTheReviewerReceivesAShortLivedUrl()
 	{
@@ -124,11 +123,13 @@ public sealed class AttachmentAccessSteps
 		values!.ShouldContain("nosniff");
 	}
 
-	[Then(@"the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff")]
-	public void ThenTheResponseForcesDownloadUnderTheReportersNameAndNosniff()
+	// A document is never rendered by the browser: the URL forces a download and
+	// the response forbids sniffing its type (ADR-0089).
+	[Then(@"the URL forces a download, with the header X-Content-Type-Options: nosniff")]
+	public void ThenTheUrlForcesADownloadWithNosniff()
 	{
-		_body!.FileName.ShouldBe(_originalFileName ?? $"{_attachmentId}.jpg");
-		Uri.UnescapeDataString(_body.Url).ShouldContain("attachment;");
+		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		Uri.UnescapeDataString(_body!.Url).ShouldContain("attachment;");
 		_response.Headers.TryGetValues("X-Content-Type-Options", out var values).ShouldBeTrue();
 		values!.ShouldContain("nosniff");
 	}
@@ -161,13 +162,6 @@ public sealed class AttachmentAccessSteps
 	{
 		// Asserted by construction: GivenProcessingFailsForAnAttachment already
 		// called RecordProcessingFailure before the request above ran.
-	}
-
-	[Then(@"the file is inaccessible to any reviewer")]
-	public async Task ThenTheFileIsInaccessibleToAnyReviewer()
-	{
-		await WhenAnAuthorizedReviewerRequestsIt();
-		_response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
 	[Then(@"no inline view link is issued for it")]

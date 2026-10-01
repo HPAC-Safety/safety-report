@@ -819,7 +819,6 @@ Scenario: A stored report carries no submitter subject, user id, or link
   And no column, join table, or hash anywhere links the report to the member who filed it
 
 @REQ-SUB-021
-@ignore
 Scenario: No audit entry or log line records who submitted a report
   Given a reporter submits a valid report while signed in
   When the submission completes

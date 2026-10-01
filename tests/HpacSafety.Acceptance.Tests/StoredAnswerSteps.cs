@@ -58,6 +58,8 @@ public sealed class StoredAnswerSteps
 
 	private JsonElement _answered;
 	private string? _submitted;
+	private bool _private;
+	private bool _consentToPublish;
 
 	// The value as JSON puts it on the wire: a string, or for "JSON true",
 	// "JSON false", and "JSON null" that literal (ADR-0130).
@@ -316,7 +318,7 @@ public sealed class StoredAnswerSteps
 			language = _language.Code,
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (object?)false },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (object?)_consentToPublish },
 				new { questionRevisionId = _answered.GetProperty("revisionId").GetString(), value = _submittedValue },
 			},
 		});
@@ -401,6 +403,132 @@ public sealed class StoredAnswerSteps
 		(await AnswersToTheQuestion()).ShouldBeEmpty();
 	}
 
+	// --- REQ-QB-026: privacy is a property of the revision, not the answer ---
+
+	[Given(@"an answer is created against a private question revision")]
+	public async Task GivenAnAnswerAgainstAPrivateRevision()
+	{
+		_private = true;
+		_consentToPublish = true;
+		_language = Locale.EnCa;
+		_submittedValue = _submitted = $"Synthetic private detail {_run}";
+
+		_admin = await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request("short_text", []));
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		_answered = await response.Content.ReadFromJsonAsync<JsonElement>();
+	}
+
+	[Then(@"it stores the exact revision identifier and a privacy snapshot")]
+	public async Task ThenItStoresTheRevisionAndSnapshot()
+	{
+		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();
+		var revisionId = TinyId.Parse(_answered.GetProperty("revisionId").GetString());
+
+		answer.QuestionRevisionId.ShouldBe(revisionId);
+		answer.Value.ShouldBe(_submitted);
+		answer.IsPrivate.ShouldBeTrue();
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var revision = await database.QuestionRevisions.AsNoTracking().SingleAsync(candidate => candidate.Id == revisionId);
+
+		answer.IsPrivate.ShouldBe(revision.IsPrivate);
+	}
+
+	[Then(@"the answer is available only to authorized admin flows and to the Worker as labeled recognition context")]
+	public async Task ThenTheAnswerIsAvailableOnlyToAdminAndTheWorker()
+	{
+		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();
+		var detail = new Uri($"/api/admin/reports/{answer.ReportId}", UriKind.Relative);
+
+		// Authorized admin flows: both reviewing roles read it, marked private.
+		foreach (var role in new[] { MemberRole.SafetyOfficer, MemberRole.Administrator })
+		{
+			using var reviewer = await BootedApi.SignedInAs(role);
+			var shown = await reviewer.GetFromJsonAsync<JsonElement>(detail);
+			var values = shown.GetProperty("answers").EnumerateArray()
+				.Single(candidate => candidate.GetProperty("questionKey").GetString() == answer.QuestionKey)
+				.GetProperty("values").EnumerateArray().Select(value => value.GetProperty("value").GetString());
+
+			values.ShouldContain(_submitted);
+		}
+
+		// Nobody else: an ordinary member, and a visitor with no token at all.
+		using var member = await BootedApi.SignedInAs(MemberRole.User);
+		using var forbidden = await member.GetAsync(detail);
+		forbidden.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+
+		using var anonymous = (await BootedApi.Factory()).CreateClient();
+		using var unauthorized = await anonymous.GetAsync(detail);
+		unauthorized.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+
+		// The Worker: the snapshot sorts it into labeled private context, never
+		// into the facts the summary is written from.
+		var field = new SummarizationField(answer.QuestionKey, "A synthetic private question", _submitted!);
+		var input = SummarizationInput.Partition([new ClassifiedReportField(field, answer.IsPrivate)]);
+
+		input.PrivateContext.ShouldHaveSingleItem().Value.ShouldBe(_submitted);
+		input.ReportContent.ShouldBeEmpty();
+	}
+
+	[Then(@"it never becomes public content")]
+	public async Task ThenItNeverBecomesPublicContent()
+	{
+		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();
+		await Publish(answer.ReportId);
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		// The report really is public now (the feed pages through other scenarios' reports, so
+		// its detail is the proof), so an absent answer is not an absent report.
+		var published = await database.PublicReports.AsNoTracking().SingleAsync(report => report.Id == answer.ReportId.Value);
+		published.ShouldNotBeNull();
+
+		using var visitor = (await BootedApi.Factory()).CreateClient();
+		var detail = await visitor.GetStringAsync(new Uri($"/api/v1/public/reports/{answer.ReportId}", UriKind.Relative));
+		var feed = await visitor.GetStringAsync(new Uri("/api/v1/public/reports", UriKind.Relative));
+		var found = await visitor.GetStringAsync(new Uri($"/api/v1/public/reports?q={Uri.EscapeDataString(_submitted!)}&locale=en-CA", UriKind.Relative));
+
+		detail.ShouldContain(answer.ReportId.Value);
+		detail.ShouldNotContain(_submitted!);
+		feed.ShouldNotContain(_submitted!);
+		found.ShouldNotContain(_submitted!);
+
+		// Every public view, row by row as the database would hand it out.
+		foreach (var view in new[] { "public_reports", "public_report_media", "public_report_comments" })
+		{
+			// The view names are the literals just above, never input.
+#pragma warning disable EF1002
+			var holding = await database.Database
+				.SqlQueryRaw<string>($"SELECT row_to_json(v)::text AS \"Value\" FROM {view} AS v WHERE row_to_json(v)::text LIKE '%' || {{0}} || '%'", _submitted!)
+				.ToListAsync();
+#pragma warning restore EF1002
+
+			holding.ShouldBeEmpty(view);
+		}
+	}
+
+	/// <summary>Takes a submitted report through review to Published, as a reviewer would.</summary>
+	private static async Task Publish(TinyId reportId)
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var report = await database.Reports.Include(candidate => candidate.Summary).SingleAsync(candidate => candidate.Id == reportId);
+		var now = DateTimeOffset.UtcNow;
+
+		if (report.Status is ReportStatus.Submitted)
+		{
+			report.BeginSummarizing();
+		}
+
+		report.AttachSummary(Summary.Generate(report.Id, "The pilot landed in a field.", "Le pilote s'est posé dans un champ.", "gemini-3.7-flash", "summarize-anonymize.v3", now));
+		report.AwaitReview();
+		report.Publish("synthetic-approver", now);
+		await database.SaveChangesAsync();
+	}
+
 	// --- helpers ---
 
 	/// <summary>Every stored answer to this scenario's own question, from any report.</summary>
@@ -461,7 +589,7 @@ public sealed class StoredAnswerSteps
 			placeholderEn = (string?)null,
 			placeholderFr = (string?)null,
 			isRequired = false,
-			isPrivate = false,
+			isPrivate = _private,
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
 			dependsOnChoiceId = (string?)null,

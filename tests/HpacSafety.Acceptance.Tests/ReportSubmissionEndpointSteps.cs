@@ -9,6 +9,7 @@ using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Testing;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +34,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     answer here is synthetic.
 /// </remarks>
 [Binding]
-public sealed class ReportSubmissionEndpointSteps
+public sealed class ReportSubmissionEndpointSteps : IDisposable
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
@@ -45,6 +46,8 @@ public sealed class ReportSubmissionEndpointSteps
 	private const string Secret = "Wind picked up on final approach — synthetic narrative for a test only.";
 
 	private readonly ScenarioContext _scenario;
+	private readonly TraceLogCapture _logs = new();
+	private string? _submitterSubject;
 	private HttpClient? _reporter;
 	private HttpClient? _admin;
 	private HttpResponseMessage? _response;
@@ -1251,7 +1254,12 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a reporter submits a valid report while signed in")]
 	public async Task GivenAReporterSubmitsAValidReportWhileSignedIn()
 	{
-		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		// A host of its own, logging everything at Trace, and a member whose
+		// subject no other scenario shares, so the lines and rows this
+		// submission leaves can be told from every other scenario's.
+		var host = (await BootedApi.Factory()).WithWebHostBuilder(builder => builder.ConfigureLogging(_logs.Register));
+		_submitterSubject = $"acceptance:submitter:{Guid.NewGuid():N}";
+		_reporter = BootedApi.SignedInAsMember(host, _submitterSubject);
 		await EnsureConsentQuestion();
 		_response = await Post(new
 		{
@@ -1261,9 +1269,42 @@ public sealed class ReportSubmissionEndpointSteps
 	}
 
 	[When(@"the submission is committed")]
+	[When(@"the submission completes")]
 	public void WhenTheSubmissionIsCommitted()
 	{
 		// Already committed by the Given step above.
+	}
+
+	public void Dispose()
+	{
+		_logs.Dispose();
+	}
+
+	// --- REQ-SUB-021: no audit entry or log line records who submitted ---
+
+	[Then(@"no audit entry attributes the submission to a subject")]
+	public async Task ThenNoAuditEntryAttributesTheSubmission()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+		var reportId = TinyId.Parse((await ResponseBody()).GetProperty("id").GetString());
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entries = await database.AuditLog.AsNoTracking()
+			.Where(entry => entry.ActorSubject == _submitterSubject
+							|| entry.TargetId == reportId
+							|| (entry.Detail != null && entry.Detail.Contains(_submitterSubject!)))
+			.ToListAsync();
+
+		entries.ShouldBeEmpty();
+	}
+
+	[Then(@"no log line records the submitting subject at any level")]
+	public void ThenNoLogLineRecordsTheSubject()
+	{
+		// A capture that saw nothing would prove nothing.
+		_logs.Lines.ShouldNotBeEmpty();
+		_logs.Lines.ShouldAllBe(line => !line.Contains(_submitterSubject!, StringComparison.OrdinalIgnoreCase));
 	}
 
 	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject")]

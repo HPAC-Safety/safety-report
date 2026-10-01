@@ -1581,10 +1581,6 @@ definition matches; a built claim may never have one.
 
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
 - [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs)
-- Unbound: `Given an answer is created against a private question revision`
-- Unbound: `Then it stores the exact revision identifier and a privacy snapshot`
-- Unbound: `Then the answer is available only to authorized admin flows and to the Worker as labeled recognition context`
-- Unbound: `Then it never becomes public content`
 
 ### REQ-QB-027
 
@@ -2542,9 +2538,6 @@ definition matches; a built claim may never have one.
 ### REQ-SUB-021
 
 - [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs)
-- Unbound: `When the submission completes`
-- Unbound: `Then no audit entry attributes the submission to a subject`
-- Unbound: `Then no log line records the submitting subject at any level`
 
 ### REQ-SUB-022
 

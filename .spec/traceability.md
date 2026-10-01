@@ -1442,7 +1442,7 @@ Only consent is projected onto the report aggregate — *Reqnroll, Covered*
 
 ### REQ-QB-026
 
-Privacy is a property of the revision, not the answer — *Reqnroll, Planned*
+Privacy is a property of the revision, not the answer — *Reqnroll, Covered*
 
 ### REQ-QB-027
 
@@ -2260,7 +2260,7 @@ A stored report carries no submitter subject, user id, or link — *Reqnroll, Co
 
 ### REQ-SUB-021
 
-No audit entry or log line records who submitted a report — *Reqnroll, Planned*
+No audit entry or log line records who submitted a report — *Reqnroll, Covered*
 
 ### REQ-SUB-022
 

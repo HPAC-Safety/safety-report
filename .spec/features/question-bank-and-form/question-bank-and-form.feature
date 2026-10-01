@@ -302,7 +302,6 @@ Scenario: Only consent is projected onto the report aggregate
   And every other answer, including dates, times, provinces, injury severities, and aircraft details, remains a stored string read through its question key
 
 @REQ-QB-026
-@ignore
 Scenario: Privacy is a property of the revision, not the answer
   Given an answer is created against a private question revision
   When the answer is persisted

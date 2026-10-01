@@ -409,11 +409,8 @@ definition matches; a built claim may never have one.
 
 ### REQ-MED-012
 
+- [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts)
 - [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts)
-- Unbound: `Given an authorized reviewer opens a document attachment`
-- Unbound: `When the admin site presents it`
-- Unbound: `Then the admin site does not embed, preview, or inline-render the document content`
-- Unbound: `Then the document is offered only as a download`
 
 ### REQ-MED-013
 
@@ -3137,10 +3134,7 @@ definition matches; a built claim may never have one.
 
 ### REQ-WLD-001
 
-- Unbound: `Given a signed-in Safety Officer is on the public report page`
-- Unbound: `When they follow the Admin menu to the review queue`
-- Unbound: `Then the review queue loads on the same origin as the report page`
-- Unbound: `Then the browser does not load a new document`
+- [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts)
 
 ### REQ-WLD-002
 
@@ -3217,10 +3211,7 @@ definition matches; a built claim may never have one.
 
 ### REQ-WLD-020
 
-- Unbound: `Given a reviewer opens a report in the admin site`
-- Unbound: `Then private answers, ordinary answers, and the summary pair each sit in their own labeled section`
-- Unbound: `Then each private answer is marked private in the reviewer's language`
-- Unbound: `Then processing failures and the approval state are shown apart from the report's content`
+- [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts)
 
 ### REQ-WLD-021
 
@@ -3332,11 +3323,7 @@ definition matches; a built claim may never have one.
 
 ### REQ-WLD-048
 
-- Unbound: `Given a reviewer is on a published report in the admin site`
-- Unbound: `When they choose to delete the report`
-- Unbound: `Then the admin site asks them to confirm before calling the API`
-- Unbound: `Then cancelling sends no request`
-- Unbound: `When they choose to unpublish the report`
+- [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts)
 
 ## Stale @ignore
 

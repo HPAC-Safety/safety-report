@@ -2507,6 +2507,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "reports.detail.privateAnswers": {
+    "source_hash": "d06375eb5b311578f812ffc34b48677c00f3f7a336c3c970a35f7ad87ab5aefc",
+    "target_hash": "ea733ed69be54257f0216fe71c661d6bf665be2db001b289fde69117eb903351",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
   "reports.detail.provenance": {
     "source_hash": "df926b8549f87b6840053064d3f51e9dff92b3bdd9a06b6191efc3b3b0350ffc",
     "target_hash": "90e91644df29b83d12932fdea2eeb5e710e5b29a0d1d3036e81982087221d370",
@@ -2535,6 +2541,12 @@
     "source_hash": "f249477a7b370e4cf019e7111532e6d569e6d052262d89f1d87d0e90cfe9f873",
     "target_hash": "ee5016b74d3bc3a07946b27f14acc869fce3d38666d7772b251fd7cca871f093",
     "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "reports.detail.status": {
+    "source_hash": "d0d2e358ff500d4c401a66eb87c516b56e72b65c8f209f26049d2b49b5a69c4c",
+    "target_hash": "29c5001fbc37c02745f0f91fc6bad41ccd08da00623f65e996ecabf5c04b8e82",
+    "provider": "gemini:gemini-3.7-flash",
     "reviewed": false
   },
   "reports.detail.summary": {

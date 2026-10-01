@@ -117,6 +117,69 @@ export function ReportDetailPage() {
 	const at = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
 	const label = (answer: ReportAnswer) => labelWithColon(locale === "fr-CA" ? answer.labelFr : answer.labelEn, answer.type, locale)
 
+	const renderAnswer = (answer: ReportAnswer) => (
+
+		<div
+			key={answer.questionKey}
+			className="rounded border border-rule bg-surface p-4"
+			data-question-key={answer.questionKey}
+		>
+			<dt className="flex flex-wrap items-center gap-2 font-sans text-sm font-medium text-ink">
+				{label(answer)}
+				{answer.isPrivate && (
+					<span
+						className="inline-flex items-center rounded-full border border-ink px-2 py-0.5 font-sans text-xs"
+						data-private-answer
+					>
+						{t("reports.detail.private")}
+					</span>
+				)}
+			</dt>
+			{answer.values.length === 0 ? (
+				<dd className="mt-1 font-sans text-ink-muted">{t("reports.detail.notAnswered")}</dd>
+			) : (
+				listedValues(answer, locale).map((value, index) => (
+					<dd key={index} className="mt-1 font-sans text-ink">
+						{isLanguageNeutral(answer.type) ? (
+							<span className="whitespace-pre-line">{formatAnswer(answer.type, value.value, locale, t)}</span>
+						) : answer.type === "long_text" ? (
+							// A paragraph answer, and its Worker translation, read as Markdown (ADR-0180).
+							<Markdown lang={value.locale} headingOffset={2} data-long-text-answer="">
+								{String(value.value)}
+							</Markdown>
+						) : (
+							<span lang={value.locale} className="whitespace-pre-line">
+								{value.value}
+							</span>
+						)}
+						{value.translatedValue && !isLanguageNeutral(answer.type) && answer.type === "long_text" && (
+							<div
+								lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
+								className="mt-2 border-l-2 border-rule pl-3 text-sm text-ink-muted"
+								data-long-text-translation=""
+							>
+								<p className="font-medium">{t("reports.detail.translationLabel")}</p>
+								<Markdown headingOffset={2} className="mt-1">
+									{value.translatedValue}
+								</Markdown>
+							</div>
+						)}
+						{value.translatedValue && !isLanguageNeutral(answer.type) && answer.type !== "long_text" && (
+							<span
+								lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
+								className="mt-1 block whitespace-pre-line text-sm text-ink-muted"
+							>
+								{t("reports.detail.translation", { text: value.translatedValue })}
+							</span>
+						)}
+					</dd>
+				))
+			)}
+		</div>
+	)
+	const privateAnswers = report?.answers.filter((answer) => answer.isPrivate) ?? []
+	const ordinaryAnswers = report?.answers.filter((answer) => !answer.isPrivate) ?? []
+
 	return (
 		<main className="mx-auto max-w-4xl px-6 py-12">
 			<Link to="/admin/reports" className="font-sans text-sm text-ink underline">
@@ -187,17 +250,33 @@ export function ReportDetailPage() {
 						onDelete={() => setConfirmingDelete(true)}
 					/>
 
+					{/* Processing failures and the approval state sit apart from the report's content (REQ-WLD-020). */}
+					{report.consent === true && (report.summaryError || report.summary) && (
+						<section aria-labelledby="status-heading" className="mt-10" data-section="status">
+							<h2 id="status-heading" className="font-display text-2xl font-bold">
+								{t("reports.detail.status")}
+							</h2>
+							{report.summaryError && (
+								<p className="mt-4 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
+									{t("reports.detail.summaryFailed", { error: report.summaryError })}
+								</p>
+							)}
+							{report.summary && (
+								<p className="mt-2 font-sans text-sm text-ink-muted" data-approval>
+									{report.summary.approvedAt
+										? t("reports.detail.approved", { at: at.format(new Date(report.summary.approvedAt)) })
+										: t("reports.detail.notApproved")}
+								</p>
+							)}
+						</section>
+					)}
+
 					{/* A report without consent is never summarized, so it has no summary panel (REQ-DOM-006). */}
 					{report.consent === true && (
-					<section aria-labelledby="summary-heading" className="mt-10">
+					<section aria-labelledby="summary-heading" className="mt-10" data-section="summary">
 						<h2 id="summary-heading" className="font-display text-2xl font-bold">
 							{t("reports.detail.summary")}
 						</h2>
-						{report.summaryError && (
-							<p className="mt-4 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
-								{t("reports.detail.summaryFailed", { error: report.summaryError })}
-							</p>
-						)}
 						{report.summary ? (
 							<>
 								<div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -231,11 +310,6 @@ export function ReportDetailPage() {
 										at: at.format(new Date(report.summary.generatedAt)),
 									})}
 								</p>
-								<p className="font-sans text-sm text-ink-muted">
-									{report.summary.approvedAt
-										? t("reports.detail.approved", { at: at.format(new Date(report.summary.approvedAt)) })
-										: t("reports.detail.notApproved")}
-								</p>
 								<SummaryHistory
 									revisions={report.summaryRevisions}
 									isLive={report.status === "published"}
@@ -256,72 +330,27 @@ export function ReportDetailPage() {
 					</section>
 					)}
 
-					<section aria-labelledby="answers-heading" className="mt-10">
-						<h2 id="answers-heading" className="font-display text-2xl font-bold">
-							{t("reports.detail.answers")}
-						</h2>
-						<dl className="mt-4 flex flex-col gap-4">
-							{report.answers.map((answer) => (
-								<div
-									key={answer.questionKey}
-									className="rounded border border-rule bg-surface p-4"
-									data-question-key={answer.questionKey}
-								>
-									<dt className="flex flex-wrap items-center gap-2 font-sans text-sm font-medium text-ink">
-										{label(answer)}
-										{answer.isPrivate && (
-											<span
-												className="inline-flex items-center rounded-full border border-ink px-2 py-0.5 font-sans text-xs"
-												data-private-answer
-											>
-												{t("reports.detail.private")}
-											</span>
-										)}
-									</dt>
-									{answer.values.length === 0 ? (
-										<dd className="mt-1 font-sans text-ink-muted">{t("reports.detail.notAnswered")}</dd>
-									) : (
-										listedValues(answer, locale).map((value, index) => (
-											<dd key={index} className="mt-1 font-sans text-ink">
-												{isLanguageNeutral(answer.type) ? (
-													<span className="whitespace-pre-line">{formatAnswer(answer.type, value.value, locale, t)}</span>
-												) : answer.type === "long_text" ? (
-													// A paragraph answer, and its Worker translation, read as Markdown (ADR-0180).
-													<Markdown lang={value.locale} headingOffset={2} data-long-text-answer="">
-														{String(value.value)}
-													</Markdown>
-												) : (
-													<span lang={value.locale} className="whitespace-pre-line">
-														{value.value}
-													</span>
-												)}
-												{value.translatedValue && !isLanguageNeutral(answer.type) && answer.type === "long_text" && (
-													<div
-														lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
-														className="mt-2 border-l-2 border-rule pl-3 text-sm text-ink-muted"
-														data-long-text-translation=""
-													>
-														<p className="font-medium">{t("reports.detail.translationLabel")}</p>
-														<Markdown headingOffset={2} className="mt-1">
-															{value.translatedValue}
-														</Markdown>
-													</div>
-												)}
-												{value.translatedValue && !isLanguageNeutral(answer.type) && answer.type !== "long_text" && (
-													<span
-														lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
-														className="mt-1 block whitespace-pre-line text-sm text-ink-muted"
-													>
-														{t("reports.detail.translation", { text: value.translatedValue })}
-													</span>
-												)}
-											</dd>
-										))
-									)}
-								</div>
-							))}
-						</dl>
-					</section>
+					{ordinaryAnswers.length > 0 && (
+						<section aria-labelledby="answers-heading" className="mt-10" data-section="answers">
+							<h2 id="answers-heading" className="font-display text-2xl font-bold">
+								{t("reports.detail.answers")}
+							</h2>
+							<dl className="mt-4 flex flex-col gap-4">{ordinaryAnswers.map(renderAnswer)}</dl>
+						</section>
+					)}
+
+					{privateAnswers.length > 0 && (
+						<section
+							aria-labelledby="private-answers-heading"
+							className="mt-10 rounded border-2 border-ink p-4"
+							data-section="private-answers"
+						>
+							<h2 id="private-answers-heading" className="font-display text-2xl font-bold">
+								{t("reports.detail.privateAnswers")}
+							</h2>
+							<dl className="mt-4 flex flex-col gap-4">{privateAnswers.map(renderAnswer)}</dl>
+						</section>
+					)}
 
 					<AttachmentStrip reportId={report.id} media={[]} staffAttachments={report.attachments} onChanged={reload} />
 

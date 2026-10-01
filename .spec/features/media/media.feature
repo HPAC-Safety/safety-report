@@ -125,7 +125,6 @@ Scenario: A reviewer downloads a validated document as an unredacted original
   And there is no API blob proxy or public URL
 
 @REQ-MED-012
-@ignore
 @ui
 Scenario: The admin site never inline-renders a private document
   Given an authorized reviewer opens a document attachment

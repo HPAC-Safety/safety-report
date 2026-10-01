@@ -4,7 +4,6 @@ React/TypeScript single-page application that renders bilingual content,
 preserves local report state, and meets WCAG 2.2 AA.
 
 @REQ-WLD-001
-@ignore
 @ui
 Scenario: The admin review queue is a route of the one site
   Given a signed-in Safety Officer is on the public report page
@@ -350,7 +349,6 @@ Scenario: The interface language alone decides which summary text is shown
   Then the report shows the other language's text
 
 @REQ-WLD-020
-@ignore
 @ui
 Scenario: A report's private context, its content, and its summary are visibly distinct
   Given a reviewer opens a report in the admin site
@@ -359,7 +357,6 @@ Scenario: A report's private context, its content, and its summary are visibly d
   And processing failures and the approval state are shown apart from the report's content
 
 @REQ-WLD-048
-@ignore
 @ui
 Scenario Outline: A destructive admin action asks for confirmation
   Given a reviewer is on a published report in the admin site

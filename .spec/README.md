@@ -24,13 +24,13 @@ detail Gherkin cannot hold, including what not to build.
 |---|---|---|---|---|---|
 | [AI anonymization](features/ai-anonymization/ai-anonymization.feature) | `REQ-AI` | 28 | 0 | 0 | [README](features/ai-anonymization/README.md) — Supporting detail for the one-call bilingual summarization and anonymization scenarios. |
 | [Comments](features/comments/comments.feature) | `REQ-COM` | 21 | 0 | 7 | [README](features/comments/README.md) — Supporting detail for the member comment, translation, and moderation scenarios. |
-| [Domain and lifecycle](features/domain-and-lifecycle/domain-and-lifecycle.feature) | `REQ-DOM` | 29 | 3 | 0 | [README](features/domain-and-lifecycle/README.md) — Supporting detail for the report states, invariants, deletion, and retention scenarios. |
+| [Domain and lifecycle](features/domain-and-lifecycle/domain-and-lifecycle.feature) | `REQ-DOM` | 28 | 2 | 0 | [README](features/domain-and-lifecycle/README.md) — Supporting detail for the report states, invariants, deletion, and retention scenarios. |
 | [Attachments](features/media/media.feature) | `REQ-MED` | 59 | 2 | 14 | [README](features/media/README.md) — Supporting detail for the image, video, document, quarantine, and derivative scenarios. |
-| [Moderation, authentication, and publication](features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature) | `REQ-MOD` | 202 | 6 | 98 | [README](features/moderation-authentication-and-publication/README.md) — Supporting detail for the member authentication, review, and public feed scenarios. |
+| [Moderation, authentication, and publication](features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature) | `REQ-MOD` | 200 | 4 | 98 | [README](features/moderation-authentication-and-publication/README.md) — Supporting detail for the member authentication, review, and public feed scenarios. |
 | [Question bank and form](features/question-bank-and-form/question-bank-and-form.feature) | `REQ-QB` | 205 | 3 | 86 | [README](features/question-bank-and-form/README.md) — Supporting detail for the immutable bilingual question and form assembly scenarios. |
 | [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 113 | 2 | 71 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
 | [Typeform question import and export](features/typeform-question-import-export/typeform-question-import-export.feature) | `REQ-TF` | 23 | 0 | 1 | [README](features/typeform-question-import-export/README.md) — Supporting detail for importing and exporting the question bank as Typeform JSON. |
-| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` | 47 | 3 | 23 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
+| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` | 48 | 4 | 24 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
 
 ## Constraint pages
 

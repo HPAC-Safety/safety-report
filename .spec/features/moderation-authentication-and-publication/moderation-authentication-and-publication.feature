@@ -255,26 +255,63 @@ Rule: Role capabilities
 
 @REQ-MOD-025
 @ignore
-Scenario: User capabilities
+Scenario Outline: A User may only submit a report
   Given a member has the User role
-  Then the member can submit an occurrence report
-  And the member has no review, authoring, or publication capability
+  When that member attempts to <capability>
+  Then the API <outcome> the attempt
+
+Examples:
+  | capability                     | outcome |
+  | submit an occurrence report    | allows  |
+  | list the review queue          | forbids |
+  | read a report's private detail | forbids |
+  | obtain an attachment link      | forbids |
+  | edit a report's summary        | forbids |
+  | publish a report               | forbids |
+  | unpublish a report             | forbids |
+  | soft-delete a report           | forbids |
+  | create a question revision     | forbids |
+  | edit a question's choices      | forbids |
 
 @REQ-MOD-026
 @ignore
-Scenario: SafetyOfficer capabilities
+Scenario Outline: A SafetyOfficer reviews and publishes but does not author questions
   Given a member has the SafetyOfficer role
-  Then the member can view the review queue and private report material
-  And view safe image/video derivatives and download validated unredacted documents
-  And edit the bilingual summary pair
-  And publish, unpublish, and soft-delete reports
+  When that member attempts to <capability>
+  Then the API <outcome> the attempt
+
+Examples:
+  | capability                     | outcome |
+  | submit an occurrence report    | allows  |
+  | list the review queue          | allows  |
+  | read a report's private detail | allows  |
+  | obtain an attachment link      | allows  |
+  | edit a report's summary        | allows  |
+  | publish a report               | allows  |
+  | unpublish a report             | allows  |
+  | soft-delete a report           | allows  |
+  | create a question revision     | forbids |
+  | edit a question's choices      | forbids |
 
 @REQ-MOD-027
 @ignore
-Scenario: Administrator capabilities include everything SafetyOfficer has
+Scenario Outline: An Administrator has every SafetyOfficer capability and authors questions
   Given a member has the Administrator role
-  Then the member has every SafetyOfficer capability
-  And can additionally create question revisions and author every question's choices
+  When that member attempts to <capability>
+  Then the API <outcome> the attempt
+
+Examples:
+  | capability                     | outcome |
+  | submit an occurrence report    | allows  |
+  | list the review queue          | allows  |
+  | read a report's private detail | allows  |
+  | obtain an attachment link      | allows  |
+  | edit a report's summary        | allows  |
+  | publish a report               | allows  |
+  | unpublish a report             | allows  |
+  | soft-delete a report           | allows  |
+  | create a question revision     | allows  |
+  | edit a question's choices      | allows  |
 
 Rule: The type-ahead review queue
 
@@ -753,24 +790,7 @@ Scenario: An unknown or non-public report id returns 404
   Then the API returns 404
   And non-public ids are indistinguishable from unknown ids
 
-@REQ-MOD-039
-@ignore
-Scenario: There is no publication channel besides the HPAC public feed
-  Given a report becomes publishable
-  When it is published
-  Then it appears only on the HPAC public feed and report-detail page
-  And no email, messaging, social, webhook, or third-party channel publishes it
-
 Rule: Access control and audit
-
-@REQ-MOD-041
-@ignore
-Scenario: Revoking a member's access is the identity provider's decision
-  Given a member's access is revoked at the identity provider
-  When their current token expires or stops being issued
-  Then they can no longer authenticate
-  And this system holds no record of them to revoke
-  And historic audit rows keep the opaque subject they were written with
 
 @REQ-MOD-042
 @ui

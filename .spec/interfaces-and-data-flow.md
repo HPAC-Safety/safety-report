@@ -35,7 +35,7 @@ Before `POST /api/v1/reports`, the only reporter-facing writes are the upload
 endpoints: unfinished answers remain browser-local and create no report,
 reserved ID, or database state, and an upload creates only a quarantine object
 ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
-*Verified by: REQ-SUB-001, REQ-MOD-039.*
+*Verified by: REQ-SUB-001.*
 
 ### Authentication API
 
@@ -66,7 +66,7 @@ below, and a write is audited.
 
 **CON-IF-005** There is no allowlist-management endpoint. Roles come from the token, and
 access is granted or revoked at the identity provider.
-*Verified by: REQ-MOD-041.*
+*Verified by: REQ-MOD-015, REQ-MOD-017.*
 
 **CON-IF-006** Admin mutation routes use explicit command DTOs and concurrency tokens where a
 stale edit could overwrite another officer's work. Error bodies are localized

@@ -710,10 +710,18 @@ Scenario: A submission may answer a known superseded revision
 
 @REQ-SUB-010
 @ignore
-Scenario: A revision that was never shown as answer-producing is rejectable
-  Given a submitted answer references a revision that the client was never shown as answer-producing, or the submitted revisions form an internally inconsistent combination for the same stable key
+Scenario Outline: A submission naming revisions inconsistently is refused
+  Given a submission carries <answers>
   When the API validates the submission
-  Then the API may reject the submission
+  Then the API refuses the submission
+  And nothing is stored
+
+Examples:
+  | answers                                                 |
+  | an answer naming an unknown revision                    |
+  | an answer naming a deleted revision                     |
+  | two answers naming the same revision                    |
+  | two answers naming revisions of one stable key          |
 
 @REQ-SUB-011
 Scenario: Reporter-visible errors never echo submitted content

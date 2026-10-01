@@ -64,6 +64,7 @@ Scenario: Unclaimed uploads expire automatically
   Given an upload that no committed submission claimed
   When the storage lifecycle rule runs
   Then the upload expires, its key stopping resolving fifteen days after it was written and its bytes gone about a day after that
+  And no file a committed submission claimed is expired by that rule
 
 @REQ-MED-006
 Scenario: Every image is re-encoded to strip metadata
@@ -129,8 +130,8 @@ Scenario: A reviewer downloads a validated document as an unredacted original
 Scenario: The admin site never inline-renders a private document
   Given an authorized reviewer opens a document attachment
   When the admin site presents it
-  Then the admin site does not embed or inline-render the document content
-  And the reviewer is warned that the document is unredacted before download
+  Then the admin site does not embed, preview, or inline-render the document content
+  And the document is offered only as a download
 
 @REQ-MED-013
 Scenario: A failed image or video is never viewed inline, but its raw original downloads, audited

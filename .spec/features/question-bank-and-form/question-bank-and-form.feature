@@ -368,10 +368,11 @@ Examples:
 
 @REQ-QB-045
 @ignore
-Scenario Outline: A statement or a group is excluded from a submission's answer-producing revisions
+Scenario Outline: An answer naming a statement or a group is refused
   Given an Administrator authors a <type> question
-  When a reporter is shown the form and submits it
-  Then it does not appear in the set of answer-producing revisions the submission records
+  When a submission carries an answer naming that question's revision
+  Then the API refuses the submission
+  And nothing is stored
 
 Examples:
   | type      |
@@ -448,10 +449,16 @@ Scenario: Grouping is unaffected by conditional dependency and vice versa
 
 @REQ-QB-052
 @ignore
-Scenario: Regrouping follows a parent that stops being a group
+Scenario Outline: A grouped question is ungrouped when its group stops being one
   Given a question is grouped under a group question
-  When an Administrator retypes that parent away from the group type, or deletes it
-  Then the child's next revision is ungrouped rather than naming a heading that no longer exists
+  When an Administrator <change>
+  Then the grouped question gets a new revision that is ungrouped
+  And it appears on the reporter's form where the group stood
+
+Examples:
+  | change                                       |
+  | deletes the group                            |
+  | retypes the group to a type other than group |
 
 Rule: Conditional questions
 

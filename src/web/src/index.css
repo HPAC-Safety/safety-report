@@ -180,7 +180,9 @@
  * The brand values do NOT change. hpac.ca has one red and inventing a second
  * one for dark mode would be inventing a brand colour. Red stays reserved for
  * filled actions and error state, where white-on-brand-700 clears AA in both
- * themes; it is never used as body text on either surface.
+ * themes. Brand red is also set as text (links, the active nav link, field
+ * errors), where on the dark surface it reads 3.75:1, below AA; the owner
+ * accepted that and the palette stays as it is (ADR-0024 amendment, 2026-09-30).
  *
  * Written unlayered so it outranks the `@layer theme` block Tailwind emits
  * from `@theme` above, and written twice so that both the system preference

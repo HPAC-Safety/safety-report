@@ -380,12 +380,11 @@ Scenario: Assets are self-hosted, never loaded from third-party CDNs
   And the logo is the approved HPAC mark, as light/dark SVG variants
 
 @REQ-WLD-022
-@ignore
 @ui
 Scenario Outline: Dark mode passes contrast and focus checks in both languages
   Given a visitor's stored theme preference is dark and their language is <locale>
   When they open <page>
-  Then an accessibility scan reports no color-contrast violation
+  Then an accessibility scan reports no color-contrast violation, except for text set in the HPAC brand red, which the owner accepted below 4.5:1 and the scan excludes
   And the focused control shows a visible focus indicator
 
 Examples:

@@ -2844,7 +2844,7 @@ Assets are self-hosted, never loaded from third-party CDNs — *Reqnroll, Covere
 
 ### REQ-WLD-022
 
-Dark mode passes contrast and focus checks in both languages — *playwright-bdd, Planned*
+Dark mode passes contrast and focus checks in both languages — *playwright-bdd, Covered*
 
 ### REQ-WLD-023
 

@@ -130,6 +130,14 @@ if staged | grep -qE '\.(md|mdc)$'; then
 		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
 		node tools/check-frontmatter.mjs $STAGED_MARKDOWN || status=1
 
+		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
+		node tools/check-links.mjs $STAGED_MARKDOWN || status=1
+
+		# The specification index is generated from .spec/ (ADR-0183).
+		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/'; then
+			node tools/spec-index.mjs --check || status=1
+		fi
+
 		# A generic skill or role agent names nothing specific to this
 		# repository, so it can be reused elsewhere (ADR-0131).
 		if echo "$STAGED_MARKDOWN" | grep -qE '^(skills|agents)/'; then
@@ -139,9 +147,17 @@ if staged | grep -qE '\.(md|mdc)$'; then
 		# A decision record's number is claimed by naming a file, and two
 		# branches claim the same one often enough that it is worth catching
 		# here rather than after a rebase (ADR-0091, lesson 0003).
-		if echo "$STAGED_MARKDOWN" | grep -q '^docs/decisions/ADR-'; then
+		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/decisions/ADR-'; then
 			node tools/adr-numbers.mjs || status=1
 		fi
+	fi
+fi
+
+# A deleted or renamed file breaks every link to it, in files this commit never
+# touched, so the whole tree is checked (ADR-0183).
+if git diff --cached --name-only --diff-filter=DR | grep -q .; then
+	if command -v node >/dev/null 2>&1; then
+		node tools/check-links.mjs || status=1
 	fi
 fi
 

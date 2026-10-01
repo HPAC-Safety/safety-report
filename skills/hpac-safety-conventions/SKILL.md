@@ -13,8 +13,8 @@ same section names.
 
 - Code graph: `graphify query` / `graphify explain` (see `AGENTS.md`
   "graphify").
-- Specification: [`features/README.md`](../../features/README.md).
-- Lessons: [`docs/lessons/`](../../docs/lessons/README.md).
+- Specification: [`.spec/features/README.md`](../../.spec/features/README.md).
+- Lessons: [`.spec/lessons/`](../../.spec/lessons/README.md).
 - Specify first: `AGENTS.md` "Specification-driven development".
 
 ## Privacy
@@ -31,10 +31,10 @@ same section names.
   `<TargetFramework>`, the Worker's `Dockerfile` base image, and
   `renovate.json`'s `allowedVersions`. An upgrade changes all four in one pull
   request; `node tools/dotnet-major.mjs` fails when they disagree
-  ([ADR-0120](../../docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
+  ([ADR-0120](../../.spec/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
 - **No `Async` suffix** on a method this repository names — the return type
   says it is asynchronous
-  ([ADR-0093](../../docs/decisions/ADR-0093-the-return-type-says-a-method-is-asynchronous.md)).
+  ([ADR-0093](../../.spec/decisions/ADR-0093-the-return-type-says-a-method-is-asynchronous.md)).
   - Exception: a member implementing or overriding a contract we do not own
     keeps its given name — `DisposeAsync`, `InitializeAsync`,
     `BackgroundService.ExecuteAsync`, `SaveChangesAsync`, `Stream.ReadAsync`,
@@ -46,22 +46,22 @@ same section names.
 ## Tests, diagrams, copy
 
 - Shouldly for .NET assertions; C# tests named `GivenX_WhenY_ThenZ`
-  ([ADR-0069](../../docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)).
+  ([ADR-0069](../../.spec/decisions/ADR-0069-scannable-given-when-then-test-names.md)).
   Detail: [`test-hpac-safety`](../test-hpac-safety/SKILL.md).
 - Mermaid for every diagram
-  ([ADR-0046](../../docs/decisions/ADR-0046-mermaid-for-diagrams.md)).
+  ([ADR-0046](../../.spec/decisions/ADR-0046-mermaid-for-diagrams.md)).
 - UI copy lives in locale catalogues. Database questions carry
   administrator-authored English and French text in each immutable revision.
 
 ## Generated files and guards
 
 - Why a rule lives where it runs:
-  [lesson 0001](../../docs/lessons/0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md),
-  [ADR-0073](../../docs/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md).
+  [lesson 0001](../../.spec/lessons/0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md),
+  [ADR-0073](../../.spec/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md).
 - Why a generated file has no whole-tree total:
-  [lesson 0013](../../docs/lessons/0013-a-generated-file-with-a-whole-tree-total-conflicts-with-every-branch.md),
-  [ADR-0106](../../docs/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md).
+  [lesson 0013](../../.spec/lessons/0013-a-generated-file-with-a-whole-tree-total-conflicts-with-every-branch.md),
+  [ADR-0106](../../.spec/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md).
 
 ## Before finishing
 
-- The specification to update is `/features`.
+- The specification to update is `.spec/features`.

@@ -41,7 +41,7 @@ export const FORBIDDEN = [
 	{ pattern: /\bADR-\d/i, why: 'cites a decision record by number' },
 	{ pattern: /\blesson \d/i, why: 'cites a lesson by number' },
 	{ pattern: /\b(REQ|CON)-[A-Z]+-\d/, why: 'cites a claim by ID' },
-	{ pattern: /docs\/(decisions|lessons)\/|\btools\/[\w-]+\.|\bsrc\/|features\//i, why: 'names a path in this repository' },
+	{ pattern: /\.spec\/|docs\/(decisions|lessons)\/|\btools\/[\w-]+\.|\bsrc\/|features\//i, why: 'names a path in this repository' },
 ]
 
 /** Every forbidden term in one file's text, as `path:line: why (match)`. */

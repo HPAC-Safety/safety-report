@@ -53,7 +53,7 @@ stateDiagram-v2
 
 - **No user table.** Identity and role come from a validated bearer token per
   request and are never persisted
-  ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+  ([ADR-0065](../../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
   An approver or audit actor is an opaque `varchar(256)` subject with no
   foreign key. A report records nothing about the member who filed it.
 - Every table except `audit_log` and `pending_import_logic` (transient Typeform
@@ -150,8 +150,8 @@ display text: the same row renders in English and French.
 
 ## Related
 
-- `docs/data-and-persistence.md` — canonical target schema
-- `docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md` — the
+- `.spec/data-and-persistence.md` — canonical target schema
+- `.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md` — the
   migration that reached it
 - `docs/form-spec.md` — source of the field set
 - `docs/data-handling.md` — retention, encryption, PIPEDA

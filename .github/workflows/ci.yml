@@ -254,11 +254,11 @@ jobs:
           cp -R ./artifacts/coverage/. /ci-local-share/coverage/
           chmod -R a+rwX /ci-local-share/coverage
 
-  # Parses every features/**/*.feature file with the official @cucumber/gherkin
+  # Parses every .spec/features/**/*.feature file with the official @cucumber/gherkin
   # parser (the same parser cucumber-js uses), pinned in
   # tools/gherkin/package.json. Syntax only — these are specification
   # documents, not an executable suite, so there are no step definitions to run
-  # them against. See features/README.md.
+  # them against. See .spec/features/README.md.
   cucumber:
     runs-on: ubuntu-latest
     steps:
@@ -287,6 +287,11 @@ jobs:
 
       - name: Every markdown file declares what it is
         run: node tools/check-frontmatter.mjs
+
+      # Nothing else notices a link a move or a rename broke: GitHub renders it
+      # as a 404 and the build stays green. ADR-0183.
+      - name: Every relative link resolves
+        run: node tools/check-links.mjs
 
       # The generic skills and role agents are reused elsewhere, so they name
       # nothing specific to this repository. ADR-0131.
@@ -329,13 +334,19 @@ jobs:
       # pull requests both change the specification, the second one's matrix
       # is stale on the merged tree, so it fails here and leaves the queue to be
       # rebased (ADR-0147).
+      # The specification index is generated from .spec/ the same way: every
+      # area, constraint page, decision, and lesson, read from its own file.
+      # traceability.yml commits it with the matrix. ADR-0183.
+      - name: The specification index matches its files
+        run: node tools/spec-index.mjs --check
+
       - name: The traceability matrix matches the specification
         run: |
           set -euo pipefail
           node tools/traceability.mjs
-          if ! git diff --exit-code --stat -- docs/traceability.md; then
-            echo "::error file=docs/traceability.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/traceability.mjs' and commit the result."
-            git diff -- docs/traceability.md
+          if ! git diff --exit-code --stat -- .spec/traceability.md; then
+            echo "::error file=.spec/traceability.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/traceability.mjs' and commit the result."
+            git diff -- .spec/traceability.md
             exit 1
           fi
 

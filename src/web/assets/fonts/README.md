@@ -80,4 +80,4 @@ font requests should be to this origin.
 
 - [`../README.md`](../README.md)
 - [`../../../../docs/design-system.md`](../../../../docs/design-system.md)
-- [ADR-0023](../../../../docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md)
+- [ADR-0023](../../../../.spec/decisions/ADR-0023-pinned-and-vendored-web-assets.md)

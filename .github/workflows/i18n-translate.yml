@@ -259,7 +259,7 @@ jobs:
           `locales/terms.json` (ADR-0102): the translator is told it, and the i18n
           check fails on French that breaks it.
 
-          See `docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md`.
+          See `.spec/decisions/ADR-0021-ci-translation-opens-a-pull-request.md`.
           MD
           } > "$RUNNER_TEMP/pr-body.md"
 

@@ -17,7 +17,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     <para>
 ///         Nothing but the two consents projects onto a typed property of
 ///         <see cref="Reporting.Report" /> — the admin review DTO reads exact asked
-///         questions and answers directly. See <c>docs/data-and-persistence.md</c>.
+///         questions and answers directly. See <c>.spec/data-and-persistence.md</c>.
 ///     </para>
 ///     <para>
 ///         Order, privacy, active state, system state, and required state all
@@ -29,7 +29,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         <see cref="IsActive" />) reads through to
 ///         <see cref="CurrentRevision" />, and every change to one of them is made by
 ///         creating a new revision. See
-///         <c>features/question-bank-and-form/question-bank-and-form.feature</c>.
+///         <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c>.
 ///     </para>
 ///     <para>
 ///         Choices are the exception, deliberately: they live here, on

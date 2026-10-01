@@ -265,7 +265,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new AdminReportSearchMatchConfiguration());
 
 		// Every application table except the append-only audit log is filtered
-		// to its live rows by default. See docs/data-and-persistence.md.
+		// to its live rows by default. See .spec/data-and-persistence.md.
 		SoftDeleteFilters.Apply(modelBuilder);
 
 		// Last, so anything named explicitly above keeps the name it was given.

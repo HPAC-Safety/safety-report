@@ -8,19 +8,19 @@ type: guide
 
 The target deployment is two small AWS environments in `ca-central-1`,
 staging and production, built from the same Terraform
-([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)):
+([ADR-0158](../.spec/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)):
 
 - the API and the Worker as Lambda functions
-  ([ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md),
-  [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md));
+  ([ADR-0042](../.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md),
+  [ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md));
 - RDS PostgreSQL with backups;
 - private S3 attachment storage;
 - one website, with the review queue as its `/admin` route, served as static
   files from a private S3 bucket through CloudFront, which also routes
   `/api/*` to the API's Lambda Function URL — there is no ALB
-  ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md),
-  [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
-  [ADR-0159](decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md));
+  ([ADR-0048](../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md),
+  [ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
+  [ADR-0159](../.spec/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md));
 - Secrets Manager, identity-provider configuration, and focused alerts for failed
   or stuck Worker work.
 
@@ -46,7 +46,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
   name, so the deploy role manages it by name. There is no myApplications
   (AppRegistry) application: AWS closed AppRegistry to new accounts on
   2026-07-30
-  ([ADR-0170](decisions/ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md)). Both accounts are reached only by their own short-lived GitHub
+  ([ADR-0170](../.spec/decisions/ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md)). Both accounts are reached only by their own short-lived GitHub
   OIDC roles
   (`hpac-safety-deploy`, `hpac-safety-plan`) — never a long-lived AWS access
   key.
@@ -56,7 +56,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
   ready; see [`infra/SETUP.md`](../infra/SETUP.md) Part 3 for the exact
   one-time steps.
 - **The identity provider is an external dependency, not chosen here**
-  ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+  ([ADR-0064](../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
   Until `AUTH_AUTHORITY` is set for an environment, that environment still
   starts and serves its public pages and public API (REQ-MOD-156, #647), but
   every bearer token is refused, so sign-in, filing a report (a member-only
@@ -64,7 +64,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
   **Staging is the exception**: `interim_issuer_enabled` turns on a temporary
   RS256 identity provider the API runs itself, so sign-in, filing a report,
   review, and administration all work in staging today
-  ([ADR-0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
+  ([ADR-0172](../.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
   Production still waits for `AUTH_AUTHORITY`.
 
 ## Release and promotion
@@ -72,10 +72,10 @@ today's Terraform differs" below for exactly what is still scaffolding.
 **Releasing** ([`release.yml`](../.github/workflows/release.yml),
 [`promote.yml`](../.github/workflows/promote.yml),
 [`deploy-environment.yml`](../.github/workflows/deploy-environment.yml);
-[ADR-0166](decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)):
+[ADR-0166](../.spec/decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)):
 
 1. **Run Release** (Actions → Release → Run workflow, from `main`, no
-   inputs; [ADR-0168](decisions/ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md),
+   inputs; [ADR-0168](../.spec/decisions/ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md),
    [`infra/SETUP.md`](../infra/SETUP.md) step 2.5) — the only human action
    every release needs. Its `release` job tags the run's `main` commit with
    the next `YYYY.MM.DD-N` (today in UTC, next free `N`) and creates a GitHub
@@ -123,7 +123,7 @@ today's Terraform differs" below for exactly what is still scaffolding.
 Staging and production hold separate concurrency groups (`release-staging`,
 `promote-production`), so a promotion waiting on approval never holds a
 staging release
-([lesson 0026](lessons/0026-a-run-waiting-on-reviewers-held-every-later-run.md)).
+([lesson 0026](../.spec/lessons/0026-a-run-waiting-on-reviewers-held-every-later-run.md)).
 
 There is no `terraform apply` on a merge to `main`
 ([`terraform.yml`](../.github/workflows/terraform.yml)). A pull request only
@@ -209,7 +209,7 @@ reads an output name or JSON key `infra/outputs.tf` doesn't declare.
 
 Migrations apply at startup: the API and the Worker each run pending migrations
 under an advisory lock, and there is no dedicated migration step
-([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+([ADR-0055](../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 Rollback redeploys a previously tested artifact; schema changes must support the
 previous application during staged rollout. Backup restoration must be tested
 before cutover.
@@ -238,7 +238,7 @@ sets, and a NAT instance instead of a managed NAT gateway. `release.yml` and
 `deploy-environment.yml` (#466) are now aligned against the real
 `infra/outputs.tf` this Terraform declares. Issue #30 tracks what remains;
 see
-[`infrastructure-and-operations.md`](infrastructure-and-operations.md)'s
+[`infrastructure-and-operations.md`](../.spec/infrastructure-and-operations.md)'s
 "Where today's Terraform differs" for exactly what is still open.
 Do not interpret a successful Terraform validation as proof that the target
 environment exists or has been applied — **no AWS deployment exists yet**,
@@ -385,7 +385,7 @@ tag/name scoping does not fit in one):
   denied only on a resource tagged for another project
   (`NeverRetagAnotherProjectsResource`); an untagged ACM certificate or
   CloudFront distribution of another workload is the accepted residual risk
-  ([ADR-0169](decisions/ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md)).
+  ([ADR-0169](../.spec/decisions/ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md)).
 - **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles, policies,
   and instance profiles (for the NAT instance, #465) named `hpac-safety-*`;
   `iam:PassRole` only to those roles and only with `iam:PassedToService` in
@@ -393,7 +393,7 @@ tag/name scoping does not fit in one):
   the explicit denies: never read a secret value even its own (except the
   Terraform-generated CloudFront origin secret, whose value is already in
   Terraform state;
-  [ADR-0171](decisions/ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md)), never read
+  [ADR-0171](../.spec/decisions/ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md)), never read
   an uploaded report file or RDS/log content, never read another
   application's Lambda function, ECR image, SSM parameter, DynamoDB item,
   Kinesis record, or SQS message, never create an IAM user or access key,

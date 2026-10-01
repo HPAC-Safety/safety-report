@@ -7,25 +7,25 @@ type: guide
 # Issue traceability
 
 This page lists every open issue and how it stands against the
-[specification](../features/README.md), as of 2026-09-26 (#550). Closed issues
+[specification](../.spec/features/README.md), as of 2026-09-26 (#550). Closed issues
 are not listed: their history is in GitHub, and what they decided lives in the
-ADRs and `/features`. A pull request that closes an issue removes its row.
+ADRs and `.spec/features`. A pull request that closes an issue removes its row.
 
 `tools/issue-traceability.mjs` compares this page with the open issues. It
 never fails a pull request: `.github/workflows/issue-traceability.yml` runs it
 daily and on every push to `main`, and keeps one "Issue traceability drift"
 issue open while an open issue has no row here or a row names a closed one
-([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+([ADR-0143](../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
 
 | Issue | Area | Disposition |
 |---|---|---|
-| [#30 — Deploy HPAC-Safety to AWS: staging and production, released and promoted](https://github.com/HPAC-Safety/safety-report/issues/30) | Infrastructure | Open, phase 2. The plan and tracking list for staging and production, built by #461 and #464–#467 after #443 brings the Terraform to the topology in [infrastructure and operations](infrastructure-and-operations.md). |
+| [#30 — Deploy HPAC-Safety to AWS: staging and production, released and promoted](https://github.com/HPAC-Safety/safety-report/issues/30) | Infrastructure | Open, phase 2. The plan and tracking list for staging and production, built by #461 and #464–#467 after #443 brings the Terraform to the topology in [infrastructure and operations](../.spec/infrastructure-and-operations.md). |
 | [#31 — Replace the Typeform with the new report form](https://github.com/HPAC-Safety/safety-report/issues/31) | Infrastructure | Open, phase 2. The cut-over after deployment. |
 | [#47 — Dependency Dashboard](https://github.com/HPAC-Safety/safety-report/issues/47) | — | Renovate's standing dashboard, not a task. |
-| [#387 — Evaluate AWS Bedrock as the summarization provider](https://github.com/HPAC-Safety/safety-report/issues/387) | AI | Open research spike. Summaries use Gemini today ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)); the provider is configuration behind `IAiMediator`. |
-| [#413 — Identify commenters by name and HPAC number once OIDC lands](https://github.com/HPAC-Safety/safety-report/issues/413) | Security | Open, waiting on the real identity provider ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)). Comments show "Member" until then ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
+| [#387 — Evaluate AWS Bedrock as the summarization provider](https://github.com/HPAC-Safety/safety-report/issues/387) | AI | Open research spike. Summaries use Gemini today ([ADR-0104](../.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)); the provider is configuration behind `IAiMediator`. |
+| [#413 — Identify commenters by name and HPAC number once OIDC lands](https://github.com/HPAC-Safety/safety-report/issues/413) | Security | Open, waiting on the real identity provider ([ADR-0064](../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)). Comments show "Member" until then ([ADR-0114](../.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | [#427 — Show report attachments as a thumbnail strip with a lightbox, and a viewer-scoped count in report lists](https://github.com/HPAC-Safety/safety-report/issues/427) | Web, API | Open, unblocked; the owner's decisions are recorded on the issue. Builds on ADR-0117 and ADR-0119. |
-| [#443 — Run the API and the Worker on Lambda (ADR-0042, ADR-0123)](https://github.com/HPAC-Safety/safety-report/issues/443) | Infrastructure | Open. The Terraform, the deploy workflows, and the Worker's drain-once Lambda host ([ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)). |
+| [#443 — Run the API and the Worker on Lambda (ADR-0042, ADR-0123)](https://github.com/HPAC-Safety/safety-report/issues/443) | Infrastructure | Open. The Terraform, the deploy workflows, and the Worker's drain-once Lambda host ([ADR-0042](../.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)). |
 | [#461 — Record the deployment shape: staging and production accounts, release promotion, CloudFront to a Function URL, two hostnames](https://github.com/HPAC-Safety/safety-report/issues/461) | Infrastructure | Open, phase 2. Documents the deployment topology before #464–#467 build it. |
 | [#464 — Bootstrap each AWS account from CloudShell with per-environment OIDC roles](https://github.com/HPAC-Safety/safety-report/issues/464) | Infrastructure, security | Open, phase 2. |
 | [#465 — Make the Terraform build staging and production, grouped as HPAC-Safety, with CloudFront routing /api to the API](https://github.com/HPAC-Safety/safety-report/issues/465) | Infrastructure | Open, phase 2. |

@@ -17,8 +17,8 @@ compartment `BlobKey.AcceptsDirectUpload` may be signed — today,
 `quarantine/<upload id>` alone. The upload waits there until a submission
 claims it, reading it through `OpenReadRange` to sniff it; deleting it removes
 every version
-([ADR-0096](../../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-[ADR-0126](../../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
+([ADR-0096](../../../.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+[ADR-0126](../../../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
 Unclaimed uploads, and those left behind by a failed submission, expire by
 lifecycle rule.
 
@@ -26,7 +26,7 @@ A staff private attachment uploads the same way, to the same quarantine,
 through `POST /api/admin/reports/{reportId}/private-attachments/uploads`; its
 claim copies it to `<report id>/private/<attachment id>`, unchanged. Only
 `PrivateAttachmentLink` signs a GET for that compartment, and only for it
-([ADR-0135](../../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
+([ADR-0135](../../../.spec/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 
 Every pre-signed URL lives at most fifteen minutes by the URL's own
 `X-Amz-Expires`: the SDK signs from its clock-skew-corrected time, so a URL it
@@ -42,4 +42,4 @@ path-style addressing, and local credentials, and signs reviewer URLs for the
 public host the browser can reach. The bucket accepts a cross-origin `PUT`
 only from the site origins (`site_origins` in Terraform; the dev server's
 origin in docker-compose). `BlobStoreContractTests` run it against
-RustFS (ADR-0110). See [`features/media/media.feature`](../../../features/media/media.feature).
+RustFS (ADR-0110). See [`.spec/features/media/media.feature`](../../../.spec/features/media/media.feature).

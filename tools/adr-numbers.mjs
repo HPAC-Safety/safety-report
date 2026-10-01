@@ -4,8 +4,9 @@
 // lesson 0003).
 //
 // Three jobs, because they are the same job at three moments:
-//   --check              a duplicate or a filename disagreeing with its heading
-//                        fails, in the pre-commit hook and in CI
+//   --check              a duplicate, a filename disagreeing with its heading,
+//                        or a status disagreeing with its status line fails,
+//                        in the pre-commit hook and in CI
 //   --next               the next free number, counting every fetched remote
 //                        branch, not only origin/main
 //   --renumber old new   move the file and rewrite every reference to it
@@ -15,8 +16,9 @@ import { execFileSync } from 'node:child_process'
 import { lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { DECISIONS, LEGACY_DECISIONS } from './spec-paths.mjs'
+
 const ROOT = process.cwd()
-const DECISIONS = 'docs/decisions'
 const FILENAME = /^ADR-(\d{4})-[a-z0-9-]+\.md$/
 // Both separators are in use: older records write "# ADR-0016: title" and
 // newer ones "# ADR-0083 — title". The separator is not the point — the number
@@ -69,36 +71,99 @@ export function checkNumbering(adrs, read) {
 	return problems
 }
 
+export const STATUSES = ['accepted', 'partially-superseded', 'superseded']
+
+/**
+ * An ADR's own status paragraph: the `**Status:**` paragraph, or the first
+ * paragraph of a `## Status` section. Only this is read, because the rest of a
+ * record discusses other records' supersession freely.
+ */
+export function statusLine(text) {
+	const bold = text.match(/^\*\*Status:\*\*[\s\S]*?(?=\n\s*\n|(?![\s\S]))/m)
+	if (bold) return bold[0]
+	const section = text.match(/^## Status\s*\n+([\s\S]*?)(?=\n\s*\n|^## |(?![\s\S]))/m)
+	return section ? section[1] : ''
+}
+
+/**
+ * Every disagreement between what an ADR declares and what it says (ADR-0183):
+ * a status outside the closed set; a status line saying it is superseded by
+ * another record while it declares `accepted`; a superseded record whose status
+ * line links nothing that replaced it; a successor that does not exist.
+ */
+export function checkStatus(adrs, read) {
+	const problems = []
+	const numbers = new Set(adrs.map((adr) => adr.number).filter(Boolean))
+
+	for (const { name, number } of adrs) {
+		if (number === null) continue
+		const text = read(name)
+		const status = text.match(/^status:\s*(.*?)\s*$/m)?.[1]
+		const line = statusLine(text)
+
+		if (!STATUSES.includes(status)) {
+			problems.push(`${DECISIONS}/${name}: "status: ${status ?? ''}" is not one of ${STATUSES.join(', ')}`)
+			continue
+		}
+
+		const successors = [...line.matchAll(/superseded\s+by\s+\**\[?`?ADR-(\d{4})/gi)].map((match) => match[1])
+		if (status === 'accepted' && successors.length > 0) {
+			problems.push(`${DECISIONS}/${name}: its status line says it is superseded by ADR-${successors[0]}, but it declares "status: accepted" — make it partially-superseded or superseded`)
+		}
+		if (status !== 'accepted' && !/\]\(/.test(line)) {
+			problems.push(`${DECISIONS}/${name}: "status: ${status}" needs a **Status:** line linking what replaced or narrowed it`)
+		}
+		for (const successor of successors) {
+			if (!numbers.has(successor)) problems.push(`${DECISIONS}/${name}: its status line names ADR-${successor}, which does not exist`)
+		}
+	}
+
+	return problems
+}
+
 /**
  * Numbers claimed anywhere git knows about: the working tree, and every fetched
  * remote branch. A number another open pull request has already used is taken,
  * even though it has not merged — which is exactly the race that keeps costing
  * a rebase.
  */
-export function claimedNumbers(root = ROOT, { remote = true } = {}) {
+export function claimedNumbers(root = ROOT, { remote = true, report } = {}) {
 	const claimed = new Set(localAdrs(root).map((adr) => adr.number).filter(Boolean))
 	if (!remote) return claimed
 
+	let refs = []
 	try {
-		const refs = execFileSync('git', ['-C', root, 'for-each-ref', '--format=%(refname)', 'refs/remotes/'], { encoding: 'utf8' })
+		refs = execFileSync('git', ['-C', root, 'for-each-ref', '--format=%(refname)', 'refs/remotes/'], { encoding: 'utf8' })
 			.split('\n')
 			.filter(Boolean)
+	} catch {
+		// No repository. The local set still stands.
+	}
 
-		for (const ref of refs) {
-			const listed = execFileSync('git', ['-C', root, 'ls-tree', '--name-only', `${ref}:${DECISIONS}`], {
-				encoding: 'utf8',
-				stdio: ['ignore', 'pipe', 'ignore'],
-			})
+	// Each ref and directory on its own: a branch not yet rebased past the
+	// move to .spec/ (ADR-0183) has only the old directory, and one missing
+	// directory must not stop the rest of the scan.
+	let legacy = 0
+	for (const ref of refs) {
+		for (const directory of [DECISIONS, LEGACY_DECISIONS]) {
+			let listed
+			try {
+				listed = execFileSync('git', ['-C', root, 'ls-tree', '--name-only', `${ref}:${directory}`], {
+					encoding: 'utf8',
+					stdio: ['ignore', 'pipe', 'ignore'],
+				})
+			} catch {
+				continue
+			}
+			if (directory === LEGACY_DECISIONS) legacy += 1
 			for (const name of listed.split('\n')) {
 				const number = name.match(FILENAME)?.[1]
 				if (number) claimed.add(number)
 			}
 		}
-	} catch {
-		// No repository, or a ref with no decisions directory. The local set
-		// still stands; --next says which sources it consulted.
 	}
 
+	report?.(`consulted ${refs.length} remote ref(s); ${legacy} still on ${LEGACY_DECISIONS}`)
 	return claimed
 }
 
@@ -224,7 +289,7 @@ export function main(argv = [], root = ROOT) {
 	const read = (name) => readFileSync(join(root, DECISIONS, name), 'utf8')
 
 	if (argv[0] === '--next') {
-		console.log(nextNumber(claimedNumbers(root)))
+		console.log(nextNumber(claimedNumbers(root, { report: (line) => console.error(line) })))
 		return 0
 	}
 
@@ -257,7 +322,8 @@ export function main(argv = [], root = ROOT) {
 		return 0
 	}
 
-	const problems = checkNumbering(localAdrs(root), read)
+	const adrs = localAdrs(root)
+	const problems = [...checkNumbering(adrs, read), ...checkStatus(adrs, read)]
 	if (problems.length > 0) {
 		for (const problem of problems) {
 			const [file, ...rest] = problem.split(': ')
@@ -266,7 +332,7 @@ export function main(argv = [], root = ROOT) {
 		return 1
 	}
 
-	console.log(`${localAdrs(root).length} decision record(s) numbered without collision.`)
+	console.log(`${adrs.length} decision record(s) numbered without collision, each status agreeing with its status line.`)
 	return 0
 }
 

@@ -15,7 +15,7 @@ namespace HpacSafety.Worker.Tests.Outbox;
 ///     <see cref="OutboxDrainPass" /> is what a Lambda invocation drains
 ///     through instead of <see cref="Worker" />'s polling loop (ADR-0123): one
 ///     or more due messages, until nothing is left or the time budget given to
-///     it runs out. See <c>features/README.md</c> and issue #443.
+///     it runs out. See <c>.spec/features/README.md</c> and issue #443.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedWorkerPostgres.Name)]

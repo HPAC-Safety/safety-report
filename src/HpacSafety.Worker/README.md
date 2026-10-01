@@ -46,7 +46,7 @@ them into eligible `report_content` and recognition-only `private_context`
 (excluding consent, skipped answers, and file-upload answers), and
 deterministically marks any exact or token-level occurrence of a private
 value found in `report_content` (see
-[ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md))
+[ADR-0082](../../.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md))
 before `OpenAiSummarizer` loads the current prompt from
 [`Prompts/`](Prompts/), makes exactly one model call, and validates strict
 English/French JSON. Answers go in form order, and the request names the
@@ -54,7 +54,7 @@ English/French JSON. Answers go in form order, and the request names the
 included, worded as the revision the reporter answered. Each language must come
 back as Markdown with exactly those `## ` headings, in order, and no other; a
 mismatch is a failed attempt like any invalid response
-([ADR-0180](../../docs/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)). A successful attempt persists one summary row with
+([ADR-0180](../../.spec/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)). A successful attempt persists one summary row with
 shared provenance and moves the report to `PendingReview`; a failure lets
 `OutboxClaimer` record it on the outbox message and, once retries are
 exhausted, moves the report to `SummaryFailed` with a content-free error for
@@ -65,7 +65,7 @@ handler whose model-name prefix matches: `GeminiHandler` claims `gemini-*`.
 The `AiChatClient` section of `appsettings.json` holds the key, model, and
 reasoning level together, with no provider setting: today `gemini-3.7-flash`,
 reasoning `low`
-([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+([ADR-0104](../../.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 The key is never committed; set `AiChatClient__ApiKey` (docker-compose maps an
 exported `GEMINI_API_KEY` to it). With no key the mediator
 reports itself unconfigured, and every attempt retries and then fails; with a

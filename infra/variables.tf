@@ -198,7 +198,7 @@ variable "api_memory_mb" {
 }
 
 variable "api_timeout_seconds" {
-  description = "Lambda timeout for the API function. Every request today completes in well under this; nothing in features/README.md needs a long-lived connection (ADR-0042)."
+  description = "Lambda timeout for the API function. Every request today completes in well under this; nothing in .spec/features/README.md needs a long-lived connection (ADR-0042)."
   type        = number
   default     = 30
 }

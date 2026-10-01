@@ -13,7 +13,7 @@
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
 # upstream guidance only when it matches the repository. Local skills are
 # generic where the practice transfers, with a project skill holding the
-# HPAC-specific knowledge and repository-specific contracts. `/features` is the
+# HPAC-specific knowledge and repository-specific contracts. `.spec/features` is the
 # product-design authority.
 #
 # Docs: https://github.com/eljulians/skillfile
@@ -45,7 +45,7 @@ github  skill  github/awesome-copilot  skills/csharp-async
 github  skill  obra/superpowers  skills/test-driven-development
 
 # Declarative Gherkin scenario design and anti-patterns; framework-agnostic —
-# features/*.feature has no step definitions, so only the authoring guidance
+# .spec/features/*.feature has no step definitions, so only the authoring guidance
 # applies, not the execution-framework parts of this skill.
 github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-best-practices
 

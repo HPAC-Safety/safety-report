@@ -15,7 +15,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The <c>SummarizeReportProcessor</c> scenarios in
-///     <c>features/ai-anonymization/ai-anonymization.feature</c> that describe the
+///     <c>.spec/features/ai-anonymization/ai-anonymization.feature</c> that describe the
 ///     outbox claim query and the persisted outcome — statements about a real
 ///     database, not the domain in isolation. See <see cref="WorkerDatabase" />.
 /// </summary>

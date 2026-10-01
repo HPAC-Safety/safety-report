@@ -1,5 +1,5 @@
 /*
- * An email answer (ADR-0137, `features/report-submission/README.md` "Email and
+ * An email answer (ADR-0137, `.spec/features/report-submission/README.md` "Email and
  * phone answers"). The API holds it to the same rule, in
  * `src/HpacSafety.Core/Features/Reporting/ContactAnswer.cs`.
  */

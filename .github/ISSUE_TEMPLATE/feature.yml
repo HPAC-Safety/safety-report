@@ -8,7 +8,7 @@ body:
         This repository is specification-driven: the scenario is written before
         the implementation, and a wrong behaviour is corrected in the
         specification rather than argued in a conversation
-        ([ADR-0081](../blob/main/docs/decisions/ADR-0083-specification-driven-development.md)).
+        ([ADR-0083](../blob/main/.spec/decisions/ADR-0083-specification-driven-development.md)).
         Fill this in as the specification you want built, not as a description
         of code to write.
   - type: textarea
@@ -32,7 +32,7 @@ body:
       description: >-
         Write each one as a scenario — given a starting state, when something
         happens, then something observable is true. These become the scenarios
-        in `features/<area>/<area>.feature`, so write what a test could fail on.
+        in `.spec/features/<area>/<area>.feature`, so write what a test could fail on.
       placeholder: |
         Given a reporter has answered every required question
         When the reporter submits the form
@@ -66,7 +66,7 @@ body:
     attributes:
       label: Affected specification page
       description: >-
-        The `features/<area>/` page or `docs/` page this changes. If none
+        The `.spec/features/<area>/` page or `docs/` page this changes. If none
         covers it, say so — a new area is a real answer.
     validations:
       required: true

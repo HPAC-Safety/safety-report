@@ -5,7 +5,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     append-only list of <see cref="SummaryRevision" />s (ADR-0177). The
 ///     Worker's single model call writes revision 1; a reviewer's edit or rollback
 ///     adds the next. Nothing here rewrites a saved revision. See product
-///     invariant #6 and <c>docs/data-and-persistence.md</c>.
+///     invariant #6 and <c>.spec/data-and-persistence.md</c>.
 /// </summary>
 public class Summary
 {

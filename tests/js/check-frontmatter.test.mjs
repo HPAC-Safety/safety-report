@@ -138,7 +138,7 @@ describe('checkFile', () => {
 	})
 
 	it('requires an ADR to keep the keys the existing records carry', () => {
-		const problems = checkFile('docs/decisions/ADR-0001-a-decision.md', '---\ntitle: A\ndescription: B\ntype: adr\n---\n')
+		const problems = checkFile('.spec/decisions/ADR-0001-a-decision.md', '---\ntitle: A\ndescription: B\ntype: adr\n---\n')
 
 		assert.deepEqual(
 			problems.map((problem) => problem.match(/missing "([^"]+)"/)[1]),
@@ -147,20 +147,20 @@ describe('checkFile', () => {
 	})
 
 	it('rejects a type that contradicts the file location', () => {
-		const problems = checkFile('docs/decisions/ADR-0001-a-decision.md', '---\ntitle: A\ndescription: B\ntype: guide\n---\n')
+		const problems = checkFile('.spec/decisions/ADR-0001-a-decision.md', '---\ntitle: A\ndescription: B\ntype: guide\n---\n')
 
 		assert.ok(problems.some((problem) => /contradicts its location/.test(problem)))
 	})
 
 	it('requires a spec page to name its area', () => {
-		const problems = checkFile('features/media/README.md', '---\ntitle: A\ndescription: B\ntype: spec\n---\n')
+		const problems = checkFile('.spec/features/media/README.md', '---\ntitle: A\ndescription: B\ntype: spec\n---\n')
 
 		assert.equal(problems.length, 1)
 		assert.match(problems[0], /missing "area"/)
 	})
 
 	it('requires a lesson to carry its date, issue, and status', () => {
-		const problems = checkFile('docs/lessons/0001-a-lesson.md', '---\ntitle: A\ndescription: B\ntype: lesson\n---\n')
+		const problems = checkFile('.spec/lessons/0001-a-lesson.md', '---\ntitle: A\ndescription: B\ntype: lesson\n---\n')
 
 		assert.equal(problems.length, 3)
 	})
@@ -175,6 +175,19 @@ describe('checkFile', () => {
 
 		assert.equal(problems.length, 1)
 		assert.match(problems[0], /does not carry "type"/)
+	})
+
+	it('refuses a lesson status outside the closed set', () => {
+		const lesson = (status) => `---\ntitle: A\ndescription: B\ntype: lesson\ndate: 2026-09-30\nissue: 1\nstatus: ${status}\n---\n`
+
+		assert.deepEqual(checkFile('.spec/lessons/0001-a-lesson.md', lesson('accepted')), [])
+		assert.match(checkFile('.spec/lessons/0001-a-lesson.md', lesson('draft'))[0], /"status: draft" is not one of accepted, superseded/)
+	})
+
+	it('refuses a specification file left where it lived before the move to .spec/', () => {
+		for (const path of ['docs/decisions/ADR-0999-late.md', 'docs/lessons/0099-late.md', 'features/media/README.md']) {
+			assert.match(checkFile(path, '---\ntitle: A\ndescription: B\ntype: guide\n---\n')[0], /moved to \.spec\//)
+		}
 	})
 
 	const agent = (extra) => `---\nname: implementer\ndescription: B\n${extra}---\n`
@@ -218,8 +231,8 @@ describe('expectationFor', () => {
 	})
 
 	it('assigns adr and lesson from the path', () => {
-		assert.equal(expectationFor('docs/decisions/ADR-0042-a-decision.md').type, 'adr')
-		assert.equal(expectationFor('docs/lessons/0001-a-lesson.md').type, 'lesson')
+		assert.equal(expectationFor('.spec/decisions/ADR-0042-a-decision.md').type, 'adr')
+		assert.equal(expectationFor('.spec/lessons/0001-a-lesson.md').type, 'lesson')
 	})
 
 	it('leaves an ordinary page type to its author', () => {

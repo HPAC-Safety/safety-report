@@ -10,9 +10,9 @@ One React/TypeScript single-page application, built with Vite. The report form
 is the default route and requires a signed-in HPAC member, though nothing about
 that member is recorded against the report; the review/administration UI lives
 at `/admin` in the same app and build — see
-[ADR-0043](../../docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md)
+[ADR-0043](../../.spec/decisions/ADR-0043-react-typescript-vite-web-front-end.md)
 and
-[ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md).
+[ADR-0048](../../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md).
 
 ```bash
 npm install
@@ -60,5 +60,5 @@ security boundary.
 
 Current main contains the design system and asset tooling but not the complete
 pages. Implement against
-[`features/web-localization-and-design/web-localization-and-design.feature`](../../features/web-localization-and-design/web-localization-and-design.feature),
+[`.spec/features/web-localization-and-design/web-localization-and-design.feature`](../../.spec/features/web-localization-and-design/web-localization-and-design.feature),
 not old issue closure state.

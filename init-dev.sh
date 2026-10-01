@@ -231,8 +231,8 @@ fi
 # provenance), and dotnet format on staged C# files — the exact classes of
 # drift that otherwise only surface after a push, in CI's "i18n" and "build"
 # jobs. .githooks/post-merge and .githooks/post-rewrite regenerate
-# docs/traceability.md after a merge or rebase finishes — see those files and
-# the .gitattributes note below for why. post-rewrite also runs dotnet format
+# .spec/traceability.md and .spec/README.md after a merge or rebase finishes —
+# see those files and the merge-driver note below for why. post-rewrite also runs dotnet format
 # on the C# files a rebase rewrote, because a rebase commits without running
 # pre-commit.
 #
@@ -251,7 +251,7 @@ fi
 #
 # A dev-machine convenience, not a CI gate — CI enforces the pre-commit
 # checks directly in the "i18n" and "build" jobs, and re-checks
-# docs/traceability.md itself in the "docs" job — so a missing hook is
+# .spec/traceability.md itself in the "docs" job — so a missing hook is
 # reported with note(), not missing(): it must never fail a fresh CI
 # checkout's `--check` step.
 HOOKS_DIR=$(git rev-parse --git-path hooks)
@@ -274,45 +274,40 @@ for hook in pre-commit commit-msg post-merge post-rewrite; do
 	fi
 done
 
-# --------------------------------------------------- traceability merge attr --
+# ------------------------------------------------ generated-file merge driver --
 #
-# docs/traceability.md is generated entirely from features/**/*.feature
-# (ADR-0084). Its format already lets git merge it: every line derives from
-# one scenario or constraint, with no whole-tree totals, and each item sits in
-# its own block (ADR-0106), so two branches with correct matrices merge into
-# the correct matrix — on GitHub too, which never reads this clone-local
-# attribute. `merge=ours` remains a local convenience for the case the format
+# .spec/traceability.md and .spec/README.md are generated entirely from .spec/
+# (ADR-0084, ADR-0183). The matrix's format already lets git merge it: every
+# line derives from one scenario or constraint, with no whole-tree totals, and
+# each item sits in its own block (ADR-0106), so two branches with correct
+# matrices merge into the correct matrix — on GitHub too, which never runs a
+# merge driver. `merge=ours` is a local convenience for the case a format
 # cannot absorb (two branches claiming the same new ID): git keeps whichever
 # side is checked out instead of stopping the rebase, and the
-# post-merge/post-rewrite hooks above regenerate the file for real once the
-# tree, including the .feature files it derives from, is in its final state.
+# post-merge/post-rewrite hooks above regenerate both files for real once the
+# tree is in its final state.
 #
-# .gitattributes is deliberately clone-local in this repository (see
-# .gitignore) rather than a tracked file, so it is written here rather than
-# shipped. Idempotent by checking for the exact line first.
-ATTR_LINE="docs/traceability.md merge=ours"
-ATTR_PRESENT=0
-[ -f .gitattributes ] && grep -qxF "$ATTR_LINE" .gitattributes && ATTR_PRESENT=1
+# The tracked .gitattributes names the driver for those two files; git only
+# honours it once this clone defines a driver called `ours`, which is
+# clone-local config, so it is registered here. Idempotent.
+if git config --get merge.ours.driver >/dev/null 2>&1; then
+	OURS_REGISTERED=1
+else
+	OURS_REGISTERED=0
+fi
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
-	if [ "$ATTR_PRESENT" -eq 1 ]; then
-		ok "docs/traceability.md merge=ours attribute"
+	if [ "$OURS_REGISTERED" -eq 1 ]; then
+		ok "merge=ours driver for the generated .spec/ files"
 	else
-		note "docs/traceability.md merge=ours attribute not set — run without --check"
+		note "merge=ours driver not registered — run without --check"
 	fi
+elif [ "$OURS_REGISTERED" -eq 1 ]; then
+	ok "merge=ours driver for the generated .spec/ files already registered"
 else
-	if [ "$ATTR_PRESENT" -eq 1 ]; then
-		ok "docs/traceability.md merge=ours attribute already set"
-	else
-		printf '%s\n' "$ATTR_LINE" >>.gitattributes
-		added "docs/traceability.md merge=ours attribute"
-	fi
-
-	if [ "$CONFIGURED" -eq 1 ]; then
-		added "docs/traceability.md merge driver"
-	else
-		ok "docs/traceability.md merge driver already registered"
-	fi
+	git config merge.ours.name "keep the checked-out side; post-merge and post-rewrite regenerate it"
+	git config merge.ours.driver true
+	added "merge=ours driver for the generated .spec/ files"
 fi
 
 # ----------------------------------------------------------------- .NET SDK ---
@@ -658,7 +653,7 @@ fi
 # `graphify extract` builds the graph on a fresh clone and incrementally
 # refreshes it on every later run (manifest-based, so a rerun with nothing
 # changed is cheap). Unlike `graphify update` (code only, no LLM), extract
-# also ingests docs — ADRs, features/*.feature, everything under docs/ — which
+# also ingests docs — ADRs, .spec/features/*.feature, everything under docs/ — which
 # this repository relies on as its design authority, so it needs an LLM
 # backend. When the `claude` CLI is on PATH, `--backend claude-cli` drives it
 # headless through the contributor's own Claude Code login — no separate API

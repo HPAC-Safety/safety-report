@@ -12,14 +12,14 @@ existing directory needs no entry, but a new directory does.
 `tools/check-inventories.mjs`, in the `docs` CI job, fails when a directory
 holding tracked files has no entry or an entry names a directory that no longer
 exists
-([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)). Migrations are listed in
+([ADR-0143](../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)). Migrations are listed in
 [`Persistence/Migrations/README.md`](../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md),
 not here.
 
 ## HpacSafety.Api — the HTTP host
 
 It runs on Lambda
-([ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md);
+([ADR-0042](../.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md);
 today's Terraform still uses ECS, #443). It validates tokens and applies
 migrations at startup, and does no AI work.
 
@@ -74,7 +74,7 @@ Core has no runtime package dependency.
 ## HpacSafety.Worker — outbox processing
 
 It runs on Lambda
-([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md);
+([ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md);
 today it is a polling loop on ECS, #443).
 
 | Directory | Holds |
@@ -88,10 +88,10 @@ today it is a polling loop on ECS, #443).
 ## web — the one website
 
 One React/TypeScript/Vite build, with the review queue as its `/admin` route
-([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
-[ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). It is served
+([ADR-0043](../.spec/decisions/ADR-0043-react-typescript-vite-web-front-end.md),
+[ADR-0048](../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md)). It is served
 from S3 through CloudFront
-([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
+([ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
 
 | Directory | Holds |
 |---|---|

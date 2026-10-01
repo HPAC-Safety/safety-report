@@ -123,7 +123,7 @@ to `var(--color-surface)`, so redefining that variable re-themes every use of it
 Three states: no `data-theme` attribute follows `prefers-color-scheme`,
 `data-theme="light"` stays light against a dark system, `data-theme="dark"` is
 dark regardless. No JavaScript is involved. See
-[ADR-0024](decisions/ADR-0024-dark-mode-is-a-token-redefinition.md).
+[ADR-0024](../.spec/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md).
 
 Two things about the dark column in the table above.
 
@@ -152,7 +152,7 @@ Google's own `unicode-range` boundaries, so a page fetches latin-ext only if it
 contains a character in it. Provenance and the refresh procedure:
 [`src/web/assets/fonts/README.md`](../src/web/assets/fonts/README.md). Why they
 are committed rather than fetched at build time:
-[ADR-0023](decisions/ADR-0023-pinned-and-vendored-web-assets.md).
+[ADR-0023](../.spec/decisions/ADR-0023-pinned-and-vendored-web-assets.md).
 
 ## Logo
 
@@ -165,11 +165,11 @@ softness problem with the raster placeholder. See
 
 ## Related
 
-- `docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md` — why
+- `.spec/decisions/ADR-0043-react-typescript-vite-web-front-end.md` — why
   React/TypeScript/Vite, and Tailwind via `@tailwindcss/vite`
-- `docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md` — why the fonts
+- `.spec/decisions/ADR-0023-pinned-and-vendored-web-assets.md` — why the fonts
   and logo are vendored and committed (partially superseded by ADR-0043 for
   build tooling)
-- `docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md` — why there is no `dark:` variant
+- `.spec/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md` — why there is no `dark:` variant
 - `src/web/README.md`
 - `docs/localization.md`

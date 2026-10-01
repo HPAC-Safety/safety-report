@@ -7,7 +7,7 @@ type: readme
 # HpacSafety.Api
 
 Deployable ASP.NET Core HTTP surface. The target contract is in
-[`../../docs/interfaces-and-data-flow.md`](../../docs/interfaces-and-data-flow.md).
+[`../../.spec/interfaces-and-data-flow.md`](../../.spec/interfaces-and-data-flow.md).
 
 ## Target responsibilities
 

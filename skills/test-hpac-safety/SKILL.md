@@ -15,7 +15,7 @@ same section names.
   Playwright.
 - Synthetic report and file fixtures only.
 - Seeded rows: the consent questions and the seeded question bank
-  ([lesson 0021](../../docs/lessons/0021-a-consent-question-found-by-a-key-it-was-never-seeded-under.md)).
+  ([lesson 0021](../../.spec/lessons/0021-a-consent-question-found-by-a-key-it-was-never-seeded-under.md)).
 - Integration tests use the supported PostgreSQL version through
   Testcontainers.
 
@@ -23,7 +23,7 @@ same section names.
 
 Three PascalCase segments joined by single underscores, opening with `Given`,
 `When`, `Then`
-([ADR-0069](../../docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)):
+([ADR-0069](../../.spec/decisions/ADR-0069-scannable-given-when-then-test-names.md)):
 
 ```csharp
 // good
@@ -56,16 +56,16 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 
 - Step definitions for a `@ui` scenario live in `tests/e2e/steps`.
 - A superseded scenario left behind `@ignore` is the contradiction
-  [ADR-0047](../../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)
+  [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)
   forbids.
 
 ### Step definitions
 
 - Write from the scenario
-  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md));
+  ([ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md));
   never encode a missing fact in C# or TypeScript.
 - A request-level claim binds through `BootedApi`
-  ([lesson 0006](../../docs/lessons/0006-an-internal-identifier-leaked-into-the-authoring-screen.md)).
+  ([lesson 0006](../../.spec/lessons/0006-an-internal-identifier-leaked-into-the-authoring-screen.md)).
 - Reqnroll steps are Cucumber Expressions:
   `(User|SafetyOfficer|Administrator)` matches nothing; use `{word}`.
 
@@ -80,7 +80,7 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 
 - Example: a provider language code (the kept, dormant DeepL adapter's
   `EN-CA`). Exercise French to English as well as English to French
-  ([lesson 0019](../../docs/lessons/0019-a-language-code-the-provider-never-offered.md)).
+  ([lesson 0019](../../.spec/lessons/0019-a-language-code-the-provider-never-offered.md)).
 - Required phrases are the role phrases.
 
 ## Contracts to cover
@@ -117,6 +117,6 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 ## Test containers
 
 - Why the local cache is suspect first:
-  [lesson 0014](../../docs/lessons/0014-a-local-image-cache-hides-a-withdrawn-upstream.md).
+  [lesson 0014](../../.spec/lessons/0014-a-local-image-cache-hides-a-withdrawn-upstream.md).
 - The S3-compatible server is pinned once, in `tests/Shared/S3Emulator.cs`
-  ([ADR-0110](../../docs/decisions/ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md)).
+  ([ADR-0110](../../.spec/decisions/ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md)).

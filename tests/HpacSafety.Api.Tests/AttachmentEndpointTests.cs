@@ -19,7 +19,7 @@ namespace HpacSafety.Api.Tests;
 /// <summary>
 ///     A reviewer's only two ways to see an uploaded file, against a real
 ///     PostgreSQL container. See issue #311 and
-///     <c>features/media/media.feature</c> REQ-MED-010/011/013.
+///     <c>.spec/features/media/media.feature</c> REQ-MED-010/011/013.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]

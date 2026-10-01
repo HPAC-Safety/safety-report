@@ -21,7 +21,7 @@ recorded rather than absorbed: an edit whose English is unchanged becomes a
 **human correction**, stamped as human-authored and never machine-translated
 again. An edit to both languages of one key at once is recorded the same way:
 whoever edited both edited both on purpose
-([ADR-0070](decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
+([ADR-0070](../.spec/decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
 
 Resolve locale in this order: explicit user selection, then the hostname
 (`securite.acvl.ca` → French, `safety.hpac.ca` → English), then browser
@@ -36,23 +36,23 @@ Switching language never changes the host.
 Each complete immutable question revision stores its English and French label
 and help text. A question's bilingual choices live on the question itself,
 outside its revisions
-([ADR-0095](decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+([ADR-0095](../.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 An answer naming a choice reads both languages from it
-([ADR-0128](decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md));
+([ADR-0128](../.spec/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md));
 the Worker supplies a reporter-added type-ahead value's missing language
-([ADR-0129](decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+([ADR-0129](../.spec/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 Administrators provide and review both versions. Question text is not generated
 from UI catalogues and is never translated at render time. While authoring, an
 administrator may ask for a machine-translated draft and saves only what they
 reviewed
-([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
+([ADR-0062](../.spec/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
 
 ## Reports and summaries
 
 A submitted answer is never changed. An answer that needs a second language
 gets one beside it, made by the Worker's machine translation off the
 submission path
-([ADR-0112](decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+([ADR-0112](../.spec/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
 Attachments are never translated. The Worker's one model
 call returns both `AiSummaryEn` and `AiSummaryFr` for the same eligible facts.
 There is no source-summary translation stage or per-language approval; a safety
@@ -61,4 +61,4 @@ officer reviews and approves the pair.
 Validation and problem details use stable machine codes plus localized safe
 copy. Never echo private input merely to localize an error.
 
-See [`features/web-localization-and-design/web-localization-and-design.feature`](../features/web-localization-and-design/web-localization-and-design.feature).
+See [`.spec/features/web-localization-and-design/web-localization-and-design.feature`](../.spec/features/web-localization-and-design/web-localization-and-design.feature).

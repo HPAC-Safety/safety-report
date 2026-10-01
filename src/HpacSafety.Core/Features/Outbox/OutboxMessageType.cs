@@ -2,7 +2,7 @@ namespace HpacSafety.Core.Features.Outbox;
 
 /// <summary>
 ///     What kind of work an outbox message carries. Stored as a stable invariant
-///     code, like every other domain enum. See <c>docs/data-and-persistence.md</c>.
+///     code, like every other domain enum. See <c>.spec/data-and-persistence.md</c>.
 /// </summary>
 public enum OutboxMessageType
 {

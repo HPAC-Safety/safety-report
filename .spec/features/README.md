@@ -1,0 +1,164 @@
+---
+title: HPAC Safety system specification
+description: "The canonical target design: the authority rules, the specification index, and the product contract."
+type: spec
+area: index
+---
+
+# HPAC Safety system specification
+
+`.spec/` is the canonical specification for the target HPAC Safety Occurrence
+Reporting system. This directory, `.spec/features/`, holds every
+behavior-describing page as a Cucumber-compliant `.feature` file
+(Given/When/Then), each with a `README.md` alongside it for supporting detail
+— tables, rationale, or current-implementation divergence notes — that
+doesn't fit Gherkin. A `.spec/features/<name>/` subfolder always contains a
+`.feature` file; a page of normative constraints with no testable scenarios
+sits one level up, in `.spec/`. It describes the deliberately small system
+the repository is intended to become.
+
+Scenarios without `@ui` execute as xUnit tests via Reqnroll
+([`tests/HpacSafety.Acceptance.Tests`](../../tests/HpacSafety.Acceptance.Tests),
+[ADR-0049](../decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)).
+A scenario tagged `@ui` asserts browser-observable behavior and executes
+instead through `playwright-bdd`
+([`tests/e2e/steps`](../../tests/e2e/steps)), which reads these same `.feature`
+files directly — Reqnroll has no browser to assert against, so it is never
+used for a `@ui` scenario
+([ADR-0045](../decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md),
+[ADR-0050](../decisions/ADR-0050-ui-tag-for-scenarios-needing-playwright.md),
+[ADR-0053](../decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
+The Reqnroll suite skips a `@ui` scenario itself, so it reports as skipped
+wherever that suite runs rather than failing for want of a C# step definition
+it is never meant to have
+([ADR-0073](../decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
+An unimplemented scenario carries an `@ignore` tag; implementing it means
+writing its step definitions — Reqnroll or `playwright-bdd`, whichever this
+scenario's tag calls for — and removing that tag in the same PR.
+It was derived from a file-by-file audit of the 135
+tracked paths under `src/`, all 69 tracked paths under `tests/`, the
+repository guidance and runtime prompts, and every open and closed GitHub issue
+through issue #82. The audited implementation baseline is main at
+`5f7340415e88706035a713bd8322e3dda466e821` on 2026-08-23.
+
+## Authority and conflict rules
+
+1. This specification defines the target design.
+2. Source and tests show what is implemented today; they do not silently
+   override this target.
+3. Issues and ADRs preserve history and rationale. A contradictory issue,
+   README, prompt, skill, test, or implementation is superseded until it is
+   aligned with this specification. An accepted ADR is different: a feature
+   file and an accepted ADR never contradict each other, and a contradiction
+   is fixed by correcting whichever one is wrong — the feature file, or the
+   ADR through a new ADR that supersedes it. "This specification wins" settles
+   only drift inherited from ADRs older than it, never new drift. A change to
+   one that affects the other updates both in the same pull request
+   ([ADR-0047](../decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
+4. [Implementation status](../../docs/implementation-status.md) records gaps explicitly.
+   A documented target feature must not be described as already working merely
+   because its domain scaffold exists.
+5. A future decision that changes the design must update the canonical page,
+   implementation-status matrix, issue traceability, and affected tests in the
+   same pull request.
+6. Every user-facing requirement gets a `.feature` scenario; every durable
+   architectural decision gets an ADR under `.spec/decisions/`. Neither is
+   optional, and neither substitutes for the other: a `.feature` file never
+   argues why a technology or pattern was chosen, and an ADR never restates
+   acceptance criteria.
+
+7. Every scenario carries one stable claim ID as a tag, and a normative
+   constraint on a canonical constraint page carries a `CON-*` ID naming what
+   verifies it
+   ([ADR-0084](../decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+   An ID is never reused or renumbered, and
+   [the traceability matrix](../traceability.md) is generated from these
+   files rather than maintained by hand.
+8. Behavior is specified before it is implemented, and a wrong behavior is
+   corrected here rather than argued in a conversation
+   ([ADR-0083](../decisions/ADR-0083-specification-driven-development.md)).
+   Each area page also records what **not** to build in that area, because a
+   page that states only the target invites an implementation to over-deliver
+   into territory nobody asked for. The global boundary in
+   [system overview](../system-overview.md) still holds; a per-area
+   section narrows it, and never contradicts it.
+9. A page lives in `.spec/` when the specification chain reads it: it carries
+   scenarios, `CON-*` IDs, a decision, or a lesson. A page that explains how —
+   setup, deployment, conventions, status — lives in `docs/`. The index of
+   `.spec/` is generated, never written by hand
+   ([ADR-0183](../decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).
+
+Source, tests, historical ADRs, and issue history remain useful audit evidence.
+Active READMEs, skills, and the Worker prompt are kept aligned with this
+specification rather than preserving competing designs.
+
+## Specification index
+
+Every feature area, constraint page, decision, and lesson is listed in the
+generated [specification index](../README.md), each row read from its own file.
+Every claim and constraint, with what verifies it, is in the generated
+[traceability matrix](../traceability.md).
+
+Guides that describe the specification without being part of it:
+
+| Need | Guide |
+|---|---|
+| Target-to-main gap analysis | [Implementation status](../../docs/implementation-status.md) |
+| Every audited path under `src/` | [Source inventory](../../docs/source-inventory.md) |
+| Every GitHub issue and its relationship to this design | [Issue traceability](../../docs/issue-traceability.md) |
+| Shared terms | [Glossary](../../docs/glossary.md) |
+
+## Product contract in one paragraph
+
+A reporter signs in as an HPAC member — which proves membership and is never
+recorded against the report — sees the latest active immutable revision of each
+bilingual database question in its configured order, may skip every question
+an administrator has not made required
+([ADR-0061](../decisions/ADR-0061-administrators-may-require-any-question.md)),
+must make an explicit publication-consent choice — and, when they consented and
+attached any file, a media-consent choice — and submits the
+answers once. Each optional attachment uploads as soon as it is attached, into
+private quarantine, and the submission claims it. Every answer is stored as one string —
+the words the reporter saw, in the language they saw them. The API saves the
+report, exact question revisions, files, and
+outbox work atomically. The Worker makes exactly one model call using one
+versioned prompt to produce an anonymized English/French summary pair, using
+private answers only as recognition context. A safety officer reviews that pair
+and permitted attachments. Only a non-deleted, positively consented report
+with a human-approved pair can appear in the public feed. When the reporter
+also consented to sharing media, its page embeds the verified image and video
+derivatives, never an original, and a reviewer may hide any of them
+([ADR-0117](../decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+When that consent's wording named documents, the page also offers each
+validated document, unchanged, as a short-lived forced download
+([ADR-0119](../decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+
+## Simplicity guardrails
+
+The target deliberately writes no respondent report data server-side before the
+one final submission, with one argued exception: an attachment uploads to
+private quarantine when it is attached, names no member, has no database row,
+and expires fifteen days after upload unless a submission claims it — the
+same window as the browser's saved report, which is the only thing that names
+it
+([ADR-0096](../decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+[ADR-0100](../decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+The file goes straight to storage through a pre-signed PUT the API mints, and
+the submission validates it
+([ADR-0126](../decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
+It has no server-side report drafts, resumable upload protocol,
+deterministic text scrubber, separate PII-audit call, summary-translation
+call, specialized aircraft processing, outbound email, external publication
+channels, application-layer field encryption, restore workflow, or automated
+raw-report purge. New abstractions are justified by a real boundary or a second
+implementation, not by a hypothetical future.
+
+Authentication is the one external identity dependency, and it is deliberately
+thin: an identity provider signs a token, the API validates it and reads two
+claims, and **no user record is stored anywhere**
+([ADR-0064](../decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+[ADR-0065](../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+There is no allowlist, no user table, no session store, no CSRF machinery, no
+password handling, and no Turnstile. Requiring a member to submit is what let
+the last of those go
+([ADR-0068](../decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).

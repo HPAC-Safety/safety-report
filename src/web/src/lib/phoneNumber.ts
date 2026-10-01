@@ -13,7 +13,7 @@ import examples from "libphonenumber-js/mobile/examples"
 import type { Locale } from "../i18n/locales"
 
 /*
- * A phone answer (ADR-0137, `features/report-submission/README.md` "Email and
+ * A phone answer (ADR-0137, `.spec/features/report-submission/README.md` "Email and
  * phone answers"): typed against a chosen country, masked by that country's
  * own convention, validated by its rules, and sent in E.164. The `max` build
  * carries the full validation patterns, so the form refuses what the API's

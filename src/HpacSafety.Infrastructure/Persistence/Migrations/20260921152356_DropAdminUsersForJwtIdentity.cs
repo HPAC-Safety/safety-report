@@ -18,7 +18,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 	/// columns are <b>renamed and widened</b> instead: <c>char(11)</c> to
 	/// <c>varchar(256)</c> is a widening cast, so an existing tiny id survives
 	/// verbatim as a string. It simply no longer resolves to anything, which is
-	/// accepted and recorded in <c>docs/data-and-persistence.md</c> rather than
+	/// accepted and recorded in <c>.spec/data-and-persistence.md</c> rather than
 	/// rewritten — editing audit rows is a destructive transform.
 	/// </para>
 	/// <para>

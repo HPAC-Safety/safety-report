@@ -33,8 +33,8 @@ description: Keep HPAC Safety application chrome, database questions, validation
   was derived from. `fr-CA.meta.json` hashes the French as well as the English,
   so a hand-edited French value is recorded as a correction instead of being
   overwritten on the next run
-  ([lesson 0002](../../docs/lessons/0002-provenance-that-hashes-only-one-side-of-a-pair.md),
-  [ADR-0070](../../docs/decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
+  ([lesson 0002](../../.spec/lessons/0002-provenance-that-hashes-only-one-side-of-a-pair.md),
+  [ADR-0070](../../.spec/decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
 - Apply the same test to any provenance you add: hash what you claim
   authorship of.
 

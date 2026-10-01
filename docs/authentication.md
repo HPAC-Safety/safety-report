@@ -29,7 +29,7 @@ invariant codes:
 
 | Role | Claim value | Capabilities |
 |---|---|---|
-| User | `user` | Proves HPAC membership. May submit a report, and comment on a published report and edit or delete their own comments ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). Nothing else. |
+| User | `user` | Proves HPAC membership. May submit a report, and comment on a published report and edit or delete their own comments ([ADR-0114](../.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md)). Nothing else. |
 | SafetyOfficer | `safety_officer` | Review queue and private report material, safe derivatives and validated documents, summary editing, approve/reject/publish/soft-delete, hiding a member's comment, reviewing type-ahead values (ADR-0129). |
 | Administrator | `administrator` | Every SafetyOfficer capability, plus question revisions and authoring each question's choices. |
 
@@ -43,7 +43,7 @@ there is nothing for a cross-site request to forge.
 ## No user records
 
 **This system stores no user details of any kind**
-([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+([ADR-0065](../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 There is no `admin_users` table, no allowlist, no role column, and no active
 flag. Where a summary's approver or an audit entry's actor is recorded, it is
 the token subject as an opaque `varchar(256)` string that joins to nothing.
@@ -57,13 +57,13 @@ record of them to revoke.
 **Production** uses a standards-based OAuth/OIDC provider. The concrete
 provider is not yet chosen — Auth0 and AWS Cognito are the candidates, and any
 provider that emits the claim shape above satisfies the contract
-([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+([ADR-0064](../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 This system never sees a member's password.
 
 **Development** mints its own genuinely signed token from a symmetric key and
 validates it through the same middleware, the same validation parameters, and
 the same policies. Only the issuer and the key differ
-([ADR-0066](decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
+([ADR-0066](../.spec/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
 
 Sign in with a real HPAC membership: `POST /api/auth/token` verifies the
 username and password against the live members site
@@ -72,7 +72,7 @@ password. Role comes from two Development-only email allowlists in
 configuration — `MembersSiteLogin:AdministratorEmails` and
 `MembersSiteLogin:SafetyOfficerEmails` — falling back to `User` for any other
 verified member
-([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+([ADR-0079](../.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
 
 The development token endpoint is **not mapped outside Development** — the
 route returns 404 rather than 401, because there is no code path that maps it
@@ -82,7 +82,7 @@ whether to offer it from `GET /api/auth/config`, never from a build flag.
 ## Filing a report
 
 Submission requires a member and records nothing about them
-([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+([ADR-0067](../.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 No report, answer, file, outbox message, audit entry, or log line holds the
 submitter's subject, and no column, join table, or hash links a report to the
 member who filed it. Authentication answers one question — *is this an HPAC
@@ -90,7 +90,7 @@ member?* — and its answer is not kept. The form tells the reporter so.
 
 Turnstile is not used. The member token is the abuse control, alongside per-IP
 rate limiting
-([ADR-0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
+([ADR-0068](../.spec/decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
 
 ## Auditing
 
@@ -99,5 +99,5 @@ publication, deletion, and question changes are audited by acting subject and
 time, without copying report content into the audit entry.
 
 See
-[`features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature`](../features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)
+[`.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature`](../.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)
 for the normative role and endpoint rules.

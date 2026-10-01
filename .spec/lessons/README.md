@@ -1,0 +1,76 @@
+---
+title: Lessons
+description: What a lesson records, when to write one, and where the generated index of lessons lives.
+type: guide
+---
+
+# Lessons
+
+A bug is usually a specification defect wearing implementation clothes. The code
+did something nobody wanted, which means either no claim covered the case or a
+claim covered it wrongly. Fixing only the code leaves that gap exactly where it
+was, and the gap is what produces the same bug again next quarter
+([ADR-0085](../decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+
+A lesson records what the specification should have said. It is read on a design
+pass, alongside `.spec/features` and the ADRs — not looked up after something breaks.
+
+## When to write one
+
+A bug fix that reveals a specification gap writes a lesson, in the same pull
+request as the fix. A fix that reveals nothing — a typo, a dependency bump, a
+rename — does not.
+
+A lesson does not replace an ADR or a scenario. A fix that also makes a durable
+architectural decision still gets an ADR, and the lesson cites it. A fix that
+changes user-facing behavior still gets a scenario, and the lesson cites its
+claim ID.
+
+## Two kinds, and what each one owes
+
+**A product lesson** is about what the system does. Its remedy is a claim: a
+scenario is added or corrected, and the lesson cites the claim ID that now
+proves it. It does not change a skill — restating product behavior in a skill
+creates a second place for it to drift from `.spec/features`.
+
+**A process lesson** is about how we work: tooling, CI, hooks, conventions, the
+delivery workflow, what an agent is expected to do. No scenario can prove it,
+so it has no claim to add. Its remedy is a **skill** — the one that would have
+prevented it — updated in the same pull request as the lesson. The skill states
+the general rule; the lesson keeps the incident.
+
+An agent reads the skills before it starts. It does not read this index looking
+for a mistake it has not made yet, which is why a process lesson that stops
+here is a story rather than a rule
+([ADR-0085](../decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+
+Some lessons are genuinely one-off and produce neither. Say so in the lesson
+rather than inventing a rule to hang on a skill.
+
+## The shape
+
+One file per lesson, `NNNN-kebab-slug.md`, numbered in the order they are
+written. Frontmatter carries the date, the issue, and a status. The body states
+four things and stops:
+
+- **Symptom** — what was observed, in the terms it was observed in.
+- **Root cause** — why it happened, not which line was edited.
+- **Spec delta** — what changed upstream: the claim added or corrected, the ADR
+  written, the guard moved.
+- **Scenario** — the claim ID that now proves it, or an explicit statement that
+  no scenario can.
+- **Skill** — for a process lesson, the skill that now carries the general rule
+  and what it says. A product lesson writes "none — the claim is the remedy."
+
+
+A lesson that turns out to be wrong is corrected in place, or marked superseded
+in its frontmatter status, like an ADR.
+
+## Index
+
+Every lesson, newest first, with what it cost and what it changed upstream, is
+listed in the generated [specification index](../README.md#lessons). Its
+"What it cost us" column is the lesson's frontmatter `description`, and its
+"Remedy" column the claims under `## Scenario` and the skills under `## Skill` —
+so write those three carefully; there is no table to fill in by hand
+([ADR-0183](../decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).

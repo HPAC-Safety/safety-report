@@ -1,6 +1,6 @@
 name: Traceability matrix
 
-# Regenerates docs/traceability.md onto a same-repo pull request's own branch,
+# Regenerates .spec/traceability.md onto a same-repo pull request's own branch,
 # so nobody ever opens a pull request just to regenerate a generated file
 # (ADR-0101). It NEVER pushes to main, and it writes nothing for a fork.
 #
@@ -12,7 +12,7 @@ name: Traceability matrix
 #   * No code the pull request wrote runs with that token. The generator is
 #     taken from the BASE branch (the default checkout for this trigger) and
 #     pointed at the head commit's files as plain data: it reads the feature
-#     files and five docs pages, and writes one markdown file. The head is
+#     files and five constraint pages, and writes two markdown files. The head is
 #     checked out without persisted credentials, and nothing is installed.
 #   * A pull request that changes the generator itself is skipped: the base
 #     generator would render the old format. Its author regenerates locally
@@ -35,14 +35,10 @@ name: Traceability matrix
 on:
   pull_request_target:
     paths:
-      - features/**
-      - docs/system-overview.md
-      - docs/data-and-persistence.md
-      - docs/interfaces-and-data-flow.md
-      - docs/infrastructure-and-operations.md
-      - docs/testing-and-quality.md
-      - docs/traceability.md
+      - .spec/**
       - tools/traceability.mjs
+      - tools/spec-index.mjs
+      - tools/spec-paths.mjs
       - .github/workflows/traceability.yml
 
 permissions:
@@ -88,18 +84,23 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.major }}
 
-      - name: Regenerate the matrix with the base branch's generator
+      # The matrix and the specification index (ADR-0183) are both generated
+      # from .spec/, so one run regenerates both and one commit carries them.
+      - name: Regenerate the matrix and the index with the base branch's generators
         id: regenerate
         run: |
           set -euo pipefail
-          if ! cmp -s base/tools/traceability.mjs head/tools/traceability.mjs; then
-            echo "::notice::This pull request changes tools/traceability.mjs, so the base generator can't render its matrix. Regenerate locally with 'node tools/traceability.mjs'; ci.yml checks the result."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          for tool in traceability.mjs spec-index.mjs spec-paths.mjs; do
+            if ! cmp -s "base/tools/$tool" "head/tools/$tool"; then
+              echo "::notice::This pull request changes tools/$tool, so the base generators can't render its output. Regenerate locally with 'node tools/traceability.mjs && node tools/spec-index.mjs'; ci.yml checks the result."
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
           cd head
           node ../base/tools/traceability.mjs
-          if git diff --quiet -- docs/traceability.md; then
+          node ../base/tools/spec-index.mjs
+          if git diff --quiet -- .spec/traceability.md .spec/README.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -112,7 +113,7 @@ jobs:
       # (ADR-0021, ADR-0057), is what makes the required checks re-run. The
       # re-run of this job on that push finds nothing to change, so it can't
       # loop.
-      - name: Commit the matrix onto the pull request's own branch
+      - name: Commit the matrix and the index onto the pull request's own branch
         if: steps.regenerate.outputs.changed == 'true'
         working-directory: head
         env:
@@ -132,8 +133,8 @@ jobs:
           git remote set-url origin \
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          git add docs/traceability.md
-          git commit -m 'Regenerate the traceability matrix'
+          git add .spec/traceability.md .spec/README.md
+          git commit -m 'Regenerate the traceability matrix and specification index'
 
           # --paths is this workflow's pull_request_target paths, verbatim;
           # tests/js/push-to-pr-branch.test.mjs fails if they disagree. The
@@ -141,4 +142,4 @@ jobs:
           node ../base/tools/push-to-pr-branch.mjs \
             --branch "$HEAD_REF" \
             --event-sha "$HEAD_SHA" \
-            --paths 'features/**,docs/system-overview.md,docs/data-and-persistence.md,docs/interfaces-and-data-flow.md,docs/infrastructure-and-operations.md,docs/testing-and-quality.md,docs/traceability.md,tools/traceability.mjs,.github/workflows/traceability.yml'
+            --paths '.spec/**,tools/traceability.mjs,tools/spec-index.mjs,tools/spec-paths.mjs,.github/workflows/traceability.yml'

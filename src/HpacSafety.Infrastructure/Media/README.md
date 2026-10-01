@@ -7,7 +7,7 @@ type: readme
 # Attachment processing
 
 This slice detects and safely processes the attachments a submission claims
-from quarantine, where the browser sent them by pre-signed PUT (ADR-0126). The normative matrix is in [`features/media/media.feature`](../../../features/media/media.feature).
+from quarantine, where the browser sent them by pre-signed PUT (ADR-0126). The normative matrix is in [`.spec/features/media/media.feature`](../../../.spec/features/media/media.feature).
 
 Accepted images are JPEG, PNG, WebP, and HEIC; videos are MP4 and QuickTime;
 documents are PDF, DOC, DOCX, RTF, MD, TXT, and ODT. Sniff actual format,

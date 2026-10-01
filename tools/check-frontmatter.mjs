@@ -2,7 +2,7 @@
 // Every tracked markdown file declares what it is (ADR-0087).
 //
 // A document's kind used to be inferred from its path: you knew
-// `docs/decisions/ADR-0047-*.md` was a decision record because you knew the
+// `.spec/decisions/ADR-0047-*.md` was a decision record because you knew the
 // repository. This asserts the frontmatter that says so in the file itself,
 // with the keys each kind needs.
 //
@@ -15,6 +15,8 @@
 import { execFileSync } from 'node:child_process'
 import { lstatSync, readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+
+import { DECISIONS, LESSONS } from './spec-paths.mjs'
 
 const ROOT = process.cwd()
 
@@ -56,9 +58,19 @@ const VENDOR_SHAPES = [
 
 // Where the path, not the author, decides the `type`.
 const TYPE_BY_PATH = [
-	{ match: (path) => /^docs\/decisions\/ADR-\d{4}-.+\.md$/.test(path), type: 'adr' },
-	{ match: (path) => /^docs\/lessons\/\d{4}-.+\.md$/.test(path), type: 'lesson' },
+	{ match: (path) => path.startsWith(`${DECISIONS}/`) && /\/ADR-\d{4}-.+\.md$/.test(path), type: 'adr' },
+	{ match: (path) => path.startsWith(`${LESSONS}/`) && /\/\d{4}-.+\.md$/.test(path), type: 'lesson' },
 ]
+
+// The values a key may hold, by type. An ADR's status is checked against its
+// own status line by adr-numbers.mjs; a lesson has no status line, so here.
+const VALUES = {
+	lesson: { status: ['accepted', 'superseded'] },
+}
+
+// Where the specification lived before it moved to .spec/ (ADR-0183). A file
+// here comes from a branch not yet rebased past the move.
+const MOVED = /^(docs\/decisions|docs\/lessons|features)\//
 
 /**
  * Reads the leading `---` block as a set of top-level keys. Returns the keys
@@ -113,6 +125,10 @@ export function isExempt(path) {
 
 /** Every problem with one file's frontmatter, as messages naming the fix. */
 export function checkFile(path, text) {
+	if (MOVED.test(path)) {
+		return [`${path}: the specification moved to .spec/ (ADR-0183) — rebase onto main and move this file under .spec/`]
+	}
+
 	const { entries, error } = parseFrontmatter(text)
 	if (error) return [`${path}: ${error}`]
 
@@ -172,6 +188,11 @@ export function checkFile(path, text) {
 	const effectiveType = assignedType ?? declaredType
 	const extras = EXTRA_KEYS[effectiveType]
 	if (extras) require(extras, `a "${effectiveType}" adds ${extras.map((key) => `"${key}"`).join(', ')}`)
+
+	for (const [key, allowed] of Object.entries(VALUES[effectiveType] ?? {})) {
+		const found = value(key)?.value
+		if (found && !allowed.includes(found)) problems.push(`${path}: "${key}: ${found}" is not one of ${allowed.join(', ')}`)
+	}
 
 	return problems
 }

@@ -9,7 +9,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The non-<c>@ui</c>, non-API scenarios in
-///     <c>features/typeform-question-import-export/typeform-question-import-export.feature</c>
+///     <c>.spec/features/typeform-question-import-export/typeform-question-import-export.feature</c>
 ///     that describe mapping behavior — everything <see cref="TypeformQuestionMapper" />
 ///     decides on its own, without a database or an HTTP endpoint. See
 ///     ADR-0077, ADR-0078.

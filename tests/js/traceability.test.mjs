@@ -30,16 +30,16 @@ const scenario = (id, name, tags = []) => [`@${id}`, ...tags, `Scenario: ${name}
  */
 function repository({ area = 'media', feature = '', pages = {} } = {}) {
 	const root = mkdtempSync(join(tmpdir(), 'traceability-'))
-	mkdirSync(join(root, 'features', area), { recursive: true })
-	writeFileSync(join(root, 'features', area, `${area}.feature`), `Feature: ${area}\n\n${feature}`)
-	mkdirSync(join(root, 'docs'), { recursive: true })
+	mkdirSync(join(root, '.spec/features', area), { recursive: true })
+	writeFileSync(join(root, '.spec/features', area, `${area}.feature`), `Feature: ${area}\n\n${feature}`)
+	mkdirSync(join(root, '.spec'), { recursive: true })
 	for (const page of CONSTRAINT_PAGES) writeFileSync(join(root, page), pages[page] ?? '# A page\n')
 	return root
 }
 
 describe('readClaims', () => {
 	it('reads the claim, area, engine, and status of each scenario', () => {
-		const { claims, problems } = readClaims('features/media/media.feature', `Feature: Media\n\n${scenario('REQ-MED-001', 'A thing happens')}`)
+		const { claims, problems } = readClaims('.spec/features/media/media.feature', `Feature: Media\n\n${scenario('REQ-MED-001', 'A thing happens')}`)
 
 		assert.deepEqual(problems, [])
 		assert.deepEqual(claims, [{ id: 'REQ-MED-001', area: 'media', scenario: 'A thing happens', engine: 'Reqnroll', status: 'Covered' }])
@@ -47,7 +47,7 @@ describe('readClaims', () => {
 
 	it('routes a @ui scenario to playwright-bdd and marks an @ignore one Planned', () => {
 		const source = `Feature: Media\n\n${scenario('REQ-MED-002', 'A browser thing', ['@ignore', '@ui'])}`
-		const { claims } = readClaims('features/media/media.feature', source)
+		const { claims } = readClaims('.spec/features/media/media.feature', source)
 
 		assert.equal(claims[0].engine, 'playwright-bdd')
 		assert.equal(claims[0].status, 'Planned')
@@ -55,7 +55,7 @@ describe('readClaims', () => {
 
 	it('reads engine and status from the scenario own tags, never a neighbour', () => {
 		const source = `Feature: Media\n\n${scenario('REQ-MED-006', 'A browser thing', ['@ignore', '@ui'])}${scenario('REQ-MED-007', 'A server thing')}`
-		const { claims } = readClaims('features/media/media.feature', source)
+		const { claims } = readClaims('.spec/features/media/media.feature', source)
 
 		assert.deepEqual(
 			claims.map(({ id, engine, status }) => ({ id, engine, status })),
@@ -68,14 +68,14 @@ describe('readClaims', () => {
 
 	it('keeps the claim attached to a Scenario Outline', () => {
 		const source = 'Feature: Media\n\n@REQ-MED-003\nScenario Outline: A table thing\n  Given <a>\n\nExamples:\n  | a |\n  | 1 |\n'
-		const { claims } = readClaims('features/media/media.feature', source)
+		const { claims } = readClaims('.spec/features/media/media.feature', source)
 
 		assert.equal(claims.length, 1)
 		assert.equal(claims[0].scenario, 'A table thing')
 	})
 
 	it('reports a scenario carrying no claim ID', () => {
-		const { claims, problems } = readClaims('features/media/media.feature', 'Feature: Media\n\nScenario: An untagged thing\n  Given a thing\n')
+		const { claims, problems } = readClaims('.spec/features/media/media.feature', 'Feature: Media\n\nScenario: An untagged thing\n  Given a thing\n')
 
 		assert.deepEqual(claims, [])
 		assert.match(problems[0], /carries no claim ID/)
@@ -83,7 +83,7 @@ describe('readClaims', () => {
 
 	it('reports a scenario carrying more than one', () => {
 		const source = 'Feature: Media\n\n@REQ-MED-004\n@REQ-MED-005\nScenario: A greedy thing\n  Given a thing\n'
-		const { problems } = readClaims('features/media/media.feature', source)
+		const { problems } = readClaims('.spec/features/media/media.feature', source)
 
 		assert.match(problems[0], /carries 2 claim IDs/)
 	})
@@ -92,7 +92,7 @@ describe('readClaims', () => {
 describe('readConstraints', () => {
 	it('reads a constraint and the claims that verify it', () => {
 		const source = '**CON-SO-001** A thing is true.\n*Verified by: REQ-MED-001, REQ-MED-002.*\n'
-		const { constraints, problems } = readConstraints('docs/system-overview.md', source)
+		const { constraints, problems } = readConstraints('.spec/system-overview.md', source)
 
 		assert.deepEqual(problems, [])
 		assert.deepEqual(constraints[0].verifiedBy, ['REQ-MED-001', 'REQ-MED-002'])
@@ -100,21 +100,21 @@ describe('readConstraints', () => {
 
 	it('accepts "none" with a reason and records no claims', () => {
 		const source = '**CON-SO-002** A thing is true.\n*Verified by: none — nothing observes it.*\n'
-		const { constraints } = readConstraints('docs/system-overview.md', source)
+		const { constraints } = readConstraints('.spec/system-overview.md', source)
 
 		assert.deepEqual(constraints[0].verifiedBy, [])
 		assert.match(constraints[0].note, /nothing observes it/)
 	})
 
 	it('reports a constraint that names nothing at all', () => {
-		const { problems } = readConstraints('docs/system-overview.md', '**CON-SO-003** A thing is true.\n')
+		const { problems } = readConstraints('.spec/system-overview.md', '**CON-SO-003** A thing is true.\n')
 
 		assert.match(problems[0], /names nothing that verifies it/)
 	})
 
 	it('stops one constraint from swallowing the next one reason', () => {
 		const source = '**CON-SO-004** First.\n*Verified by: REQ-MED-001.*\n\n**CON-SO-005** Second.\n*Verified by: REQ-MED-002.*\n'
-		const { constraints } = readConstraints('docs/system-overview.md', source)
+		const { constraints } = readConstraints('.spec/system-overview.md', source)
 
 		assert.deepEqual(constraints.map((constraint) => constraint.verifiedBy), [['REQ-MED-001'], ['REQ-MED-002']])
 	})
@@ -131,7 +131,7 @@ describe('build', () => {
 	it('fails on a constraint naming a claim no scenario declares', () => {
 		const root = repository({
 			feature: scenario('REQ-MED-001', 'First'),
-			pages: { 'docs/system-overview.md': '**CON-SO-001** A thing.\n*Verified by: REQ-MED-999.*\n' },
+			pages: { '.spec/system-overview.md': '**CON-SO-001** A thing.\n*Verified by: REQ-MED-999.*\n' },
 		})
 
 		assert.match(build(root).problems.join('\n'), /names REQ-MED-999, which no scenario declares/)
@@ -140,7 +140,7 @@ describe('build', () => {
 	it('fails on a constraint declared twice', () => {
 		const root = repository({
 			feature: scenario('REQ-MED-001', 'First'),
-			pages: { 'docs/system-overview.md': '**CON-SO-001** A.\n*Verified by: none — x.*\n\n**CON-SO-001** B.\n*Verified by: none — y.*\n' },
+			pages: { '.spec/system-overview.md': '**CON-SO-001** A.\n*Verified by: none — x.*\n\n**CON-SO-001** B.\n*Verified by: none — y.*\n' },
 		})
 
 		assert.match(build(root).problems.join('\n'), /CON-SO-001 is declared twice/)
@@ -198,8 +198,8 @@ describe('render', () => {
 
 	it('orders constraints by ID and names what verifies each', () => {
 		const matrix = render([], [
-			{ id: 'CON-SO-002', page: 'docs/system-overview.md', verifiedBy: [], note: 'none — a reason' },
-			{ id: 'CON-SO-001', page: 'docs/system-overview.md', verifiedBy: ['REQ-MED-001'], note: 'REQ-MED-001' },
+			{ id: 'CON-SO-002', page: '.spec/system-overview.md', verifiedBy: [], note: 'none — a reason' },
+			{ id: 'CON-SO-001', page: '.spec/system-overview.md', verifiedBy: ['REQ-MED-001'], note: 'REQ-MED-001' },
 		])
 
 		assert.match(matrix, /### CON-SO-001\n\nsystem-overview.md — verified by `REQ-MED-001`\n\n### CON-SO-002\n\nsystem-overview.md — verified by none — a reason\n/)
@@ -255,7 +255,7 @@ describe('main', () => {
 	it('passes a repository whose claims and constraints line up', () => {
 		const root = repository({
 			feature: scenario('REQ-MED-001', 'A thing happens'),
-			pages: { 'docs/system-overview.md': '**CON-SO-001** A thing.\n*Verified by: REQ-MED-001.*\n' },
+			pages: { '.spec/system-overview.md': '**CON-SO-001** A thing.\n*Verified by: REQ-MED-001.*\n' },
 		})
 
 		const { code, output } = runMain(root)

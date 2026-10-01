@@ -15,12 +15,12 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         A revision is born complete: both official languages are supplied together,
 ///         atomically, by whoever authors it. There is no partially translated, pending,
 ///         or machine-generated state to reach a database — see product invariant #1 and
-///         <c>docs/data-and-persistence.md</c>.
+///         <c>.spec/data-and-persistence.md</c>.
 ///     </para>
 ///     <para>
 ///         Order, privacy, active state, system state, and required state are all
 ///         revision fields — see
-///         <c>features/question-bank-and-form/question-bank-and-form.feature</c>. None
+///         <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c>. None
 ///         of them can be mutated on an existing revision; every change, including
 ///         these, is a new revision row created by <see cref="Question" />.
 ///     </para>

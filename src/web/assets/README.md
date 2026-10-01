@@ -9,7 +9,7 @@ type: readme
 Everything the two static front ends load that is not HTML, CSS, or JavaScript.
 All of it is committed, and none of it is fetched at page load from anywhere
 but this origin — see
-[ADR-0023](../../../docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md).
+[ADR-0023](../../../.spec/decisions/ADR-0023-pinned-and-vendored-web-assets.md).
 
 | | |
 |---|---|

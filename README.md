@@ -20,15 +20,15 @@ requires human approval before publication.
 ## How this repository works
 
 HPAC Safety is built specification-first
-([ADR-0083](docs/decisions/ADR-0083-specification-driven-development.md)).
+([ADR-0083](.spec/decisions/ADR-0083-specification-driven-development.md)).
 Behavior is written down as an executable scenario before it is implemented,
 and every hop between a need and the code is a tracked file rather than a
 message in a conversation:
 
 ```
 need (issue)
-  → scenario            features/<area>/<area>.feature
-  → supporting detail   features/<area>/README.md, docs/*.md
+  → scenario            .spec/features/<area>/<area>.feature
+  → supporting detail   .spec/features/<area>/README.md, .spec/*.md
   → step definitions    tests/HpacSafety.Acceptance.Tests | tests/e2e/steps
   → code                src/**
 ```
@@ -39,11 +39,11 @@ Three consequences are worth knowing before you open a pull request:
   the wrong thing, the first question is whether the scenario said the wrong
   thing. If it did, the scenario changes and the chain re-runs from there.
 - **Every claim has a stable ID.** A scenario carries one `@REQ-<AREA>-<NNN>`
-  tag and a normative constraint in `docs/` carries a `CON-<PAGE>-<NNN>` ID, so
+  tag and a normative constraint in `.spec/` carries a `CON-<PAGE>-<NNN>` ID, so
   a claim can be cited from an ADR, an issue, a review finding, or a commit
   already in history. IDs are never reused or renumbered
-  ([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
-  [`docs/traceability.md`](docs/traceability.md) is generated from those files
+  ([ADR-0084](.spec/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+  [`.spec/traceability.md`](.spec/traceability.md) is generated from those files
   by `node tools/traceability.mjs`, never maintained by hand, and CI fails on a
   difference.
 - **Out of scope is part of the specification.** What not to build is written
@@ -57,9 +57,14 @@ carries `@ignore`.
 
 ## Canonical specification
 
-[`features/README.md`](features/README.md) is the design authority and index for every
-feature, boundary, DTO, lifecycle rule, and implementation gap. Older ADRs and
-GitHub issues are historical context when they disagree with `/features`.
+Everything the specification chain reads lives in [`.spec/`](.spec/README.md):
+the feature areas, the constraint pages, the decisions, the lessons, and the
+traceability matrix. [`.spec/README.md`](.spec/README.md) is a generated index
+of all of it, and
+[`.spec/features/README.md`](.spec/features/README.md) is the design authority
+for every feature, boundary, DTO, and lifecycle rule. Older ADRs and GitHub
+issues are historical context when they disagree with `.spec/features`
+([ADR-0183](.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).
 
 The target flow is deliberately small.
 [`docs/architecture.md`](docs/architecture.md) draws it, in the repository's
@@ -68,13 +73,13 @@ one report-flow diagram.
 - Questions are complete immutable English/French database revisions. An
   administrator may make any question required; publication consent can never
   be optional
-  ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
+  ([ADR-0061](.spec/decisions/ADR-0061-administrators-may-require-any-question.md)).
 - An unfinished report exists only in the respondent's browser for 15 days.
   Nothing is written to the API or database until the one final submission.
   Each attachment uploads to private quarantine when it is attached, and
   expires unless that submission claims it. A continued saved report restores
   its attached files too, within the same 15 days
-  ([ADR-0100](docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+  ([ADR-0100](.spec/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - Private answers help the one model call recognize identifying text; they are
   never facts for publication. A repeated private name becomes a role such as
   “the pilot” / “le pilote,” with no name fragment left behind.
@@ -82,20 +87,20 @@ one report-flow diagram.
   and kept unchanged; they are never anonymized, parsed, or sent to AI.
 - Public output is the report ID, both approved summary texts, publication
   time, and member comments
-  ([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+  ([ADR-0114](.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
   With media consent, a published report also shows its image and video
   derivatives and offers its documents as forced downloads
-  ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
-  [ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+  ([ADR-0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+  [ADR-0119](.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 Summarization makes one model call, with no second call, PII-audit call, or
 translation call. A deterministic marking pass runs before it
-([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+([ADR-0082](.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
 Answer and comment translation is a separate Gemini translation call in the
 Worker, outside the summary's one call (DeepL is kept, dormant)
-([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),
-[ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
-[ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+([ADR-0179](.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),
+[ADR-0112](.spec/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
+[ADR-0114](.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
 The system has no specialized aircraft processing, application-managed field
 encryption, email-notification pipeline, server-side draft, or external
 publication channel.
@@ -106,28 +111,28 @@ publication channel.
 |---|---|
 | API and Worker | .NET 10 / ASP.NET Core |
 | Database | PostgreSQL with EF Core |
-| Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite`; `@dnd-kit` for reordering, behind one owned component ([ADR-0059](docs/decisions/ADR-0059-dnd-kit-for-reordering.md)) |
-| Authentication | Bearer JWT from an external OAuth/OIDC provider — Auth0 or AWS Cognito, not yet chosen — with three roles read from a claim and no user records stored ([ADR-0064](docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md), [ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)). Development signs its own tokens ([ADR-0066](docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)) |
-| Summarization model | Google Gemini `gemini-3.7-flash` at reasoning `low`, paid key, through the `IAiMediator`, which picks the provider handler by the model's name, with no provider setting ([ADR-0104](docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
-| Attachment processing | Magick.NET re-encodes images ([ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md)); ffmpeg remuxes video as a child process, installed from Ubuntu's archive in the Worker's Dockerfile-built image ([ADR-0094](docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md), [ADR-0118](docs/decisions/ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md)) |
+| Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite`; `@dnd-kit` for reordering, behind one owned component ([ADR-0059](.spec/decisions/ADR-0059-dnd-kit-for-reordering.md)) |
+| Authentication | Bearer JWT from an external OAuth/OIDC provider — Auth0 or AWS Cognito, not yet chosen — with three roles read from a claim and no user records stored ([ADR-0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md), [ADR-0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)). Development signs its own tokens ([ADR-0066](.spec/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)) |
+| Summarization model | Google Gemini `gemini-3.7-flash` at reasoning `low`, paid key, through the `IAiMediator`, which picks the provider handler by the model's name, with no provider setting ([ADR-0104](.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
+| Attachment processing | Magick.NET re-encodes images ([ADR-0025](.spec/decisions/ADR-0025-magick-net-for-exif-stripping.md)); ffmpeg remuxes video as a child process, installed from Ubuntu's archive in the Worker's Dockerfile-built image ([ADR-0094](.spec/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md), [ADR-0118](.spec/decisions/ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md)) |
 | Tests | xUnit, Shouldly, Testcontainers, `node:test`, Playwright |
-| Hosting target | AWS `ca-central-1`. API and Worker on Lambda, website on S3 + CloudFront ([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)); deployed through GitHub OIDC |
+| Hosting target | AWS `ca-central-1`. API and Worker on Lambda, website on S3 + CloudFront ([ADR-0042](.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)); deployed through GitHub OIDC |
 
 One Vite/React app serves the report form as its default route and the
 review queue at `/admin`; the API's role-claim authorization is the security
 boundary, not the delivery path
-([ADR-0048](docs/decisions/ADR-0048-one-website-admin-as-a-route.md)). The API
+([ADR-0048](.spec/decisions/ADR-0048-one-website-admin-as-a-route.md)). The API
 and the Worker run as container images on Lambda. The API sits behind the ALB
-([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)).
+([ADR-0042](.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)).
 The Worker is nudged by the API after each commit and swept every minute by
 EventBridge. The website is static files in a private S3 bucket behind
 CloudFront
-([ADR-0123](docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
+([ADR-0123](.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
 The AWS topology, with a diagram of how every service connects, is in
-[infrastructure and operations](docs/infrastructure-and-operations.md#production-topology).
+[infrastructure and operations](.spec/infrastructure-and-operations.md#production-topology).
 Runtime data stays in Canada, object storage remains private, and the API and Worker apply pending migrations at startup under an
 advisory lock
-([ADR-0055](docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+([ADR-0055](.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 ## Getting started
 
@@ -154,7 +159,7 @@ To also render the graphify knowledge graph into a local Obsidian vault at
 
 `./init-dev.sh` also asks for the private provider keys local development
 needs — `GEMINI_API_KEY`, for summaries and every machine translation
-([ADR-0179](docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)),
+([ADR-0179](.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)),
 and `DEEPL_API_KEY`, kept dormant so DeepL can be switched back — and
 writes them to a `.env` file at the root of the primary checkout. That file is
 gitignored and never committed. `./dev-up.sh` passes it to the API and Worker
@@ -166,7 +171,7 @@ DEEPL_API_KEY=...
 ```
 
 Without `GEMINI_API_KEY`, translation is unavailable and summaries fail. There is no
-stand-in ([ADR-0109](docs/decisions/ADR-0109-no-translation-stand-in-in-any-environment.md)).
+stand-in ([ADR-0109](.spec/decisions/ADR-0109-no-translation-stand-in-in-any-environment.md)).
 
 Common verification commands:
 
@@ -194,7 +199,7 @@ By default it runs the pull request workflows' fast checks themselves —
 `linked-issue.yml`, `feature-coverage.yml`, and the cheap `ci.yml` jobs
 (`build`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`) — under
 [act](https://github.com/nektos/act), in an Ubuntu 24.04 container
-([ADR-0145](docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)).
+([ADR-0145](.spec/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)).
 It skips `test`, `coverage`, `e2e`, and terraform: GitHub CI, the coverage
 ratchet included, is the full gate. `--full` runs every job, coverage against
 main's last green run too (it needs `gh auth login`); `--job <id>` runs one
@@ -234,11 +239,11 @@ it to reset.
 
 | Path | Purpose |
 |---|---|
-| [`features/`](features/README.md) | Canonical product and system specification, one claim per scenario |
+| [`.spec/`](.spec/README.md) | Canonical specification: feature areas (one claim per scenario), constraint pages, decisions, lessons, and the generated index and [traceability matrix](.spec/traceability.md) |
 | [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and the React/Vite web app |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused coding-agent guidance: generic skills, and the project skills that extend them |
-| [`docs/`](docs/architecture.md) | Constraints, operational notes, the generated [traceability matrix](docs/traceability.md), and historical ADRs |
+| [`docs/`](docs/architecture.md) | Guides: architecture, setup, deployment, conventions, implementation status, and PR screenshots |
 | [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding; [`infra/SETUP.md`](infra/SETUP.md) is the human setup checklist for staging and production |
 | [`locales/`](locales/en-CA.json) | Reviewed application UI catalogues |
 

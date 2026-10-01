@@ -10,7 +10,7 @@ import { afterRejection, main, matchesAny } from '../../tools/push-to-pr-branch.
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const BRANCH = 'issue-1/feature'
-const PATHS = 'features/**,docs/traceability.md'
+const PATHS = '.spec/features/**,.spec/traceability.md'
 
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
 
@@ -43,14 +43,14 @@ function scenario({ paths = PATHS } = {}) {
 
 	const author = clone(origin, 'author', root)
 	git(author, 'switch', '--quiet', '-c', BRANCH)
-	commitFile(author, 'features/a.feature', 'Feature: A\n', 'Author')
-	commitFile(author, 'docs/traceability.md', 'old matrix\n', 'Matrix')
+	commitFile(author, '.spec/features/a.feature', 'Feature: A\n', 'Author')
+	commitFile(author, '.spec/traceability.md', 'old matrix\n', 'Matrix')
 	git(author, 'push', '--quiet', 'origin', BRANCH)
 	const eventSha = git(author, 'rev-parse', 'HEAD')
 
 	const bot = clone(origin, 'bot', root)
 	git(bot, 'checkout', '--quiet', '--detach', eventSha)
-	commitFile(bot, 'docs/traceability.md', 'new matrix\n', 'Regenerate the traceability matrix')
+	commitFile(bot, '.spec/traceability.md', 'new matrix\n', 'Regenerate the traceability matrix')
 
 	const run = () => silently(() => main(['--branch', BRANCH, '--event-sha', eventSha, '--paths', paths], bot))
 	const branchFiles = () => {
@@ -79,12 +79,12 @@ function silently(action) {
 
 describe('matchesAny', () => {
 	it('matches a file under a dir/** pattern and an exact path', () => {
-		assert.equal(matchesAny('features/review/review.feature', ['features/**']), true)
+		assert.equal(matchesAny('.spec/features/review/review.feature', ['.spec/features/**']), true)
 		assert.equal(matchesAny('locales/en-CA.json', ['locales/en-CA.json']), true)
 	})
 
 	it('does not match a sibling that only shares a prefix', () => {
-		assert.equal(matchesAny('features-old/a.feature', ['features/**']), false)
+		assert.equal(matchesAny('features-old/a.feature', ['.spec/features/**']), false)
 		assert.equal(matchesAny('locales/fr-CA.json', ['locales/en-CA.json']), false)
 	})
 
@@ -95,14 +95,14 @@ describe('matchesAny', () => {
 })
 
 describe('afterRejection', () => {
-	const base = { eventSha: 'a', patterns: ['features/**'] }
+	const base = { eventSha: 'a', patterns: ['.spec/features/**'] }
 
 	it('fails when the branch has not moved', () => {
 		assert.equal(afterRejection({ ...base, branchSha: 'a', changed: [] }), 'failed')
 	})
 
 	it('is superseded when the newer push changed a file this workflow is triggered by', () => {
-		assert.equal(afterRejection({ ...base, branchSha: 'b', changed: ['locales/fr-CA.json', 'features/a.feature'] }), 'superseded')
+		assert.equal(afterRejection({ ...base, branchSha: 'b', changed: ['locales/fr-CA.json', '.spec/features/a.feature'] }), 'superseded')
 	})
 
 	it('retries when the newer push changed only files outside its triggers', () => {
@@ -112,7 +112,7 @@ describe('afterRejection', () => {
 	it('has landed when the branch gained a commit with its own subject and no trigger change', () => {
 		const landed = { ...base, branchSha: 'b', changed: ['locales/fr-CA.json'], subject: 'Translate', gainedSubjects: ['Translate'] }
 		assert.equal(afterRejection(landed), 'landed')
-		assert.equal(afterRejection({ ...landed, changed: ['features/a.feature'] }), 'superseded')
+		assert.equal(afterRejection({ ...landed, changed: ['.spec/features/a.feature'] }), 'superseded')
 	})
 })
 
@@ -137,7 +137,7 @@ describe('push-to-pr-branch', () => {
 
 	it('stands down when the author pushed a change that starts its own run', () => {
 		const { author, run, branchFiles } = scenario()
-		commitFile(author, 'features/b.feature', 'Feature: B\n', 'Author again')
+		commitFile(author, '.spec/features/b.feature', 'Feature: B\n', 'Author again')
 		git(author, 'push', '--quiet', 'origin', BRANCH)
 
 		const { code, output } = run()
@@ -152,8 +152,8 @@ describe('push-to-pr-branch', () => {
 		// onto the second push's head, and the second's replay then conflicted
 		// with it. The matrix is not a trigger here, as fr-CA.json is not one
 		// for the translation.
-		const { author, run, branchFiles } = scenario({ paths: 'features/**' })
-		commitFile(author, 'docs/traceability.md', 'earlier run matrix\n', 'Regenerate the traceability matrix')
+		const { author, run, branchFiles } = scenario({ paths: '.spec/features/**' })
+		commitFile(author, '.spec/traceability.md', 'earlier run matrix\n', 'Regenerate the traceability matrix')
 		git(author, 'push', '--quiet', 'origin', BRANCH)
 
 		const { code, output } = run()
@@ -166,8 +166,8 @@ describe('push-to-pr-branch', () => {
 	it('fails when its commit does not apply on top of the newer head', () => {
 		// The matrix is not a trigger here, so the run replays rather than
 		// stands down, and the replay conflicts with the matrix already there.
-		const { author, run } = scenario({ paths: 'features/**' })
-		commitFile(author, 'docs/traceability.md', 'hand-edited matrix\n', 'Hand edit')
+		const { author, run } = scenario({ paths: '.spec/features/**' })
+		commitFile(author, '.spec/traceability.md', 'hand-edited matrix\n', 'Hand edit')
 		git(author, 'push', '--quiet', 'origin', BRANCH)
 
 		const { code, output } = run()

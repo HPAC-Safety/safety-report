@@ -632,6 +632,33 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
+	[Fact]
+	public async Task GivenGroupWithChild_WhenGroupIsDeleted_ThenChildIsUngroupedAndAudited()
+	{
+		// Given
+		using var client = await SignedIn();
+		var group = await Create(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+		var groupId = group.GetProperty("id").GetString();
+		var child = await Create(client, Draft(UniqueKey("manufacturer"), "short_text") with { GroupedUnderQuestionId = groupId });
+		var childId = child.GetProperty("id").GetString()!;
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		var listed = await client.GetFromJsonAsync<JsonElement>(Questions);
+		var ungrouped = listed.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == childId);
+		ungrouped.GetProperty("groupedUnderQuestionId").ValueKind.ShouldBe(JsonValueKind.Null);
+
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entry = await database.AuditLog.SingleAsync(e =>
+			e.Action == AuditAction.RevisedQuestion && e.TargetId == TinyId.Parse(childId));
+		entry.Detail.ShouldBe("ungrouped");
+	}
+
 	// ------------------------------------- multi-select reporter additions (ADR-0077) --
 
 	[Fact]

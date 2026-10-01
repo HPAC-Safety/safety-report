@@ -513,6 +513,30 @@ public class Question
 	}
 
 	/// <summary>
+	///     Ungroups the question and gives it a form position, because its group is
+	///     gone or no longer a group, and returns the question that is live afterwards.
+	///     Like any other edit, an unanswered question is revised and an answered one
+	///     is retired and replaced by a new question carrying the same stable key
+	///     (ADR-0071, <see cref="ForksWhenEdited" />). See REQ-QB-052.
+	/// </summary>
+	public Question Ungroup(bool hasBeenAnswered,
+							int displayOrder,
+							DateTimeOffset at)
+	{
+		EnsureNotDeleted();
+
+		var draft = CurrentDraft() with { GroupedUnderQuestionId = null, DisplayOrder = displayOrder };
+
+		if (ForksWhenEdited(hasBeenAnswered))
+		{
+			return Fork(draft, at);
+		}
+
+		ReviseInternal(draft, at);
+		return this;
+	}
+
+	/// <summary>
 	///     Makes this question's choices depend on another question's answer, or on
 	///     nothing. No revision: the dependency lives on the question (ADR-0146).
 	///     Every live choice must then name one of the parent's choices, which the

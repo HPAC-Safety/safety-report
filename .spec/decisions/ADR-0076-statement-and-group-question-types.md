@@ -129,6 +129,21 @@ would require amending ADR-0060/ADR-0074 for no actual gain.
 additive follow-up ADR if it ever does, matching ADR-0074's precedent for
 scoping a decision to the concrete need in front of it.
 
+## Amendment (2026-09-30)
+
+A group that is deleted, or retyped to a type other than `group`, leaves
+every live child naming a heading that no longer renders it, and the public
+form shows only the children of live groups. So the same save ungroups each
+live child (`REQ-QB-052`, issue #720):
+
+- An answered child forks like any edit, and an unanswered one gets a new
+  revision (ADR-0071). Grouping is display metadata, but a revision is the
+  only way a question changes.
+- The ungrouped children take the group's slot on the form, in their order
+  within the group, and the questions after them shift down. A retyped group
+  keeps its own slot and its children follow it.
+- Each write is audited like any other question write.
+
 ## Related
 
 - [ADR-0060](ADR-0060-conditional-questions-depend-on-a-boolean-question.md) — the carve-out this ADR makes real

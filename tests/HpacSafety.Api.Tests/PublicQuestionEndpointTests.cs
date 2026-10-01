@@ -132,6 +132,38 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		children[0].GetProperty("key").GetString().ShouldBe(childKey);
 	}
 
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task GivenGroupWithChild_WhenGroupIsDeletedOrRetyped_ThenChildStaysOnPublicFormInItsPlace(bool retype)
+	{
+		// Given
+		using var admin = await SignedIn();
+		var groupKey = UniqueKey("aircraft");
+		var group = await Create(admin, Draft(groupKey, "group") with { IsRequired = false, IsPrivate = false });
+		var groupId = group.GetProperty("id").GetString();
+		var childKey = UniqueKey("aircraft_type");
+		await Create(admin, Draft(childKey, "short_text") with { GroupedUnderQuestionId = groupId });
+		var laterKey = UniqueKey("later");
+		await Create(admin, Draft(laterKey, "short_text"));
+
+		// When
+		using var response = retype
+			? await admin.PutAsJsonAsync(
+				new Uri($"/api/admin/questions/{groupId}", UriKind.Relative),
+				Draft(groupKey, "short_text") with { IsRequired = false, IsPrivate = false })
+			: await admin.DeleteAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative));
+
+		// Then
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+
+		var keys = (await ListPublic()).Select(candidate => candidate.GetProperty("key").GetString()).ToList();
+		var child = keys.IndexOf(childKey);
+		child.ShouldBeGreaterThanOrEqualTo(0);
+		keys.IndexOf(laterKey).ShouldBe(child + 1);
+		keys.IndexOf(groupKey).ShouldBe(retype ? child - 1 : -1);
+	}
+
 	[Fact]
 	public async Task GivenConditionalQuestion_WhenListedPublicly_ThenDependencyIsIncluded()
 	{

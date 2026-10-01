@@ -338,6 +338,13 @@ carries its own conditional dependency — grouping and conditional dependency
 are independent (ADR-0076) — and the group page itself is skipped only if
 every one of its children is currently hidden by an unmet condition.
 
+A group that is deleted, or retyped to anything but `group`, ungroups its live
+children in the same save (`REQ-QB-052`, ADR-0076). An answered child forks and
+an unanswered child gets a new revision, like any edit (ADR-0071). The children
+take the group's slot in their existing order, and every later question shifts
+down; a retyped group keeps its own slot and the children follow it. Each is
+audited as a question edit.
+
 ## Current implementation divergence
 
 Main currently has a stable `Question` whose order, active flag, privacy, and

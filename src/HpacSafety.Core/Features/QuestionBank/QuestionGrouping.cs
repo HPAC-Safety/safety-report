@@ -70,6 +70,96 @@ public static class QuestionGrouping
 	}
 
 	/// <summary>
+	///     Ungroups every live question displayed under <paramref name="group" />
+	///     because it was just deleted or retyped away from
+	///     <see cref="QuestionType.Group" />, and places them in the form where it
+	///     stood (REQ-QB-052).
+	/// </summary>
+	/// <remarks>
+	///     <para>
+	///         The children keep their order within the group and take the group's slot,
+	///         every later question shifting down. A group that was deleted leaves the
+	///         slot; one that was retyped keeps it, and its children follow it. An
+	///         answered child forks and an unanswered one is revised, like any edit
+	///         (ADR-0071). Whether a child has been answered is a fact about reports, so
+	///         the caller reads it and passes it in.
+	///     </para>
+	///     <para>
+	///         Call it after the group was deleted or retyped. Grouping is display
+	///         metadata, so an ungrouped child's own condition and choice dependencies
+	///         are untouched; the caller re-points the ones a fork leaves behind.
+	///     </para>
+	/// </remarks>
+	/// <param name="questions">Every live question, and the group even if it was just retired.</param>
+	/// <param name="group">The group that stopped being one.</param>
+	/// <param name="answered">Ids of the questions any answer references.</param>
+	/// <param name="at">When the change happened.</param>
+	public static UngroupResult UngroupChildren(IReadOnlyCollection<Question> questions,
+												Question group,
+												IReadOnlySet<TinyId> answered,
+												DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(group);
+		ArgumentNullException.ThrowIfNull(answered);
+
+		var form = questions
+			.Where(question => question.Deleted is null || question.Id == group.Id)
+			.OrderBy(question => question.DisplayOrder)
+			.ThenBy(question => question.Key, StringComparer.Ordinal)
+			.ToList();
+
+		var children = form.Where(question => question.Deleted is null && question.GroupedUnderQuestionId == group.Id).ToList();
+
+		if (children.Count == 0)
+		{
+			return new UngroupResult([], [], 0);
+		}
+
+		var arrangement = new List<Question>(form.Count);
+
+		foreach (var question in form.Where(question => !children.Contains(question)))
+		{
+			if (question.Deleted is null)
+			{
+				arrangement.Add(question);
+			}
+
+			if (question.Id == group.Id)
+			{
+				arrangement.AddRange(children);
+			}
+		}
+
+		List<Question> ungrouped = [];
+		List<Question> replacements = [];
+		var moved = 0;
+
+		for (var position = 0; position < arrangement.Count; position++)
+		{
+			var question = arrangement[position];
+
+			if (children.Contains(question))
+			{
+				var live = question.Ungroup(answered.Contains(question.Id), position, at);
+				ungrouped.Add(live);
+
+				if (!ReferenceEquals(live, question))
+				{
+					replacements.Add(live);
+				}
+			}
+			else if (question.DisplayOrder != position)
+			{
+				question.Reorder(position, at);
+				moved++;
+			}
+		}
+
+		return new UngroupResult(ungrouped, replacements, moved);
+	}
+
+	/// <summary>
 	///     Whether following <see cref="Question.GroupedUnderQuestionId" /> from
 	///     <paramref name="from" /> reaches <paramref name="target" />. The
 	///     visited set is what stops a cycle already in the data from looping

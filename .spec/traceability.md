@@ -1466,7 +1466,7 @@ A statement or a group collects no answer — *Reqnroll, Covered*
 
 ### REQ-QB-045
 
-An answer naming a statement or a group is refused — *Reqnroll, Planned*
+An answer naming a statement or a group is refused — *Reqnroll, Covered*
 
 ### REQ-QB-046
 
@@ -1702,7 +1702,7 @@ A media consent answer must be an explicit yes or no — *Reqnroll, Covered*
 
 ### REQ-QB-116
 
-A media consent answer covers documents only under the wording the form showed — *Reqnroll, Covered*
+A media consent answer covers documents when it answers the wording the form showed — *Reqnroll, Covered*
 
 ### REQ-QB-117
 
@@ -2192,6 +2192,10 @@ A migration removes a trailing colon from every stored question label, in place 
 
 The seeded question bank has no label ending in a colon — *Reqnroll, Covered*
 
+### REQ-QB-247
+
+A media consent answer naming an earlier wording is refused, so no document is published on it — *Reqnroll, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -2214,13 +2218,9 @@ A skipped answer is represented by an empty value, not omission — *Reqnroll, C
 
 The API rejects a malformed submission DTO — *Reqnroll, Covered*
 
-### REQ-SUB-009
-
-A submission may answer a known superseded revision — *Reqnroll, Covered*
-
 ### REQ-SUB-010
 
-A submission naming revisions inconsistently is refused — *Reqnroll, Planned*
+A submission naming a revision that is not current, or naming revisions inconsistently, is refused — *Reqnroll, Covered*
 
 ### REQ-SUB-011
 
@@ -2646,6 +2646,22 @@ Leaving the report form for another page while it holds unsubmitted answers is c
 
 Closing or reloading the tab while the report form holds unsubmitted answers triggers the browser's own prompt — *playwright-bdd, Covered*
 
+### REQ-SUB-124
+
+Continuing a saved report leaves out an answer whose question revision is no longer current — *playwright-bdd, Covered*
+
+### REQ-SUB-125
+
+The reporter is told once that saved answers were cleared — *playwright-bdd, Covered*
+
+### REQ-SUB-126
+
+No notice appears when every saved answer is still current — *playwright-bdd, Covered*
+
+### REQ-SUB-127
+
+A saved report with no answer still current is replaced by a fresh form and the notice — *playwright-bdd, Covered*
+
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001
@@ -2955,7 +2971,7 @@ data-and-persistence.md — verified by none — managed encryption is an infras
 
 ### CON-DP-004
 
-data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-SUB-009`, `REQ-QB-122`, `REQ-QB-124`, `REQ-QB-131`
+data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-SUB-010`, `REQ-QB-122`, `REQ-QB-124`, `REQ-QB-131`
 
 ### CON-DP-005
 
@@ -3171,7 +3187,7 @@ testing-and-quality.md — verified by none — a delivery rule, enforced by the
 
 ### CON-TQ-004
 
-testing-and-quality.md — verified by `REQ-QB-001`, `REQ-QB-009`, `REQ-QB-016`, `REQ-SUB-078`, `REQ-SUB-005`, `REQ-SUB-009`, `REQ-SUB-013`, `REQ-SUB-017`, `REQ-SUB-018`
+testing-and-quality.md — verified by `REQ-QB-001`, `REQ-QB-009`, `REQ-QB-016`, `REQ-SUB-078`, `REQ-SUB-005`, `REQ-SUB-010`, `REQ-SUB-013`, `REQ-SUB-017`, `REQ-SUB-018`, `REQ-SUB-124`, `REQ-SUB-125`
 
 ### CON-TQ-005
 

@@ -1611,9 +1611,7 @@ definition matches; a built claim may never have one.
 ### REQ-QB-045
 
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
-- Unbound: `When a submission carries an answer naming that question's revision`
-- Unbound: `Then the API refuses the submission`
-- Unbound: `Then nothing is stored`
+- [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs)
 
 ### REQ-QB-046
 
@@ -2470,6 +2468,11 @@ definition matches; a built claim may never have one.
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
 - [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs)
 
+### REQ-QB-247
+
+- [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs)
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -2495,19 +2498,9 @@ definition matches; a built claim may never have one.
 
 - [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs)
 
-### REQ-SUB-009
-
-- [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs)
-
 ### REQ-SUB-010
 
 - [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs)
-- Unbound: `Given a submission carries an answer naming an unknown revision`
-- Unbound: `Then the API refuses the submission`
-- Unbound: `Then nothing is stored`
-- Unbound: `Given a submission carries an answer naming a deleted revision`
-- Unbound: `Given a submission carries two answers naming the same revision`
-- Unbound: `Given a submission carries two answers naming revisions of one stable key`
 
 ### REQ-SUB-011
 
@@ -3021,6 +3014,26 @@ definition matches; a built claim may never have one.
 - [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
 - [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
 - [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
+
+### REQ-SUB-124
+
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+
+### REQ-SUB-125
+
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+
+### REQ-SUB-126
+
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+
+### REQ-SUB-127
+
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
 
 ## Claims: typeform-question-import-export
 

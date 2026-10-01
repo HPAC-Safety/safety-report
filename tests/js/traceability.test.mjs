@@ -89,6 +89,24 @@ describe('readClaims', () => {
 	})
 })
 
+describe('readClaims with Rule blocks', () => {
+	it('reads claims inside Rules exactly as outside them', () => {
+		const source = `Feature: Media\n\nRule: Uploads\n\n${scenario('REQ-MED-001', 'A thing happens', ['@ui'])}Rule: Review\n\n${scenario('REQ-MED-002', 'Another')}`
+		const { claims, problems } = readClaims('.spec/features/media/media.feature', source)
+
+		assert.deepEqual(problems, [])
+		assert.deepEqual(claims.map((each) => [each.id, each.engine]), [['REQ-MED-001', 'playwright-bdd'], ['REQ-MED-002', 'Reqnroll']])
+	})
+
+	it('refuses a tag on a Rule, which would reach every scenario beneath it', () => {
+		const source = `Feature: Media\n\n@ui\nRule: Uploads\n\n${scenario('REQ-MED-001', 'A thing happens')}`
+		const { claims, problems } = readClaims('.spec/features/media/media.feature', source)
+
+		assert.match(problems[0], /:4: tags on a Rule are not supported/)
+		assert.equal(claims[0].engine, 'Reqnroll')
+	})
+})
+
 describe('readConstraints', () => {
 	it('reads a constraint and the claims that verify it', () => {
 		const source = '**CON-SO-001** A thing is true.\n*Verified by: REQ-MED-001, REQ-MED-002.*\n'

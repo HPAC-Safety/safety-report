@@ -3,6 +3,8 @@ Members present a signed token, get one of three roles from its claims,
 review reports, and only a fully approved, consented, non-deleted report ever
 reaches the public feed.
 
+Rule: Login and session
+
 @REQ-MOD-001
 @ui
 Scenario: In development the login page offers no third-party sign-in option
@@ -49,6 +51,8 @@ Scenario: A member's signed-in session persists across a reload and clears on lo
   Then the header still shows the logout action
   When the visitor activates the logout action
   Then the header shows the member-login action again
+
+Rule: Admin menu and pending counts
 
 @REQ-MOD-007
 @ui
@@ -127,6 +131,8 @@ Scenario: With nothing waiting, the Admin menu shows no count
   Then the Admin menu shows no count
   When the visitor activates the Admin menu
   Then no option shows a count
+
+Rule: Tokens, development login, and the interim issuer
 
 @REQ-MOD-013
 Scenario: A token signed by an unknown key is rejected
@@ -245,6 +251,8 @@ Scenario: The temporary interim issuer's JWKS publishes only a public key
   When the interim issuer's JWKS is requested
   Then the response carries only a public key, never a private key field
 
+Rule: Role capabilities
+
 @REQ-MOD-025
 @ignore
 Scenario: User capabilities
@@ -267,6 +275,8 @@ Scenario: Administrator capabilities include everything SafetyOfficer has
   Given a member has the Administrator role
   Then the member has every SafetyOfficer capability
   And can additionally create question revisions and author every question's choices
+
+Rule: The type-ahead review queue
 
 @REQ-MOD-094
 Scenario Outline: A Safety Officer or an Administrator reviews type-ahead values
@@ -419,6 +429,8 @@ Scenario: A translation overtaken by a direction flip is dropped, and Translate 
   And the translation then answers
   Then its answer is dropped and Translate is no longer shown as working
 
+Rule: The admin report list
+
 @REQ-MOD-096
 Scenario Outline: A report's consent reaches the admin view as true, false, or null
   Given a report whose publication consent is <publication> and whose media consent is <media>
@@ -540,6 +552,8 @@ Scenario: A report without publication consent never needs action
   Then that report is not listed
   And the reports count does not include it
 
+Rule: Report detail and summary revisions
+
 @REQ-MOD-031
 Scenario: A report detail view exposes only what the reviewer needs
   Given a reviewer opens a report's detail view
@@ -645,6 +659,8 @@ Scenario: A save that changes neither language is refused
   When a reviewer saves the summary pair unchanged
   Then the request is refused with 400 and saves nothing
 
+Rule: Publication guards and the public feed API
+
 @REQ-MOD-033
 Scenario: Publishing approves the current bilingual pair once
   Given a reviewer publishes the current English/French summary pair
@@ -745,6 +761,8 @@ Scenario: There is no publication channel besides the HPAC public feed
   Then it appears only on the HPAC public feed and report-detail page
   And no email, messaging, social, webhook, or third-party channel publishes it
 
+Rule: Access control and audit
+
 @REQ-MOD-041
 @ignore
 Scenario: Revoking a member's access is the identity provider's decision
@@ -826,6 +844,8 @@ Scenario: Sign-out is not an audited event
   Given the API's mapped routes
   Then none of them signs a member out
   And no audit action records a sign-out
+
+Rule: Managing reports and admin search
 
 @REQ-MOD-052
 @ui
@@ -1005,6 +1025,8 @@ Scenario: A search matching nothing shows a message naming the query, not an err
   And the safety officer searches for a word that matches nothing
   Then a message says no reports match that search
   And no error is shown
+
+Rule: The report view and review actions
 
 @REQ-MOD-054
 @ui
@@ -1332,6 +1354,8 @@ Scenario: The report view shows how each summary language was produced
   Then the English text is labelled as edited by a reviewer
   And the French text is labelled as machine-translated
 
+Rule: The public feed and report page
+
 @REQ-MOD-079
 @ui
 Scenario: Each report in the public feed opens at its own address
@@ -1471,6 +1495,8 @@ Scenario: A reviewer can open a published report's public page
   Then the report view links to the report's public address
   And a report that is not published shows no such link
 
+Rule: Private notes
+
 # Private notes (ADR-0133). Staff-only plain text on a report: never
 # summarized, translated, or published.
 
@@ -1566,6 +1592,8 @@ Scenario: A safety officer keeps private notes on the report page
   And its history shows both revisions
   When the safety officer removes that private note and confirms
   Then "Investigator report received." is no longer listed
+
+Rule: Private attachments
 
 @REQ-MOD-107
 Scenario Outline: Only a Safety Officer or an Administrator may reach private attachments
@@ -1777,6 +1805,8 @@ Scenario: Leaving the report page with only refused private attachments staged d
   When the safety officer reloads the report page
   Then the page reloads without warning, and the refused row is gone
 
+Rule: Public search
+
 @REQ-MOD-140
 Scenario: Search matches the approved published summary in the visitor's site language
   Given a published report whose English summary says "The pilot landed in a field."
@@ -1872,6 +1902,8 @@ Scenario: The search box sits at the top of the public feed, and its query is bo
   When the visitor goes back
   Then the search box is empty and the full feed is shown again
 
+Rule: Unsaved changes
+
 @REQ-MOD-185
 @ui
 Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
@@ -1904,6 +1936,8 @@ Scenario: Leaving with an unsaved private note is confirmed
   And the safety officer starts writing a private note without saving it
   And navigates to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
+
+Rule: Markdown rendering
 
 @REQ-MOD-208
 @ui

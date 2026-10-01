@@ -111,6 +111,12 @@ Rules:
 - `@ignore` and superseded scenarios: also
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios".
 - Each `.spec/features/<area>/README.md` records what **not** to build.
+- A large area is grouped with Gherkin `Rule:` blocks inside its one `.feature`
+  file, not split into new directories; a new scenario goes inside the Rule it
+  belongs to. A Rule carries no tags — a claim's engine and status come from its
+  own scenario's tags, and `node tools/traceability.mjs` fails a tagged Rule
+  ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)
+  amendment).
 
 ### The `feature-coverage` exemption
 

@@ -248,4 +248,136 @@ public class QuestionGroupingTests
 		Should.NotThrow(() =>
 			QuestionGrouping.EnsureGroupingAllowed([groupA, groupB, unrelated], unrelated.Id, groupA.Id));
 	}
+
+	private static Question WithOrder(Question question,
+								int order)
+	{
+		question.Reorder(order, At);
+		return question;
+	}
+
+	[Fact]
+	public void GivenDeletedGroup_WhenChildrenAreUngrouped_ThenTheyTakeItsSlotAndLaterQuestionsShiftDown()
+	{
+		// Given
+		var before = WithOrder(Ordinary("before", QuestionType.ShortText), 0);
+		var group = WithOrder(Group("aircraft"), 1);
+		var first = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 2);
+		var second = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 3);
+		var after = WithOrder(Ordinary("after", QuestionType.ShortText), 4);
+		group.Delete(false, At.AddHours(1));
+
+		// When
+		var result = QuestionGrouping.UngroupChildren([before, group, first, second, after], group, new HashSet<TinyId>(), At.AddHours(1));
+
+		// Then
+		result.Replacements.ShouldBeEmpty();
+		result.Ungrouped.ShouldBe([first, second]);
+		first.GroupedUnderQuestionId.ShouldBeNull();
+		second.GroupedUnderQuestionId.ShouldBeNull();
+		new[] { before, first, second, after }.Select(question => question.DisplayOrder).ShouldBe([0, 1, 2, 4]);
+		result.Moved.ShouldBe(0);
+	}
+
+	[Fact]
+	public void GivenChildrenOrderedFarFromTheirGroup_WhenUngrouped_ThenOnlyTheQuestionsTheyDisplaceShift()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var near = WithOrder(Ordinary("near", QuestionType.ShortText), 1);
+		var first = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 5);
+		var second = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 6);
+		var far = WithOrder(Ordinary("far", QuestionType.ShortText), 20);
+		group.Delete(false, At.AddHours(1));
+
+		// When
+		var result = QuestionGrouping.UngroupChildren([group, near, first, second, far], group, new HashSet<TinyId>(), At.AddHours(1));
+
+		// Then
+		new[] { first, second, near, far }.Select(question => question.DisplayOrder).ShouldBe([0, 1, 2, 20]);
+		result.Moved.ShouldBe(1);
+	}
+
+	[Fact]
+	public void GivenRetypedGroup_WhenChildrenAreUngrouped_ThenTheyFollowIt()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var second = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 2);
+		var first = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 1);
+		var after = WithOrder(Ordinary("after", QuestionType.ShortText), 3);
+		group.Revise(QuestionType.ShortText, "Aircraft", "Aéronef", false, true, 0, At);
+
+		// When
+		var result = QuestionGrouping.UngroupChildren([group, second, first, after], group, new HashSet<TinyId>(), At.AddHours(1));
+
+		// Then
+		result.Ungrouped.ShouldBe([first, second]);
+		new[] { group, first, second, after }.Select(question => question.DisplayOrder).ShouldBe([0, 1, 2, 3]);
+	}
+
+	[Fact]
+	public void GivenAnsweredChild_WhenUngrouped_ThenItIsReplacedWithTheSameKey()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var answered = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 1);
+		var unanswered = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 2);
+		group.Delete(false, At.AddHours(1));
+
+		// When
+		var result = QuestionGrouping.UngroupChildren(
+			[group, answered, unanswered], group, new HashSet<TinyId> { answered.Id }, At.AddHours(1));
+
+		// Then
+		var replacement = result.Replacements.ShouldHaveSingleItem();
+		replacement.Key.ShouldBe("first");
+		replacement.Id.ShouldNotBe(answered.Id);
+		replacement.GroupedUnderQuestionId.ShouldBeNull();
+		replacement.DisplayOrder.ShouldBe(0);
+		answered.Deleted.ShouldNotBeNull();
+		unanswered.Deleted.ShouldBeNull();
+		unanswered.CurrentRevision.RevisionNumber.ShouldBe(3);
+		result.Ungrouped.ShouldBe([replacement, unanswered]);
+	}
+
+	[Fact]
+	public void GivenGroupWithNoChildren_WhenUngrouped_ThenNothingChanges()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var other = WithOrder(Ordinary("other", QuestionType.ShortText), 5);
+		group.Delete(false, At.AddHours(1));
+
+		// When
+		var result = QuestionGrouping.UngroupChildren([group, other], group, new HashSet<TinyId>(), At.AddHours(1));
+
+		// Then
+		result.Ungrouped.ShouldBeEmpty();
+		result.Moved.ShouldBe(0);
+		other.DisplayOrder.ShouldBe(5);
+	}
+
+	[Fact]
+	public void GivenEditedGroup_WhenChildrenAreRevised_ThenEachIsRevisedOrForkedAndStaysGrouped()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var answered = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 1);
+		var unanswered = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 2);
+
+		// When
+		var result = QuestionGrouping.ReviseChildren(
+			[group, answered, unanswered], group, new HashSet<TinyId> { answered.Id }, At.AddHours(1));
+
+		// Then
+		var replacement = result.Replacements.ShouldHaveSingleItem();
+		replacement.Key.ShouldBe("first");
+		replacement.GroupedUnderQuestionId.ShouldBe(group.Id);
+		replacement.DisplayOrder.ShouldBe(1);
+		answered.Deleted.ShouldNotBeNull();
+		unanswered.GroupedUnderQuestionId.ShouldBe(group.Id);
+		unanswered.CurrentRevision.RevisionNumber.ShouldBe(3);
+		result.Ungrouped.ShouldBe([replacement, unanswered]);
+	}
 }

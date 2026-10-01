@@ -1494,7 +1494,7 @@ Grouping is unaffected by conditional dependency and vice versa — *Reqnroll, C
 
 ### REQ-QB-052
 
-A grouped question is ungrouped when its group stops being one — *Reqnroll, Planned*
+A grouped question is ungrouped when its group stops being one — *Reqnroll, Covered*
 
 ### REQ-QB-053
 
@@ -2195,6 +2195,10 @@ The seeded question bank has no label ending in a colon — *Reqnroll, Covered*
 ### REQ-QB-247
 
 A media consent answer naming an earlier wording is refused, so no document is published on it — *Reqnroll, Covered*
+
+### REQ-QB-248
+
+Editing a group gives each of its questions a new revision that stays grouped under it — *Reqnroll, Covered*
 
 ## Claims: report-submission
 

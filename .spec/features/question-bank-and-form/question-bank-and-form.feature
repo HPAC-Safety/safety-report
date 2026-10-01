@@ -446,17 +446,34 @@ Scenario: Grouping is unaffected by conditional dependency and vice versa
   And clearing one leaves the other unchanged
 
 @REQ-QB-052
-@ignore
 Scenario Outline: A grouped question is ungrouped when its group stops being one
-  Given a question is grouped under a group question
+  Given a group question has two questions grouped under it, the first with <answers>
+  And a later question follows the group on the form
   When an Administrator <change>
-  Then the grouped question gets a new revision that is ungrouped
-  And it appears on the reporter's form where the group stood
+  Then the first grouped question <result>
+  And the second grouped question gets a new revision that is ungrouped
+  And the reporter's form lists both as entries of their own, in their former order, at the group's place
+  And the later question comes after them
 
 Examples:
-  | change                                       |
-  | deletes the group                            |
-  | retypes the group to a type other than group |
+  | change                                       | answers    | result                                                                   |
+  | deletes the group                            | no answers | gets a new revision that is ungrouped                                    |
+  | deletes the group                            | an answer  | is retired and replaced by a new question with its key that is ungrouped |
+  | retypes the group to a type other than group | no answers | gets a new revision that is ungrouped                                    |
+  | retypes the group to a type other than group | an answer  | is retired and replaced by a new question with its key that is ungrouped |
+
+@REQ-QB-248
+Scenario Outline: Editing a group gives each of its questions a new revision that stays grouped under it
+  Given a group question has two questions grouped under it, the first with <answers>
+  When an Administrator edits the group's wording
+  Then the first grouped question <result>
+  And the second grouped question gets a new revision that is still grouped under the group
+  And the reporter's form lists both as children of the group, in their former order
+
+Examples:
+  | answers    | result                                                                                |
+  | no answers | gets a new revision that is still grouped under the group                             |
+  | an answer  | is retired and replaced by a new question with its key that is grouped under the group |
 
 Rule: Conditional questions
 

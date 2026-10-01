@@ -1637,11 +1637,7 @@ definition matches; a built claim may never have one.
 ### REQ-QB-052
 
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
-- Unbound: `Given a question is grouped under a group question`
-- Unbound: `When an Administrator deletes the group`
-- Unbound: `Then the grouped question gets a new revision that is ungrouped`
-- Unbound: `Then it appears on the reporter's form where the group stood`
-- Unbound: `When an Administrator retypes the group to a type other than group`
+- [QuestionUngroupingSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionUngroupingSteps.cs)
 
 ### REQ-QB-053
 
@@ -2468,6 +2464,11 @@ definition matches; a built claim may never have one.
 
 - [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs)
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+
+### REQ-QB-248
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [QuestionUngroupingSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionUngroupingSteps.cs)
 
 ## Claims: report-submission
 

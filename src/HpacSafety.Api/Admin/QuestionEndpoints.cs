@@ -190,6 +190,7 @@ public static class QuestionEndpoints
 		}
 
 		var wasActive = question.IsActive;
+		var wasGroup = question.Type == QuestionType.Group;
 		var at = clock.GetUtcNow();
 
 		return await Save(async () =>
@@ -217,6 +218,7 @@ public static class QuestionEndpoints
 			// Revises while nothing has answered it, and otherwise retires
 			// this question and returns its replacement (ADR-0071) — unless
 			// only the choices changed, which never does either (ADR-0095).
+			var revisionsBefore = question.Revisions.Count;
 			var live = question.ApplyEdit(
 				hasBeenAnswered,
 				type,
@@ -253,6 +255,20 @@ public static class QuestionEndpoints
 
 			var action = wasActive && !request.IsActive ? AuditAction.DeactivatedQuestion : AuditAction.RevisedQuestion;
 			Audit(database, context, action, live.Id, at, forked ? "forked" : null);
+
+			// A group retyped to anything else no longer has a heading to render
+			// under, so its children leave it in this same save (REQ-QB-052).
+			if (wasGroup && type != QuestionType.Group)
+			{
+				await UngroupChildren(database, context, questions, question, at, cancellationToken).ConfigureAwait(false);
+			}
+			else if (wasGroup && question.Revisions.Count > revisionsBefore)
+			{
+				// A group that stays one and gets a new revision gives each child one
+				// too, still grouped under it (REQ-QB-248).
+				await UngroupChildren(database, context, questions, question, at, cancellationToken, keepGrouped: true).ConfigureAwait(false);
+			}
+
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			// The replacement is new, so nothing has answered it yet.
@@ -349,9 +365,8 @@ public static class QuestionEndpoints
 			return Results.NotFound();
 		}
 
-		var question = await LiveQuestions(database)
-			.FirstOrDefaultAsync(candidate => candidate.Id == questionId, cancellationToken)
-			.ConfigureAwait(false);
+		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
+		var question = questions.Find(candidate => candidate.Id == questionId);
 
 		if (question is null)
 		{
@@ -368,10 +383,63 @@ public static class QuestionEndpoints
 			var at = clock.GetUtcNow();
 			question.Delete(hasBeenAnswered, at);
 			Audit(database, context, AuditAction.DeletedQuestion, question.Id, at);
+
+			// Nothing may be left naming a heading that no longer exists, so a
+			// deleted group's children leave it in this same save (REQ-QB-052).
+			if (question.Type == QuestionType.Group)
+			{
+				await UngroupChildren(database, context, questions, question, at, cancellationToken).ConfigureAwait(false);
+			}
+
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			return Results.NoContent();
 		}).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	///     Ungroups a group's live children after the group was deleted or retyped — or,
+	///     with <c>keepGrouped</c>, gives them a new revision still grouped after the
+	///     group was edited — in the caller's save: each child by a revision or, once answered, a replacement
+	///     question (ADR-0071), and the questions after them shifted down. Every write is
+	///     audited like the edit it is.
+	/// </summary>
+	private static async Task UngroupChildren(
+		HpacSafetyDbContext database,
+		HttpContext context,
+		List<Question> questions,
+		Question group,
+		DateTimeOffset at,
+		CancellationToken cancellationToken,
+		bool keepGrouped = false)
+	{
+		var answered = await AnsweredQuestionIds(database, cancellationToken).ConfigureAwait(false);
+		var result = keepGrouped
+			? QuestionGrouping.ReviseChildren(questions, group, answered, at)
+			: QuestionGrouping.UngroupChildren(questions, group, answered, at);
+		var verb = keepGrouped ? "revised with group" : "ungrouped";
+
+		database.Questions.AddRange(result.Replacements);
+
+		// A replacement's choice dependents follow it, as they follow any fork (ADR-0151).
+		List<Question> touched = [.. questions, .. result.Replacements];
+
+		foreach (var replacement in result.Replacements)
+		{
+			ChoiceDependencies.Follow(touched, replacement, at);
+		}
+
+		foreach (var child in result.Ungrouped)
+		{
+			Audit(
+				database, context, AuditAction.RevisedQuestion, child.Id, at,
+				result.Replacements.Contains(child) ? $"forked; {verb}" : verb);
+		}
+
+		if (result.Moved > 0)
+		{
+			Audit(database, context, AuditAction.ReorderedQuestions, TinyId.New(), at, $"moved={result.Moved}", "QuestionOrder");
+		}
 	}
 
 	/// <summary>

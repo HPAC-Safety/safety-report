@@ -205,6 +205,14 @@ Scenario: Every runtime translation is told the required rendering of every list
   When text is translated in either direction
   Then the prompt instructs the model to render "upload" as "téléverser" and never "télécharg…"
 
+@REQ-WLD-047
+Scenario: Every translation localizes place names rather than copying them
+  Given a Gemini key is configured
+  When text is translated in either direction
+  Then the prompt instructs the model to localize place names into the target language
+  And the prompt gives the Canadian abbreviation of every province and territory in both languages
+  And the prompt does not tell the model to copy place names unchanged
+
 @REQ-WLD-036
 Scenario: With no Gemini key translation is unavailable, in every environment
   Given no Gemini key is configured, in Development or anywhere else

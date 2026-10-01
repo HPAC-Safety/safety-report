@@ -8,7 +8,7 @@
  * API and the Worker and translates question wording, answers, comments, and
  * summary drafts. This one runs in GitHub Actions and translates UI chrome out
  * of `locales/en-CA.json`. Both send the one prompt in
- * `locales/translation-prompt.v1.md` and the term list in
+ * `locales/translation-prompt.v2.md` and the term list in
  * `locales/terms.json`, so the two produce the same French (ADR-0179).
  *
  * **A raw report never reaches either.** Nothing here ever sees report data —
@@ -62,7 +62,7 @@ export class TranslatorNotConfiguredError extends Error {
 }
 
 /** The one current translation prompt. A behavior change is a new version file. */
-export const PROMPT_FILE = 'translation-prompt.v1.md'
+export const PROMPT_FILE = 'translation-prompt.v2.md'
 
 export const DEFAULT_MODEL = 'gemini-3.7-flash'
 export const DEFAULT_REASONING_EFFORT = 'low'

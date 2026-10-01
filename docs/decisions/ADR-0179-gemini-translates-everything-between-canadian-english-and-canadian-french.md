@@ -142,7 +142,7 @@ the term list.
      both directions: the French rendering, the forms never to use, and that
      French text written with that rendering is the English term.
    - **The prompt is one current versioned file**,
-     `locales/translation-prompt.v1.md`, beside the term list. Both runtimes
+     `locales/translation-prompt.v2.md` since the amendment below, beside the term list. Both runtimes
      read that one file: `tools/translator.mjs` from disk, and
      `HpacSafety.Infrastructure` as an embedded resource. A behavior change is
      a new version file (`v2`); a used version is never edited. It is not a
@@ -214,3 +214,22 @@ can chatter or drop a field:
   when a key is held), and REQ-AI-030 with REQ-AI-023 (the same for the
   summary). REQ-WLD-028 and REQ-WLD-029 stay, now
   asserting the kept DeepL adapter's English target (ADR-0115).
+
+## Amendment (2026-09-30) — places are localized, not copied
+
+Version 1 of the prompt told the model to copy "the names of people, places,
+aircraft, and organizations" unchanged. Nearly every reporter-added
+type-ahead value is a place (a launch, a landing field, a town), so the
+reviewer's Translate button returned it in English: "Prairie Mountain, AB"
+came back as its own French. DeepL had localized the same text ("Mont Yamaska
+Nord", "Lumby, C.-B.") (#704).
+
+`locales/translation-prompt.v2.md` replaces it for the API, the Worker, and
+CI. It still copies the names of people, aircraft, and organizations. It
+localizes places in both directions: a place's established name in the
+target language (Colombie-Britannique, Québec, Mexique), the Canadian
+province and territory abbreviations (BC ↔ C.-B., AB ↔ Alb.), and the generic
+word in a name (Mount ↔ mont, Lake ↔ lac), copying the specific part
+(Yamaska, Cochrane) and a municipality's official name (Saint-Pie,
+Mont-Saint-Pierre). Version 1 stays in the repository unedited. Values
+already saved are not re-translated. Claim: REQ-WLD-047.

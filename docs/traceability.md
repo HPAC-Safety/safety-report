@@ -2938,6 +2938,10 @@ A summary's Markdown renders as a safe subset — *playwright-bdd, Covered*
 
 A public summary is set in the same type as the other public pages, in the <theme> theme — *playwright-bdd, Covered*
 
+### REQ-WLD-047
+
+Every translation localizes place names rather than copying them — *Reqnroll, Covered*
+
 ## Constraints
 
 A constraint states something the system must be true of; the claims beside

@@ -408,7 +408,7 @@ contributor who never invokes one is unaffected.
     and `Translation:ReasoningEffort`. Translation needs no key of its own;
     the DeepL key and secret are kept dormant and nothing reads them.
   - With no key it is unavailable in every environment; there is no stand-in.
-  - One versioned prompt, `locales/translation-prompt.v1.md`, serves runtime
+  - One versioned prompt, `locales/translation-prompt.v2.md`, serves runtime
     and CI. A used version is never edited.
 - A reviewer's translation is a draft they confirm. Each saved language records
   whether it was generated, written by a human, or machine-translated
@@ -450,7 +450,7 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 - Keep one current versioned prompt. Add a version when behavior changes,
   record the version with each summary, and remove obsolete active-pipeline
   machinery.
-- The one exception is the translation prompt, `locales/translation-prompt.v1.md`,
+- The one exception is the translation prompt, `locales/translation-prompt.v2.md`,
   shared by the API, the Worker, and CI; see "Machine translation".
 
 ## Delivery

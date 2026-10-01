@@ -55,6 +55,10 @@ services:
       AWS_SECRET_ACCESS_KEY: hpac-dev-secret
       AWS_DEFAULT_REGION: ca-central-1
       AWS_ENDPOINT_URL: http://s3:9000
+    volumes:
+      # The one copy of the rule: the acceptance suite applies the same file to
+      # its own server and reads it back (REQ-MED-005, CON-INF-010).
+      - ./docker/s3-quarantine-lifecycle.json:/s3-quarantine-lifecycle.json:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -62,7 +66,7 @@ services:
         aws s3api head-bucket --bucket hpac-safety-uploads 2>/dev/null || aws s3api create-bucket --bucket hpac-safety-uploads
         aws s3api put-bucket-versioning --bucket hpac-safety-uploads --versioning-configuration Status=Enabled
         aws s3api put-bucket-cors --bucket hpac-safety-uploads --cors-configuration '{"CORSRules":[{"AllowedMethods":["PUT"],"AllowedOrigins":["http://localhost:5173"],"AllowedHeaders":["content-type"],"MaxAgeSeconds":600}]}'
-        aws s3api put-bucket-lifecycle-configuration --bucket hpac-safety-uploads --lifecycle-configuration '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":15},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}'
+        aws s3api put-bucket-lifecycle-configuration --bucket hpac-safety-uploads --lifecycle-configuration file:///s3-quarantine-lifecycle.json
     restart: "no"
 
   api:

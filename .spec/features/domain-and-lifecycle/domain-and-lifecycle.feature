@@ -129,7 +129,6 @@ Scenario: Raw reports are retained until explicit deletion
   And there is no scheduled report purge and no physical-delete path in the application
 
 @REQ-DOM-011
-@ignore
 Scenario: Soft-deleting a report keeps its row and its stored files
   Given a synthetic report with an attachment has been submitted
   When a safety officer soft-deletes the report

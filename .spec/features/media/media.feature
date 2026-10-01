@@ -59,7 +59,6 @@ Scenario: A sent upload waits, unvalidated, in a private quarantine compartment
   And it is not validated until a submission claims it
 
 @REQ-MED-005
-@ignore
 Scenario: Unclaimed uploads expire automatically
   Given an upload that no committed submission claimed
   When the storage lifecycle rule runs

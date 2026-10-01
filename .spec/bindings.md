@@ -264,11 +264,7 @@ definition matches; a built claim may never have one.
 
 ### REQ-DOM-011
 
-- Unbound: `Given a synthetic report with an attachment has been submitted`
-- Unbound: `When a safety officer soft-deletes the report`
-- Unbound: `Then the report row remains, stamped with a deleted timestamp`
-- Unbound: `Then its answers, files, and stored objects remain`
-- Unbound: `Then no application path removes them afterwards`
+- [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs)
 
 ### REQ-DOM-013
 
@@ -372,11 +368,8 @@ definition matches; a built claim may never have one.
 
 ### REQ-MED-005
 
+- [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs)
 - [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs)
-- Unbound: `Given an upload that no committed submission claimed`
-- Unbound: `When the storage lifecycle rule runs`
-- Unbound: `Then the upload expires, its key stopping resolving fifteen days after it was written and its bytes gone about a day after that`
-- Unbound: `Then no file a committed submission claimed is expired by that rule`
 
 ### REQ-MED-006
 

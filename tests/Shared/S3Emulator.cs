@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -80,6 +81,57 @@ internal static class S3Emulator
 			VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled },
 		});
 
+		await ApplyQuarantineLifecycle(client, bucketName);
+
 		return client;
+	}
+
+	/// <summary>
+	///     The quarantine expiry rule dev-up applies to the local bucket and
+	///     infra/storage.tf applies to production, read from the one file
+	///     docker-compose.yml also mounts (CON-INF-010, REQ-MED-005).
+	/// </summary>
+	public static string LifecycleRulePath()
+	{
+		var directory = new DirectoryInfo(AppContext.BaseDirectory);
+		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
+		{
+			directory = directory.Parent;
+		}
+
+		return Path.Combine(
+			directory?.FullName ?? throw new InvalidOperationException("The repository root was not found."),
+			"docker",
+			"s3-quarantine-lifecycle.json");
+	}
+
+	private static async Task ApplyQuarantineLifecycle(AmazonS3Client client,
+													   string bucketName)
+	{
+		using var document = JsonDocument.Parse(await File.ReadAllTextAsync(LifecycleRulePath()));
+		var rules = document.RootElement.GetProperty("Rules").EnumerateArray().Select(rule => new LifecycleRule
+		{
+			Id = rule.GetProperty("ID").GetString(),
+			Status = LifecycleRuleStatus.FindValue(rule.GetProperty("Status").GetString()!),
+			Filter = new LifecycleFilter
+			{
+				LifecycleFilterPredicate = new LifecyclePrefixPredicate { Prefix = rule.GetProperty("Filter").GetProperty("Prefix").GetString() },
+			},
+			Expiration = new LifecycleRuleExpiration { Days = rule.GetProperty("Expiration").GetProperty("Days").GetInt32() },
+			NoncurrentVersionExpiration = new LifecycleRuleNoncurrentVersionExpiration
+			{
+				NoncurrentDays = rule.GetProperty("NoncurrentVersionExpiration").GetProperty("NoncurrentDays").GetInt32(),
+			},
+			AbortIncompleteMultipartUpload = new LifecycleRuleAbortIncompleteMultipartUpload
+			{
+				DaysAfterInitiation = rule.GetProperty("AbortIncompleteMultipartUpload").GetProperty("DaysAfterInitiation").GetInt32(),
+			},
+		}).ToList();
+
+		await client.PutLifecycleConfigurationAsync(new PutLifecycleConfigurationRequest
+		{
+			BucketName = bucketName,
+			Configuration = new LifecycleConfiguration { Rules = rules },
+		});
 	}
 }

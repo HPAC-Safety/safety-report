@@ -150,9 +150,11 @@ reaches the public.
 
 `consent_documents` is `consent_media`'s answer, recorded only when the
 reporter answered the wording the form showed at submission. Media consent was
-reworded to name documents. A yes given before that, or to a superseded wording
-a stale draft still held, shows the report's photos and video and keeps its
-documents private.
+reworded to name documents. A yes given before that shows the report's photos
+and video and keeps its documents private. A yes to a superseded wording that a
+stale draft still held is refused at submission, like any answer to a superseded
+revision
+([ADR-0185](../../decisions/ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md)).
 
 ## The thumbnail strip, lightbox, and viewer-scoped counts (#427)
 

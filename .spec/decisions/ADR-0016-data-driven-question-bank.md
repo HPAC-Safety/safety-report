@@ -13,6 +13,9 @@ keywords: question bank, data-driven, form
 **Status:** Superseded in shape by the
 [complete-revision specification](../features/question-bank-and-form/question-bank-and-form.feature). The
 core decision that questions are database data remains.
+Narrowed again by
+[ADR-0185](ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md):
+a submission may name only a revision that is current when it is submitted.
 
 **Date:** 2026-08-22
 

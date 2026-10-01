@@ -18,6 +18,10 @@ covers documents. **Amends**
 visitor may be issued a short-lived pre-signed GET to a document's private
 original, and only to one this record makes public. Changes `AGENTS.md`
 invariant 5: a document may now be published, as a forced download.
+**Amended by** [ADR-0185](ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md):
+the API now refuses an answer to a superseded revision, so a stale draft's media
+consent is refused rather than recorded without document consent (point 3). A
+report stored before still keeps its documents private.
 
 ## Context
 

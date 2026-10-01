@@ -10,6 +10,8 @@ import {
 	pickChoice,
 	typeAheadFormQuestions,
 	forgetDraftInBrowser,
+	revisedNarrativeFormQuestions,
+	writeOnlyStaleAnswersDraftToBrowser,
 	readDraftFromBrowser,
 	stubCurrentQuestions,
 	stubSubmission,
@@ -139,6 +141,30 @@ Given(
 		await stubAuth(page)
 		await stubCurrentQuestions(page, dateTimeFormQuestions())
 		await writeSavedDateTimeDraftToBrowser(page, date, time)
+	},
+)
+
+Given(
+	"this browser holds an unexpired saved report, and an Administrator has since revised one of its answered questions",
+	async ({ page }) => {
+		await stubAuth(page)
+		await stubCurrentQuestions(page, revisedNarrativeFormQuestions())
+		await writeSavedDraftToBrowser(page)
+	},
+)
+
+Given("this browser holds an unexpired saved report whose every answer is still current", async ({ page }) => {
+	await stubAuth(page)
+	await stubCurrentQuestions(page, dateTimeFormQuestions())
+	await writeSavedDateTimeDraftToBrowser(page, "2026-09-13", "14:30")
+})
+
+Given(
+	"this browser holds an unexpired saved report whose every answer names a revision that is no longer current",
+	async ({ page }) => {
+		await stubAuth(page)
+		await stubCurrentQuestions(page)
+		await writeOnlyStaleAnswersDraftToBrowser(page)
 	},
 )
 
@@ -611,6 +637,34 @@ Then("the saved answers are restored", async ({ page }) => {
 	await expect(page.getByRole("group", { name: "Was anyone injured?" }).getByRole("radio", { name: "Yes" })).toBeChecked()
 	await goBack(page)
 	await expect(page.getByLabel("What happened?")).toHaveValue("A saved synthetic narrative.")
+})
+
+Then("the revised question is empty", async ({ page }) => {
+	// The step before left the form on the injured page; the narrative is the one before it.
+	await goBack(page)
+	await expect(page.getByLabel("What happened?")).toHaveValue("")
+})
+
+Then("the saved answers to the other questions are restored", async ({ page }) => {
+	await expect(page.getByLabel("Describe the injury")).toHaveValue("A synthetic sprain.")
+	await goBack(page)
+	await expect(page.getByRole("group", { name: "Was anyone injured?" }).getByRole("radio", { name: "Yes" })).toBeChecked()
+})
+
+Then("one notice says the form changed since the report was saved, so some answers were cleared", async ({ page }) => {
+	const notice = page.getByTestId("cleared-answers-notice")
+	await expect(notice).toHaveCount(1)
+	await expect(notice).toContainText("The form changed since you saved this report, so some of your answers were cleared.")
+})
+
+Then("no question is marked individually", async ({ page }) => {
+	await expect(page.getByRole("alert")).toHaveCount(0)
+	await expect(page.locator("[aria-invalid='true']")).toHaveCount(0)
+})
+
+Then("no notice says answers were cleared", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Back" })).toBeVisible()
+	await expect(page.getByTestId("cleared-answers-notice")).toHaveCount(0)
 })
 
 Then("the form opens on the page the reporter was last on", async ({ page }) => {

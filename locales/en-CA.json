@@ -113,6 +113,7 @@
   "report.resume.tableCaption": "Your saved answers",
   "report.resume.questionHeader": "Question",
   "report.resume.answerHeader": "Saved answer",
+  "report.resume.cleared": "The form changed since you saved this report, so some of your answers were cleared. Please answer those questions again.",
   "report.discard.open": "Discard report",
   "report.discard.title": "Discard this report?",
   "report.discard.body": "This removes your answers from this browser and deletes the files you attached. It cannot be undone.",

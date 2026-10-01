@@ -201,7 +201,8 @@
       "no": "Non, recommencez",
       "tableCaption": "Vos réponses enregistrées",
       "questionHeader": "Question",
-      "answerHeader": "Réponse enregistrée"
+      "answerHeader": "Réponse enregistrée",
+      "cleared": "Le formulaire a changé depuis que vous avez enregistré ce signalement, certaines de vos réponses ont donc été effacées. Veuillez répondre à nouveau à ces questions."
     },
     "discard": {
       "open": "Rejeter le signalement",

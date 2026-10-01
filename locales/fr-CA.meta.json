@@ -2171,6 +2171,12 @@
     "provider": "human",
     "reviewed": true
   },
+  "report.resume.cleared": {
+    "source_hash": "adeb92528e49fb7457f3d99bd3ca213a34c8aa293eae58c2b8142848b717df4f",
+    "target_hash": "a9a1c414f7192c5c5bfbcd3e545a5cc5d383b391e623a8c57021353b74a082f7",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
   "report.resume.no": {
     "source_hash": "b8179d025fc55c7823c98080e988d520686ebe86183e39b76105a80745897a2a",
     "target_hash": "b977fcd48add64d8a3fc403f3691c6888b2898977625e8277b6f899caa9c9841",

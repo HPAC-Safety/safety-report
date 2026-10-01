@@ -84,6 +84,41 @@ Scenario: A reporter with no saved report is not asked
   When the reporter returns to the form
   Then no dialog asks whether to continue
 
+@REQ-SUB-124
+@ui
+Scenario: Continuing a saved report leaves out an answer whose question revision is no longer current
+  Given this browser holds an unexpired saved report, and an Administrator has since revised one of its answered questions
+  When the reporter returns to the form
+  And the reporter chooses to continue
+  Then the saved answers to the other questions are restored
+  And the revised question is empty
+
+@REQ-SUB-125
+@ui
+Scenario: The reporter is told once that saved answers were cleared
+  Given this browser holds an unexpired saved report, and an Administrator has since revised one of its answered questions
+  When the reporter returns to the form
+  And the reporter chooses to continue
+  Then one notice says the form changed since the report was saved, so some answers were cleared
+  And no question is marked individually
+
+@REQ-SUB-126
+@ui
+Scenario: No notice appears when every saved answer is still current
+  Given this browser holds an unexpired saved report whose every answer is still current
+  When the reporter returns to the form
+  And the reporter chooses to continue
+  Then no notice says answers were cleared
+
+@REQ-SUB-127
+@ui
+Scenario: A saved report with no answer still current is replaced by a fresh form and the notice
+  Given this browser holds an unexpired saved report whose every answer names a revision that is no longer current
+  When the reporter returns to the form
+  Then no dialog asks whether to continue
+  And the browser removes the saved report
+  And one notice says the form changed since the report was saved, so some answers were cleared
+
 @REQ-SUB-053
 @ui
 Scenario: Each page of the form has its own address
@@ -700,28 +735,19 @@ Scenario: The form's question list says whether each date question allows future
   When the reporter's form reads the current questions
   Then each carries allowFutureDates as the JSON boolean matching its setting
 
-@REQ-SUB-009
-Scenario: A submission may answer a known superseded revision
-  Given the browser's session began before an Administrator edited the form
-  And an answered revision is a known, non-deleted, superseded revision
-  When the API validates the submission
-  Then the API validates the answer against that revision's historical type, options, and privacy
-  And does not require the submitted set to equal the latest form
-
 @REQ-SUB-010
-@ignore
-Scenario Outline: A submission naming revisions inconsistently is refused
+Scenario Outline: A submission naming a revision that is not current, or naming revisions inconsistently, is refused
   Given a submission carries <answers>
   When the API validates the submission
   Then the API refuses the submission
   And nothing is stored
 
 Examples:
-  | answers                                                 |
-  | an answer naming an unknown revision                    |
-  | an answer naming a deleted revision                     |
-  | two answers naming the same revision                    |
-  | two answers naming revisions of one stable key          |
+  | answers                                                   |
+  | an answer naming an unknown revision                      |
+  | an answer naming a deleted revision                       |
+  | an answer naming a superseded revision of a live question |
+  | two answers naming the same revision                      |
 
 @REQ-SUB-011
 Scenario: Reporter-visible errors never echo submitted content

@@ -227,9 +227,21 @@ form holds an answer or an attached file. It asks first, in a dialog whose
 focus starts on the choice that keeps the report. Confirming deletes every
 finished upload, abandons any still in flight, removes the saved report, and
 returns to the introduction with no answers.
-- A saved answer whose question revision is not on the current form is not
-  listed and not restored. If no saved answer is on the current form, there is
-  nothing to continue: the saved report is removed and no dialog is shown.
+- A saved answer whose question revision is not the current revision of a
+  question on the current form is not listed and not restored; the reporter
+  re-answers it. This holds for a question edited while unanswered (a new
+  revision) and for one forked since (ADR-0071). The API refuses any such
+  revision at submission, so the form never sends one after a restore
+  ([ADR-0185](../../decisions/ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md)).
+- When one or more saved answers were dropped, **one notice** says the form
+  changed since the report was saved, so some answers were cleared. It names
+  no question; a cleared question shows empty. It shows after the reporter
+  continues, and never when nothing was dropped or the reporter declines.
+- If no saved answer is on the current form, there is nothing to continue: the
+  saved report is removed, no dialog is shown, and the form opens at its
+  introduction with the same notice.
+- Not built: a per-question highlight of what was cleared, and any carrying of
+  a stale answer onto a revised question.
 
 ## Leaving the form with unsaved changes (#659)
 
@@ -386,8 +398,9 @@ The API performs, in order:
    checks;
 2. DTO syntax, locale, duplicate, and count checks;
 3. revision lookup including soft-deleted rows;
-4. rejection of unknown or deleted revisions and validation against each exact
-   historical type and the question's live choices, including the written
+4. rejection of unknown, deleted, and non-current revisions (any revision but
+   the highest-numbered one of a live question) and validation against that
+   revision's type and the question's live choices, including the written
    form of a date, time, email, or phone answer, and a date after today in
    the latest time zone where that revision does not allow future dates;
 5. enforcement of an explicit answer to the `consent_publish` revision;

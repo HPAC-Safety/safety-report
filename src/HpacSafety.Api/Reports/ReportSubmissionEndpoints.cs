@@ -206,6 +206,13 @@ public static partial class ReportSubmissionEndpoints
 
 		var (question, revision) = found;
 
+		// Only the revision the form asks today may be answered (ADR-0185): the
+		// browser drops a saved answer to any other when it restores a report.
+		if (revision.Id != question.CurrentRevision.Id)
+		{
+			return Problem("An answer named a revision that is no longer current.");
+		}
+
 		if (revision.CollectsNoAnswer)
 		{
 			return Problem("A statement or group question collects no answer.");

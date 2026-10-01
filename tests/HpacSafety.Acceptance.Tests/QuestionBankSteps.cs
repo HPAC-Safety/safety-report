@@ -25,11 +25,17 @@ public sealed class QuestionBankSteps
 
 	private static readonly DateTimeOffset Noon = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 
+	private readonly ScenarioContext _scenario;
 	private readonly List<Question> _questions = [];
 	private Question? _question;
 	private Dictionary<TinyId, int> _revisionNumbersBefore = [];
 	private DomainRuleViolationException? _rejection;
 	private bool _hasBeenAnswered;
+
+	public QuestionBankSteps(ScenarioContext scenario)
+	{
+		_scenario = scenario;
+	}
 
 	[Given(@"the question bank stores each question as a stable, non-localized key")]
 	public void GivenQuestionsHaveStableKeys()
@@ -501,6 +507,8 @@ public sealed class QuestionBankSteps
 	{
 		EnumCode.TryParse<QuestionType>(type, out var parsed).ShouldBeTrue();
 		_pendingType = parsed;
+		// The submission scenarios build the same question through the API.
+		_scenario["questionType"] = type;
 	}
 
 	[When(@"they supply bilingual choices with it")]

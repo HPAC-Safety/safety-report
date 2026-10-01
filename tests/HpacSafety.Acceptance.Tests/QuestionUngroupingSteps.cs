@@ -81,6 +81,59 @@ public sealed class QuestionUngroupingSteps
 		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
 	}
 
+	[When(@"an Administrator edits the group's wording")]
+	public async Task WhenAnAdministratorEditsTheGroup()
+	{
+		using var response = await (await Admin()).PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{_groupId}", UriKind.Relative),
+			Request(_groupKey!, "group", null, "A reworded synthetic heading"));
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	[Then(@"the first grouped question gets a new revision that is still grouped under the group")]
+	public async Task ThenTheFirstGetsARevisionStillGrouped()
+	{
+		var question = (await Rows(_firstKey!)).ShouldHaveSingleItem();
+
+		question.Id.Value.ShouldBe(_firstId);
+		question.Revisions.Count.ShouldBe(2);
+		question.GroupedUnderQuestionId!.Value.Value.ShouldBe(_groupId);
+	}
+
+	[Then(@"the first grouped question is retired and replaced by a new question with its key that is grouped under the group")]
+	public async Task ThenTheFirstIsReplacedAndStillGrouped()
+	{
+		var rows = await Rows(_firstKey!);
+		rows.Count.ShouldBe(2);
+
+		var retired = rows.Single(question => question.Deleted is not null);
+		var live = rows.Single(question => question.Deleted is null);
+
+		retired.Id.Value.ShouldBe(_firstId);
+		live.Id.ShouldNotBe(retired.Id);
+		live.GroupedUnderQuestionId!.Value.Value.ShouldBe(_groupId);
+	}
+
+	[Then(@"the second grouped question gets a new revision that is still grouped under the group")]
+	public async Task ThenTheSecondGetsARevisionStillGrouped()
+	{
+		var question = (await Rows(_secondKey!)).ShouldHaveSingleItem();
+
+		question.Revisions.Count.ShouldBe(2);
+		question.GroupedUnderQuestionId!.Value.Value.ShouldBe(_groupId);
+	}
+
+	[Then(@"the reporter's form lists both as children of the group, in their former order")]
+	public async Task ThenTheFormListsBothAsChildren()
+	{
+		using var anonymous = (await BootedApi.Factory()).CreateClient();
+		var form = await anonymous.GetFromJsonAsync<JsonElement>(PublicQuestions);
+		var group = form.EnumerateArray().Single(entry => entry.GetProperty("key").GetString() == _groupKey);
+
+		group.GetProperty("children").EnumerateArray().Select(child => child.GetProperty("key").GetString())
+			.ShouldBe([_firstKey, _secondKey]);
+	}
+
 	[Then(@"the first grouped question gets a new revision that is ungrouped")]
 	public async Task ThenTheFirstGetsANewRevision()
 	{
@@ -160,13 +213,14 @@ public sealed class QuestionUngroupingSteps
 
 	private static object Request(string key,
 								  string type,
-								  string? groupedUnderQuestionId)
+								  string? groupedUnderQuestionId,
+								  string labelEn = "A synthetic question")
 	{
 		return new
 		{
 			key,
 			type,
-			labelEn = "A synthetic question",
+			labelEn,
 			labelFr = "Une question synthétique",
 			isRequired = false,
 			isPrivate = false,

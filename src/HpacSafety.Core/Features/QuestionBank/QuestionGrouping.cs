@@ -172,6 +172,42 @@ public static class QuestionGrouping
 	}
 
 	/// <summary>
+	///     Gives every live question displayed under <paramref name="group" /> a new
+	///     revision, still grouped under it, because the group was edited and stayed
+	///     one (REQ-QB-248). An answered child forks and an unanswered one is revised,
+	///     like any edit (ADR-0071); the form order is untouched.
+	/// </summary>
+	/// <param name="questions">Every live question.</param>
+	/// <param name="group">The group that was edited.</param>
+	/// <param name="answered">Ids of the questions any answer references.</param>
+	/// <param name="at">When the change happened.</param>
+	public static UngroupResult ReviseChildren(IReadOnlyCollection<Question> questions,
+											   Question group,
+											   IReadOnlySet<TinyId> answered,
+											   DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(group);
+		ArgumentNullException.ThrowIfNull(answered);
+
+		List<Question> revised = [];
+		List<Question> replacements = [];
+
+		foreach (var child in questions.Where(question => question.Deleted is null && question.GroupedUnderQuestionId == group.Id))
+		{
+			var live = child.ReviseWithGroup(answered.Contains(child.Id), at);
+			revised.Add(live);
+
+			if (!ReferenceEquals(live, child))
+			{
+				replacements.Add(live);
+			}
+		}
+
+		return new UngroupResult(revised, replacements, 0);
+	}
+
+	/// <summary>
 	///     Whether following <see cref="Question.GroupedUnderQuestionId" /> from
 	///     <paramref name="from" /> reaches <paramref name="target" />. The
 	///     visited set is what stops a cycle already in the data from looping

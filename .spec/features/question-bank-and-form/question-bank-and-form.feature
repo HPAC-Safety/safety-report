@@ -462,6 +462,19 @@ Examples:
   | retypes the group to a type other than group | no answers | gets a new revision that is ungrouped                                    |
   | retypes the group to a type other than group | an answer  | is retired and replaced by a new question with its key that is ungrouped |
 
+@REQ-QB-248
+Scenario Outline: Editing a group gives each of its questions a new revision that stays grouped under it
+  Given a group question has two questions grouped under it, the first with <answers>
+  When an Administrator edits the group's wording
+  Then the first grouped question <result>
+  And the second grouped question gets a new revision that is still grouped under the group
+  And the reporter's form lists both as children of the group, in their former order
+
+Examples:
+  | answers    | result                                                                                |
+  | no answers | gets a new revision that is still grouped under the group                             |
+  | an answer  | is retired and replaced by a new question with its key that is grouped under the group |
+
 Rule: Conditional questions
 
 @REQ-QB-053

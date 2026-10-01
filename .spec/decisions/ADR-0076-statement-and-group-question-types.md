@@ -144,6 +144,11 @@ live child (`REQ-QB-052`, issue #720):
   keeps its own slot and its children follow it.
 - Each write is audited like any other question write.
 
+Editing a group that stays a group is the third case (`REQ-QB-248`): any saved
+change that gives the group a new revision gives each live child a new
+revision too, grouped under the group, and an answered child forks, grouped
+under the group, like any edit (ADR-0071). The same save writes them all.
+
 ## Related
 
 - [ADR-0060](ADR-0060-conditional-questions-depend-on-a-boolean-question.md) — the carve-out this ADR makes real

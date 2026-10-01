@@ -345,6 +345,10 @@ take the group's slot in their existing order, and every later question shifts d
 a retyped group keeps its own slot and the children follow it. Each is
 audited as a question edit.
 
+A group that is edited and stays a group gives each live child a new revision in
+the same save, still grouped under it (`REQ-QB-248`); an answered child forks, and
+its replacement is grouped under the group too.
+
 ## Current implementation divergence
 
 Main currently has a stable `Question` whose order, active flag, privacy, and

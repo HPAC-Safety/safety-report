@@ -218,6 +218,7 @@ public static class QuestionEndpoints
 			// Revises while nothing has answered it, and otherwise retires
 			// this question and returns its replacement (ADR-0071) — unless
 			// only the choices changed, which never does either (ADR-0095).
+			var revisionsBefore = question.Revisions.Count;
 			var live = question.ApplyEdit(
 				hasBeenAnswered,
 				type,
@@ -260,6 +261,12 @@ public static class QuestionEndpoints
 			if (wasGroup && type != QuestionType.Group)
 			{
 				await UngroupChildren(database, context, questions, question, at, cancellationToken).ConfigureAwait(false);
+			}
+			else if (wasGroup && question.Revisions.Count > revisionsBefore)
+			{
+				// A group that stays one and gets a new revision gives each child one
+				// too, still grouped under it (REQ-QB-248).
+				await UngroupChildren(database, context, questions, question, at, cancellationToken, keepGrouped: true).ConfigureAwait(false);
 			}
 
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -391,8 +398,9 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>
-	///     Ungroups a group's live children after the group was deleted or retyped, in
-	///     the caller's save: each child by a revision or, once answered, a replacement
+	///     Ungroups a group's live children after the group was deleted or retyped — or,
+	///     with <c>keepGrouped</c>, gives them a new revision still grouped after the
+	///     group was edited — in the caller's save: each child by a revision or, once answered, a replacement
 	///     question (ADR-0071), and the questions after them shifted down. Every write is
 	///     audited like the edit it is.
 	/// </summary>
@@ -402,10 +410,14 @@ public static class QuestionEndpoints
 		List<Question> questions,
 		Question group,
 		DateTimeOffset at,
-		CancellationToken cancellationToken)
+		CancellationToken cancellationToken,
+		bool keepGrouped = false)
 	{
 		var answered = await AnsweredQuestionIds(database, cancellationToken).ConfigureAwait(false);
-		var result = QuestionGrouping.UngroupChildren(questions, group, answered, at);
+		var result = keepGrouped
+			? QuestionGrouping.ReviseChildren(questions, group, answered, at)
+			: QuestionGrouping.UngroupChildren(questions, group, answered, at);
+		var verb = keepGrouped ? "revised with group" : "ungrouped";
 
 		database.Questions.AddRange(result.Replacements);
 
@@ -421,7 +433,7 @@ public static class QuestionEndpoints
 		{
 			Audit(
 				database, context, AuditAction.RevisedQuestion, child.Id, at,
-				result.Replacements.Contains(child) ? "forked; ungrouped" : "ungrouped");
+				result.Replacements.Contains(child) ? $"forked; {verb}" : verb);
 		}
 
 		if (result.Moved > 0)

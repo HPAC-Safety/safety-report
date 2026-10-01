@@ -357,4 +357,27 @@ public class QuestionGroupingTests
 		result.Moved.ShouldBe(0);
 		other.DisplayOrder.ShouldBe(5);
 	}
+
+	[Fact]
+	public void GivenEditedGroup_WhenChildrenAreRevised_ThenEachIsRevisedOrForkedAndStaysGrouped()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var answered = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 1);
+		var unanswered = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 2);
+
+		// When
+		var result = QuestionGrouping.ReviseChildren(
+			[group, answered, unanswered], group, new HashSet<TinyId> { answered.Id }, At.AddHours(1));
+
+		// Then
+		var replacement = result.Replacements.ShouldHaveSingleItem();
+		replacement.Key.ShouldBe("first");
+		replacement.GroupedUnderQuestionId.ShouldBe(group.Id);
+		replacement.DisplayOrder.ShouldBe(1);
+		answered.Deleted.ShouldNotBeNull();
+		unanswered.GroupedUnderQuestionId.ShouldBe(group.Id);
+		unanswered.CurrentRevision.RevisionNumber.ShouldBe(3);
+		result.Ungrouped.ShouldBe([replacement, unanswered]);
+	}
 }

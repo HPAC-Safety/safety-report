@@ -5,15 +5,15 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { checkNumbering, claimedNumbers, localAdrs, main, nextNumber, renumber } from '../../tools/adr-numbers.mjs'
+import { checkNumbering, checkStatus, claimedNumbers, localAdrs, main, nextNumber, renumber, statusLine } from '../../tools/adr-numbers.mjs'
 
 const adr = (number, title = 'A decision') => `---\ntitle: ${title}\ndescription: A decision.\ntype: adr\nstatus: accepted\ndate: 2026-09-22\ndecision-makers: Someone\nkeywords: a, b\n---\n\n# ADR-${number} — ${title}\n\n## Context\n\nSomething.\n`
 
 /** A throwaway git repository holding the named ADR files. */
 function repository(files) {
 	const root = mkdtempSync(join(tmpdir(), 'adr-numbers-'))
-	mkdirSync(join(root, 'docs/decisions'), { recursive: true })
-	for (const [name, contents] of Object.entries(files)) writeFileSync(join(root, 'docs/decisions', name), contents)
+	mkdirSync(join(root, '.spec/decisions'), { recursive: true })
+	for (const [name, contents] of Object.entries(files)) writeFileSync(join(root, '.spec/decisions', name), contents)
 
 	execFileSync('git', ['-C', root, 'init', '--quiet'])
 	execFileSync('git', ['-C', root, 'config', 'user.email', 'test@example.test'])
@@ -36,6 +36,59 @@ function runMain(argv, root) {
 		console.error = original.error
 	}
 }
+
+describe('checkStatus', () => {
+	const record = (number, status, line) =>
+		`---\ntitle: A\ndescription: B.\ntype: adr\nstatus: ${status}\ndate: 2026-09-30\ndecision-makers: Someone\nkeywords: a\n---\n\n# ADR-${number} — A\n\n${line}\n\n## Context\n\nADR-0009 was superseded by ADR-0010 long ago.\n`
+	const check = (files) => {
+		const adrs = Object.keys(files).map((name) => ({ name, number: name.slice(4, 8) }))
+		return checkStatus(adrs, (name) => files[name])
+	}
+
+	it('passes a status that agrees with its status line', () => {
+		assert.deepEqual(
+			check({
+				'ADR-0001-a.md': record('0001', 'partially-superseded', '**Status:** Accepted, partially superseded by\n[ADR-0002](ADR-0002-b.md).'),
+				'ADR-0002-b.md': record('0002', 'accepted', '**Status:** Accepted.'),
+			}),
+			[],
+		)
+	})
+
+	it('fails an accepted record whose status line says another supersedes it', () => {
+		const problems = check({
+			'ADR-0001-a.md': record('0001', 'accepted', '**Status:** Accepted, partially superseded by [ADR-0002](ADR-0002-b.md).'),
+			'ADR-0002-b.md': record('0002', 'accepted', '**Status:** Accepted.'),
+		})
+
+		assert.equal(problems.length, 1)
+		assert.match(problems[0], /ADR-0001-a\.md: its status line says it is superseded by ADR-0002/)
+	})
+
+	it('reads only the status line, not a record discussing another one', () => {
+		assert.deepEqual(check({ 'ADR-0001-a.md': record('0001', 'accepted', '**Status:** Accepted.') }), [])
+	})
+
+	it('fails a successor that does not exist', () => {
+		const problems = check({ 'ADR-0001-a.md': record('0001', 'superseded', '**Status:** Superseded by [ADR-0099](ADR-0099-gone.md).') })
+
+		assert.match(problems[0], /names ADR-0099, which does not exist/)
+	})
+
+	it('fails a superseded record that links nothing that replaced it', () => {
+		const problems = check({ 'ADR-0001-a.md': record('0001', 'superseded', '**Status:** Superseded.') })
+
+		assert.match(problems[0], /needs a \*\*Status:\*\* line linking what replaced or narrowed it/)
+	})
+
+	it('fails a status outside the closed set', () => {
+		assert.match(check({ 'ADR-0001-a.md': record('0001', 'proposed', '**Status:** Proposed.') })[0], /"status: proposed" is not one of/)
+	})
+
+	it('reads a ## Status section when there is no bold status line', () => {
+		assert.equal(statusLine('# ADR\n\n## Status\n\nAccepted; amended by [ADR-0002](x.md).\n\n## Context\n'), 'Accepted; amended by [ADR-0002](x.md).')
+	})
+})
 
 describe('checkNumbering', () => {
 	const read = (files) => (name) => files[name]
@@ -110,7 +163,7 @@ describe('claimedNumbers', () => {
 		// has taken the number, and it is nowhere in this working tree.
 		const origin = repository({ 'ADR-0007-seven.md': adr('0007') })
 		execFileSync('git', ['-C', origin, 'checkout', '--quiet', '-b', 'someone-elses-work'])
-		writeFileSync(join(origin, 'docs/decisions/ADR-0008-theirs.md'), adr('0008'))
+		writeFileSync(join(origin, '.spec/decisions/ADR-0008-theirs.md'), adr('0008'))
 		execFileSync('git', ['-C', origin, 'add', '-A'])
 		execFileSync('git', ['-C', origin, 'commit', '--quiet', '-m', 'their decision'])
 
@@ -124,10 +177,34 @@ describe('claimedNumbers', () => {
 		assert.equal(nextNumber(claimed), '0009')
 	})
 
+	it('counts a remote branch not yet rebased past the move to .spec/, and keeps scanning past one without it', () => {
+		// The first ref git lists (origin/HEAD, origin/main) has .spec/decisions
+		// and no docs/decisions; an un-rebased branch has only docs/decisions.
+		// A missing directory on one ref must not end the scan (ADR-0183).
+		const origin = repository({ 'ADR-0007-seven.md': adr('0007') })
+		execFileSync('git', ['-C', origin, 'checkout', '--quiet', '-b', 'zz-before-the-move'])
+		execFileSync('git', ['-C', origin, 'mv', '.spec/decisions', 'legacy'])
+		mkdirSync(join(origin, 'docs'), { recursive: true })
+		execFileSync('git', ['-C', origin, 'mv', 'legacy', 'docs/decisions'])
+		writeFileSync(join(origin, 'docs/decisions/ADR-0012-old-place.md'), adr('0012'))
+		execFileSync('git', ['-C', origin, 'add', '-A'])
+		execFileSync('git', ['-C', origin, 'commit', '--quiet', '-m', 'a decision in the old place'])
+		execFileSync('git', ['-C', origin, 'checkout', '--quiet', '-'])
+
+		const clone = mkdtempSync(join(tmpdir(), 'adr-numbers-clone-'))
+		execFileSync('git', ['clone', '--quiet', origin, clone])
+		const reports = []
+
+		const claimed = claimedNumbers(clone, { report: (line) => reports.push(line) })
+
+		assert.ok(claimed.has('0012'), 'a number claimed under docs/decisions on an un-rebased branch is still taken')
+		assert.match(reports.join('\n'), /1 still on docs\/decisions/)
+	})
+
 	it('falls back to the working tree where git cannot answer', () => {
 		const root = mkdtempSync(join(tmpdir(), 'adr-numbers-bare-'))
-		mkdirSync(join(root, 'docs/decisions'), { recursive: true })
-		writeFileSync(join(root, 'docs/decisions/ADR-0003-three.md'), adr('0003'))
+		mkdirSync(join(root, '.spec/decisions'), { recursive: true })
+		writeFileSync(join(root, '.spec/decisions/ADR-0003-three.md'), adr('0003'))
 
 		assert.deepEqual([...claimedNumbers(root)], ['0003'])
 	})
@@ -143,12 +220,12 @@ describe('renumber', () => {
 		const result = renumber(root, '0089', '0091')
 
 		assert.equal(result.to, 'ADR-0091-taken.md')
-		const citing = readFileSync(join(root, 'docs/decisions/ADR-0001-cites.md'), 'utf8')
+		const citing = readFileSync(join(root, '.spec/decisions/ADR-0001-cites.md'), 'utf8')
 		assert.match(citing, /\[ADR-0091\]\(ADR-0091-taken\.md\)/)
 		assert.match(citing, /bare ADR-0091 too/)
 		assert.doesNotMatch(citing, /ADR-0089/)
 
-		const moved = readFileSync(join(root, 'docs/decisions/ADR-0091-taken.md'), 'utf8')
+		const moved = readFileSync(join(root, '.spec/decisions/ADR-0091-taken.md'), 'utf8')
 		assert.match(moved, /# ADR-0091 — Taken/)
 	})
 
@@ -222,7 +299,7 @@ describe('main', () => {
 		const { code, output } = runMain([], root)
 
 		assert.equal(code, 1)
-		assert.match(output.error.join('\n'), /::error file=docs\/decisions\/ADR-0089-two\.md::/)
+		assert.match(output.error.join('\n'), /::error file=\.spec\/decisions\/ADR-0089-two\.md::/)
 	})
 
 	it('prints the next free number', () => {
@@ -263,7 +340,7 @@ describe('main', () => {
 		assert.match(readFileSync(join(root, 'NOTES.md'), 'utf8'), /bare ADR-0090/, 'the ambiguous reference is untouched')
 		assert.match(output.log.join('\n'), /bare reference\(s\) left alone/)
 		assert.match(output.log.join('\n'), /NOTES\.md:1/)
-		assert.match(readFileSync(join(root, 'docs/decisions/ADR-0092-two.md'), 'utf8'), /# ADR-0092 — Two/)
+		assert.match(readFileSync(join(root, '.spec/decisions/ADR-0092-two.md'), 'utf8'), /# ADR-0092 — Two/)
 	})
 
 	it('refuses a renumber that is not two four-digit numbers', () => {

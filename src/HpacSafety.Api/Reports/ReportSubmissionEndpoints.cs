@@ -17,7 +17,7 @@ namespace HpacSafety.Api.Reports;
 ///     attachments already sent to quarantine, validating each, and persisting
 ///     the report atomically, with no report state created before it. See issue
 ///     #14, ADR-0096, ADR-0126, and
-///     <c>features/report-submission/report-submission.feature</c>.
+///     <c>.spec/features/report-submission/report-submission.feature</c>.
 /// </summary>
 /// <remarks>
 ///     Every answer's <c>value</c> and <c>locale</c> are written here and never

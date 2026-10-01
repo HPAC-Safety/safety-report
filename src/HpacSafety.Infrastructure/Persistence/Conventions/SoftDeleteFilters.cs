@@ -6,7 +6,7 @@ namespace HpacSafety.Infrastructure.Persistence.Conventions;
 /// <summary>
 ///     Every application table except the append-only <c>audit_log</c> carries a
 ///     <c>Deleted timestamptz null</c> column and is filtered to its live rows by
-///     default. See <c>docs/data-and-persistence.md</c>.
+///     default. See <c>.spec/data-and-persistence.md</c>.
 /// </summary>
 public static class SoftDeleteFilters
 {

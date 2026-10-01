@@ -12,7 +12,7 @@ browser journeys, and Testcontainers for PostgreSQL/storage integration tests.
 
 Name a .NET test as **three PascalCase segments joined by single underscores**,
 each opening with `Given`, `When`, or `Then`
-([ADR-0069](decisions/ADR-0069-scannable-given-when-then-test-names.md)), and
+([ADR-0069](../.spec/decisions/ADR-0069-scannable-given-when-then-test-names.md)), and
 mark those three sections in the body with comments:
 
 ```csharp
@@ -37,7 +37,7 @@ assert schema, privacy properties, and preserved safety facts rather than exact
 prose.
 
 Prioritize boundaries described in
-[`testing-and-quality.md`](testing-and-quality.md): immutable
+[`testing-and-quality.md`](../.spec/testing-and-quality.md): immutable
 question selection, JSON submission mapping and atomicity with claimed uploads,
 token validation and rate limits, one-call bilingual output, role replacement
 with no identity fragments, attachment derivatives and document publication
@@ -63,4 +63,4 @@ percentage.
 
 A UI behavior change ships with a Playwright test and, when it touches or
 relies on API behavior, a server-side test — see
-[ADR-0045](decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md).
+[ADR-0045](../.spec/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md).

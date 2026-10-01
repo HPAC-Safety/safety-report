@@ -180,9 +180,9 @@ describe('what the bots would commit', () => {
 	})
 
 	it('ci-local regenerates the matrix in the clone and commits it there', () => {
-		assert.match(code, /diff --quiet "\$BASE_SHA" HEAD -- tools\/traceability\.mjs/)
-		assert.match(code, /cd "\$WORK\/repo" && node tools\/traceability\.mjs/)
-		assert.match(code, /commit -q --no-verify -m "Regenerate the traceability matrix[^"]*"\s*\\\s*-- docs\/traceability\.md/)
+		assert.match(code, /diff --quiet "\$BASE_SHA" HEAD -- tools\/traceability\.mjs tools\/spec-index\.mjs tools\/spec-paths\.mjs/)
+		assert.match(code, /cd "\$WORK\/repo" && node tools\/traceability\.mjs >\/dev\/null 2>&1 && node tools\/spec-index\.mjs/)
+		assert.match(code, /commit -q --no-verify -m "Regenerate the traceability matrix[^"]*"\s*\\\s*-- \.spec\/traceability\.md \.spec\/README\.md/)
 		assert.match(code, /update-ref "refs\/remotes\/origin\/\$BRANCH" "\$HEAD_SHA"/)
 	})
 

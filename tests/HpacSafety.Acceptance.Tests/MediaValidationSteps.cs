@@ -9,7 +9,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The allowlist and document-validation scenarios in
-///     <c>features/media/media.feature</c> — <c>REQ-MED-001</c> and
+///     <c>.spec/features/media/media.feature</c> — <c>REQ-MED-001</c> and
 ///     <c>REQ-MED-008</c>. These assert the domain rules directly: no host or
 ///     database is needed to sniff, validate, or ingest a document. See #310.
 /// </summary>

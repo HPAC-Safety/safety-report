@@ -1,4 +1,4 @@
-# Local dev only. Not used by CI or production — see docs/decisions/ADR-0015
+# Local dev only. Not used by CI or production — see .spec/decisions/ADR-0015
 # (init-dev.sh, machine bootstrap) and dev-up.sh (this file's counterpart,
 # builds the api image and brings these services up).
 services:

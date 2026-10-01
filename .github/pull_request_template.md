@@ -67,7 +67,7 @@ this comment:
 
 ## Privacy and specification
 
-- [ ] Product behavior matches `/features`, or the affected specification pages are updated here
+- [ ] Product behavior matches `.spec/features`, or the affected specification pages are updated here
 - [ ] The scenario was written or amended before the implementation, and nothing here is untraced to one
 - [ ] If this claims `No .feature scenario needed:`, it names one of the categories listed under **Specification delta** and the claim IDs the change leaves standing (ADR-0090)
 - [ ] Report/question/model/attachment/auth/publication changes have a focused boundary test

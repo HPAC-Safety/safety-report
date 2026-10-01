@@ -20,7 +20,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         report list, never publicly. Every other question is ordinary
 ///         revision-bound data — the admin review DTO reads exact asked questions
 ///         and answers directly, so nothing else needs a typed projection. See
-///         <c>docs/data-and-persistence.md</c>.
+///         <c>.spec/data-and-persistence.md</c>.
 ///     </para>
 /// </remarks>
 public enum QuestionRole

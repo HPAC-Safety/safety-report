@@ -15,7 +15,7 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     The model-provider scenarios in <c>features/ai-anonymization/ai-anonymization.feature</c>:
+///     The model-provider scenarios in <c>.spec/features/ai-anonymization/ai-anonymization.feature</c>:
 ///     strict response validation (REQ-AI-011), the configured model and reasoning level on
 ///     the wire (REQ-AI-022), fail-closed startup (REQ-AI-023), and the rules the shipped
 ///     prompt carries (REQ-AI-024). Nothing here reaches a real provider (ADR-0104).

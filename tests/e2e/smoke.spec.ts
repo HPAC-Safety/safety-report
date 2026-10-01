@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test"
 
 // Broad regression smoke test for the homepage shell. Scenario-level
 // behavior (nav destinations, language/theme persistence) lives in
-// features/web-localization-and-design/web-localization-and-design.feature
+// .spec/features/web-localization-and-design/web-localization-and-design.feature
 // and executes via the generated specs in ./steps (ADR-0053), not here.
 test("the homepage loads with a header, nav, and hero", async ({ page }) => {
 	await page.goto("/")

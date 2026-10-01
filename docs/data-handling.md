@@ -8,9 +8,9 @@ type: guide
 
 Occurrence reports can contain identities, contact details, injuries, and
 fatalities. The canonical storage, deletion, AI, and attachment rules are in
-[`data-and-persistence.md`](data-and-persistence.md),
-[`features/ai-anonymization/ai-anonymization.feature`](../features/ai-anonymization/ai-anonymization.feature), and
-[`features/media/media.feature`](../features/media/media.feature).
+[`data-and-persistence.md`](../.spec/data-and-persistence.md),
+[`.spec/features/ai-anonymization/ai-anonymization.feature`](../.spec/features/ai-anonymization/ai-anonymization.feature), and
+[`.spec/features/media/media.feature`](../.spec/features/media/media.feature).
 
 ## Storage and retention
 
@@ -21,8 +21,8 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
   it or abandons the report, and expires by lifecycle rule fifteen days after
   upload unless a submission claims it. The browser's saved report keeps its
   upload ID and name for the same window
-  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-  [ADR-0100](decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+  ([ADR-0096](../.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+  [ADR-0100](../.spec/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - Use AWS-managed encryption at rest and TLS. Do not maintain application AES
   keys or ciphertext converters.
 - Keep raw reports private until an authorized officer soft-deletes them.
@@ -31,11 +31,11 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
   message, audit entry, or log line records the submitter's subject, and no
   column, join table, or hash links a report to whoever filed it. Sign-in
   proves membership; its answer is discarded
-  ([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+  ([ADR-0067](../.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 - Store no user records at all. Identity and role come from claims on a
   validated token, per request. Where an approver or an audit actor is
   recorded, it is an opaque token subject that joins to nothing
-  ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+  ([ADR-0065](../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 - Every application record except append-only `audit_log` and the Typeform
   import's hard-deleted `pending_import_logic` notes (ADR-0077) has an
   irreversible deletion timestamp. Report deletion cascade-stamps dependents in one
@@ -45,8 +45,8 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
   opaque id, kind, and (for a document) coarse format of a published report's
   verified image and video derivatives when media was consented to, and of
   its validated documents when `consent_documents` is true
-  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
-  [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+  ([ADR-0117](../.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+  [ADR-0119](../.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 ## Model boundary
 
@@ -58,7 +58,7 @@ boundary. Model prompts/responses and report values are never logged.
 Only a report whose reporter consented to publication makes that call; a report without consent is never sent to the model. That call goes to Google Gemini with a paid, billing-enabled key, so Google
 does not use the content to train its models, and it is processed outside
 Canada. That is the one place report content leaves `ca-central-1`
-([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+([ADR-0104](../.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 
 ## Attachments
 
@@ -68,9 +68,9 @@ past the kind's cap: 250 MB for a video, 25 MB for an image or a document. The
 bytes never pass through the API. The final submission may claim a configurable
 count (default 5), and validates each upload it claims — sniffed, checked
 against the allowlist and the detected kind's cap — before writing anything
-([ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)). The upload carries no filename; the final
+([ADR-0126](../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)). The upload carries no filename; the final
 submission names each file, and that name is kept, sanitized, only as a
-reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)). There is no malware scan (ADR-0089).
+reviewer's download name ([ADR-0097](../.spec/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)). There is no malware scan (ADR-0089).
 
 Safe image/video derivatives may be previewed by authorized reviewers through
 short-lived access. On a published report whose reporter also consented to
@@ -78,13 +78,13 @@ sharing media, those same derivatives — never an original — are shown to any
 visitor through a pre-signed URL that lives at most fifteen minutes, minted per
 file by an anonymous endpoint that refuses a hidden or unpublished file. The
 bucket stays private, and nothing is copied to the CDN
-([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+([ADR-0117](../.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
 Validated documents remain unmodified originals and are forced downloads
 only; they are never anonymized, parsed for AI, or rendered inline. On a
 published report whose reporter consented to media under wording that names
 documents, a validated document's unchanged original is offered to any visitor
 the same way, under a server-minted name
-([ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)). Unreferenced quarantine bytes expire by storage lifecycle;
+([ADR-0119](../.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)). Unreferenced quarantine bytes expire by storage lifecycle;
 report-linked bytes remain private after soft deletion.
 
 ## Logging

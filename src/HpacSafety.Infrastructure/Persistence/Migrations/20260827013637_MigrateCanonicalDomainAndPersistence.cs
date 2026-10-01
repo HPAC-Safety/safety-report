@@ -7,7 +7,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
 	/// <summary>
 	/// Aligns current-main's schema with the canonical target in
-	/// <c>docs/data-and-persistence.md</c>: complete immutable bilingual
+	/// <c>.spec/data-and-persistence.md</c>: complete immutable bilingual
 	/// question revisions, a consent-only report projection, one bilingual
 	/// summary row per report, attachment kinds, universal soft deletion, and
 	/// removal of application-side field encryption.

@@ -142,7 +142,7 @@ describe('judge', () => {
 	})
 
 	it('passes a behavior change that changed a scenario too', () => {
-		const verdict = judge({ changed: ['src/a.cs'], features: ['features/media/media.feature'], body: '', knownClaims: KNOWN })
+		const verdict = judge({ changed: ['src/a.cs'], features: ['.spec/features/media/media.feature'], body: '', knownClaims: KNOWN })
 
 		assert.equal(verdict.ok, true)
 	})

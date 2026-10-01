@@ -76,7 +76,7 @@ jobs:
               | grep -v '/\.features-gen/' \
               | grep -v '^tests/e2e/steps/' \
               | grep -v '/README\.md$' || true)
-            CHANGED_FEATURES=$(git diff --name-only "$1" -- ':(glob)features/**/*.feature' || true)
+            CHANGED_FEATURES=$(git diff --name-only "$1" -- ':(glob).spec/features/**/*.feature' || true)
             export CHANGED_BEHAVIOR CHANGED_FEATURES
             node tools/feature-coverage.mjs
           }

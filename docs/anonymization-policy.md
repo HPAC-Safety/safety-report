@@ -7,7 +7,7 @@ type: guide
 # Anonymization policy
 
 The normative contract is
-[`features/ai-anonymization/ai-anonymization.feature`](../features/ai-anonymization/ai-anonymization.feature). HPAC publishes safety
+[`.spec/features/ai-anonymization/ai-anonymization.feature`](../.spec/features/ai-anonymization/ai-anonymization.feature). HPAC publishes safety
 lessons, not identities.
 
 The Worker makes one model call per attempt with one versioned prompt. Answered
@@ -19,7 +19,7 @@ attachments, and document text are excluded.
 Before the call, the Worker deterministically marks any exact or token-level
 occurrence of a private value found in `report_content` with a
 `[PRIVATE:<question-key>]` marker
-([ADR-0082](decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+([ADR-0082](../.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
 `private_context` is still sent in full — the marking pass narrows what the
 model has to infer, it does not replace it.
 
@@ -38,7 +38,7 @@ place becomes “the launch site”, “the landing field”, or “the location
 “le lieu”; an exact date becomes its month or season while the time of day is
 kept; a club, school, or company becomes “the club”, “the school”, or “the
 company”; an aircraft becomes its category. The full table is in the
-[AI anonymization supporting detail](../features/ai-anonymization/README.md).
+[AI anonymization supporting detail](../.spec/features/ai-anonymization/README.md).
 
 Summarization makes no independent PII-audit call, translation call,
 specialized aircraft processing, or repair call, and no general-purpose deterministic
@@ -50,12 +50,12 @@ Documents are validated evidence. They are not transformed, anonymized,
 parsed, sent to AI, or rendered inline. On a published report whose reporter
 consented to media under wording that names documents, the unchanged original
 is offered as a forced download
-([ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+([ADR-0119](../.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 A safety officer reviews and approves the current pair. A summary is an
 append-only list of revisions; approval belongs to a revision, and an edit to a
 report that is not yet published is a draft that needs approving. On a Published
 report, a saved edit is approved by its author and public at once
-([ADR-0177](decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)).
+([ADR-0177](../.spec/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)).
 Positive publication consent and a live report remain required for public
 visibility. Model inputs and outputs are never logged.

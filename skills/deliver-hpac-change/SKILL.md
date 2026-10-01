@@ -18,7 +18,7 @@ names and step numbers.
   [`clarify-requirements`](../clarify-requirements/SKILL.md). Record the
   answer in the issue, and in the specification where it changes behavior,
   before any code
-  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+  ([ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md)).
 - Sub-agent briefs: end with "if anything is ambiguous, stop and report the
   question; do not guess".
 - Sequencing: two issues that edit the same EF migration, SQL view under
@@ -39,12 +39,12 @@ names and step numbers.
 - Session label: `tools/session-label.sh "#<number> <short-description>"`
   (and the later relabels in "Verify and publish").
 - Why the first-edit check exists:
-  [lesson 0004](../../docs/lessons/0004-a-rule-read-once-is-not-a-rule-checked-again.md).
+  [lesson 0004](../../.spec/lessons/0004-a-rule-read-once-is-not-a-rule-checked-again.md).
 
 ### Commit, rebase, claim identifiers
 
 - Why identifiers are claimed after the rebase:
-  [lesson 0003](../../docs/lessons/0003-a-number-is-claimed-the-moment-someone-else-merges.md).
+  [lesson 0003](../../.spec/lessons/0003-a-number-is-claimed-the-moment-someone-else-merges.md).
 - ADR number: `node tools/adr-numbers.mjs --next`.
 - Lost the race? `node tools/adr-numbers.mjs --renumber <old> <new>` moves the
   file and rewrites every reference.
@@ -54,30 +54,64 @@ names and step numbers.
 
 ### Before editing
 
-- The specification is `/features`.
+- The specification is `.spec/features`.
 
 ## Document
+
+### Specification directory
+
+Everything the specification chain reads lives in `.spec/`
+([ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)):
+
+- `.spec/features/<area>/` — the area's `.feature` file and its `README.md`;
+- the five constraint pages, `.spec/*.md`, listed in `tools/spec-paths.mjs`;
+- `.spec/decisions/` and `.spec/lessons/`;
+- two generated files, never edited by hand:
+  - `.spec/traceability.md` — `node tools/traceability.mjs`;
+  - `.spec/README.md`, the index of every area, constraint page, decision, and
+    lesson — `node tools/spec-index.mjs`.
+
+Rules:
+
+- A page goes in `.spec/` when the chain reads it — scenarios, `CON-*` IDs, a
+  decision, a lesson. A page that explains how goes in `docs/`.
+- A new path the tools read is added to `tools/spec-paths.mjs`, not written
+  into a tool; `tests/js/spec-paths.test.mjs` ties the hooks and workflows to
+  it.
+- Both generated files regenerate in post-merge and post-rewrite, in
+  `traceability.yml` on a same-repo pull request, and in `tools/ci-local.sh`.
+  The `docs` job fails either one stale. A stale `.spec/README.md` in
+  pre-commit: run `node tools/spec-index.mjs` and stage it.
+- `node tools/check-links.mjs` fails a relative link or `#anchor` that does not
+  resolve: pre-commit checks staged markdown, and the whole tree when a file is
+  deleted or renamed; `docs` checks everything. Fix the link — never move a
+  file without its references.
+- A file added under the old `docs/decisions/`, `docs/lessons/`, or `features/`
+  fails `check-frontmatter.mjs`: rebase, then move it under `.spec/`.
+- After pulling this layout into an older clone: `rm .gitattributes && git
+  checkout -- .gitattributes`, then `./init-dev.sh`, which installs the hooks
+  and registers the `merge=ours` driver.
 
 ### Scenarios
 
 - Specification-driven development:
-  [ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md).
+  [ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md).
 - `@ignore` and superseded scenarios: also
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios".
-- Each `features/<area>/README.md` records what **not** to build.
+- Each `.spec/features/<area>/README.md` records what **not** to build.
 
 ### The `feature-coverage` exemption
 
 - Rules: `AGENTS.md` "The `feature-coverage` exemption"
-  ([ADR-0090](../../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+  ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
 - The closed category list is in `.github/pull_request_template.md`
   ("Specification delta"); a test keeps the template's list equal to the
-  tool's ([lesson 0022](../../docs/lessons/0022-a-closed-list-kept-where-the-author-never-looks.md)).
+  tool's ([lesson 0022](../../.spec/lessons/0022-a-closed-list-kept-where-the-author-never-looks.md)).
 - Run the check locally with the body: "Verify and publish" step 1 runs it;
   alone, `tools/ci-local.sh --body pr-body.md --job feature-coverage`.
 - Renovate writes its own `dependency` exemption for `src/web` bumps from
   `renovate.json`
-  ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
+  ([ADR-0111](../../.spec/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
 
 ### Inventories
 
@@ -90,23 +124,35 @@ names and step numbers.
   issue needs no pull request. Drift never fails a pull request; it keeps an
   "Issue traceability drift" issue open, and whoever resolves that issue adds
   the missing rows
-  ([ADR-0143](../../docs/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+  ([ADR-0143](../../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
 
 ### Lessons
 
-- Lessons live under [`docs/lessons/`](../../docs/lessons/README.md)
-  ([ADR-0085](../../docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+- Lessons live under [`.spec/lessons/`](../../.spec/lessons/README.md)
+  ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
 - A process lesson updates the generic skill when its rule transfers to any
   project, and this project's companion skill when the rule names this
   repository's tools or paths. The lesson's `## Skill` section names the skill
   it changed.
-- A product lesson's remedy is a claim and a scenario in `/features`.
+- A product lesson's remedy is a claim and a scenario in `.spec/features`.
+- No index to update: `.spec/README.md` lists the lesson from its frontmatter
+  `title`, `description` (shown as "What it cost us"), `issue`, `date`, and
+  `status` (`accepted` or `superseded`), and its remedy from the claim IDs
+  under `## Scenario` and the backticked skill names under `## Skill`.
 
 ### ADRs
 
 - `node tools/adr-numbers.mjs` fails a duplicate number or a filename and
   heading that disagree, in the pre-commit hook and CI
-  ([ADR-0091](../../docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
+  ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
+- It also fails a `status:` that disagrees with the record's own `**Status:**`
+  line ([ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)):
+  - `status:` is `accepted`, `partially-superseded`, or `superseded`;
+  - a status line saying "superseded by [ADR-NNNN]" needs `partially-superseded`
+    or `superseded`, and ADR-NNNN must exist;
+  - a superseded record's status line links what replaced or narrowed it.
+- Superseding part of an older ADR: change its `status:` and its status line in
+  the same pull request.
 - The root README is [`README.md`](../../README.md).
 
 ### Markdown
@@ -114,14 +160,14 @@ names and step numbers.
 - Every tracked markdown file opens with frontmatter: `title`, `description`,
   and `type` — one of `adr`, `spec`, `guide`, `readme`, `lesson`,
   `instructions`, `template` — plus the keys that type adds
-  ([ADR-0087](../../docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+  ([ADR-0087](../../.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
 - A `skills/*/SKILL.md` carries exactly `name` and `description` instead; its
   type comes from its path.
 - An `agents/*.md` carries `name`, `description`, `model`, and `effort`, and
   may carry the other keys Claude Code reads on an agent: `tools`,
   `disallowedTools`, `permissionMode`, `maxTurns`, `skills`, `memory`,
   `isolation`, `background`. Nothing else
-  ([ADR-0182](../../docs/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
+  ([ADR-0182](../../.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
 - The Worker's runtime prompts are exempt; their bytes are the model payload.
 - `node tools/check-frontmatter.mjs` is the authority; the pre-commit hook runs
   it over staged markdown.
@@ -140,8 +186,8 @@ names and step numbers.
 
 1. Run the tests for the code you changed, natively, then the gate:
    `tools/ci-local.sh --body pr-body.md`, for every pull request
-   ([ADR-0145](../../docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md),
-   [lesson 0025](../../docs/lessons/0025-a-local-gate-that-re-implemented-ci-disagreed-with-it.md)).
+   ([ADR-0145](../../.spec/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md),
+   [lesson 0025](../../.spec/lessons/0025-a-local-gate-that-re-implemented-ci-disagreed-with-it.md)).
    - Native tests first: a filtered `dotnet test` (for example
      `dotnet test <project> --filter <name>`) for the changed .NET code, and
      `CI=1 npm test` in `tests/e2e` for each touched e2e spec. Not the whole
@@ -184,7 +230,7 @@ names and step numbers.
    queue sets the method and refuses the flag) and never `--admin`. Never
    merge directly or run `enqueuePullRequest` or `mergePullRequest` — the
    owner does that by hand
-   ([ADR-0147](../../docs/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)
+   ([ADR-0147](../../.spec/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)
    second amendment; a repository-tracked `PreToolUse` hook,
    `tools/guard-pr-merge.mjs`, refuses it too). Get the pull request's own
    required checks green. `main` has a merge queue: with auto-merge on, the
@@ -199,7 +245,7 @@ names and step numbers.
      `gh pr create` / `gh pr comment --attach`;
    - URL:
      `https://raw.githubusercontent.com/HPAC-Safety/safety-report/<sha>/docs/screenshots/<dir>/<file>.png`
-     ([lesson 0017](../../docs/lessons/0017-a-screenshot-linked-by-a-page-url-renders-broken.md)).
+     ([lesson 0017](../../.spec/lessons/0017-a-screenshot-linked-by-a-page-url-renders-broken.md)).
    - OS-level capture on macOS, against a headed browser, for a native
      `<datalist>`, `<select>` popup, or date input: `screencapture -iw <file>`
      and click the window, or `screencapture -l <windowid> <file>` with an id
@@ -217,17 +263,17 @@ names and step numbers.
      `src/web/src/` (not a test) whose body has neither a pinned
      `raw.githubusercontent.com/…/docs/screenshots/…` image nor that line. It
      does not judge the shots; review does
-     ([ADR-0142](../../docs/decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md),
-     [lesson 0023](../../docs/lessons/0023-a-rule-the-template-never-asks-for.md)).
+     ([ADR-0142](../../.spec/decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md),
+     [lesson 0023](../../.spec/lessons/0023-a-rule-the-template-never-asks-for.md)).
      Step 1 runs it; alone,
      `tools/ci-local.sh --body pr-body.md --job screenshots`.
 7. `./dev-up.sh` from the worktree. It takes the dev ports from any other
    checkout, starts containers detached, waits until the API and dev server
    answer, prints their URLs, and returns.
 8. `./dev-up.sh --down`, then `git worktree remove`
-   ([lesson 0008](../../docs/lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
+   ([lesson 0008](../../.spec/lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
 9. Why green is not enough:
-   [lesson 0011](../../docs/lessons/0011-a-branch-rebased-before-its-push-is-behind-by-the-time-it-is-green.md).
+   [lesson 0011](../../.spec/lessons/0011-a-branch-rebased-before-its-push-is-behind-by-the-time-it-is-green.md).
    With the merge queue, `BEHIND` alone needs no rebase.
    - Queue state: `gh pr view <pr> --json state,mergeStateStatus,autoMergeRequest`,
      or `https://github.com/HPAC-Safety/safety-report/queue/main`.
@@ -238,7 +284,7 @@ names and step numbers.
      `feature-coverage` (an exemption citing a claim that is gone), or
      `coverage`.
    - Two queued pull requests that both change the specification: the second
-     is usually ejected, because its `docs/traceability.md` is stale on the
+     is usually ejected, because its `.spec/traceability.md` is stale on the
      merged tree. That is expected. Rebase onto `main` and push;
      `traceability.yml` regenerates the matrix, and auto-merge queues it again.
    Finish with `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
@@ -250,22 +296,22 @@ names and step numbers.
 - A change to `locales/` runs the browser suite before the pull request,
   because a step may match the copy you changed: step 1 runs `e2e`, whose
   filter lists `locales/`
-  ([lesson 0020](../../docs/lessons/0020-a-copy-change-that-ran-no-browser-test.md)).
+  ([lesson 0020](../../.spec/lessons/0020-a-copy-change-that-ran-no-browser-test.md)).
 
 ## Workflows that push
 
 - **Onto a pull request's branch**: push through `tools/push-to-pr-branch.mjs`,
   passing the workflow's own `pull_request_target.paths`
-  ([ADR-0113](../../docs/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
-  [lesson 0016](../../docs/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
+  ([ADR-0113](../../.spec/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
+  [lesson 0016](../../.spec/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
 - **With a token on the remote URL**:
-  [lesson 0018](../../docs/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md).
+  [lesson 0018](../../.spec/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md).
 
 ## Concurrency and quotas
 
 - `terraform.yml` serialises `apply` alone, in the job-level group
   `terraform-apply`
-  ([ADR-0148](../../docs/decisions/ADR-0148-a-terraform-apply-waits-in-its-own-concurrency-group.md),
-  [lesson 0026](../../docs/lessons/0026-a-run-waiting-on-reviewers-held-every-later-run.md)).
+  ([ADR-0148](../../.spec/decisions/ADR-0148-a-terraform-apply-waits-in-its-own-concurrency-group.md),
+  [lesson 0026](../../.spec/lessons/0026-a-run-waiting-on-reviewers-held-every-later-run.md)).
 - `skillfile` reads `GITHUB_TOKEN`, then `GH_TOKEN`. `agent-config` passes it
   `github.token`.

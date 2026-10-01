@@ -4,7 +4,7 @@ namespace HpacSafety.Api.Reports;
 
 /// <summary>
 ///     The one final submission's JSON body. See
-///     <c>features/report-submission/README.md</c> for the full contract.
+///     <c>.spec/features/report-submission/README.md</c> for the full contract.
 /// </summary>
 /// <param name="Language">The reporter's UI locale — exactly <c>en-CA</c> or <c>fr-CA</c>.</param>
 /// <param name="Answers">One entry for every answer-producing revision the client showed.</param>

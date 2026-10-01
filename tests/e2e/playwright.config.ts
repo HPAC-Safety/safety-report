@@ -29,7 +29,7 @@ if (!process.env.E2E_PORT) {
 }
 const E2E_PORT = process.env.E2E_PORT
 
-// @ui-tagged scenarios in features/**/*.feature execute here, not through
+// @ui-tagged scenarios in .spec/features/**/*.feature execute here, not through
 // Reqnroll — see ADR-0053. playwright-bdd reads the same .feature files in
 // place (no copy) and generates runnable specs from them plus the step
 // definitions in ./steps; `npm test` runs `bddgen` before `playwright test`
@@ -37,8 +37,8 @@ const E2E_PORT = process.env.E2E_PORT
 // `@ui and not @ignore`: an @ignore'd @ui scenario has no step definitions
 // yet, same convention ADR-0049 uses for Reqnroll.
 const bddTestDir = defineBddConfig({
-	featuresRoot: "../../features",
-	features: "../../features/**/*.feature",
+	featuresRoot: "../../.spec/features",
+	features: "../../.spec/features/**/*.feature",
 	steps: "steps/**/*.ts",
 	tags: "@ui and not @ignore",
 })

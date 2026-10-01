@@ -1,6 +1,6 @@
 /*
  * Browser-only continuity for the in-progress report (AGENTS.md invariant #2,
- * `features/report-submission/report-submission.feature`'s "browser holds
+ * `.spec/features/report-submission/report-submission.feature`'s "browser holds
  * report state locally" scenarios).
  *
  * What is kept: the selected locale, the shown revision IDs, entered answer

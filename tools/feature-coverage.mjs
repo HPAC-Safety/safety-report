@@ -21,6 +21,8 @@
 // The exit code is the contract.
 import { readFileSync } from 'node:fs'
 
+import { TRACEABILITY } from './spec-paths.mjs'
+
 // Why a scenario might genuinely be unnecessary. Deliberately closed: a new
 // category is a decision somebody argues for, not a word somebody types.
 export const CATEGORIES = {
@@ -176,7 +178,7 @@ export function main({ changed, features, body, matrix }) {
 		console.error('::error::This pull request claims an exemption from scenario coverage, and the claim does not hold.')
 		for (const problem of verdict.problems) console.error(`::error::${problem}`)
 	} else {
-		console.error('::error::This pull request changes behavior under src/ or in an e2e spec and touches no features/**/*.feature file.')
+		console.error('::error::This pull request changes behavior under src/ or in an e2e spec and touches no .spec/features/**/*.feature file.')
 	}
 
 	console.error('')
@@ -196,7 +198,7 @@ export function main({ changed, features, body, matrix }) {
 	console.error(`Categories: ${Object.entries(CATEGORIES).map(([name, meaning]) => `${name} (${meaning})`).join('; ')}.`)
 	console.error('')
 	console.error('An exemption is a citation, not an assertion — the claims are checked')
-	console.error('against docs/traceability.md (ADR-0090).')
+	console.error('against .spec/traceability.md (ADR-0090).')
 	return 1
 }
 
@@ -207,7 +209,7 @@ if (runAsCommand) {
 			changed: lines(process.env.CHANGED_BEHAVIOR ?? ''),
 			features: lines(process.env.CHANGED_FEATURES ?? ''),
 			body: process.env.PR_BODY ?? '',
-			matrix: readFileSync('docs/traceability.md', 'utf8'),
+			matrix: readFileSync(TRACEABILITY, 'utf8'),
 		}),
 	)
 }

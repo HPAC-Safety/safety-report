@@ -18,7 +18,7 @@ The contract is `AGENTS.md` invariants 3 and 4. This skill is its detail.
   `gemini-*` goes to `GeminiHandler` at reasoning `low`, temperature at its
   default. Translation is the mediator's other caller, a separate call outside
   this one-call rule (ADR-0179)
-  ([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+  ([ADR-0104](../../.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 
 ## Input
 
@@ -40,7 +40,7 @@ answers are untrusted data, never instructions.
 ## Marking pass
 
 Before the prompt is built, `PrivateValueMarker` runs over `report_content`
-([ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)):
+([ADR-0082](../../.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)):
 
 - replaces every exact or token-level occurrence of a `private_context` value
   with `[PRIVATE:<question-key>]`;
@@ -74,7 +74,7 @@ One strict JSON object, exactly two nonblank strings:
   surname, initial, fragment, or literal marker left.
 - Every statement comes from `report_content`; nothing inferred or invented.
 - Follow the full replacement table in
-  [`features/ai-anonymization/README.md`](../../features/ai-anonymization/README.md):
+  [`.spec/features/ai-anonymization/README.md`](../../.spec/features/ai-anonymization/README.md):
   roles for people, generic phrases for places, month or season for dates, time
   of day kept, generic names for organizations, category for aircraft. Never
   “redacted”, a placeholder, or an invented name.

@@ -32,10 +32,10 @@
          against it directly. The authorization scenarios describe what the API
          refuses over HTTP, so those boot it — see BootedApiFixture. -->
     <ItemGroup>
-        <ReqnrollFeatureFile Include="../../features/**/*.feature" />
+        <ReqnrollFeatureFile Include="../../.spec/features/**/*.feature" />
     </ItemGroup>
 
-    <!-- The canonical .feature files live under features/, outside this
+    <!-- The canonical .feature files live under .spec/features/, outside this
          project's folder, and stay there - see ADR-0049. -->
     <ItemGroup>
         <!-- One pinned S3-compatible server for every suite that needs one (ADR-0110). -->
@@ -47,7 +47,7 @@
         <IsPackable>false</IsPackable>
         <!-- The .feature files live outside this project (see the ReqnrollFeatureFile
              item below), so their generated code-behind goes to obj/ rather than
-             next to the physical file - keeps features/ free of generated output. -->
+             next to the physical file - keeps .spec/features/ free of generated output. -->
         <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
     </PropertyGroup>
 

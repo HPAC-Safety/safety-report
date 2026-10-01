@@ -8,8 +8,8 @@ description: Handle HPAC Safety attachment uploads, private storage, safe image/
 ## Upload
 
 Each file uploads alone, the moment it is attached, straight to storage
-([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-[ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
+([ADR-0096](../../.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+[ADR-0126](../../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
 
 1. `POST /api/v1/uploads` takes the declared content type and exact byte size,
    never a filename.
@@ -41,12 +41,12 @@ The final `POST /api/v1/reports`:
   quote, or reserved characters; at most 255 — and store it on the report file.
   Use it only as a reviewer's forced-download name, with the served type's
   extension
-  ([ADR-0097](../../docs/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
+  ([ADR-0097](../../.spec/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
 
 The Worker's `ProcessAttachment` handler — one outbox message per file,
 idempotent, skipping deleted reports — sniffs the original and writes the
 derivative
-([ADR-0098](../../docs/decisions/ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)).
+([ADR-0098](../../.spec/decisions/ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)).
 
 ## Storage
 
@@ -74,7 +74,7 @@ derivative
 - An image that cannot be stripped fails closed.
 - A video that cannot be remuxed is kept as a private original with no
   derivative, reachable only as a reviewer download
-  ([ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
+  ([ADR-0094](../../.spec/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
 - A published report shows verified derivatives — never an original — when the
   reporter also consented to media. Served through a pre-signed GET of at most
   15 minutes, minted by `PublicMediaLink` and gated by the

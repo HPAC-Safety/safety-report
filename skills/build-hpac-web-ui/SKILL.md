@@ -8,14 +8,14 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 ## Stack
 
 - React and TypeScript, built with Vite
-  ([ADR-0043](../../docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md)).
+  ([ADR-0043](../../.spec/decisions/ADR-0043-react-typescript-vite-web-front-end.md)).
 - Tailwind v4 via `@tailwindcss/vite` is the only CSS build step.
 - **No inline JavaScript.** Every script is an external, type-checked `.ts`
   module under `src/web/src/`, loaded with `<script type="module" src="...">`
-  ([ADR-0052](../../docs/decisions/ADR-0052-no-inline-script-typescript-only.md)).
+  ([ADR-0052](../../.spec/decisions/ADR-0052-no-inline-script-typescript-only.md)).
 - Design tokens, not raw colors. Dark mode redefines tokens rather than adding
   `dark:` variants
-  ([ADR-0024](../../docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md)).
+  ([ADR-0024](../../.spec/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md)).
 - Self-hosted assets only.
 
 ## Accessibility and locale
@@ -38,11 +38,11 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   name, and size, only in the same browser, for 15 days from the first save or
   until a successful submit. Never a file's bytes. Abandoning the saved report
   deletes its uploads
-  ([ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+  ([ADR-0100](../../.spec/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - **The only write before final submission is an attachment upload.**
 - **Uploads**
-  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-  [ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
+  ([ADR-0096](../../.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+  [ADR-0126](../../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
   - upload each file at once: mint it via `POST /api/v1/uploads` (declared
     type and size, never a filename), then `PUT` it to the returned URL, one
     request per file with its own `AbortController`;
@@ -68,7 +68,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 ## Admin and authentication
 
 - Public and admin are routes in one application, build, and container
-  ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
+  ([ADR-0048](../../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md)).
 - **API authorization is the boundary**, not hidden markup. Every `/admin/*`
   route is wrapped in `AdminRouteGuard`: signed out redirects to `/login`, and
   the wrong role gets a real 403 view (ADR-0092). The guard only decides what
@@ -80,7 +80,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 - Ask the API its authentication mode (`GET /api/auth/config`); never branch on
   a build flag. Where no provider is configured, the third-party sign-in button
   is hidden, not disabled
-  ([ADR-0066](../../docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
+  ([ADR-0066](../../.spec/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
 
 ## Tests
 
@@ -90,9 +90,9 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
     satisfy this;
   - a Playwright test. For a `@ui` scenario, its steps in `tests/e2e/steps/`
     **are** that test, via `playwright-bdd`
-    ([ADR-0053](../../docs/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md));
+    ([ADR-0053](../../.spec/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md));
   - a server-side test when it touches API behavior
-    ([ADR-0045](../../docs/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
+    ([ADR-0045](../../.spec/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
 - Plain `.spec.ts` files outside `tests/e2e/steps/` are broad smoke coverage
   only, never a substitute for a scenario.
 

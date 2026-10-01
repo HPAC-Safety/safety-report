@@ -11,23 +11,23 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   ADR-0123), RDS PostgreSQL, private S3 attachment storage, and one website,
   with admin as a route, served from a private S3 bucket through CloudFront,
   which also routes `/api/*` to the API's Function URL — no ALB
-  ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md),
-  [ADR-0123](../../docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
-  [ADR-0159](../../docs/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
+  ([ADR-0048](../../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md),
+  [ADR-0123](../../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
+  [ADR-0159](../../.spec/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
   The topology and today's Terraform differences are in
-  [`infrastructure-and-operations.md`](../../docs/infrastructure-and-operations.md).
+  [`infrastructure-and-operations.md`](../../.spec/infrastructure-and-operations.md).
 - **Two accounts, one Terraform root.** Staging is the owner's personal AWS
   account (synthetic data only); production is a separate, HPAC-owned account
   (real reports), not created from staging and not linked to it. Both build
   from the one `infra/` root, differing only in `infra/staging.tfvars` and
   `infra/production.tfvars`
-  ([ADR-0158](../../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+  ([ADR-0158](../../.spec/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
   A dated GitHub Release deploys to staging automatically and never to
   production. A maintainer promotes a staging-green tag with `promote.yml`,
   which deploys the same artifacts to production only after the
   `hpac-safety-admins` team approves the `hpac-safety-production` GitHub
   environment
-  ([ADR-0166](../../docs/decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)). First goal: staging alone; production
+  ([ADR-0166](../../.spec/decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)). First goal: staging alone; production
   follows once HPAC's own account and DNS exist.
 - Each account groups its resources under its own tag-based Resource Group
   (no AppRegistry application; ADR-0170), `hpac-safety-staging`/`hpac-safety-production` — a cost/grouping
@@ -55,26 +55,26 @@ Lessons from staging's first real release, #613 through #638
   (`gh api repos/<org>/<repo>/actions/oidc/customization/sub`) before writing
   a trust policy — `use_immutable_subject: true` changes the subject GitHub
   actually sends
-  ([lesson 0027](../../docs/lessons/0027-a-trust-policy-named-a-subject-form-github-no-longer-sends.md)).
+  ([lesson 0027](../../.spec/lessons/0027-a-trust-policy-named-a-subject-form-github-no-longer-sends.md)).
 - Every resource name Terraform creates must match an ARN pattern in
   `bootstrap.sh`'s deploy policy, and every tag value it writes must match the
   policy's value exactly, case included (IAM tag comparisons are
   case-sensitive) — check both in the same pull request
-  ([lesson 0029](../../docs/lessons/0029-an-ami-pin-that-named-no-image-and-a-tag-that-drifted-in-case.md),
-  [lesson 0034](../../docs/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
+  ([lesson 0029](../../.spec/lessons/0029-an-ami-pin-that-named-no-image-and-a-tag-that-drifted-in-case.md),
+  [lesson 0034](../../.spec/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
 - Audit the deploy role's policy against every resource Terraform creates and
   every AWS call the deploy workflow makes — tag-on-create, later updates, and
   non-tag-scopable services included — before the role's first real use, not
   one error at a time
-  ([lesson 0031](../../docs/lessons/0031-a-deploy-role-with-more-gaps-than-its-first-error-showed.md)).
+  ([lesson 0031](../../.spec/lessons/0031-a-deploy-role-with-more-gaps-than-its-first-error-showed.md)).
 - Pin a third-party AMI (or any external image) to an exact, dated build, not
   a module or package version string, and confirm the lookup resolves to
   exactly one image
-  ([lesson 0029](../../docs/lessons/0029-an-ami-pin-that-named-no-image-and-a-tag-that-drifted-in-case.md)).
+  ([lesson 0029](../../.spec/lessons/0029-an-ami-pin-that-named-no-image-and-a-tag-that-drifted-in-case.md)).
 - Before depending on an AWS service, check that it is still open to new
   accounts — AWS can close one with no signal visible in Terraform or the
   deploy role until the resource is created
-  ([lesson 0033](../../docs/lessons/0033-a-service-closed-to-new-accounts.md)).
+  ([lesson 0033](../../.spec/lessons/0033-a-service-closed-to-new-accounts.md)).
 - Security-group (and rule) descriptions accept only AWS's allowed character
   set — no em dash, curly quote, or other non-ASCII character. Provider
   `default_tags` do not reach an `aws_autoscaling_group`'s own `tag` blocks or
@@ -85,39 +85,39 @@ Lessons from staging's first real release, #613 through #638
   secret version is read back by the provider on create and on every later
   plan, so the deploy and plan roles must be able to read it: keep secret
   values out of Terraform except where both readers need the literal
-  ([lesson 0034](../../docs/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
+  ([lesson 0034](../../.spec/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
 - A tag condition must name the resource type it guards: AWS evaluates a
   call against every resource it touches, including one it is creating that
   cannot be tagged yet (a security-group rule) and one owned by another
   account (a public AMI). Never set a Lambda-reserved environment variable
   (`AWS_REGION`, `AWS_LAMBDA_*`, `_HANDLER`, and the rest)
-  ([lesson 0035](../../docs/lessons/0035-a-guard-checked-against-the-resource-a-call-creates.md)).
+  ([lesson 0035](../../.spec/lessons/0035-a-guard-checked-against-the-resource-a-call-creates.md)).
 - Declare every attribute as AWS records it: a value AWS normalizes (a
   default CloudFront certificate's TLS minimum, an RDS parameter's apply
   method) is a permanent diff that fails the release's drift re-plan
-  ([lesson 0036](../../docs/lessons/0036-a-setting-aws-records-differently-than-it-was-asked.md)).
+  ([lesson 0036](../../.spec/lessons/0036-a-setting-aws-records-differently-than-it-was-asked.md)).
 - A failed create can leave a resource tainted; a `prevent_destroy` resource
   that is tainted blocks every later plan — the deploy untaints those before
   applying
-  ([lesson 0034](../../docs/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
+  ([lesson 0034](../../.spec/lessons/0034-terraform-arguments-and-tags-never-checked-against-aws-and-the-deploy-role.md)).
 
 ## Workflow mechanics
 
 - `-chdir=infra` resolves every later relative flag, including `-var-file`,
   from `infra/`, not the repository root — a workflow that uses `-chdir`
   passes an absolute path (`$GITHUB_WORKSPACE/<path>`)
-  ([lesson 0028](../../docs/lessons/0028-a-var-file-path-that-only-worked-outside-chdir.md)).
+  ([lesson 0028](../../.spec/lessons/0028-a-var-file-path-that-only-worked-outside-chdir.md)).
 - A local action (`./.github/actions/...`) runs from the checked-out
   workspace — check out before running one, in every workflow. A Lambda
   function created from a container image needs that image already in the
   registry — create the registry and push before the apply that creates the
   function depends on it
-  ([lesson 0030](../../docs/lessons/0030-a-deploy-job-that-ran-steps-before-their-own-prerequisites.md)).
+  ([lesson 0030](../../.spec/lessons/0030-a-deploy-job-that-ran-steps-before-their-own-prerequisites.md)).
 - Pull a CI base image from a registry with no per-IP anonymous rate limit —
   mirror it into this org's own registry when the only upstream source has
   one. A retry loop retries only errors that can clear on their own; anything
   else fails on the first attempt
-  ([lesson 0032](../../docs/lessons/0032-a-registry-limit-and-a-retry-that-outlasted-nothing.md)).
+  ([lesson 0032](../../.spec/lessons/0032-a-registry-limit-and-a-retry-that-outlasted-nothing.md)).
 
 ## Data
 
@@ -137,7 +137,7 @@ Lessons from staging's first real release, #613 through #638
 - The development JWT signing key is a committed throwaway, not a secret.
   Production holds no signing key; it validates against the provider's
   published keys
-  ([ADR-0064](../../docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+  ([ADR-0064](../../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 - Provider choice is deferred. Residency matters when it is made:
   `ca-central-1` favors AWS Cognito.
 - **`AUTH_AUTHORITY` is an external dependency, not chosen here.** Until the

@@ -15,7 +15,7 @@ namespace HpacSafety.Worker.Tests.Outbox;
 ///     invoking the Worker Lambda with a <c>{"requeue":"poison"}</c> payload
 ///     is handled by <see cref="PoisonRequeue" /> once <c>Program.cs</c> has
 ///     parsed the payload — these scenarios exercise that logic against a
-///     real database (features/domain-and-lifecycle, REQ-DOM-016/017).
+///     real database (.spec/features/domain-and-lifecycle, REQ-DOM-016/017).
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedWorkerPostgres.Name)]

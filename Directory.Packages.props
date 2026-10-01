@@ -89,7 +89,7 @@
 		<PackageVersion Include="Npgsql" Version="10.0.3" />
 	</ItemGroup>
 	<ItemGroup Label="Reqnroll">
-		<!-- Executes the Gherkin scenarios under features/ as xUnit tests. See
+		<!-- Executes the Gherkin scenarios under .spec/features/ as xUnit tests. See
 		     ADR-0049. Reqnroll.Tools.MsBuild.Generation is the actual
 		     feature-file-to-code-behind compiler; Reqnroll.xUnit only wires the
 		     generated tests into xUnit. -->

@@ -19,7 +19,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The report-submission scenarios in
-///     <c>features/report-submission/report-submission.feature</c> that describe
+///     <c>.spec/features/report-submission/report-submission.feature</c> that describe
 ///     what <c>POST /api/v1/reports</c> does over HTTP — validation order, the
 ///     immutable value/locale split, atomic persistence, and the opaque receipt.
 ///     See issue #14 and ADR-0080. Also REQ-WLD-018, that the endpoint validates

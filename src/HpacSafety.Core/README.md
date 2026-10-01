@@ -7,7 +7,7 @@ type: readme
 # HpacSafety.Core
 
 Non-deployable domain library with no runtime package dependency. The target
-model is specified in [`features/domain-and-lifecycle/domain-and-lifecycle.feature`](../../features/domain-and-lifecycle/domain-and-lifecycle.feature).
+model is specified in [`.spec/features/domain-and-lifecycle/domain-and-lifecycle.feature`](../../.spec/features/domain-and-lifecycle/domain-and-lifecycle.feature).
 
 ## Target shape
 

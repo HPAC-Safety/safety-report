@@ -14,7 +14,7 @@ page is only the checklist.
 - Do **Part 2** for staging, then **Part 3** for production. They are separate
   accounts with separate settings; never copy a value from one to the other.
 - No step shares a password or an AWS access key. GitHub reaches AWS by OIDC
-  only ([ADR-0158](../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+  only ([ADR-0158](../.spec/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 
 ## Staging vs production
 
@@ -45,7 +45,7 @@ infrastructure differences.
   (`gh auth status`).
 - A paid, billing-enabled Gemini API key, for the interface translation
   workflow (the same development key summaries use,
-  [ADR-0179](../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
+  [ADR-0179](../.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 
 ### 1.1 Merge settings
 
@@ -62,7 +62,7 @@ infrastructure differences.
 ### 1.2 The `main` ruleset and merge queue
 
 - Apply only after `main` carries the workflows that report the required checks
-  ([ADR-0147](../docs/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)).
+  ([ADR-0147](../.spec/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)).
 - New repository:
   `gh api -X POST repos/HPAC-Safety/safety-report/rulesets --input docs/github-ruleset.json`.
 - Existing ruleset: find its ID with
@@ -89,11 +89,11 @@ Repository-level (not environment) settings, read by
 [`i18n-translate.yml`](../.github/workflows/i18n-translate.yml),
 [`traceability.yml`](../.github/workflows/traceability.yml), and
 [`terraform-relock.yml`](../.github/workflows/terraform-relock.yml)
-([ADR-0021](../docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md)).
+([ADR-0021](../.spec/decisions/ADR-0021-ci-translation-opens-a-pull-request.md)).
 
 - [Settings → Secrets and variables → Actions → **Secrets**](https://github.com/HPAC-Safety/safety-report/settings/secrets/actions):
   - `GEMINI_API_KEY_DEV` — the development Gemini key, which the translation
-    workflow also reads ([ADR-0179](../docs/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)). Without it, translation reports what is
+    workflow also reads ([ADR-0179](../.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)). Without it, translation reports what is
     waiting and changes nothing.
   - `TRANSLATION_PR_TOKEN` — a
     [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
@@ -132,7 +132,7 @@ Repository-level (not environment) settings, read by
 - Administrator sign-in to the **existing** AWS account (the owner's).
 - Admin on the GitHub repository.
 - The Gemini API key (paid,
-  [ADR-0104](../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md))
+  [ADR-0104](../.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md))
   and a DeepL API key. Staging uses its own copies; for now they hold the same
   values as production's.
 - Nothing else: staging needs no DNS, no certificate, and no alarm inbox.
@@ -177,7 +177,7 @@ Repository-level (not environment) settings, read by
   gh variable set AWS_ACCOUNT_ID      --repo HPAC-Safety/safety-report --env hpac-safety-staging --body <printed>
   ```
 - Repository variables, read by pull-request `terraform plan`
-  ([ADR-0164](../docs/decisions/ADR-0164-release-workflow-build-once-deploy-and-promote.md)):
+  ([ADR-0164](../.spec/decisions/ADR-0164-release-workflow-build-once-deploy-and-promote.md)):
   ```sh
   gh variable set AWS_PLAN_ROLE_ARN_STAGING --repo HPAC-Safety/safety-report --body <printed>
   gh variable set TF_STATE_BUCKET_STAGING   --repo HPAC-Safety/safety-report --body <printed>
@@ -333,7 +333,7 @@ Repository-level (not environment) settings, read by
 ### Known gaps
 
 - **Sign-in**: the identity provider is deferred
-  ([ADR-0064](../docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)),
+  ([ADR-0064](../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)),
   and no workflow or Terraform sets its authority yet. Until it is wired,
   public pages and submission work, but sign-in, review, and administration do
   not, in either environment.
@@ -343,10 +343,10 @@ Repository-level (not environment) settings, read by
 
 - [`docs/deployment.md`](../docs/deployment.md) — release, promotion,
   rollback, and what the deploy and plan roles may do.
-- [`docs/infrastructure-and-operations.md`](../docs/infrastructure-and-operations.md)
+- [`.spec/infrastructure-and-operations.md`](../.spec/infrastructure-and-operations.md)
   — topology, configuration, alarms, backups.
 - [`infra/README.md`](README.md) — what each Terraform file creates.
 - [`.github/workflows/README.md`](../.github/workflows/README.md) — what each
   workflow does.
-- [ADR-0159](../docs/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)
+- [ADR-0159](../.spec/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)
   — CloudFront routes `/api/*` to the API; no ALB.

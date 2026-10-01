@@ -9,10 +9,10 @@ Extends [`design-ef-core-model`](../design-ef-core-model/SKILL.md) for how an
 entity, relationship, or query is mapped; read that first. This skill wins
 where they differ.
 
-- Target schema: [`docs/data-and-persistence.md`](../../docs/data-and-persistence.md).
+- Target schema: [`.spec/data-and-persistence.md`](../../.spec/data-and-persistence.md).
 - Schema changes, raw SQL, and how migrations are applied:
   [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md)
-  ([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+  ([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 - Tables and sensitivity tiers: [`incident-domain-model`](../incident-domain-model/SKILL.md).
 
 ## Records

@@ -154,6 +154,18 @@ stronger one:
 
 ## Document
 
+### Specification directory
+
+- Everything the specification chain reads — scenarios, constraint pages,
+  decisions, lessons, generated matrices — lives under one root, apart from
+  guides. The project skill names it.
+- An index of specification files is generated from their frontmatter and
+  drift-checked in CI, never kept by hand; a hand-kept table falls behind.
+- Every relative link in tracked markdown is checked before commit and in CI.
+  Moving a file rewrites every reference to it in the same commit.
+- The paths live in one module every tool imports; a test ties the copies in
+  hooks and workflows, which cannot import it, to that module.
+
 ### Scenarios
 
 - Every user-facing requirement has a scenario in a `.feature` file. A change
@@ -209,6 +221,9 @@ stronger one:
   none.
 - A decision that changes an existing ADR amends it with a dated paragraph
   rather than adding a new one.
+- An ADR's declared status agrees with its own status line, and a successor it
+  names exists. A tool checks both; superseding part of an ADR updates its
+  status in the same pull request.
 - Number it after rebasing (see "Commit, rebase, claim identifiers"). Keep the
   filename and the `# ADR-NNNN` heading in step.
 - Keep rationale and requirements apart: never restate a scenario's acceptance

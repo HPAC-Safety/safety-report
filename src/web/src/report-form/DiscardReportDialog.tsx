@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 
 /*
  * Confirms discarding the report in progress (issue no. 373,
- * `features/report-submission/README.md`'s "Discarding a report"). Focus
+ * `.spec/features/report-submission/README.md`'s "Discarding a report"). Focus
  * starts on the choice that keeps the report, and Escape keeps it too.
  */
 export function DiscardReportDialog({

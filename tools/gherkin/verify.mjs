@@ -1,17 +1,19 @@
 #!/usr/bin/env node
-// Verifies every features/**/*.feature file parses as valid Gherkin, using
+// Verifies every .spec/features/**/*.feature file parses as valid Gherkin, using
 // the official @cucumber/gherkin parser (the same parser cucumber-js uses).
 //
 // This checks syntax only, not step definitions. Scenarios execute as xUnit
 // tests via Reqnroll (tests/HpacSafety.Acceptance.Tests, ADR-0049) once their
 // step definitions exist; until then each carries an @ignore tag. See
-// features/README.md.
+// .spec/features/README.md.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import { IdGenerator } from '@cucumber/messages'
 
-const root = 'features'
+import { FEATURES } from '../spec-paths.mjs'
+
+const root = FEATURES
 
 const findFeatureFiles = (dir) =>
   readdirSync(dir).flatMap((entry) => {

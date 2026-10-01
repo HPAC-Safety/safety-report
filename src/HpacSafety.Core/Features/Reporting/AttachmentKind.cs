@@ -5,7 +5,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     anonymized and may grow a reviewer derivative; documents are validated and
 ///     kept private (no malware scan — ADR-0089) — never transformed, sent to the
 ///     model, or published. See product invariant #5 and
-///     <c>docs/data-and-persistence.md</c>.
+///     <c>.spec/data-and-persistence.md</c>.
 /// </summary>
 public enum AttachmentKind
 {

@@ -32,8 +32,8 @@ function runMain(root, paths) {
 
 describe('resolve', () => {
 	it('resolves relative to the file, or to the root for a leading slash', () => {
-		assert.equal(resolve('docs/a.md', '../features/README.md'), 'features/README.md')
-		assert.equal(resolve('docs/a.md', '/features/'), 'features')
+		assert.equal(resolve('docs/a.md', '../.spec/features/README.md'), '.spec/features/README.md')
+		assert.equal(resolve('docs/a.md', '/.spec/features/'), '.spec/features')
 		assert.equal(resolve('docs/a.md', 'b%20c.md'), 'docs/b c.md')
 	})
 

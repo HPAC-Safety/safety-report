@@ -6,7 +6,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     An occurrence report. Every ordinary answer is data — one row per question
 ///     asked, in <see cref="Answers" /> — and the two consents, publication and
 ///     media, are the only ones that additionally project onto a typed property
-///     here, because they are read by logic rather than only displayed. See <c>docs/data-and-persistence.md</c>.
+///     here, because they are read by logic rather than only displayed. See <c>.spec/data-and-persistence.md</c>.
 /// </summary>
 public class Report
 {

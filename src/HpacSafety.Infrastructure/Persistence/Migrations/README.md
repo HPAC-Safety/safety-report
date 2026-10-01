@@ -9,11 +9,11 @@ type: readme
 One PostgreSQL database, one `DbContext`
 ([`HpacSafetyDbContext`](../HpacSafetyDbContext.cs)), and one way to change the
 schema: an EF Core migration in this folder. There is no second context for a
-"worker schema" or a "reporting schema," and no hand-written DDL anywhere ([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+"worker schema" or a "reporting schema," and no hand-written DDL anywhere ([ADR-0055](../../../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 This file describes the database. The target *design* lives in
-[`docs/data-and-persistence.md`](../../../../docs/data-and-persistence.md) and
-[`/features`](../../../../features/README.md); where they disagree with this
+[`.spec/data-and-persistence.md`](../../../../.spec/data-and-persistence.md) and
+[`.spec/features`](../../../../.spec/features/README.md); where they disagree with this
 page, they win and this page is stale.
 
 ## Four conventions, applied everywhere
@@ -23,7 +23,7 @@ page, they win and this page is stale.
 every table, so there are no mixed-type joins, and — the actual reason — an
 identifier encodes no creation time and cannot be enumerated. A report id ends
 up in URLs, blob keys, and logs, and this system narrows a published occurrence
-to a month and a year on purpose; a UUIDv7 would hand the timestamp back ([ADR-0034](../../../../docs/decisions/ADR-0034-tiny-ids.md)).
+to a month and a year on purpose; a UUIDv7 would hand the timestamp back ([ADR-0034](../../../../.spec/decisions/ADR-0034-tiny-ids.md)).
 
 **Nothing is physically deleted.** Every table except `audit_log` carries
 `deleted timestamptz null` and a default query filter limiting reads to live
@@ -44,7 +44,7 @@ the enum beside it, and reordering an enum member cannot silently reinterpret
 history.
 
 Dates and times follow
-[ADR-0035](../../../../docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md):
+[ADR-0035](../../../../.spec/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md):
 `DateOnly` when the time does not matter, `TimeOnly` when the date does not,
 `DateTimeOffset` for an instant. `DateTime` is banned and the build enforces it.
 
@@ -249,28 +249,28 @@ system question, and its role. Everything a reporter could see — wording, type
 order, section, privacy, required state, and conditionality — lives on
 `question_revisions`, and an edit inserts a new one rather than updating the
 old. `report_answers` points at a revision, never at a question, so
-a report filed two years ago still renders exactly what it asked ([ADR-0016](../../../../docs/decisions/ADR-0016-data-driven-question-bank.md)).
+a report filed two years ago still renders exactly what it asked ([ADR-0016](../../../../.spec/decisions/ADR-0016-data-driven-question-bank.md)).
 
 **Choices belong to the question, not to a revision.** `question_choices` is
 edited in place: adding, rewording, pinning, or removing a choice creates no
 revision and never forks the question. It has no order of its own: `pin` puts a
 choice before or after the rest, and the reader's browser lists each group
 alphabetically in their language
-([ADR-0136](../../../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
+([ADR-0136](../../../../.spec/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
 `display_order` is still written but no screen reads it. A single-select, multi-select, or
 type-ahead answer names its choice through `report_answers.choice_id` and reads
 both labels there, so a choice an answer names is never erased
-([ADR-0128](../../../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+([ADR-0128](../../../../.spec/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
 A removed choice keeps its row with `deleted` stamped, and is loaded with its
 question — the one table without the live-row filter — because a fork copies
 it, an old answer still names it, and a reporter must not revive it. A type-ahead's reporter-added choice may hold one language until an
-administrator supplies the other ([ADR-0095](../../../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+administrator supplies the other ([ADR-0095](../../../../.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 
 **One rule is deliberately not in the database.** "A conditional question's
 parent must be a `yes_no` question" depends on the parent's *current* revision —
 a different row — so a `CHECK` cannot express it and a trigger would hide a
 domain rule from everyone reading the C#. It is enforced in
-`QuestionDependencies` and at the API instead ([ADR-0060](../../../../docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md)).
+`QuestionDependencies` and at the API instead ([ADR-0060](../../../../.spec/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md)).
 
 **`outbox_messages.aggregate_id` and `audit_log.target_id` have no foreign
 key**, on purpose: each names more than one kind of row. Because EF cannot fix
@@ -285,7 +285,7 @@ PostgreSQL advisory lock, re-checks for pending migrations *after* acquiring it,
 and applies them only if any remain. Whichever process starts first after a
 deploy does the work; the other blocks briefly and finds nothing to do. That is
 what makes "the Worker booted before the API" safe by construction rather than
-by deployment ordering ([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+by deployment ordering ([ADR-0055](../../../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 ## Adding a migration
 
@@ -307,8 +307,8 @@ this.
 ## The views
 
 Read rules live in SQL views, never in C#
-([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md),
-[ADR-0116](../../../../docs/decisions/ADR-0116-a-read-rule-lives-in-a-view.md)).
+([ADR-0055](../../../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md),
+[ADR-0116](../../../../.spec/decisions/ADR-0116-a-read-rule-lives-in-a-view.md)).
 Each view's current definition is in the SQL file of the migration that last
 defines it, under [`Sql/`](../Sql/).
 

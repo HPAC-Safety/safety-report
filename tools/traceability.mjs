@@ -2,8 +2,8 @@
 // The traceability matrix, generated from the artifacts (ADR-0084).
 //
 // Every scenario carries one stable claim ID as a Gherkin tag, and every
-// normative constraint in a canonical docs page carries a CON id naming the
-// claims that verify it. This reads both and writes docs/traceability.md, so
+// normative constraint in a canonical specification page carries a CON id naming the
+// claims that verify it. This reads both and writes .spec/traceability.md, so
 // the matrix is derived rather than maintained — the 1998 version of this
 // document was a spreadsheet nobody updated.
 //
@@ -15,25 +15,19 @@
 // The exit code is the contract: a duplicate, malformed, missing, or dangling
 // id fails rather than producing a matrix with a hole in it.
 import { appendFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, posix } from 'node:path'
+
+import { CONSTRAINT_PAGES, FEATURES, SPEC_ROOT, TRACEABILITY } from './spec-paths.mjs'
+
+export { CONSTRAINT_PAGES }
 
 const ROOT = process.cwd()
-const OUTPUT = 'docs/traceability.md'
+const OUTPUT = TRACEABILITY
 
 export const CLAIM_TAG = /^\s*@(REQ-[A-Z]+-\d{3})\s*$/
 const SCENARIO = /^\s*(Scenario|Scenario Outline):\s*(.+?)\s*$/
 const CONSTRAINT = /\*\*(CON-[A-Z]+-\d{3})\*\*/g
 const VERIFIED_BY = /\*Verified by:\s*([^*]+)\*/
-
-// The docs pages that carry normative constraints. A page not listed here is
-// narrative: it describes, it does not require.
-export const CONSTRAINT_PAGES = [
-	'docs/system-overview.md',
-	'docs/data-and-persistence.md',
-	'docs/interfaces-and-data-flow.md',
-	'docs/infrastructure-and-operations.md',
-	'docs/testing-and-quality.md',
-]
 
 /** Every claim a feature file declares, in file order. */
 export function readClaims(path, source) {
@@ -76,7 +70,7 @@ export function readClaims(path, source) {
 
 		claims.push({
 			id: pending[0],
-			area: path.split('/')[1],
+			area: posix.relative(FEATURES, path).split('/')[0],
 			scenario: scenario[2],
 			engine: tags.includes('@ui') ? 'playwright-bdd' : 'Reqnroll',
 			status: tags.includes('@ignore') ? 'Planned' : 'Covered',
@@ -122,7 +116,7 @@ function featureFiles(root) {
 			const path = join(dir, entry)
 			return statSync(path).isDirectory() ? walk(path) : path.endsWith('.feature') ? [path] : []
 		})
-	return walk(join(root, 'features'))
+	return walk(join(root, FEATURES))
 		.map((path) => path.slice(root.length + 1))
 		.sort()
 }
@@ -181,7 +175,7 @@ export function render(claims, constraints) {
 	for (const constraint of [...constraints].sort(byId)) {
 		const verifiedBy =
 			constraint.verifiedBy.length > 0 ? constraint.verifiedBy.map((id) => `\`${id}\``).join(', ') : escape(constraint.note)
-		lines.push('', `### ${constraint.id}`, '', `${constraint.page.replace('docs/', '')} — verified by ${verifiedBy}`)
+		lines.push('', `### ${constraint.id}`, '', `${constraint.page.replace(`${SPEC_ROOT}/`, '')} — verified by ${verifiedBy}`)
 	}
 
 	lines.push('')

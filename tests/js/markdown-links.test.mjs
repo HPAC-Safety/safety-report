@@ -13,7 +13,7 @@ describe('links', () => {
 	})
 
 	it('keeps a link whose text is a code span', () => {
-		assert.deepEqual(targets('[`features/README.md`](features/README.md)'), ['features/README.md'])
+		assert.deepEqual(targets('[`.spec/features/README.md`](.spec/features/README.md)'), ['.spec/features/README.md'])
 	})
 
 	it('ignores a link inside a code span, a fence, or a comment', () => {

@@ -359,23 +359,23 @@ done
 # ci.yml's i18n job passes --allow-pending-translation under act instead,
 # the pre-commit hook's branch rule. Neither changes what runs on GitHub.
 
-if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/traceability.mjs; then
-	if (cd "$WORK/repo" && node tools/traceability.mjs >/dev/null 2>&1); then
-		if ! git -C "$WORK/repo" diff --quiet -- docs/traceability.md; then
+if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/traceability.mjs tools/spec-index.mjs tools/spec-paths.mjs; then
+	if (cd "$WORK/repo" && node tools/traceability.mjs >/dev/null 2>&1 && node tools/spec-index.mjs >/dev/null 2>&1); then
+		if ! git -C "$WORK/repo" diff --quiet -- .spec/traceability.md .spec/README.md; then
 			git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \
-				commit -q --no-verify -m "Regenerate the traceability matrix, as traceability.yml would" \
-				-- docs/traceability.md || die "could not commit the regenerated matrix in the clone"
+				commit -q --no-verify -m "Regenerate the traceability matrix and specification index, as traceability.yml would" \
+				-- .spec/traceability.md .spec/README.md || die "could not commit the regenerated matrix in the clone"
 			HEAD_SHA=$(git -C "$WORK/repo" rev-parse HEAD) || die "cannot read the clone's HEAD"
 			git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" \
 				|| die "git update-ref failed"
-			say "Traceability matrix: regenerated and committed in the clone, as traceability.yml would on GitHub."
+			say "Traceability matrix and specification index: regenerated and committed in the clone, as traceability.yml would on GitHub."
 		fi
 	else
-		git -C "$WORK/repo" checkout -q -- docs/traceability.md 2>/dev/null || true
-		warn "node tools/traceability.mjs failed in the clone; the docs job will say why"
+		git -C "$WORK/repo" checkout -q -- .spec/traceability.md .spec/README.md 2>/dev/null || true
+		warn "node tools/traceability.mjs or tools/spec-index.mjs failed in the clone; the docs job will say why"
 	fi
 else
-	say "Traceability matrix: not regenerated, because this branch changes tools/traceability.mjs (traceability.yml skips it too)."
+	say "Traceability matrix and specification index: not regenerated, because this branch changes their generators (traceability.yml skips it too)."
 fi
 
 # ------------------------------------------------------------ the baseline --

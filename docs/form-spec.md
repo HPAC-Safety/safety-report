@@ -9,13 +9,13 @@ type: guide
 > **Generated file — do not edit by hand.**
 > Regenerate with `tools/extract-typeform.py`. Not currently wired into CI — regenerate
 > manually to notice drift from the live form. It is evidence, not the question-bank seed
-> source; see [ADR-0077](decisions/ADR-0077-typeform-json-import-and-export.md).
+> source; see [ADR-0077](../.spec/decisions/ADR-0077-typeform-json-import-and-export.md).
 
 Source: <https://pq3ivecn4rb.typeform.com/to/ZzIBaNLP>
 
 This is source evidence for the questions HPAC has been collecting through
 Typeform. The replacement preserves their intent and recognizable wording.
-It is not the target system contract: `/features` controls revision semantics,
+It is not the target system contract: `.spec/features` controls revision semantics,
 optionality, attachments, submission, AI, review, and publication.
 
 See `docs/anonymization-policy.md` for which of these fields survive into a

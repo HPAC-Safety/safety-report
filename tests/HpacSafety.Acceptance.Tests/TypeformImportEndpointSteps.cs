@@ -12,7 +12,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The Typeform import scenarios in
-///     <c>features/typeform-question-import-export/typeform-question-import-export.feature</c>
+///     <c>.spec/features/typeform-question-import-export/typeform-question-import-export.feature</c>
 ///     that describe what the API does — over HTTP, against the booted host —
 ///     rather than what <see cref="HpacSafety.Core.Features.QuestionBank.Typeform.TypeformQuestionMapper" />
 ///     decides on its own. See ADR-0077, amended by ADR-0078. Every other

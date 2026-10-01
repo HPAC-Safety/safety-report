@@ -27,7 +27,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Most scenarios in <c>features/</c> describe rules that live in the domain
+///         Most scenarios in <c>.spec/features/</c> describe rules that live in the domain
 ///         and execute against it directly — no host, no database, no container. The
 ///         authorization scenarios are different: "the API rejects the operation
 ///         regardless of what the UI would have shown" is a statement about a real

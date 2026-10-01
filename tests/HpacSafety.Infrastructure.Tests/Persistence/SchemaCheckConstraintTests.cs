@@ -6,7 +6,7 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 /// <summary>
 ///     The canonical persistence specification requires database checks for
 ///     valid status/role/type/work codes and coherent nullable approval and
-///     processing fields — see <c>docs/data-and-persistence.md</c> and
+///     processing fields — see <c>.spec/data-and-persistence.md</c> and
 ///     <c>MigrateCanonicalDomainAndPersistence</c>. Every constraint is proven
 ///     here by attempting the exact write it exists to reject.
 /// </summary>

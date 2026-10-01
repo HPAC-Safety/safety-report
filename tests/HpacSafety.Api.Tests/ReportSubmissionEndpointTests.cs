@@ -18,7 +18,7 @@ namespace HpacSafety.Api.Tests;
 /// <summary>
 ///     The reporter's report write, against real PostgreSQL and S3-compatible containers. Every
 ///     report here is synthetic. See issue #14 and
-///     <c>features/report-submission/report-submission.feature</c>.
+///     <c>.spec/features/report-submission/report-submission.feature</c>.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]

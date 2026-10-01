@@ -7,7 +7,7 @@ type: guide
 # Contributing
 
 Read [`AGENTS.md`](AGENTS.md) and the canonical
-[`features/README.md`](features/README.md) before changing product behavior. The
+[`.spec/features/README.md`](.spec/features/README.md) before changing product behavior. The
 repository processes real accident reports, so privacy and publication rules
 are part of correctness.
 
@@ -40,7 +40,7 @@ in `~/.claude/settings.json` for every project.
 
 1. Find or open a focused issue.
 2. Branch from current `main` using `issue-<number>/<short-description>`.
-3. Implement the smallest change that satisfies `/features` and the issue.
+3. Implement the smallest change that satisfies `.spec/features` and the issue.
 4. Run the tests for the code you changed, natively (a filtered `dotnet test`,
    and `CI=1 npm test` for a touched e2e spec), then
    `tools/ci-local.sh --body <pr-body.md>`: it runs the pull request's fast
@@ -64,16 +64,20 @@ the repository delivery contract.
 - Use Shouldly, not `Xunit.Assert` or another assertion library.
 - Name .NET tests `GivenX_WhenY_ThenZ` — three PascalCase segments joined by
   single underscores, no articles
-  ([ADR-0069](docs/decisions/ADR-0069-scannable-given-when-then-test-names.md))
+  ([ADR-0069](.spec/decisions/ADR-0069-scannable-given-when-then-test-names.md))
   — and mark those sections in the body.
 - Use Mermaid for diagrams.
 - Put user-facing UI text in the locale catalogues and keep English/French keys
   in parity. Database question text is manually authored in both languages.
 - Open every markdown file with YAML frontmatter naming its `title`,
   `description`, and `type`
-  ([ADR-0087](docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+  ([ADR-0087](.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
   `node tools/check-frontmatter.mjs` checks the tree; the pre-commit hook
   checks what you staged.
+- Keep every relative link resolvable; `node tools/check-links.mjs` checks
+  them, in the pre-commit hook and in CI. A specification page goes under
+  `.spec/`, a guide under `docs/`
+  ([ADR-0183](.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).
 - Never hand-edit generated files. Generated paths and commands are listed in
   [`docs/agent-workflow.md`](docs/agent-workflow.md).
 

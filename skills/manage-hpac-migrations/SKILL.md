@@ -19,7 +19,7 @@ holds only what is specific to this repository, under the same section names.
 ## Rules
 
 The generic rules hold
-([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)),
+([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)),
 plus:
 
 1. **Past migrations keep their inline SQL.** The raw SQL inlined in
@@ -27,7 +27,7 @@ plus:
    `20260827013637_MigrateCanonicalDomainAndPersistence.cs` stays.
 2. **Nothing is physically deleted.** No `DELETE`, no `DROP TABLE` on a table
    holding application data, no `ALTER` that loses a value
-   ([ADR-0040](../../docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
+   ([ADR-0040](../../.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
    - Retirement is a `deleted timestamptz` stamp. Every new table gets that
      column and the default live-row filter — except `question_choices` and
      `question_choice_parents`, which skip the filter because their aggregate
@@ -39,18 +39,18 @@ plus:
      - the legacy per-language question tables and `report_aircraft`, dropped
        by `MigrateCanonicalDomainAndPersistence` after folding their data
        forward
-       ([ADR-0040](../../docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md));
+       ([ADR-0040](../../.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md));
      - `admin_users`, which never held data in a deployed environment
-       ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
+       ([ADR-0065](../../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
      - the shared-choice-list and per-revision option tables, dropped only
        after the same migration copies every choice onto its question
-       ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md));
+       ([ADR-0095](../../.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md));
      - `pending_import_logic` rows, transient Typeform import notes with no
        `deleted` column, hard-deleted when an administrator resolves them
-       ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
+       ([ADR-0077](../../.spec/decisions/ADR-0077-typeform-json-import-and-export.md)).
      None generalizes; any other physical delete needs its own ADR.
 3. **Every key is a tiny id**, `char(11)`
-   ([ADR-0034](../../docs/decisions/ADR-0034-tiny-ids.md)). Never `uuid` or
+   ([ADR-0034](../../.spec/decisions/ADR-0034-tiny-ids.md)). Never `uuid` or
    `bigint identity`. Type the key as `TinyId`; `ConfigureConventions` handles
    the conversion.
 4. **Every enum column is a `varchar` of invariant codes with a `CHECK`
@@ -58,12 +58,12 @@ plus:
    generates it once the constraint string in the entity configuration is
    updated.
 5. **No `DateTime`** — `DateOnly`, `TimeOnly`, `DateTimeOffset`
-   ([ADR-0035](../../docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
+   ([ADR-0035](../../.spec/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
    `tests/BannedSymbols.txt` enforces it in the build.
 6. **Names are `snake_case`**, applied automatically. Hand-name a column only
    when it must differ.
 7. **Seed identifiers come from `SeedIds`**
-   ([ADR-0020](../../docs/decisions/ADR-0020-seeding-by-migration.md)). Never
+   ([ADR-0020](../../.spec/decisions/ADR-0020-seeding-by-migration.md)). Never
    real report content.
 8. **New raw SQL is a `.sql` file** under
    `src/HpacSafety.Infrastructure/Persistence/Sql/`, loaded by the migration,
@@ -120,7 +120,7 @@ plus:
   before API" after a deploy is safe.
 - There is no `migrate` deploy job. Adding one reintroduces the ordering
   dependency this replaced
-  ([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+  ([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 ## Squash to one baseline
 
@@ -152,8 +152,8 @@ the one baseline.
 - Run `dotnet test HpacSafety.slnx --filter "Category!=ui"`. API and
   Infrastructure suites boot a real PostgreSQL container.
 - The diagram is a Mermaid `erDiagram` with `snake_case` names
-  ([ADR-0046](../../docs/decisions/ADR-0046-mermaid-for-diagrams.md)).
+  ([ADR-0046](../../.spec/decisions/ADR-0046-mermaid-for-diagrams.md)).
 - Update the migration table at the bottom of `Persistence/Migrations/README.md`,
   and its schema diagram when the shape changed.
-- Update [`docs/data-and-persistence.md`](../../docs/data-and-persistence.md)
+- Update [`.spec/data-and-persistence.md`](../../.spec/data-and-persistence.md)
   when the logical record changed.

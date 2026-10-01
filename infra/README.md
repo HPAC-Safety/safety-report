@@ -9,7 +9,7 @@ type: readme
 One Terraform root, `infra/`, builds two AWS environments — **staging**
 (the owner's existing account, synthetic data only) and **production** (a
 separate, HPAC-owned account, real reports) — in `ca-central-1`
-([ADR-0158](../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+([ADR-0158](../.spec/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 The two environments differ ONLY in `staging.tfvars` and `production.tfvars`;
 `diff` between them is the complete list of differences. Nothing
 environment-specific lives anywhere else in this directory.
@@ -17,11 +17,11 @@ environment-specific lives anywhere else in this directory.
 The topology: the API and the Worker as Lambda functions behind one
 CloudFront distribution that also serves the website, RDS PostgreSQL, private
 attachment S3, and no ALB
-([ADR-0042](../docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md),
-[ADR-0048](../docs/decisions/ADR-0048-one-website-admin-as-a-route.md),
-[ADR-0123](../docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
-[ADR-0159](../docs/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
-See [`docs/infrastructure-and-operations.md`](../docs/infrastructure-and-operations.md)
+([ADR-0042](../.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md),
+[ADR-0048](../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md),
+[ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md),
+[ADR-0159](../.spec/decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md)).
+See [`.spec/infrastructure-and-operations.md`](../.spec/infrastructure-and-operations.md)
 for the full target design, [`docs/deployment.md`](../docs/deployment.md)
 for the operator guide, and [`SETUP.md`](SETUP.md) for the step-by-step
 human setup of each environment.

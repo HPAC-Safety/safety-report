@@ -53,16 +53,6 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
-	[Given(@"a report has been published")]
-	public async Task GivenAReportHasBeenPublished()
-	{
-		// It carries an attachment, so there is something the DTO could leak.
-		seeded.Id = await BootedReports.Seed(
-			ReportStatus.Published,
-			true,
-			report => report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, DateTimeOffset.UtcNow));
-	}
-
 	[Given(@"^a report written in (French|English) has been published$")]
 	public async Task GivenAReportWrittenInALanguageHasBeenPublished(string written)
 	{

@@ -377,12 +377,6 @@ Then("both the English and French summary texts are shown with the model and pro
 	await expect(page.locator("[data-provenance]")).toContainText("summarize-anonymize.v3")
 })
 
-Then("no action to edit, approve, reject, or publish is offered", async ({ page }) => {
-	const main = page.getByRole("main")
-	await expect(main.getByRole("button")).toHaveCount(0)
-	await expect(main.getByRole("textbox")).toHaveCount(0)
-})
-
 /*
  * Review actions (REQ-MOD-062..068). One stubbed report per status; each
  * command answers with the report as the API would leave it, so what is

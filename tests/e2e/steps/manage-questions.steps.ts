@@ -420,14 +420,6 @@ When("they edit its English wording and save", async ({ page }) => {
 	await page.getByRole("button", { name: "Save" }).click()
 })
 
-When("they edit the first question's English wording and save", async ({ page }) => {
-	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
-
-	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
-	await page.getByLabel("Question (English)").fill("Were you hurt?")
-	await page.getByRole("button", { name: "Save" }).click()
-})
-
 Then("the list shows the new wording and a higher version number", async ({ page }) => {
 	const row = page
 		.getByRole("list", { name: "Questions on the form" })

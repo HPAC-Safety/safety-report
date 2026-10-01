@@ -120,6 +120,7 @@ Scenario: A reviewer downloads a validated document as an unredacted original
   When an authorized reviewer requests it
   Then the reviewer receives a short-lived URL to the private original
   And the download is named with the reporter's sanitized filename, or a server-minted name when there is none
+  And the URL forces a download, with the header X-Content-Type-Options: nosniff
   And there is no API blob proxy or public URL
 
 @REQ-MED-012

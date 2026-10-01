@@ -225,8 +225,8 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the pair's approval is cleared")]
-	public void ThenApprovalIsCleared()
+	// The approval half of the combined step below; no scenario names it alone.
+	private void ThenApprovalIsCleared()
 	{
 		_result.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 		_result.GetProperty("summary").GetProperty("approvedBySubject").ValueKind.ShouldBe(JsonValueKind.Null);

@@ -24,12 +24,13 @@ cd "$REPO_ROOT" || exit 0
 
 command -v node >/dev/null 2>&1 || exit 0
 
-# The matrix and the specification index are both generated from .spec/
-# (ADR-0084, ADR-0183).
+# The matrix, the specification index, and the step-bindings map are
+# generated from .spec/ and the step definitions (ADR-0084, ADR-0183, ADR-0184).
 node tools/traceability.mjs >/dev/null 2>&1 || exit 0
 node tools/spec-index.mjs >/dev/null 2>&1 || exit 0
+node tools/bindings.mjs --no-fail >/dev/null 2>&1 || exit 0
 
-for generated in .spec/traceability.md .spec/README.md; do
+for generated in .spec/traceability.md .spec/README.md .spec/bindings.md; do
 	if ! git diff --quiet -- "$generated"; then
 		git add -- "$generated"
 		echo "post-merge: $generated regenerated and staged — include it in your next commit."

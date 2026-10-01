@@ -20,7 +20,8 @@ requests. Amended by
 [ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md)
 on point 4: a push moved by the other bot started no run, so the commit is
 replayed on top of it rather than dropped. Paths amended by
-[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
+[ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 
 ## Context
 
@@ -105,3 +106,7 @@ collision is real, and it should stop the merge.
 ## Amendment (2026-09-30)
 
 `.gitattributes` is now tracked, naming `merge=ours` for `.spec/traceability.md` and `.spec/README.md`; `init-dev.sh` registers the driver per clone. GitHub still runs no merge driver, so the format property this record states is what makes a merge on GitHub correct. The generated index keeps the same property: one row per file, no whole-tree total. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
+
+## Amendment (2026-09-30, ADR-0184)
+
+The same property holds for `.spec/bindings.md`: every block derives from one claim, step, or step definition, with no line numbers and no totals, so branches merge it cleanly. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

@@ -63,6 +63,7 @@ the `Given`/`When`/`Then` text behind it.
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
 | `.spec/traceability.md` | `node tools/traceability.mjs`; on a same-repo PR, `traceability.yml` commits it (ADR-0101) |
 | `.spec/README.md` | `node tools/spec-index.mjs`; committed with the matrix by `traceability.yml` (ADR-0183) |
+| `.spec/bindings.md` | `node tools/bindings.mjs`; committed with the matrix by `traceability.yml`, and fails `docs` when a built claim's step is unbound (ADR-0184) |
 | `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` |
 | `src/web/dist/` | `npm --prefix src/web run build` |
 

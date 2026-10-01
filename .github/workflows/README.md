@@ -13,7 +13,7 @@ type: readme
 | `feature-coverage.yml` | Require a scenario for a behavior change, or a citation of the claims it preserves |
 | `i18n-translate.yml` | Prepare French application-catalogue changes only, and report each run that calls the provider to open `verify:translation-run` issues (ADR-0103) |
 | `issue-traceability.yml` | Daily and on push to `main`: keep one drift issue open while `docs/issue-traceability.md` misses an open issue or lists a closed one. Never gates a PR |
-| `traceability.yml` | Commit the regenerated `.spec/traceability.md` onto a same-repo PR's branch |
+| `traceability.yml` | Commit the regenerated `.spec/traceability.md`, `.spec/bindings.md`, and `.spec/README.md` onto a same-repo PR's branch |
 | `terraform.yml` | Validate Terraform on every pull request (credential-free); plan it against both AWS accounts on a same-repo pull request. Never applies. |
 | `release.yml` | **Release**, run by hand on `main`: create the next `YYYY.MM.DD-N` tag and a GitHub Release with notes generated from the pull requests merged since the last one (`.github/release.yml`), build the API image, the Worker image, and the web bundle once, and deploy them to `hpac-safety-staging` (issues #619, #621, ADR-0168). Never deploys to production (issue #466, ADR-0158, ADR-0166, CON-INF-011..013) |
 | `promote.yml` | Run by hand on a release tag: deploy that tag's already-built, staging-green artifacts to `hpac-safety-production` after `hpac-safety-admins` approves — the same artifacts, never a rebuild (issue #609, ADR-0166, CON-INF-012) |

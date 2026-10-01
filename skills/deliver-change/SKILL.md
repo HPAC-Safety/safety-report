@@ -165,6 +165,9 @@ stronger one:
   Moving a file rewrites every reference to it in the same commit.
 - The paths live in one module every tool imports; a test ties the copies in
   hooks and workflows, which cannot import it, to that module.
+- A generated map ties each claim to the step definitions that bind it. A
+  built claim with a step no definition matches fails CI; the specification
+  wins, so fix the definition, or the scenario only when it was wrong.
 
 ### Scenarios
 

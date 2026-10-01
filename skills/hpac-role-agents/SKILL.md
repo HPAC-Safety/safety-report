@@ -49,8 +49,8 @@ roles and why each trusts only the artifact before it:
 - Clarify with [`clarify-requirements`](../clarify-requirements/SKILL.md).
 - Claim IDs are `@REQ-<AREA>-<NNN>`, never reused or renumbered
   ([ADR-0084](../../.spec/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
-- Run `node tools/traceability.mjs` and `node tools/spec-index.mjs` before
-  finishing.
+- Run `node tools/traceability.mjs`, `node tools/bindings.mjs`, and
+  `node tools/spec-index.mjs` before finishing.
 
 ## test-writer
 
@@ -60,6 +60,10 @@ roles and why each trusts only the artifact before it:
   - `@ui` scenario: playwright-bdd, in `tests/e2e/steps`.
 - Conventions and fixtures:
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md).
+- Start from the claim's block in
+  [`.spec/bindings.md`](../../.spec/bindings.md): its unbound steps are the
+  definitions to write. Remove `@ignore` once the map lists the claim as stale
+  and the scenario passes.
 - Test code is C# or TypeScript.
 - Synthetic fixtures: people, locations, reports, attachments.
 - The required phrases in model output are the role phrases.
@@ -81,6 +85,8 @@ roles and why each trusts only the artifact before it:
   filenames, attachment URLs.
 - Conventions most often broken: `DateTime`, an assertion library other than
   Shouldly, a hand-edited generated file.
+- Before finishing, `node tools/bindings.mjs` exits 0: every built claim's
+  steps are bound.
 
 ## spec-reviewer
 
@@ -91,6 +97,10 @@ roles and why each trusts only the artifact before it:
   summary.
 - The exemption: `No .feature scenario needed:`
   ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+- `.spec/bindings.md` for the cited claims: each bound by the files the diff
+  touches; no new entry under "Unused step definitions" or "Stale @ignore" the
+  diff caused
+  ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
 
 ## database-administrator
 

@@ -179,3 +179,14 @@ No test fixture or specification
 may contain a real reporter's personal information.
 *Verified by: none — a rule about the tests themselves, enforced by the suites
 and the CI gates rather than by a scenario.*
+
+**CON-TQ-010** Every step of a built claim — a scenario not tagged `@ignore` —
+is bound to a step definition in its engine: Reqnroll for a claim without
+`@ui`, playwright-bdd for one with it. The specification is the authority, so a
+step no definition matches fails the required `docs` job, and the generated
+[step-bindings map](bindings.md) records which files bind each claim, the
+`@ignore` claims whose steps are already bound, and the step definitions no
+scenario uses
+([ADR-0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
+*Verified by: none — a rule about the specification and the tests together,
+enforced by `tools/bindings.mjs` rather than by a scenario.*

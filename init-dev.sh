@@ -276,8 +276,9 @@ done
 
 # ------------------------------------------------ generated-file merge driver --
 #
-# .spec/traceability.md and .spec/README.md are generated entirely from .spec/
-# (ADR-0084, ADR-0183). The matrix's format already lets git merge it: every
+# .spec/traceability.md, .spec/README.md, and .spec/bindings.md are generated
+# from .spec/ and the step definitions
+# (ADR-0084, ADR-0183, ADR-0184). The matrix's format already lets git merge it: every
 # line derives from one scenario or constraint, with no whole-tree totals, and
 # each item sits in its own block (ADR-0106), so two branches with correct
 # matrices merge into the correct matrix — on GitHub too, which never runs a

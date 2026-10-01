@@ -1,11 +1,11 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { CONSTRAINT_PAGES, build, main, readClaims, readConstraints, render } from '../../tools/traceability.mjs'
+import { mergeFile } from './helpers/merge-file.mjs'
 
 /** Runs `main` with console output captured, restoring it afterwards even on failure. */
 function runMain(root) {
@@ -154,15 +154,7 @@ const claim = (id, area, status = 'Covered') => ({ id, area, scenario: `Scenario
  * would meet: `git merge-file` exits 0 on a clean merge and with the count of
  * conflicts otherwise.
  */
-function mergeMatrices(base, ours, theirs) {
-	const dir = mkdtempSync(join(tmpdir(), 'traceability-merge-'))
-	const files = Object.entries({ base, ours, theirs }).map(([name, content]) => {
-		writeFileSync(join(dir, name), content)
-		return join(dir, name)
-	})
-	const result = spawnSync('git', ['merge-file', '-p', files[1], files[0], files[2]], { encoding: 'utf8' })
-	return { conflicts: result.status, merged: result.stdout }
-}
+const mergeMatrices = mergeFile
 
 describe('render', () => {
 	it('opens with frontmatter and says it is generated', () => {

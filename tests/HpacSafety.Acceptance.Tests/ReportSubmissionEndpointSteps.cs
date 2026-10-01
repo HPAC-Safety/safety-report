@@ -44,6 +44,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private static readonly SemaphoreSlim ConsentGate = new(1, 1);
 	private const string Secret = "Wind picked up on final approach — synthetic narrative for a test only.";
 
+	private readonly ScenarioContext _scenario;
 	private HttpClient? _reporter;
 	private HttpClient? _admin;
 	private HttpResponseMessage? _response;
@@ -63,7 +64,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _narrativeRevisionId;
 	private string? _answerId;
 	private string? _submittedReportId;
-	private string? _supersededRevisionId;
+	private object[]? _namedAnswers;
 	private string? _problem;
 	private string? _uploadId;
 	private string? _expiredUploadId;
@@ -75,6 +76,11 @@ public sealed class ReportSubmissionEndpointSteps
 	// same database in parallel, so "nothing was created" is asserted as "no
 	// stored answer carries this value", never as an unchanged report count.
 	private readonly string _marker = $"synthetic-{Guid.NewGuid():N}";
+
+	public ReportSubmissionEndpointSteps(ScenarioContext scenario)
+	{
+		_scenario = scenario;
+	}
 
 	// --- Background: documented facts about the endpoint, not actions. ---
 
@@ -288,17 +294,9 @@ public sealed class ReportSubmissionEndpointSteps
 			return;
 		}
 
-		if (_supersededRevisionId is not null)
+		if (_namedAnswers is not null)
 		{
-			_response = await Post(new
-			{
-				language = "en-CA",
-				answers = new object[]
-				{
-					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-					new { questionRevisionId = _supersededRevisionId, value = (string?)"an old answer" },
-				},
-			});
+			_response = await Post(new { language = "en-CA", answers = _namedAnswers });
 		}
 	}
 
@@ -670,36 +668,84 @@ public sealed class ReportSubmissionEndpointSteps
 		}
 	}
 
-	// --- A submission may answer a known superseded revision ---
+	// --- A submission naming a revision that is not current is refused ---
 
-	[Given(@"the browser's session began before an Administrator edited the form")]
-	public async Task GivenTheBrowsersSessionBeganBeforeAnEdit()
+	[Given(@"a submission carries an answer naming an unknown revision")]
+	public async Task GivenASubmissionNamesAnUnknownRevision()
+	{
+		await ReadyToNameRevisions();
+		_namedAnswers = [Answer(TinyId.New().Value)];
+	}
+
+	[Given(@"a submission carries an answer naming a deleted revision")]
+	public async Task GivenASubmissionNamesADeletedRevision()
+	{
+		await ReadyToNameRevisions();
+		_namedAnswers = [Answer(await DeletedRevisionId())];
+	}
+
+	[Given(@"a submission carries an answer naming a superseded revision of a live question")]
+	public async Task GivenASubmissionNamesASupersededRevision()
+	{
+		await ReadyToNameRevisions();
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
+		var created = await Create(key, "short_text", "Original wording");
+		var supersededRevisionId = created.GetProperty("revisionId").GetString()!;
+		await Revise(created.GetProperty("id").GetString()!, key, "short_text", "Reworded once");
+		_namedAnswers = [Answer(supersededRevisionId)];
+	}
+
+	[Given(@"a submission carries two answers naming the same revision")]
+	public async Task GivenASubmissionNamesOneRevisionTwice()
+	{
+		await ReadyToNameRevisions();
+		var revisionId = await CreateSyntheticQuestion("short_text");
+		_namedAnswers = [Answer(revisionId), Answer(revisionId)];
+	}
+
+	[Then(@"the API refuses the submission")]
+	public async Task ThenTheApiRefusesTheSubmission()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest, await _response.Content.ReadAsStringAsync());
+	}
+
+	[Then(@"nothing is stored")]
+	public async Task ThenNothingIsStored()
+	{
+		(await AnswerCarryingMarkerExists()).ShouldBeFalse();
+	}
+
+	// An answer's value is the scenario's marker, so "nothing is stored" can be
+	// asserted as "no stored answer carries it" (see _marker).
+	private object Answer(string revisionId)
+	{
+		return new { questionRevisionId = revisionId, value = (string?)_marker };
+	}
+
+	private async Task ReadyToNameRevisions()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
 	}
 
-	[Given(@"an answered revision is a known, non-deleted, superseded revision")]
-	public async Task GivenAnAnsweredRevisionIsAKnownSupersededRevision()
-	{
-		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
-		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
-		var created = await Create(key, "short_text", "Original wording");
-		var questionId = created.GetProperty("id").GetString()!;
-		_supersededRevisionId = created.GetProperty("revisionId").GetString();
-		await Revise(questionId, key, "short_text", "Reworded once");
-	}
+	// --- An answer naming a statement or a group is refused ---
 
-	[Then(@"the API validates the answer against that revision's historical type, options, and privacy")]
-	public void ThenTheApiValidatesAgainstHistoricalRevision()
+	[When(@"a submission carries an answer naming that question's revision")]
+	public async Task WhenASubmissionNamesTheQuestionsRevision()
 	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, "a known superseded revision must still be accepted");
-	}
-
-	[Then(@"does not require the submitted set to equal the latest form")]
-	public void ThenItDoesNotRequireTheSubmittedSetToEqualTheLatestForm()
-	{
-		// Asserted by the same response above.
+		var type = (string)_scenario["questionType"];
+		await ReadyToNameRevisions();
+		var revisionId = await CreateSyntheticQuestion(type);
+		_response = await Post(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
+				Answer(revisionId),
+			},
+		});
 	}
 
 	// --- Reporter-visible errors never echo submitted content ---

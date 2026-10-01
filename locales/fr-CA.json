@@ -201,7 +201,8 @@
       "no": "Non, recommencez",
       "tableCaption": "Vos réponses enregistrées",
       "questionHeader": "Question",
-      "answerHeader": "Réponse enregistrée"
+      "answerHeader": "Réponse enregistrée",
+      "cleared": "#The form changed since you saved this report, so some of your answers were cleared. Please answer those questions again."
     },
     "discard": {
       "open": "Rejeter le signalement",

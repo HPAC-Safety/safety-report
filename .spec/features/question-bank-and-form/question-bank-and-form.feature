@@ -367,7 +367,6 @@ Examples:
   | group     |
 
 @REQ-QB-045
-@ignore
 Scenario Outline: An answer naming a statement or a group is refused
   Given an Administrator authors a <type> question
   When a submission carries an answer naming that question's revision
@@ -1889,17 +1888,19 @@ Scenario: A media consent answer must be an explicit yes or no
   Then the API rejects the submission
 
 @REQ-QB-116
-Scenario Outline: A media consent answer covers documents only under the wording the form showed
+Scenario: A media consent answer covers documents when it answers the wording the form showed
   Given a submission answers yes to publication consent and attaches a document
-  And it answers yes to the consent_media question's <revision> revision
+  And it answers yes to the consent_media question's current revision
   When the API accepts the submission
   Then the report records media consent as yes
-  And the report records document consent as <documents>
+  And the report records document consent as yes
 
-Examples:
-  | revision                         | documents  |
-  | current                          | yes        |
-  | earlier, superseded              | unanswered |
+@REQ-QB-247
+Scenario: A media consent answer naming an earlier wording is refused, so no document is published on it
+  Given a submission answers yes to publication consent and attaches a document
+  And it answers yes to the consent_media question's earlier, superseded revision
+  When the reporter submits it
+  Then the API rejects the submission
 
 @REQ-QB-117
 Scenario: Media consent names documents and says they are published as uploaded

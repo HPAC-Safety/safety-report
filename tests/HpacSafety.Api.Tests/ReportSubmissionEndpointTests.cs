@@ -157,6 +157,70 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenASupersededRevisionOfALiveQuestion_WhenSubmitted_ThenRejectedAndTheCurrentRevisionAccepted()
+	{
+		// Given — an Administrator revises an unanswered question, so its first revision is no longer current
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var key = await CreateSyntheticQuestion(admin);
+		using var client = _factory.CreateClient();
+		var original = (await FlattenedPublicQuestions(client)).Single(candidate => candidate.GetProperty("key").GetString() == key);
+		var supersededRevisionId = original.GetProperty("revisionId").GetString()!;
+		var revision = new
+		{
+			key,
+			type = "short_text",
+			labelEn = "A reworded synthetic question",
+			labelFr = "Une question synthétique reformulée",
+			helpTextEn = (string?)null,
+			helpTextFr = (string?)null,
+			placeholderEn = (string?)null,
+			placeholderFr = (string?)null,
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+			dependsOnQuestionId = (string?)null,
+			dependsOnChoiceId = (string?)null,
+			groupedUnderQuestionId = (string?)null,
+			allowsReporterAdditions = false,
+			options = Array.Empty<object>(),
+		};
+		using var revised = await admin.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{original.GetProperty("id").GetString()}", UriKind.Relative), revision);
+		revised.StatusCode.ShouldBe(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync());
+		var currentRevisionId = await RevisionIdFor(key);
+		currentRevisionId.ShouldNotBe(supersededRevisionId);
+
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
+
+		// When — the same answer is submitted under each revision
+		using var supersededContent = ReportPart(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = (bool?)true },
+				new { questionRevisionId = supersededRevisionId, value = (string?)"an old answer" },
+			},
+		});
+		using var supersededResponse = await reporter.PostAsync(Submit, supersededContent);
+		using var currentContent = ReportPart(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = (bool?)true },
+				new { questionRevisionId = currentRevisionId, value = (string?)"a current answer" },
+			},
+		});
+		using var currentResponse = await reporter.PostAsync(Submit, currentContent);
+
+		// Then — only the current revision is accepted (ADR-0185)
+		supersededResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		currentResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted, await currentResponse.Content.ReadAsStringAsync());
+	}
+
+	[Fact]
 	public async Task GivenSkippedOptionalQuestion_WhenSubmitted_ThenAccepted()
 	{
 		// Given

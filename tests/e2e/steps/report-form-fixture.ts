@@ -404,3 +404,32 @@ export async function writeSavedDateTimeDraftToBrowser(page: Page, date: string,
 		[date, time] as const,
 	)
 }
+
+/**
+ * The default form after an Administrator revised "What happened?": the question
+ * now carries a new current revision, so the revision a saved report names for
+ * it is superseded (ADR-0185).
+ */
+export function revisedNarrativeFormQuestions(): StubQuestion[] {
+	return defaultFormQuestions().map((entry) =>
+		entry.key === "narrative" ? { ...entry, revisionId: "rev-narrative-revised" } : entry,
+	)
+}
+
+/** A saved, unexpired report whose only answers name revisions the current form does not have. */
+export async function writeOnlyStaleAnswersDraftToBrowser(page: Page) {
+	await page.addInitScript(() => {
+		if (sessionStorage.getItem("hpac.test.savedDraftWritten")) return
+		sessionStorage.setItem("hpac.test.savedDraftWritten", "1")
+		localStorage.setItem(
+			"hpac.report.draft",
+			JSON.stringify({
+				locale: "en-CA",
+				answers: { "rev-retired": { kind: "value", value: "An answer to a retired question." } },
+				attachments: {},
+				startedAtMs: Date.now() - 60 * 60 * 1000,
+				savedAtMs: Date.now() - 60 * 60 * 1000,
+			}),
+		)
+	})
+}

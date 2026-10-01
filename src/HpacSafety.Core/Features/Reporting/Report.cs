@@ -149,11 +149,9 @@ public class Report
 	}
 
 	/// <summary>
-	///     Records one answer against an exact revision — the current one, or a
-	///     known, non-deleted, superseded one a reporter's browser session spanned
-	///     an Administrator's edit across. Validation always runs against that exact
-	///     revision's historical type and privacy, and the question's live choices; a submission never has
-	///     to equal the latest form.
+	///     Records one answer against an exact revision. The submission endpoint
+	///     passes only a question's current revision (ADR-0185); validation runs
+	///     against that revision's type and privacy and the question's live choices.
 	/// </summary>
 	/// <param name="question">The question answered.</param>
 	/// <param name="revision">The exact revision answered.</param>

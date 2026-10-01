@@ -33,7 +33,7 @@ something a scenario can observe through the application.*
 
 **CON-DP-004** The physical model may combine stable question identity and revision data where
 constraints permit, but it must preserve these logical records.
-*Verified by: REQ-QB-019, REQ-QB-026, REQ-SUB-009, REQ-QB-122, REQ-QB-124,
+*Verified by: REQ-QB-019, REQ-QB-026, REQ-SUB-010, REQ-QB-122, REQ-QB-124,
 REQ-QB-131.*
 
 | Record | Essential fields and relationships |

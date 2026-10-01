@@ -23,7 +23,7 @@ import {
 	type ReportDraft,
 } from "./draft"
 import { QuestionField } from "./QuestionField"
-import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
+import { ResumeDraftDialog, clearedAnswerCount, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import { DEFAULT_PHONE_COUNTRY, toE164 } from "../lib/phoneNumber"
 import {
@@ -126,6 +126,9 @@ export function ReportForm() {
 	const [submit, setSubmit] = useState<SubmitState>({ status: "idle" })
 	const offeredDraft = useRef(false)
 	const [pendingDraft, setPendingDraft] = useState<ReportDraft | null>(null)
+	// True when a restore left saved answers out because their question revision
+	// is no longer current; one notice tells the reporter (ADR-0185).
+	const [clearedNotice, setClearedNotice] = useState(false)
 	const [confirmingDiscard, setConfirmingDiscard] = useState(false)
 	// True once the reporter has changed anything, so the draft is rewritten
 	// even when that change emptied it — a removed file must leave the draft
@@ -156,9 +159,11 @@ export function ReportForm() {
 		const { draft, expiredUploadIds } = readDraft()
 		deleteUploads(expiredUploadIds) // An expired report's files go with it (REQ-SUB-067).
 		if (!draft) return
-		if (savedAnswerRows(load.questions, draft.answers, draft.attachments ?? {}, locale, t).length === 0) {
+		const rows = savedAnswerRows(load.questions, draft.answers, draft.attachments ?? {}, locale, t)
+		if (rows.length === 0) {
 			deleteUploads(draftUploadIds(draft))
 			clearDraft() // Nothing on this form to continue.
+			setClearedNotice(clearedAnswerCount(draft.answers, draft.attachments ?? {}, rows) > 0)
 			return
 		}
 		setPendingDraft(draft)
@@ -268,6 +273,7 @@ export function ReportForm() {
 		// A saved child answer its saved parent's answer no longer allows is dropped (ADR-0146).
 		setAnswers(consistentAnswers(restored, questionsById))
 		setAttachments(restoredFiles)
+		setClearedNotice(clearedAnswerCount(draft.answers, draft.attachments ?? {}, pendingRows) > 0)
 		const savedStep = steps.find((step) =>
 			draft.stepKey ? step.question.key === draft.stepKey : step.question.revisionId === draft.stepRevisionId,
 		)
@@ -291,6 +297,7 @@ export function ReportForm() {
 		)
 		clearDraft()
 		edited.current = false
+		setClearedNotice(false)
 		setAnswers({})
 		setAttachments({})
 		setUploading({})
@@ -537,6 +544,15 @@ export function ReportForm() {
 					{t("report.privacy.localStorage")}
 				</p>
 			</div>
+
+			{clearedNotice && (
+				<p
+					data-testid="cleared-answers-notice"
+					className="mt-4 rounded border border-rule bg-surface-2 p-4 font-sans text-sm text-ink"
+				>
+					{t("report.resume.cleared")}
+				</p>
+			)}
 
 			{blocking.length > 0 && (
 				<div role="alert" className="mt-4 rounded border border-brand-700 bg-surface p-4">

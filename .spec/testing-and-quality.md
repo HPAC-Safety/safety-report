@@ -37,7 +37,7 @@ relies on API behavior, a server-side test covering that behavior
 
 **CON-TQ-004** These contracts are covered by test.
 *Verified by: REQ-QB-001, REQ-QB-009, REQ-QB-016, REQ-SUB-078, REQ-SUB-005,
-REQ-SUB-009, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018.*
+REQ-SUB-010, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018, REQ-SUB-124, REQ-SUB-125.*
 
 - every display-affecting edit to an unanswered question creates a complete
   immutable revision, an edit to an answered one forks it (ADR-0071), and an
@@ -54,8 +54,10 @@ REQ-SUB-009, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018.*
   required only when its revision says so (ADR-0061);
 - skips are persisted for all shown answer-producing revisions, and each upload
   ID a submission names maps exactly once to its file-upload answer;
-- known superseded revisions are accepted, while unknown/deleted revisions and
-  invalid historical options are rejected;
+- a submission names only current revisions: unknown, deleted, and superseded
+  revisions are rejected, and so are invalid options; the browser drops a saved
+  answer to a non-current revision when it restores a saved report, and says so
+  once (ADR-0185);
 - bearer-token validation, trusted-IP extraction, throttling, attachment
   count and size bounds, and safe localized errors fail closed; and
 - report, answers, files, and all outbox work commit or roll back together.

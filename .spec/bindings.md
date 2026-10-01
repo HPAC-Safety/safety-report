@@ -3227,14 +3227,7 @@ definition matches; a built claim may never have one.
 
 ### REQ-WLD-022
 
-- Unbound: `Given a visitor's stored theme preference is dark and their language is en-CA`
-- Unbound: `When they open the report form`
-- Unbound: `Then an accessibility scan reports no color-contrast violation`
-- Unbound: `Then the focused control shows a visible focus indicator`
-- Unbound: `Given a visitor's stored theme preference is dark and their language is fr-CA`
-- Unbound: `When they open the report form showing its errors`
-- Unbound: `When they open the public feed`
-- Unbound: `When they open the admin review queue`
+- [dark-mode.steps.ts](../tests/e2e/steps/dark-mode.steps.ts)
 
 ### REQ-WLD-023
 

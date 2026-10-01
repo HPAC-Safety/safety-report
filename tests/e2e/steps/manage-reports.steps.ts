@@ -155,7 +155,7 @@ interface ListStub {
 
 const listStubs = new WeakMap<Page, ListStub>()
 
-async function stubReports(page: Page) {
+export async function stubReports(page: Page) {
 	const stub: ListStub = { rows: ROWS.map((row) => ({ ...row })), stale: new Set(), sent: [] }
 	listStubs.set(page, stub)
 

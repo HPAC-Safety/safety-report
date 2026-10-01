@@ -94,3 +94,12 @@ in `docs/design-system.md` so a designer can replace them without archaeology.
   demonstrate the flip.
 - The derived neutrals are provisional. Replacing them is an edit to two blocks
   in `src/web/styles/tailwind.css` and changes nothing else.
+
+## Amendment (2026-09-30)
+
+Brand red set as text (`text-brand-700`: links, the active navigation link, and
+field error text) is accepted below 4.5:1 against the dark surfaces — 3.75:1 on
+`#1a1a1a` — by owner decision, issue #724. Brand values still never change per
+theme: no lighter red is introduced for dark mode. The dark-mode claim
+(`REQ-WLD-022`) therefore scans for color-contrast violations with brand-red
+text exempted, and nothing else.

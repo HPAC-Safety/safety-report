@@ -58,7 +58,7 @@ const HIDDEN_ID = "hiddenaaaaa"
 /** The one search term this stub recognizes; only FIRST's summary contains it. */
 const SEARCH_TERM = "crosswind"
 
-async function stubFeed(page: Page) {
+export async function stubFeed(page: Page) {
 	await page.route(/\/api\/v1\/public\/reports\/?(\?.*)?$/, async (route) => {
 		const url = new URL(route.request().url())
 		const q = url.searchParams.get("q")

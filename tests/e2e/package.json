@@ -7,6 +7,7 @@
 		"test": "bddgen && playwright test"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.13.0",
 		"@playwright/test": "1.63.0",
 		"playwright-bdd": "^9.2.1"
 	}

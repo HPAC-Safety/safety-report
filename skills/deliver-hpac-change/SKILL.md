@@ -66,8 +66,10 @@ Everything the specification chain reads lives in `.spec/`
 - `.spec/features/<area>/` — the area's `.feature` file and its `README.md`;
 - the five constraint pages, `.spec/*.md`, listed in `tools/spec-paths.mjs`;
 - `.spec/decisions/` and `.spec/lessons/`;
-- two generated files, never edited by hand:
+- three generated files, never edited by hand:
   - `.spec/traceability.md` — `node tools/traceability.mjs`;
+  - `.spec/bindings.md`, the step-definition files that bind each claim —
+    `node tools/bindings.mjs` ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md));
   - `.spec/README.md`, the index of every area, constraint page, decision, and
     lesson — `node tools/spec-index.mjs`.
 
@@ -78,10 +80,20 @@ Rules:
 - A new path the tools read is added to `tools/spec-paths.mjs`, not written
   into a tool; `tests/js/spec-paths.test.mjs` ties the hooks and workflows to
   it.
-- Both generated files regenerate in post-merge and post-rewrite, in
-  `traceability.yml` on a same-repo pull request, and in `tools/ci-local.sh`.
-  The `docs` job fails either one stale. A stale `.spec/README.md` in
-  pre-commit: run `node tools/spec-index.mjs` and stage it.
+- All three regenerate in post-merge and post-rewrite, in `traceability.yml`
+  on a same-repo pull request (also when only a step file changed), and in
+  `tools/ci-local.sh`. The `docs` job fails any one stale. A stale
+  `.spec/README.md` in pre-commit: run `node tools/spec-index.mjs` and stage it.
+- `node tools/bindings.mjs` fails a built claim (not `@ignore`) with a step no
+  step definition in its engine matches. The specification wins: fix the step
+  definition, or the scenario only when it said the wrong thing. Stale
+  `@ignore` claims, ambiguous steps, and unused step definitions are listed in
+  `.spec/bindings.md`, not failed.
+- The tool reads only the step-definition forms in use: `[Given(@"…")]` on one
+  line in a `[Binding]` class scoped, if at all, by `[Scope(Feature = "…")]`;
+  `Given("…")` or `Given(/…/)` from `createBdd()`; Cucumber parameters
+  `{string}`, `{word}`, `{int}`, `{}`. Anything else fails it by name — teach
+  the tool first.
 - `node tools/check-links.mjs` fails a relative link or `#anchor` that does not
   resolve: pre-commit checks staged markdown, and the whole tree when a file is
   deleted or renamed; `docs` checks everything. Fix the link — never move a

@@ -20,7 +20,8 @@ paths in [ADR-0083](ADR-0083-specification-driven-development.md),
 [ADR-0090](ADR-0090-an-exemption-cites-the-claims-it-preserves.md),
 [ADR-0091](ADR-0091-an-adr-number-is-verified-not-assumed.md),
 [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md), and
-[ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md).
+[ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md). Amended by
+[ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 
 ## Context
 
@@ -161,3 +162,7 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md)
 - [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)
 - [ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md)
+
+## Amendment (2026-09-30, ADR-0184)
+
+`tools/spec-paths.mjs` also exports `BINDINGS` (`.spec/bindings.md`) and the two step-definition roots, `REQNROLL_STEPS` and `PLAYWRIGHT_STEPS`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

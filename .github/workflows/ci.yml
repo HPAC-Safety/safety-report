@@ -350,6 +350,21 @@ jobs:
             exit 1
           fi
 
+      # Every built claim's steps are bound to a step definition in its engine,
+      # and the committed map of which files bind which claim is current. The
+      # specification is the authority: a step no definition matches fails
+      # here; unused definitions and stale @ignore claims are listed in the map.
+      # traceability.yml commits the map onto a same-repo PR. ADR-0184.
+      - name: Every built claim's steps are bound
+        run: |
+          set -euo pipefail
+          node tools/bindings.mjs
+          if ! git diff --exit-code --stat -- .spec/bindings.md; then
+            echo "::error file=.spec/bindings.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/bindings.mjs' and commit the result."
+            git diff -- .spec/bindings.md
+            exit 1
+          fi
+
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this
     # merges and gates the reports it handed over (#694). Depends on e2e (not

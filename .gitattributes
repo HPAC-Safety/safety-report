@@ -3,6 +3,7 @@
 # driver, which is clone-local config (ADR-0106, ADR-0183).
 .spec/traceability.md merge=ours
 .spec/README.md merge=ours
+.spec/bindings.md merge=ours
 
 # graphify's union merge driver for its graph; `graphify install` registers it
 # and leaves this line alone when it is already here.

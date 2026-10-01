@@ -39,6 +39,9 @@ on:
       - tools/traceability.mjs
       - tools/spec-index.mjs
       - tools/spec-paths.mjs
+      - tools/bindings.mjs
+      - tests/HpacSafety.Acceptance.Tests/**
+      - tests/e2e/steps/**
       - .github/workflows/traceability.yml
 
 permissions:
@@ -53,6 +56,9 @@ jobs:
   regenerate:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    # The step-bindings map compiles patterns read from the pull request's own
+    # files; a pathological one stops here instead of holding a runner.
+    timeout-minutes: 5
     steps:
       # The base branch: the trusted generator, and the pinned Node major.
       - uses: actions/checkout@v7
@@ -90,9 +96,9 @@ jobs:
         id: regenerate
         run: |
           set -euo pipefail
-          for tool in traceability.mjs spec-index.mjs spec-paths.mjs; do
+          for tool in traceability.mjs spec-index.mjs spec-paths.mjs bindings.mjs; do
             if ! cmp -s "base/tools/$tool" "head/tools/$tool"; then
-              echo "::notice::This pull request changes tools/$tool, so the base generators can't render its output. Regenerate locally with 'node tools/traceability.mjs && node tools/spec-index.mjs'; ci.yml checks the result."
+              echo "::notice::This pull request changes tools/$tool, so the base generators can't render its output. Regenerate locally with 'node tools/traceability.mjs && node tools/bindings.mjs && node tools/spec-index.mjs'; ci.yml checks the result."
               echo "changed=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
@@ -100,7 +106,10 @@ jobs:
           cd head
           node ../base/tools/traceability.mjs
           node ../base/tools/spec-index.mjs
-          if git diff --quiet -- .spec/traceability.md .spec/README.md; then
+          # Step files are read as text and their patterns compiled; nothing
+          # in them runs. --no-fail: ci.yml's docs job is the gate (ADR-0184).
+          node ../base/tools/bindings.mjs --no-fail
+          if git diff --quiet -- .spec/traceability.md .spec/README.md .spec/bindings.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -133,8 +142,8 @@ jobs:
           git remote set-url origin \
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          git add .spec/traceability.md .spec/README.md
-          git commit -m 'Regenerate the traceability matrix and specification index'
+          git add .spec/traceability.md .spec/README.md .spec/bindings.md
+          git commit -m 'Regenerate the traceability matrix, step bindings, and specification index'
 
           # --paths is this workflow's pull_request_target paths, verbatim;
           # tests/js/push-to-pr-branch.test.mjs fails if they disagree. The
@@ -142,4 +151,4 @@ jobs:
           node ../base/tools/push-to-pr-branch.mjs \
             --branch "$HEAD_REF" \
             --event-sha "$HEAD_SHA" \
-            --paths '.spec/**,tools/traceability.mjs,tools/spec-index.mjs,tools/spec-paths.mjs,.github/workflows/traceability.yml'
+            --paths '.spec/**,tools/traceability.mjs,tools/spec-index.mjs,tools/spec-paths.mjs,tools/bindings.mjs,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'

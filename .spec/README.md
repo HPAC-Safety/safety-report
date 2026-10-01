@@ -12,7 +12,8 @@ type: readme
 
 The authority rules, the product contract, and the simplicity guardrails are
 in [`features/README.md`](features/README.md). Every claim and constraint, with
-what verifies it, is in [`traceability.md`](traceability.md).
+what verifies it, is in [`traceability.md`](traceability.md); the step definitions
+that bind each claim, in [`bindings.md`](bindings.md).
 
 ## Feature areas
 
@@ -41,7 +42,7 @@ Each normative constraint carries a `CON-*` ID naming the claims that verify it.
 | [Data and persistence](data-and-persistence.md) | `CON-DP` | 16 | The canonical target records, naming, transactions, constraints, and query DTOs. |
 | [Interfaces and data flow](interfaces-and-data-flow.md) | `CON-IF` | 10 | The canonical HTTP surface, ports, and end-to-end flow of a report through the system. |
 | [Infrastructure and operations](infrastructure-and-operations.md) | `CON-INF` | 19 | The canonical minimal AWS topology, deployment, secrets, backups, and alerting. |
-| [Testing and quality](testing-and-quality.md) | `CON-TQ` | 9 | The canonical test strategy, required contract coverage, and quality gates. |
+| [Testing and quality](testing-and-quality.md) | `CON-TQ` | 10 | The canonical test strategy, required contract coverage, and quality gates. |
 
 ## Decisions
 
@@ -50,6 +51,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md) | A generated map binds every claim to its step definitions | accepted | 2026-09-30 |
 | [0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md) | The specification lives in a .spec directory | accepted | 2026-09-30 |
 | [0182](decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md) | A role agent declares its model and effort | accepted | 2026-09-30 |
 | [0181](decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md) | A one-time migration trims label colons in place | accepted | 2026-09-30 |

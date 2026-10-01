@@ -3200,3 +3200,7 @@ testing-and-quality.md — verified by none — a rule about the tests themselve
 ### CON-TQ-009
 
 testing-and-quality.md — verified by none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario
+
+### CON-TQ-010
+
+testing-and-quality.md — verified by none — a rule about the specification and the tests together, enforced by `tools/bindings.mjs` rather than by a scenario

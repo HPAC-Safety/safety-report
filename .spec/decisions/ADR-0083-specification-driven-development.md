@@ -11,7 +11,8 @@ keywords: specification-driven development, SDD, Gherkin, agents, artifact chain
 # ADR-0083 — Specification-driven development is how this repository works
 
 **Status:** Accepted. Paths amended by
-[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
+[ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 
 **Amended 2026-09-29 (#687):** an ADR records a real decision, meaning a new
 rule, a reversed rule, a privacy or data boundary, or an architecture choice.
@@ -126,3 +127,7 @@ roles that consume the chain are decided in
 ## Amendment (2026-09-30)
 
 The chain's files moved into `.spec/`: scenarios to `.spec/features/<area>/<area>.feature`, supporting detail to `.spec/features/<area>/README.md` and the constraint pages in `.spec/`. A page lives in `.spec/` when the chain reads it; `docs/` keeps guides. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
+
+## Amendment (2026-09-30, ADR-0184)
+
+The chain is now checked from the specification down: `tools/bindings.mjs` resolves every scenario step to the step definition that binds it, fails a built claim with an unbound step, and writes the map to `.spec/bindings.md`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

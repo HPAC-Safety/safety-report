@@ -27,7 +27,8 @@ requests now merge through a merge queue. Decision 4's guarantee holds on the
 queue's merged tree, where `docs` must pass, instead of on a branch the author
 updates by hand. The rejected "merge queue on its own" is adopted alongside
 this workflow, not in place of it. Paths amended by
-[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
+[ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 
 ## Context
 
@@ -137,3 +138,7 @@ A person should never open a pull request to regenerate a generated file.
 ## Amendment (2026-09-30)
 
 `traceability.yml` is triggered by any change under `.spec/` and regenerates both `.spec/traceability.md` and `.spec/README.md`, committing them in one bot commit. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
+
+## Amendment (2026-09-30, ADR-0184)
+
+`traceability.yml` also regenerates `.spec/bindings.md`, with `--no-fail`, and is triggered by a change to a step-definition file; the required `docs` job remains the gate. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

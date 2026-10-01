@@ -16,7 +16,8 @@ regenerates the matrix onto a same-repo pull request, and a branch must be up
 to date to merge. Amended by
 [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md):
 the matrix carries no totals and one block per item, so git can merge it. Paths amended by
-[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
+[ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 
 ## Context
 
@@ -113,3 +114,7 @@ Tags are inert to both runners: Reqnroll turns a tag into an xUnit trait and
 ## Amendment (2026-09-30)
 
 The matrix is `.spec/traceability.md`, and the canonical constraint pages are the five `.spec/*.md` pages listed in `tools/spec-paths.mjs`. A generated `.spec/README.md` indexes the areas, constraint pages, decisions, and lessons beside it. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
+
+## Amendment (2026-09-30, ADR-0184)
+
+The generated specification files are three: the matrix, the index (`.spec/README.md`), and the step-bindings map (`.spec/bindings.md`), which lists the step-definition files that bind each claim. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

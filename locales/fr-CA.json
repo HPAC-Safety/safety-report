@@ -202,7 +202,7 @@
       "tableCaption": "Vos réponses enregistrées",
       "questionHeader": "Question",
       "answerHeader": "Réponse enregistrée",
-      "cleared": "#The form changed since you saved this report, so some of your answers were cleared. Please answer those questions again."
+      "cleared": "Le formulaire a changé depuis que vous avez enregistré ce signalement, certaines de vos réponses ont donc été effacées. Veuillez répondre à nouveau à ces questions."
     },
     "discard": {
       "open": "Rejeter le signalement",

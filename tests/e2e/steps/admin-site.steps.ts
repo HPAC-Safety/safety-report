@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import { createBdd } from "playwright-bdd"
 import { expect, type Download, type Page } from "@playwright/test"
 
@@ -88,7 +90,28 @@ function answer(partial: Pick<StubAnswer, "questionKey" | "labelEn" | "labelFr" 
 
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true })
 
-Given("a reviewer opens a report in the admin site", async ({ page }) => {
+const LOCALES: Record<string, string> = { English: "en-CA", French: "fr-CA" }
+
+// The catalogue the interface reads, so no French is written here: CI fills
+// fr-CA.json, and its current value is what the reviewer sees.
+function catalogueText(locale: string, key: string, values: Record<string, string> = {}): string {
+	const entries = JSON.parse(readFileSync(new URL(`../../../locales/${locale}.json`, import.meta.url), "utf8")) as Record<string, unknown>
+	// en-CA.json is flat; fr-CA.json nests on the dots. Either shape resolves.
+	const text = typeof entries[key] === "string"
+		? (entries[key] as string)
+		: (key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], entries) as string)
+	expect(typeof text, `catalogue key ${key} in ${locale}`).toBe("string")
+	return text.replace(/\{(\w+)\}/g, (_, name: string) => values[name] ?? "")
+}
+
+const reviewerLocale = new WeakMap<Page, string>()
+const reviewerText = (page: Page, key: string, values?: Record<string, string>) => catalogueText(reviewerLocale.get(page)!, key, values)
+
+Given(/^a reviewer whose language is (English|French) opens a report in the admin site$/, async ({ page, context }, language: string) => {
+	const locale = LOCALES[language]
+	reviewerLocale.set(page, locale)
+	await context.addInitScript((chosen) => localStorage.setItem("hpac.locale", chosen), locale)
+
 	const report = {
 		...reportDetail([
 			answer({ questionKey: "pilot_name", labelEn: "Pilot name", labelFr: "Nom du pilote", isPrivate: true, value: PILOT_NAME }),
@@ -100,18 +123,19 @@ Given("a reviewer opens a report in the admin site", async ({ page }) => {
 	}
 	await stubReportDetail(page, report)
 	await openReport(page)
+	await expect(page.locator("html")).toHaveAttribute("lang", locale)
 })
 
 Then("private answers, ordinary answers, and the summary pair each sit in their own labeled section", async ({ page }) => {
-	const priv = region(page, "Private answers")
+	const priv = region(page, reviewerText(page, "reports.detail.privateAnswers"))
 	await expect(priv.locator('[data-question-key="pilot_name"]')).toContainText(PILOT_NAME)
 	await expect(priv.locator('[data-question-key="narrative"]')).toHaveCount(0)
 
-	const ordinary = region(page, "Answers")
+	const ordinary = region(page, reviewerText(page, "reports.detail.answers"))
 	await expect(ordinary.locator('[data-question-key="narrative"]')).toContainText(NARRATIVE)
 	await expect(ordinary.locator('[data-question-key="pilot_name"]')).toHaveCount(0)
 
-	const summary = region(page, "Summary")
+	const summary = region(page, reviewerText(page, "reports.detail.summary"))
 	await expect(summary.locator('[data-summary="en"]')).toBeVisible()
 	await expect(summary.locator('[data-summary="fr"]')).toBeVisible()
 	await expect(summary.locator("[data-question-key]")).toHaveCount(0)
@@ -120,19 +144,22 @@ Then("private answers, ordinary answers, and the summary pair each sit in their 
 Then("each private answer is marked private in the reviewer's language", async ({ page }) => {
 	const marks = page.locator("[data-private-answer]")
 	await expect(marks).toHaveCount(1)
-	await expect(marks).toHaveText("Private")
-	await expect(region(page, "Private answers").locator('[data-question-key="pilot_name"] [data-private-answer]')).toHaveCount(1)
-	await expect(region(page, "Answers").locator("[data-private-answer]")).toHaveCount(0)
+	await expect(marks).toHaveText(reviewerText(page, "reports.detail.private"))
+	await expect(region(page, reviewerText(page, "reports.detail.privateAnswers")).locator('[data-question-key="pilot_name"] [data-private-answer]')).toHaveCount(1)
+	await expect(region(page, reviewerText(page, "reports.detail.answers")).locator("[data-private-answer]")).toHaveCount(0)
 })
 
 Then("processing failures and the approval state are shown apart from the report's content", async ({ page }) => {
-	const status = region(page, "Processing and approval")
-	await expect(status).toContainText(`Summarization failed: ${FAILURE}`)
-	await expect(status).toContainText("Not approved yet.")
+	const failed = reviewerText(page, "reports.detail.summaryFailed", { error: FAILURE })
+	const notApproved = reviewerText(page, "reports.detail.notApproved")
 
-	for (const content of ["Private answers", "Answers", "Summary"]) {
-		await expect(region(page, content)).not.toContainText("Summarization failed")
-		await expect(region(page, content)).not.toContainText("Not approved yet.")
+	const status = region(page, reviewerText(page, "reports.detail.status"))
+	await expect(status).toContainText(failed)
+	await expect(status).toContainText(notApproved)
+
+	for (const key of ["reports.detail.privateAnswers", "reports.detail.answers", "reports.detail.summary"]) {
+		await expect(region(page, reviewerText(page, key))).not.toContainText(failed)
+		await expect(region(page, reviewerText(page, key))).not.toContainText(notApproved)
 	}
 })
 

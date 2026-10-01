@@ -350,11 +350,16 @@ Scenario: The interface language alone decides which summary text is shown
 
 @REQ-WLD-020
 @ui
-Scenario: A report's private context, its content, and its summary are visibly distinct
-  Given a reviewer opens a report in the admin site
+Scenario Outline: A report's private context, its content, and its summary are visibly distinct
+  Given a reviewer whose language is <language> opens a report in the admin site
   Then private answers, ordinary answers, and the summary pair each sit in their own labeled section
   And each private answer is marked private in the reviewer's language
   And processing failures and the approval state are shown apart from the report's content
+
+Examples:
+  | language |
+  | English  |
+  | French   |
 
 @REQ-WLD-048
 @ui

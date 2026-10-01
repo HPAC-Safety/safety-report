@@ -171,10 +171,43 @@ describe('checkFile', () => {
 	})
 
 	it('refuses to let a repository key leak into a file a third-party loader parses', () => {
-		const problems = checkFile('agents/spec-reviewer.md', '---\nname: spec-reviewer\ndescription: B\ntype: agent\n---\n')
+		const problems = checkFile('agents/spec-reviewer.md', '---\nname: spec-reviewer\ndescription: B\nmodel: opus\neffort: high\ntype: agent\n---\n')
 
 		assert.equal(problems.length, 1)
 		assert.match(problems[0], /does not carry "type"/)
+	})
+
+	const agent = (extra) => `---\nname: implementer\ndescription: B\n${extra}---\n`
+
+	it('accepts an agent that declares its model and effort', () => {
+		assert.deepEqual(checkFile('agents/implementer.md', agent('model: sonnet\neffort: medium\n')), [])
+		assert.deepEqual(checkFile('agents/implementer.md', agent('model: claude-opus-5-5\neffort: 8000\n')), [])
+	})
+
+	it('requires an agent to declare its model and effort', () => {
+		const problems = checkFile('agents/implementer.md', agent('effort: medium\n'))
+
+		assert.equal(problems.length, 1)
+		assert.match(problems[0], /missing "model"/)
+	})
+
+	it('accepts the optional keys Claude Code reads on an agent', () => {
+		assert.deepEqual(checkFile('agents/implementer.md', agent('model: sonnet\neffort: medium\ntools: Read, Grep\nmaxTurns: 20\n')), [])
+	})
+
+	it('refuses an agent key Claude Code does not read', () => {
+		const problems = checkFile('agents/implementer.md', agent('model: sonnet\neffort: medium\ncolour: blue\n'))
+
+		assert.equal(problems.length, 1)
+		assert.match(problems[0], /"colour" is not a key an agent carries/)
+	})
+
+	it('refuses a model or effort its loader would reject', () => {
+		const problems = checkFile('agents/implementer.md', agent('model: gpt-5\neffort: silly\n'))
+
+		assert.equal(problems.length, 2)
+		assert.match(problems[0], /"model: gpt-5"/)
+		assert.match(problems[1], /"effort: silly"/)
 	})
 })
 

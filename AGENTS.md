@@ -123,6 +123,9 @@ contributor who never invokes one is unaffected.
 - The six agents are generic. This repository's paths, tags, commands, and
   privacy boundaries for each are in
   [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).
+- Each declares its model and effort in frontmatter; the assignment and its
+  reason are in `hpac-role-agents`
+  ([ADR-0182](docs/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
 
 ### Lessons
 

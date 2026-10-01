@@ -115,8 +115,13 @@ names and step numbers.
   and `type` — one of `adr`, `spec`, `guide`, `readme`, `lesson`,
   `instructions`, `template` — plus the keys that type adds
   ([ADR-0087](../../docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
-- A `skills/*/SKILL.md` or `agents/*.md` carries exactly `name` and
-  `description` instead; its type comes from its path.
+- A `skills/*/SKILL.md` carries exactly `name` and `description` instead; its
+  type comes from its path.
+- An `agents/*.md` carries `name`, `description`, `model`, and `effort`, and
+  may carry the other keys Claude Code reads on an agent: `tools`,
+  `disallowedTools`, `permissionMode`, `maxTurns`, `skills`, `memory`,
+  `isolation`, `background`. Nothing else
+  ([ADR-0182](../../docs/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
 - The Worker's runtime prompts are exempt; their bytes are the model payload.
 - `node tools/check-frontmatter.mjs` is the authority; the pre-commit hook runs
   it over staged markdown.

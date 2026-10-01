@@ -15,7 +15,9 @@ keywords: agents, skillfile, roles, spec author, test writer, implementer, revie
 adds a fifth role outside the specification chain. Extended by
 [ADR-0131](ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md),
 which makes the role agents generic and moves this repository's specifics into
-the `hpac-role-agents` skill.
+the `hpac-role-agents` skill. Amended by
+[ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md): an agent
+also declares its `model` and `effort`.
 
 ## Context
 
@@ -98,3 +100,10 @@ role is a way of holding a change to one job at a time.
 - [ADR-0037](ADR-0037-progressive-agent-instructions.md)
 - [ADR-0083](ADR-0083-specification-driven-development.md)
 - [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
+
+## Amendment (2026-09-30)
+
+An agent's frontmatter is no longer only `name` and `description`: it also
+declares `model` and `effort`, and may carry the other keys Claude Code reads
+on an agent
+([ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md)).

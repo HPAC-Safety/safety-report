@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
@@ -89,7 +89,55 @@ describe('render', () => {
 	})
 })
 
+describe('render, at the edges', () => {
+	it('falls back to the directory name for an area with no README and no scenarios yet', () => {
+		const root = specification()
+		mkdirSync(join(root, '.spec/features/new-area'), { recursive: true })
+		writeFileSync(join(root, '.spec/features/new-area/new-area.feature'), 'Feature: New\n')
+
+		const index = render(collect(root))
+
+		assert.match(index, /\| \[new-area\]\(features\/new-area\/new-area\.feature\) \| `` \| 0 \| 0 \| 0 \| — \|/)
+	})
+
+	it('falls back to the path for a constraint page with no title and no constraints yet', () => {
+		const root = specification()
+		writeFileSync(join(root, CONSTRAINT_PAGES[1]), '# Untitled\n')
+
+		const page = CONSTRAINT_PAGES[1]
+
+		assert.ok(render(collect(root)).includes(`| [${page}](${page.replace('.spec/', '')}) | \`\` | 0 |  |`))
+	})
+
+	it('shows an issue that is not a number as written', () => {
+		const root = specification()
+		writeFileSync(join(root, '.spec/lessons/0003-no-issue.md'), lesson('No issue', '## Scenario\n\nNone.\n').replace('issue: 704', 'issue: none'))
+
+		assert.match(render(collect(root)), /\[0003\]\(lessons\/0003-no-issue\.md\) \| No issue \| .* \| none \| none \|/)
+	})
+})
+
 describe('main', () => {
+	it('fails --check when the index has never been generated', () => {
+		const root = specification()
+		rmSync(join(root, SPEC_INDEX), { force: true })
+
+		assert.equal(runMain(root, { check: true }).code, 1)
+	})
+
+	it('adds the totals to the job summary when one is set', () => {
+		const root = specification()
+		const summary = join(root, 'summary.md')
+		process.env.GITHUB_STEP_SUMMARY = summary
+		try {
+			runMain(root)
+		} finally {
+			delete process.env.GITHUB_STEP_SUMMARY
+		}
+
+		assert.match(readFileSync(summary, 'utf8'), /\*\*Specification:\*\* 2 areas \(3 scenarios\)/)
+	})
+
 	it('writes the index, then passes --check', () => {
 		const root = specification()
 

@@ -32,7 +32,7 @@ export function frontmatter(text) {
 }
 
 /** A value made safe for one table cell. */
-const cell = (text) => String(text ?? '').replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()
+const cell = (text = '') => String(text).replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()
 
 /** Where `path` (under the specification root) is linked from the index. */
 const link = (path) => posix.relative(SPEC_ROOT, path)
@@ -63,13 +63,14 @@ function areas(root) {
 			const feature = `${FEATURES}/${name}/${name}.feature`
 			const readme = `${FEATURES}/${name}/README.md`
 			const { claims } = readClaims(feature, readFileSync(join(root, feature), 'utf8'))
-			const meta = existsSync(join(root, readme)) ? frontmatter(readFileSync(join(root, readme), 'utf8')) : {}
+			const hasReadme = existsSync(join(root, readme))
+			const meta = hasReadme ? frontmatter(readFileSync(join(root, readme), 'utf8')) : {}
 			return {
 				name,
 				title: meta.title || name,
-				description: meta.description ?? '',
+				description: meta.description,
 				feature,
-				readme: existsSync(join(root, readme)) ? readme : null,
+				readme: hasReadme ? readme : null,
 				scenarios: claims.length,
 				planned: claims.filter((claim) => claim.status === 'Planned').length,
 				browser: claims.filter((claim) => claim.engine === 'playwright-bdd').length,
@@ -86,7 +87,7 @@ function constraintPages(root) {
 		return {
 			page,
 			title: meta.title || page,
-			description: meta.description ?? '',
+			description: meta.description,
 			count: constraints.length,
 			prefix: constraints[0]?.id.replace(/-\d{3}$/, '') ?? '',
 		}

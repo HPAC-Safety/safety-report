@@ -40,6 +40,10 @@ describe('resolve', () => {
 	it('refuses a link that climbs out of the repository', () => {
 		assert.equal(resolve('a.md', '../outside.md'), null)
 	})
+
+	it('checks a malformed percent escape as written', () => {
+		assert.equal(resolve('docs/a.md', 'b%E0%A4%A.md'), 'docs/b%E0%A4%A.md')
+	})
 })
 
 describe('checkText', () => {
@@ -58,6 +62,12 @@ describe('checkText', () => {
 		assert.deepEqual(problems.map((problem) => problem.line), [2, 3])
 		assert.match(problems[0].message, /docs\/gone.md is not a tracked file/)
 		assert.match(problems[1].message, /#nowhere names no heading/)
+	})
+
+	it('reports a link that climbs out of the repository', () => {
+		const problems = checkText('README.md', '[up](../elsewhere/README.md)', lookup, read)
+
+		assert.match(problems[0].message, /climbs out of the repository/)
 	})
 
 	it('checks a bare anchor against the file itself', () => {

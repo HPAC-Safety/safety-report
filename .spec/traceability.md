@@ -256,11 +256,7 @@ Raw reports are retained until explicit deletion — *Reqnroll, Covered*
 
 ### REQ-DOM-011
 
-Soft-deleted and private data remain under managed retention — *Reqnroll, Planned*
-
-### REQ-DOM-012
-
-Unreferenced quarantine objects expire without affecting reports — *Reqnroll, Planned*
+Soft-deleting a report keeps its row and its stored files — *Reqnroll, Planned*
 
 ### REQ-DOM-013
 
@@ -668,15 +664,15 @@ Every operation is authorized by the API, not just the UI — *Reqnroll, Covered
 
 ### REQ-MOD-025
 
-User capabilities — *Reqnroll, Planned*
+A User may only submit a report — *Reqnroll, Planned*
 
 ### REQ-MOD-026
 
-SafetyOfficer capabilities — *Reqnroll, Planned*
+A SafetyOfficer reviews and publishes but does not author questions — *Reqnroll, Planned*
 
 ### REQ-MOD-027
 
-Administrator capabilities include everything SafetyOfficer has — *Reqnroll, Planned*
+An Administrator has every SafetyOfficer capability and authors questions — *Reqnroll, Planned*
 
 ### REQ-MOD-028
 
@@ -717,14 +713,6 @@ The public feed lists only publishable reports, newest submitted first — *Reqn
 ### REQ-MOD-038
 
 An unknown or non-public report id returns 404 — *Reqnroll, Covered*
-
-### REQ-MOD-039
-
-There is no publication channel besides the HPAC public feed — *Reqnroll, Planned*
-
-### REQ-MOD-041
-
-Revoking a member's access is the identity provider's decision — *Reqnroll, Planned*
 
 ### REQ-MOD-042
 
@@ -1478,7 +1466,7 @@ A statement or a group collects no answer — *Reqnroll, Covered*
 
 ### REQ-QB-045
 
-A statement or a group is excluded from a submission's answer-producing revisions — *Reqnroll, Planned*
+An answer naming a statement or a group is refused — *Reqnroll, Planned*
 
 ### REQ-QB-046
 
@@ -1506,7 +1494,7 @@ Grouping is unaffected by conditional dependency and vice versa — *Reqnroll, C
 
 ### REQ-QB-052
 
-Regrouping follows a parent that stops being a group — *Reqnroll, Planned*
+A grouped question is ungrouped when its group stops being one — *Reqnroll, Planned*
 
 ### REQ-QB-053
 
@@ -2232,7 +2220,7 @@ A submission may answer a known superseded revision — *Reqnroll, Covered*
 
 ### REQ-SUB-010
 
-A revision that was never shown as answer-producing is rejectable — *Reqnroll, Planned*
+A submission naming revisions inconsistently is refused — *Reqnroll, Planned*
 
 ### REQ-SUB-011
 
@@ -2756,7 +2744,7 @@ Importing a question strips a trailing colon from its title — *Reqnroll, Cover
 
 ### REQ-WLD-001
 
-The admin review queue is a route on the one deployed site — *playwright-bdd, Planned*
+The admin review queue is a route of the one site — *playwright-bdd, Planned*
 
 ### REQ-WLD-002
 
@@ -2832,7 +2820,7 @@ The interface language alone decides which summary text is shown — *playwright
 
 ### REQ-WLD-020
 
-Admin pages distinguish private, ordinary, and output content — *playwright-bdd, Planned*
+A report's private context, its content, and its summary are visibly distinct — *playwright-bdd, Planned*
 
 ### REQ-WLD-021
 
@@ -2840,7 +2828,7 @@ Assets are self-hosted, never loaded from third-party CDNs — *Reqnroll, Covere
 
 ### REQ-WLD-022
 
-Dark mode renders correctly in every state — *playwright-bdd, Planned*
+Dark mode passes contrast and focus checks in both languages — *playwright-bdd, Planned*
 
 ### REQ-WLD-023
 
@@ -2942,6 +2930,10 @@ A public summary is set in the same type as the other public pages, in the <them
 
 Every translation localizes place names rather than copying them — *Reqnroll, Covered*
 
+### REQ-WLD-048
+
+A destructive admin action asks for confirmation — *playwright-bdd, Planned*
+
 ## Constraints
 
 A constraint states something the system must be true of; the claims beside
@@ -3019,7 +3011,7 @@ interfaces-and-data-flow.md — verified by `REQ-QB-011`, `REQ-SUB-018`, `REQ-MO
 
 ### CON-IF-002
 
-interfaces-and-data-flow.md — verified by `REQ-SUB-001`, `REQ-MOD-039`
+interfaces-and-data-flow.md — verified by `REQ-SUB-001`
 
 ### CON-IF-003
 
@@ -3031,7 +3023,7 @@ interfaces-and-data-flow.md — verified by `REQ-MOD-023`, `REQ-MOD-024`, `REQ-M
 
 ### CON-IF-005
 
-interfaces-and-data-flow.md — verified by `REQ-MOD-041`
+interfaces-and-data-flow.md — verified by `REQ-MOD-015`, `REQ-MOD-017`
 
 ### CON-IF-006
 
@@ -3059,7 +3051,7 @@ infrastructure-and-operations.md — verified by none — an infrastructure prop
 
 ### CON-INF-002
 
-infrastructure-and-operations.md — verified by `REQ-MOD-039`
+infrastructure-and-operations.md — verified by none — a scenario can assert what the system does, not enumerate what it never grew
 
 ### CON-INF-003
 
@@ -3087,11 +3079,11 @@ infrastructure-and-operations.md — verified by `REQ-AI-021`, `REQ-MED-003`
 
 ### CON-INF-009
 
-infrastructure-and-operations.md — verified by `REQ-MOD-039`
+infrastructure-and-operations.md — verified by none — the alert set and the absence of outbound email are operational properties no application scenario observes
 
 ### CON-INF-010
 
-infrastructure-and-operations.md — verified by `REQ-DOM-010`, `REQ-DOM-011`, `REQ-DOM-012`, `REQ-MED-005`
+infrastructure-and-operations.md — verified by `REQ-DOM-010`, `REQ-DOM-011`, `REQ-MED-005`
 
 ### CON-INF-011
 
@@ -3163,7 +3155,7 @@ system-overview.md — verified by `REQ-DOM-007`
 
 ### CON-SO-009
 
-system-overview.md — verified by `REQ-MOD-039`
+system-overview.md — verified by none — a scenario can assert what the system does, not enumerate what it never grew
 
 ### CON-TQ-001
 

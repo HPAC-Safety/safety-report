@@ -6,10 +6,11 @@ preserves local report state, and meets WCAG 2.2 AA.
 @REQ-WLD-001
 @ignore
 @ui
-Scenario: The admin review queue is a route on the one deployed site
-  Given the product ships one website
-  Then the public form and the admin review queue are routes within the same React/TypeScript application, built with Vite and served from one containerized deployment
-  And loading the site requires JavaScript
+Scenario: The admin review queue is a route of the one site
+  Given a signed-in Safety Officer is on the public report page
+  When they follow the Admin menu to the review queue
+  Then the review queue loads on the same origin as the report page
+  And the browser does not load a new document
 
 @REQ-WLD-002
 @ui
@@ -351,12 +352,25 @@ Scenario: The interface language alone decides which summary text is shown
 @REQ-WLD-020
 @ignore
 @ui
-Scenario: Admin pages distinguish private, ordinary, and output content
+Scenario: A report's private context, its content, and its summary are visibly distinct
   Given a reviewer opens a report in the admin site
-  Then private context, ordinary report content, summary output, processing failures, approval state, safe image/video derivatives, and unredacted private document downloads are all visibly distinguished
-  And dangerous actions require clear confirmation
-  And editing either summary text visibly invalidates approval
-  And question editing explains that saving always creates a new immutable revision
+  Then private answers, ordinary answers, and the summary pair each sit in their own labeled section
+  And each private answer is marked private in the reviewer's language
+  And processing failures and the approval state are shown apart from the report's content
+
+@REQ-WLD-048
+@ignore
+@ui
+Scenario Outline: A destructive admin action asks for confirmation
+  Given a reviewer is on a published report in the admin site
+  When they choose to <action>
+  Then the admin site asks them to confirm before calling the API
+  And cancelling sends no request
+
+Examples:
+  | action               |
+  | delete the report    |
+  | unpublish the report |
 
 @REQ-WLD-021
 Scenario: Assets are self-hosted, never loaded from third-party CDNs
@@ -368,10 +382,22 @@ Scenario: Assets are self-hosted, never loaded from third-party CDNs
 @REQ-WLD-022
 @ignore
 @ui
-Scenario: Dark mode renders correctly in every state
-  Given a visitor's OS or stored preference requests dark mode
-  When the page renders
-  Then contrast, focus, error, disabled, and success states work in both themes and languages
+Scenario Outline: Dark mode passes contrast and focus checks in both languages
+  Given a visitor's stored theme preference is dark and their language is <locale>
+  When they open <page>
+  Then an accessibility scan reports no color-contrast violation
+  And the focused control shows a visible focus indicator
+
+Examples:
+  | locale | page                                  |
+  | en-CA  | the report form                       |
+  | fr-CA  | the report form                       |
+  | en-CA  | the report form showing its errors    |
+  | fr-CA  | the report form showing its errors    |
+  | en-CA  | the public feed                       |
+  | fr-CA  | the public feed                       |
+  | en-CA  | the admin review queue                |
+  | fr-CA  | the admin review queue                |
 
 @REQ-WLD-023
 @ui

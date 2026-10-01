@@ -264,32 +264,27 @@ definition matches; a built claim may never have one.
 
 ### REQ-DOM-011
 
-- Unbound: `Given a report has been soft-deleted, or a question revision has a private original or derivative`
-- Unbound: `When that data is no longer reachable through normal application paths`
-- Unbound: `Then it remains under managed storage/database retention rather than being purged`
-- Unbound: `Then backups of that data follow infrastructure policy`
-
-### REQ-DOM-012
-
-- Unbound: `Given a submission fails before its transaction commits, or an upload is never claimed`
-- Unbound: `When the resulting quarantine objects are never referenced by a report`
-- Unbound: `Then those objects may expire automatically through storage lifecycle rules`
-- Unbound: `Then that operational cleanup does not change report retention`
+- Unbound: `Given a synthetic report with an attachment has been submitted`
+- Unbound: `When a safety officer soft-deletes the report`
+- Unbound: `Then the report row remains, stamped with a deleted timestamp`
+- Unbound: `Then its answers, files, and stored objects remain`
+- Unbound: `Then no application path removes them afterwards`
 
 ### REQ-DOM-013
 
 - [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs)
-- Unbound: `Given an authorization denial that matters to a privileged path occurs`
+- Unbound: `Given a question is created occurs`
 - Unbound: `Then an audit log entry records the acting token subject and action metadata`
 - Unbound: `Then the subject is an opaque string that joins to no user record`
 - Unbound: `Then it never contains raw answers, names, credentials, tokens, or client filenames`
-- Unbound: `Given a question revision is created or deleted occurs`
+- Unbound: `Given a question is revised occurs`
+- Unbound: `Given a question is deleted occurs`
+- Unbound: `Given a question revision is deleted occurs`
 - Unbound: `Given a report is deleted occurs`
-- Unbound: `Given summary generation fails occurs`
-- Unbound: `Given a summary is manually edited occurs`
-- Unbound: `Given a summary pair is approved occurs`
-- Unbound: `Given a report is unpublished occurs`
+- Unbound: `Given a summary is edited occurs`
+- Unbound: `Given a summary is rolled back occurs`
 - Unbound: `Given a report is published occurs`
+- Unbound: `Given a report is unpublished occurs`
 
 ### REQ-DOM-014
 
@@ -381,6 +376,7 @@ definition matches; a built claim may never have one.
 - Unbound: `Given an upload that no committed submission claimed`
 - Unbound: `When the storage lifecycle rule runs`
 - Unbound: `Then the upload expires, its key stopping resolving fifteen days after it was written and its bytes gone about a day after that`
+- Unbound: `Then no file a committed submission claimed is expired by that rule`
 
 ### REQ-MED-006
 
@@ -416,8 +412,8 @@ definition matches; a built claim may never have one.
 - [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts)
 - Unbound: `Given an authorized reviewer opens a document attachment`
 - Unbound: `When the admin site presents it`
-- Unbound: `Then the admin site does not embed or inline-render the document content`
-- Unbound: `Then the reviewer is warned that the document is unredacted before download`
+- Unbound: `Then the admin site does not embed, preview, or inline-render the document content`
+- Unbound: `Then the document is offered only as a download`
 
 ### REQ-MED-013
 
@@ -744,22 +740,41 @@ definition matches; a built claim may never have one.
 ### REQ-MOD-025
 
 - [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs)
-- Unbound: `Then the member can submit an occurrence report`
-- Unbound: `Then the member has no review, authoring, or publication capability`
+- Unbound: `When that member attempts to submit an occurrence report`
+- Unbound: `When that member attempts to list the review queue`
+- Unbound: `When that member attempts to read a report's private detail`
+- Unbound: `When that member attempts to obtain an attachment link`
+- Unbound: `When that member attempts to edit a report's summary`
+- Unbound: `When that member attempts to publish a report`
+- Unbound: `When that member attempts to unpublish a report`
+- Unbound: `When that member attempts to soft-delete a report`
+- Unbound: `When that member attempts to edit a question's choices`
 
 ### REQ-MOD-026
 
 - [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs)
-- Unbound: `Then the member can view the review queue and private report material`
-- Unbound: `Then view safe image/video derivatives and download validated unredacted documents`
-- Unbound: `Then edit the bilingual summary pair`
-- Unbound: `Then publish, unpublish, and soft-delete reports`
+- Unbound: `When that member attempts to submit an occurrence report`
+- Unbound: `When that member attempts to list the review queue`
+- Unbound: `When that member attempts to read a report's private detail`
+- Unbound: `When that member attempts to obtain an attachment link`
+- Unbound: `When that member attempts to edit a report's summary`
+- Unbound: `When that member attempts to publish a report`
+- Unbound: `When that member attempts to unpublish a report`
+- Unbound: `When that member attempts to soft-delete a report`
+- Unbound: `When that member attempts to edit a question's choices`
 
 ### REQ-MOD-027
 
 - [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs)
-- Unbound: `Then the member has every SafetyOfficer capability`
-- Unbound: `Then can additionally create question revisions and author every question's choices`
+- Unbound: `When that member attempts to submit an occurrence report`
+- Unbound: `When that member attempts to list the review queue`
+- Unbound: `When that member attempts to read a report's private detail`
+- Unbound: `When that member attempts to obtain an attachment link`
+- Unbound: `When that member attempts to edit a report's summary`
+- Unbound: `When that member attempts to publish a report`
+- Unbound: `When that member attempts to unpublish a report`
+- Unbound: `When that member attempts to soft-delete a report`
+- Unbound: `When that member attempts to edit a question's choices`
 
 ### REQ-MOD-028
 
@@ -802,21 +817,6 @@ definition matches; a built claim may never have one.
 ### REQ-MOD-038
 
 - [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs)
-
-### REQ-MOD-039
-
-- Unbound: `Given a report becomes publishable`
-- Unbound: `When it is published`
-- Unbound: `Then it appears only on the HPAC public feed and report-detail page`
-- Unbound: `Then no email, messaging, social, webhook, or third-party channel publishes it`
-
-### REQ-MOD-041
-
-- Unbound: `Given a member's access is revoked at the identity provider`
-- Unbound: `When their current token expires or stops being issued`
-- Unbound: `Then they can no longer authenticate`
-- Unbound: `Then this system holds no record of them to revoke`
-- Unbound: `Then historic audit rows keep the opaque subject they were written with`
 
 ### REQ-MOD-042
 
@@ -1638,8 +1638,9 @@ definition matches; a built claim may never have one.
 ### REQ-QB-045
 
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
-- Unbound: `When a reporter is shown the form and submits it`
-- Unbound: `Then it does not appear in the set of answer-producing revisions the submission records`
+- Unbound: `When a submission carries an answer naming that question's revision`
+- Unbound: `Then the API refuses the submission`
+- Unbound: `Then nothing is stored`
 
 ### REQ-QB-046
 
@@ -1670,8 +1671,10 @@ definition matches; a built claim may never have one.
 
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
 - Unbound: `Given a question is grouped under a group question`
-- Unbound: `When an Administrator retypes that parent away from the group type, or deletes it`
-- Unbound: `Then the child's next revision is ungrouped rather than naming a heading that no longer exists`
+- Unbound: `When an Administrator deletes the group`
+- Unbound: `Then the grouped question gets a new revision that is ungrouped`
+- Unbound: `Then it appears on the reporter's form where the group stood`
+- Unbound: `When an Administrator retypes the group to a type other than group`
 
 ### REQ-QB-053
 
@@ -2526,8 +2529,12 @@ definition matches; a built claim may never have one.
 ### REQ-SUB-010
 
 - [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs)
-- Unbound: `Given a submitted answer references a revision that the client was never shown as answer-producing, or the submitted revisions form an internally inconsistent combination for the same stable key`
-- Unbound: `Then the API may reject the submission`
+- Unbound: `Given a submission carries an answer naming an unknown revision`
+- Unbound: `Then the API refuses the submission`
+- Unbound: `Then nothing is stored`
+- Unbound: `Given a submission carries an answer naming a deleted revision`
+- Unbound: `Given a submission carries two answers naming the same revision`
+- Unbound: `Given a submission carries two answers naming revisions of one stable key`
 
 ### REQ-SUB-011
 
@@ -3150,9 +3157,10 @@ definition matches; a built claim may never have one.
 
 ### REQ-WLD-001
 
-- Unbound: `Given the product ships one website`
-- Unbound: `Then the public form and the admin review queue are routes within the same React/TypeScript application, built with Vite and served from one containerized deployment`
-- Unbound: `Then loading the site requires JavaScript`
+- Unbound: `Given a signed-in Safety Officer is on the public report page`
+- Unbound: `When they follow the Admin menu to the review queue`
+- Unbound: `Then the review queue loads on the same origin as the report page`
+- Unbound: `Then the browser does not load a new document`
 
 ### REQ-WLD-002
 
@@ -3230,10 +3238,9 @@ definition matches; a built claim may never have one.
 ### REQ-WLD-020
 
 - Unbound: `Given a reviewer opens a report in the admin site`
-- Unbound: `Then private context, ordinary report content, summary output, processing failures, approval state, safe image/video derivatives, and unredacted private document downloads are all visibly distinguished`
-- Unbound: `Then dangerous actions require clear confirmation`
-- Unbound: `Then editing either summary text visibly invalidates approval`
-- Unbound: `Then question editing explains that saving always creates a new immutable revision`
+- Unbound: `Then private answers, ordinary answers, and the summary pair each sit in their own labeled section`
+- Unbound: `Then each private answer is marked private in the reviewer's language`
+- Unbound: `Then processing failures and the approval state are shown apart from the report's content`
 
 ### REQ-WLD-021
 
@@ -3241,9 +3248,14 @@ definition matches; a built claim may never have one.
 
 ### REQ-WLD-022
 
-- Unbound: `Given a visitor's OS or stored preference requests dark mode`
-- Unbound: `When the page renders`
-- Unbound: `Then contrast, focus, error, disabled, and success states work in both themes and languages`
+- Unbound: `Given a visitor's stored theme preference is dark and their language is en-CA`
+- Unbound: `When they open the report form`
+- Unbound: `Then an accessibility scan reports no color-contrast violation`
+- Unbound: `Then the focused control shows a visible focus indicator`
+- Unbound: `Given a visitor's stored theme preference is dark and their language is fr-CA`
+- Unbound: `When they open the report form showing its errors`
+- Unbound: `When they open the public feed`
+- Unbound: `When they open the admin review queue`
 
 ### REQ-WLD-023
 
@@ -3344,6 +3356,14 @@ definition matches; a built claim may never have one.
 ### REQ-WLD-047
 
 - [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs)
+
+### REQ-WLD-048
+
+- Unbound: `Given a reviewer is on a published report in the admin site`
+- Unbound: `When they choose to delete the report`
+- Unbound: `Then the admin site asks them to confirm before calling the API`
+- Unbound: `Then cancelling sends no request`
+- Unbound: `When they choose to unpublish the report`
 
 ## Stale @ignore
 

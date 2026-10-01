@@ -130,19 +130,12 @@ Scenario: Raw reports are retained until explicit deletion
 
 @REQ-DOM-011
 @ignore
-Scenario: Soft-deleted and private data remain under managed retention
-  Given a report has been soft-deleted, or a question revision has a private original or derivative
-  When that data is no longer reachable through normal application paths
-  Then it remains under managed storage/database retention rather than being purged
-  And backups of that data follow infrastructure policy
-
-@REQ-DOM-012
-@ignore
-Scenario: Unreferenced quarantine objects expire without affecting reports
-  Given a submission fails before its transaction commits, or an upload is never claimed
-  When the resulting quarantine objects are never referenced by a report
-  Then those objects may expire automatically through storage lifecycle rules
-  And that operational cleanup does not change report retention
+Scenario: Soft-deleting a report keeps its row and its stored files
+  Given a synthetic report with an attachment has been submitted
+  When a safety officer soft-deletes the report
+  Then the report row remains, stamped with a deleted timestamp
+  And its answers, files, and stored objects remain
+  And no application path removes them afterwards
 
 @REQ-DOM-013
 @ignore
@@ -154,15 +147,16 @@ Scenario Outline: An audited action is recorded in the immutable audit log
   And it never contains raw answers, names, credentials, tokens, or client filenames
 
 Examples:
-  | action                                                    |
-  | an authorization denial that matters to a privileged path |
-  | a question revision is created or deleted                 |
-  | a report is deleted                                       |
-  | summary generation fails                                  |
-  | a summary is manually edited                              |
-  | a summary pair is approved                                |
-  | a report is unpublished                                   |
-  | a report is published                                     |
+  | action                                  |
+  | a question is created                   |
+  | a question is revised                   |
+  | a question is deleted                   |
+  | a question revision is deleted          |
+  | a report is deleted                     |
+  | a summary is edited                     |
+  | a summary is rolled back                |
+  | a report is published                   |
+  | a report is unpublished                 |
 
 @REQ-DOM-016
 Scenario: An operator requeues poisoned outbox work

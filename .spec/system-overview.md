@@ -151,7 +151,7 @@ production environment.
 
 **CON-SO-009** The system does not include any of the following, and an
 implementation that adds one has exceeded its scope.
-*Verified by: REQ-MOD-039 for the publication channel; none for the rest — a
+*Verified by: none — a
 scenario can assert what the system does, not enumerate what it never grew.*
 
 - General-purpose form branching, surveys, scoring, or form templates

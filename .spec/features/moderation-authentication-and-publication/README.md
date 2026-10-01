@@ -503,6 +503,9 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - A user table, an allowlist, an allowlist-management screen, or a session
   store. Roles come from the token
   ([ADR-0065](../../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+- A revocation endpoint or a member record to revoke. Access is granted and
+  revoked at the identity provider; a revoked member's token simply stops being
+  issued, and audit rows keep the opaque subject they were written with.
 - Handling a member's password, outside Development's carve-out and its
   temporary staging extension
   ([ADR-0079](../../decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md),
@@ -510,7 +513,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - CSRF machinery or Turnstile. A bearer token carries no ambient authority
   ([ADR-0068](../../decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
 - Email, push, or chat notification of a reviewer, a reporter, or anyone else.
-- Any publication channel besides the HPAC public feed.
+- Any publication channel besides the HPAC public feed, until #661's decision
+  specifies one.
 - Automatic approval or publication, including "approve if the model is
   confident."
 - A per-reporter rate limit, which would mean identifying the reporter.

@@ -373,8 +373,8 @@ contributor who never invokes one is unaffected.
 - **None of these exist**: a deterministic scrubber beyond the marking pass
   (invariant 3), a separate PII auditor, specialized aircraft processing, an
   outbound email flow, a server-side draft or resumable upload protocol, a
-  speculative publication channel, a user table, an allowlist, a credential
-  proxy, CSRF machinery, or Turnstile verification.
+  user table, an allowlist, a credential proxy, CSRF machinery, or Turnstile
+  verification.
 - **Two carved exceptions**: Development's members-site login (invariant 7)
   carries a hardcoded, Development-only email allowlist for role, and
   CSRF/session handling scoped entirely to that credential source. It never

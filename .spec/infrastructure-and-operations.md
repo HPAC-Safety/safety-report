@@ -230,8 +230,8 @@ instance (`fck-nat`) replaces the managed NAT gateway. This remains open:
 an attachment (a published file is reached only through a pre-signed GET of
 at most 15 minutes, ADR-0117), application encryption key, speculative queueing platform, or autoscaling
 machinery is part of the target.
-*Verified by: REQ-MOD-039 for the publication and messaging boundary; none for
-the rest.* Existing infrastructure for those removed
+*Verified by: none — a scenario can assert what the system does, not enumerate
+what it never grew.* Existing infrastructure for those removed
 features should be pruned when implementation aligns.
 
 ## Environments, release, and durability
@@ -518,8 +518,8 @@ storage capacity. Dashboards avoid dimensions derived from report content.
 
 **CON-INF-009** Alerts stay focused and actionable, and the application itself sends no
 reporter or reviewer email.
-*Verified by: REQ-MOD-039 for the absence of an outbound channel; none for the
-alert set itself.*
+*Verified by: none — the alert set and the absence of outbound email are
+operational properties no application scenario observes.*
 
 **CON-INF-025** The Worker publishes one application metric, `OutboxOldestAgeSeconds` — how
 old the oldest unclaimed, unpoisoned outbox row is — as a CloudWatch
@@ -561,4 +561,4 @@ physically purges report-linked originals/derivatives merely because a report
 was soft-deleted. RDS automated backups and final snapshots meet an explicit
 retention policy; backup access is audited and limited. This operational
 retention is distinct from application visibility.
-*Verified by: REQ-DOM-010, REQ-DOM-011, REQ-DOM-012, REQ-MED-005.*
+*Verified by: REQ-DOM-010, REQ-DOM-011, REQ-MED-005.*

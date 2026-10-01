@@ -18,6 +18,9 @@ keywords: traceability, step definitions, bindings, Reqnroll, playwright-bdd, Cu
 [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md),
 [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md),
 and [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+Amended on 2026-09-30 by
+[#711](https://github.com/HPAC-Safety/safety-report/issues/711): a large area is
+grouped with `Rule:` blocks.
 
 ## Context
 
@@ -129,3 +132,27 @@ in the map, left for a follow-up issue.
 - [ADR-0088](ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)
 - [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)
 - [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md)
+
+## Amendment (2026-09-30, #711)
+
+**A large area is grouped with Gherkin `Rule:` blocks, not split.** The two
+largest areas held about 200 scenarios each in one flat file:
+`question-bank-and-form` and `moderation-authentication-and-publication`. Each
+now groups its scenarios under `Rule:` blocks inside the same file — 15 and 17
+of them — following the sections of the area's README.
+
+- **Nothing that names an area changes.** The Feature titles stay, so every
+  `[Scope(Feature = …)]` binding still resolves. Claim IDs, area directories,
+  and every link into the files are untouched.
+- **Both runners and both generated files agree.** Reqnroll lists the same
+  1,183 tests and playwright-bdd the same 401. The matrix and the step-bindings
+  map regenerate byte-identical.
+- **A Rule carries no tags.** Gherkin would let a tag on a Rule reach every
+  scenario beneath it, but the matrix takes a claim's engine and status from
+  the scenario's own tags only. So `tools/traceability.mjs` fails a tagged
+  Rule rather than let the two disagree.
+- **A Rule may have its own Background**, which `tools/bindings.mjs` adds to the
+  scenarios in that Rule only.
+- **Rejected:** splitting each area into new directories. It would rename areas,
+  rescope four step-definition classes, and rewrite some forty links for no
+  change in what is specified.

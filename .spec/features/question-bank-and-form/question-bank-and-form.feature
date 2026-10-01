@@ -10,6 +10,8 @@ Background:
   And each revision has a monotonically increasing revision number for its key
   And at most one live question exists for a stable key
 
+Rule: Questions are revised, forked, and queried as complete revisions
+
 @REQ-QB-001
 Scenario: Editing an unanswered question creates a new revision instead of mutating one
   Given an active question revision exists for a stable key
@@ -177,6 +179,8 @@ Scenario: consent_publish must resolve to an explicit yes or no
   When the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no
   Then the API rejects the submission
 
+Rule: Answers are stored in the form they were written
+
 @REQ-QB-019
 Scenario Outline: Every answer is stored in its written form
   Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
@@ -288,6 +292,8 @@ Scenario: A yes or no stored as anything but the four words stops the conversion
   Then the migration fails and names no answer's value
   And no answer was converted
 
+Rule: Consent, privacy, and type-ahead growth
+
 @REQ-QB-025
 Scenario: Only consent is projected onto the report aggregate
   Given a submitted report has answers to several ordinary questions
@@ -345,6 +351,8 @@ Examples:
   | autocomplete  | the report is accepted and the question gains the value     |
   | single_select | the submission is rejected and the question is unchanged    |
   | multi_select  | the submission is rejected and the question is unchanged    |
+
+Rule: Statements, groups, and instructional questions
 
 @REQ-QB-044
 Scenario Outline: A statement or a group collects no answer
@@ -445,6 +453,8 @@ Scenario: Regrouping follows a parent that stops being a group
   When an Administrator retypes that parent away from the group type, or deletes it
   Then the child's next revision is ungrouped rather than naming a heading that no longer exists
 
+Rule: Conditional questions
+
 @REQ-QB-053
 Scenario: A question can be made conditional only on a yes/no or single-select question
   Given an active question asks for something other than yes/no or single-select
@@ -484,6 +494,8 @@ Scenario: Publication consent can never be made conditional
   Given the consent_publish question exists
   When an Administrator tries to make it conditional on another question
   Then the attempt is rejected
+
+Rule: Order, keys, and retirement
 
 @REQ-QB-059
 Scenario: Rearranging the form writes a new revision for every question that moved
@@ -528,6 +540,8 @@ Scenario: Publication consent can never be deleted or deactivated
   Then the attempt is rejected
   And trying to stop asking it is rejected the same way
   And an ordinary edit that clears its active flag is rejected the same way
+
+Rule: Machine translation of wording and choices
 
 @REQ-QB-066
 Scenario: A translation draft comes from the API and is saved only by a person
@@ -705,6 +719,8 @@ Scenario: A choice written in one language can be translated without being edite
   And the choice written in both languages offers no Translate action
   When they press that choice's Translate action
   Then that choice's French field is filled with the translation of its English
+
+Rule: The question editor
 
 @REQ-QB-074
 @ui
@@ -900,6 +916,8 @@ Scenario: The report form shows a one-language choice in the language it has
   Given a type-ahead question has a reporter-added choice typed only in English
   When a reporter using French opens that question
   Then the type-ahead offers the choice in its English wording
+
+Rule: Choice identity: fix, replace, review, merge
 
 @REQ-QB-122
 Scenario Outline: An answer names the choice it was given under
@@ -1104,6 +1122,8 @@ Scenario: Existing answers are linked to their choices without being rewritten
   And the second answer names a removed choice carrying the label it stored, in its language
   And neither answer's stored text changes
 
+Rule: Choice order and pinning
+
 @REQ-QB-144
 Scenario: The API sends each choice's pin, pinned-first choices first and pinned-last choices last
   Given an Administrator saves a single-select question with "Other" pinned last, "United States" and "Canada" pinned first, and "Mexico" and "Brazil" not pinned
@@ -1189,6 +1209,8 @@ Scenario: The type-ahead review page offers merge targets as the form lists them
 Scenario: A multi-select answer on the report page is listed as the form lists its choices
   Given a signed-in Safety Officer opens a report whose multi-select answer names "Turbulent", "Other" pinned last, and "Gusty"
   Then the answer is listed "Gusty", "Turbulent", "Other"
+
+Rule: Type-ahead and picker fields
 
 @REQ-QB-159
 @ui
@@ -1406,6 +1428,8 @@ Scenario: A multi-select's list is drawn like a type-ahead's list, with a checkb
   When they move to the "France" checkbox with the keyboard and press Space
   Then the "France" row is highlighted as a type-ahead's active option is
   And "France" is checked, and the list stays open
+
+Rule: Dependent choices
 
 @REQ-QB-179
 Scenario Outline: A picker or type-ahead's choices may depend on another picker or type-ahead
@@ -1783,6 +1807,8 @@ Scenario: The migration merges no pair whose wording matches in one language onl
   Then both choices stay live, each under its own parent choice
   And the question's next save is refused, naming "EN-A"
 
+Rule: Attachment wording and media consent
+
 @REQ-QB-104
 Scenario: A new installation asks for several attachments
   Given a new, empty database
@@ -1874,6 +1900,8 @@ Scenario: Media consent names documents and says they are published as uploaded
   Then its wording in both languages asks about photos, videos, and documents
   And it says that documents are published exactly as they were uploaded and may contain personal details
 
+Rule: Unsaved changes in the editor
+
 @REQ-QB-238
 @ui
 Scenario: Leaving the question editor with an unsaved draft is confirmed before it is discarded
@@ -1892,6 +1920,8 @@ Scenario: Switching from one open question editor straight to another starts cle
   And they open the second question for editing
   And they navigate to another admin page
   Then no confirmation of any kind appears
+
+Rule: A label has no closing colon
 
 @REQ-QB-240
 @ui

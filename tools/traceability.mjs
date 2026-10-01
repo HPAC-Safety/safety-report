@@ -26,6 +26,10 @@ const OUTPUT = TRACEABILITY
 
 export const CLAIM_TAG = /^\s*@(REQ-[A-Z]+-\d{3})\s*$/
 const SCENARIO = /^\s*(Scenario|Scenario Outline):\s*(.+?)\s*$/
+// A Rule groups scenarios inside a feature (ADR-0184). Gherkin would let a tag
+// on it reach every scenario beneath; this reader takes a claim's engine and
+// status from the scenario's own tags only, so a Rule carries none.
+const RULE = /^\s*Rule:/
 const CONSTRAINT = /\*\*(CON-[A-Z]+-\d{3})\*\*/g
 const VERIFIED_BY = /\*Verified by:\s*([^*]+)\*/
 
@@ -54,6 +58,9 @@ export function readClaims(path, source) {
 				continue
 			}
 			if (line.trim() === '') continue
+			if (RULE.test(line) && (pending.length > 0 || tags.length > 0)) {
+				problems.push(`${path}:${index + 1}: tags on a Rule are not supported — a claim's engine and status come from its own scenario's tags`)
+			}
 			pending = []
 			tags = []
 			continue

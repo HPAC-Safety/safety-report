@@ -374,7 +374,7 @@ A reviewer downloads a validated document as an unredacted original — *Reqnrol
 
 ### REQ-MED-012
 
-The admin site never inline-renders a private document — *playwright-bdd, Planned*
+The admin site never inline-renders a private document — *playwright-bdd, Covered*
 
 ### REQ-MED-013
 
@@ -2760,7 +2760,7 @@ Importing a question strips a trailing colon from its title — *Reqnroll, Cover
 
 ### REQ-WLD-001
 
-The admin review queue is a route of the one site — *playwright-bdd, Planned*
+The admin review queue is a route of the one site — *playwright-bdd, Covered*
 
 ### REQ-WLD-002
 
@@ -2836,7 +2836,7 @@ The interface language alone decides which summary text is shown — *playwright
 
 ### REQ-WLD-020
 
-A report's private context, its content, and its summary are visibly distinct — *playwright-bdd, Planned*
+A report's private context, its content, and its summary are visibly distinct — *playwright-bdd, Covered*
 
 ### REQ-WLD-021
 
@@ -2948,7 +2948,7 @@ Every translation localizes place names rather than copying them — *Reqnroll, 
 
 ### REQ-WLD-048
 
-A destructive admin action asks for confirmation — *playwright-bdd, Planned*
+A destructive admin action asks for confirmation — *playwright-bdd, Covered*
 
 ## Constraints
 

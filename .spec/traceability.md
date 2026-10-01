@@ -260,7 +260,7 @@ Soft-deleting a report keeps its row and its stored files — *Reqnroll, Covered
 
 ### REQ-DOM-013
 
-An audited action is recorded in the immutable audit log — *Reqnroll, Planned*
+An audited action is recorded in the immutable audit log — *Reqnroll, Covered*
 
 ### REQ-DOM-014
 
@@ -736,7 +736,7 @@ A reviewer's attachment view writes its own audit row, distinct from a raw-repor
 
 ### REQ-MOD-047
 
-A failed audit write blocks the action it would have recorded — *Reqnroll, Planned*
+A failed audit write blocks the action it would have recorded — *Reqnroll, Covered*
 
 ### REQ-MOD-048
 

@@ -1,9 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +17,9 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The audit scenarios — ADR-0092: REQ-MOD-029, REQ-MOD-044, REQ-MOD-045, and
-///     REQ-MOD-091, that signing out has nothing to audit. Detailed
+///     REQ-MOD-091, that signing out has nothing to audit; REQ-DOM-013, that every
+///     audited action is recorded; and REQ-MOD-047, that a failed audit write
+///     blocks the action. Detailed
 ///     coverage of every audited action lives in <c>HpacSafety.Api.Tests</c>; this
 ///     proves the feature file's sentences are true against the booted host.
 /// </summary>
@@ -35,6 +40,14 @@ public sealed class AuditSteps
 	private DateTimeOffset _started;
 	private DateTimeOffset _finished;
 	private List<string> _routes = [];
+	private readonly List<string> _secrets = [];
+	private readonly List<bool> _blocked = [];
+	private AuditAction _expectedAction;
+	private string _targetType = string.Empty;
+	private string _targetId = string.Empty;
+	private string _version = string.Empty;
+	private string _failedQuestionLabel = string.Empty;
+	private bool _triggerInstalled;
 
 	[Given(@"a member signs in with valid credentials")]
 	public async Task GivenValidCredentials()
@@ -135,7 +148,8 @@ public sealed class AuditSteps
 	[When(@"the action completes")]
 	public void WhenTheActionCompletes()
 	{
-		_actions.ShouldBe([HttpStatusCode.OK, HttpStatusCode.Created]);
+		_actions.ShouldNotBeEmpty();
+		_actions.ShouldAllBe(status => (int)status >= 200 && (int)status < 300);
 		_finished = DateTimeOffset.UtcNow;
 	}
 
@@ -154,6 +168,7 @@ public sealed class AuditSteps
 	}
 
 	[Then(@"the subject is stored as an opaque string that joins to no user record")]
+	[Then(@"the subject is an opaque string that joins to no user record")]
 	public async Task ThenTheSubjectJoinsToNothing()
 	{
 		(await EntriesBy(_subject)).ShouldNotBeEmpty();
@@ -182,6 +197,306 @@ public sealed class AuditSteps
 			(entry.Detail ?? string.Empty).ShouldNotContain(_marker);
 			entry.TargetType.ShouldNotContain(_marker);
 		}
+	}
+
+	// --- REQ-DOM-013: every audited action is recorded ---
+
+	[Given(@"^(a question is created|a question is revised|a question is deleted|a question revision is deleted|a report is deleted|a summary is edited|a summary is rolled back|a report is published|a report is unpublished) occurs$")]
+	public async Task GivenAnAuditedActionOccurs(string action)
+	{
+		ArgumentNullException.ThrowIfNull(action);
+
+		var host = await BootedApi.Factory();
+		_started = DateTimeOffset.UtcNow;
+
+		if (action.StartsWith("a question", StringComparison.Ordinal))
+		{
+			using var admin = BootedApi.SignedInAsMember(host, _subject, "administrator");
+			RememberSecrets(admin);
+			await PerformQuestionAction(admin, action);
+		}
+		else
+		{
+			using var officer = BootedApi.SignedInAsMember(host, _subject, "safety_officer");
+			RememberSecrets(officer);
+			await PerformReportAction(officer, action);
+		}
+	}
+
+	[Then(@"an audit log entry records the acting token subject and action metadata")]
+	public async Task ThenAnEntryRecordsSubjectAndMetadata()
+	{
+		var matching = (await EntriesBy(_subject))
+			.Where(entry => entry.Action == _expectedAction && entry.TargetId.Value == _targetId)
+			.ToList();
+
+		var entry = matching.ShouldHaveSingleItem();
+		entry.ActorSubject.ShouldBe(_subject);
+		entry.TargetType.ShouldBe(_targetType);
+		entry.OccurredAt.ShouldBeInRange(_started.AddSeconds(-1), _finished.AddSeconds(1));
+	}
+
+	[Then(@"it never contains raw answers, names, credentials, tokens, or client filenames")]
+	public async Task ThenNoRawContentIsRecorded()
+	{
+		var entries = await EntriesBy(_subject);
+		entries.ShouldNotBeEmpty();
+
+		_secrets.ShouldNotBeEmpty();
+		foreach (var entry in entries)
+		{
+			var recorded = $"{entry.TargetType} {entry.Detail}";
+			foreach (var secret in _secrets)
+			{
+				recorded.ShouldNotContain(secret);
+			}
+		}
+	}
+
+	// --- REQ-MOD-047: a failed audit write blocks the action ---
+
+	[Given(@"an administrator or reviewer performs an action that must be audited")]
+	public async Task GivenAnActionThatMustBeAudited()
+	{
+		var host = await BootedApi.Factory();
+		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
+
+		using var officer = BootedApi.SignedInAsMember(host, _subject, "safety_officer");
+		var detail = await officer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+		_version = detail.GetProperty("version").GetString()!;
+	}
+
+	[When(@"the audit row fails to write")]
+	public async Task WhenTheAuditRowFailsToWrite()
+	{
+		var host = await BootedApi.Factory();
+
+		// A database-side refusal of this actor's audit rows only, so the audit
+		// insert fails for real inside the same SaveChanges as the action.
+		await Sql(host, $"""
+			CREATE FUNCTION {TriggerName}() RETURNS trigger AS $body$
+			BEGIN
+				RAISE EXCEPTION 'synthetic audit write failure';
+			END;
+			$body$ LANGUAGE plpgsql;
+			""");
+		await Sql(host, $"""
+			CREATE TRIGGER {TriggerName} BEFORE INSERT ON audit_log
+				FOR EACH ROW WHEN (NEW.actor_subject = '{_subject}')
+				EXECUTE FUNCTION {TriggerName}();
+			""");
+		_triggerInstalled = true;
+
+		using var admin = BootedApi.SignedInAsMember(host, _subject, "administrator");
+		_failedQuestionLabel = $"A question whose audit failed {Guid.NewGuid():N}";
+		_blocked.Add(await Attempt(() => admin.PostAsJsonAsync("/api/admin/questions", new
+		{
+			key = (string?)null,
+			type = "short_text",
+			labelEn = _failedQuestionLabel,
+			labelFr = "Une question dont la trace a échoué",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+		})));
+
+		using var officer = BootedApi.SignedInAsMember(host, _subject, "safety_officer");
+		_blocked.Add(await Attempt(() => officer.PostAsJsonAsync($"/api/admin/reports/{_reportId}/publish", new { version = _version })));
+	}
+
+	[Then(@"the action itself does not commit")]
+	public async Task ThenTheActionDoesNotCommit()
+	{
+		var host = await BootedApi.Factory();
+		using var admin = BootedApi.SignedInAsMember(host, _subject, "administrator");
+		var questions = await admin.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/questions", UriKind.Relative));
+		questions.EnumerateArray()
+			.ShouldNotContain(question => question.GetProperty("labelEn").GetString() == _failedQuestionLabel);
+
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var report = await database.Reports.AsNoTracking().SingleAsync(candidate => candidate.Id == TinyId.Parse(_reportId!));
+		report.Status.ShouldBe(ReportStatus.Pending);
+
+		(await EntriesBy(_subject)).ShouldNotContain(entry => entry.Action == AuditAction.CreatedQuestion || entry.Action == AuditAction.PublishedReport);
+	}
+
+	[Then(@"the caller sees the action as failed, not succeeded")]
+	public void ThenTheCallerSeesFailure()
+	{
+		_blocked.Count.ShouldBe(2);
+		_blocked.ShouldAllBe(failed => failed);
+	}
+
+	[AfterScenario]
+	public async Task RemoveTheFailingTrigger()
+	{
+		if (!_triggerInstalled)
+		{
+			return;
+		}
+
+		var host = await BootedApi.Factory();
+		await Sql(host, $"DROP TRIGGER IF EXISTS {TriggerName} ON audit_log");
+		await Sql(host, $"DROP FUNCTION IF EXISTS {TriggerName}()");
+	}
+
+	private string TriggerName => $"refuse_audit_{_subject.Replace("-", "_", StringComparison.Ordinal)}"[..40];
+
+	/// <summary>True when the call failed: a server error answered, or the host surfaced the exception.</summary>
+	private static async Task<bool> Attempt(Func<Task<HttpResponseMessage>> call)
+	{
+		try
+		{
+			using var response = await call();
+			return !response.IsSuccessStatusCode;
+		}
+		catch (Exception)
+		{
+			// The test server hands an unhandled host exception to the caller.
+			return true;
+		}
+	}
+
+	private static async Task Sql(WebApplicationFactory<Program> host,
+								  string statement)
+	{
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		await database.Database.ExecuteSqlRawAsync(statement);
+	}
+
+	private void RememberSecrets(HttpClient client)
+	{
+		_secrets.Add(client.DefaultRequestHeaders.Authorization!.Parameter!);
+		_secrets.Add(BootedReports.PilotName);
+		_secrets.Add("launch-site.jpg");
+	}
+
+	private async Task PerformQuestionAction(HttpClient admin,
+											 string action)
+	{
+		var label = $"An audited synthetic question {Guid.NewGuid():N}";
+		_secrets.Add(label);
+
+		var created = await Send(admin.PostAsJsonAsync("/api/admin/questions", QuestionBody(label)), HttpStatusCode.Created);
+		var questionId = created.GetProperty("id").GetString()!;
+		var firstRevisionId = created.GetProperty("revisionId").GetString()!;
+		var question = new Uri($"/api/admin/questions/{questionId}", UriKind.Relative);
+
+		(_expectedAction, _targetType, _targetId) = (AuditAction.CreatedQuestion, "Question", questionId);
+
+		if (action == "a question is created")
+		{
+			_actions.Add(HttpStatusCode.Created);
+			return;
+		}
+
+		if (action == "a question is deleted")
+		{
+			using var deleted = await admin.DeleteAsync(question);
+			_actions.Add(deleted.StatusCode);
+			_expectedAction = AuditAction.DeletedQuestion;
+			return;
+		}
+
+		var revisedLabel = $"{label} reworded";
+		_secrets.Add(revisedLabel);
+		using var revised = await admin.PutAsJsonAsync(question, QuestionBody(revisedLabel));
+		_actions.Add(revised.StatusCode);
+		_expectedAction = AuditAction.RevisedQuestion;
+
+		if (action == "a question revision is deleted")
+		{
+			using var deleted = await admin.DeleteAsync(new Uri($"/api/admin/questions/{questionId}/revisions/{firstRevisionId}", UriKind.Relative));
+			_actions.Add(deleted.StatusCode);
+			(_expectedAction, _targetType, _targetId) = (AuditAction.DeletedQuestionRevision, "QuestionRevision", firstRevisionId);
+		}
+	}
+
+	private async Task PerformReportAction(HttpClient officer,
+										   string action)
+	{
+		var status = action is "a report is unpublished" ? ReportStatus.Published : ReportStatus.Pending;
+		_reportId = await BootedReports.Seed(status, true);
+		_secrets.Add("The pilot landed in a field.");
+		_targetType = "Report";
+		_targetId = _reportId;
+
+		var detail = await officer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+		var version = detail.GetProperty("version").GetString();
+		var report = $"/api/admin/reports/{_reportId}";
+
+		switch (action)
+		{
+			case "a report is deleted":
+				using (var deleted = await officer.DeleteAsync(new Uri(report, UriKind.Relative)))
+				{
+					_actions.Add(deleted.StatusCode);
+				}
+
+				_expectedAction = AuditAction.DeletedReport;
+				break;
+			case "a report is published":
+				_actions.Add(await Post(officer, $"{report}/publish", new { version }));
+				_expectedAction = AuditAction.PublishedReport;
+				break;
+			case "a report is unpublished":
+				_actions.Add(await Post(officer, $"{report}/unpublish", new { version }));
+				_expectedAction = AuditAction.UnpublishedReport;
+				break;
+			default:
+				_secrets.Add(EditedEn);
+				_secrets.Add(EditedFr);
+				using (var edited = await officer.PutAsJsonAsync(new Uri($"{report}/summary", UriKind.Relative), new { version, aiSummaryEn = EditedEn, aiSummaryFr = EditedFr }))
+				{
+					_actions.Add(edited.StatusCode);
+					var after = await edited.Content.ReadFromJsonAsync<JsonElement>();
+					_expectedAction = AuditAction.EditedSummary;
+
+					if (action == "a summary is rolled back")
+					{
+						var earlier = after.GetProperty("summaryRevisions")[1].GetProperty("id").GetString()!;
+						_actions.Add(await Post(officer, $"{report}/summary/revisions/{earlier}/rollback", new { version = after.GetProperty("version").GetString() }));
+						_expectedAction = AuditAction.RolledBackSummary;
+					}
+				}
+
+				break;
+		}
+	}
+
+	private const string EditedEn = "Synthetic edited summary for the audit scenario.";
+	private const string EditedFr = "Résumé synthétique modifié pour le scénario d'audit.";
+
+	private static object QuestionBody(string label)
+	{
+		return new
+		{
+			key = (string?)null,
+			type = "short_text",
+			labelEn = label,
+			labelFr = "Une question synthétique auditée",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+		};
+	}
+
+	private static async Task<JsonElement> Send(Task<HttpResponseMessage> call,
+												HttpStatusCode expected)
+	{
+		using var response = await call;
+		response.StatusCode.ShouldBe(expected, await response.Content.ReadAsStringAsync());
+		return await response.Content.ReadFromJsonAsync<JsonElement>();
+	}
+
+	private static async Task<HttpStatusCode> Post(HttpClient client,
+												   string uri,
+												   object body)
+	{
+		using var response = await client.PostAsJsonAsync(new Uri(uri, UriKind.Relative), body);
+		return response.StatusCode;
 	}
 
 	// --- REQ-MOD-091: sign-out is not an audited event ---

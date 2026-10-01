@@ -269,18 +269,6 @@ definition matches; a built claim may never have one.
 ### REQ-DOM-013
 
 - [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs)
-- Unbound: `Given a question is created occurs`
-- Unbound: `Then an audit log entry records the acting token subject and action metadata`
-- Unbound: `Then the subject is an opaque string that joins to no user record`
-- Unbound: `Then it never contains raw answers, names, credentials, tokens, or client filenames`
-- Unbound: `Given a question is revised occurs`
-- Unbound: `Given a question is deleted occurs`
-- Unbound: `Given a question revision is deleted occurs`
-- Unbound: `Given a report is deleted occurs`
-- Unbound: `Given a summary is edited occurs`
-- Unbound: `Given a summary is rolled back occurs`
-- Unbound: `Given a report is published occurs`
-- Unbound: `Given a report is unpublished occurs`
 
 ### REQ-DOM-014
 
@@ -804,10 +792,7 @@ definition matches; a built claim may never have one.
 
 ### REQ-MOD-047
 
-- Unbound: `Given an administrator or reviewer performs an action that must be audited`
-- Unbound: `When the audit row fails to write`
-- Unbound: `Then the action itself does not commit`
-- Unbound: `Then the caller sees the action as failed, not succeeded`
+- [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs)
 
 ### REQ-MOD-048
 

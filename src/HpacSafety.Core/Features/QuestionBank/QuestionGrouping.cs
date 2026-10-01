@@ -78,8 +78,9 @@ public static class QuestionGrouping
 	/// <remarks>
 	///     <para>
 	///         The children keep their order within the group and take the group's slot,
-	///         every later question shifting down. A group that was deleted leaves the
-	///         slot; one that was retyped keeps it, and its children follow it. An
+	///         every later question shifting down only as far as it must. A group that
+	///         was deleted leaves the slot; one that was retyped keeps it, and its
+	///         children follow it. An
 	///         answered child forks and an unanswered one is revised, like any edit
 	///         (ADR-0071). Whether a child has been answered is a fact about reports, so
 	///         the caller reads it and passes it in.
@@ -134,14 +135,19 @@ public static class QuestionGrouping
 		List<Question> ungrouped = [];
 		List<Question> replacements = [];
 		var moved = 0;
+		var last = -1;
+		var shifting = false;
 
-		for (var position = 0; position < arrangement.Count; position++)
+		// Questions before the children's slot keep their order. After it, a question
+		// is shifted only while it sits at or before the one ahead of it; the first
+		// that clears the children ends the shifting, so nothing unrelated is revised.
+		foreach (var question in arrangement)
 		{
-			var question = arrangement[position];
-
 			if (children.Contains(question))
 			{
-				var live = question.Ungroup(answered.Contains(question.Id), position, at);
+				shifting = true;
+				last++;
+				var live = question.Ungroup(answered.Contains(question.Id), last, at);
 				ungrouped.Add(live);
 
 				if (!ReferenceEquals(live, question))
@@ -149,10 +155,16 @@ public static class QuestionGrouping
 					replacements.Add(live);
 				}
 			}
-			else if (question.DisplayOrder != position)
+			else if (shifting && question.DisplayOrder <= last)
 			{
-				question.Reorder(position, at);
+				last++;
+				question.Reorder(last, at);
 				moved++;
+			}
+			else
+			{
+				shifting = false;
+				last = Math.Max(last, question.DisplayOrder);
 			}
 		}
 

@@ -140,7 +140,7 @@ live child (`REQ-QB-052`, issue #720):
   revision (ADR-0071). Grouping is display metadata, but a revision is the
   only way a question changes.
 - The ungrouped children take the group's slot on the form, in their order
-  within the group, and the questions after them shift down. A retyped group
+  within the group, and the questions after them shift down only as far as they must. A retyped group
   keeps its own slot and its children follow it.
 - Each write is audited like any other question write.
 

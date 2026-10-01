@@ -275,7 +275,26 @@ public class QuestionGroupingTests
 		result.Ungrouped.ShouldBe([first, second]);
 		first.GroupedUnderQuestionId.ShouldBeNull();
 		second.GroupedUnderQuestionId.ShouldBeNull();
-		new[] { before, first, second, after }.Select(question => question.DisplayOrder).ShouldBe([0, 1, 2, 3]);
+		new[] { before, first, second, after }.Select(question => question.DisplayOrder).ShouldBe([0, 1, 2, 4]);
+		result.Moved.ShouldBe(0);
+	}
+
+	[Fact]
+	public void GivenChildrenOrderedFarFromTheirGroup_WhenUngrouped_ThenOnlyTheQuestionsTheyDisplaceShift()
+	{
+		// Given
+		var group = WithOrder(Group("aircraft"), 0);
+		var near = WithOrder(Ordinary("near", QuestionType.ShortText), 1);
+		var first = WithOrder(Ordinary("first", QuestionType.ShortText, group.Id), 5);
+		var second = WithOrder(Ordinary("second", QuestionType.ShortText, group.Id), 6);
+		var far = WithOrder(Ordinary("far", QuestionType.ShortText), 20);
+		group.Delete(false, At.AddHours(1));
+
+		// When
+		var result = QuestionGrouping.UngroupChildren([group, near, first, second, far], group, new HashSet<TinyId>(), At.AddHours(1));
+
+		// Then
+		new[] { first, second, near, far }.Select(question => question.DisplayOrder).ShouldBe([0, 1, 2, 20]);
 		result.Moved.ShouldBe(1);
 	}
 

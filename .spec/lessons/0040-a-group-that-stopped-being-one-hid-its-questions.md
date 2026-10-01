@@ -26,7 +26,7 @@ appeared on the reporter's form. They were still live in the question bank.
 
 - REQ-QB-052: a grouped question is ungrouped in the same save, an answered one
   by a fork and an unanswered one by a revision, taking the group's slot in
-  their existing order with later questions shifting down.
+  their existing order with later questions shifting down only as far as they must.
 - ADR-0076 is amended and the question-bank README states the rule.
 
 ## Scenario

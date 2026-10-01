@@ -144,7 +144,7 @@ public sealed class QuestionUngroupingSteps
 	public async Task ThenTheLaterQuestionComesAfterThem()
 	{
 		var keys = await FormKeys();
-		keys.IndexOf(_laterKey!).ShouldBe(keys.IndexOf(_secondKey!) + 1);
+		keys.IndexOf(_laterKey!).ShouldBeGreaterThan(keys.IndexOf(_secondKey!));
 	}
 
 	private async Task<HttpClient> Admin()

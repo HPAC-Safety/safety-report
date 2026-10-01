@@ -288,6 +288,11 @@ jobs:
       - name: Every markdown file declares what it is
         run: node tools/check-frontmatter.mjs
 
+      # Nothing else notices a link a move or a rename broke: GitHub renders it
+      # as a 404 and the build stays green. ADR-0183.
+      - name: Every relative link resolves
+        run: node tools/check-links.mjs
+
       # The generic skills and role agents are reused elsewhere, so they name
       # nothing specific to this repository. ADR-0131.
       - name: Generic agent instructions name nothing specific to this repository

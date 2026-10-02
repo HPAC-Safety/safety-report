@@ -256,7 +256,7 @@ Raw reports are retained until explicit deletion — *Reqnroll, Covered*
 
 ### REQ-DOM-011
 
-Soft-deleting a report keeps its row and its stored files — *Reqnroll, Planned*
+Soft-deleting a report keeps its row and its stored files — *Reqnroll, Covered*
 
 ### REQ-DOM-013
 
@@ -346,7 +346,7 @@ The client filename is kept only as a reviewer's download name — *Reqnroll, Co
 
 ### REQ-MED-005
 
-Unclaimed uploads expire automatically — *Reqnroll, Planned*
+Unclaimed uploads expire automatically — *Reqnroll, Covered*
 
 ### REQ-MED-006
 

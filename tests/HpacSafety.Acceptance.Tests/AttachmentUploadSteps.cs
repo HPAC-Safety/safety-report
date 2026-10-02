@@ -52,6 +52,8 @@ public sealed class AttachmentUploadSteps
 	private string? _reportId;
 	private int _abortedAfterBytes;
 	private string? _mintedKey;
+	private string? _blobKey;
+	private LifecycleConfiguration? _lifecycle;
 
 	// --- REQ-SUB-072: minting returns a pre-signed PUT for one quarantine key ---
 
@@ -520,6 +522,141 @@ public sealed class AttachmentUploadSteps
 			Prefix = $"{_reportId}/stripped/",
 		});
 		(listing.S3Objects ?? []).ShouldBeEmpty();
+	}
+
+	// --- REQ-MED-005: the quarantine lifecycle rule applied to the bucket ---
+
+	[Given(@"an upload that no committed submission claimed")]
+	public async Task GivenAnUploadNoSubmissionClaimed()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_fileName = "launch-site.pdf";
+		_uploadId = await DirectUpload.Send(_reporter, UniquePdf(), "application/pdf");
+
+		// And, beside it, one a committed submission did claim.
+		var claimedUpload = await DirectUpload.Send(_reporter, UniquePdf(), "application/pdf");
+		using var response = await SubmitClaiming(claimedUpload, _fileName);
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+		_reportId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+	}
+
+	[When(@"the storage lifecycle rule runs")]
+	public async Task WhenTheStorageLifecycleRuleRuns()
+	{
+		// A server cannot be made to wait fifteen days, so what is checked is the
+		// configuration it would run: the one actually applied to the bucket.
+		_lifecycle = (await BootedApi.Storage.GetLifecycleConfigurationAsync(BootedApi.BucketName)).Configuration;
+	}
+
+	[Then(@"the upload expires, its key stopping resolving fifteen days after it was written and its bytes gone about a day after that")]
+	public async Task ThenTheUploadExpires()
+	{
+		var rule = _lifecycle!.Rules.Single(candidate => candidate.Id == "expire-quarantine");
+		rule.Status.ShouldBe(LifecycleRuleStatus.Enabled);
+		rule.Expiration.Days.ShouldBe(15);
+
+		// A versioned bucket's expiry only hides the key behind a delete marker;
+		// the bytes go when the version turns noncurrent a day later.
+		rule.NoncurrentVersionExpiration.NoncurrentDays.ShouldBe(1);
+		rule.AbortIncompleteMultipartUpload.DaysAfterInitiation.ShouldBe(1);
+		Matches(rule, $"quarantine/{_uploadId}").ShouldBeTrue();
+
+		// Production's rule says the same (infra/storage.tf, CON-INF-010).
+		var terraform = await File.ReadAllTextAsync(Path.Combine(Path.GetDirectoryName(S3Emulator.LifecycleRulePath())!, "..", "infra", "storage.tf"));
+		terraform.ShouldContain("id     = \"expire-quarantine\"");
+		terraform.ShouldContain("prefix = \"quarantine/\"");
+		terraform.ShouldContain("days = 15");
+		terraform.ShouldContain("noncurrent_days = 1");
+	}
+
+	[Then(@"no file a committed submission claimed is expired by that rule")]
+	public async Task ThenNoClaimedFileIsExpired()
+	{
+		var file = await ClaimedFile();
+		file.BlobKey.ShouldNotStartWith("quarantine/");
+
+		foreach (var rule in _lifecycle!.Rules.Where(candidate => candidate.Status == LifecycleRuleStatus.Enabled))
+		{
+			Matches(rule, file.BlobKey).ShouldBeFalse(rule.Id);
+			if (file.StrippedBlobKey is not null)
+			{
+				Matches(rule, file.StrippedBlobKey).ShouldBeFalse(rule.Id);
+			}
+		}
+	}
+
+	/// <summary>Whether <paramref name="rule" /> would apply to <paramref name="key" />: a filter of a prefix only, and the key under it.</summary>
+	private static bool Matches(LifecycleRule rule,
+								string key)
+	{
+		return rule.Filter?.LifecycleFilterPredicate switch
+		{
+			LifecyclePrefixPredicate prefix => key.StartsWith(prefix.Prefix ?? string.Empty, StringComparison.Ordinal),
+			null => true,
+			_ => throw new NotSupportedException("A rule filtered by tag or size is not one this suite expects."),
+		};
+	}
+
+	// --- REQ-DOM-011: soft deletion keeps the report's files and stored objects ---
+
+	[Given(@"a synthetic report with an attachment has been submitted")]
+	public async Task GivenAReportWithAnAttachmentHasBeenSubmitted()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_bytes = UniquePdf();
+		_uploadId = await DirectUpload.Send(_reporter, _bytes, "application/pdf");
+		using var response = await SubmitClaiming(_uploadId, "launch-site.pdf");
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+		_reportId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		_blobKey = (await ClaimedFile()).BlobKey;
+	}
+
+	[When(@"a safety officer soft-deletes the report")]
+	public async Task WhenASafetyOfficerSoftDeletesTheReport()
+	{
+		var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		using var response = await officer.DeleteAsync(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+	}
+
+	[Then(@"the report row remains, stamped with a deleted timestamp")]
+	public async Task ThenTheReportRowRemains()
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var report = await database.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == TinyId.Parse(_reportId!));
+		report.Deleted.ShouldNotBeNull();
+	}
+
+	[Then(@"its answers, files, and stored objects remain")]
+	public async Task ThenItsAnswersFilesAndObjectsRemain()
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var reportId = TinyId.Parse(_reportId!);
+		(await database.ReportAnswers.IgnoreQueryFilters().CountAsync(a => a.ReportId == reportId)).ShouldBeGreaterThan(0);
+		(await database.ReportFiles.IgnoreQueryFilters().SingleAsync(f => f.ReportId == reportId)).BlobKey.ShouldBe(_blobKey);
+
+		(await StoredLength(_blobKey!)).ShouldBe(_bytes.Length);
+	}
+
+	[Then(@"no application path removes them afterwards")]
+	public async Task ThenNoApplicationPathRemovesThem()
+	{
+		// The delete the API offers is gone for a report already deleted, and the
+		// bucket holds a version of the original but no delete marker over it.
+		var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		using var again = await officer.DeleteAsync(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+		again.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+
+		var versions = await BootedApi.Storage.ListVersionsAsync(new ListVersionsRequest
+		{
+			BucketName = BootedApi.BucketName,
+			Prefix = $"{_reportId}/",
+		});
+		(versions.Versions ?? []).Count(version => version.Key == _blobKey && version.IsDeleteMarker != true).ShouldBe(1);
+		(versions.Versions ?? []).ShouldNotContain(version => version.IsDeleteMarker == true);
+		(await StoredLength(_blobKey!)).ShouldBe(_bytes.Length);
 	}
 
 	/// <summary>Submits a report whose one file-upload answer claims <paramref name="uploadId" />.</summary>

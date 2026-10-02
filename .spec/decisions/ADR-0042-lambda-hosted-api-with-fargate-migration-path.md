@@ -22,7 +22,7 @@ Web Adapter choice stand. **Amended by #629:** the Dockerfile copies the
 adapter from this organization's GHCR mirror,
 `ghcr.io/hpac-safety/aws-lambda-adapter`, pinned to upstream's tag and digest,
 never from `public.ecr.aws`, whose per-IP anonymous pull limit shared CI
-runners exhaust. `tools/mirror-lambda-adapter.sh` copies a new version once,
+runners exhaust. `tools/build/mirror-lambda-adapter.sh` copies a new version once,
 from the release's build job.
 
 ## Context

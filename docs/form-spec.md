@@ -7,7 +7,7 @@ type: guide
 # Occurrence report — form specification
 
 > **Generated file — do not edit by hand.**
-> Regenerate with `tools/extract-typeform.py`. Not currently wired into CI — regenerate
+> Regenerate with `tools/dev/extract-typeform.py`. Not currently wired into CI — regenerate
 > manually to notice drift from the live form. It is evidence, not the question-bank seed
 > source; see [ADR-0077](../.spec/decisions/ADR-0077-typeform-json-import-and-export.md).
 

@@ -7,7 +7,7 @@ type: readme
 # Specification index
 
 > **Generated file — do not edit by hand.**
-> Regenerate with `node tools/spec-index.mjs`. CI fails on a difference
+> Regenerate with `node tools/spec/generate-spec-index.mjs`. CI fails on a difference
 > ([ADR-0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).
 
 The authority rules, the product contract, and the simplicity guardrails are
@@ -51,6 +51,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0189](decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md) | A workflow step runs one command, and tools/ is grouped by domain | accepted | 2026-10-02 |
 | [0188](decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md) | A component's logic lives in Foo.tsx and its markup in Foo.view.tsx, and web logic is unit-tested | accepted | 2026-10-02 |
 | [0187](decisions/ADR-0187-a-migration-restores-the-seeded-groups-a-fresh-database-lost.md) | A migration restores the seeded groups a fresh database lost | accepted | 2026-10-02 |
 | [0186](decisions/ADR-0186-the-country-question-is-a-pinned-country-pick-list-and-province-follows-it.md) | The Country question is a pinned country pick list, and Province follows it | accepted | 2026-10-02 |

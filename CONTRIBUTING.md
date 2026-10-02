@@ -43,7 +43,7 @@ in `~/.claude/settings.json` for every project.
 3. Implement the smallest change that satisfies `.spec/features` and the issue.
 4. Run the tests for the code you changed, natively (a filtered `dotnet test`,
    and `CI=1 npm test` for a touched e2e spec), then
-   `tools/ci-local.sh --body <pr-body.md>`: it runs the pull request's fast
+   `tools/dev/ci-local.sh --body <pr-body.md>`: it runs the pull request's fast
    checks under act (body checks, `feature-coverage`, and the cheap `ci.yml`
    jobs), so a failure is caught before the PR rather than in it. GitHub CI,
    the coverage ratchet included, is the full gate; `--full` runs all of it
@@ -72,9 +72,9 @@ the repository delivery contract.
 - Open every markdown file with YAML frontmatter naming its `title`,
   `description`, and `type`
   ([ADR-0087](.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
-  `node tools/check-frontmatter.mjs` checks the tree; the pre-commit hook
+  `node tools/docs/check-frontmatter.mjs` checks the tree; the pre-commit hook
   checks what you staged.
-- Keep every relative link resolvable; `node tools/check-links.mjs` checks
+- Keep every relative link resolvable; `node tools/docs/check-links.mjs` checks
   them, in the pre-commit hook and in CI. A specification page goes under
   `.spec/`, a guide under `docs/`
   ([ADR-0183](.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).

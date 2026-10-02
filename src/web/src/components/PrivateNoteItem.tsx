@@ -6,7 +6,7 @@ import { PrivateNoteItemView } from "./PrivateNoteItem.view"
 
 export type { PrivateNote, PrivateNoteRevision } from "../api/adminReports"
 
-// Split across lines on purpose: tools/check-hardcoded-strings.mjs is a line
+// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 export type RemoveNote = () =>
 	Promise<boolean>

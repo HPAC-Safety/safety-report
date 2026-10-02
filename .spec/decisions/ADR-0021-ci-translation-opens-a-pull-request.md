@@ -77,7 +77,7 @@ flowchart TD
     human --> main["main"]
 ```
 
-`--check` and `--generate` are separate modes of `tools/translate-locale.mjs`,
+`--check` and `--generate` are separate modes of `tools/i18n/translate-locale.mjs`,
 and there is **no default mode** — running it with neither flag exits 2. A tool
 whose no-argument behaviour is the side-effecting one gets invoked that way by
 accident exactly once.
@@ -102,7 +102,7 @@ their absence look like first-run setup.
 ### The offline stub cannot reach `main`
 
 The test suite needs a translator that makes no network call, so
-`tools/translator.mjs` ships a `stub` provider. It stamps `provider: "stub"` in
+`tools/i18n/translator.mjs` ships a `stub` provider. It stamps `provider: "stub"` in
 the provenance, and `--check` **fails** on that stamp. A development stand-in
 must never weaken a guarantee the production one makes — so the stand-in's
 output is rejected by the same gate that protects everything else, no matter

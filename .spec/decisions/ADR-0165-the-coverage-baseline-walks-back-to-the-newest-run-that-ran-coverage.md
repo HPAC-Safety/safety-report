@@ -24,7 +24,7 @@ so the ratchet did not run." (#589). The `coverage` job is skipped whenever a
 change touches no .NET or e2e code (`changes`'s filter), so `main`'s newest
 successful `push` run is frequently one that never ran coverage and so never
 uploaded a `coverage-report` artifact. `ci.yml`'s "Fetch the main baseline"
-step, and the identical lookup in `tools/ci-local.sh`, took only that newest
+step, and the identical lookup in `tools/dev/ci-local.sh`, took only that newest
 run (`gh run list --limit 1`) and gave up the moment it lacked the artifact -
 even though an earlier green run has a perfectly good one, well inside the
 artifact's retention window.
@@ -35,7 +35,7 @@ carried a live artifact.
 
 ## Decision
 
-**Walk back.** `tools/find-coverage-baseline.mjs` is now the one place either
+**Walk back.** `tools/coverage/find-coverage-baseline.mjs` is now the one place either
 caller finds the baseline:
 
 - List successful `push` runs of `CI` on `main`, newest first
@@ -51,7 +51,7 @@ caller finds the baseline:
 - Giving up after `--limit` runs (20, generous enough to cross several
   docs-only merges in a row) is not a failure: it is today's outcome, applied
   further back - a visible notice, ratchet skipped, the floor still gates.
-- `ci.yml`'s "Fetch the main baseline" step and `tools/ci-local.sh` both call
+- `ci.yml`'s "Fetch the main baseline" step and `tools/dev/ci-local.sh` both call
   the script and nothing else, so they can never pick a different run.
 - **The coverage comment now names the baseline run** it used
   (`coverage-gate.mjs --baseline-run-id`), so a reader can open the exact run
@@ -77,7 +77,7 @@ had expired.
 - Two `gh` calls become up to `1 + limit`: one `run list`, plus one
   `artifacts` lookup per candidate walked past. In the ordinary case (the
   newest run ran coverage) this is unchanged from before.
-- `tools/find-coverage-baseline.mjs`'s selection logic
+- `tools/coverage/find-coverage-baseline.mjs`'s selection logic
   (`isEligible`, `selectBaselineRun`) is unit-tested directly; a CLI-level
-  test stubs `gh` the same way `tools/ci-local.sh`'s own tests already stub
+  test stubs `gh` the same way `tools/dev/ci-local.sh`'s own tests already stub
   `gh` and `act`.

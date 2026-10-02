@@ -23,7 +23,7 @@ name: Traceability matrix
 # newer push changed a file below, it started its own run, and this one is
 # superseded (ADR-0106). When it didn't — i18n-translate.yml committed its
 # French for the same push — nothing else will regenerate, so the commit is
-# replayed on top and pushed again (ADR-0113). tools/push-to-pr-branch.mjs
+# replayed on top and pushed again (ADR-0113). tools/github/push-to-pr-branch.mjs
 # decides which.
 #
 # A pull request merges through the merge queue (ADR-0147), where ci.yml's
@@ -36,10 +36,14 @@ on:
   pull_request_target:
     paths:
       - .spec/**
-      - tools/traceability.mjs
-      - tools/spec-index.mjs
-      - tools/spec-paths.mjs
-      - tools/bindings.mjs
+      - tools/spec/generate-traceability.mjs
+      - tools/spec/generate-spec-index.mjs
+      - tools/spec/spec-paths.mjs
+      - tools/spec/generate-bindings.mjs
+      - tools/spec/regenerate-spec-docs.mjs
+      - tools/github/commit-to-pr-branch.mjs
+      - tools/github/read-node-major.mjs
+      - tools/lib/actions.mjs
       - tests/HpacSafety.Acceptance.Tests/**
       - tests/e2e/steps/**
       - .github/workflows/traceability.yml
@@ -77,14 +81,7 @@ jobs:
       # The Node major is pinned in ci.yml and nowhere else (ADR-0015).
       - name: Read the pinned Node major
         id: node
-        run: |
-          set -euo pipefail
-          major=$(grep -m1 -oE 'node-version: [0-9]+' base/.github/workflows/ci.yml | grep -oE '[0-9]+$')
-          if [ -z "$major" ]; then
-            echo "::error::Could not read the pinned Node major out of .github/workflows/ci.yml."
-            exit 1
-          fi
-          echo "major=$major" >> "$GITHUB_OUTPUT"
+        run: node base/tools/github/read-node-major.mjs base/.github/workflows/ci.yml
 
       - uses: actions/setup-node@v7
         with:
@@ -94,26 +91,7 @@ jobs:
       # from .spec/, so one run regenerates both and one commit carries them.
       - name: Regenerate the matrix and the index with the base branch's generators
         id: regenerate
-        run: |
-          set -euo pipefail
-          for tool in traceability.mjs spec-index.mjs spec-paths.mjs bindings.mjs; do
-            if ! cmp -s "base/tools/$tool" "head/tools/$tool"; then
-              echo "::notice::This pull request changes tools/$tool, so the base generators can't render its output. Regenerate locally with 'node tools/traceability.mjs && node tools/bindings.mjs && node tools/spec-index.mjs'; ci.yml checks the result."
-              echo "changed=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
-          cd head
-          node ../base/tools/traceability.mjs
-          node ../base/tools/spec-index.mjs
-          # Step files are read as text and their patterns compiled; nothing
-          # in them runs. --no-fail: ci.yml's docs job is the gate (ADR-0184).
-          node ../base/tools/bindings.mjs --no-fail
-          if git diff --quiet -- .spec/traceability.md .spec/README.md .spec/bindings.md; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: node base/tools/spec/regenerate-spec-docs.mjs base head
 
       # A push made with the built-in GITHUB_TOKEN does not trigger workflows
       # (GitHub's loop protection), so ci.yml would never re-run on this
@@ -130,25 +108,13 @@ jobs:
           USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # --paths is this workflow's pull_request_target paths, verbatim;
+        # tests/js/github/push-to-pr-branch.test.mjs fails if they disagree. The
+        # tool is the base branch's copy, like the generator, and pushes through
+        # tools/github/push-to-pr-branch.mjs.
         run: |
-          set -euo pipefail
-
-          if [ "$USING_DEFAULT_TOKEN" = 'true' ]; then
-            echo "::warning::No TRANSLATION_PR_TOKEN is set, so this commit is pushed with the built-in GITHUB_TOKEN and CI will not re-run on it. Push an empty commit, or close and reopen the PR, before merging. See ADR-0101."
-          fi
-
-          git config user.name  'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git remote set-url origin \
-            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-
-          git add .spec/traceability.md .spec/README.md .spec/bindings.md
-          git commit -m 'Regenerate the traceability matrix, step bindings, and specification index'
-
-          # --paths is this workflow's pull_request_target paths, verbatim;
-          # tests/js/push-to-pr-branch.test.mjs fails if they disagree. The
-          # tool is the base branch's copy, like the generator.
-          node ../base/tools/push-to-pr-branch.mjs \
-            --branch "$HEAD_REF" \
-            --event-sha "$HEAD_SHA" \
-            --paths '.spec/**,tools/traceability.mjs,tools/spec-index.mjs,tools/spec-paths.mjs,tools/bindings.mjs,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'
+          node ../base/tools/github/commit-to-pr-branch.mjs \
+          --adr ADR-0101 \
+          --add '.spec/traceability.md,.spec/README.md,.spec/bindings.md' \
+          --subject 'Regenerate the traceability matrix, step bindings, and specification index' \
+          --paths '.spec/**,tools/spec/generate-traceability.mjs,tools/spec/generate-spec-index.mjs,tools/spec/spec-paths.mjs,tools/spec/generate-bindings.mjs,tools/spec/regenerate-spec-docs.mjs,tools/github/commit-to-pr-branch.mjs,tools/github/read-node-major.mjs,tools/lib/actions.mjs,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'

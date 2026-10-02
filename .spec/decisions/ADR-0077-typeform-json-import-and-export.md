@@ -197,7 +197,7 @@ question set, ahead of any synthetic fixture test.
   covers the latter's rationale), and the `pending_import_logic` table.
 - `docs/form-spec.md` stops being the seed's source of truth; it remains
   useful, hand-maintained evidence of what the live Typeform page currently
-  asks, regenerable by `tools/extract-typeform.py`.
+  asks, regenerable by `tools/dev/extract-typeform.py`.
 - `QuestionKey.Normalize` must accept a GUID-with-dashes shape, since `Key`
   is now sometimes assigned from one directly rather than always typed by an
   administrator — verified during implementation, not assumed here.

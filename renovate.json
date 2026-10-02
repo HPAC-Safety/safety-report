@@ -51,7 +51,7 @@
 			"datasourceTemplate": "docker"
 		},
 		{
-			"description": "The API Dockerfile pulls the Lambda Web Adapter from this org's GHCR mirror, never public.ecr.aws (#629). The tag and digest on that line are upstream's, so track them against upstream; tools/mirror-lambda-adapter.sh copies a bumped version on the next release.",
+			"description": "The API Dockerfile pulls the Lambda Web Adapter from this org's GHCR mirror, never public.ecr.aws (#629). The tag and digest on that line are upstream's, so track them against upstream; tools/build/mirror-lambda-adapter.sh copies a bumped version on the next release.",
 			"customType": "regex",
 			"managerFilePatterns": [
 				"/^src/HpacSafety\\.Api/Dockerfile$/"
@@ -99,7 +99,7 @@
 			]
 		},
 		{
-			"description": "A web dependency PR changes src/web/package.json or its lock file, and feature-coverage counts src/** as behavior-bearing. The PR cites the Playwright-covered claims the bump leaves standing, in the one shape tools/feature-coverage.mjs accepts; the required web and e2e checks re-prove those claims on the same PR, and the dependency category fails if anything but a manifest or lock file changed (ADR-0090, ADR-0111).",
+			"description": "A web dependency PR changes src/web/package.json or its lock file, and feature-coverage counts src/** as behavior-bearing. The PR cites the Playwright-covered claims the bump leaves standing, in the one shape tools/spec/check-feature-coverage.mjs accepts; the required web and e2e checks re-prove those claims on the same PR, and the dependency category fails if anything but a manifest or lock file changed (ADR-0090, ADR-0111).",
 			"matchFileNames": [
 				"src/web/package.json",
 				"src/web/package-lock.json"
@@ -127,7 +127,7 @@
 			"automerge": false
 		},
 		{
-			"description": "Hold the .NET SDK and every mcr.microsoft.com/dotnet image to the major the projects target. Renovate cannot see the target framework, so on its own it offered runtime:11.0 to a net10.0 Worker that would not start on it (#429). Digest, minor, and patch updates still flow. The next major is moved by hand in one pull request: global.json, <TargetFramework> in Directory.Build.props, the Dockerfile FROM, and this allowedVersions. tools/dotnet-major.mjs fails the docs check when they disagree (ADR-0120).",
+			"description": "Hold the .NET SDK and every mcr.microsoft.com/dotnet image to the major the projects target. Renovate cannot see the target framework, so on its own it offered runtime:11.0 to a net10.0 Worker that would not start on it (#429). Digest, minor, and patch updates still flow. The next major is moved by hand in one pull request: global.json, <TargetFramework> in Directory.Build.props, the Dockerfile FROM, and this allowedVersions. tools/build/check-dotnet-major.mjs fails the docs check when they disagree (ADR-0120).",
 			"matchPackageNames": [
 				"dotnet-sdk",
 				"mcr.microsoft.com/dotnet/**"
@@ -135,9 +135,9 @@
 			"allowedVersions": "/^10\\./"
 		},
 		{
-			"description": "tools/act/Dockerfile's amd64 stage supplies the x86-64 loader and glibc for the act image, whose base is catthehacker's act-24.04 (ADR-0145). It stays on that release, so a local run loads amd64 downloads against the runner's glibc; #551 moved it to 26.04 alone (#552). Digest updates within 24.04 still flow. The next release moves both FROM lines by hand in one pull request.",
+			"description": "tools/dev/act/Dockerfile's amd64 stage supplies the x86-64 loader and glibc for the act image, whose base is catthehacker's act-24.04 (ADR-0145). It stays on that release, so a local run loads amd64 downloads against the runner's glibc; #551 moved it to 26.04 alone (#552). Digest updates within 24.04 still flow. The next release moves both FROM lines by hand in one pull request.",
 			"matchFileNames": [
-				"tools/act/Dockerfile"
+				"tools/dev/act/Dockerfile"
 			],
 			"matchPackageNames": [
 				"ubuntu"

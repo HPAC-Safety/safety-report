@@ -79,8 +79,8 @@ command line is typed is not a guard
 
 ## Consequences
 
-- `tools/check-frontmatter.mjs` is the one authority on the shape, in the same
-  dependency-free style as `tools/check-locales.mjs`; its exit code is the
+- `tools/docs/check-frontmatter.mjs` is the one authority on the shape, in the same
+  dependency-free style as `tools/i18n/check-locales.mjs`; its exit code is the
   contract and its errors name the file, the key, and the expected shape.
 - A new markdown file cannot be added without stating what it is.
 - `docs` becomes a required status check, and the job is extended rather than

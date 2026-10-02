@@ -58,7 +58,7 @@ the body, or says why it needs none.**
   ([ADR-0090](ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
 - **The template** has a `## Screenshots` section that shows both forms, and a
   checkbox under "Repository checks".
-- **The check** is `tools/pr-screenshots.mjs`, run by a `screenshots` job in
+- **The check** is `tools/web/check-pr-screenshots.mjs`, run by a `screenshots` job in
   `linked-issue.yml`, which re-runs on `edited` so fixing the body clears it.
   It reads only the body and the changed-file list. A screenshot counts only
   shown as an image (`![…](…)` or `<img src=…>`), linked to this repository

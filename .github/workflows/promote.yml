@@ -58,6 +58,13 @@ jobs:
       sha: ${{ steps.find.outputs.sha }}
       run_id: ${{ steps.find.outputs.run_id }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
       - name: Find the tag's green release run and its artifacts
         id: find
         env:
@@ -65,48 +72,7 @@ jobs:
           REPO: ${{ github.repository }}
           REF_TYPE: ${{ github.ref_type }}
           TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          if [ "$REF_TYPE" != "tag" ]; then
-            echo "::error::Run this on a release tag, not the '$TAG' branch: Run workflow → Use workflow from → Tags → the tag (or: gh workflow run promote.yml --ref <tag>)."
-            exit 1
-          fi
-          if ! echo "$TAG" | grep -Eq '^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])-[1-9][0-9]*$'; then
-            echo "::error::Tag '$TAG' does not match YYYY.MM.DD-N (e.g. 2026.10.02-1). See ADR-0158."
-            exit 1
-          fi
-
-          # The build job tagged every image with the commit the tag points to,
-          # and release.yml tags the very commit its run is on, so that run is
-          # the one whose head_sha is this commit. Newest first; a success
-          # means its staging job was green.
-          sha=$(gh api "repos/$REPO/commits/$TAG" --jq '.sha')
-          run_id=$(gh api "repos/$REPO/actions/workflows/release.yml/runs?head_sha=$sha&status=success&per_page=1" \
-            --jq '.workflow_runs[0].id // empty')
-          if [ -z "$run_id" ]; then
-            echo "::error::No successful Release run for $TAG (commit $sha). Only a release already green on staging is promoted: wait for its staging job to pass."
-            exit 1
-          fi
-
-          live=$(gh api --paginate "repos/$REPO/actions/runs/$run_id/artifacts" \
-            --jq '.artifacts[] | select(.expired == false) | .name')
-          for name in api-image worker-image web-dist; do
-            if ! printf '%s\n' "$live" | grep -qx "$name"; then
-              echo "::error::Release run $run_id for $TAG no longer has its '$name' artifact (release.yml keeps them 90 days). Run Release to cut a new release from main, then promote that one."
-              exit 1
-            fi
-          done
-
-          {
-            echo "tag=$TAG"
-            echo "sha=$sha"
-            echo "run_id=$run_id"
-          } >> "$GITHUB_OUTPUT"
-          {
-            echo "### Promoting $TAG"
-            echo "- Release run: $GITHUB_SERVER_URL/$REPO/actions/runs/$run_id"
-            echo "- Commit: \`$sha\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: node tools/github/find-release-run.mjs
 
   production:
     needs: locate

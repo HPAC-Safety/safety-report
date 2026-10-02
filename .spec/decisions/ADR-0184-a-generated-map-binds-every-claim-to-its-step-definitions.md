@@ -1,6 +1,6 @@
 ---
 title: A generated map binds every claim to its step definitions
-description: tools/bindings.mjs resolves every scenario step to the step definition its runner would bind and writes .spec/bindings.md — per claim, the files that bind it. A built claim with an unbound step fails the docs job; stale @ignore claims, unused step definitions, and ambiguous steps are listed, not failed. The specification is the authority.
+description: tools/spec/generate-bindings.mjs resolves every scenario step to the step definition its runner would bind and writes .spec/bindings.md — per claim, the files that bind it. A built claim with an unbound step fails the docs job; stale @ignore claims, unused step definitions, and ambiguous steps are listed, not failed. The specification is the authority.
 type: adr
 status: accepted
 date: 2026-09-30
@@ -45,7 +45,7 @@ truth, and the code second.
 
 ## Decision
 
-`tools/bindings.mjs` writes `.spec/bindings.md`, a generated file beside the
+`tools/spec/generate-bindings.mjs` writes `.spec/bindings.md`, a generated file beside the
 matrix.
 
 - **The map.** For each claim, it lists the step-definition files that bind its
@@ -89,7 +89,7 @@ matrix.
   appear, so moving code does not churn the file (ADR-0106).
   - `traceability.yml` regenerates it with the matrix and the index, also when
     only a step file changes.
-  - The post-merge and post-rewrite hooks and `tools/ci-local.sh` regenerate it.
+  - The post-merge and post-rewrite hooks and `tools/dev/ci-local.sh` regenerate it.
   - `.gitattributes` keeps the checked-out side on a conflict.
 - **The rule is recorded.**
   [CON-TQ-010](../testing-and-quality.md) records it, and the generated index
@@ -149,9 +149,9 @@ of them — following the sections of the area's README.
   map regenerate byte-identical.
 - **A Rule carries no tags.** Gherkin would let a tag on a Rule reach every
   scenario beneath it, but the matrix takes a claim's engine and status from
-  the scenario's own tags only. So `tools/traceability.mjs` fails a tagged
+  the scenario's own tags only. So `tools/spec/generate-traceability.mjs` fails a tagged
   Rule rather than let the two disagree.
-- **A Rule may have its own Background**, which `tools/bindings.mjs` adds to the
+- **A Rule may have its own Background**, which `tools/spec/generate-bindings.mjs` adds to the
   scenarios in that Rule only.
 - **Rejected:** splitting each area into new directories. It would rename areas,
   rescope four step-definition classes, and rewrite some forty links for no

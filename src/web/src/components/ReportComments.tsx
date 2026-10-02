@@ -16,7 +16,7 @@ export type { PublicComment } from "../api/publicReports"
  * own; a reviewer hides any. The API authorizes every one of those, so these
  * controls are convenience, not the boundary.
  */
-// Split across lines on purpose: tools/check-hardcoded-strings.mjs is a line
+// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 type Task = () =>
 	Promise<unknown>

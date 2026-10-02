@@ -6,6 +6,9 @@ obj/
 artifacts/
 TestResults/
 coverage/
+# tools/coverage/ and its tests are source, not coverage output (ADR-0189).
+!tools/coverage/
+!tests/js/coverage/
 *.coverage
 *.cobertura.xml
 
@@ -39,12 +42,12 @@ tests/e2e/.features-gen/
 .env
 .env.local
 # act's default secret, variable, and personal-flag files. .actrc points act
-# at /dev/null for the first two; tools/ci-local.sh gives act no token
+# at /dev/null for the first two; tools/dev/ci-local.sh gives act no token
 # (ADR-0145).
 .secrets
 .vars
 .actrc.local
-# main's coverage baseline, which tools/ci-local.sh downloads on the host into
+# main's coverage baseline, which tools/dev/ci-local.sh downloads on the host into
 # the clone act copies (ADR-0145).
 /.ci-local/
 appsettings.Development.local.json

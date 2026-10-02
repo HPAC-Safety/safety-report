@@ -40,7 +40,7 @@ because it reads as correct.
 ## Decision
 
 **The number is verified where it is claimed, and losing the race costs a
-command.** `tools/adr-numbers.mjs` does three things:
+command.** `tools/spec/adr-numbers.mjs` does three things:
 
 - `--check`, the default, fails on two records sharing a number, on a filename
   whose number disagrees with the document's own heading, and on a file in

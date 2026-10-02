@@ -34,7 +34,7 @@ were affected.
 ## Spec delta
 
 Both workflows now check out with `persist-credentials: false`.
-`tests/js/workflow-push-credentials.test.mjs` fails if any workflow that puts a
+`tests/js/github/workflow-push-credentials.test.mjs` fails if any workflow that puts a
 token on its remote URL has a checkout step that persists credentials.
 
 ## Scenario

@@ -48,7 +48,7 @@ not be a rewrite of the translation job.
 **DeepL**, targeting `FR-CA`, behind an adapter that is the one file to change
 to swap provider.
 
-`tools/translator.mjs` declares the same port as
+`tools/i18n/translator.mjs` declares the same port as
 `HpacSafety.Core.SharedKernel.ITranslator`:
 
 ```
@@ -61,7 +61,7 @@ The contract is deliberately identical.
 
 ```mermaid
 flowchart LR
-    cli["translate-locale.mjs<br/>plan · merge · stamp"] --> port["ITranslator port<br/>tools/translator.mjs"]
+    cli["translate-locale.mjs<br/>plan · merge · stamp"] --> port["ITranslator port<br/>tools/i18n/translator.mjs"]
     port --> dl["deepl · default<br/>FR-CA · prefer_more"]
     port --> cc["chat-completions<br/>endpoint · model · key<br/>all from config"]
     port --> stub["stub<br/>tests only"]

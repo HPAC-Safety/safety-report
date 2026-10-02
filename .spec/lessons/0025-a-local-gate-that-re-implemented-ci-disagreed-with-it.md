@@ -36,7 +36,7 @@ the environment never did.
 
 None upstream: this is delivery tooling, not a product claim.
 [ADR-0145](../decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)
-replaces both scripts with `tools/ci-local.sh`, which runs the workflow files
+replaces both scripts with `tools/dev/ci-local.sh`, which runs the workflow files
 themselves under act, in an Ubuntu 24.04 image, against the same baseline
 artifact CI downloads.
 
@@ -50,4 +50,4 @@ None. This is a process lesson, and no scenario can prove it.
 step 1 now says: run the project's local CI runner with the draft pull request
 body, which runs the pull request's workflows rather than a copy of them.
 [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md) step 1
-names `tools/ci-local.sh --body pr-body.md`, for every pull request.
+names `tools/dev/ci-local.sh --body pr-body.md`, for every pull request.

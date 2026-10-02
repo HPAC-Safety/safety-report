@@ -33,7 +33,7 @@ but the files sat in three roots:
 - `docs/lessons/` held 39 lessons, indexed by a table kept by hand.
 - Five pages carrying `CON-*` constraints sat in `docs/` beside sixteen
   how-to guides, distinguishable only by a list inside
-  `tools/traceability.mjs`.
+  `tools/spec/generate-traceability.mjs`.
 - The generated matrix was `docs/traceability.md`.
 
 Nothing indexed the area pages: `features/README.md` linked each `.feature`
@@ -70,10 +70,10 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - **The name is `.spec`.** It is tooling-facing, like `.github`; GitHub renders
   it, and graphify reads dot-directories, so the specification still reaches
   the graph (ADR-0088).
-- **One home for the paths.** `tools/spec-paths.mjs` exports them; every tool
+- **One home for the paths.** `tools/spec/spec-paths.mjs` exports them; every tool
   imports it. A hook or workflow, which cannot import a module, is tied to it
-  by `tests/js/spec-paths.test.mjs`.
-- **A generated index.** `tools/spec-index.mjs` writes `.spec/README.md`:
+  by `tests/js/spec/spec-paths.test.mjs`.
+- **A generated index.** `tools/spec/generate-spec-index.mjs` writes `.spec/README.md`:
   - every area with its claim prefix, scenario, `@ignore`, and `@ui` counts,
     and its supporting page;
   - every constraint page with its count;
@@ -87,16 +87,16 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - **Regenerated like the matrix.** The `docs` CI job fails a stale index.
   `traceability.yml` regenerates both generated files with the base branch's
   tools and commits them in one bot commit (ADR-0101). The post-merge and
-  post-rewrite hooks regenerate both, and `tools/ci-local.sh` does what the
+  post-rewrite hooks regenerate both, and `tools/dev/ci-local.sh` does what the
   bot would.
-- **Every relative link is checked.** `tools/check-links.mjs` resolves every
+- **Every relative link is checked.** `tools/docs/check-links.mjs` resolves every
   relative link in tracked markdown, and a C# `<see href>`, against the
   tracked tree, and checks each `#anchor` against the target's headings.
   - It runs in the `docs` CI job.
   - Pre-commit checks the staged markdown, and the whole tree when a commit
     deletes or renames a file.
   - Code fences, code spans, comments, and external URLs are skipped.
-- **An ADR's status agrees with its status line.** `tools/adr-numbers.mjs`
+- **An ADR's status agrees with its status line.** `tools/spec/adr-numbers.mjs`
   already reads every ADR, so the same pass fails:
   - a `status:` outside `accepted`, `partially-superseded`, `superseded`;
   - an `accepted` record whose status line says "superseded by ADR-NNNN";
@@ -165,4 +165,4 @@ hand, drifts. The rules that held were the ones a tool enforces.
 
 ## Amendment (2026-09-30, ADR-0184)
 
-`tools/spec-paths.mjs` also exports `BINDINGS` (`.spec/bindings.md`) and the two step-definition roots, `REQNROLL_STEPS` and `PLAYWRIGHT_STEPS`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))
+`tools/spec/spec-paths.mjs` also exports `BINDINGS` (`.spec/bindings.md`) and the two step-definition roots, `REQNROLL_STEPS` and `PLAYWRIGHT_STEPS`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

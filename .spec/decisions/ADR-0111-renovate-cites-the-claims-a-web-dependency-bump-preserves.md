@@ -34,7 +34,7 @@ wrote the line.
 
 **Renovate writes the exemption itself.** A `packageRules` entry matching
 `src/web/package.json` and `src/web/package-lock.json` appends this to the PR
-body, in the exact shape `tools/feature-coverage.mjs` parses:
+body, in the exact shape `tools/spec/check-feature-coverage.mjs` parses:
 
 ```
 No .feature scenario needed: dependency — a web package or lock version moved; no application source file changed

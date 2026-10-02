@@ -11,7 +11,7 @@ import { join, relative } from 'node:path'
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import { IdGenerator } from '@cucumber/messages'
 
-import { FEATURES } from '../spec-paths.mjs'
+import { FEATURES } from '../spec/spec-paths.mjs'
 
 const root = FEATURES
 

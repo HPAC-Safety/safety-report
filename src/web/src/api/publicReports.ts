@@ -161,7 +161,7 @@ export interface PublicComment {
 /** The longest comment the API accepts. */
 export const COMMENT_MAX_LENGTH = 2000
 
-// Signature split across lines on purpose: tools/check-hardcoded-strings.mjs
+// Signature split across lines on purpose: tools/web/check-hardcoded-strings.mjs
 // is a line scanner (see adminQuestions.ts).
 async function send<T>(
 	path: string,

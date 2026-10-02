@@ -96,13 +96,13 @@ public sealed class WebLocalizationAndDesignSteps
 	[Then(@"it comes from a committed locale catalogue with key parity between en-CA and fr-CA")]
 	public void ThenLocaleKeyParity()
 	{
-		RunNodeTool("tools/check-locales.mjs");
+		RunNodeTool("tools/i18n/check-locales.mjs");
 	}
 
 	[Then(@"no user-facing literal appears directly in code")]
 	public void ThenNoHardcodedStrings()
 	{
-		RunNodeTool("tools/check-hardcoded-strings.mjs");
+		RunNodeTool("tools/web/check-hardcoded-strings.mjs");
 	}
 
 	private string _localesDir = string.Empty;
@@ -126,7 +126,7 @@ public sealed class WebLocalizationAndDesignSteps
 	[When(@"the local build runs, or a commit is made that stages a locales\/ file")]
 	public void WhenTheStubberRuns()
 	{
-		RunNodeTool("tools/stub-missing-translations.mjs", true, "--locales", _localesDir);
+		RunNodeTool("tools/i18n/stub-missing-translations.mjs", true, "--locales", _localesDir);
 
 		// The commit half of that sentence. Running git here would prove
 		// little that the hook's own three verified cases do not already
@@ -161,7 +161,7 @@ public sealed class WebLocalizationAndDesignSteps
 	[Then(@"a key still carrying that # marker fails locale verification, so it can never reach main untranslated")]
 	public void ThenAStubbedKeyFailsVerification()
 	{
-		var exitCode = RunNodeTool("tools/translate-locale.mjs", false, "--check", "--locales", _localesDir);
+		var exitCode = RunNodeTool("tools/i18n/translate-locale.mjs", false, "--check", "--locales", _localesDir);
 		exitCode.ShouldNotBe(0);
 	}
 
@@ -224,7 +224,7 @@ public sealed class WebLocalizationAndDesignSteps
 	public void WhenTheLocalesAreVerified()
 	{
 		_verifyExitCode = RunNodeTool(
-			"tools/translate-locale.mjs",
+			"tools/i18n/translate-locale.mjs",
 			false,
 			out _verifyOutput,
 			"--check",
@@ -336,7 +336,7 @@ public sealed class WebLocalizationAndDesignSteps
 	{
 		// The adapter's own request builder, fed the term list the way
 		// translate-locale.mjs feeds it. Nothing is sent anywhere.
-		var tools = Path.Combine(RepositoryRoot(), "tools");
+		var tools = Path.Combine(RepositoryRoot(), "tools", "i18n");
 		var script = Path.Combine(_correctionDir, "build-request.mjs");
 		File.WriteAllText(
 			script,

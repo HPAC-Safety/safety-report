@@ -115,7 +115,7 @@ follow-up idea, not part of it).
 
 Eight area pull requests split components in parallel, so no list is edited to
 bring a file under the threshold. The scope is computed from the files on disk
-by `tools/web-coverage-scope.mjs`, which `vite.config.ts` reads:
+by `tools/web/web-coverage-scope.mjs`, which `vite.config.ts` reads:
 
 - a `Foo.tsx` with a sibling `Foo.view.tsx` is in scope: the split *is* the
   opt-in;
@@ -144,15 +144,15 @@ gate, with `typecheck`, the split guard and the bundle check.
 
 The lcov names each file from the repository root (`src/web/src/lib/…`), like
 the .NET and `tools/` reports, so the merged report shows web source. Because
-the `coverage` job runs only on GitHub and under `tools/ci-local.sh --full`,
-the `web` job also runs `tools/check-web-lcov.mjs`. That check proves the lcov
+the `coverage` job runs only on GitHub and under `tools/dev/ci-local.sh --full`,
+the `web` job also runs `tools/web/check-web-lcov.mjs`. That check proves the lcov
 exists, sits under a `-reports:` glob read from `ci.yml` itself, and names files
 that exist. It runs in the fast local gate, so a broken hand-off fails before
 GitHub ([#769](https://github.com/HPAC-Safety/safety-report/issues/769)).
 
 ### The guard
 
-`tools/check-component-split.mjs`, run by the `web` job and pre-commit, fails
+`tools/web/check-component-split.mjs`, run by the `web` job and pre-commit, fails
 with the file and line when:
 
 - a `*.view.tsx` has no sibling `Foo.tsx`, calls a hook other than
@@ -175,7 +175,7 @@ CI ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It is
 
 - The test packages stay in `devDependencies`.
 - The import rule above stops test code at the source.
-- `tools/check-web-bundle.mjs` reads what was built: it fails if a file under
+- `tools/web/check-web-bundle.mjs` reads what was built: it fails if a file under
   `src/web/dist` carries a marker only tests hold (`vitest`,
   `@testing-library`, `user-event`, `jsdom`, `renderHook`, `describe(`,
   `expect(`, `.test.`). The markers were checked against a real build and are

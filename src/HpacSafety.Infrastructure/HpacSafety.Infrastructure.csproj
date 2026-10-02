@@ -17,7 +17,7 @@
         <!-- Raw SQL lives in its own files and is loaded by SqlScript (ADR-0055). -->
         <EmbeddedResource Include="Persistence\Sql\*.sql" LogicalName="Sql/%(Filename)%(Extension)" />
         <!-- The one translation prompt and the term list, shared with CI's
-             tools/translator.mjs, which reads the same files (ADR-0179). -->
+             tools/i18n/translator.mjs, which reads the same files (ADR-0179). -->
         <EmbeddedResource Include="..\..\locales\translation-prompt.v2.md" LogicalName="Translation/translation-prompt.v2.md" />
         <EmbeddedResource Include="..\..\locales\terms.json" LogicalName="Translation/terms.json" />
     </ItemGroup>

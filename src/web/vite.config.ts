@@ -2,10 +2,10 @@ import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
-import { coverageScope } from "../../tools/web-coverage-scope.mjs"
+import { coverageScope } from "../../tools/web/web-coverage-scope.mjs"
 
 // locales/ lives at the repository root, not under src/web (see
-// tools/check-locales.mjs and .github/workflows/i18n-translate.yml).
+// tools/i18n/check-locales.mjs and .github/workflows/i18n-translate.yml).
 // src/web/src/i18n/loadCatalogue.ts reaches it with a relative
 // import.meta.glob; server.fs.allow lets the dev server serve a path outside
 // its own project root.
@@ -29,9 +29,9 @@ export default defineConfig({
 			// (src/web/src/lib/sortChoices.ts), as the .NET and tools/ reports do,
 			// so the merged report finds the source (#769).
 			reporter: ["text", ["lcov", { projectRoot: repoRoot }]],
-			// tools/ci-local.sh and the CI `test` job read the lcov from here,
+			// tools/dev/ci-local.sh and the CI `test` job read the lcov from here,
 			// the path the coverage job merges (ci.yml "Merge into one report").
-			// tools/check-web-lcov.mjs proves it in the `web` job.
+			// tools/web/check-web-lcov.mjs proves it in the `web` job.
 			reportsDirectory: fileURLToPath(new URL("../../artifacts/coverage/web", import.meta.url)),
 			thresholds: { lines: 100, branches: 100, functions: 100, statements: 100, perFile: true },
 		},

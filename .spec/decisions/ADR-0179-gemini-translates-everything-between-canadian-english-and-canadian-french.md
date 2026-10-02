@@ -47,7 +47,7 @@ the term list.
 
 1. **Gemini translates; DeepL is kept, dormant.** Gemini does all machine
    translation, in every environment and in CI. DeepL is not removed: its
-   code (`DeepLTranslator`, `DeepLOptions`, and the `tools/translator.mjs`
+   code (`DeepLTranslator`, `DeepLOptions`, and the `tools/i18n/translator.mjs`
    adapter), its tests, its secret, its IAM grant, its Lambda setting, its
    deploy step, and its dev and CI wiring all stay, so it can be switched back
    if Gemini disappoints. Nothing registers it, so nothing calls it.
@@ -96,7 +96,7 @@ the term list.
    at startup, naming the setting.
    With no key, translation is unavailable in every environment, Development
    included, and there is still no stand-in (ADR-0109).
-5. **CI moves too.** `tools/translator.mjs` gets a Gemini adapter (the same
+5. **CI moves too.** `tools/i18n/translator.mjs` gets a Gemini adapter (the same
    OpenAI-compatible call), which is its default, and `i18n-translate.yml` reads `GEMINI_API_KEY_DEV`. The
    DeepL adapter stays beside it, used only when `TRANSLATION_PROVIDER` is
    `deepl`, and the workflow still passes `DEEPL_API_KEY`. ADR-0022's
@@ -128,7 +128,7 @@ the term list.
      its setting (`AiChatClient:Model` or `Translation:Model`); with no key,
      translation and summaries stay unavailable, as before. The
      `AiChatClient` section keeps its name and keys.
-   - CI's `tools/translator.mjs` mirrors this in small form: the model-name
+   - CI's `tools/i18n/translator.mjs` mirrors this in small form: the model-name
      prefix picks the adapter, `gemini-` is Gemini's endpoint, and an unknown
      model fails.
 7. **One term list, one prompt, for every translation.**
@@ -143,7 +143,7 @@ the term list.
      French text written with that rendering is the English term.
    - **The prompt is one current versioned file**,
      `locales/translation-prompt.v2.md` since the amendment below, beside the term list. Both runtimes
-     read that one file: `tools/translator.mjs` from disk, and
+     read that one file: `tools/i18n/translator.mjs` from disk, and
      `HpacSafety.Infrastructure` as an embedded resource. A behavior change is
      a new version file (`v2`); a used version is never edited. It is not a
      Worker prompt: it is shared with CI and the API, so it does not live

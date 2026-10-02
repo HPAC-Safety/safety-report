@@ -110,7 +110,7 @@ The browser calls `POST /api/admin/translate`, admin-gated like the rest of
 a style preference: a credential shipped to a page is a credential published.
 The endpoint returns translations positionally and nothing else.
 
-`DeepLTranslator` deliberately mirrors `tools/translator.mjs` — the same
+`DeepLTranslator` deliberately mirrors `tools/i18n/translator.mjs` — the same
 provider, the same `{placeholder}` protection through `tag_handling`/
 `ignore_tags`, the same `preserve_formatting`, and the same `prefer_more`
 formality default. Two translators that ask differently would produce UI
@@ -203,7 +203,7 @@ silently start writing English into French, and an administrator pressing
 Translate would have no way to tell. Failing visibly is the right behaviour
 there.
 
-**Reuse `tools/translator.mjs` by shelling out to Node from the API.** No
+**Reuse `tools/i18n/translator.mjs` by shelling out to Node from the API.** No
 second implementation of the request shape. Rejected — it makes the API depend
 on a Node runtime inside its container and on a CLI's argument format, to save
 about eighty lines of C# that the type system otherwise checks.

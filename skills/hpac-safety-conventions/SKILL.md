@@ -30,7 +30,7 @@ same section names.
 - **The .NET major moves as one.** It lives in `global.json`,
   `<TargetFramework>`, the Worker's `Dockerfile` base image, and
   `renovate.json`'s `allowedVersions`. An upgrade changes all four in one pull
-  request; `node tools/dotnet-major.mjs` fails when they disagree
+  request; `node tools/build/check-dotnet-major.mjs` fails when they disagree
   ([ADR-0120](../../.spec/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
 - **No `Async` suffix** on a method this repository names — the return type
   says it is asynchronous
@@ -61,6 +61,13 @@ same section names.
 - Why a generated file has no whole-tree total:
   [lesson 0013](../../.spec/lessons/0013-a-generated-file-with-a-whole-tree-total-conflicts-with-every-branch.md),
   [ADR-0106](../../.spec/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md).
+
+## Tools
+
+- A script goes in its domain's folder under `tools/` and is named for what it
+  does (`check-`, `generate-`, `guard-`, `build-`, `find-`/`read-`, `report-`);
+  its test mirrors it under `tests/js/`. See [`tools/README.md`](../../tools/README.md)
+  ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
 
 ## Before finishing
 

@@ -6,6 +6,10 @@ type: readme
 
 # GitHub workflows
 
+Each `run:` step is one command; its logic is a tested script under
+[`tools/`](../../tools/README.md)
+([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
+
 | Workflow | Responsibility |
 |---|---|
 | `ci.yml` | Build, tests, coverage, web, localization, skill/agent validation |

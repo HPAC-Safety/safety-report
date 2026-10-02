@@ -1,0 +1,258 @@
+#!/usr/bin/env node
+// The traceability matrix, generated from the artifacts (ADR-0084).
+//
+// Every scenario carries one stable claim ID as a Gherkin tag, and every
+// normative constraint in a canonical specification page carries a CON id naming the
+// claims that verify it. This reads both and writes .spec/traceability.md, so
+// the matrix is derived rather than maintained — the 1998 version of this
+// document was a spreadsheet nobody updated.
+//
+// Dependency-free, like every other tool in this directory. The grammar it
+// consumes is two line shapes, and tools/gherkin/verify.mjs has already
+// proved with the official parser that the files are valid Gherkin, so this
+// never has to be the thing that discovers a syntax error.
+//
+// The exit code is the contract: a duplicate, malformed, missing, or dangling
+// id fails rather than producing a matrix with a hole in it.
+import { appendFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { join, posix } from 'node:path'
+
+import { CONSTRAINT_PAGES, FEATURES, SPEC_ROOT, TRACEABILITY } from './spec-paths.mjs'
+
+export { CONSTRAINT_PAGES }
+
+const ROOT = process.cwd()
+const OUTPUT = TRACEABILITY
+
+export const CLAIM_TAG = /^\s*@(REQ-[A-Z]+-\d{3})\s*$/
+const SCENARIO = /^\s*(Scenario|Scenario Outline):\s*(.+?)\s*$/
+// A Rule groups scenarios inside a feature (ADR-0184). Gherkin would let a tag
+// on it reach every scenario beneath; this reader takes a claim's engine and
+// status from the scenario's own tags only, so a Rule carries none.
+const RULE = /^\s*Rule:/
+const CONSTRAINT = /\*\*(CON-[A-Z]+-\d{3})\*\*/g
+const VERIFIED_BY = /\*Verified by:\s*([^*]+)\*/
+
+/** Every claim a feature file declares, in file order. */
+export function readClaims(path, source) {
+	const lines = source.split('\n')
+	const claims = []
+	const problems = []
+	let pending = []
+	let tags = []
+
+	for (const [index, line] of lines.entries()) {
+		const tag = line.match(CLAIM_TAG)
+		if (tag) {
+			pending.push(tag[1])
+			continue
+		}
+
+		const scenario = line.match(SCENARIO)
+		if (!scenario) {
+			// Any other tag line belongs to the scenario below it, like the
+			// claim; anything else ends the tag block, so a neighbouring
+			// scenario's @ui or @ignore never reaches this one.
+			if (line.trim().startsWith('@')) {
+				tags.push(line.trim())
+				continue
+			}
+			if (line.trim() === '') continue
+			if (RULE.test(line) && (pending.length > 0 || tags.length > 0)) {
+				problems.push(`${path}:${index + 1}: tags on a Rule are not supported — a claim's engine and status come from its own scenario's tags`)
+			}
+			pending = []
+			tags = []
+			continue
+		}
+
+		if (pending.length === 0) {
+			tags = []
+			problems.push(`${path}:${index + 1}: "${scenario[2]}" carries no claim ID — every scenario names one claim (ADR-0084)`)
+			continue
+		}
+		if (pending.length > 1) {
+			problems.push(`${path}:${index + 1}: "${scenario[2]}" carries ${pending.length} claim IDs (${pending.join(', ')}) — a scenario is exactly one claim`)
+		}
+
+		claims.push({
+			id: pending[0],
+			area: posix.relative(FEATURES, path).split('/')[0],
+			scenario: scenario[2],
+			engine: tags.includes('@ui') ? 'playwright-bdd' : 'Reqnroll',
+			status: tags.includes('@ignore') ? 'Planned' : 'Covered',
+		})
+		pending = []
+		tags = []
+	}
+
+	return { claims, problems }
+}
+
+/** Every constraint a docs page declares, with the claims it names. */
+export function readConstraints(path, source) {
+	const constraints = []
+	const problems = []
+	const markers = [...source.matchAll(CONSTRAINT)]
+
+	for (const [index, marker] of markers.entries()) {
+		const until = index + 1 < markers.length ? markers[index + 1].index : source.length
+		const body = source.slice(marker.index, until)
+		const verified = body.match(VERIFIED_BY)
+
+		if (!verified) {
+			problems.push(`${path}: ${marker[1]} names nothing that verifies it — add "*Verified by: …*", or "none — <reason>" when no scenario can`)
+			continue
+		}
+
+		const text = verified[1].trim()
+		constraints.push({
+			id: marker[1],
+			page: path,
+			verifiedBy: text.startsWith('none') ? [] : [...text.matchAll(/REQ-[A-Z]+-\d{3}/g)].map((match) => match[0]),
+			note: text.replace(/\s+/g, ' ').replace(/\.$/, ''),
+		})
+	}
+
+	return { constraints, problems }
+}
+
+function featureFiles(root) {
+	const walk = (dir) =>
+		readdirSync(dir).flatMap((entry) => {
+			const path = join(dir, entry)
+			return statSync(path).isDirectory() ? walk(path) : path.endsWith('.feature') ? [path] : []
+		})
+	return walk(join(root, FEATURES))
+		.map((path) => path.slice(root.length + 1))
+		.sort()
+}
+
+// A scenario name is free text on a line of its own; one that opens with "#"
+// would render as a heading.
+const escape = (text) => text.replace(/^#/, '\\#')
+
+const byId = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+
+/**
+ * The matrix is built so that git can merge it (ADR-0106). Every line depends
+ * on exactly one scenario or one constraint — nothing is counted across the
+ * whole tree — and every item's data line sits between unchanged heading and
+ * blank lines, so two branches that each carry a correct matrix merge into the
+ * matrix of the merged tree. Totals go to stdout instead; see `totals`.
+ */
+export function render(claims, constraints) {
+	const areas = [...new Set(claims.map((claim) => claim.area))].sort()
+	const lines = [
+		'---',
+		'title: Traceability',
+		'description: Generated matrix of every claim, the scenario that states it, and every constraint that names one.',
+		'type: guide',
+		'---',
+		'',
+		'# Traceability',
+		'',
+		'> **Generated file — do not edit by hand.**',
+		'> Regenerate with `node tools/spec/generate-traceability.mjs`. CI fails on a difference',
+		'> ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).',
+		'> One block per claim and per constraint, in ID order, and no totals, so',
+		'> branches merge it without conflicting',
+		'> ([ADR-0106](decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)).',
+		'',
+		'Each claim reads: the scenario that states it — *engine, status*. A',
+		'`Planned` claim is still `@ignore`.',
+	]
+
+	for (const area of areas) {
+		lines.push('', `## Claims: ${area}`)
+		for (const claim of claims.filter((each) => each.area === area).sort(byId)) {
+			lines.push('', `### ${claim.id}`, '', `${escape(claim.scenario)} — *${claim.engine}, ${claim.status}*`)
+		}
+	}
+
+	lines.push(
+		'',
+		'## Constraints',
+		'',
+		'A constraint states something the system must be true of; the claims beside',
+		'it are the scenarios that prove it. `none` is an honest answer — an',
+		'infrastructure or test-suite property is not observable from a scenario —',
+		'and it carries its reason.',
+	)
+	for (const constraint of [...constraints].sort(byId)) {
+		const verifiedBy =
+			constraint.verifiedBy.length > 0 ? constraint.verifiedBy.map((id) => `\`${id}\``).join(', ') : escape(constraint.note)
+		lines.push('', `### ${constraint.id}`, '', `${constraint.page.replace(`${SPEC_ROOT}/`, '')} — verified by ${verifiedBy}`)
+	}
+
+	lines.push('')
+	return lines.join('\n')
+}
+
+/** The whole-tree counts, reported rather than committed (ADR-0106). */
+export function totals(claims, constraints) {
+	const planned = claims.filter((claim) => claim.status === 'Planned').length
+	return (
+		`${claims.length} claims across ${new Set(claims.map((claim) => claim.area)).size} areas: ` +
+		`${claims.length - planned} covered by a step definition today, ${planned} still \`@ignore\`. ` +
+		`${constraints.length} constraints.`
+	)
+}
+
+export function build(root = ROOT) {
+	const problems = []
+	const claims = []
+	const constraints = []
+
+	for (const path of featureFiles(root)) {
+		const result = readClaims(path, readFileSync(join(root, path), 'utf8'))
+		claims.push(...result.claims)
+		problems.push(...result.problems)
+	}
+
+	for (const path of CONSTRAINT_PAGES) {
+		const result = readConstraints(path, readFileSync(join(root, path), 'utf8'))
+		constraints.push(...result.constraints)
+		problems.push(...result.problems)
+	}
+
+	const seen = new Map()
+	for (const claim of claims) {
+		if (seen.has(claim.id)) problems.push(`${claim.id} is used twice: "${seen.get(claim.id)}" and "${claim.scenario}" — a claim ID is never reused`)
+		seen.set(claim.id, claim.scenario)
+	}
+
+	const constraintIds = new Set()
+	for (const constraint of constraints) {
+		if (constraintIds.has(constraint.id)) problems.push(`${constraint.id} is declared twice`)
+		constraintIds.add(constraint.id)
+
+		for (const id of constraint.verifiedBy) {
+			if (!seen.has(id)) problems.push(`${constraint.page}: ${constraint.id} names ${id}, which no scenario declares`)
+		}
+	}
+
+	return { claims, constraints, problems, matrix: render(claims, constraints) }
+}
+
+/**
+ * Builds the matrix and writes it, reporting the way the command line does
+ * without exiting, so a test can exercise both outcomes. Returns the exit code.
+ */
+export function main(root = ROOT, { write = true } = {}) {
+	const { claims, constraints, problems, matrix } = build(root)
+
+	if (problems.length > 0) {
+		for (const problem of problems) console.error(`::error::${problem}`)
+		return 1
+	}
+
+	if (write) writeFileSync(join(root, OUTPUT), matrix)
+	console.log(`${claims.length} claim(s) and ${constraints.length} constraint(s) written to ${OUTPUT}.`)
+	console.log(totals(claims, constraints))
+	if (write && process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `**Traceability:** ${totals(claims, constraints)}\n`)
+	return 0
+}
+
+const runAsCommand = String(process.argv[1]).endsWith('/generate-traceability.mjs')
+if (runAsCommand) process.exit(main())

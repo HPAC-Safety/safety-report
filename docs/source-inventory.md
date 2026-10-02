@@ -9,7 +9,7 @@ type: guide
 This page maps every project and directory under `src/`, as of 2026-09-26
 (#444). It is kept at directory level so it stays true: a new file in an
 existing directory needs no entry, but a new directory does.
-`tools/check-inventories.mjs`, in the `docs` CI job, fails when a directory
+`tools/docs/check-inventories.mjs`, in the `docs` CI job, fails when a directory
 holding tracked files has no entry or an entry names a directory that no longer
 exists
 ([ADR-0143](../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)). Migrations are listed in

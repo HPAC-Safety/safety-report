@@ -30,7 +30,7 @@ namespace HpacSafety.Infrastructure.Translation;
 ///         never the reply, the text, or the credential.
 ///     </para>
 ///     <para>
-///         It mirrors <c>tools/translator.mjs</c>, which sends the same prompt file for
+///         It mirrors <c>tools/i18n/translator.mjs</c>, which sends the same prompt file for
 ///         the CI locale job.
 ///     </para>
 /// </remarks>

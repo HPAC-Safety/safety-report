@@ -1,5 +1,5 @@
 {
-  "_comment": "HPAC's own French wording, pinned verbatim and never sent to a translation provider. See tools/translate-locale.mjs. The organization's bilingual wordmark uses 'ACVL' as the French-facing name (docs/design-system.md) — a general-purpose translator otherwise reads 'HPAC' as the HVAC acronym. 'Safety'/'Sécurité' is an ordinary word and is translated as usual.",
+  "_comment": "HPAC's own French wording, pinned verbatim and never sent to a translation provider. See tools/i18n/translate-locale.mjs. The organization's bilingual wordmark uses 'ACVL' as the French-facing name (docs/design-system.md) — a general-purpose translator otherwise reads 'HPAC' as the HVAC acronym. 'Safety'/'Sécurité' is an ordinary word and is translated as usual.",
   "app.title": "ACVL Sécurité",
   "header.logoAlt": "ACVL Sécurité",
   "nav.openMenuLabel": "Ouvrir le menu",

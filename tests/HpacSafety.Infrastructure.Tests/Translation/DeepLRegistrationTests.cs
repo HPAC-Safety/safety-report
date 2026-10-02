@@ -48,7 +48,7 @@ public class DeepLRegistrationTests
 	public void GivenOnlyBareEnvironmentName_WhenRegistered_ThenKeyIsUsed()
 	{
 		// Given — DEEPL_API_KEY is the name the credential already has, in
-		// repository settings and in tools/translator.mjs
+		// repository settings and in tools/i18n/translator.mjs
 		using var provider = Provider(new Dictionary<string, string?>
 		{
 			["DEEPL_API_KEY"] = "abc:fx",

@@ -23,6 +23,6 @@ routine implementation detail with no rejected alternative, or a restatement of
 Every decision, newest first, with its status and date, is listed in the
 generated [specification index](../README.md#decisions). A record's `status:`
 must agree with its own `**Status:**` line, and a successor it names must
-exist; `node tools/adr-numbers.mjs` checks both, with the numbering, in the
+exist; `node tools/spec/adr-numbers.mjs` checks both, with the numbering, in the
 pre-commit hook and in CI
 ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md)).

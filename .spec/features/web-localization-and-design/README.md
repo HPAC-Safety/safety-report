@@ -76,7 +76,7 @@ has no language code to configure and no `EnglishTarget` setting
 (REQ-WLD-033, REQ-WLD-034).
 
 DeepL is kept, dormant: `DeepLTranslator`, `DeepLOptions`, their tests, and
-the `tools/translator.mjs` adapter stay, but nothing registers or selects them,
+the `tools/i18n/translator.mjs` adapter stay, but nothing registers or selects them,
 so it can be switched back. DeepL has no Canadian English, so that adapter
 still asks for `EN-US` or `EN-GB` by `Translation:EnglishTarget`, and anything
 else stops it at startup (REQ-WLD-028, REQ-WLD-029;
@@ -91,7 +91,7 @@ else stops it at startup (REQ-WLD-028, REQ-WLD-029;
   (REQ-WLD-038, REQ-WLD-039).
 - **The term list goes with every request**, runtime and CI: the API's
   authoring and reviewer drafts, the Worker's answers, labels, and comments,
-  and `tools/translator.mjs` (REQ-WLD-027, REQ-WLD-035).
+  and `tools/i18n/translator.mjs` (REQ-WLD-027, REQ-WLD-035).
 - **One versioned prompt**, `locales/translation-prompt.v2.md`, read by both
   runtimes. A behavior change is a new version file.
 - **Places are localized, never copied.** A place takes its established name

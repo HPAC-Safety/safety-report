@@ -24,7 +24,7 @@ still spent about ten minutes backing off before giving up.
 - `public.ecr.aws`'s anonymous pull limit is per source IP, and GitHub's
   hosted runners share IPs with everyone else's jobs, so the quota was spent
   by other people's traffic, not this repository's.
-- `tools/mirror-lambda-adapter.sh` passed skopeo a source reference carrying
+- `tools/build/mirror-lambda-adapter.sh` passed skopeo a source reference carrying
   both a tag and a digest
   (`public.ecr.aws/awsguru/aws-lambda-adapter:1.1.0@sha256:…`). The skopeo
   version on `ubuntu-latest` rejects that form outright — a permanent error,

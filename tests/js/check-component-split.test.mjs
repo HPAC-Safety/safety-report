@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { checkTree, checkView, main, stripComments, STRICT } from '../../tools/check-component-split.mjs'
+import { checkIgnoreHints, checkTree, checkView, importsOf, main, stripComments, stripCommentsAndStrings, STRICT } from '../../tools/check-component-split.mjs'
 
 const messages = (violations) => violations.map(({ file, line, message }) => `${file}:${line}: ${message}`)
 
@@ -14,8 +14,8 @@ export function FooView() {
 }
 `
 
-test('strict mode is off until the last pull request of the split turns it on', () => {
-	assert.equal(STRICT, false)
+test('strict mode is on: every component has its view', () => {
+	assert.equal(STRICT, true)
 })
 
 test('a clean view with its sibling passes', () => {
@@ -81,6 +81,122 @@ test('a comment mentioning a forbidden thing does not fail, and keeps line numbe
 	assert.equal(stripComments('const u = "http://x"').includes('http://x'), true)
 })
 
+test('a view may import types from api/, and only types', () => {
+	const source = [
+		'import type { A } from "../api/adminReports"',
+		'import { type B, type C } from "../api/adminReports"',
+		'import type D from "../api/x"',
+		'import type * as E from "../api/x"',
+		'import { type F, g } from "../api/adminReports"',
+		'import H, { type I } from "../api/adminReports"',
+		'import * as J from "../api/x"',
+		'import {',
+		'\ttype K,',
+		'\ttype L,',
+		'} from "../api/multi"',
+		'import {',
+		'\ttype M,',
+		'\tn,',
+		'} from "../api/multi"',
+		'export type { P } from "../api/x"',
+		'export { q } from "../api/x"',
+		'import "../api/effect"',
+	].join('\n')
+	assert.deepEqual(checkView('V.view.tsx', source).map(({ line }) => line), [5, 6, 7, 12, 17, 18])
+})
+
+test('importsOf reads multi-line and re-export statements and names the first line', () => {
+	const found = importsOf('import {\n\ta,\n} from "./a"\nexport * from "./b"\nexport type { T } from "./c"\nconst d = await import("./d")\n')
+	assert.deepEqual(
+		found.map(({ line, specifier, typeOnly }) => [line, specifier, typeOnly]),
+		[
+			[1, './a', false],
+			[4, './b', false],
+			[5, './c', true],
+			[6, './d', false],
+		],
+	)
+})
+
+test('a view importing a runtime value from its own sibling Foo.tsx fails', () => {
+	const source = [
+		'import { isGone } from "./Foo"',
+		'import { x } from "./Foo.tsx"',
+		'import Foo from "./Foo"',
+		'import * as all from "./Foo"',
+		'export { y } from "./Foo"',
+		'import type { FooProps } from "./Foo"',
+		'import { type FooModel } from "./Foo"',
+		'export type { FooProps } from "./Foo"',
+		'import { z } from "./FooBar"',
+		'import { w } from "./Other"',
+	].join('\n')
+	const found = checkView('src/web/src/Foo.view.tsx', source)
+	assert.deepEqual(found.map(({ line }) => line), [1, 2, 3, 4, 5])
+	assert.match(found[0].message, /runtime circular import/)
+})
+
+test('a shared module both files import is fine', () => {
+	assert.deepEqual(checkView('src/web/src/Foo.view.tsx', 'import { shared } from "./fooShared"\n'), [])
+})
+
+test('a string literal naming a forbidden thing is not a use of it', () => {
+	const source = [
+		'const a = t("report.privacy.localStorage")',
+		"const b = 'fetch(' + \"setTimeout\"",
+		'const c = `useState( ${useRef(0)} setInterval`',
+		'const d = `outer ${ `inner XMLHttpRequest` } sessionStorage`',
+		'const e = "esc \\" localStorage"',
+		'<p>don\'t</p>',
+		'fetch("/x")',
+	].join('\n')
+	assert.deepEqual(checkView('V.view.tsx', source).map(({ line }) => line), [3, 7])
+})
+
+test('stripping strings keeps the quotes, the line count and the code around them', () => {
+	const source = 'const a = "x\\"y" + `a\n${b}\nc` // tail\nconst c = \'it\'\nconst d = "open\nconst e = 1'
+	const stripped = stripCommentsAndStrings(source)
+	assert.equal(stripped.split('\n').length, source.split('\n').length)
+	assert.equal(stripped.includes('tail'), false)
+	assert.equal(stripped.includes('${b}'), true)
+	assert.equal(stripped.includes('const e = 1'), true)
+	assert.equal(stripComments(source).includes('"x\\"y"'), true)
+})
+
+test('a coverage ignore hint needs a reason comment on the line directly above', () => {
+	const source = [
+		'// The draft is untrusted storage; no input reaches this.',
+		'/* v8 ignore next */',
+		'const a = 1',
+		'/* v8 ignore next */',
+		'const b = 2',
+		'',
+		'/* istanbul ignore next */',
+		'const c = 3',
+		'const d = 4',
+		'/**',
+		' * Unreachable: the type forbids it.',
+		' */',
+		'/* v8 ignore start */',
+		'// v8 ignore next',
+		'// v8 ignore next',
+		'//',
+		'// v8 ignore stop',
+		'/* v8 ignore next */ // inline',
+		'const h = "v8 ignored"',
+	].join('\n')
+	assert.deepEqual(checkIgnoreHints('a.ts', source).map(({ line }) => line), [4, 7, 14, 15, 17, 18])
+})
+
+test('the ignore rule applies to every file, tests included, and the first line has nothing above', () => {
+	const hint = '/* v8 ignore next */\n'
+	for (const path of ['src/web/src/lib/a.ts', 'src/web/src/Foo.test.tsx', 'src/web/src/Foo.tsx']) {
+		const found = checkTree(new Map([[path, hint]]), { strict: false })
+		assert.equal(found.length, 1)
+		assert.match(found[0].message, /reason in a comment on the line directly above/)
+	}
+})
+
 test('non-test code importing a test file, vitest or Testing Library fails', () => {
 	const source = [
 		'import { a } from "./Foo.test"',
@@ -112,8 +228,8 @@ test('strict mode wants a view for every component, except main, routes and test
 		['src/web/src/Split.view.tsx', CLEAN_VIEW],
 		['src/web/src/Bare.tsx', ''],
 	])
-	assert.deepEqual(checkTree(files), [])
-	assert.deepEqual(messages(checkTree(files, { strict: true })), ['src/web/src/Bare.tsx:1: every component has a Bare.view.tsx holding its markup; none exists'])
+	assert.deepEqual(checkTree(files, { strict: false }), [])
+	assert.deepEqual(messages(checkTree(files)), ['src/web/src/Bare.tsx:1: every component has a Bare.view.tsx holding its markup; none exists'])
 })
 
 test('violations are sorted by file then line', () => {
@@ -175,8 +291,8 @@ test('main names file and line for each violation and exits 1', () => {
 test('main honours strict mode passed in code', () => {
 	const root = tree({ 'Bare.tsx': 'x' })
 	try {
-		assert.equal(quietly(() => main(root)).status, 0)
-		assert.equal(quietly(() => main(root, { strict: true })).status, 1)
+		assert.equal(quietly(() => main(root, { strict: false })).status, 0)
+		assert.equal(quietly(() => main(root)).status, 1)
 	} finally {
 		rmSync(root, { recursive: true })
 	}

@@ -89,6 +89,9 @@ export const SIZE_LIMIT_PARAMS = {
 export function declaredType(file: File): string {
 	const type = file.type.split(";")[0]?.trim().toLowerCase()
 	if (type) return type
+	// String.split always yields at least one piece, so pop() is never undefined;
+	// the fallback only satisfies the compiler's indexed-access check.
+	/* v8 ignore next */
 	const extension = file.name.split(".").pop()?.toLowerCase() ?? ""
 	return TYPE_BY_EXTENSION[extension] ?? "application/octet-stream"
 }

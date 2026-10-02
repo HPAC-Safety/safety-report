@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-02
 decision-makers: Chase Florell
-keywords: web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
+keywords: web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
 ---
 
 # ADR-0188 — A component's logic lives in `Foo.tsx` and its markup in `Foo.view.tsx`, and web logic is unit-tested
@@ -156,9 +156,11 @@ GitHub ([#769](https://github.com/HPAC-Safety/safety-report/issues/769)).
 with the file and line when:
 
 - a `*.view.tsx` has no sibling `Foo.tsx`, calls a hook other than
-  `useLocale`, imports from `api/`, uses `localStorage`, `sessionStorage`,
-  `fetch(`, `setTimeout`, `setInterval` or `XMLHttpRequest`, or holds a
-  module-level `let` or `var`;
+  `useLocale`, imports a value from `api/` or a runtime value from its own
+  sibling `Foo.tsx`, uses `localStorage`, `sessionStorage`, `fetch(`,
+  `setTimeout`, `setInterval` or `XMLHttpRequest`, or holds a module-level
+  `let` or `var` (comments and string literals are not code, and a type-only
+  import is allowed; see the 2026-10-02 amendment);
 - any file that is not a test imports a `*.test.*` file, `vitest`, `@vitest/*`
   or `@testing-library/*`.
 
@@ -166,8 +168,8 @@ A **strict** mode additionally requires a `.view.tsx` for every component `.tsx`
 (`main.tsx`, `routes.tsx` and tests excepted). It is a constant in the script,
 not a command-line flag, so it holds in an editor and a local run as well as in
 CI ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It is
-`false` while the split is under way and the last pull request of #756 sets it
-`true`.
+`false` while the split was under way; the last pull request of #756 set it
+`true`, and it stays `true`.
 
 ### Test code is never part of a release
 
@@ -193,8 +195,8 @@ CI ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It is
   overlap: `node:test` for `tools/`, Vitest for `src/web`.
 - Each of the 63 components becomes two files, and every import site is
   unchanged.
-- The foundation moves no component. Until the last area pull request, strict
-  mode is off and unsplit components are neither guarded nor held to 100%.
+- The foundation moved no component. Until the last area pull request, strict
+  mode was off and unsplit components were neither guarded nor held to 100%.
 
 ## Alternatives considered
 
@@ -212,3 +214,76 @@ CI ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It is
   that lives only in a CI step is not a rule
   ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)); it is a
   script with its own test.
+
+## Amendment (2026-10-02)
+
+The last pull request of [#756](https://github.com/HPAC-Safety/safety-report/issues/756)
+([#766](https://github.com/HPAC-Safety/safety-report/issues/766)) finished the
+split and settled what the area pull requests turned up.
+
+### The guard learned three things
+
+- **A type-only import from `api/` is allowed in a view** (`import type …`, or
+  `import { type X }` where every specifier is a type). Types are erased at
+  compile time and carry no data access. A value import from `api/` stays
+  banned. The guard reads import statements, so a statement split across lines
+  is judged whole.
+- **A view imports no runtime value from its own sibling `Foo.tsx`.** `Foo.tsx`
+  imports `Foo.view.tsx`, so a runtime import back is a circular import. A type
+  import is fine; a shared value goes in a small module both files import.
+- **Comments and string literals are not code.** The banned words
+  (`localStorage`, `fetch(`, timers…) are matched on code only, so a catalogue
+  key such as `"report.privacy.localStorage"` is not a use of `localStorage`.
+
+### A coverage-ignore hint is for an unreachable defensive branch, with its reason
+
+A `v8 ignore` or `istanbul ignore` hint is allowed **only** for a branch no
+input can reach (a defensive `?? []` over untrusted storage; a fallback the
+compiler's indexed-access check asks for). The comment **directly above** it
+gives the reason. The guard fails any such hint in any file without one. It is
+not a way to reach 100% on code a test could reach: write the test, or delete
+the branch in its own pull request.
+
+### Every component is split, and the guard says so
+
+Strict mode is on. The 5 attachment components, the type-ahead review page, the
+dialogs and everything before them are pairs; a `.tsx` without a `.view.tsx`
+fails, `main.tsx` and `routes.tsx` excepted.
+
+### One hook opens every native dialog
+
+`hooks/useModalDialog` opens a `<dialog>` as a modal when it mounts and starts
+focus on the control `focusRef` is attached to. The six confirmation dialogs and
+the attachment lightbox use it, instead of each carrying the same effect. The
+DOM and behaviour are unchanged (proved against the originals on `main`: same
+markup, same focus, one `showModal()`, Escape still keeps).
+
+### Every TypeScript and JavaScript file is linted
+
+- **ESLint, flat config at the root** (`eslint.config.mjs`), over `src/web`
+  (tests included), `tools/*.mjs`, `tests/js` and `tests/e2e`. Dependencies are
+  in a root `package.json`, because no single package owns all four trees; the
+  web app's and the browser suite's own `package.json` stay about their runtime
+  and tests. ESLint 9 is used because `eslint-plugin-jsx-a11y` supports 9, not 10.
+- **Rules, all errors:** `@eslint/js` recommended and `typescript-eslint`
+  recommended (not the type-checked presets) everywhere; in `src/web` also
+  `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps` and `jsx-a11y`
+  recommended. A name starting with `_` is unused on purpose. An unused
+  `eslint-disable` is itself an error.
+- **A rule is turned off on the line, with the reason after `--`,** never for a
+  directory. A fix that would change behaviour or the DOM is never made to
+  satisfy a rule: an `exhaustive-deps` dependency that would change when an
+  effect runs, or a role or caption that would change the markup, is disabled
+  on its line with the reason.
+- **It runs** as the `lint` job in CI (no path filter), in `tools/ci-local.sh`'s
+  fast set, and in pre-commit over the staged files (over everything when the
+  config or the root `package.json` is staged).
+- **Not yet:** type-aware, strict rules. They are
+  [#781](https://github.com/HPAC-Safety/safety-report/issues/781).
+
+### Every web helper has a test
+
+A `.ts` under `src/web/src` with no test was outside the coverage scope, which
+is what "the writing of the test is the opt-in" meant. Each now has a colocated
+test at 100%, so all web logic falls under the gate. `vite.config.ts` and the
+scope rule are unchanged; the files simply have tests.

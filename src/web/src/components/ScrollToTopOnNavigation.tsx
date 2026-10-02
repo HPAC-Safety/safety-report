@@ -27,7 +27,7 @@ export function useScrollToTopOnNavigation(): Record<string, never> {
 		if (navigationType === "POP" || hash) return
 		window.scrollTo({ top: 0, left: 0, behavior: "instant" })
 		// A new page resets; the navigation type and anchor are read for that change only.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- see the comment above: only a pathname change resets
 	}, [pathname])
 
 	return {}

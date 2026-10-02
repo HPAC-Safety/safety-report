@@ -19,7 +19,6 @@ export function usePublicReportPage() {
 		return fetchPublicReport(reportId)
 			.then((report) => setLoaded({ state: "ready", report }))
 			.catch((cause: unknown) => setLoaded({ state: cause instanceof PublicReportNotFound ? "missing" : "failed" }))
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [reportId])
 
 	useEffect(() => {

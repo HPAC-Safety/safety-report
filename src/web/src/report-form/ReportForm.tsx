@@ -129,6 +129,9 @@ export function useReportForm() {
 	const hasAttachment = useMemo(() => hasFileAttached(attachments), [attachments])
 	const visible = useMemo(
 		() => visibleSteps(steps, answers, questionsById, hasAttachment),
+		// `locale` is not read here: it makes `visible` a new array when the language
+		// changes, which re-runs the effect below, so it stays (no behaviour change).
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[steps, answers, questionsById, locale, hasAttachment],
 	)
 

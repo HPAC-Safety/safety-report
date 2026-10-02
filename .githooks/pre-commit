@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 #
-# Five genuinely independent checks, each gated on the kind of file actually
+# Six genuinely independent checks, each gated on the kind of file actually
 # staged so an unrelated commit pays nothing. This file is the tracked
 # template; ./init-dev.sh copies it into the real hooks directory (see that
 # file for why it's a copy rather than core.hooksPath) — edit this copy, not
@@ -63,6 +63,11 @@
 #    itself, tools/check-component-split.mjs checks that every *.view.tsx is
 #    markup only and that no shipped file imports test code (ADR-0188). It
 #    reads the working tree, as CI's "web" job does.
+#
+# 6. ESLint: when a TypeScript or JavaScript file is staged, eslint runs over
+#    just those files; when the config or the root package.json is staged, over
+#    everything. The same rules as CI's "lint" job (ADR-0188), which needs the
+#    root dependencies: `npm ci` at the repository root.
 
 set -u
 
@@ -182,6 +187,22 @@ if staged | grep -qE '^(src/web/src/|tools/check-component-split\.mjs$)'; then
 		status=1
 	else
 		node tools/check-component-split.mjs || status=1
+	fi
+fi
+
+STAGED_SCRIPTS=$(staged | grep -E '\.(ts|tsx|mjs|js|cjs)$' || true)
+if [ -n "$STAGED_SCRIPTS" ] || staged | grep -qE '^(eslint\.config\.mjs|package(-lock)?\.json)$'; then
+	if ! command -v node >/dev/null 2>&1; then
+		echo "pre-commit: node is not on PATH, cannot lint — see README.md" >&2
+		status=1
+	elif [ ! -x node_modules/.bin/eslint ]; then
+		echo "pre-commit: ESLint is not installed; run npm ci at the repository root" >&2
+		status=1
+	elif staged | grep -qE '^(eslint\.config\.mjs|package(-lock)?\.json)$'; then
+		node_modules/.bin/eslint . || status=1
+	else
+		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
+		node_modules/.bin/eslint $STAGED_SCRIPTS || status=1
 	fi
 fi
 

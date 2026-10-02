@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useModalDialog } from "../hooks/useModalDialog"
 import { wordDiff } from "../lib/wordDiff"
 import { TranslateConfirmDialogView } from "./TranslateConfirmDialog.view"
 
@@ -16,17 +16,10 @@ export interface TranslateConfirmDialogProps {
 }
 
 export function useTranslateConfirmDialog({ current, proposed }: TranslateConfirmDialogProps) {
-	const dialogRef = useRef<HTMLDialogElement>(null)
-	const keepButtonRef = useRef<HTMLButtonElement>(null)
+	const { dialogRef, focusRef: keepButtonRef } = useModalDialog()
 	const parts = wordDiff(current, proposed)
 	const currentParts = parts.filter((part) => part.kind !== "added")
 	const proposedParts = parts.filter((part) => part.kind !== "removed")
-
-	useEffect(() => {
-		const element = dialogRef.current
-		if (element && !element.open) element.showModal()
-		keepButtonRef.current?.focus()
-	}, [])
 
 	return { dialogRef, keepButtonRef, currentParts, proposedParts }
 }

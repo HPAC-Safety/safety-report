@@ -50,6 +50,8 @@ export function useTypeformImportDialog({ onReview }: TypeformImportDialogProps)
 
 	useEffect(() => {
 		void loadPendingLogic()
+		// Once, on open: loadPendingLogic is a new function every render, so listing it would refetch on every render.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	async function runImport() {

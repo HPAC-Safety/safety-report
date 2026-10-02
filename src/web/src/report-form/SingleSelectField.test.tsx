@@ -182,6 +182,7 @@ describe("SingleSelectField", () => {
 	it("closes on Escape without letting it reach the page, and on Tab", () => {
 		const outer = vi.fn()
 		render(
+			// eslint-disable-next-line jsx-a11y/no-static-element-interactions -- a probe: it records whether Escape bubbles past the field to the page
 			<div onKeyDown={outer}>
 				<Harness />
 			</div>,

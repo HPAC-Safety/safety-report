@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useModalDialog } from "../hooks/useModalDialog"
 import { ResumeDraftDialogView, type ResumeDraftDialogViewProps } from "./ResumeDraftDialog.view"
 
 export { clearedAnswerCount, savedAnswerRows, type SavedAnswerRow } from "./savedAnswerRows"
@@ -10,16 +10,9 @@ export { clearedAnswerCount, savedAnswerRows, type SavedAnswerRow } from "./save
  * request of its own.
  */
 export function useResumeDraftDialog() {
-	const dialogRef = useRef<HTMLDialogElement>(null)
-	const continueButtonRef = useRef<HTMLButtonElement>(null)
-
 	// showModal() focuses the first control, which is the destructive one;
 	// start on the choice that keeps the reporter's answers instead.
-	useEffect(() => {
-		const element = dialogRef.current
-		if (element && !element.open) element.showModal()
-		continueButtonRef.current?.focus()
-	}, [])
+	const { dialogRef, focusRef: continueButtonRef } = useModalDialog()
 
 	return { dialogRef, continueButtonRef }
 }

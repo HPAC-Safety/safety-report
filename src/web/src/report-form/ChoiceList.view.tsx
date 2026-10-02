@@ -66,6 +66,7 @@ export interface ChoiceOptionsProps {
 /** The `role="option"` rows of a listbox, with a separator between pin groups. */
 export function ChoiceOptions({ groups, leading, optionId, activeKey, isSelected, onPoint, onPick }: ChoiceOptionsProps) {
 	const row = (choice: ListChoice, extra: Record<string, string> = {}) => (
+		// eslint-disable-next-line jsx-a11y/click-events-have-key-events -- an option of a combobox listbox: the keyboard drives it from the input through aria-activedescendant
 		<li
 			key={choice.key}
 			id={optionId(choice)}

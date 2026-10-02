@@ -33,6 +33,7 @@ export function MultiSelectPickerView({
 				{label}
 			</span>
 			<div className="relative">
+				{/* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- aria-invalid reports a required picker left empty; dropping it would change the DOM */}
 				<button
 					ref={triggerRef}
 					id={fieldId}

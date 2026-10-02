@@ -44,6 +44,7 @@ export function CalendarDateFieldView({
 }: CalendarDateFieldViewProps) {
 	return (
 		<div className="relative" onBlur={onWrapperBlur}>
+			{/* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- a text field that opens a calendar dialog; giving it role=combobox would change the DOM and how it is announced */}
 			<input
 				ref={inputRef}
 				id={fieldId}
@@ -69,6 +70,7 @@ export function CalendarDateFieldView({
 			<p role="status" className="sr-only">
 				{announcement}
 			</p>
+			{/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the dialog takes the keys, pointer and focus events bubbling up from the controls inside it */}
 			<div
 				id={dialogId}
 				role="dialog"

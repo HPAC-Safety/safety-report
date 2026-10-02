@@ -156,7 +156,7 @@ export function useInfiniteReportList<T>(
 	const restored = useMemo(() => {
 		return readRestorable<T>(key, entry)
 		// Decided once per list key: a later entry change on the same list does not re-restore.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- see the comment above
 	}, [key])
 
 	const [items, setItems] = useState<T[]>(restored?.items ?? [])
@@ -183,7 +183,6 @@ export function useInfiniteReportList<T>(
 		setInitialLoading(again === null)
 		setFailed(false)
 		restoredScroll.current = again?.scrollY ?? null
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [key])
 
 	const persist = useCallback(
@@ -240,7 +239,7 @@ export function useInfiniteReportList<T>(
 		if (restored === null) {
 			load(null, true)
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- first page once per list key; `restored` and `load` are read for that load only
 	}, [key])
 
 	// Restores scroll position once the restored items have painted.

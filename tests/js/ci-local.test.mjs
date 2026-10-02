@@ -212,8 +212,8 @@ describe('the modes of tools/ci-local.sh', () => {
 	const branches = code.match(/^if \[ -n "\$JOBS" \][\s\S]*?\nfi\n/m)?.[0] ?? ''
 	const [, fullBranch = '', fastBranch = ''] = branches.split(/\nelif |\nelse\n/)
 
-	it('runs build, web, i18n, docs, cucumber, and agent-config by default', () => {
-		assert.deepEqual(fast, ['build', 'web', 'i18n', 'docs', 'cucumber', 'agent-config'])
+	it('runs build, lint, web, i18n, docs, cucumber, and agent-config by default', () => {
+		assert.deepEqual(fast, ['build', 'lint', 'web', 'i18n', 'docs', 'cucumber', 'agent-config'])
 	})
 
 	it('runs only ci.yml jobs that exist', () => {

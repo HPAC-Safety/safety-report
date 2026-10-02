@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useModalDialog } from "../hooks/useModalDialog"
 import { DeleteReportDialogView, type DeleteReportDialogViewProps } from "./DeleteReportDialog.view"
 
 /*
@@ -7,14 +7,7 @@ import { DeleteReportDialogView, type DeleteReportDialogViewProps } from "./Dele
  * it too.
  */
 export function useDeleteReportDialog() {
-	const dialogRef = useRef<HTMLDialogElement>(null)
-	const keepButtonRef = useRef<HTMLButtonElement>(null)
-
-	useEffect(() => {
-		const element = dialogRef.current
-		if (element && !element.open) element.showModal()
-		keepButtonRef.current?.focus()
-	}, [])
+	const { dialogRef, focusRef: keepButtonRef } = useModalDialog()
 
 	return { dialogRef, keepButtonRef }
 }

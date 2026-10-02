@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { checkNumbering, checkStatus, claimedNumbers, localAdrs, main, nextNumber, renumber, statusLine } from '../../tools/adr-numbers.mjs'
+import { checkNumbering, checkStatus, claimedNumbers, main, nextNumber, renumber, statusLine } from '../../tools/adr-numbers.mjs'
 
 const adr = (number, title = 'A decision') => `---\ntitle: ${title}\ndescription: A decision.\ntype: adr\nstatus: accepted\ndate: 2026-09-22\ndecision-makers: Someone\nkeywords: a, b\n---\n\n# ADR-${number} — ${title}\n\n## Context\n\nSomething.\n`
 

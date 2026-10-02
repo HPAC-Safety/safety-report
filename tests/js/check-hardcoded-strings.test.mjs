@@ -224,3 +224,29 @@ describe('the command', () => {
 		})
 	})
 })
+
+describe('the hardcoded-string scanner and TypeScript type positions', () => {
+	const flagged = (line) => findViolations(`${line}\n`, 'src/V.tsx').map((violation) => violation.text)
+
+	it('given a Promise generic after an arrow then it is not read as JSX text', () => {
+		assert.deepEqual(flagged('\tonRestore: (revisionId: string) => Promise<boolean>'), [])
+		assert.deepEqual(flagged('\ttype Attempt = () => Promise<void>'), [])
+	})
+
+	it('given a call with type arguments then the call is not read as JSX text', () => {
+		assert.deepEqual(flagged('\tconst ref = useRef<HTMLDivElement>(null); return <div ref={ref} />'), [])
+		assert.deepEqual(flagged('\tconst Row = <T,>(props: Props<T>) => <li />'), [])
+		assert.deepEqual(flagged('\tconst Row = <T extends object>(props: Props<T>) => <li />'), [])
+		assert.deepEqual(flagged('\tconst map = new Map<string, Array<number>>(); return <p />'), [])
+	})
+
+	it('given real JSX text beside a type position then the text is still flagged', () => {
+		assert.deepEqual(flagged('\tconst f = (): Promise<void> => <p>Hello there</p>'), ['Hello there'])
+		assert.deepEqual(flagged('\treturn <p>Hello</b></p>'), ['Hello'])
+		assert.deepEqual(flagged('\treturn <p>One <b>two</b></p>'), ['One'])
+	})
+
+	it('given a nested element then its closing tag is not taken for a generic', () => {
+		assert.deepEqual(flagged('\treturn <li>Item</li>'), ['Item'])
+	})
+})

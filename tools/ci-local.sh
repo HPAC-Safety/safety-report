@@ -17,7 +17,7 @@
 #
 #   linked-issue.yml      linked-issue, no-session-link, screenshots
 #   feature-coverage.yml  feature-coverage
-#   ci.yml                build, web, i18n, docs, cucumber, agent-config
+#   ci.yml                build, lint, web, i18n, docs, cucumber, agent-config
 #
 # It skips test, coverage, e2e, and terraform. Those are the slow ones, and
 # GitHub CI, the coverage ratchet included, is the full gate. So before opening
@@ -127,7 +127,7 @@ BODY=$(CDPATH='' cd -- "$(dirname -- "$BODY")" && pwd)/$(basename -- "$BODY") \
 # The allow list. A job not named here cannot be run by this script.
 workflow_of() {
 	case "$1" in
-		changes|build|test|cucumber|docs|coverage|web|e2e|agent-config|i18n) echo ci.yml ;;
+		changes|build|test|cucumber|docs|coverage|lint|web|e2e|agent-config|i18n) echo ci.yml ;;
 		linked-issue|no-session-link|screenshots) echo linked-issue.yml ;;
 		feature-coverage) echo feature-coverage.yml ;;
 		infra) echo terraform.yml ;;
@@ -550,7 +550,7 @@ check_coverage() {
 
 # The cheap ci.yml jobs the default run covers. Not test, coverage, e2e, or
 # infra: GitHub CI runs those (ADR-0145, amended for #687).
-FAST_CI_JOBS='build web i18n docs cucumber agent-config'
+FAST_CI_JOBS='build lint web i18n docs cucumber agent-config'
 
 FAILED=0
 if [ -n "$JOBS" ]; then

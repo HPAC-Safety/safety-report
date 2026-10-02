@@ -29,6 +29,7 @@ function hostnameIn(text: string): string | undefined {
 // baseURL and webServer use.
 const e2ePort = process.env.E2E_PORT
 
+// eslint-disable-next-line no-empty-pattern -- Playwright reads the fixtures a step needs from this destructuring pattern, and this one needs none
 Given(/^a visitor has ((?:an explicit stored language choice|no stored choice).+)$/, async ({}, signal: string) => {
 	const hostname = hostnameIn(signal)
 	if (signal.startsWith("an explicit stored language choice of")) {

@@ -231,7 +231,6 @@ export function main(root = ROOT, paths = []) {
 	const files = paths.length > 0 ? [...paths].sort() : collectMarkdownFiles(root)
 	const checked = []
 	const problems = []
-	const missing = []
 
 	for (const path of files) {
 		if (isExempt(path)) continue

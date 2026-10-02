@@ -58,6 +58,7 @@ node --test $(find tests/js -name '*.test.mjs')
 npm --prefix src/web run test:coverage   # Vitest, 100% on split components and tested helpers
 npm --prefix src/web run typecheck
 node tools/check-component-split.mjs
+npm ci && npm run lint                    # ESLint: src/web, tools, tests/js, tests/e2e
 npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 
@@ -68,6 +69,12 @@ Which files are held to it follows the files on disk, so a pull request that
 splits a component edits no configuration; see
 [`build-hpac-web-ui`](../skills/build-hpac-web-ui/SKILL.md). Test code is never
 part of a release: `tools/check-web-bundle.mjs` fails a build that carries any.
+Every `.ts` helper under `src/web/src` has a colocated test, so all web logic is
+under the gate; `api/` tests mock `fetch` and `XMLHttpRequest`. A `v8 ignore` or
+`istanbul ignore` hint is for a branch no input can reach, with its reason in the
+comment directly above, and the split guard fails one without it. Every
+TypeScript and JavaScript file is linted by ESLint at the repository root
+(`eslint.config.mjs`, CI's `lint` job, pre-commit); the rules are errors.
 
 Integration suites require Docker. Coverage retains the repository floor and
 added-code ratchet, but privacy and behavior assertions matter more than a high

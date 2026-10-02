@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useModalDialog } from "../hooks/useModalDialog"
 import { DiscardReportDialogView, type DiscardReportDialogViewProps } from "./DiscardReportDialog.view"
 
 /*
@@ -7,14 +7,7 @@ import { DiscardReportDialogView, type DiscardReportDialogViewProps } from "./Di
  * starts on the choice that keeps the report, and Escape keeps it too.
  */
 export function useDiscardReportDialog() {
-	const dialogRef = useRef<HTMLDialogElement>(null)
-	const keepButtonRef = useRef<HTMLButtonElement>(null)
-
-	useEffect(() => {
-		const element = dialogRef.current
-		if (element && !element.open) element.showModal()
-		keepButtonRef.current?.focus()
-	}, [])
+	const { dialogRef, focusRef: keepButtonRef } = useModalDialog()
 
 	return { dialogRef, keepButtonRef }
 }

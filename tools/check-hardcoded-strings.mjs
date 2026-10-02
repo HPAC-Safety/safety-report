@@ -37,6 +37,20 @@ export function collectSourceFiles(dir) {
 }
 
 /**
+ * Blanks what is TypeScript rather than markup on one line, so its `>` and `<`
+ * are not read as the ends of a JSX tag: an arrow's `=>`, and the type
+ * arguments of a generic (`Promise<void>`, `useRef<T>(null)`, `<T,>(props)`).
+ * A generic's `<` follows an identifier directly and opens with a name; a JSX
+ * closing tag opens with `/`, so `Hello</b>` is left alone.
+ */
+export function blankTypePositions(line) {
+  return line
+    .replace(/=>/g, '  ')
+    .replace(/(?<=[\w$\])])<[A-Za-z_$][^<>()=]*(?:<[^<>]*>[^<>()=]*)*>/g, (match) => ' '.repeat(match.length))
+    .replace(/<[A-Z]\w*(?:,|\s+extends\s+[^<>]*,?)>(?=\s*\()/g, (match) => ' '.repeat(match.length))
+}
+
+/**
  * Flags JSX text nodes and copy-bearing prop string literals that are not
  * sourced from `t(...)`. A pragmatic line-based scan, not a real parser: it
  * strips comments and template-literal/expression content first so it
@@ -54,7 +68,7 @@ export function findViolations(source, filePath) {
     // JSX text content: a line whose visible content is plain text between
     // tags, e.g. `<h1>Hello World</h1>` or a bare text line inside an
     // element. Only lines that look like markup are considered.
-    const textBetweenTags = line.match(/>([^<>{}\n]*[A-Za-z][^<>{}\n]*)</)
+    const textBetweenTags = blankTypePositions(line).match(/>([^<>{}\n]*[A-Za-z][^<>{}\n]*)</)
     if (textBetweenTags && textBetweenTags[1].trim().length > 0) {
       violations.push({ file: filePath, line: lineNumber, text: textBetweenTags[1].trim(), reason: 'JSX text content' })
     }

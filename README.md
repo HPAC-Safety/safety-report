@@ -183,6 +183,7 @@ dotnet test HpacSafety.slnx
 node --test $(find tests/js -name '*.test.mjs')
 node tools/traceability.mjs && node tools/bindings.mjs
 npm --prefix src/web ci && npm --prefix src/web run build
+npm ci && npm run lint   # ESLint over src/web, tools, tests/js and tests/e2e (ADR-0188)
 ```
 
 Integration tests require Docker. See [`tests/README.md`](tests/README.md) and
@@ -199,7 +200,7 @@ tools/ci-local.sh --body pr-body.md
 
 By default it runs the pull request workflows' fast checks themselves —
 `linked-issue.yml`, `feature-coverage.yml`, and the cheap `ci.yml` jobs
-(`build`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`) — under
+(`build`, `lint`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`) — under
 [act](https://github.com/nektos/act), in an Ubuntu 24.04 container
 ([ADR-0145](.spec/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)).
 It skips `test`, `coverage`, `e2e`, and terraform: GitHub CI, the coverage

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useModalDialog } from "../hooks/useModalDialog"
 import { UnsavedChangesDialogView, type UnsavedChangesDialogViewProps } from "./UnsavedChangesDialog.view"
 
 /*
@@ -10,14 +10,7 @@ import { UnsavedChangesDialogView, type UnsavedChangesDialogViewProps } from "./
  * same pattern as `DiscardReportDialog`.
  */
 export function useUnsavedChangesDialog() {
-	const dialogRef = useRef<HTMLDialogElement>(null)
-	const keepButtonRef = useRef<HTMLButtonElement>(null)
-
-	useEffect(() => {
-		const element = dialogRef.current
-		if (element && !element.open) element.showModal()
-		keepButtonRef.current?.focus()
-	}, [])
+	const { dialogRef, focusRef: keepButtonRef } = useModalDialog()
 
 	return { dialogRef, keepButtonRef }
 }

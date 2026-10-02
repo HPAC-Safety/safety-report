@@ -212,7 +212,7 @@ Rules:
      suite.
    - The gate runs the workflow files themselves under act (version in
      `.act-version`). By default only the fast checks: `linked-issue.yml`,
-     `feature-coverage.yml`, and the `ci.yml` jobs `build`, `web`, `i18n`,
+     `feature-coverage.yml`, and the `ci.yml` jobs `build`, `lint`, `web`, `i18n`,
      `docs`, `cucumber`, and `agent-config`. It skips `test`, `coverage`,
      `e2e`, and terraform `infra`, and needs no `gh` login. It stops at the
      first failure.

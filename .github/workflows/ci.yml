@@ -638,6 +638,25 @@ jobs:
 
   # Vite + @tailwindcss/vite, one package.json, one committed lockfile. See
   # ADR-0043 (supersedes ADR-0006's no-Node standalone-CLI build).
+  # ESLint over every TypeScript and JavaScript file: src/web, tools, tests/js and
+  # tests/e2e (ADR-0188). It has no path filter: a change to any of them, or to
+  # the root package.json or eslint.config.mjs, must be linted, and it costs
+  # seconds. The dependencies are the root package.json's; the web app's and the
+  # browser suite's own installs are not needed to lint.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: npm ci
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
   web:
     needs: changes
     if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.web == 'true')"

@@ -60,9 +60,13 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   renders `<FooView {...props} {...useFoo(props)} />`. Import sites never
   change. A markup-only component gets the pass-through with no `useFoo`.
 - **`Foo.view.tsx` is markup.** It exports `FooView` and `FooViewProps`. It
-  calls no hook but `useLocale`, imports nothing from `api/`, and uses no
-  storage, `fetch`, timer or module-level mutable state. A DOM ref arrives as a
-  prop.
+  calls no hook but `useLocale`, imports no value from `api/` (a type-only
+  import, `import type …` or `import { type X }`, is allowed) and no runtime
+  value from its own sibling `Foo.tsx` (that is a runtime circular import: put a
+  shared value in a small module both import; a type import is fine), and uses
+  no storage, `fetch`, timer or module-level mutable state. A DOM ref arrives as
+  a prop. The guard reads code only: a string literal or a comment that names
+  `localStorage` is not a use of it.
 - A stateful private sub-component gets its own pair; a stateless one moves into
   the view. A pure helper goes into a camelCase `.ts` file. A provider keeps its
   value logic in `Foo.tsx` and its view renders `Ctx.Provider`; a class error
@@ -73,7 +77,11 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   split is wrong.
 - `node tools/check-component-split.mjs` enforces the view rules and the test
   boundary below. Its strict mode (every component has a view) is a constant in
-  the script, off until the last pull request of the split.
+  the script, and it is on: a new component is a pair from the start.
+- **One hook opens every native `<dialog>`:** `hooks/useModalDialog` shows it as
+  a modal on mount and starts focus on the control `focusRef` is attached to
+  (the choice that keeps things as they are). A new dialog uses it; it does not
+  carry its own effect.
 
 ### Unit tests for logic
 
@@ -87,6 +95,24 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   with a colocated test. Split a component and test it; the threshold follows.
 - Test with Testing Library by role and label, as a user would. `renderHook` a
   view model that has no markup of its own.
+- **Every `.ts` helper has a colocated test** (`lib/`, `api/`, `hooks/`, `i18n/`,
+  `theme/`, `auth/`, `report-form/`): mock `fetch` and `XMLHttpRequest` for
+  `api/`, so the whole web logic is under the gate.
+- **A `v8 ignore` or `istanbul ignore` hint** is for a branch no input can
+  reach, and the comment on the line directly above it says why. The guard fails
+  one without a reason. Never use it for code a test could reach.
+
+### Lint
+
+- `npm ci && npm run lint` at the repository root runs ESLint over `src/web`,
+  `tools`, `tests/js` and `tests/e2e` (flat config `eslint.config.mjs`; CI's
+  `lint` job; pre-commit over the staged files). Rules are errors: `@eslint/js`
+  and `typescript-eslint` recommended everywhere; in `src/web` also
+  `react-hooks` (`rules-of-hooks`, `exhaustive-deps`) and `jsx-a11y`.
+- Fix the code, never the markup to please a rule. Where a fix would change
+  behaviour or the DOM, disable that rule on that line with the reason:
+  `// eslint-disable-next-line react-hooks/exhaustive-deps -- <why>`. A name
+  starting with `_` is unused on purpose.
 
 ### Tests are never part of a release
 

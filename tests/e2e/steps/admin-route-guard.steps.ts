@@ -1,7 +1,7 @@
 import { createBdd } from "playwright-bdd"
 import { expect, type Page } from "@playwright/test"
 
-import { signInAs, stubAuth, type Role } from "./auth"
+import { stubAuth } from "./auth"
 
 const { Given, When, Then } = createBdd()
 

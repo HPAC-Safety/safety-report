@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useModalDialog } from "../hooks/useModalDialog"
 import { RestoreVersionDialogView, type RestoreVersionDialogViewProps } from "./RestoreVersionDialog.view"
 
 /*
@@ -9,14 +9,7 @@ import { RestoreVersionDialogView, type RestoreVersionDialogViewProps } from "./
  * the current version too.
  */
 export function useRestoreVersionDialog() {
-	const dialogRef = useRef<HTMLDialogElement>(null)
-	const keepButtonRef = useRef<HTMLButtonElement>(null)
-
-	useEffect(() => {
-		const element = dialogRef.current
-		if (element && !element.open) element.showModal()
-		keepButtonRef.current?.focus()
-	}, [])
+	const { dialogRef, focusRef: keepButtonRef } = useModalDialog()
 
 	return { dialogRef, keepButtonRef }
 }

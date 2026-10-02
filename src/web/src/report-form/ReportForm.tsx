@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
-import type { Locale } from "../i18n/locales"
 import { useLocale } from "../i18n/useLocale"
 import { fetchCurrentQuestions, type PublicQuestionView } from "../api/publicQuestions"
-import {
-	SubmissionNetworkError,
-	SubmissionRejectedError,
-	submitReport,
-	type SubmitAnswer,
-} from "../api/reportSubmission"
+import { SubmissionNetworkError, SubmissionRejectedError, submitReport } from "../api/reportSubmission"
 import { MAX_ATTACHMENTS, deleteUpload } from "../api/uploads"
 import type { Attachment } from "./AttachmentField"
-import { DiscardReportDialog } from "./DiscardReportDialog"
+import { markRejectedUploads, hasFileAttached, savedAttachments, type AttachmentMap } from "./attachmentMap"
 import {
 	clearDraft,
 	draftExpiresAtMs,
@@ -20,87 +14,37 @@ import {
 	readDraft,
 	writeDraft,
 	type DraftAnswer,
-	type DraftAttachment,
 	type ReportDraft,
 } from "./draft"
-import { QuestionField } from "./QuestionField"
-import { ResumeDraftDialog, clearedAnswerCount, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
+import { clearedAnswerCount, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
+import { ReportFormView, type SubmitState } from "./ReportForm.view"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
-import { DEFAULT_PHONE_COUNTRY, toE164 } from "../lib/phoneNumber"
+import { stepPath } from "./stepPath"
 import {
 	answerProblem,
 	blockingQuestions,
 	buildSteps,
-	cannotBeAnswered,
-	choiceScope,
-	collectsNoAnswer,
 	consistentAnswers,
 	indexQuestionsById,
 	isMalformed,
-	optionFor,
-	optionTyped,
-	questionHelp,
-	questionLabel,
-	scopedQuestion,
-	visibleChildren,
 	visibleSteps,
 	type AnswerMap,
 	type FormStep,
 } from "./steps"
+import { buildSubmitAnswers } from "./submitAnswers"
 import { useStrayFileDropGuard } from "./useStrayFileDropGuard"
-import { isYesNoType, yesNoValue } from "./yesNo"
 
 type LoadState =
 	| { status: "loading" }
 	| { status: "error" }
 	| { status: "ready"; questions: PublicQuestionView[] }
 
-// Every state of the form sits in the same column as the not-tracked notice
-// above it, so the confirmation lines up with the page rather than the viewport.
-const COLUMN = "mx-auto max-w-measure px-6 py-10"
-
-type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "submitted"; id: string } | { status: "failed"; message: string; keepsLocalState: boolean }
-
 /** Best effort, one request each: an upload this fails to erase is never claimed, and the lifecycle rule expires it. */
 function deleteUploads(uploadIds: string[]) {
 	for (const uploadId of uploadIds) void deleteUpload(uploadId)
 }
 
-type AttachmentMap = Record<string, Attachment[]>
-
-/**
- * Whether any upload has finished, which is when the form asks media consent:
- * it covers photos, video, and documents alike (ADR-0117, ADR-0119).
- */
-function hasFileAttached(attachments: AttachmentMap): boolean {
-	return Object.values(attachments)
-		.flat()
-		.some((row) => row.status === "uploaded")
-}
-type DraftAttachmentMap = Record<string, DraftAttachment[]>
-
-/** The finished uploads the draft keeps, per question; a refused or expired row is not worth restoring. */
-function savedAttachments(attachments: AttachmentMap): DraftAttachmentMap {
-	const saved: DraftAttachmentMap = {}
-	for (const [revisionId, rows] of Object.entries(attachments)) {
-		const uploaded = rows
-			.filter((row) => row.status === "uploaded" && row.uploadId)
-			.map((row) => ({ uploadId: row.uploadId!, name: row.name, size: row.size }))
-		if (uploaded.length > 0) saved[revisionId] = uploaded
-	}
-	return saved
-}
-
-function stepQuestionId(step: FormStep): string {
-	return step.question.id
-}
-
-/** The introduction is the bare form address; every other page is named by its heading question's key (ADR-0099). */
-function stepPath(step: FormStep): string {
-	return step.kind === "intro" ? "/report" : `/report/${encodeURIComponent(step.question.key)}`
-}
-
-export function ReportForm() {
+export function useReportForm() {
 	const { locale, t } = useLocale()
 	useStrayFileDropGuard()
 	const [load, setLoad] = useState<LoadState>({ status: "loading" })
@@ -190,7 +134,7 @@ export function ReportForm() {
 
 	const currentIndex = !addressSettled || !stepKey ? 0 : visible.findIndex((step) => step.question.key === stepKey)
 	const currentStep = currentIndex >= 0 ? (visible[currentIndex] ?? null) : null
-	const currentStepId = currentStep ? stepQuestionId(currentStep) : null
+	const currentStepId = currentStep ? currentStep.question.id : null
 
 	useEffect(() => {
 		if (visible.length === 0) return
@@ -275,6 +219,9 @@ export function ReportForm() {
 				restored[row.revisionId] = draft.answers[row.revisionId]!
 				continue
 			}
+			// Defensive: the draft is untrusted storage. An attachments row is only
+			// listed for files the draft names, so no test can reach the fallback.
+			/* v8 ignore next */
 			restoredFiles[row.revisionId] = (draft.attachments?.[row.revisionId] ?? []).map((file) => ({
 				key: `restored-${file.uploadId}`,
 				name: file.name,
@@ -384,68 +331,7 @@ export function ReportForm() {
 
 		setSubmit({ status: "submitting" })
 
-		const submitAnswers: SubmitAnswer[] = []
-
-		for (const step of visible) {
-			const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, hasAttachment) : [step.question]
-
-			for (const question of questions) {
-				if (collectsNoAnswer(question)) continue
-				// A question that cannot be answered yet was never asked (ADR-0146).
-				if (cannotBeAnswered(question, answers, questionsById)) continue
-
-				const answer = answers[question.revisionId]
-
-				// A choice answer names its choices by ID (ADR-0128); a type-ahead
-				// value no choice carries yet goes as the typed text (ADR-0129).
-				if (question.type === "multi_select" || question.type === "single_select" || question.type === "autocomplete") {
-					// Only what the parent's answer lets it offer is matched (ADR-0146).
-					const offered = scopedQuestion(question, answers, questionsById)
-					const stored = answer?.kind === "options" ? answer.values : answer?.kind === "value" ? [answer.value] : []
-					// A type-ahead choice picked from its list names itself by ID; only
-					// typed text is matched to a choice by its wording.
-					const picked =
-						question.type === "autocomplete" && answer?.kind === "value" && answer.choice
-							? offered.options.find((option) => option.id === answer.choice)
-							: undefined
-					const named = picked
-						? [picked]
-						: question.type === "autocomplete"
-							? stored.map((typed) => optionTyped(offered, typed))
-							: stored.map((value) => optionFor(offered, value))
-					const typed = question.type === "autocomplete" && stored.length > 0 && !named[0] ? stored[0].trim() : null
-					submitAnswers.push({
-						questionRevisionId: question.revisionId,
-						value: typed || null,
-						choices: typed ? null : named.flatMap((option) => (option ? [option.id] : [])),
-						attachments: null,
-					})
-					continue
-				}
-
-				if (question.type === "file_upload") {
-					submitAnswers.push({
-						questionRevisionId: question.revisionId,
-						value: null,
-						choices: null,
-						attachments: (attachments[question.revisionId] ?? [])
-							.filter((row) => row.status === "uploaded" && row.uploadId)
-							.map((row) => ({ uploadId: row.uploadId!, fileName: row.name })),
-					})
-					continue
-				}
-
-				const value = answer?.kind === "value" ? submittedText(question, answer) : null
-
-				submitAnswers.push({
-					questionRevisionId: question.revisionId,
-					// A yes/no is sent as a JSON boolean, whatever the language (ADR-0130).
-					value: value !== null && isYesNoType(question.type) ? yesNoValue(value) : value,
-					choices: null,
-					attachments: null,
-				})
-			}
-		}
+		const submitAnswers = buildSubmitAnswers(visible, answers, attachments, questionsById, hasAttachment)
 
 		try {
 			const result = await submitReport(locale, submitAnswers)
@@ -466,19 +352,7 @@ export function ReportForm() {
 				// A refused upload is never claimed; it is erased now rather than
 				// left for the lifecycle rule.
 				deleteUploads([...refused.keys()])
-				setAttachments((prev) =>
-					Object.fromEntries(
-						Object.entries(prev).map(([revisionId, rows]) => [
-							revisionId,
-							rows.map((row) => {
-								if (!row.uploadId) return row
-								if (expired.has(row.uploadId)) return { ...row, status: "expired" as const }
-								const reason = refused.get(row.uploadId)
-								return reason ? { ...row, status: "rejected" as const, reason } : row
-							}),
-						]),
-					),
-				)
+				setAttachments((prev) => markRejectedUploads(prev, expired, refused))
 				setSubmit({
 					status: "failed",
 					message: t(expired.size > 0 ? "report.attachments.expiredSummary" : "report.attachments.refusedSummary"),
@@ -490,41 +364,6 @@ export function ReportForm() {
 				setSubmit({ status: "failed", message: t("report.error.submitFailed"), keepsLocalState: true })
 			}
 		}
-	}
-
-	if (load.status === "loading") {
-		return (
-			<div className={COLUMN}>
-				<p aria-busy="true" className="font-sans text-ink-muted">{t("report.loading")}</p>
-			</div>
-		)
-	}
-
-	if (load.status === "error") {
-		return (
-			<div className={COLUMN}>
-				<p role="alert" className="font-sans text-brand-700">{t("report.loadError")}</p>
-			</div>
-		)
-	}
-
-	if (submit.status === "submitted") {
-		return (
-			<div className={COLUMN}>
-				<div role="status" className="rounded border border-rule bg-surface-2 p-6">
-					<h2 className="font-display text-xl font-bold text-ink">{t("report.submitted.title")}</h2>
-					<p className="mt-2 font-sans text-ink-muted">{t("report.submitted.body")}</p>
-				</div>
-			</div>
-		)
-	}
-
-	if (!currentStep) {
-		return (
-			<div className={COLUMN}>
-				<p className="font-sans text-ink-muted">{t("report.loading")}</p>
-			</div>
-		)
 	}
 
 	const blocking = attemptedAdvance ? blockingRequirements() : []
@@ -541,261 +380,43 @@ export function ReportForm() {
 	)
 	const anyUnanswered = blocking.some((question) => !isMalformed(question, answers[question.revisionId]))
 
-	return (
-		<div className={COLUMN}>
-			{pendingDraft && (
-				<ResumeDraftDialog rows={pendingRows} onContinue={continueDraft} onStartOver={startOver} t={t} />
-			)}
-
-			{confirmingDiscard && (
-				<DiscardReportDialog onConfirm={discard} onKeep={() => setConfirmingDiscard(false)} t={t} />
-			)}
-
-			<p role="status" className="sr-only">
-				{t("report.progress", { current: currentIndex + 1, total: visible.length })}
-			</p>
-
-			<div className="rounded border border-rule bg-surface p-4 sm:p-6">
-				<p className="font-sans text-xs text-ink-muted">
-					{t("report.privacy.localStorage")}
-				</p>
-			</div>
-
-			{clearedNotice && (
-				<p
-					data-testid="cleared-answers-notice"
-					className="mt-4 rounded border border-rule bg-surface-2 p-4 font-sans text-sm text-ink"
-				>
-					{t("report.resume.cleared")}
-				</p>
-			)}
-
-			{blocking.length > 0 && (
-				<div role="alert" className="mt-4 rounded border border-brand-700 bg-surface p-4">
-					<p className="font-sans text-sm font-semibold text-brand-700">
-						{t(anyUnanswered ? "report.required.summary" : "report.invalid.summary")}
-					</p>
-					<ul className="mt-1 list-disc pl-5 font-sans text-sm text-brand-700">
-						{blocking.map((question) => (
-							<li key={question.revisionId}>
-								<a href={`#question-${question.revisionId}`}>{questionLabel(question, locale)}</a>
-							</li>
-						))}
-					</ul>
-				</div>
-			)}
-
-			{submit.status === "failed" && (
-				<p role="alert" className="mt-4 rounded border border-brand-700 bg-surface p-4 font-sans text-sm text-brand-700">
-					{submit.message}
-				</p>
-			)}
-
-			<div className={`mt-6 transition-opacity duration-200 ${entering ? "opacity-100" : "opacity-0"}`}>
-				<StepContent
-					step={currentStep}
-					locale={locale}
-					answers={answers}
-					attachments={attachments}
-					onAttachments={updateAttachments}
-					onUploading={setQuestionUploading}
-					attachmentRoom={attachmentRoom}
-					onAnswer={setAnswer}
-					blockingMessages={blockingMessages}
-					questionsById={questionsById}
-					t={t}
-				/>
-			</div>
-
-			<div className="mt-8 flex items-center justify-between gap-4">
-				{!isFirst && currentStep.kind !== "intro" ? (
-					<button
-						type="button"
-						className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
-						onClick={handleBack}
-					>
-						{t("report.nav.back")}
-					</button>
-				) : (
-					<span />
-				)}
-
-				{isLast ? (
-					<button
-						type="button"
-						className="touch-target rounded bg-brand-700 px-5 font-sans text-sm font-semibold text-ink-inverse disabled:opacity-60"
-						disabled={submit.status === "submitting" || anyUploading}
-						onClick={handleSubmit}
-					>
-						{submit.status === "submitting" ? t("report.nav.submitting") : t("report.nav.submit")}
-					</button>
-				) : (
-					<button
-						type="button"
-						className="touch-target rounded bg-brand-700 px-5 font-sans text-sm font-semibold text-ink-inverse disabled:opacity-60"
-						disabled={anyUploading}
-						onClick={handleNext}
-					>
-						{t("report.nav.next")}
-					</button>
-				)}
-			</div>
-
-			{hasSomethingToDiscard && (
-				<div className="mt-6 flex justify-center">
-					<button
-						type="button"
-						className="touch-target rounded px-3 font-sans text-sm text-ink-muted underline hover:text-ink"
-						onClick={() => setConfirmingDiscard(true)}
-					>
-						{t("report.discard.open")}
-					</button>
-				</div>
-			)}
-		</div>
-	)
+	return {
+		loadStatus: load.status,
+		submit,
+		currentStep,
+		currentIndex,
+		visibleCount: visible.length,
+		pendingDraft: pendingDraft !== null,
+		pendingRows,
+		onContinue: continueDraft,
+		onStartOver: startOver,
+		confirmingDiscard,
+		onDiscard: discard,
+		onKeepReport: () => setConfirmingDiscard(false),
+		onOpenDiscard: () => setConfirmingDiscard(true),
+		clearedNotice,
+		blocking,
+		anyUnanswered,
+		entering,
+		answers,
+		attachments,
+		onAttachments: updateAttachments,
+		onUploading: setQuestionUploading,
+		attachmentRoom,
+		onAnswer: setAnswer,
+		blockingMessages,
+		questionsById,
+		isFirst,
+		isLast,
+		anyUploading,
+		onBack: handleBack,
+		onNext: handleNext,
+		onSubmit: handleSubmit,
+		hasSomethingToDiscard,
+		privacyNotice: t("report.privacy.localStorage"),
+	}
 }
 
-interface StepContentProps {
-	step: FormStep
-	locale: ReturnType<typeof useLocale>["locale"]
-	answers: AnswerMap
-	attachments: Record<string, Attachment[]>
-	onAttachments: (revisionId: string, update: (current: Attachment[]) => Attachment[]) => void
-	onUploading: (revisionId: string, uploading: boolean) => void
-	attachmentRoom: number
-	onAnswer: (revisionId: string, answer: DraftAnswer | undefined) => void
-	blockingMessages: Map<string, string>
-	questionsById: Map<string, PublicQuestionView>
-	t: (key: string, params?: Record<string, string | number>) => string
-}
-
-/**
- * A statement's description, in the reader's language, keeping the line breaks
- * it was written with so its paragraphs stay apart (REQ-QB-143).
- */
-function StatementDescription({ question, locale }: { question: PublicQuestionView; locale: Locale }) {
-	const description = questionHelp(question, locale)
-	if (!description) return null
-	return <p className="mt-3 whitespace-pre-line font-sans text-ink-muted">{description}</p>
-}
-
-function StepContent({
-	step,
-	locale,
-	answers,
-	attachments,
-	onAttachments,
-	onUploading,
-	attachmentRoom,
-	onAnswer,
-	blockingMessages,
-	questionsById,
-	t,
-}: StepContentProps) {
-	// A picker or type-ahead whose choices depend on another question offers only
-	// what that question's answer allows, and waits, disabled, until it is
-	// answered (ADR-0146).
-	function dependent(question: PublicQuestionView) {
-		const scope = choiceScope(question, answers, questionsById)
-		if (scope.kind === "all") return { question, disabled: false, note: null }
-
-		const parent = questionLabel(scope.parent, locale)
-		if (scope.kind === "waiting") {
-			const note = t("report.dependent.answerFirst", { question: parent })
-			return { question: { ...question, options: [] }, disabled: true, note, announcement: "" }
-		}
-
-		const picker = question.type !== "autocomplete"
-		const empty = scope.options.length === 0
-		const note = empty ? t(picker ? "report.dependent.nothingUnder" : "report.dependent.typeOne", { question: parent }) : null
-		return {
-			question: { ...question, options: scope.options },
-			disabled: picker && empty,
-			note,
-			announcement: note ?? t("report.dependent.ready", { question: questionLabel(question, locale), parent }),
-		}
-	}
-
-	if (step.kind === "intro") {
-		return (
-			<div>
-				<h1 className="font-display text-2xl font-bold text-ink">{questionLabel(step.question, locale)}</h1>
-				<StatementDescription question={step.question} locale={locale} />
-			</div>
-		)
-	}
-
-	if (step.kind === "group") {
-		const children = visibleChildren(step.question, answers, questionsById, hasFileAttached(attachments))
-		return (
-			<fieldset>
-				<legend className="font-display text-lg font-semibold text-ink">{questionLabel(step.question, locale)}</legend>
-				<div className="mt-4">
-					{children.map((child) =>
-						// A statement under a group is a sub-heading with its
-						// description, never an input (REQ-QB-143).
-						collectsNoAnswer(child) ? (
-							<div key={child.revisionId} className="mb-6">
-								<h3 className="font-display text-base font-semibold text-ink">{questionLabel(child, locale)}</h3>
-								<StatementDescription question={child} locale={locale} />
-							</div>
-						) : (
-							<QuestionField
-								key={child.revisionId}
-								{...dependent(child)}
-								locale={locale}
-								answer={answers[child.revisionId]}
-								onChange={(answer) => onAnswer(child.revisionId, answer)}
-								attachments={attachments[child.revisionId] ?? []}
-								onAttachmentsChange={(update) => onAttachments(child.revisionId, update)}
-								onUploadingChange={(busy) => onUploading(child.revisionId, busy)}
-								attachmentRoom={attachmentRoom}
-								errorText={blockingMessages.get(child.revisionId) ?? null}
-								t={t}
-							/>
-						),
-					)}
-				</div>
-			</fieldset>
-		)
-	}
-
-	if (collectsNoAnswer(step.question)) {
-		return (
-			<div>
-				<h2 className="font-display text-xl font-bold text-ink">{questionLabel(step.question, locale)}</h2>
-				<StatementDescription question={step.question} locale={locale} />
-			</div>
-		)
-	}
-
-	return (
-		<QuestionField
-			{...dependent(step.question)}
-			locale={locale}
-			answer={answers[step.question.revisionId]}
-			onChange={(answer) => onAnswer(step.question.revisionId, answer)}
-			attachments={attachments[step.question.revisionId] ?? []}
-			onAttachmentsChange={(update) => onAttachments(step.question.revisionId, update)}
-			onUploadingChange={(busy) => onUploading(step.question.revisionId, busy)}
-			attachmentRoom={attachmentRoom}
-			errorText={blockingMessages.get(step.question.revisionId) ?? null}
-			t={t}
-		/>
-	)
-}
-
-/**
- * An entered text answer as it is sent: an email address trimmed, and a phone
- * number in E.164 for the country it was typed for (ADR-0137); a blank one of
- * either as no answer (REQ-SUB-086). The form has already refused a malformed
- * one.
- */
-function submittedText(question: PublicQuestionView, answer: { value: string; country?: string }): string | null {
-	if (question.type !== "email" && question.type !== "phone") return answer.value
-	const entered = answer.value.trim()
-	if (!entered) return null
-	if (question.type === "email") return entered
-	return toE164(answer.country ?? DEFAULT_PHONE_COUNTRY, entered) ?? entered
+export function ReportForm() {
+	return <ReportFormView {...useReportForm()} />
 }

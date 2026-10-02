@@ -1,63 +1,38 @@
 import { useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError, translate } from "../api/adminQuestions"
-import type { ReportDetail, ReportListItem, ReportStatus, SummarySource } from "../api/adminReports"
-import { TranslateConfirmDialog } from "./TranslateConfirmDialog"
+import type { ReportDetail, SummarySource } from "../api/adminReports"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
+import { actionsFor } from "./reportReviewActions"
+import { ReviewActionsView } from "./ReviewActions.view"
 
-type Language = "en" | "fr"
+export type { ReportDetail, SummarySource } from "../api/adminReports"
+export { actionsFor, type ReviewAction } from "./reportReviewActions"
+
+export type Language = "en" | "fr"
 
 const LOCALE: Record<Language, string> = { en: "en-CA", fr: "fr-CA" }
 const OTHER: Record<Language, Language> = { en: "fr", fr: "en" }
 
-/** What a reviewer may do in each state (REQ-MOD-062, ADR-0125). Delete is always offered. */
-export type ReviewAction = "edit" | "write" | "publish" | "unpublish" | "delete"
-
-const ACTIONS: Record<ReportStatus, ReviewAction[]> = {
-	pending: ["edit", "publish", "unpublish", "delete"],
-	published: ["edit", "unpublish", "delete"],
-	unpublished: ["edit", "publish", "delete"],
-	summary_failed: ["write", "delete"],
-	submitted: ["delete"],
-	summarizing: ["delete"],
-}
-
-/**
- * A report whose reporter did not consent is unpublished for good: it is never
- * summarized, and deleting it is the one thing a reviewer can do (REQ-DOM-015).
- */
-export function actionsFor(report: Pick<ReportListItem, "status" | "consent">): ReviewAction[] {
-	return report.consent === true ? ACTIONS[report.status] : ["delete"]
-}
-
-const PRIMARY =
-	"touch-target inline-flex items-center rounded bg-brand-700 px-5 font-sans font-medium text-ink-inverse hover:bg-brand-600 disabled:opacity-50"
-const SECONDARY =
-	"touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-ink hover:bg-surface-2 disabled:opacity-50"
-const FIELD = "mt-1 w-full rounded border border-rule bg-surface-2 px-3 py-2 font-sans text-ink"
-
-/*
- * The action bar and the two inline forms it opens: the summary-pair editor
- * (both languages saved together) and the unpublishing note. The parent owns the
- * requests; this component owns only what the reviewer is typing.
- */
-export function ReviewActions({
-	report,
-	busy,
-	onSave,
-	onPublish,
-	onUnpublish,
-	onDelete,
-}: {
+export interface ReviewActionsProps {
 	report: ReportDetail
 	busy: boolean
+	// Split across lines on purpose: tools/check-hardcoded-strings.mjs is a
+	// line scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 	onSave: (aiSummaryEn: string, aiSummaryFr: string, sourceEn: SummarySource, sourceFr: SummarySource) =>
 		Promise<boolean>
 	onPublish: () => void
 	onUnpublish: (note: string) =>
 		Promise<boolean>
 	onDelete: () => void
-}) {
+}
+
+/*
+ * The action bar and the two inline forms it opens: the summary-pair editor
+ * (both languages saved together) and the unpublishing note. The parent owns the
+ * requests; this component owns only what the reviewer is typing.
+ */
+export function useReviewActions({ report, busy, onSave, onUnpublish }: ReviewActionsProps) {
 	const { t } = useLocale()
 	const [mode, setMode] = useState<"view" | "edit" | "unpublish">("view")
 	const [original, setOriginal] = useState<Record<Language, string>>({ en: "", fr: "" })
@@ -133,124 +108,30 @@ export function ReviewActions({
 		}
 	}
 
-	if (mode === "edit") {
-		return (
-			<form
-				aria-label={t("reports.edit.label")}
-				className="mt-4 flex flex-col gap-4 rounded border border-rule bg-surface p-4"
-				onSubmit={(event) => {
-					event.preventDefault()
-					void save()
-				}}
-			>
-				<label className="block font-sans text-sm text-ink">
-					{t("reports.edit.en")}
-					<textarea lang="en-CA" rows={6} className={FIELD} value={draft.en} onChange={(e) => type("en", e.target.value)} />
-				</label>
-				<label className="block font-sans text-sm text-ink">
-					{t("reports.edit.fr")}
-					<textarea lang="fr-CA" rows={6} className={FIELD} value={draft.fr} onChange={(e) => type("fr", e.target.value)} />
-				</label>
-				{(changed("en") || changed("fr")) && (
-					<div role="group" aria-label={t("reports.translate.label")} className="flex flex-wrap gap-3">
-						{changed("en") && (
-							<button type="button" className={SECONDARY} disabled={busy || translating} onClick={() => void translateFrom("en")}>
-								{t("reports.translate.toFrench")}
-							</button>
-						)}
-						{changed("fr") && (
-							<button type="button" className={SECONDARY} disabled={busy || translating} onClick={() => void translateFrom("fr")}>
-								{t("reports.translate.toEnglish")}
-							</button>
-						)}
-					</div>
-				)}
-				{translateError && (
-					<p role="alert" className="rounded border border-brand-700 bg-surface-2 p-3 font-sans text-sm text-ink">
-						{translateError}
-					</p>
-				)}
-				{proposal && (
-					<TranslateConfirmDialog
-						target={proposal.target}
-						current={draft[proposal.target]}
-						proposed={proposal.text}
-						onAccept={() => accept(proposal.target, proposal.text)}
-						onKeep={() => setProposal(null)}
-					/>
-				)}
-				<p className="font-sans text-sm text-ink-muted">
-					{t(report.status === "published" ? "reports.edit.publishesAtOnce" : "reports.edit.savesDraft")}
-				</p>
-				<div className="flex flex-wrap gap-3">
-					<button type="submit" className={PRIMARY} disabled={busy || !edited || !draft.en.trim() || !draft.fr.trim()}>
-						{t("reports.edit.save")}
-					</button>
-					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("view")}>
-						{t("reports.action.cancel")}
-					</button>
-				</div>
-			</form>
-		)
+	return {
+		mode,
+		draft,
+		proposal,
+		translating,
+		translateError,
+		note,
+		changedEn: changed("en"),
+		changedFr: changed("fr"),
+		saveDisabled: busy || !edited || !draft.en.trim() || !draft.fr.trim(),
+		actions: actionsFor(report),
+		openEditor,
+		openUnpublish: () => setMode("unpublish"),
+		cancel: () => setMode("view"),
+		type,
+		changeNote: setNote,
+		translateFrom: (language: Language) => void translateFrom(language),
+		accept,
+		keepCurrent: () => setProposal(null),
+		submitEdit: () => void save(),
+		submitUnpublish: () => void unpublish(),
 	}
+}
 
-	if (mode === "unpublish") {
-		return (
-			<form
-				aria-label={t("reports.unpublish.label")}
-				className="mt-4 flex flex-col gap-4 rounded border border-rule bg-surface p-4"
-				onSubmit={(event) => {
-					event.preventDefault()
-					void unpublish()
-				}}
-			>
-				<label className="block font-sans text-sm text-ink">
-					{t("reports.unpublish.note")}
-					<textarea rows={3} maxLength={2000} className={FIELD} value={note} onChange={(e) => setNote(e.target.value)} />
-				</label>
-				<div className="flex flex-wrap gap-3">
-					<button type="submit" className={PRIMARY} disabled={busy}>
-						{t("reports.unpublish.confirm")}
-					</button>
-					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("view")}>
-						{t("reports.action.cancel")}
-					</button>
-				</div>
-			</form>
-		)
-	}
-
-	const actions = actionsFor(report)
-
-	return (
-		<div className="mt-4 flex flex-col gap-2">
-			{actions.includes("publish") && <p className="font-sans text-sm text-ink-muted">{t("reports.publish.hint")}</p>}
-			{report.consent !== true && <p className="font-sans text-sm text-ink-muted">{t("reports.private.hint")}</p>}
-			<div role="group" aria-label={t("reports.action.label")} className="flex flex-wrap gap-3">
-				{actions.includes("edit") && (
-					<button type="button" className={SECONDARY} disabled={busy} onClick={openEditor}>
-						{t("reports.action.edit")}
-					</button>
-				)}
-				{actions.includes("write") && (
-					<button type="button" className={PRIMARY} disabled={busy} onClick={openEditor}>
-						{t("reports.action.write")}
-					</button>
-				)}
-				{actions.includes("publish") && (
-					<button type="button" className={PRIMARY} disabled={busy} onClick={onPublish}>
-						{t("reports.action.publish")}
-					</button>
-				)}
-				{actions.includes("unpublish") && (
-					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("unpublish")}>
-						{t("reports.action.unpublish")}
-					</button>
-				)}
-				<button type="button" className={SECONDARY} disabled={busy} onClick={onDelete}>
-					{t("reports.action.delete")}
-				</button>
-			</div>
-		</div>
-	)
+export function ReviewActions(props: ReviewActionsProps) {
+	return <ReviewActionsView {...props} {...useReviewActions(props)} />
 }

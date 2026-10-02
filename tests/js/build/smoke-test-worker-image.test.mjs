@@ -5,7 +5,7 @@ import { main, probes } from '../../../tools/build/smoke-test-worker-image.mjs'
 
 const recorder = (idStdout = '1000') => {
 	const calls = []
-	const exec = (command, args, options = {}) => {
+	const exec = (command, args) => {
 		calls.push([command, ...args])
 		return { status: 0, stdout: args.includes('id') ? idStdout : '', stderr: '' }
 	}

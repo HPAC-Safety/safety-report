@@ -1,19 +1,11 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
 import { loadAuthConfig } from "../auth/authApi"
+import { MemberLoginPageView } from "./MemberLoginPage.view"
+import { returnTarget } from "./returnTarget"
 
-/**
- * Member sign-in.
- *
- * Whether a third-party option is offered comes from the API, not a build
- * flag, and the button is hidden rather than disabled where none is
- * configured — a disabled control still reads to a screen reader as something
- * on offer. See ADR-0066.
- */
-export function MemberLoginPage() {
-	const { t } = useLocale()
+export function useMemberLoginPage() {
 	const { signInWithPassword } = useAuth()
 	const navigate = useNavigate()
 	const [searchParams] = useSearchParams()
@@ -36,7 +28,7 @@ export function MemberLoginPage() {
 		}
 	}, [])
 
-	async function handleSubmit(event: React.FormEvent) {
+	async function onSubmit(event: FormEvent) {
 		event.preventDefault()
 
 		setSubmitting(true)
@@ -53,73 +45,26 @@ export function MemberLoginPage() {
 		}
 	}
 
-	return (
-		<main className="mx-auto max-w-measure px-6 py-16">
-			<h1 className="font-display text-3xl font-bold">{t("page.login.title")}</h1>
-
-			{/* noValidate: the field is type="email" for a phone's email keyboard, but
-			    Development's fixed accounts (ADR-0066) sign in as plain "admin" and
-			    the like, which the browser would otherwise refuse. */}
-			<form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
-				{failed && (
-					<p role="alert" className="rounded border border-rule bg-surface px-3 py-2 font-sans text-sm text-ink">
-						{t("page.login.errorGeneric")}
-					</p>
-				)}
-
-				<label className="flex flex-col gap-1 font-sans text-sm text-ink">
-					{t("page.login.usernameLabel")}
-					<input
-						type="email"
-						name="username"
-						value={username}
-						onChange={(event) => setUsername(event.target.value)}
-						autoComplete="email"
-						autoCapitalize="none"
-						autoCorrect="off"
-						spellCheck={false}
-						className="touch-target rounded border border-rule bg-surface px-3 text-ink"
-					/>
-				</label>
-
-				<label className="flex flex-col gap-1 font-sans text-sm text-ink">
-					{t("page.login.passwordLabel")}
-					<input
-						type="password"
-						name="password"
-						value={password}
-						onChange={(event) => setPassword(event.target.value)}
-						autoComplete="current-password"
-						className="touch-target rounded border border-rule bg-surface px-3 text-ink"
-					/>
-				</label>
-
-				{thirdPartySignIn && (
-					<button
-						type="button"
-						className="touch-target mt-2 inline-flex items-center justify-center rounded border border-rule bg-surface px-4 font-sans text-sm font-semibold text-ink"
-					>
-						{t("page.login.googleButton")}
-					</button>
-				)}
-
-				<button
-					type="submit"
-					disabled={submitting}
-					className="touch-target inline-flex items-center justify-center rounded bg-brand-700 px-4 font-sans text-sm font-semibold text-ink-inverse disabled:opacity-60"
-				>
-					{submitting ? t("page.login.submitting") : t("page.login.submitButton")}
-				</button>
-			</form>
-		</main>
-	)
+	return {
+		username,
+		password,
+		submitting,
+		failed,
+		thirdPartySignIn,
+		onUsernameChange: setUsername,
+		onPasswordChange: setPassword,
+		onSubmit,
+	}
 }
 
 /**
- * Where to go after signing in: the page that sent the member here, such as a
- * report they wanted to comment on, but only a path on this site. Anything
- * else — another origin, a protocol-relative URL — goes home.
+ * Member sign-in.
+ *
+ * Whether a third-party option is offered comes from the API, not a build
+ * flag, and the button is hidden rather than disabled where none is
+ * configured — a disabled control still reads to a screen reader as something
+ * on offer. See ADR-0066.
  */
-function returnTarget(requested: string | null): string {
-	return requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.startsWith("/\\") ? requested : "/"
+export function MemberLoginPage() {
+	return <MemberLoginPageView {...useMemberLoginPage()} />
 }

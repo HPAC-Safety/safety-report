@@ -1,7 +1,4 @@
-import { createContext, useContext, useEffect, useId, useMemo, useRef, type ReactNode } from "react"
-import { useBlocker } from "react-router-dom"
-import { useLocale } from "../i18n/useLocale"
-import { UnsavedChangesDialog } from "../components/UnsavedChangesDialog"
+import { createContext, useContext, useEffect, useId } from "react"
 
 /**
  * Warns before a person loses unsaved changes on a form (issue no. 659): a
@@ -36,59 +33,20 @@ export interface UnsavedChangesOptions {
 	copy?: () => UnsavedChangesCopy | undefined
 }
 
-interface Registration {
+export interface Registration {
 	shouldBlock: ShouldBlock
 	copy?: () => UnsavedChangesCopy | undefined
 }
 
-interface Registry {
+export interface Registry {
 	register: (id: string, registration: Registration) => void
 	unregister: (id: string) => void
 }
 
-const UnsavedChangesContext = createContext<Registry | null>(null)
+export const UnsavedChangesContext = createContext<Registry | null>(null)
 
 function isWithinPath(pathname: string, withinPath: string): boolean {
 	return pathname === withinPath || pathname.startsWith(`${withinPath}/`)
-}
-
-export function UnsavedChangesGuardRoot({ children }: { children: ReactNode }) {
-	const { t } = useLocale()
-	const registrations = useRef(new Map<string, Registration>())
-	// The wording of the form that blocked the navigation being confirmed.
-	const blockedCopy = useRef<UnsavedChangesCopy | undefined>(undefined)
-
-	const registry = useMemo<Registry>(
-		() => ({
-			register: (id, registration) => registrations.current.set(id, registration),
-			unregister: (id) => registrations.current.delete(id),
-		}),
-		[],
-	)
-
-	const blocker = useBlocker((args) => {
-		for (const registration of registrations.current.values()) {
-			if (registration.shouldBlock(args)) {
-				blockedCopy.current = registration.copy?.()
-				return true
-			}
-		}
-		return false
-	})
-
-	return (
-		<UnsavedChangesContext.Provider value={registry}>
-			{children}
-			{blocker.state === "blocked" && (
-				<UnsavedChangesDialog
-					onConfirm={() => blocker.proceed()}
-					onKeep={() => blocker.reset()}
-					t={t}
-					copy={blockedCopy.current}
-				/>
-			)}
-		</UnsavedChangesContext.Provider>
-	)
 }
 
 /**

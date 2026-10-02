@@ -1,29 +1,9 @@
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { fetchIdentity, requestToken } from "./authApi"
-import { clearSession, readSession, writeSession, type MemberRole, type MemberSession } from "./session"
-
-export type AuthStatus = "unknown" | "signedOut" | "signedIn"
-
-export interface AuthContextValue {
-	/** Whether the stored session has been checked yet. */
-	status: AuthStatus
-	isSignedIn: boolean
-	/** The role the API says this token carries, once signed in. */
-	role: MemberRole | null
-	/**
-	 * Signs in with member credentials. Throws when they are not accepted.
-	 *
-	 * Declared as a method rather than an arrow property so the line carries no
-	 * `=>` before its generic: tools/check-hardcoded-strings.mjs is a line
-	 * scanner and reads `=> Promise<void>` as JSX text between a `>` and a `<`.
-	 * adminQuestions.ts wraps its `call` signature for the same reason.
-	 */
-	signInWithPassword(username: string, password: string): Promise<void>
-	signOut: () => void
-}
-
-export const AuthContext = createContext<AuthContextValue | null>(null)
+import { AuthContext, type AuthContextValue, type AuthStatus } from "./authSessionContext"
+import { AuthProviderView } from "./AuthContext.view"
+import { clearSession, readSession, writeSession, type MemberSession } from "./session"
 
 /**
  * Holds the bearer token this browser signed in with.
@@ -33,7 +13,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null)
  * so a revoked or expired one becomes a signed-out browser rather than chrome
  * that lies about what it can do.
  */
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function useAuthProvider(): AuthContextValue {
 	const [session, setSession] = useState<MemberSession | null>(null)
 	const [status, setStatus] = useState<AuthStatus>("unknown")
 
@@ -92,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setStatus("signedOut")
 	}, [])
 
-	const value = useMemo<AuthContextValue>(
+	return useMemo<AuthContextValue>(
 		() => ({
 			status,
 			isSignedIn: status === "signedIn",
@@ -102,6 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}),
 		[status, session, signInWithPassword, signOut],
 	)
-
-	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+	return <AuthProviderView value={useAuthProvider()}>{children}</AuthProviderView>
+}
+
+export { AuthContext, type AuthContextValue, type AuthStatus }

@@ -1,13 +1,7 @@
-import { createContext, useCallback, useMemo, useState, type ReactNode } from "react"
+import { useCallback, useMemo, useState, type ReactNode } from "react"
+import { ThemeContext, type ThemeContextValue } from "./themeContext"
+import { ThemeProviderView } from "./ThemeProvider.view"
 import { STORAGE_KEY, type Theme } from "./resolveInitialTheme"
-
-export interface ThemeContextValue {
-	/** `null` means no explicit override — the page follows prefers-color-scheme. */
-	theme: Theme | null
-	setTheme: (theme: Theme | null) => void
-}
-
-export const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 function readInitialTheme(): Theme | null {
 	// The inline script in index.html already set (or cleared) this attribute
@@ -18,7 +12,7 @@ function readInitialTheme(): Theme | null {
 	return attr === "light" || attr === "dark" ? attr : null
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function useThemeProvider(): ThemeContextValue {
 	const [theme, setThemeState] = useState<Theme | null>(readInitialTheme)
 
 	const setTheme = useCallback((next: Theme | null) => {
@@ -39,7 +33,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 		}
 	}, [])
 
-	const value = useMemo<ThemeContextValue>(() => ({ theme, setTheme }), [theme, setTheme])
-
-	return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+	return useMemo<ThemeContextValue>(() => ({ theme, setTheme }), [theme, setTheme])
 }
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+	return <ThemeProviderView value={useThemeProvider()}>{children}</ThemeProviderView>
+}
+
+export { ThemeContext, type ThemeContextValue }

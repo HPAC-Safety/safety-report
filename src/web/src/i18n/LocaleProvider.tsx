@@ -1,16 +1,9 @@
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { DEFAULT_LOCALE, STORAGE_KEY, type Locale } from "./locales"
 import { loadCatalogue, type Catalogue } from "./loadCatalogue"
+import { LocaleContext, type LocaleContextValue } from "./localeContext"
+import { LocaleProviderView } from "./LocaleProvider.view"
 import { resolveInitialLocale } from "./resolveInitialLocale"
-
-export interface LocaleContextValue {
-	locale: Locale
-	setLocale: (locale: Locale) => void
-	/** Looks up `key` in the current catalogue, interpolating `{token}` placeholders from `params`. */
-	t: (key: string, params?: Record<string, string | number>) => string
-}
-
-export const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 function readStoredLocale(): string | null {
 	try {
@@ -25,7 +18,7 @@ function interpolate(text: string, params?: Record<string, string | number>): st
 	return text.replace(/\{(\w+)\}/g, (match, token) => (token in params ? String(params[token]) : match))
 }
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
+export function useLocaleProvider(): LocaleContextValue {
 	const [locale, setLocaleState] = useState<Locale>(() =>
 		resolveInitialLocale(readStoredLocale(), navigator.languages ?? [navigator.language], window.location.hostname),
 	)
@@ -66,9 +59,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 		[catalogue],
 	)
 
-	const value = useMemo<LocaleContextValue>(() => ({ locale, setLocale, t }), [locale, setLocale, t])
-
-	return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
+	return useMemo<LocaleContextValue>(() => ({ locale, setLocale, t }), [locale, setLocale, t])
 }
 
-export { DEFAULT_LOCALE }
+export function LocaleProvider({ children }: { children: ReactNode }) {
+	return <LocaleProviderView value={useLocaleProvider()}>{children}</LocaleProviderView>
+}
+
+export { DEFAULT_LOCALE, LocaleContext, type LocaleContextValue }

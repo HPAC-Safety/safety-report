@@ -336,7 +336,7 @@ public sealed class WebLocalizationAndDesignSteps
 	{
 		// The adapter's own request builder, fed the term list the way
 		// translate-locale.mjs feeds it. Nothing is sent anywhere.
-		var tools = Path.Combine(RepositoryRoot(), "tools");
+		var tools = Path.Combine(RepositoryRoot(), "tools", "i18n");
 		var script = Path.Combine(_correctionDir, "build-request.mjs");
 		File.WriteAllText(
 			script,

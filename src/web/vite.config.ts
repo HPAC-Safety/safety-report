@@ -25,9 +25,13 @@ export default defineConfig({
 			// that no test loads still counts, as 0%.
 			include: coverageScope(fileURLToPath(new URL(".", import.meta.url))),
 			exclude: ["**/*.view.tsx", "src/main.tsx", "src/routes.tsx", "**/*.test.*", "**/*.d.ts"],
-			reporter: ["text", "lcov"],
+			// The lcov names each file from the repository root
+			// (src/web/src/lib/sortChoices.ts), as the .NET and tools/ reports do,
+			// so the merged report finds the source (#769).
+			reporter: ["text", ["lcov", { projectRoot: repoRoot }]],
 			// tools/ci-local.sh and the CI `test` job read the lcov from here,
 			// the path the coverage job merges (ci.yml "Merge into one report").
+			// tools/check-web-lcov.mjs proves it in the `web` job.
 			reportsDirectory: fileURLToPath(new URL("../../artifacts/coverage/web", import.meta.url)),
 			thresholds: { lines: 100, branches: 100, functions: 100, statements: 100, perFile: true },
 		},

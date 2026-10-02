@@ -142,6 +142,14 @@ under `artifacts/coverage`. The floor and the ratchet
 count it with no change to them. The `web` job runs the same command as its own
 gate, with `typecheck`, the split guard and the bundle check.
 
+The lcov names each file from the repository root (`src/web/src/lib/…`), like
+the .NET and `tools/` reports, so the merged report shows web source. Because
+the `coverage` job runs only on GitHub and under `tools/ci-local.sh --full`,
+the `web` job also runs `tools/check-web-lcov.mjs`. That check proves the lcov
+exists, sits under a `-reports:` glob read from `ci.yml` itself, and names files
+that exist. It runs in the fast local gate, so a broken hand-off fails before
+GitHub ([#769](https://github.com/HPAC-Safety/safety-report/issues/769)).
+
 ### The guard
 
 `tools/check-component-split.mjs`, run by the `web` job and pre-commit, fails

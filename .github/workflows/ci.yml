@@ -663,6 +663,13 @@ jobs:
       - name: Unit tests and coverage
         run: npm --prefix src/web run test:coverage
 
+      # The lcov just written is the one the `test` job hands to `coverage`.
+      # This proves it lands where that merge reads and names each file from
+      # the repository root, in the job the fast local gate runs, rather than
+      # leaving the first proof to GitHub (#769).
+      - name: Web coverage reaches the ratchet
+        run: node tools/check-web-lcov.mjs
+
       # A view is markup only, and no shipped file imports test code. The
       # strictness (every component split) is a constant in the script, not a
       # flag here (ADR-0073).

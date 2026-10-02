@@ -842,7 +842,6 @@ Scenario: A reviewer's attachment view writes its own audit row, distinct from a
   And it is distinguishable from a raw-report-viewed audit entry for the same report
 
 @REQ-MOD-047
-@ignore
 Scenario: A failed audit write blocks the action it would have recorded
   Given an administrator or reviewer performs an action that must be audited
   When the audit row fails to write

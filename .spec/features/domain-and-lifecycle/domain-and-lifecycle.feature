@@ -137,7 +137,6 @@ Scenario: Soft-deleting a report keeps its row and its stored files
   And no application path removes them afterwards
 
 @REQ-DOM-013
-@ignore
 Scenario Outline: An audited action is recorded in the immutable audit log
   Given <action> occurs
   When the action completes

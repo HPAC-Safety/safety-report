@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
-import { SortableList } from "../components/SortableList"
-import { QuestionEditor, type QuestionDraft, blankDraft, draftFromImported, draftOf } from "../components/QuestionEditor"
-import { TypeformImportDialog } from "../components/TypeformImportDialog"
+import type { QuestionEditorProps } from "../components/QuestionEditor.view"
+import { blankDraft, draftFromImported, draftOf, type ImportedQuestionDraftView, type QuestionDraft, type QuestionView } from "../components/questionDraft"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
-import { labelWithColon } from "../lib/questionPrompt"
 import {
 	ApiError,
 	createQuestion,
@@ -13,9 +11,9 @@ import {
 	reorderQuestions,
 	reviseQuestion,
 	translationAvailable,
-	type QuestionView,
 } from "../api/adminQuestions"
 import { exportTypeform } from "../api/adminTypeformImport"
+import { ManageQuestionsPageView, type ManageQuestionsPageViewProps } from "./ManageQuestionsPage.view"
 
 /*
  * The question bank, as a safety officer edits it.
@@ -32,7 +30,8 @@ import { exportTypeform } from "../api/adminTypeformImport"
  *      what the database holds.
  */
 
-export function ManageQuestionsPage() {
+/** The question bank page's view model: loading, saving, removing, exporting, reordering, and the editor's lists. */
+export function useManageQuestionsPage(): ManageQuestionsPageViewProps {
 	const { t, locale } = useLocale()
 	const [questions, setQuestions] = useState<QuestionView[]>([])
 	const [canTranslate, setCanTranslate] = useState(false)
@@ -172,200 +171,69 @@ export function ManageQuestionsPage() {
 					(!editingQuestion || asksBefore(question, editingQuestion)),
 			)
 
-	const editor = draft && (
-		<QuestionEditor
-			draft={draft}
-			conditionQuestions={conditionQuestions}
-			groupQuestions={groupQuestions}
-			choiceParentQuestions={choiceParentQuestions}
-			isEditing={editing !== null}
-			hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
-			translationAvailable={canTranslate}
-			// A choice's translation lands as a function of the current draft, so a
-			// result arriving after other edits keeps them.
-			onChange={(change) =>
-				typeof change === "function"
-					? setDraft((current) => (current === null ? current : change(current)))
-					: setDraft(change)
-			}
-			onCancel={() => {
-				openDraft(null)
-				setEditing(null)
-			}}
-			onSave={save}
-		/>
-	)
+	const editor: QuestionEditorProps | null = draft && {
+		draft,
+		conditionQuestions,
+		groupQuestions,
+		choiceParentQuestions,
+		isEditing: editing !== null,
+		hasBeenAnswered: questions.some((question) => question.id === editing && question.hasBeenAnswered),
+		translationAvailable: canTranslate,
+		// A choice's translation lands as a function of the current draft, so a
+		// result arriving after other edits keeps them.
+		onChange: (change) =>
+			typeof change === "function"
+				? setDraft((current) => (current === null ? current : change(current)))
+				: setDraft(change),
+		onCancel: () => {
+			openDraft(null)
+			setEditing(null)
+		},
+		onSave: save,
+	}
 
-	return (
-		<main className="mx-auto max-w-4xl px-6 py-12">
-			<h1 className="font-display text-3xl font-bold">{t("questions.title")}</h1>
-			<p className="mt-2 font-sans text-ink-muted">{t("questions.intro")}</p>
+	return {
+		questions,
+		loading,
+		error,
+		editing,
+		importing,
+		exporting,
+		editor,
+		startNew: () => {
+			setEditing(null)
+			openDraft(blankDraft())
+			setImporting(false)
+		},
+		startImport: () => {
+			openDraft(null)
+			setEditing(null)
+			setImporting(true)
+		},
+		closeImport: () => setImporting(false),
+		reviewImported: (imported: ImportedQuestionDraftView) => {
+			// A draft whose key matches a live question is the same
+			// question re-imported — reviewing it opens the ordinary
+			// edit flow (a new revision, or a fork if it has been
+			// answered, per ADR-0071) rather than trying to create a
+			// second question under the same key.
+			const existing = questions.find((question) => question.key === imported.key)
 
-			{error && (
-				<p role="alert" className="mt-6 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
-					{error}
-				</p>
-			)}
-
-			<div className="mt-8 flex flex-wrap gap-3">
-				<button
-					type="button"
-					className="touch-target inline-flex items-center rounded bg-brand-700 px-5 font-sans font-medium text-ink-inverse hover:bg-brand-600"
-					onClick={() => {
-						setEditing(null)
-						openDraft(blankDraft())
-						setImporting(false)
-					}}
-				>
-					{t("questions.addQuestion")}
-				</button>
-				<button
-					type="button"
-					className="touch-target inline-flex items-center rounded border border-rule px-5 font-sans text-ink hover:bg-surface-2"
-					onClick={() => {
-						openDraft(null)
-						setEditing(null)
-						setImporting(true)
-					}}
-				>
-					{t("questions.import.openDialog")}
-				</button>
-				<button
-					type="button"
-					className="touch-target inline-flex items-center rounded border border-rule px-5 font-sans text-ink hover:bg-surface-2 disabled:opacity-40"
-					disabled={exporting}
-					onClick={() => void exportBank()}
-				>
-					{exporting ? t("questions.export.working") : t("questions.export.action")}
-				</button>
-			</div>
-
-			{importing && (
-				<TypeformImportDialog
-					onReview={(imported) => {
-						// A draft whose key matches a live question is the same
-						// question re-imported — reviewing it opens the ordinary
-						// edit flow (a new revision, or a fork if it has been
-						// answered, per ADR-0071) rather than trying to create a
-						// second question under the same key.
-						const existing = questions.find((question) => question.key === imported.key)
-
-						setEditing(existing?.id ?? null)
-						openDraft(draftFromImported(imported, questions))
-						setImporting(false)
-					}}
-					onClose={() => setImporting(false)}
-				/>
-			)}
-
-			{/* A new question is authored above the list; an existing one is
-			    edited in its own row, where the administrator clicked Edit. */}
-			{draft && editing === null && <div className="mt-6">{editor}</div>}
-
-			<h2 className="mt-12 font-display text-2xl font-bold">{t("questions.listTitle")}</h2>
-
-			{loading ? (
-				<p className="mt-4 font-sans text-ink-muted">{t("questions.loading")}</p>
-			) : questions.length === 0 ? (
-				<p className="mt-4 font-sans text-ink-muted">{t("questions.empty")}</p>
-			) : (
-				<div className="mt-4">
-					<SortableList
-						items={questions}
-						getId={(question) => question.id}
-						onReorder={reorder}
-						label={t("questions.listTitle")}
-					>
-						{(question) =>
-							draft && question.id === editing ? (
-								editor
-							) : (
-								<QuestionRow
-									question={question}
-									questions={questions}
-									onEdit={() => {
-										setImporting(false)
-										setEditing(question.id)
-										openDraft(draftOf(question, locale))
-									}}
-									onDelete={() => void remove(question)}
-								/>
-							)
-						}
-					</SortableList>
-				</div>
-			)}
-		</main>
-	)
+			setEditing(existing?.id ?? null)
+			openDraft(draftFromImported(imported, questions))
+			setImporting(false)
+		},
+		exportBank,
+		editQuestion: (question: QuestionView) => {
+			setImporting(false)
+			setEditing(question.id)
+			openDraft(draftOf(question, locale))
+		},
+		remove,
+		reorder,
+	}
 }
 
-const rowButtonClassName =
-	"touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
-
-function QuestionRow({
-	question,
-	questions,
-	onEdit,
-	onDelete,
-}: {
-	question: QuestionView
-	questions: QuestionView[]
-	onEdit: () => void
-	onDelete: () => void
-}) {
-	const { t } = useLocale()
-	const parent = questions.find((candidate) => candidate.id === question.dependsOnQuestionId)
-	const groupParent = questions.find((candidate) => candidate.id === question.groupedUnderQuestionId)
-
-	return (
-		<div className="flex flex-wrap items-start justify-between gap-4">
-			<div className="min-w-0">
-				<p className="font-sans font-medium text-ink" lang="en-CA" data-label="en">
-					{labelWithColon(question.labelEn, question.type, "en-CA")}
-				</p>
-				<p className="font-sans text-sm text-ink-muted" lang="fr-CA" data-label="fr">
-					{labelWithColon(question.labelFr, question.type, "fr-CA")}
-				</p>
-				<p className="mt-2 font-sans text-xs text-ink-muted">
-					{t(`questions.type.${question.type}`)} · {t("questions.revisionNumber", { number: String(question.revisionNumber) })}
-					{question.isRequired ? ` · ${t("questions.required")}` : ` · ${t("questions.optional")}`}
-					{question.isPrivate ? ` · ${t("questions.private")}` : ""}
-					{question.isActive ? "" : ` · ${t("questions.inactive")}`}
-				</p>
-				{parent && (
-					<p className="mt-1 font-sans text-xs text-ink-muted">
-						{question.dependsOnChoiceId
-							? t("questions.dependsOnOptionSummary", {
-									question: parent.labelEn,
-									option:
-										parent.options.find((option) => option.id === question.dependsOnChoiceId)?.labelEn ??
-										question.dependsOnChoiceId,
-								})
-							: t("questions.dependsOnSummary", { question: parent.labelEn })}
-					</p>
-				)}
-				{groupParent && (
-					<p className="mt-1 font-sans text-xs text-ink-muted">
-						{t("questions.groupedUnderSummary", { question: groupParent.labelEn })}
-					</p>
-				)}
-				{question.reporterChoicesAwaitingReview > 0 && (
-					<p className="mt-2 font-sans text-xs font-medium text-ink">
-						{t("questions.reporterChoicesAwaiting", { count: String(question.reporterChoicesAwaitingReview) })}
-					</p>
-				)}
-			</div>
-
-			<div className="flex gap-2">
-				<button type="button" className={rowButtonClassName} onClick={onEdit}>
-					{t("questions.edit")}
-				</button>
-				{!question.isSystem && (
-					<button type="button" className={rowButtonClassName} onClick={onDelete}>
-						{t("questions.delete")}
-					</button>
-				)}
-			</div>
-		</div>
-	)
+export function ManageQuestionsPage() {
+	return <ManageQuestionsPageView {...useManageQuestionsPage()} />
 }

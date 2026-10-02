@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using Reqnroll;
 using Testcontainers.PostgreSql;
 
@@ -244,6 +245,33 @@ public static class BootedApi
 			builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(new FixedClock(now))));
 	}
 
+	/// <summary>
+	///     A host on its own empty database inside the same PostgreSQL container, with
+	///     every migration applied, otherwise identical to <see cref="Factory" />. For a
+	///     scenario whose statement takes a table-level lock (a <c>TRUNCATE</c>) on
+	///     tables every other scenario's rows point at: run against the shared database
+	///     it queues behind, and deadlocks with, whatever writes concurrently
+	///     (issue #741). Dispose the result to drop the database.
+	/// </summary>
+	public static async Task<ScratchHost> Scratch()
+	{
+		var shared = await Factory().ConfigureAwait(false);
+		var administration = new NpgsqlConnectionStringBuilder(postgres!.GetConnectionString());
+		var name = "scratch_" + Guid.NewGuid().ToString("n");
+
+		await using (var connection = new NpgsqlConnection(administration.ConnectionString))
+		{
+			await connection.OpenAsync().ConfigureAwait(false);
+			await using var create = new NpgsqlCommand($"CREATE DATABASE \"{name}\"", connection);
+			await create.ExecuteNonQueryAsync().ConfigureAwait(false);
+		}
+
+		administration.Database = name;
+		var scratchString = administration.ConnectionString;
+		var host = shared.WithWebHostBuilder(builder => builder.UseSetting("ConnectionStrings:HpacSafety", scratchString));
+		return new ScratchHost(host, name, postgres.GetConnectionString());
+	}
+
 	private static WebApplicationFactory<Program>? recordingReads;
 
 	/// <summary>
@@ -458,4 +486,40 @@ public static class BootedApi
 	}
 
 	private sealed record TokenPayload(string AccessToken);
+}
+
+/// <summary>
+///     A booted host on a throwaway database, from <see cref="BootedApi.Scratch" />.
+/// </summary>
+public sealed class ScratchHost : IAsyncDisposable
+{
+	private readonly string _databaseName;
+	private readonly string _administrationConnectionString;
+
+	/// <summary>Wraps a host and the database it owns.</summary>
+	/// <param name="host">The host, pointed at the throwaway database.</param>
+	/// <param name="databaseName">The throwaway database's name.</param>
+	/// <param name="administrationConnectionString">A connection to the container's maintenance database, used to drop it.</param>
+	public ScratchHost(WebApplicationFactory<Program> host,
+					   string databaseName,
+					   string administrationConnectionString)
+	{
+		Host = host;
+		_databaseName = databaseName;
+		_administrationConnectionString = administrationConnectionString;
+	}
+
+	/// <summary>The host, pointed at the throwaway database.</summary>
+	public WebApplicationFactory<Program> Host { get; }
+
+	/// <summary>Stops the host and drops the database.</summary>
+	public async ValueTask DisposeAsync()
+	{
+		await Host.DisposeAsync().ConfigureAwait(false);
+
+		await using var connection = new NpgsqlConnection(_administrationConnectionString);
+		await connection.OpenAsync().ConfigureAwait(false);
+		await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{_databaseName}\" WITH (FORCE)", connection);
+		await drop.ExecuteNonQueryAsync().ConfigureAwait(false);
+	}
 }

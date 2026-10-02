@@ -663,9 +663,10 @@ internal static class BootedReports
 										  DateTimeOffset? at = null,
 										  bool? mediaConsent = null,
 										  bool mediaConsentToEarlierWording = false,
-										  Locale? language = null)
+										  Locale? language = null,
+										  WebApplicationFactory<Program>? host = null)
 	{
-		var factory = await BootedApi.Factory();
+		var factory = host ?? await BootedApi.Factory();
 
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

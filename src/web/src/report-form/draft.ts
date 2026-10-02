@@ -105,6 +105,17 @@ export function readDraft(clockNowMs: number = Date.now()): DraftRead {
 	}
 }
 
+/** When the saved draft's 15 days end, or null when there is no live draft. */
+export function draftExpiresAtMs(clockNowMs: number = Date.now()): number | null {
+	try {
+		const draft = stored()
+		if (!draft || isExpired(draft, clockNowMs)) return null
+		return startOf(draft) + MAX_AGE_MS
+	} catch {
+		return null
+	}
+}
+
 /** Saves the draft, keeping the start time of the one already saved unless that one has expired. */
 export function writeDraft(draft: Omit<ReportDraft, "savedAtMs" | "startedAtMs">, clockNowMs: number = Date.now()): void {
 	try {

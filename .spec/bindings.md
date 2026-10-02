@@ -2978,12 +2978,6 @@ definition matches; a built claim may never have one.
 - [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
 - [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
 
-### REQ-SUB-123
-
-- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
-- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
-- [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
-
 ### REQ-SUB-124
 
 - [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
@@ -3003,6 +2997,24 @@ definition matches; a built claim may never have one.
 
 - [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
 - [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+
+### REQ-SUB-128
+
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+- [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
+
+### REQ-SUB-129
+
+- [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+- [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
+
+### REQ-SUB-130
+
+- [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+- [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
 
 ## Claims: typeform-question-import-export
 

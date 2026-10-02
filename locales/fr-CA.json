@@ -210,6 +210,12 @@
       "body": "Cette opération supprimera vos réponses de ce navigateur et effacera les fichiers que vous avez joints. Elle ne peut pas être annulée.",
       "confirm": "Oui, jetez-le",
       "keep": "Non, gardez-le"
+    },
+    "leave": {
+      "title": "Votre signalement est enregistré",
+      "body": "Vos réponses sont enregistrées dans ce navigateur jusqu'au {date}. Revenez sur ce navigateur avant cette date pour reprendre là où vous vous étiez arrêté.",
+      "uploading": "Un fichier est encore en cours de téléversement et ne sera pas conservé si vous quittez maintenant.",
+      "keepWorking": "Continuer à travailler"
     }
   },
   "unsavedChanges": {

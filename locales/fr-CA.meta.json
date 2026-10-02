@@ -2075,6 +2075,30 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "report.leave.body": {
+    "source_hash": "bddcd584fe6f1841fb854db3c941cb184c8f3b6664ae2f4d353ba59bb3e5d101",
+    "target_hash": "4d83e8038ad8d9207d6d491fa288540faca5a6e8a570be86d3037b830136739e",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "report.leave.keepWorking": {
+    "source_hash": "5ed03f22466442e65d352cf6701151c831d588a4fabc5785451531a2a1778bee",
+    "target_hash": "371575e164c27751a4bb1b229a4321804b8496350003bb3eaeae3687878d4b91",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "report.leave.title": {
+    "source_hash": "26d74355eabd40efdf8c3aba828848469d6dc39f0aea020a96a1cc4a7c23e3e2",
+    "target_hash": "b789e8465dc94da83230957fbcda0f6f7b02ca7716b7fe90ea85ac1537bef9a7",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "report.leave.uploading": {
+    "source_hash": "1e55998fda911dceb611c155e9b6caaa74b9280f990b0af4b8a2aaae1c4b5513",
+    "target_hash": "9e02e3816ea966a18977c204ad3c117445a31acf33d0c8a51ceaf97a7dafebb0",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
   "report.loadError": {
     "source_hash": "7e4b3e63e54574e34ec0136a7a60cbf9359b6dd30c69d0d072c316deb3abf0dd",
     "target_hash": "632b254159c84254efdd4c90ddbae87fa8a1d7848b8a66dc0d7093f8da2bf386",

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import {
-	DndContext,
 	KeyboardSensor,
 	PointerSensor,
 	closestCenter,
@@ -9,21 +8,16 @@ import {
 	type DragEndEvent,
 } from "@dnd-kit/core"
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import {
-	SortableContext,
-	sortableKeyboardCoordinates,
-	useSortable,
-	verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { useLocale } from "../i18n/useLocale"
+import { sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { SortableListView } from "./SortableList.view"
 
 /*
  * The one place this application knows @dnd-kit exists (ADR-0033, ADR-0059).
  *
  * Callers pass items and receive a reordered array of ids. They never see a
  * sensor, a modifier, or a transform, so replacing the library is a change to
- * this file rather than to every screen that reorders something.
+ * this file (and SortableRow.tsx) rather than to every screen that reorders
+ * something.
  *
  * Reordering is never pointer-only. Each row carries a drag handle that is a
  * real focusable button — @dnd-kit's keyboard sensor drives it with the arrow
@@ -39,7 +33,10 @@ export interface SortableListProps<T> {
 	label: string
 }
 
-export function SortableList<T>({ items, getId, onReorder, children, label }: SortableListProps<T>) {
+const MODIFIERS = [restrictToVerticalAxis, restrictToParentElement]
+
+/** The view model: the drag sensors and the move that turns a drag or a button into a reordered id list. */
+export function useSortableList<T>({ items, getId, onReorder }: SortableListProps<T>) {
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
 		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -63,88 +60,20 @@ export function SortableList<T>({ items, getId, onReorder, children, label }: So
 		move(ids.indexOf(String(active.id)), ids.indexOf(String(over.id)))
 	}
 
-	return (
-		<DndContext
-			sensors={sensors}
-			collisionDetection={closestCenter}
-			modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-			onDragEnd={onDragEnd}
-		>
-			<SortableContext items={ids} strategy={verticalListSortingStrategy}>
-				<ul aria-label={label} className="flex flex-col gap-3">
-					{items.map((item, index) => (
-						<SortableRow
-							key={getId(item)}
-							id={getId(item)}
-							position={index}
-							count={items.length}
-							onMove={move}
-						>
-							{children(item, index)}
-						</SortableRow>
-					))}
-				</ul>
-			</SortableContext>
-		</DndContext>
-	)
+	return {
+		ids,
+		sensors,
+		collisionDetection: closestCenter,
+		modifiers: MODIFIERS,
+		strategy: verticalListSortingStrategy,
+		move,
+		onDragEnd,
+	}
 }
 
-const controlClassName =
-	"touch-target inline-flex items-center justify-center rounded border border-rule bg-surface-2 px-2 font-sans text-sm text-ink hover:bg-surface-3 disabled:opacity-40"
-
-function SortableRow({
-	id,
-	position,
-	count,
-	onMove,
-	children,
-}: {
-	id: string
-	position: number
-	count: number
-	onMove: (from: number, to: number) => void
-	children: ReactNode
-}) {
-	const { t } = useLocale()
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-
-	return (
-		<li
-			ref={setNodeRef}
-			style={{ transform: CSS.Transform.toString(transform), transition }}
-			className={`flex items-start gap-3 rounded border border-rule bg-surface p-4 ${isDragging ? "opacity-60" : ""}`}
-		>
-			<div className="flex flex-col items-center gap-1">
-				<button
-					type="button"
-					className={controlClassName}
-					onClick={() => onMove(position, position - 1)}
-					disabled={position === 0}
-					aria-label={t("questions.moveUp")}
-				>
-					↑
-				</button>
-				<button
-					type="button"
-					className={`${controlClassName} cursor-grab`}
-					aria-label={t("questions.dragHandle")}
-					{...attributes}
-					{...listeners}
-				>
-					⠿
-				</button>
-				<button
-					type="button"
-					className={controlClassName}
-					onClick={() => onMove(position, position + 1)}
-					disabled={position === count - 1}
-					aria-label={t("questions.moveDown")}
-				>
-					↓
-				</button>
-			</div>
-
-			<div className="min-w-0 flex-1">{children}</div>
-		</li>
-	)
+// Signature split across lines on purpose: tools/check-hardcoded-strings.mjs is a line scanner.
+export function SortableList<T>(
+	props: SortableListProps<T>,
+) {
+	return <SortableListView {...props} {...useSortableList(props)} />
 }

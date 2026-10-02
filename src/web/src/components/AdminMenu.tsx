@@ -1,39 +1,15 @@
 import { useEffect, useRef, useState } from "react"
-import { Link } from "react-router-dom"
-import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
 import type { PendingCounts } from "../api/adminReports"
-import { CountBadge } from "./CountBadge"
+import { AdminMenuView, type AdminMenuViewProps } from "./AdminMenu.view"
 
-const rowLinkClassName =
-	"group touch-target flex items-center whitespace-nowrap rounded px-4 font-sans text-sm font-medium text-ink"
-
-const stackedLinkClassName =
-	"group touch-target flex items-center rounded px-2 font-sans text-base font-medium text-ink"
-
-/** Underlines only the words on hover, never the count beside them. */
-function Label({ children }: { children: string }) {
-	return <span className="underline-offset-4 group-hover:underline">{children}</span>
-}
-
-/**
- * The admin options this member's role allows.
- *
- * Gating the chrome is a convenience, never the boundary — the API authorizes
- * every request on its own, and the admin routes stay reachable by URL on
- * purpose (ADR-0048). Hiding an option a member cannot use just keeps the menu
- * honest about what it offers.
- */
-export function AdminMenu({
-	stacked = false,
-	onNavigate,
-	counts = null,
-}: {
+export interface AdminMenuProps {
 	stacked?: boolean
 	onNavigate?: () => void
 	counts?: PendingCounts | null
-}) {
-	const { t } = useLocale()
+}
+
+export function useAdminMenu({ onNavigate, counts = null }: AdminMenuProps): Omit<AdminMenuViewProps, "stacked"> {
 	const { role } = useAuth()
 	const [open, setOpen] = useState(false)
 	const containerRef = useRef<HTMLDivElement>(null)
@@ -63,55 +39,31 @@ export function AdminMenu({
 		}
 	}, [open])
 
-	const reports = counts?.reportsNeedingAction ?? 0
-	const typeAheadValues = counts?.typeAheadValuesAwaitingReview ?? 0
-
-	function selectItem() {
+	function onSelectItem() {
 		setOpen(false)
 		onNavigate?.()
 	}
 
-	return (
-		<div ref={containerRef} className="relative">
-			<button
-				ref={buttonRef}
-				type="button"
-				onClick={() => setOpen((value) => !value)}
-				aria-haspopup="menu"
-				aria-expanded={open}
-				className={stacked ? stackedLinkClassName : "group touch-target inline-flex items-center rounded px-2 font-sans text-sm font-medium text-ink"}
-			>
-				<Label>{t("nav.admin")}</Label>
-				<CountBadge count={reports + typeAheadValues} />
-			</button>
+	return {
+		open,
+		reports: counts?.reportsNeedingAction ?? 0,
+		typeAheadValues: counts?.typeAheadValuesAwaitingReview ?? 0,
+		isAdministrator: role === "administrator",
+		containerRef,
+		buttonRef,
+		onToggle: () => setOpen((value) => !value),
+		onSelectItem,
+	}
+}
 
-			{open && (
-				<div
-					role="menu"
-					aria-label={t("nav.admin")}
-					className={
-						stacked
-							? "mt-1 flex flex-col gap-1 border-l border-rule pl-4"
-							: "absolute right-0 top-full z-50 mt-1 flex w-max flex-col gap-1 rounded border border-rule bg-surface py-2 shadow-lg"
-					}
-				>
-					<Link role="menuitem" to="/admin/reports" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
-						<Label>{t("nav.manageReports")}</Label>
-						<CountBadge count={reports} />
-					</Link>
-					<Link role="menuitem" to="/admin/type-ahead-values" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
-						<Label>{t("nav.reviewTypeAheadValues")}</Label>
-						<CountBadge count={typeAheadValues} />
-					</Link>
-					{role === "administrator" && (
-						<>
-							<Link role="menuitem" to="/admin/questions" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
-								<Label>{t("nav.manageQuestions")}</Label>
-							</Link>
-						</>
-					)}
-				</div>
-			)}
-		</div>
-	)
+/**
+ * The admin options this member's role allows.
+ *
+ * Gating the chrome is a convenience, never the boundary — the API authorizes
+ * every request on its own, and the admin routes stay reachable by URL on
+ * purpose (ADR-0048). Hiding an option a member cannot use just keeps the menu
+ * honest about what it offers.
+ */
+export function AdminMenu(props: AdminMenuProps) {
+	return <AdminMenuView stacked={props.stacked} {...useAdminMenu(props)} />
 }

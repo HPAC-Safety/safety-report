@@ -1,7 +1,27 @@
 import type { ReactNode } from "react"
-import { Navigate } from "react-router-dom"
 import { useAuth } from "../auth/useAuth"
-import { ForbiddenPage } from "../routes/ForbiddenPage"
+import { AdminRouteGuardView, type AdminRouteGuardOutcome } from "./AdminRouteGuard.view"
+
+export interface AdminRouteGuardProps {
+	requires: "reviewer" | "administrator"
+	children: ReactNode
+}
+
+export function useAdminRouteGuard({ requires }: AdminRouteGuardProps): { outcome: AdminRouteGuardOutcome } {
+	const { status, isSignedIn, role } = useAuth()
+
+	if (status === "unknown") {
+		return { outcome: "checking" }
+	}
+
+	if (!isSignedIn) {
+		return { outcome: "signedOut" }
+	}
+
+	const allowed = requires === "administrator" ? role === "administrator" : role === "administrator" || role === "safety_officer"
+
+	return { outcome: allowed ? "allowed" : "forbidden" }
+}
 
 /**
  * Wraps an `/admin/*` route element (ADR-0092).
@@ -12,30 +32,6 @@ import { ForbiddenPage } from "../routes/ForbiddenPage"
  * role cannot use the route sees a real forbidden view rather than the page's
  * content or a 404.
  */
-export function AdminRouteGuard({
-	requires,
-	children,
-}: {
-	requires: "reviewer" | "administrator"
-	children: ReactNode
-}) {
-	const { status, isSignedIn, role } = useAuth()
-
-	// The stored session is still being checked against the API — render
-	// nothing rather than guess, so no admin content ever shows first.
-	if (status === "unknown") {
-		return null
-	}
-
-	if (!isSignedIn) {
-		return <Navigate to="/login" replace />
-	}
-
-	const allowed = requires === "administrator" ? role === "administrator" : role === "administrator" || role === "safety_officer"
-
-	if (!allowed) {
-		return <ForbiddenPage />
-	}
-
-	return children
+export function AdminRouteGuard(props: AdminRouteGuardProps) {
+	return <AdminRouteGuardView {...useAdminRouteGuard(props)}>{props.children}</AdminRouteGuardView>
 }

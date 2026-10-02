@@ -1,5 +1,6 @@
 import { useLayoutEffect } from "react"
 import { useLocation, useNavigationType } from "react-router-dom"
+import { ScrollToTopOnNavigationView } from "./ScrollToTopOnNavigation.view"
 
 /*
  * Starts every page at its top when the reader navigates to it afresh
@@ -17,7 +18,7 @@ import { useLocation, useNavigationType } from "react-router-dom"
  * Rendered once, beside the routes, so it applies to every page and no page
  * opts in or out.
  */
-export function ScrollToTopOnNavigation() {
+export function useScrollToTopOnNavigation(): Record<string, never> {
 	const { pathname, hash } = useLocation()
 	const navigationType = useNavigationType()
 
@@ -29,5 +30,9 @@ export function ScrollToTopOnNavigation() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [pathname])
 
-	return null
+	return {}
+}
+
+export function ScrollToTopOnNavigation() {
+	return <ScrollToTopOnNavigationView {...useScrollToTopOnNavigation()} />
 }

@@ -1,3 +1,4 @@
+@xunit:collection(QuestionBankRunsAlone)
 Feature: Question bank and form
 Questions are stored as complete, immutable bilingual revisions. An edit to a
 question nobody has answered creates a new revision instead of patching an

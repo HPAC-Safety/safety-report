@@ -2240,6 +2240,38 @@ Country is optional — *playwright-bdd, Covered*
 
 Province is shown only when Country is Canada — *playwright-bdd, Covered*
 
+### REQ-QB-259
+
+A freshly migrated database sends each seeded group with its questions — *Reqnroll, Covered*
+
+### REQ-QB-260
+
+A seeded question that lost its group gets a new revision grouped under it when no answer references it — *Reqnroll, Covered*
+
+### REQ-QB-261
+
+A seeded question that lost its group is forked under it when a report has answered it — *Reqnroll, Covered*
+
+### REQ-QB-262
+
+The seeded-group repair run a second time changes nothing — *Reqnroll, Covered*
+
+### REQ-QB-263
+
+A seeded question an Administrator has grouped is left alone — *Reqnroll, Covered*
+
+### REQ-QB-264
+
+A seeded question whose group is no longer live is left alone — *Reqnroll, Covered*
+
+### REQ-QB-265
+
+The browser suite's seeded form is what a freshly migrated database sends — *Reqnroll, Covered*
+
+### REQ-QB-266
+
+Each seeded group is one page with its heading and exactly its questions — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

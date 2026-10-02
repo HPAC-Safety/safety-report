@@ -2115,3 +2115,73 @@ Scenario: Province is shown only when Country is Canada
   Then the Province question is shown
   When the reporter goes back and chooses "Mexico" for Country and presses Next
   Then the form moves on without asking Province
+
+Rule: A database created from scratch keeps the seeded groups
+
+@REQ-QB-259
+Scenario Outline: A freshly migrated database sends each seeded group with its questions
+  When the report form's questions are read from a freshly migrated database
+  Then the group <group> holds <questions>, in that order
+  And none of those questions is sent at the top level
+
+Examples:
+  | group      | questions                                                    |
+  | "From"     | "First name", "Last name", "Phone number", "Email"           |
+  | "Pilot"    | "First name", "Last name"                                    |
+  | "Aircraft" | "Type of aircraft", "Manufacturer", "Model", "Certification" |
+
+@REQ-QB-260
+Scenario: A seeded question that lost its group gets a new revision grouped under it when no answer references it
+  Given a database created from scratch before the seeded-group repair
+  And no answer references the "From" group's questions
+  When the seeded-group repair migration runs
+  Then each of the "From" group's questions has a new revision grouped under "From" and keeps its identifier
+
+@REQ-QB-261
+Scenario: A seeded question that lost its group is forked under it when a report has answered it
+  Given a database created from scratch before the seeded-group repair
+  And a report has answered the reporter's "First name"
+  When the seeded-group repair migration runs
+  Then the original "First name" question is stamped as deleted and keeps its answer
+  And a new live question with the same key is grouped under "From"
+  And the one answer still names the original "First name" question, unchanged
+
+@REQ-QB-262
+Scenario: The seeded-group repair run a second time changes nothing
+  Given a database created from scratch before the seeded-group repair
+  And the seeded-group repair migration has run
+  When the seeded-group repair script is run again
+  Then the questions, revisions, and choices are unchanged
+
+@REQ-QB-263
+Scenario: A seeded question an Administrator has grouped is left alone
+  Given a database created from scratch before the seeded-group repair
+  And an Administrator has grouped the reporter's "First name" under a group of their own
+  When the seeded-group repair migration runs
+  Then the reporter's "First name" is still grouped under that group, with no new revision
+
+@REQ-QB-264
+Scenario: A seeded question whose group is no longer live is left alone
+  Given a database created from scratch before the seeded-group repair
+  And the "Pilot" group has been deleted
+  When the seeded-group repair migration runs
+  Then the "Pilot" group's questions are still ungrouped, with no new revision
+
+@REQ-QB-265
+Scenario: The browser suite's seeded form is what a freshly migrated database sends
+  When the report form's questions are read from a freshly migrated database
+  Then they are exactly the browser suite's seeded-form fixture
+
+@REQ-QB-266
+@ui
+Scenario Outline: Each seeded group is one page with its heading and exactly its questions
+  Given the form asks the questions the migrations seed
+  When a reporter using <language> moves through the form to the <group> group
+  Then the page is headed <group> and asks exactly <questions>
+
+Examples:
+  | language | group      | questions                                                                 |
+  | English  | "From"     | "First name", "Last name", "Phone number", "Email"                        |
+  | English  | "Pilot"    | "First name", "Last name"                                                 |
+  | English  | "Aircraft" | "Type of aircraft", "Manufacturer", "Model", "Certification"              |
+  | French   | "Qui"      | "Prénom", "Nom de famille", "Numéro de téléphone", "Courriel"             |

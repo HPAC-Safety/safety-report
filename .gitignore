@@ -6,6 +6,9 @@ obj/
 artifacts/
 TestResults/
 coverage/
+# tools/coverage/ and its tests are source, not coverage output (ADR-0189).
+!tools/coverage/
+!tests/js/coverage/
 *.coverage
 *.cobertura.xml
 

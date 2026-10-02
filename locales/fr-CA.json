@@ -212,10 +212,10 @@
       "keep": "Non, gardez-le"
     },
     "leave": {
-      "title": "#Your report is saved",
-      "body": "#Your answers are saved in this browser until {date}. Come back on this browser before then to pick up where you left off.",
-      "uploading": "#A file is still uploading and will not be kept if you leave now.",
-      "keepWorking": "#Keep working"
+      "title": "Votre signalement est enregistré",
+      "body": "Vos réponses sont enregistrées dans ce navigateur jusqu'au {date}. Revenez sur ce navigateur avant cette date pour reprendre là où vous vous étiez arrêté.",
+      "uploading": "Un fichier est encore en cours de téléversement et ne sera pas conservé si vous quittez maintenant.",
+      "keepWorking": "Continuer à travailler"
     }
   },
   "unsavedChanges": {

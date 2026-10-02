@@ -2,7 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Dialog, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
-import { stubCurrentQuestions } from "./report-form-fixture"
+import { readDraftFromBrowser, stubCurrentQuestions } from "./report-form-fixture"
 
 const { Given, When, Then } = createBdd()
 
@@ -17,8 +17,13 @@ const { Given, When, Then } = createBdd()
  * defined here.
  */
 
+// Either wording: the shared one, or the report form's own (issue #748).
 function unsavedChangesDialog(page: Page) {
-	return page.getByRole("dialog", { name: "Leave without saving?" })
+	return page.getByRole("dialog", { name: /^(Leave without saving\?|Your report is saved)$/ })
+}
+
+function reportSavedDialog(page: Page) {
+	return page.getByRole("dialog", { name: "Your report is saved" })
 }
 
 Given("a reporter has not answered anything on the report form", async ({ page }) => {
@@ -78,6 +83,47 @@ Then("a bilingual dialog asks whether to leave, offering to stay", async ({ page
 	await expect(dialog).toBeVisible()
 	await expect(dialog.getByRole("button", { name: "Leave" })).toBeVisible()
 	await expect(dialog.getByRole("button", { name: "Stay" })).toBeVisible()
+})
+
+Then(
+	"a bilingual dialog says the report is saved in this browser until the day its 15 days end, offering to keep working",
+	async ({ page }) => {
+		const draft = (await readDraftFromBrowser(page)) as { startedAtMs: number } | null
+		expect(draft).not.toBeNull()
+		const fifteenDaysMs = 15 * 24 * 60 * 60 * 1000
+		const until = new Intl.DateTimeFormat("en-CA", { dateStyle: "long" }).format(new Date(draft!.startedAtMs + fifteenDaysMs))
+		const dialog = reportSavedDialog(page)
+		await expect(dialog).toBeVisible()
+		await expect(dialog).toContainText(`Your answers are saved in this browser until ${until}.`)
+		await expect(dialog).not.toContainText("still uploading")
+		await expect(dialog.getByRole("button", { name: "Leave" })).toBeVisible()
+		await expect(dialog.getByRole("button", { name: "Keep working" })).toBeVisible()
+	},
+)
+
+Then("the dialog also says a file still uploading will not be kept if they leave", async ({ page }) => {
+	const dialog = reportSavedDialog(page)
+	await expect(dialog).toBeVisible()
+	await expect(dialog).toContainText("Your answers are saved in this browser until")
+	await expect(dialog).toContainText("A file is still uploading and will not be kept if you leave now.")
+})
+
+// The prompts each page showed during its last reload, for the Then that checks none did.
+const unloadPrompts = new WeakMap<Page, string[]>()
+
+When("the reporter reloads the tab", async ({ page }) => {
+	await expect.poll(() => readDraftFromBrowser(page)).not.toBeNull()
+	const prompts: string[] = []
+	page.on("dialog", (dialog) => {
+		prompts.push(dialog.type())
+		void dialog.dismiss()
+	})
+	unloadPrompts.set(page, prompts)
+	await page.reload() // Completes only if no unload prompt held it.
+})
+
+Then("no unload prompt appears", async ({ page }) => {
+	expect(unloadPrompts.get(page)).toEqual([])
 })
 
 When("the reporter confirms leaving", async ({ page }) => {

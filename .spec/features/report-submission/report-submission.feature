@@ -1100,17 +1100,32 @@ Scenario: A successful submission nudges the Worker
 
 @REQ-SUB-122
 @ui
-Scenario: Leaving the report form for another page while it holds unsubmitted answers is confirmed first
+Scenario: Leaving the report form for another page while it holds unsubmitted answers says the report is saved, and is confirmed first
   Given a reporter is filling out the form
   When the reporter activates a header navigation link away from the form
-  Then a bilingual dialog asks whether to leave, offering to stay
+  Then a bilingual dialog says the report is saved in this browser until the day its 15 days end, offering to keep working
   When the reporter confirms leaving
   Then the browser navigates to that page
 
-@REQ-SUB-123
+@REQ-SUB-128
 @ui
-Scenario: Closing or reloading the tab while the report form holds unsubmitted answers triggers the browser's own prompt
+Scenario: Closing or reloading the tab while the report form holds only saved answers shows no prompt
   Given a reporter is filling out the form
+  When the reporter reloads the tab
+  Then no unload prompt appears
+  And a dialog asks whether to continue where they left off, with No and Yes buttons
+
+@REQ-SUB-129
+@ui
+Scenario: Leaving the report form for another page while a file is still uploading says that file will not be kept
+  Given a file on the current page is still uploading
+  When the reporter activates a header navigation link away from the form
+  Then the dialog also says a file still uploading will not be kept if they leave
+
+@REQ-SUB-130
+@ui
+Scenario: Closing or reloading the tab while a file is still uploading triggers the browser's own prompt
+  Given a file on the current page is still uploading
   When the reporter tries to close or reload the tab
   Then the browser's own unload prompt appears, with no custom text
 

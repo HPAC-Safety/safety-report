@@ -2644,11 +2644,7 @@ Leaving the untouched report form never shows a confirmation — *playwright-bdd
 
 ### REQ-SUB-122
 
-Leaving the report form for another page while it holds unsubmitted answers is confirmed first — *playwright-bdd, Covered*
-
-### REQ-SUB-123
-
-Closing or reloading the tab while the report form holds unsubmitted answers triggers the browser's own prompt — *playwright-bdd, Covered*
+Leaving the report form for another page while it holds unsubmitted answers says the report is saved, and is confirmed first — *playwright-bdd, Covered*
 
 ### REQ-SUB-124
 
@@ -2665,6 +2661,18 @@ No notice appears when every saved answer is still current — *playwright-bdd, 
 ### REQ-SUB-127
 
 A saved report with no answer still current is replaced by a fresh form and the notice — *playwright-bdd, Covered*
+
+### REQ-SUB-128
+
+Closing or reloading the tab while the report form holds only saved answers shows no prompt — *playwright-bdd, Covered*
+
+### REQ-SUB-129
+
+Leaving the report form for another page while a file is still uploading says that file will not be kept — *playwright-bdd, Covered*
+
+### REQ-SUB-130
+
+Closing or reloading the tab while a file is still uploading triggers the browser's own prompt — *playwright-bdd, Covered*
 
 ## Claims: typeform-question-import-export
 

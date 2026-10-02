@@ -15,6 +15,7 @@ import type { Attachment } from "./AttachmentField"
 import { DiscardReportDialog } from "./DiscardReportDialog"
 import {
 	clearDraft,
+	draftExpiresAtMs,
 	draftUploadIds,
 	readDraft,
 	writeDraft,
@@ -229,13 +230,28 @@ export function ReportForm() {
 		.filter((row) => row.status === "uploaded").length
 	const attachmentRoom = Math.max(0, MAX_ATTACHMENTS - attachedCount)
 
-	// Unsubmitted answers, even though they are also saved locally for 15
-	// days (ADR-0100) — the owner's decision for issue no. 659. Moving between
-	// the form's own steps stays within "/report" and is never blocked.
+	// Unsubmitted answers (issue no. 659). They are saved in this browser for
+	// 15 days (ADR-0100), so leaving says so, naming the day they expire, and
+	// closing the tab prompts only while an upload — the one thing leaving
+	// loses — is in flight (issue no. 748). With nothing saved yet, the shared
+	// wording stands. Moving between the form's own steps stays within
+	// "/report" and is never blocked.
 	const dirty =
 		submit.status !== "submitted" &&
 		(Object.keys(answers).length > 0 || Object.values(attachments).some((rows) => rows.length > 0) || anyUploading)
-	useUnsavedChangesGuard(dirty, "/report")
+	const leaveCopy = useCallback(() => {
+		const expiresAtMs = draftExpiresAtMs()
+		if (expiresAtMs === null) return undefined
+		const date = new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(expiresAtMs))
+		const saved = t("report.leave.body", { date })
+		return {
+			title: t("report.leave.title"),
+			body: anyUploading ? `${saved} ${t("report.leave.uploading")}` : saved,
+			leave: t("unsavedChanges.leave"),
+			stay: t("report.leave.keepWorking"),
+		}
+	}, [anyUploading, locale, t])
+	useUnsavedChangesGuard(dirty, { withinPath: "/report", unloadPrompt: anyUploading, copy: leaveCopy })
 
 	const updateAttachments = useCallback((revisionId: string, update: (current: Attachment[]) => Attachment[]) => {
 		edited.current = true

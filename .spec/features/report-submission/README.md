@@ -243,23 +243,33 @@ returns to the introduction with no answers.
 - Not built: a per-question highlight of what was cleared, and any carrying of
   a stale answer onto a revised question.
 
-## Leaving the form with unsaved changes (#659)
+## Leaving the form with unsaved changes (#659, #748)
 
-The form warns before it is left with any unsubmitted answer, attached file,
-or upload in flight — even though the browser already keeps those answers for
-15 days (`Discarding a report`, above; ADR-0100). Nothing is truly lost, but
-the person is asked before they leave anyway, because they may not remember
-that.
+The form keeps every unsubmitted answer and finished upload in this browser
+for 15 days from the report's first save (`Returning to a saved report` and
+`Discarding a report`, above; ADR-0100). Leaving it loses nothing, so it never
+says otherwise; it tells the reporter the report is saved and until when.
 
-- Closing the tab, reloading, or typing a new address triggers the browser's
-  own unload prompt, which cannot carry custom text.
-- Navigating in-app to another page pauses the navigation and shows a
-  bilingual confirm dialog (`UnsavedChangesDialog`), reusing the same
-  focus-on-keep, Escape-keeps pattern as `DiscardReportDialog`.
+- Navigating in-app to another page with any unsubmitted answer or attached
+  file pauses the navigation and shows a bilingual dialog
+  (`UnsavedChangesDialog`): "Your report is saved", naming the day the 15
+  days end (`startedAtMs` plus 15 days, in the reader's locale), and
+  offering "Keep working" or "Leave". It reuses the focus-on-keep,
+  Escape-keeps pattern of `DiscardReportDialog`.
+- Closing the tab, reloading, or typing a new address shows **no** prompt: the
+  browser's own text ("changes may not be saved") cannot be changed and would
+  be false. On return the form offers to continue the saved report.
+- A file still uploading is the one thing leaving would lose. While one is,
+  the dialog adds that the file will not be kept, and closing or reloading
+  triggers the browser's own unload prompt.
+- With no saved report yet (only an upload in flight, nothing else entered),
+  the dialog falls back to the shared "Leave without saving?" wording.
 - Moving between the form's own steps (`/report/<question-key>`) never
   triggers either prompt — that stays within the form, not away from it.
-- The mechanism is the shared `useUnsavedChangesGuard` hook, used the same
-  way by every other editable form across the public and admin sites (see
+- The mechanism is the shared `useUnsavedChangesGuard` hook; the report form
+  passes its own dialog wording and turns the unload prompt off except while
+  uploading. Every other editable form keeps the shared wording and its
+  unload prompt (see
   [`web-localization-and-design/README.md`](../web-localization-and-design/README.md)).
 
 ## The page in the address (#366)

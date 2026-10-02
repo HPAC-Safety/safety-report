@@ -132,6 +132,11 @@ block for an in-app navigation, which shows the shared bilingual
 the same focus-on-keep, Escape-keeps pattern the report form's
 `DiscardReportDialog` already used.
 
+A form may pass its own dialog wording and turn off the unload prompt, through
+the hook's optional third argument. Only the report form does: its answers are
+already saved in the browser, so its dialog says so and it prompts on unload
+only while a file is still uploading (#748; `report-submission/README.md`).
+
 React Router allows only one active `useBlocker` per router, so the hook
 itself never calls it: `UnsavedChangesGuardRoot`, mounted once in `App.tsx`,
 owns the one `useBlocker` and the one dialog, and each form's
@@ -148,7 +153,7 @@ Every editable form calls the hook with its own `dirty` condition:
 
 | Form | Route | Scenarios |
 |---|---|---|
-| Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121..123 |
+| Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121, REQ-SUB-122, REQ-SUB-128..130 |
 | Question editor | `/admin/questions` | `question-bank-and-form.feature` REQ-QB-238, REQ-QB-239 |
 | Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-186 |
 | Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-185 |

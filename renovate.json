@@ -268,6 +268,20 @@
 			]
 		},
 		{
+			"description": "ESLint and the plugins the root lint config loads move as one group. ESLint stays on a major until every plugin's peer range accepts the next one: until then npm ci cannot resolve the group's lock file, the required lint check fails, and the pull request cannot merge (#784, lesson 0042). A plugin release that widens its range lands first, and Renovate rebases the held pull request onto it; once it resolves and every required check passes, it automerges, major included (#789).",
+			"groupName": "ESLint",
+			"matchPackageNames": [
+				"eslint",
+				"@eslint/js",
+				"eslint-plugin-jsx-a11y",
+				"eslint-plugin-react-hooks",
+				"globals",
+				"typescript-eslint"
+			],
+			"autoApprove": true,
+			"automerge": true
+		},
+		{
 			"description": "Keep Renovate up to date (self-managed)",
 			"groupName": "Renovate",
 			"matchManagers": [

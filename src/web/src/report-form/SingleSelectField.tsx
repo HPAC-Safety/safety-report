@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react"
-import { Caret, ChoiceOptions, choiceListClassName, type ListChoice } from "./ChoiceList"
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react"
+import type { ListChoice } from "./ChoiceList"
+import { SingleSelectFieldView } from "./SingleSelectField.view"
 
 export interface SingleSelectFieldProps {
 	fieldId: string
@@ -28,19 +29,16 @@ function folded(text: string, locale: string): string {
 const TYPE_TO_SELECT_MS = 500
 
 /**
- * A single-select question as a picker the form draws (REQ-QB-208, ADR-0150):
- * a field with a caret, and the type-ahead's list directly beneath it. The
- * WAI-ARIA 1.2 select-only combobox pattern: focus stays on the field, the
- * arrow keys move the highlighted choice, and nothing can be typed; a
- * character only jumps to the next choice starting with it.
+ * The view model of a single-select question as a picker the form draws
+ * (REQ-QB-208, ADR-0150): the WAI-ARIA 1.2 select-only combobox pattern. Focus
+ * stays on the field, the arrow keys move the highlighted choice, and nothing
+ * can be typed; a character only jumps to the next choice starting with it.
  */
-export function SingleSelectField({
+export function useSingleSelectField({
 	fieldId,
-	label,
 	groups,
 	selectedKey,
 	placeholder,
-	describedBy,
 	locale,
 	onChange,
 	disabled = false,
@@ -180,51 +178,36 @@ export function SingleSelectField({
 		else setOpen(false)
 	}
 
-	return (
-		<div
-			ref={containerRef}
-			className="relative mt-1"
-			onBlur={(event) => {
-				// Tabbing out closes the list; a pointer press outside is handled above.
-				const next = event.relatedTarget as Node | null
-				if (next && !containerRef.current?.contains(next)) setOpen(false)
-			}}
-		>
-			<button
-				ref={fieldRef}
-				id={fieldId}
-				type="button"
-				role="combobox"
-				aria-haspopup="listbox"
-				aria-expanded={open}
-				aria-controls={listId}
-				aria-activedescendant={activeId}
-				aria-describedby={describedBy}
-				disabled={disabled}
-				className="relative block w-full rounded border border-rule bg-surface py-2 pl-3 pr-11 text-left font-sans text-ink disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted"
-				onClick={onClick}
-				onKeyDown={onKeyDown}
-			>
-				<span className={chosen ? "block truncate" : "block truncate text-ink-muted"} lang={chosen?.lang}>
-					{chosen ? chosen.label : placeholder}
-				</span>
-				<span className={`absolute inset-y-0 right-0 flex w-11 items-center justify-center ${disabled ? "opacity-40" : ""}`}>
-					<Caret />
-				</span>
-			</button>
-			{/* The listbox is always in the page so aria-controls names it; it is hidden while closed. */}
-			<ul id={listId} role="listbox" aria-label={label} hidden={!open} className={choiceListClassName}>
-				<ChoiceOptions
-					groups={groups}
-					leading={none}
-					optionId={optionId}
-					activeKey={activeChoice?.key}
-					// The select-only pattern marks the chosen choice; the highlighted one is aria-activedescendant.
-					isSelected={(choice) => choice.key === (chosen?.key ?? "")}
-					onPoint={(choice) => setActive(all.findIndex((entry) => entry.key === choice.key))}
-					onPick={choose}
-				/>
-			</ul>
-		</div>
-	)
+	function onBlur(event: FocusEvent<HTMLDivElement>) {
+		// Tabbing out closes the list; a pointer press outside is handled above.
+		const next = event.relatedTarget as Node | null
+		if (next && !containerRef.current?.contains(next)) setOpen(false)
+	}
+
+	return {
+		open,
+		disabled,
+		containerRef,
+		fieldRef,
+		listId,
+		optionId,
+		none,
+		chosen,
+		activeId,
+		activeKey: activeChoice?.key,
+		onBlur,
+		onClick,
+		onKeyDown,
+		// The select-only pattern marks the chosen choice; the highlighted one is aria-activedescendant.
+		isSelected: (choice: ListChoice) => choice.key === (chosen?.key ?? ""),
+		onPoint: (choice: ListChoice) => setActive(all.findIndex((entry) => entry.key === choice.key)),
+		onPick: choose,
+	}
+}
+
+export type SingleSelectFieldModel = ReturnType<typeof useSingleSelectField>
+
+/** A single-select question as a picker the form draws; the logic is `useSingleSelectField`. */
+export function SingleSelectField(props: SingleSelectFieldProps) {
+	return <SingleSelectFieldView {...props} {...useSingleSelectField(props)} />
 }

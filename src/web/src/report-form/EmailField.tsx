@@ -1,6 +1,7 @@
-import { useState, type KeyboardEvent } from "react"
+import { useState, type ChangeEvent, type KeyboardEvent } from "react"
 
 import { emailSuggestions } from "../lib/emailAddress"
+import { EmailFieldView } from "./EmailField.view"
 
 export interface EmailFieldProps {
 	fieldId: string
@@ -13,13 +14,13 @@ export interface EmailFieldProps {
 }
 
 /**
- * An email question (REQ-SUB-085, REQ-SUB-092..095): the email keyboard, and a
- * list of suggested addresses below the field, as a combobox and its listbox.
- * Arrow keys move through the suggestions, Enter or a press chooses one, and
- * Escape closes the list. A suggestion never stops the reporter typing any
- * other address.
+ * The view model of an email question (REQ-SUB-085, REQ-SUB-092..095): the
+ * email keyboard, and a list of suggested addresses below the field, as a
+ * combobox and its listbox. Arrow keys move through the suggestions, Enter or a
+ * press chooses one, and Escape closes the list. A suggestion never stops the
+ * reporter typing any other address.
  */
-export function EmailField({ fieldId, className, describedBy, placeholder, value, onChange, t }: EmailFieldProps) {
+export function useEmailField({ fieldId, value, onChange }: EmailFieldProps) {
 	const [focused, setFocused] = useState(false)
 	const [dismissed, setDismissed] = useState(false)
 	const [active, setActive] = useState(-1)
@@ -59,53 +60,24 @@ export function EmailField({ fieldId, className, describedBy, placeholder, value
 		}
 	}
 
-	return (
-		<div className="relative">
-			<input
-				id={fieldId}
-				type="email"
-				inputMode="email"
-				autoComplete="email"
-				role="combobox"
-				aria-autocomplete="list"
-				aria-expanded={showing}
-				aria-controls={listId}
-				aria-activedescendant={showing && active >= 0 ? `${listId}-${active}` : undefined}
-				className={className}
-				value={value}
-				aria-describedby={describedBy}
-				placeholder={placeholder}
-				onFocus={() => setFocused(true)}
-				onBlur={() => setFocused(false)}
-				onKeyDown={onKeyDown}
-				onChange={(event) => type(event.target.value)}
-			/>
-			<ul
-				id={listId}
-				role="listbox"
-				aria-label={t("report.email.suggestions")}
-				hidden={!showing}
-				className="mt-1 rounded border border-rule bg-surface py-1 font-sans text-ink"
-			>
-				{suggestions.map((suggestion, index) => (
-					<li
-						key={suggestion}
-						id={`${listId}-${index}`}
-						role="option"
-						aria-selected={index === active}
-						className={`touch-target flex cursor-pointer items-center px-3 ${index === active ? "bg-surface-2" : "hover:bg-surface-2"}`}
-						// Chosen on press, before the field loses focus and the list closes.
-						onMouseDown={(event) => {
-							event.preventDefault()
-							choose(suggestion)
-						}}
-					>
-						{suggestion}
-					</li>
-				))}
-			</ul>
-		</div>
-	)
+	return {
+		listId,
+		suggestions,
+		showing,
+		active,
+		onFocus: () => setFocused(true),
+		onBlur: () => setFocused(false),
+		onKeyDown,
+		onInputChange: (event: ChangeEvent<HTMLInputElement>) => type(event.target.value),
+		onChoose: choose,
+	}
+}
+
+export type EmailFieldModel = ReturnType<typeof useEmailField>
+
+/** An email question; the logic is `useEmailField`. */
+export function EmailField(props: EmailFieldProps) {
+	return <EmailFieldView {...props} {...useEmailField(props)} />
 }
 
 /** The suggestion an arrow key moves to, wrapping at either end; from none, Down goes to the first and Up to the last. */

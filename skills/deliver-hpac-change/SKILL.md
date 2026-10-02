@@ -316,6 +316,14 @@ Rules:
   filter lists `locales/`
   ([lesson 0020](../../.spec/lessons/0020-a-copy-change-that-ran-no-browser-test.md)).
 
+## Workflow steps
+
+- A `run:` is one command; logic goes in a script under `tools/<group>/` with
+  its test under `tests/js/<group>/`, and plain sequences become separate steps.
+  `tools/github/check-workflow-steps.mjs` fails anything else in pre-commit and
+  `docs`. Add the script to the workflow's path filter
+  ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
+
 ## Workflows that push
 
 - **Onto a pull request's branch**: push through `tools/github/push-to-pr-branch.mjs`,

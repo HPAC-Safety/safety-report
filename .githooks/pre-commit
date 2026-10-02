@@ -163,6 +163,14 @@ if staged | grep -qE '\.(md|mdc)$'; then
 	fi
 fi
 
+# A workflow step runs one command; its logic lives in a tested script under
+# tools/ (ADR-0189).
+if staged | grep -qE '^\.github/(workflows|actions)/'; then
+	if command -v node >/dev/null 2>&1; then
+		node tools/github/check-workflow-steps.mjs || status=1
+	fi
+fi
+
 # A deleted or renamed file breaks every link to it, in files this commit never
 # touched, so the whole tree is checked (ADR-0183).
 if git diff --cached --name-only --diff-filter=DR | grep -q .; then

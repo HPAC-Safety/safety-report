@@ -96,12 +96,20 @@ jobs:
               - 'init-dev.sh'
               - 'tools/dev/ci-local.sh'
               - 'tools/build/build-worker-image.sh'
+              - 'tools/build/smoke-test-worker-image.mjs'
+              - 'tools/build/check-clean-worktree.mjs'
+              - 'tools/coverage/**'
+              - 'tools/lib/actions.mjs'
               - '.github/workflows/ci.yml'
             # The web bundle loads its catalogues from locales/ at the repository
             # root, so a copy change is a web change (lesson 0020).
             web:
               - 'src/web/**'
               - 'locales/**'
+              - 'tools/web/check-no-third-party-fonts.mjs'
+              - 'tools/web/check-raw-hex.mjs'
+              - 'tools/build/check-clean-worktree.mjs'
+              - 'tools/lib/actions.mjs'
               - '.github/workflows/ci.yml'
             e2e:
               - 'src/web/**'
@@ -145,15 +153,7 @@ jobs:
       - name: shellcheck the Worker image build
         run: shellcheck tools/build/build-worker-image.sh
       - name: Build the Worker image and prove ffmpeg runs inside it
-        run: |
-          tools/build/build-worker-image.sh hpacsafety-worker:ci
-          docker run --rm --entrypoint ffmpeg hpacsafety-worker:ci -hide_banner -version
-          docker run --rm --entrypoint ffprobe hpacsafety-worker:ci -hide_banner -version
-          docker run --rm --entrypoint dotnet hpacsafety-worker:ci --list-runtimes
-          if [ "$(docker run --rm --entrypoint id hpacsafety-worker:ci -u)" = "0" ]; then
-            echo "::error::The Worker image runs as root."
-            exit 1
-          fi
+        run: node tools/build/smoke-test-worker-image.mjs hpacsafety-worker:ci
 
   # The one job that runs the .NET and JavaScript suites. It collects coverage
   # as it runs them and hands the raw reports to `coverage`, which gates them
@@ -193,8 +193,11 @@ jobs:
       # to carry it: FfmpegVideoRemuxerTests generates its fixtures with it and
       # would otherwise fail for a reason that has nothing to do with the change
       # under test.
+      - name: Update the package index
+        run: sudo apt-get update
+
       - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get install -y ffmpeg
 
       # coverlet.runsettings excludes generated code. Without it the API reports
       # 4.8% while Program.cs is at 100%, because the OpenApi source generator
@@ -204,41 +207,30 @@ jobs:
       # one, each host gets a unique name and tools/coverage/report-test-counts.mjs reads the
       # project name back out of the trx's own `storage` attribute.
       - name: dotnet test
-        run: >
-          dotnet test HpacSafety.slnx
-          --configuration Release
-          --filter "Category!=ui"
-          --collect:"XPlat Code Coverage"
-          --settings coverlet.runsettings
-          --logger trx
-          --results-directory ./artifacts/coverage
-
-      # The suite is passed as an explicit file list rather than as a
-      # directory: `node --test tests/js` resolves the path as a module and
-      # fails with MODULE_NOT_FOUND on the pinned Node.
-      - name: node --test
         run: |
-          suite=$(find tests/js -name '*.test.mjs' -o -name '*.test.js' 2>/dev/null)
-          if [ -n "$suite" ]; then
-            mkdir -p ./artifacts/coverage/js
-            # shellcheck disable=SC2086
-            node --test --experimental-test-coverage \
-              --test-reporter=spec --test-reporter-destination=stdout \
-              --test-reporter=lcov --test-reporter-destination=./artifacts/coverage/js/lcov.info \
-              $suite
-          else
-            echo "::notice::No JavaScript test suite yet — added by #8. Skipping."
-          fi
+          dotnet test HpacSafety.slnx \
+            --configuration Release \
+            --filter "Category!=ui" \
+            --collect:"XPlat Code Coverage" \
+            --settings coverlet.runsettings \
+            --logger trx \
+            --results-directory ./artifacts/coverage
+
+      # The script passes the suite as an explicit file list, and writes the
+      # lcov to ./artifacts/coverage/js/lcov.info for `coverage` to merge.
+      - name: node --test
+        run: node tools/coverage/run-js-tests.mjs
 
       # The web logic's unit tests, for their lcov. vite.config.ts writes it to
       # artifacts/coverage/web/lcov.info, where the ReportGenerator glob in
       # `coverage` finds it with the .NET and tools/ reports, so the ratchet
       # counts it (ADR-0188). The `web` job runs the same command as its gate;
       # this run is the one whose report is merged.
+      - name: Install the web dependencies
+        run: npm --prefix src/web ci
+
       - name: Web unit tests
-        run: |
-          npm --prefix src/web ci
-          npm --prefix src/web run test:coverage
+        run: npm --prefix src/web run test:coverage
 
       # The raw reports, the trx files included, for `coverage` to merge and
       # gate. Only this run reads them, so a day's retention is enough.
@@ -254,15 +246,9 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-      # a+rwX: the container writes as root, and on a Linux host the wrapper
-      # removing the run's directory afterwards is not root.
       - name: Hand the raw reports to coverage under act
         if: env.ACT
-        run: |
-          [ -d /ci-local-share ] || { echo "::error::/ci-local-share is not mounted; run this workflow through tools/dev/ci-local.sh"; exit 1; }
-          mkdir -p /ci-local-share/coverage
-          cp -R ./artifacts/coverage/. /ci-local-share/coverage/
-          chmod -R a+rwX /ci-local-share/coverage
+        run: node tools/coverage/hand-over-raw-reports.mjs push
 
   # Parses every .spec/features/**/*.feature file with the official @cucumber/gherkin
   # parser (the same parser cucumber-js uses), pinned in
@@ -277,10 +263,11 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install the Gherkin parser
+        run: npm --prefix tools/gherkin ci
+
       - name: Gherkin feature files parse
-        run: |
-          npm --prefix tools/gherkin ci
-          node tools/gherkin/verify.mjs
+        run: node tools/gherkin/verify.mjs
 
   # Every tracked markdown file declares its title, description, and type
   # (ADR-0087). The Worker's runtime prompts are exempt - their bytes are the
@@ -307,6 +294,11 @@ jobs:
       # nothing specific to this repository. ADR-0131.
       - name: Generic agent instructions name nothing specific to this repository
         run: node tools/docs/check-generic-instructions.mjs
+
+      # A workflow step runs one command; its logic is a tested script under
+      # tools/. ADR-0189.
+      - name: Workflow steps run one command
+        run: node tools/github/check-workflow-steps.mjs
 
       # An ADR's number is its identity and is claimed by naming a file, so two
       # branches can claim the same one and only a rebase notices. ADR-0091.
@@ -352,13 +344,10 @@ jobs:
 
       - name: The traceability matrix matches the specification
         run: |
-          set -euo pipefail
-          node tools/spec/generate-traceability.mjs
-          if ! git diff --exit-code --stat -- .spec/traceability.md; then
-            echo "::error file=.spec/traceability.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/spec/generate-traceability.mjs' and commit the result."
-            git diff -- .spec/traceability.md
-            exit 1
-          fi
+          node tools/spec/check-generated-file.mjs \
+            --generator tools/spec/generate-traceability.mjs \
+            --file .spec/traceability.md \
+            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/spec/generate-traceability.mjs' and commit the result."
 
       # Every built claim's steps are bound to a step definition in its engine,
       # and the committed map of which files bind which claim is current. The
@@ -367,13 +356,10 @@ jobs:
       # traceability.yml commits the map onto a same-repo PR. ADR-0184.
       - name: Every built claim's steps are bound
         run: |
-          set -euo pipefail
-          node tools/spec/generate-bindings.mjs
-          if ! git diff --exit-code --stat -- .spec/bindings.md; then
-            echo "::error file=.spec/bindings.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/spec/generate-bindings.mjs' and commit the result."
-            git diff -- .spec/bindings.md
-            exit 1
-          fi
+          node tools/spec/check-generated-file.mjs \
+            --generator tools/spec/generate-bindings.mjs \
+            --file .spec/bindings.md \
+            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/spec/generate-bindings.mjs' and commit the result."
 
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this
@@ -435,10 +421,7 @@ jobs:
 
       - name: The raw reports under act
         if: env.ACT
-        run: |
-          [ -d /ci-local-share/coverage ] || { echo "::error::no raw reports in /ci-local-share/coverage; run this workflow through tools/dev/ci-local.sh"; exit 1; }
-          mkdir -p ./artifacts/coverage
-          cp -R /ci-local-share/coverage/. ./artifacts/coverage/
+        run: node tools/coverage/hand-over-raw-reports.mjs pull
 
       # ReportGenerator merges every Cobertura and lcov file it finds into one
       # report, so the JS half needs no wiring here beyond producing lcov.
@@ -450,47 +433,21 @@ jobs:
       # The count read then varied between 11 and 12 with identical coverage,
       # because every In/ copy duplicates an attachment (#546).
       - name: Merge into one report
-        run: >
-          dotnet tool run reportgenerator
-          "-reports:./artifacts/coverage/*/coverage.cobertura.xml;./artifacts/coverage/**/lcov.info"
-          "-targetdir:./artifacts/report"
-          "-reporttypes:Cobertura;MarkdownSummaryGithub;HtmlInline"
+        run: |
+          dotnet tool run reportgenerator \
+            "-reports:./artifacts/coverage/*/coverage.cobertura.xml;./artifacts/coverage/**/lcov.info" \
+            "-targetdir:./artifacts/report" \
+            "-reporttypes:Cobertura;MarkdownSummaryGithub;HtmlInline"
 
-      # The ratchet compares against main's last green run rather than
-      # recomputing it, which would re-run main's Testcontainers suite for a
-      # number that is already known. See ADR-0014.
-      # A merge group is ratcheted too: it is the tree that will become main.
-      # The baseline is only ever a push run on main - never a merge-group run
-      # (branch gh-readonly-queue/main/*) or a pull request run (ADR-0147).
-      # main's newest green run does not always carry the artifact: the
-      # coverage job is skipped on a docs-, infra-, or workflow-only change, so
-      # tools/coverage/find-coverage-baseline.mjs walks back to the newest run that
-      # actually ran coverage (#589, ADR-0165). tools/dev/ci-local.sh calls the
-      # same script, so both pick the same run.
+      # The ratchet compares against main's last green run (ADR-0014, ADR-0147,
+      # ADR-0165); the script says how it picks it. tools/dev/ci-local.sh calls
+      # the same finder, so both pick the same run.
       - name: Fetch the main baseline
         id: baseline
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && !env.ACT
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -uo pipefail
-          run_id=$(node tools/coverage/find-coverage-baseline.mjs --repo "$GITHUB_REPOSITORY" || true)
-
-          if [ -z "${run_id:-}" ] || [ "$run_id" = "none" ]; then
-            echo "path=none" >> "$GITHUB_OUTPUT"
-            echo "run-id=none" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if gh run download "$run_id" --name coverage-report --dir ./artifacts/baseline 2>/dev/null \
-            && [ -f ./artifacts/baseline/Cobertura.xml ]; then
-            echo "path=./artifacts/baseline/Cobertura.xml" >> "$GITHUB_OUTPUT"
-            echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::main run $run_id reported a coverage-report artifact, but the download failed. Ratchet skipped; the floor still applies."
-            echo "path=none" >> "$GITHUB_OUTPUT"
-            echo "run-id=none" >> "$GITHUB_OUTPUT"
-          fi
+        run: node tools/coverage/fetch-coverage-baseline.mjs
 
       # Under act (tools/dev/ci-local.sh) the job has no token, and GitHub answers an
       # anonymous artifact download with 401 even on a public repository. So the
@@ -503,51 +460,23 @@ jobs:
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && env.ACT
         env:
           JOB_TOKEN: ${{ github.token }}
-        run: |
-          echo "ci-local:github-token=$([ -n "$JOB_TOKEN" ] && echo present || echo empty)"
-          if [ -f .ci-local/baseline/Cobertura.xml ]; then
-            run_id=$(cat .ci-local/baseline/run-id)
-            echo "Baseline from main run $run_id."
-            echo "path=./.ci-local/baseline/Cobertura.xml" >> "$GITHUB_OUTPUT"
-            echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::$(cat .ci-local/baseline/notice 2>/dev/null || echo 'No baseline from tools/ci-local.sh. Ratchet skipped; the floor still applies.')"
-            echo "path=none" >> "$GITHUB_OUTPUT"
-            echo "run-id=none" >> "$GITHUB_OUTPUT"
-          fi
+        run: node tools/coverage/read-local-baseline.mjs
 
-      # Output is captured to comment.md here, once, rather than re-run by the
-      # comment step below - the script writes to $GITHUB_STEP_SUMMARY as a
-      # side effect, and running it twice duplicated the table in the job
-      # summary.
+      # The script runs the gate once and keeps its output as comment.md, so the
+      # comment step below does not re-run it (that duplicated the table in the
+      # job summary).
       - name: Gate
         id: gate
-        run: |
-          set -o pipefail
-          {
-            echo "<!-- coverage-gate -->"
-            node tools/coverage/check-coverage.mjs \
-              --report ./artifacts/report/Cobertura.xml \
-              --baseline "${{ steps.baseline.outputs.path || steps.baseline-local.outputs.path || 'none' }}" \
-              --baseline-run-id "${{ steps.baseline.outputs.run-id || steps.baseline-local.outputs.run-id || 'none' }}" \
-              --min-line 80 --min-branch 70
-          } 2>&1 | tee comment.md
+        env:
+          BASELINE_PATH: ${{ steps.baseline.outputs.path || steps.baseline-local.outputs.path || 'none' }}
+          BASELINE_RUN_ID: ${{ steps.baseline.outputs.run-id || steps.baseline-local.outputs.run-id || 'none' }}
+        run: node tools/coverage/write-coverage-comment.mjs --min-line 80 --min-branch 70
 
       # The detailed per-file table, always, so a failure is diagnosable from
       # the run page without downloading anything.
       - name: Detail in the job summary
         if: always()
-        run: |
-          if [ -f ./artifacts/report/SummaryGithub.md ]; then
-            {
-              echo ""
-              echo "<details><summary>Per-assembly detail</summary>"
-              echo ""
-              cat ./artifacts/report/SummaryGithub.md
-              echo ""
-              echo "</details>"
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+        run: node tools/coverage/report-coverage-detail.mjs
 
       # Only present when the e2e job actually ran (needs.e2e.result ==
       # 'success'); a dotnet-only PR has nothing to download here, and the
@@ -566,18 +495,7 @@ jobs:
       # rather than a separate comment, per #263 - one table pair, not two
       # comments to scroll past.
       - name: Add test counts
-        run: |
-          {
-            echo ""
-            echo "## Test counts"
-            echo ""
-            node tools/coverage/report-test-counts.mjs --section csharp --trx-dir ./artifacts/coverage
-            if [ -f ./artifacts/test-count/e2e.md ]; then
-              cat ./artifacts/test-count/e2e.md
-            else
-              echo "_Playwright suite not run in this job._"
-            fi
-          } >> comment.md
+        run: node tools/coverage/append-test-counts.mjs
 
       # Skipped on fork pull requests, whose token cannot write, and on a merge
       # group, which has no pull request to comment on. The job summary above
@@ -604,25 +522,7 @@ jobs:
       # ships the fix. ADR-0145.
       - name: Coverage for tools/dev/ci-local.sh
         if: always() && env.ACT
-        run: |
-          echo "ci-local:coverage:begin"
-          cat comment.md 2>/dev/null || true
-          echo ""
-          cat ./artifacts/report/SummaryGithub.md 2>/dev/null || true
-          echo ""
-          echo "Cobertura totals:"
-          grep -o '<coverage [^>]*>' ./artifacts/report/Cobertura.xml 2>/dev/null || true
-          echo ""
-          echo "Per-project reports (packages each one carries):"
-          for f in $(find ./artifacts/coverage -name coverage.cobertura.xml | sort); do
-            echo "$f: $(grep -o '<package name="[^"]*"' "$f" | sed 's/.*name="//; s/"$//' | sort | tr '\n' ' ')"
-          done
-          # The attachment copies, one per project in a GUID directory, are
-          # what the merge above reads. Deduplicated by content, they are the
-          # distinct per-project reports; fewer than the test projects means a
-          # suite's coverage was lost.
-          echo "ci-local:reports=$(find ./artifacts/coverage -mindepth 2 -maxdepth 2 -name coverage.cobertura.xml -exec sha256sum {} + | cut -d' ' -f1 | sort -u | wc -l)"
-          echo "ci-local:coverage:end"
+        run: node tools/coverage/print-ci-local-coverage.mjs
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
@@ -710,59 +610,18 @@ jobs:
       # in the built bundle reaches Google for a font. The @font-face URLs in
       # src/web/src/index.css are relative paths into src/web/assets/fonts.
       - name: No third-party font requests
-        run: |
-          set -eu
-          hits=$(grep -rIl -e fonts.googleapis.com -e fonts.gstatic.com \
-            src/web/dist || true)
-          if [ -n "$hits" ]; then
-            echo "::error::Fonts must be self-hosted from src/web/assets/fonts. Found a Google Fonts reference in:"
-            echo "$hits"
-            exit 1
-          fi
+        run: node tools/web/check-no-third-party-fonts.mjs
 
       # Raw hex in markup defeats the token system: a literal colour cannot be
-      # re-themed, so it is the one thing that stays light when everything
-      # around it goes dark. Hex values belong in src/web/src/index.css, which
-      # is why only source markup/components are scanned here, not that file
-      # itself. See ADR-0024.
-      #
-      # CSS hex colours come in four valid lengths - #rgb, #rgba, #rrggbb,
-      # #rrggbbaa - and Tailwind arbitrary values (bg-[#f22312ff]) use the
-      # 4- and 8-digit alpha forms routinely. The alternation below is
-      # ordered longest-first so grep reports the whole literal rather than a
-      # 6-digit prefix of an 8-digit one; POSIX ERE alternation is
-      # leftmost-longest at each position regardless of order, but the order
-      # keeps the intent readable.
-      #
-      # Known false positive, left as-is rather than fixed: a hex-shaped
-      # anchor fragment - href="#bad", href="#dead" - matches the 3/4-digit
-      # branch. Distinguishing "#bad" the fragment from "#bad" the colour
-      # needs the surrounding attribute context (href=, id=, a CSS
-      # declaration, a Tailwind bracket), which turns a one-line content lint
-      # into a small parser for one rare collision - a fragment id that also
-      # happens to be a valid hex string. Cheaper to rename the anchor than to
-      # carry that complexity in a grep gate.
+      # re-themed. Hex values belong in src/web/src/index.css; the script scans
+      # only source markup and components. See ADR-0024.
       - name: No raw hex in markup
-        run: |
-          set -eu
-          hits=$(grep -rInE '#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{4}\b|#[0-9a-fA-F]{3}\b' \
-            src/web/src src/web/index.html src/web/theme-preview.html \
-            --include='*.tsx' --include='*.ts' --include='*.html' || true)
-          if [ -n "$hits" ]; then
-            echo "::error::Raw hex values belong in src/web/src/index.css. Use the @theme tokens in markup:"
-            echo "$hits"
-            exit 1
-          fi
+        run: node tools/web/check-raw-hex.mjs
 
       # dist/ is generated and gitignored. If a build produces a tracked
       # change, something that should be generated has been committed.
       - name: No drift from building
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "::error::Building the app modified tracked files:"
-            git status --porcelain
-            exit 1
-          fi
+        run: node tools/build/check-clean-worktree.mjs "Building the app modified tracked files:"
 
   e2e:
     needs: changes
@@ -791,9 +650,7 @@ jobs:
       # regenerating it — only this job has actually run Playwright. See #263.
       - name: Count Playwright tests
         if: always()
-        run: |
-          mkdir -p ./artifacts/test-count
-          node tools/coverage/report-test-counts.mjs --section e2e > ./artifacts/test-count/e2e.md
+        run: node tools/coverage/report-test-counts.mjs --section e2e --out ./artifacts/test-count/e2e.md
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
@@ -812,49 +669,32 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Agent instruction symlinks resolve to AGENTS.md
-        run: |
-          set -euo pipefail
-          canonical=$(readlink -f AGENTS.md)
-          fail=0
-          for link in CLAUDE.md .github/copilot-instructions.md .cursor/rules/agents.mdc; do
-            if [ ! -L "$link" ]; then
-              echo "::error file=$link::Not a symlink. It must point at AGENTS.md."
-              fail=1
-              continue
-            fi
-            target=$(readlink -f "$link" || true)
-            if [ "$target" != "$canonical" ]; then
-              echo "::error file=$link::Resolves to '${target:-<broken>}', expected '$canonical'."
-              fail=1
-            fi
-          done
-          exit $fail
+        run: node tools/docs/check-agent-symlinks.mjs
 
       - name: Install skillfile
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release download v1.9.1 \
-            --repo eljulians/skillfile \
-            --pattern skillfile-x86_64-linux \
-            --output "$RUNNER_TEMP/skillfile"
-          chmod +x "$RUNNER_TEMP/skillfile"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+        run: node tools/dev/install-skillfile.mjs
 
       # skillfile resolves each github-sourced entry through the GitHub API.
       # Unauthenticated, it shares the runner IP's 60-an-hour anonymous quota
       # and fails with HTTP 403 when a neighbour has spent it (#552). It reads
       # GITHUB_TOKEN, then GH_TOKEN; the job token is read-only here, and on a
       # fork pull request too, which is all public repositories need.
-      - name: Skillfile validates and installs from the lock
+      - name: Skillfile validates the lock
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          skillfile validate
-          skillfile install
-          skillfile status
+        run: skillfile validate
+
+      - name: Skillfile installs from the lock
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: skillfile install
+
+      - name: Skillfile reports its status
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: skillfile status
 
       # The deploy workflows never run on a pull request - by design, they
       # trigger on a push to main. So nothing exercises a local action they
@@ -873,12 +713,7 @@ jobs:
       # .claude/skills and .claude/agents are gitignored. If `skillfile install`
       # ever starts writing tracked files, that is drift worth failing on.
       - name: No drift from installing skills
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "::error::skillfile install modified tracked files:"
-            git status --porcelain
-            exit 1
-          fi
+        run: node tools/build/check-clean-worktree.mjs "skillfile install modified tracked files:"
 
   i18n:
     runs-on: ubuntu-latest
@@ -889,24 +724,10 @@ jobs:
           node-version: 24
 
       - name: Locale key parity
-        run: |
-          if [ ! -f locales/en-CA.json ]; then
-            echo "::notice::No locale files yet — added by #7. Skipping."
-            exit 0
-          fi
-          if [ ! -f tools/i18n/check-locales.mjs ]; then
-            echo "::error::locales/en-CA.json exists but tools/i18n/check-locales.mjs does not. See #8."
-            exit 1
-          fi
-          node tools/i18n/check-locales.mjs
+        run: node tools/i18n/check-locales.mjs
 
       - name: No hardcoded user-facing strings
-        run: |
-          if [ ! -f tools/web/check-hardcoded-strings.mjs ]; then
-            echo "::notice::Hardcoded-string lint not written yet — added by #8. Skipping."
-            exit 0
-          fi
-          node tools/web/check-hardcoded-strings.mjs
+        run: node tools/web/check-hardcoded-strings.mjs
 
       # VERIFY ONLY. --check reads the three locale files and constructs no
       # translator, so no inference happens here and no locale file is written.

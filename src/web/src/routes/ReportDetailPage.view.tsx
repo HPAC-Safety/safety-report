@@ -30,7 +30,7 @@ export interface ReportDetailPageViewProps {
 	save: ReviewActionsProps["onSave"]
 	publish: () => void
 	unpublish: ReviewActionsProps["onUnpublish"]
-	// Split across lines on purpose: tools/check-hardcoded-strings.mjs is a
+	// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a
 	// line scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 	restore: (revisionId: string) =>
 		Promise<boolean>

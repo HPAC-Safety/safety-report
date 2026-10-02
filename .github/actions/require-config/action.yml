@@ -33,38 +33,7 @@ runs:
         REQUIRED_SECRETS: ${{ inputs.secrets }}
         REQUIRED_VARIABLES: ${{ inputs.variables }}
         FAILURE_CONTEXT: ${{ inputs.context }}
-      run: |
-        set -uo pipefail
-        missing=0
-
-        check() {
-          kind=$1
-          # Fed by a here-string, never a pipe: a piped `while` runs in a
-          # subshell and `missing=1` would not survive it.
-          while IFS= read -r line; do
-            [ -z "${line//[[:space:]]/}" ] && continue
-            name=${line%%=*}
-            value=${line#*=}
-            # A line with no '=' is a malformed call, not a missing value.
-            if [ "$name" = "$line" ]; then
-              echo "::error::require-config: malformed $kind entry '$name' (expected NAME=value)."
-              missing=1
-              continue
-            fi
-            if [ -z "$value" ]; then
-              echo "::error::Missing $kind '$name'. $FAILURE_CONTEXT"
-              missing=1
-            fi
-          done
-        }
-
-        check secret   <<< "$REQUIRED_SECRETS"
-        check variable <<< "$REQUIRED_VARIABLES"
-
-        if [ "$missing" -ne 0 ]; then
-          echo ""
-          echo "The AWS environment has not been created yet. It is built by"
-          echo "#32 (bootstrap) and wired up by #30 (live deployment)."
-          exit 1
-        fi
-        echo "All required configuration is present."
+      # The action runs from its own checkout (a local action only resolves
+      # after actions/checkout, so the repository tree is always there), and
+      # GITHUB_ACTION_PATH is this directory: the script is three levels up.
+      run: node "$GITHUB_ACTION_PATH/../../../tools/infra/require-config.mjs"

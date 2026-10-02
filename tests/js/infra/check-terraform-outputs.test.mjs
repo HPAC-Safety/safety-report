@@ -101,6 +101,14 @@ describe('referencedOutputNames', () => {
 		].join('\n')
 		assert.deepEqual([...referencedOutputNames(text)].sort(), ['deploy_variables', 'nat_autoscaling_group_name'])
 	})
+
+	it('finds a reference in a script\'s exec argument list', () => {
+		const text = [
+			"exec('terraform', ['-chdir=infra', 'output', '-raw', 'nat_autoscaling_group_arn'])",
+			"exec('terraform', ['-chdir=infra', 'output', '-json', 'secret_entries'])",
+		].join('\n')
+		assert.deepEqual([...referencedOutputNames(text)].sort(), ['nat_autoscaling_group_arn', 'secret_entries'])
+	})
 })
 
 describe('referencedDeployVariableKeys', () => {

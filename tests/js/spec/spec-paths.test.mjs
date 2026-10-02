@@ -35,8 +35,9 @@ describe('the places that cannot import the specification paths', () => {
 	it('ci.yml checks both generated files and every link', () => {
 		const ci = read('.github/workflows/ci.yml')
 
-		assert.ok(ci.includes(`git diff --exit-code --stat -- ${TRACEABILITY}`))
-		assert.ok(ci.includes(`git diff --exit-code --stat -- ${BINDINGS}`))
+		assert.ok(ci.includes(`--file ${TRACEABILITY}`))
+		assert.ok(ci.includes(`--file ${BINDINGS}`))
+		assert.ok(ci.includes('node tools/spec/check-generated-file.mjs'))
 		assert.ok(ci.includes('node tools/spec/generate-spec-index.mjs --check'))
 		assert.ok(ci.includes('node tools/docs/check-links.mjs'))
 	})

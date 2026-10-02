@@ -27,10 +27,14 @@
  *   node tools/coverage/report-test-counts.mjs --section csharp --trx-dir ./artifacts/coverage [--tests-dir tests]
  *   node tools/coverage/report-test-counts.mjs --section e2e [--e2e-gen tests/e2e/.features-gen]
  *                                            [--smoke-spec tests/e2e/smoke.spec.ts]
+ *
+ * `--out <file>` writes the tables there (creating its directory) instead of
+ * printing them; ci.yml's e2e job uses it for the fragment the coverage job
+ * downloads.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, join, relative } from 'node:path'
 
 const args = new Map()
 for (let i = 2; i < process.argv.length; i += 2) {
@@ -42,6 +46,7 @@ const trxDir = args.get('trx-dir') ?? './artifacts/coverage'
 const testsDir = args.get('tests-dir') ?? 'tests'
 const e2eGenDir = args.get('e2e-gen') ?? 'tests/e2e/.features-gen'
 const smokeSpec = args.get('smoke-spec') ?? 'tests/e2e/smoke.spec.ts'
+const outFile = args.get('out')
 
 function exists(path) {
 	try {
@@ -161,7 +166,13 @@ function main() {
 		lines.push(...(playwright ?? ['_Playwright suite not run in this job._', '']))
 	}
 
-	console.log(lines.join('\n'))
+	const text = lines.join('\n')
+	if (outFile) {
+		mkdirSync(dirname(outFile), { recursive: true })
+		writeFileSync(outFile, `${text}\n`)
+	} else {
+		console.log(text)
+	}
 }
 
 main()

@@ -28,6 +28,8 @@ import { globSync, readFileSync } from 'node:fs'
 
 export const OUTPUTS_FILE = 'infra/outputs.tf'
 export const WORKFLOWS_GLOB = '.github/workflows/*.yml'
+// The deploy steps' scripts read outputs too (ADR-0189 moved them out of the YAML).
+export const SCRIPTS_GLOB = 'tools/infra/deploy/*.mjs'
 
 /** Index of the character matching the `{` at `openIndex`, scanning forward. */
 function matchBrace(text, openIndex) {
@@ -103,9 +105,15 @@ export function parseOutputs(hcl) {
 	return outputs
 }
 
-/** `terraform output -raw NAME` / `-json NAME` references, top-level names only. */
+/**
+ * `terraform output -raw NAME` / `-json NAME` references, top-level names only:
+ * on a shell command line in a workflow, or as the argument list of a script's
+ * `exec('terraform', ['-chdir=infra', 'output', '-raw', 'NAME'])`.
+ */
 export function referencedOutputNames(workflowText) {
-	return new Set([...workflowText.matchAll(/terraform\s+-chdir=\S+\s+output\s+(?:-raw|-json)\s+([A-Za-z0-9_]+)/g)].map((m) => m[1]))
+	const shell = workflowText.matchAll(/terraform\s+-chdir=\S+\s+output\s+(?:-raw|-json)\s+([A-Za-z0-9_]+)/g)
+	const script = workflowText.matchAll(/'output',\s*'(?:-raw|-json)',\s*'([A-Za-z0-9_]+)'/g)
+	return new Set([...shell, ...script].map((m) => m[1]))
 }
 
 /**
@@ -193,6 +201,6 @@ export function main({ outputsHcl, workflows }) {
 const runAsCommand = String(process.argv[1]).endsWith('/check-terraform-outputs.mjs')
 if (runAsCommand) {
 	const outputsHcl = readFileSync(OUTPUTS_FILE, 'utf8')
-	const workflows = globSync(WORKFLOWS_GLOB).map((path) => ({ path, text: readFileSync(path, 'utf8') }))
+	const workflows = [...globSync(WORKFLOWS_GLOB), ...globSync(SCRIPTS_GLOB)].map((path) => ({ path, text: readFileSync(path, 'utf8') }))
 	process.exit(main({ outputsHcl, workflows }))
 }

@@ -237,8 +237,8 @@ describe('the workflows that push through it', () => {
 	/** The --paths a workflow passes to this tool. */
 	function passedPaths(workflow) {
 		const text = readFileSync(join(REPO, '.github/workflows', workflow), 'utf8')
-		const match = text.match(/push-to-pr-branch\.mjs[\s\S]*?--paths '([^']+)'/)
-		assert.ok(match, `${workflow} does not push through tools/github/push-to-pr-branch.mjs`)
+		const match = text.match(/commit-to-pr-branch\.mjs[\s\S]*?--paths '([^']+)'/)
+		assert.ok(match, `${workflow} does not push through tools/github/commit-to-pr-branch.mjs`)
 		return match[1].split(',')
 	}
 

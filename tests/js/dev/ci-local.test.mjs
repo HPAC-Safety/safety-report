@@ -51,8 +51,8 @@ describe('the coverage job under act', () => {
 	})
 
 	it('reads the baseline the wrapper fetched, and reports whether it holds a token', () => {
-		assert.match(ci, /id: baseline-local\n\s+if: .*&& env\.ACT\n/)
-		assert.match(ci, /ci-local:github-token=/)
+		assert.match(ci, /id: baseline-local\n\s+if: .*&& env\.ACT\n[\s\S]*?run: node tools\/coverage\/read-local-baseline\.mjs\n/)
+		assert.match(readFileSync(join(REPO, 'tools/coverage/read-local-baseline.mjs'), 'utf8'), /ci-local:github-token=/)
 		assert.match(ci, /steps\.baseline\.outputs\.path \|\| steps\.baseline-local\.outputs\.path \|\| 'none'/)
 	})
 })
@@ -266,8 +266,11 @@ describe('the suites run once', () => {
 	})
 
 	it('runs node --test with coverage in the test job', () => {
-		assert.match(steps('test'), /node --test --experimental-test-coverage/)
-		assert.match(steps('test'), /--test-reporter=lcov --test-reporter-destination=\.\/artifacts\/coverage\/js\/lcov\.info/)
+		assert.match(steps('test'), /run: node tools\/coverage\/run-js-tests\.mjs\n/)
+		const script = readFileSync(join(REPO, 'tools/coverage/run-js-tests.mjs'), 'utf8')
+		assert.match(script, /'--experimental-test-coverage'/)
+		assert.match(script, /'--test-reporter=lcov'/)
+		assert.match(script, /LCOV = '\.\/artifacts\/coverage\/js\/lcov\.info'/)
 	})
 
 	it('runs no test in the coverage job', () => {
@@ -288,8 +291,12 @@ describe('the suites run once', () => {
 	})
 
 	it('hands them over through /ci-local-share under act', () => {
-		assert.match(steps('test'), /if: env\.ACT\n[\s\S]*cp -R \.\/artifacts\/coverage\/\. \/ci-local-share\/coverage\//)
-		assert.match(steps('coverage'), /if: env\.ACT\n[\s\S]*cp -R \/ci-local-share\/coverage\/\. \.\/artifacts\/coverage\//)
+		assert.match(steps('test'), /if: env\.ACT\n\s+run: node tools\/coverage\/hand-over-raw-reports\.mjs push\n/)
+		assert.match(steps('coverage'), /if: env\.ACT\n\s+run: node tools\/coverage\/hand-over-raw-reports\.mjs pull\n/)
+		const script = readFileSync(join(REPO, 'tools/coverage/hand-over-raw-reports.mjs'), 'utf8')
+		assert.match(script, /'\/ci-local-share'/)
+		assert.match(script, /exec\('cp', \['-R', `\$\{LOCAL\}\/\.`, `\$\{shared\}\/`\]/)
+		assert.match(script, /exec\('cp', \['-R', `\$\{shared\}\/\.`, `\$\{LOCAL\}\/`\]/)
 	})
 
 	it('mounts a per-run directory, inside the run\'s work directory, at /ci-local-share', () => {

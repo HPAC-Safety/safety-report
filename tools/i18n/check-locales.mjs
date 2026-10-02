@@ -32,6 +32,13 @@ const read = (path) => {
   }
 }
 
+// A repository with no locale files yet has nothing to compare: skip, as the
+// i18n CI job did before this check owned the question.
+if (!existsSync(source)) {
+  console.log(`::notice::No locale files yet — added by #7. Skipping.`)
+  process.exit(0)
+}
+
 const englishKeys = read(source)
 
 if (englishKeys.length === 0) {

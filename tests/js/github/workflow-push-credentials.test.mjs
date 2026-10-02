@@ -26,13 +26,29 @@ function checkoutSteps(text) {
 	return steps
 }
 
+/**
+ * Whether a workflow runs a script under tools/ that puts a token on the
+ * remote URL. The `git remote set-url` lives in the script (ADR-0189), so the
+ * workflow is found through the scripts it runs.
+ */
+function pushesWithTokenOnRemote(text) {
+	const scripts = [...text.matchAll(/node (?:\.\.\/base\/)?(tools\/[\w/.-]+\.mjs)/g)].map((match) => match[1])
+	return scripts.some((script) => {
+		try {
+			return /'remote',\s*'set-url',\s*'origin',\s*`https:\/\/x-access-token:/.test(readFileSync(join(REPO, script), 'utf8'))
+		} catch {
+			return false
+		}
+	})
+}
+
 // A workflow that puts a token on the remote URL does so to push as that
 // token. actions/checkout's persisted GITHUB_TOKEN header outranks it, so the
 // push lands as github-actions[bot] and its CI waits for approval (lesson 0018).
 describe('a workflow that pushes with a token on the remote URL', () => {
 	const pushers = readdirSync(WORKFLOWS)
 		.filter((file) => /\.ya?ml$/.test(file))
-		.filter((file) => /git remote set-url origin[\s\\]*\n?\s*"https:\/\/x-access-token:/.test(readFileSync(join(WORKFLOWS, file), 'utf8')))
+		.filter((file) => pushesWithTokenOnRemote(readFileSync(join(WORKFLOWS, file), 'utf8')))
 
 	it('exists, so this check is looking at something', () => {
 		assert.ok(pushers.length > 0)

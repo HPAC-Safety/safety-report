@@ -62,6 +62,13 @@ same section names.
   [lesson 0013](../../.spec/lessons/0013-a-generated-file-with-a-whole-tree-total-conflicts-with-every-branch.md),
   [ADR-0106](../../.spec/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md).
 
+## Tools
+
+- A script goes in its domain's folder under `tools/` and is named for what it
+  does (`check-`, `generate-`, `guard-`, `build-`, `find-`/`read-`, `report-`);
+  its test mirrors it under `tests/js/`. See [`tools/README.md`](../../tools/README.md)
+  ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
+
 ## Before finishing
 
 - The specification to update is `.spec/features`.

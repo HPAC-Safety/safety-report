@@ -60,6 +60,13 @@ jobs:
     outputs:
       tag: ${{ steps.create.outputs.tag }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
       - name: Create the next tag and its release
         id: create
         env:
@@ -69,38 +76,7 @@ jobs:
           SHA: ${{ github.sha }}
           SERVER: ${{ github.server_url }}
           RUN_ID: ${{ github.run_id }}
-        run: |
-          set -euo pipefail
-          if [ "$REF" != "refs/heads/main" ]; then
-            echo "::error::Release from main only (this run is on $REF). Run workflow → Use workflow from → main."
-            exit 1
-          fi
-
-          # Today's releases are YYYY.MM.DD-1, -2, ...; take the next free N.
-          day=$(date -u +%Y.%m.%d)
-          last=$(gh api "repos/$REPO/git/matching-refs/tags/$day-" --jq '.[].ref' \
-            | sed -n "s|^refs/tags/$day-\([1-9][0-9]*\)$|\1|p" | sort -n | tail -n 1)
-          tag="$day-$(( ${last:-0} + 1 ))"
-
-          notes=$(mktemp)
-          {
-            echo "## Provenance"
-            echo ""
-            echo "| Commit | Release run |"
-            echo "|---|---|"
-            echo "| [\`$SHA\`]($SERVER/$REPO/commit/$SHA) | [run $RUN_ID]($SERVER/$REPO/actions/runs/$RUN_ID) |"
-            echo ""
-            echo "This run deploys it to staging. Promote to production: Actions → Promote → Use workflow from → Tags → \`$tag\`."
-            echo ""
-          } > "$notes"
-
-          # --generate-notes appends every pull request merged since the
-          # previous release, grouped by .github/release.yml.
-          gh release create "$tag" --repo "$REPO" --target "$SHA" \
-            --title "$tag" --notes-file "$notes" --generate-notes
-
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "### Release [$tag]($SERVER/$REPO/releases/tag/$tag)" >> "$GITHUB_STEP_SUMMARY"
+        run: node tools/github/create-release.mjs
 
   # No AWS credential anywhere in this job, deliberately (see this file's
   # header). It builds each artifact exactly once, tagged by the commit SHA
@@ -156,12 +132,18 @@ jobs:
       - name: Build the Worker image
         run: tools/build/build-worker-image.sh "hpac-safety-worker:${{ steps.sha.outputs.sha }}"
 
-      - name: Save the images as artifacts
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/release
-          docker save "hpac-safety-api:${{ steps.sha.outputs.sha }}" | gzip > artifacts/release/api-image.tar.gz
-          docker save "hpac-safety-worker:${{ steps.sha.outputs.sha }}" | gzip > artifacts/release/worker-image.tar.gz
+      - name: Make the artifacts directory
+        run: mkdir -p artifacts/release
+
+      # `shell: bash` runs with pipefail, so a failed `docker save` fails the
+      # step instead of hiding behind gzip.
+      - name: Save the API image as an artifact
+        shell: bash
+        run: docker save "hpac-safety-api:${{ steps.sha.outputs.sha }}" | gzip > artifacts/release/api-image.tar.gz
+
+      - name: Save the Worker image as an artifact
+        shell: bash
+        run: docker save "hpac-safety-worker:${{ steps.sha.outputs.sha }}" | gzip > artifacts/release/worker-image.tar.gz
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -175,12 +157,17 @@ jobs:
           path: artifacts/release/worker-image.tar.gz
           retention-days: 90
 
+      - name: Install the web dependencies
+        run: npm --prefix src/web ci
+
       - name: Build the web bundle
-        run: |
-          npm --prefix src/web ci
-          npm --prefix src/web run build
-          node tools/web/check-web-bundle.mjs src/web/dist
-          tar czf artifacts/release/web-dist.tar.gz -C src/web/dist .
+        run: npm --prefix src/web run build
+
+      - name: Check the web bundle
+        run: node tools/web/check-web-bundle.mjs src/web/dist
+
+      - name: Pack the web bundle
+        run: tar czf artifacts/release/web-dist.tar.gz -C src/web/dist .
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

@@ -333,6 +333,13 @@ Rules:
 - **With a token on the remote URL**:
   [lesson 0018](../../.spec/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md).
 
+## Required checks
+
+- A new CI job that can fail `main` joins the main ruleset's required status
+  checks in the pull request that adds it, and its workflow triggers on
+  `merge_group`. A check nobody requires holds nothing back
+  ([lesson 0042](../../.spec/lessons/0042-a-check-nobody-required-let-a-broken-bump-merge.md)).
+
 ## Concurrency and quotas
 
 - `terraform.yml` serialises `apply` alone, in the job-level group

@@ -309,6 +309,27 @@ revision (`REQ-QB-105`), and an answered one forks (`REQ-QB-106`). The
 migration acts only while the question still carries the exact seeded wording,
 so it never overwrites an Administrator's own edit (`REQ-QB-107`).
 
+## The Country pick list
+
+The seeded Country question is an optional single-select of every ISO 3166-1
+country (249), not the yes/no "Did the occurrence happen in Canada?" it was
+([ADR-0186](../../decisions/ADR-0186-the-country-question-is-a-pinned-country-pick-list-and-province-follows-it.md)).
+
+- Each choice's code is its lowercase alpha-2 code, and its wording is CLDR's
+  region name in en-CA and fr-CA. Canada and the United States are pinned first
+  and the rest are not pinned, so the open list reads Canada, United States, a
+  separator, then the other countries alphabetically in the reader's language
+  (`REQ-QB-249`, `REQ-QB-256`). It is optional (`REQ-QB-257`).
+- Province is shown only when Country is Canada, and a reporter who leaves
+  Country blank is never asked Province (`REQ-QB-258`).
+- A migration converts a database seeded before the change by the same rule as
+  an Administrator's edit: an unanswered question gets a new revision
+  (`REQ-QB-250`), and an answered one forks with its key kept (`REQ-QB-251`,
+  `REQ-QB-252` for Province). Old yes/no answers stay on the retired question as
+  given. The migration acts only while Country still reads as seeded, so a re-run
+  or a changed question is left alone (`REQ-QB-253`, `REQ-QB-254`). A question
+  that waited for "answered yes" waits for Canada instead (`REQ-QB-255`).
+
 ## A label has no closing colon
 
 A question's label is stored without a colon, and the interface draws it
@@ -465,4 +486,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   a group's fields. Only a statement's wording labels differ (`REQ-QB-141`).
 - Correcting any other seeded question's wording by migration. Once a database
   is seeded, an Administrator owns its wording, and the attachment question's
-  correction (`REQ-QB-105`) is not a pattern for re-seeding.
+  correction (`REQ-QB-105`) is not a pattern for re-seeding. The Country
+  conversion (`REQ-QB-250`) is the same one-off, not a pattern.
+- Back-filling or rewriting an old yes/no Country answer, and a flag beside a
+  country. The historical import (#566) maps `true` to Canada and `false` to no
+  answer; it is not built here.

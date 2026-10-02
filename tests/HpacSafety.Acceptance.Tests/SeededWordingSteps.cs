@@ -20,7 +20,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     answers it is synthetic.
 /// </remarks>
 [Binding]
-public sealed class SeededWordingSteps
+public sealed partial class SeededWordingSteps
 {
 	private const string PriorMigration = "AddReportFileOriginalFileName";
 	private const string AttachmentKey = "418e72ec_1edc_4e0d_9429_af65ca564ab1";

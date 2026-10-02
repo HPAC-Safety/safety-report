@@ -2025,3 +2025,93 @@ Scenario: The seeded question bank has no label ending in a colon
   Given a clean database
   When the migrations have run
   Then no question revision's English or French label ends in a colon
+
+Rule: The Country question is a pinned country pick list, and Province follows it
+
+@REQ-QB-249
+Scenario: The API sends Country as an optional single-select of every country, with Canada and the United States pinned first
+  When the report form's questions are read from the API
+  Then the Country question is an optional single-select labelled "Country" and "Pays"
+  And its help text is "Country where the occurrence happened." and "Pays où l'évènement a eu lieu."
+  And it offers 249 countries, each coded by its lowercase ISO 3166-1 alpha-2 code
+  And "Canada" and "United States" are pinned first and every other country is not pinned
+  And the French wording of "us" is "États-Unis"
+  And the Province question depends on the Canada choice of the Country question
+
+@REQ-QB-250
+Scenario: The seeded yes/no Country question is revised into the pick list when no answer references it
+  Given a database whose Country question is still the seeded yes/no question
+  And no answer references the Country question
+  When the Country pick list migration runs
+  Then the Country question has a new revision as a single-select with the pick-list wording
+  And the Country question keeps its identifier and offers 249 countries
+  And the Province question has a new revision that depends on the Canada choice and keeps its identifier
+
+@REQ-QB-251
+Scenario: The seeded yes/no Country question is forked into the pick list when a report has answered it
+  Given a database whose Country question is still the seeded yes/no question
+  And a report has answered the Country question yes
+  When the Country pick list migration runs
+  Then the original Country question is stamped as deleted and keeps its yes/no wording and its answer
+  And a new live question with the same key is a single-select offering 249 countries
+  And no answer is created, changed, or deleted
+
+@REQ-QB-252
+Scenario: An answered Province is forked with its choices when it begins to follow Country
+  Given a database whose Country question is still the seeded yes/no question
+  And a report has answered the Province question "Ontario"
+  When the Country pick list migration runs
+  Then the original Province question is stamped as deleted and keeps its answer
+  And a new live Province question with the same key offers the same 13 provinces and depends on the Canada choice
+  And the Province answer still names the choice it named
+
+@REQ-QB-253
+Scenario: The Country pick list migration run a second time changes nothing
+  Given a database whose Country question is still the seeded yes/no question
+  And the Country pick list migration has run
+  When the Country pick list script is run again
+  Then the questions, revisions, and choices are unchanged
+
+@REQ-QB-254
+Scenario: A Country question an Administrator already changed is left alone
+  Given a database whose Country question an Administrator has already reworded
+  When the Country pick list migration runs
+  Then the Country question and its revisions are unchanged
+  And the Province question is still unconditional
+
+@REQ-QB-255
+Scenario: A question that waited for the old yes/no Country answer now waits for Canada
+  Given a database whose Country question is still the seeded yes/no question
+  And another question is shown only when the old Country question is answered yes
+  When the Country pick list migration runs
+  Then that question is shown only when Country is the Canada choice
+
+@REQ-QB-256
+@ui
+Scenario Outline: The Country list reads Canada, United States, a separator, then every other country alphabetically
+  Given the form asks the Country question as the migrations seed it
+  When a reporter using <language> opens the Country question
+  Then its open list reads <list>
+
+Examples:
+  | language | list                                                                                         |
+  | English  | "Canada", "United States", a separator, "Australia", "Brazil", "Mexico", "Zambia"            |
+  | French   | "Canada", "États-Unis", a separator, "Australie", "Brésil", "Mexique", "Zambie"              |
+
+@REQ-QB-257
+@ui
+Scenario: Country is optional
+  Given the form asks the Country question as the migrations seed it
+  When a reporter using English opens the Country question
+  And presses Next without choosing a country
+  Then the form moves on without asking Province
+  And no message says an answer is required
+
+@REQ-QB-258
+@ui
+Scenario: Province is shown only when Country is Canada
+  Given the form asks the Country question as the migrations seed it
+  When a reporter using English chooses "Canada" for Country and presses Next
+  Then the Province question is shown
+  When the reporter goes back and chooses "Mexico" for Country and presses Next
+  Then the form moves on without asking Province

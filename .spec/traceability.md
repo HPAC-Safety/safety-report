@@ -2200,6 +2200,46 @@ A media consent answer naming an earlier wording is refused, so no document is p
 
 Editing a group gives each of its questions a new revision that stays grouped under it — *Reqnroll, Covered*
 
+### REQ-QB-249
+
+The API sends Country as an optional single-select of every country, with Canada and the United States pinned first — *Reqnroll, Covered*
+
+### REQ-QB-250
+
+The seeded yes/no Country question is revised into the pick list when no answer references it — *Reqnroll, Covered*
+
+### REQ-QB-251
+
+The seeded yes/no Country question is forked into the pick list when a report has answered it — *Reqnroll, Covered*
+
+### REQ-QB-252
+
+An answered Province is forked with its choices when it begins to follow Country — *Reqnroll, Covered*
+
+### REQ-QB-253
+
+The Country pick list migration run a second time changes nothing — *Reqnroll, Covered*
+
+### REQ-QB-254
+
+A Country question an Administrator already changed is left alone — *Reqnroll, Covered*
+
+### REQ-QB-255
+
+A question that waited for the old yes/no Country answer now waits for Canada — *Reqnroll, Covered*
+
+### REQ-QB-256
+
+The Country list reads Canada, United States, a separator, then every other country alphabetically — *playwright-bdd, Covered*
+
+### REQ-QB-257
+
+Country is optional — *playwright-bdd, Covered*
+
+### REQ-QB-258
+
+Province is shown only when Country is Canada — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

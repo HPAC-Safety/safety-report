@@ -165,7 +165,8 @@ public sealed partial class QuestionLabelColonSteps
 	[When(@"the migration that trims label colons runs")]
 	public async Task WhenTheMigrationRuns()
 	{
-		await MigrateTo(null);
+		// Stops at the migration under test: a later one adds questions and revisions (#750).
+		await MigrateTo("TrimLabelColons");
 	}
 
 	[Then(@"every label has no trailing colon, and a label that had none is unchanged")]

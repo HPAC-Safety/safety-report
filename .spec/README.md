@@ -27,7 +27,7 @@ detail Gherkin cannot hold, including what not to build.
 | [Domain and lifecycle](features/domain-and-lifecycle/domain-and-lifecycle.feature) | `REQ-DOM` | 28 | 0 | 0 | [README](features/domain-and-lifecycle/README.md) — Supporting detail for the report states, invariants, deletion, and retention scenarios. |
 | [Attachments](features/media/media.feature) | `REQ-MED` | 59 | 0 | 14 | [README](features/media/README.md) — Supporting detail for the image, video, document, quarantine, and derivative scenarios. |
 | [Moderation, authentication, and publication](features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature) | `REQ-MOD` | 200 | 0 | 98 | [README](features/moderation-authentication-and-publication/README.md) — Supporting detail for the member authentication, review, and public feed scenarios. |
-| [Question bank and form](features/question-bank-and-form/question-bank-and-form.feature) | `REQ-QB` | 207 | 0 | 86 | [README](features/question-bank-and-form/README.md) — Supporting detail for the immutable bilingual question and form assembly scenarios. |
+| [Question bank and form](features/question-bank-and-form/question-bank-and-form.feature) | `REQ-QB` | 217 | 0 | 89 | [README](features/question-bank-and-form/README.md) — Supporting detail for the immutable bilingual question and form assembly scenarios. |
 | [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 118 | 0 | 77 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
 | [Typeform question import and export](features/typeform-question-import-export/typeform-question-import-export.feature) | `REQ-TF` | 23 | 0 | 1 | [README](features/typeform-question-import-export/README.md) — Supporting detail for importing and exporting the question bank as Typeform JSON. |
 | [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` | 48 | 0 | 24 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
@@ -51,6 +51,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0186](decisions/ADR-0186-the-country-question-is-a-pinned-country-pick-list-and-province-follows-it.md) | The Country question is a pinned country pick list, and Province follows it | accepted | 2026-10-02 |
 | [0185](decisions/ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md) | A submission answers only current revisions, and the browser drops stale saved answers | accepted | 2026-09-30 |
 | [0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md) | A generated map binds every claim to its step definitions | accepted | 2026-09-30 |
 | [0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md) | The specification lives in a .spec directory | accepted | 2026-09-30 |

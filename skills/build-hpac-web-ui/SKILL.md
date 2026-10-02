@@ -52,6 +52,51 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   - submit one JSON request naming the upload IDs; mark each upload it
     refuses as expired or invalid on its own row, and keep everything else.
 
+## Components: logic and markup
+([ADR-0188](../../.spec/decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md))
+
+- **`Foo.tsx` is logic.** It exports `useFoo(props)`, the view model (state,
+  effects, refs, derived values, handlers, fetching), and `Foo`, which only
+  renders `<FooView {...props} {...useFoo(props)} />`. Import sites never
+  change. A markup-only component gets the pass-through with no `useFoo`.
+- **`Foo.view.tsx` is markup.** It exports `FooView` and `FooViewProps`. It
+  calls no hook but `useLocale`, imports nothing from `api/`, and uses no
+  storage, `fetch`, timer or module-level mutable state. A DOM ref arrives as a
+  prop.
+- A stateful private sub-component gets its own pair; a stateless one moves into
+  the view. A pure helper goes into a camelCase `.ts` file. A provider keeps its
+  value logic in `Foo.tsx` and its view renders `Ctx.Provider`; a class error
+  boundary keeps the class in `.tsx` and moves its fallback markup to the view.
+  `main.tsx` and `routes.tsx` are exempt.
+- **The DOM stays identical** (elements, attributes, ids, `data-*`, classes,
+  text, order). No `tests/e2e/**` file changes for a split; if one would, the
+  split is wrong.
+- `node tools/check-component-split.mjs` enforces the view rules and the test
+  boundary below. Its strict mode (every component has a view) is a constant in
+  the script, off until the last pull request of the split.
+
+### Unit tests for logic
+
+- **Vitest, Testing Library and jsdom**; `npm --prefix src/web run test`,
+  `test:coverage`, `typecheck`. Tests sit beside the code as `Foo.test.tsx`
+  (`foo.test.ts` for a helper); titles are prose.
+- Logic is held to **100% line, branch, function and statement coverage**;
+  Playwright covers views, and `*.view.tsx` is excluded from the report.
+- **The scope needs no config edit.** `tools/web-coverage-scope.mjs` puts in
+  scope every `Foo.tsx` with a sibling `Foo.view.tsx`, and every `.ts` helper
+  with a colocated test. Split a component and test it; the threshold follows.
+- Test with Testing Library by role and label, as a user would. `renderHook` a
+  view model that has no markup of its own.
+
+### Tests are never part of a release
+
+- The test packages stay in `devDependencies`. No file that is not a test
+  imports a `*.test.*` file, `vitest`, `@vitest/*` or `@testing-library/*`
+  (`check-component-split`).
+- `node tools/check-web-bundle.mjs src/web/dist` fails if the built bundle
+  carries a test marker. The `web` job and the release build run it. The release
+  ships the built `dist` only, never `src/`.
+
 ## Markdown and label colons
 
 - **One renderer.** `components/Markdown.tsx` is the only place Markdown becomes
@@ -93,6 +138,8 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
     ([ADR-0053](../../.spec/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md));
   - a server-side test when it touches API behavior
     ([ADR-0045](../../.spec/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
+- Logic you add or move is unit-tested as above; a unit test adds to the
+  Playwright test and replaces neither.
 - Plain `.spec.ts` files outside `tests/e2e/steps/` are broad smoke coverage
   only, never a substitute for a scenario.
 

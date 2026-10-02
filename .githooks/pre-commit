@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 #
-# Four genuinely independent checks, each gated on the kind of file actually
+# Five genuinely independent checks, each gated on the kind of file actually
 # staged so an unrelated commit pays nothing. This file is the tracked
 # template; ./init-dev.sh copies it into the real hooks directory (see that
 # file for why it's a copy rather than core.hooksPath) — edit this copy, not
@@ -58,6 +58,11 @@
 #    that every directory under src/ holding a tracked file has a row, and
 #    every row names one (ADR-0143). It reads the index, so it judges exactly
 #    what this commit holds. CI's "docs" job re-checks as the backstop.
+#
+# 5. Component split: when a file under src/web/src is staged, or the guard
+#    itself, tools/check-component-split.mjs checks that every *.view.tsx is
+#    markup only and that no shipped file imports test code (ADR-0188). It
+#    reads the working tree, as CI's "web" job does.
 
 set -u
 
@@ -168,6 +173,15 @@ if git diff --cached --name-only --diff-filter=AD | grep -q '^src/' \
 		status=1
 	else
 		node tools/check-inventories.mjs || status=1
+	fi
+fi
+
+if staged | grep -qE '^(src/web/src/|tools/check-component-split\.mjs$)'; then
+	if ! command -v node >/dev/null 2>&1; then
+		echo "pre-commit: node is not on PATH, cannot check the component split — see README.md" >&2
+		status=1
+	else
+		node tools/check-component-split.mjs || status=1
 	fi
 fi
 

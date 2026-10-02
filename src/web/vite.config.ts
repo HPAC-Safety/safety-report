@@ -1,7 +1,8 @@
 import { fileURLToPath } from "node:url"
-import { defineConfig } from "vite"
+import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
+import { coverageScope } from "../../tools/web-coverage-scope.mjs"
 
 // locales/ lives at the repository root, not under src/web (see
 // tools/check-locales.mjs and .github/workflows/i18n-translate.yml).
@@ -12,6 +13,25 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url))
 
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
+	test: {
+		environment: "jsdom",
+		include: ["src/**/*.test.{ts,tsx}"],
+		coverage: {
+			provider: "v8",
+			// What is held to 100% is decided by the files on disk, not a list
+			// edited here (ADR-0188): a Foo.tsx with a sibling Foo.view.tsx, and
+			// a helper with a colocated test. A view, main.tsx, routes.tsx, a
+			// test and a declaration file are never in scope. A file in scope
+			// that no test loads still counts, as 0%.
+			include: coverageScope(fileURLToPath(new URL(".", import.meta.url))),
+			exclude: ["**/*.view.tsx", "src/main.tsx", "src/routes.tsx", "**/*.test.*", "**/*.d.ts"],
+			reporter: ["text", "lcov"],
+			// tools/ci-local.sh and the CI `test` job read the lcov from here,
+			// the path the coverage job merges (ci.yml "Merge into one report").
+			reportsDirectory: fileURLToPath(new URL("../../artifacts/coverage/web", import.meta.url)),
+			thresholds: { lines: 100, branches: 100, functions: 100, statements: 100, perFile: true },
+		},
+	},
 	server: {
 		host: true,
 		// Named hosts the dev server will answer to, beyond localhost. Vite

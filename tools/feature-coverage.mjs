@@ -77,7 +77,9 @@ export function parseExemption(body) {
 	}
 }
 
-const isTest = (path) => path.startsWith('tests/')
+// A web unit test sits beside the code it tests (ADR-0188), so it is a test
+// even though it lives under src/.
+const isTest = (path) => path.startsWith('tests/') || /^src\/web\/.*\.test\.tsx?$/.test(path)
 const isMarkdown = (path) => path.endsWith('.md') || path.endsWith('.mdc')
 const isDependencyManifest = (path) => DEPENDENCY_MANIFESTS.some((pattern) => pattern.test(path))
 

@@ -140,6 +140,23 @@ describe('collectSourceFiles', () => {
 			assert.equal(files.length, 3)
 			assert.ok(files.every((file) => file.endsWith('.ts') || file.endsWith('.tsx')))
 		})
+
+		it('when it walks the tree then it skips unit tests, which hold fixtures and assert on copy', () => {
+			// Given
+			const dir = sourceTree({
+				'App.tsx': '',
+				'App.test.tsx': '<p>Hello World</p>',
+				'lib/sortChoices.ts': '',
+				'lib/sortChoices.test.ts': '',
+			})
+
+			// When
+			const files = collectSourceFiles(dir)
+
+			// Then
+			assert.equal(files.length, 2)
+			assert.ok(files.every((file) => !file.includes('.test.')))
+		})
 	})
 })
 

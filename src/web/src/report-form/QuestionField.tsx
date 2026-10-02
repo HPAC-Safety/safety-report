@@ -1,19 +1,20 @@
+import type { ChangeEvent } from "react"
+
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
-import { AttachmentField, type Attachment } from "./AttachmentField"
-import { DateField } from "./DateField"
+import type { AttachmentFieldProps, Attachment } from "./AttachmentField"
+import type { DateFieldProps } from "./DateField"
 import type { DraftAnswer } from "./draft"
-import { EmailField } from "./EmailField"
-import { MultiSelectPicker } from "./MultiSelectPicker"
-import { PhoneField } from "./PhoneField"
-import { SingleSelectField } from "./SingleSelectField"
-import { TypeAheadField } from "./TypeAheadField"
+import type { EmailFieldProps } from "./EmailField"
+import type { MultiSelectPickerProps } from "./MultiSelectPicker"
+import type { PhoneFieldProps } from "./PhoneField"
+import { QuestionFieldView } from "./QuestionField.view"
+import type { SingleSelectFieldProps } from "./SingleSelectField"
+import type { TypeAheadFieldProps } from "./TypeAheadField"
 import { optionFor, optionGroups, optionLabel, questionHelp, questionLabel, questionPlaceholder, questionPrompt } from "./steps"
 
 const fieldClassName =
 	"mt-1 w-full rounded border border-rule bg-surface px-3 py-2 font-sans text-ink placeholder:text-ink-muted"
-
-const labelClassName = "block font-sans text-sm font-medium text-ink"
 
 const INPUT_TYPE_BY_QUESTION_TYPE: Record<string, string> = {
 	number: "number",
@@ -44,8 +45,33 @@ export interface QuestionFieldProps {
 	announcement?: string
 }
 
-/** One answerable question, in whichever shape its type needs. Not used for `statement`/`group`, which collect no answer. */
-export function QuestionField({
+/** How the question is drawn: the control its type needs, and the props that control takes. */
+export type QuestionFieldControl =
+	| { kind: "boolean"; name: string; describedBy: string | undefined; value: string; onPick: (token: "yes" | "no") => void }
+	| { kind: "typeAhead"; props: TypeAheadFieldProps }
+	| { kind: "singleSelect"; props: SingleSelectFieldProps }
+	| { kind: "multiSelect"; props: Omit<MultiSelectPickerProps, "label"> }
+	| { kind: "file"; props: AttachmentFieldProps }
+	| { kind: "phone"; props: PhoneFieldProps }
+	| { kind: "email"; props: EmailFieldProps }
+	| { kind: "date"; props: DateFieldProps }
+	| {
+			kind: "text"
+			multiline: boolean
+			id: string
+			type: string
+			className: string
+			value: string
+			describedBy: string | undefined
+			placeholder: string | undefined
+			onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+	  }
+
+/**
+ * The view model of one answerable question, in whichever shape its type
+ * needs. Not used for `statement`/`group`, which collect no answer.
+ */
+export function useQuestionField({
 	question,
 	locale,
 	answer,
@@ -58,7 +84,6 @@ export function QuestionField({
 	t,
 	disabled = false,
 	note = null,
-	announcement,
 }: QuestionFieldProps) {
 	const fieldId = `question-${question.revisionId}`
 	const errorId = `${fieldId}-error`
@@ -66,263 +91,158 @@ export function QuestionField({
 	const noteId = `${fieldId}-note`
 	const help = questionHelp(question, locale)
 	const describedBy = [note ? noteId : null, help ? helpId : null, errorText ? errorId : null].filter(Boolean).join(" ") || undefined
+	const placeholder = questionPlaceholder(question, locale) ?? undefined
+	const answerText = answer?.kind === "value" ? answer.value : ""
+	const onValue = (value: string) => onChange(value ? { kind: "value", value } : undefined)
 
-	const label = (
-		<label className={labelClassName} htmlFor={question.type === "yes_no" ? undefined : fieldId}>
-			{questionPrompt(question, locale)}
-			{question.isRequired && (
-				<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
-			)}
-		</label>
-	)
+	const control = ((): QuestionFieldControl => {
+		switch (question.type) {
+			case "yes_no":
+			case "checkbox":
+				return { kind: "boolean", name: fieldId, describedBy, value: answerText, onPick: (token) => onChange({ kind: "value", value: token }) }
 
-	const errorNode = errorText ? (
-		<p id={errorId} role="alert" className="mt-1 font-sans text-sm text-brand-700">
-			{errorText}
-		</p>
-	) : null
-
-	// The live region is in the page before its text changes, so the change is
-	// announced when the parent is answered and the field opens.
-	const noteNode = (
-		<>
-			{note ? (
-				<p id={noteId} data-testid="question-note" className="mt-1 font-sans text-sm text-ink-muted">
-					{note}
-				</p>
-			) : null}
-			{announcement !== undefined && (
-				<p role="status" className="sr-only" data-testid="question-announcement">
-					{announcement}
-				</p>
-			)}
-		</>
-	)
-
-	const helpNode = help ? (
-		<p id={helpId} className="mt-1 font-sans text-xs text-ink-muted">
-			{help}
-		</p>
-	) : null
-
-	if (question.type === "yes_no" || question.type === "checkbox") {
-		const value = answer?.kind === "value" ? answer.value : ""
-		return (
-			<fieldset className="mb-6" aria-describedby={describedBy}>
-				<legend className={labelClassName}>
-					{questionPrompt(question, locale)}
-					{question.isRequired && (
-						<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
-					)}
-				</legend>
-				<div className="mt-2 flex gap-4">
-					{(["yes", "no"] as const).map((token) => (
-						<label key={token} className="touch-target inline-flex items-center gap-2 font-sans text-ink">
-							<input
-								type="radio"
-								name={fieldId}
-								checked={value === token}
-								onChange={() => onChange({ kind: "value", value: token })}
-							/>
-							{token === "yes" ? t("report.booleanYes") : t("report.booleanNo")}
-						</label>
-					))}
-				</div>
-				{helpNode}
-				{errorNode}
-			</fieldset>
-		)
-	}
-
-	if (question.type === "single_select" || question.type === "autocomplete") {
-		const value = answer?.kind === "value" ? answer.value : ""
-		// A type-ahead choice picked from its list is held by its ID, and shown in the reader's language.
-		const picked = answer?.kind === "value" && answer.choice ? question.options.find((option) => option.id === answer.choice) : undefined
-		const groups = optionGroups(question, locale)
-		return (
-			<div className="mb-6">
-				{label}
-				{question.type === "autocomplete" ? (
-					<TypeAheadField
-						fieldId={fieldId}
-						label={questionLabel(question, locale)}
-						groups={groups.map((group) =>
+			case "autocomplete": {
+				// A type-ahead choice picked from its list is held by its ID, and shown in the reader's language.
+				const picked = answer?.kind === "value" && answer.choice ? question.options.find((option) => option.id === answer.choice) : undefined
+				return {
+					kind: "typeAhead",
+					props: {
+						fieldId,
+						label: questionLabel(question, locale),
+						groups: optionGroups(question, locale).map((group) =>
 							group.map((option) => ({
 								key: option.id,
 								label: optionLabel(option, locale),
 								lang: option.onlyIn ?? undefined,
 								aliases: option.aliases,
 							})),
-						)}
-						value={picked ? optionLabel(picked, locale) : value}
-						selectedKey={picked?.id}
-						placeholder={questionPlaceholder(question, locale) ?? undefined}
-						describedBy={describedBy}
-						locale={locale}
-						onChange={(typed, choice) =>
-							onChange(typed ? { kind: "value", value: typed, ...(choice ? { choice } : {}) } : undefined)
-						}
-						t={t}
-						disabled={disabled}
-					/>
-				) : (
-					<SingleSelectField
-						fieldId={fieldId}
-						label={questionLabel(question, locale)}
-						groups={groups.map((group) =>
+						),
+						value: picked ? optionLabel(picked, locale) : answerText,
+						selectedKey: picked?.id,
+						placeholder,
+						describedBy,
+						locale,
+						onChange: (typed, choice) =>
+							onChange(typed ? { kind: "value", value: typed, ...(choice ? { choice } : {}) } : undefined),
+						t,
+						disabled,
+					},
+				}
+			}
+
+			case "single_select":
+				return {
+					kind: "singleSelect",
+					props: {
+						fieldId,
+						label: questionLabel(question, locale),
+						groups: optionGroups(question, locale).map((group) =>
 							group.map((option) => ({ key: option.id, label: optionLabel(option, locale), lang: option.onlyIn ?? undefined })),
-						)}
+						),
 						// A draft saved before answers named choices holds a label; it still finds its choice.
-						selectedKey={value ? optionFor(question, value)?.id : undefined}
-						placeholder={t("report.select.placeholder")}
-						describedBy={describedBy}
-						locale={locale}
-						onChange={(choice) => onChange(choice ? { kind: "value", value: choice } : undefined)}
-						disabled={disabled}
-					/>
-				)}
-				{noteNode}
-				{helpNode}
-				{errorNode}
-			</div>
-		)
-	}
+						selectedKey: answerText ? optionFor(question, answerText)?.id : undefined,
+						placeholder: t("report.select.placeholder"),
+						describedBy,
+						locale,
+						onChange: (choice) => onChange(choice ? { kind: "value", value: choice } : undefined),
+						disabled,
+					},
+				}
 
-	if (question.type === "multi_select") {
-		// The chosen choices' IDs; a draft saved before answers named choices holds labels.
-		const values = (answer?.kind === "options" ? answer.values : []).map((stored) => optionFor(question, stored)?.id ?? stored)
-		const toggle = (id: string) => {
-			const next = values.includes(id) ? values.filter((entry) => entry !== id) : [...values, id]
-			onChange(next.length > 0 ? { kind: "options", values: next } : undefined)
+			case "multi_select": {
+				// The chosen choices' IDs; a draft saved before answers named choices holds labels.
+				const values = (answer?.kind === "options" ? answer.values : []).map((stored) => optionFor(question, stored)?.id ?? stored)
+				return {
+					kind: "multiSelect",
+					props: {
+						fieldId,
+						groups: optionGroups(question, locale).map((group) =>
+							group.map((option) => ({ key: option.id, label: optionLabel(option, locale) })),
+						),
+						values,
+						placeholder: t("report.multiSelect.placeholder"),
+						describedBy,
+						onToggle: (id) => {
+							const next = values.includes(id) ? values.filter((entry) => entry !== id) : [...values, id]
+							onChange(next.length > 0 ? { kind: "options", values: next } : undefined)
+						},
+					},
+				}
+			}
+
+			case "file_upload":
+				return {
+					kind: "file",
+					props: {
+						fieldId,
+						describedBy,
+						attachments,
+						onAttachmentsChange,
+						onBusyChange: onUploadingChange,
+						remaining: attachmentRoom,
+						t,
+					},
+				}
+
+			case "phone":
+				return { kind: "phone", props: { fieldId, describedBy, answer, onChange, locale, t } }
+
+			case "email":
+				return {
+					kind: "email",
+					props: { fieldId, className: fieldClassName, describedBy, placeholder, value: answerText, onChange: onValue, t },
+				}
+
+			case "date":
+				return {
+					kind: "date",
+					props: {
+						fieldId,
+						className: fieldClassName,
+						describedBy,
+						placeholder,
+						value: answerText,
+						allowFutureDates: question.allowFutureDates,
+						locale,
+						onChange: onValue,
+						t,
+					},
+				}
+
+			default:
+				// Every remaining type stores one plain string: short/long text, number,
+				// time (ADR-0072).
+				return {
+					kind: "text",
+					multiline: question.type === "long_text",
+					id: fieldId,
+					type: INPUT_TYPE_BY_QUESTION_TYPE[question.type] ?? "text",
+					className: fieldClassName,
+					value: answerText,
+					describedBy,
+					placeholder,
+					onChange: (event) => onValue(event.target.value),
+				}
 		}
-		return (
-			<div className="mb-6">
-				<MultiSelectPicker
-					fieldId={fieldId}
-					label={
-						<>
-							{questionPrompt(question, locale)}
-							{question.isRequired && (
-								<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
-							)}
-						</>
-					}
-					groups={optionGroups(question, locale).map((group) =>
-						group.map((option) => ({ key: option.id, label: optionLabel(option, locale) })),
-					)}
-					values={values}
-					placeholder={t("report.multiSelect.placeholder")}
-					describedBy={describedBy}
-					onToggle={toggle}
-				/>
-				{helpNode}
-				{errorNode}
-			</div>
-		)
+	})()
+
+	return {
+		fieldId,
+		errorId,
+		helpId,
+		noteId,
+		help,
+		note,
+		prompt: questionPrompt(question, locale),
+		// A yes/no question's legend names the group; every other label names its field.
+		labelFor: question.type === "yes_no" ? undefined : fieldId,
+		control,
 	}
+}
 
-	if (question.type === "file_upload") {
-		return (
-			<div className="mb-6">
-				{label}
-				<AttachmentField
-					fieldId={fieldId}
-					describedBy={describedBy}
-					attachments={attachments}
-					onAttachmentsChange={onAttachmentsChange}
-					onBusyChange={onUploadingChange}
-					remaining={attachmentRoom}
-					t={t}
-				/>
-				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.keptWithReport")}</p>
-				{helpNode}
-				{errorNode}
-			</div>
-		)
-	}
+export type QuestionFieldModel = ReturnType<typeof useQuestionField>
 
-	if (question.type === "phone") {
-		return (
-			<div className="mb-6">
-				{label}
-				<PhoneField fieldId={fieldId} describedBy={describedBy} answer={answer} onChange={onChange} locale={locale} t={t} />
-				{helpNode}
-				{errorNode}
-			</div>
-		)
-	}
-
-	if (question.type === "email") {
-		return (
-			<div className="mb-6">
-				{label}
-				<EmailField
-					fieldId={fieldId}
-					className={fieldClassName}
-					describedBy={describedBy}
-					placeholder={questionPlaceholder(question, locale) ?? undefined}
-					value={answer?.kind === "value" ? answer.value : ""}
-					onChange={(value) => onChange(value ? { kind: "value", value } : undefined)}
-					t={t}
-				/>
-				{helpNode}
-				{errorNode}
-			</div>
-		)
-	}
-
-	if (question.type === "date") {
-		return (
-			<div className="mb-6">
-				{label}
-				<DateField
-					fieldId={fieldId}
-					className={fieldClassName}
-					describedBy={describedBy}
-					placeholder={questionPlaceholder(question, locale) ?? undefined}
-					value={answer?.kind === "value" ? answer.value : ""}
-					allowFutureDates={question.allowFutureDates}
-					locale={locale}
-					onChange={(value) => onChange(value ? { kind: "value", value } : undefined)}
-					t={t}
-				/>
-				{helpNode}
-				{errorNode}
-			</div>
-		)
-	}
-
-	// Every remaining type stores one plain string: short/long text, number,
-	// time (ADR-0072).
-	const value = answer?.kind === "value" ? answer.value : ""
-	const inputType = INPUT_TYPE_BY_QUESTION_TYPE[question.type] ?? "text"
-
-	return (
-		<div className="mb-6">
-			{label}
-			{question.type === "long_text" ? (
-				<textarea
-					id={fieldId}
-					className={fieldClassName}
-					rows={5}
-					value={value}
-					aria-describedby={describedBy}
-					placeholder={questionPlaceholder(question, locale) ?? undefined}
-					onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
-				/>
-			) : (
-				<input
-					id={fieldId}
-					type={inputType}
-					className={fieldClassName}
-					value={value}
-					aria-describedby={describedBy}
-					placeholder={questionPlaceholder(question, locale) ?? undefined}
-					onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
-				/>
-			)}
-			{helpNode}
-			{errorNode}
-		</div>
-	)
+/** One answerable question, in whichever shape its type needs. Not used for `statement`/`group`, which collect no answer. */
+export function QuestionField(props: QuestionFieldProps) {
+	return <QuestionFieldView {...props} {...useQuestionField(props)} />
 }

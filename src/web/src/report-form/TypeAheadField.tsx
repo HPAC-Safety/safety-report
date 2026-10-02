@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
-import { ChoiceOptions, choiceListClassName, choiceRowClassName, type ListChoice } from "./ChoiceList"
+import { useEffect, useRef, useState, type ChangeEvent, type FocusEvent, type KeyboardEvent } from "react"
+import type { ListChoice } from "./ChoiceList"
+import { TypeAheadFieldView } from "./TypeAheadField.view"
 
 /** A type-ahead shows no choices below this many typed characters, trimmed (ADR-0140, ADR-0152). */
 export const TYPE_AHEAD_THRESHOLD = 3
@@ -52,26 +53,23 @@ function folded(text: string, locale: string): string {
 }
 
 /**
- * A type-ahead question as a picker the form draws (REQ-QB-159, ADR-0140): a
- * plain text field, with no caret, and a list directly beneath it that typing
- * narrows. The WAI-ARIA 1.2 combobox pattern with list autocomplete: focus
- * stays in the field, and the arrow keys move the active option. Any text may
- * be typed; a value the list does not offer is a reporter-added one
- * (ADR-0129).
+ * The view model of a type-ahead question as a picker the form draws
+ * (REQ-QB-159, ADR-0140): a plain text field, with no caret, and a list
+ * directly beneath it that typing narrows. The WAI-ARIA 1.2 combobox pattern
+ * with list autocomplete: focus stays in the field, and the arrow keys move the
+ * active option. Any text may be typed; a value the list does not offer is a
+ * reporter-added one (ADR-0129).
  *
  * Below three typed characters, trimmed, the open list shows a hint instead
  * of choices, so the field reads as a place to type rather than a dropdown to
  * pick from (ADR-0152). No option is active there, so Up, Down, and Enter do
  * nothing.
  */
-export function TypeAheadField({
+export function useTypeAheadField({
 	fieldId,
-	label,
 	groups,
 	value,
 	selectedKey,
-	placeholder,
-	describedBy,
 	locale,
 	onChange,
 	t,
@@ -203,77 +201,49 @@ export function TypeAheadField({
 		}
 	}
 
-	return (
-		<div
-			ref={containerRef}
-			className="relative mt-1"
-			onBlur={(event) => {
-				// Tabbing out closes the list; a pointer press outside is handled above.
-				const next = event.relatedTarget as Node | null
-				if (next && !containerRef.current?.contains(next)) close()
-			}}
-		>
-			<input
-				ref={inputRef}
-				id={fieldId}
-				type="text"
-				role="combobox"
-				autoComplete="off"
-				aria-autocomplete="list"
-				aria-expanded={expanded}
-				aria-controls={listId}
-				aria-activedescendant={activeId}
-				aria-describedby={describedBy}
-				className="w-full rounded border border-rule bg-surface py-2 px-3 font-sans text-ink placeholder:text-ink-muted disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted"
-				value={value}
-				placeholder={placeholder}
-				disabled={disabled}
-				onClick={() => {
-					if (!open) openAll()
-				}}
-				onChange={(event) => {
-					onChange(event.target.value)
-					setFilter(event.target.value)
-					setOpen(true)
-					setActive(-1)
-				}}
-				onKeyDown={onKeyDown}
-			/>
-			{/* The listbox is always in the page so aria-controls names it; it is hidden while closed. */}
-			<ul id={listId} role="listbox" aria-label={label} hidden={!expanded} className={choiceListClassName}>
-				{belowThreshold ? (
-					// Presentational, like ChoiceSeparator: not an option, so Up, Down, and Enter pick nothing.
-					<li role="presentation" data-hint="" className={`${choiceRowClassName} cursor-default text-ink-muted`}>
-						{t("report.typeAhead.typeToSeeChoices")}
-					</li>
-				) : (
-					<ChoiceOptions
-						groups={shown}
-						optionId={optionId}
-						activeKey={activeChoice?.key}
-						// The highlighted choice is the selected one: the combobox with list autocomplete.
-						isSelected={(choice) => choice.key === activeChoice?.key}
-						onPoint={(choice) => setActive(flat.findIndex((entry) => entry.key === choice.key))}
-						onPick={choose}
-					/>
-				)}
-			</ul>
-			{/*
-			 * Always in the page, so a change is announced through this polite live
-			 * status the moment it happens. The hint is already visible as the
-			 * list's own row, so this copy stays screen-reader only; "no match"
-			 * has no visible row of its own, so it also draws the floating box.
-			 */}
-			<p
-				role="status"
-				className={
-					noMatch
-						? "absolute left-0 right-0 top-full z-40 mt-1 rounded border border-rule bg-surface px-3 py-2 font-sans text-sm text-ink-muted shadow-lg"
-						: "sr-only"
-				}
-			>
-				{noMatch ? t("report.typeAhead.noMatches") : expanded && belowThreshold ? t("report.typeAhead.typeToSeeChoices") : ""}
-			</p>
-		</div>
-	)
+	function onBlur(event: FocusEvent<HTMLDivElement>) {
+		// Tabbing out closes the list; a pointer press outside is handled above.
+		const next = event.relatedTarget as Node | null
+		if (next && !containerRef.current?.contains(next)) close()
+	}
+
+	function onClick() {
+		if (!open) openAll()
+	}
+
+	function onInputChange(event: ChangeEvent<HTMLInputElement>) {
+		onChange(event.target.value)
+		setFilter(event.target.value)
+		setOpen(true)
+		setActive(-1)
+	}
+
+	return {
+		disabled,
+		containerRef,
+		inputRef,
+		listId,
+		optionId,
+		expanded,
+		belowThreshold,
+		noMatch,
+		shown,
+		activeId,
+		activeKey: activeChoice?.key,
+		onBlur,
+		onClick,
+		onInputChange,
+		onKeyDown,
+		// The highlighted choice is the selected one: the combobox with list autocomplete.
+		isSelected: (choice: ListChoice) => choice.key === activeChoice?.key,
+		onPoint: (choice: ListChoice) => setActive(flat.findIndex((entry) => entry.key === choice.key)),
+		onPick: choose,
+	}
+}
+
+export type TypeAheadFieldModel = ReturnType<typeof useTypeAheadField>
+
+/** A type-ahead question as a picker the form draws; the logic is `useTypeAheadField`. */
+export function TypeAheadField(props: TypeAheadFieldProps) {
+	return <TypeAheadFieldView {...props} {...useTypeAheadField(props)} />
 }

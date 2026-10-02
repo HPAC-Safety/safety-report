@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react"
-import { Caret, ChoiceSeparator, choiceListClassName, choiceRowClassName } from "./ChoiceList"
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react"
+import { MultiSelectPickerView } from "./MultiSelectPicker.view"
 
 export interface MultiSelectPickerProps {
 	fieldId: string
@@ -23,22 +23,17 @@ export interface MultiSelectPickerProps {
 }
 
 /**
- * A "Pick several" question as a picker dropdown (issue no. 343, REQ-SUB-034):
- * one closed trigger naming what is chosen, opening the type-ahead's list with a
- * checkbox on each row (REQ-QB-211, ADR-0150), which stays open while several
- * are checked. Escape closes it and returns focus to
+ * The view model of a "Pick several" question as a picker dropdown (issue no.
+ * 343, REQ-SUB-034): one closed trigger naming what is chosen, opening the
+ * type-ahead's list with a checkbox on each row (REQ-QB-211, ADR-0150), which
+ * stays open while several are checked. Escape closes it and returns focus to
  * the trigger; pressing outside or tabbing away closes it too.
  */
-export function MultiSelectPicker({
+export function useMultiSelectPicker({
 	fieldId,
-	label,
 	groups,
 	values,
-	placeholder,
-	describedBy,
-	onToggle,
 	locked = [],
-	lockedReason,
 	invalid = false,
 }: MultiSelectPickerProps) {
 	const [open, setOpen] = useState(false)
@@ -78,68 +73,31 @@ export function MultiSelectPicker({
 		.filter((option) => values.includes(option.key))
 		.map((option) => option.label)
 
-	return (
-		<div
-			ref={containerRef}
-			onBlur={(event) => {
-				// Tabbing out closes the list; a pointer press outside is handled above.
-				const next = event.relatedTarget as Node | null
-				if (next && !containerRef.current?.contains(next)) setOpen(false)
-			}}
-		>
-			<span id={labelId} className="block font-sans text-sm font-medium text-ink">
-				{label}
-			</span>
-			<div className="relative">
-				<button
-					ref={triggerRef}
-					id={fieldId}
-					type="button"
-					aria-expanded={open}
-					aria-controls={panelId}
-					aria-labelledby={`${labelId} ${summaryId}`}
-					aria-describedby={describedBy}
-					aria-invalid={invalid || undefined}
-					onClick={() => setOpen((value) => !value)}
-					className="touch-target mt-1 flex w-full items-center justify-between gap-2 rounded border border-rule bg-surface px-3 py-2 text-left font-sans text-ink"
-				>
-					<span id={summaryId} className={chosen.length > 0 ? "truncate" : "truncate text-ink-muted"}>
-						{chosen.length > 0 ? chosen.join(", ") : placeholder}
-					</span>
-					<Caret />
-				</button>
-				{open && (
-					<ul id={panelId} role="group" aria-labelledby={labelId} className={choiceListClassName}>
-						{groups.map((group, index) => (
-							<Fragment key={group[0].key}>
-								{index > 0 && <ChoiceSeparator />}
-								{group.map((option) => (
-									<li key={option.key} role="presentation">
-										{/* The type-ahead's row and highlight (ChoiceList), on the row pointed at or holding keyboard focus. */}
-										<label
-											className={`${choiceRowClassName} gap-2 hover:bg-surface-4 hover:shadow-[inset_4px_0_0_var(--color-focus)] has-[:focus-visible]:bg-surface-4 has-[:focus-visible]:shadow-[inset_4px_0_0_var(--color-focus)]`}
-										>
-											<input
-												type="checkbox"
-												checked={values.includes(option.key)}
-												disabled={locked.includes(option.key)}
-												aria-describedby={locked.includes(option.key) && lockedReason ? lockedReasonId : undefined}
-												onChange={() => onToggle(option.key)}
-											/>
-											{option.label}
-										</label>
-									</li>
-								))}
-							</Fragment>
-						))}
-					</ul>
-				)}
-				{lockedReason && (
-					<span id={lockedReasonId} className="sr-only">
-						{lockedReason}
-					</span>
-				)}
-			</div>
-		</div>
-	)
+	function onBlur(event: FocusEvent<HTMLDivElement>) {
+		// Tabbing out closes the list; a pointer press outside is handled above.
+		const next = event.relatedTarget as Node | null
+		if (next && !containerRef.current?.contains(next)) setOpen(false)
+	}
+
+	return {
+		open,
+		locked,
+		invalid,
+		containerRef,
+		triggerRef,
+		labelId,
+		summaryId,
+		panelId,
+		lockedReasonId,
+		chosen,
+		onBlur,
+		onToggleOpen: () => setOpen((value) => !value),
+	}
+}
+
+export type MultiSelectPickerModel = ReturnType<typeof useMultiSelectPicker>
+
+/** A "Pick several" question as a picker dropdown; the logic is `useMultiSelectPicker`. */
+export function MultiSelectPicker(props: MultiSelectPickerProps) {
+	return <MultiSelectPickerView {...props} {...useMultiSelectPicker(props)} />
 }

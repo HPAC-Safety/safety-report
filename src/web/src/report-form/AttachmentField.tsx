@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 
-import { AttachmentDropZone } from "../components/AttachmentDropZone"
 import {
 	ACCEPTED_FILE_TYPES,
 	MAX_ATTACHMENTS,
@@ -11,6 +10,7 @@ import {
 	uploadAttachment,
 	type UploadRejectionReason,
 } from "../api/uploads"
+import { AttachmentFieldView } from "./AttachmentField.view"
 
 /**
  * One file the reporter attached, as the form keeps it once its upload has
@@ -55,18 +55,17 @@ let nextKey = 0
 export { carriesFiles } from "../components/AttachmentDropZone"
 
 /**
- * A file-upload question's attachments: chosen from a drop zone — dropped on
- * it, or picked through its one large button — and uploaded the moment they
- * are chosen,
- * each with its own indeterminate activity indicator and Cancel control while it
- * uploads, and a Remove control once it has (ADR-0096). Each goes straight to
- * storage through the pre-signed PUT the API mints for it (ADR-0126). Everything about an
- * upload in progress is encapsulated here — the form only learns which files
- * finished and whether anything is still in flight.
+ * The view model of a file-upload question's attachments: chosen from a drop
+ * zone — dropped on it, or picked through its one large button — and uploaded
+ * the moment they are chosen, each with its own indeterminate activity
+ * indicator and Cancel control while it uploads, and a Remove control once it
+ * has (ADR-0096). Each goes straight to storage through the pre-signed PUT the
+ * API mints for it (ADR-0126). Everything about an upload in progress is
+ * encapsulated here — the form only learns which files finished and whether
+ * anything is still in flight.
  */
-export function AttachmentField({
+export function useAttachmentField({
 	fieldId,
-	describedBy,
 	attachments,
 	onAttachmentsChange,
 	onBusyChange,
@@ -157,74 +156,29 @@ export function AttachmentField({
 
 	const guidanceId = `${fieldId}-guidance`
 
-	return (
-		<>
-			<AttachmentDropZone
-				fieldId={fieldId}
-				describedBy={describedBy}
-				guidanceId={guidanceId}
-				guidance={t("report.attachments.guidance", { count: MAX_ATTACHMENTS, ...SIZE_LIMIT_PARAMS })}
-				promptText={t("report.attachments.dropPrompt")}
-				accept={ACCEPTED_FILE_TYPES}
-				onFiles={choose}
-			/>
+	/** What a row says beneath its size when its upload did not stand: it expired, or the file was refused. */
+	function rowMessage(row: Attachment): string {
+		return row.status === "expired"
+			? t("report.attachments.expired")
+			: t(`report.attachments.rejected.${row.reason ?? "unknown"}`, SIZE_LIMIT_PARAMS)
+	}
 
-			{hasRows && (
-				<ul className="mt-3 divide-y divide-rule rounded border border-rule" aria-label={t("report.attachments.listLabel")}>
-					{attachments.map((row) => (
-						<li key={row.key} className="flex items-center justify-between gap-3 px-3 py-2">
-							<div className="min-w-0">
-								<p className="truncate font-sans text-sm text-ink">{row.name}</p>
-								<p className="font-sans text-xs text-ink-muted">{formatSize(row.size)}</p>
-								{row.status !== "uploaded" && (
-									<p role="alert" className="font-sans text-xs text-brand-700">
-										{row.status === "expired"
-											? t("report.attachments.expired")
-											: t(`report.attachments.rejected.${row.reason ?? "unknown"}`, SIZE_LIMIT_PARAMS)}
-									</p>
-								)}
-							</div>
-							<button
-								type="button"
-								className="touch-target shrink-0 rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
-								aria-label={t("report.attachments.removeNamed", { name: row.name })}
-								onClick={() => remove(row)}
-							>
-								{t("report.attachments.remove")}
-							</button>
-						</li>
-					))}
-					{inFlight.map((upload) => (
-						<li key={upload.key} className="flex items-center justify-between gap-3 px-3 py-2" aria-busy="true">
-							<div className="flex min-w-0 items-center gap-3">
-								<span
-									role="progressbar"
-									aria-label={t("report.attachments.uploadingNamed", { name: upload.name })}
-									className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-rule border-t-brand-700 motion-reduce:animate-none"
-								/>
-								<div className="min-w-0">
-									<p className="truncate font-sans text-sm text-ink">{upload.name}</p>
-									<p className="font-sans text-xs text-ink-muted">{t("report.attachments.uploading")}</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								className="touch-target shrink-0 rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
-								aria-label={t("report.attachments.cancelNamed", { name: upload.name })}
-								onClick={() => cancel(upload.key)}
-							>
-								{t("report.attachments.cancel")}
-							</button>
-						</li>
-					))}
-				</ul>
-			)}
-		</>
-	)
+	return {
+		inFlight,
+		hasRows,
+		guidanceId,
+		guidance: t("report.attachments.guidance", { count: MAX_ATTACHMENTS, ...SIZE_LIMIT_PARAMS }),
+		accept: ACCEPTED_FILE_TYPES,
+		rowMessage,
+		onFiles: choose,
+		onCancel: cancel,
+		onRemove: remove,
+	}
 }
 
-function formatSize(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`
-	if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+export type AttachmentFieldModel = ReturnType<typeof useAttachmentField>
+
+/** A file-upload question's attachments; the logic is `useAttachmentField`. */
+export function AttachmentField(props: AttachmentFieldProps) {
+	return <AttachmentFieldView {...props} {...useAttachmentField(props)} />
 }

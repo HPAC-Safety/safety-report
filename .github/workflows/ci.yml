@@ -230,6 +230,16 @@ jobs:
             echo "::notice::No JavaScript test suite yet — added by #8. Skipping."
           fi
 
+      # The web logic's unit tests, for their lcov. vite.config.ts writes it to
+      # artifacts/coverage/web/lcov.info, where the ReportGenerator glob in
+      # `coverage` finds it with the .NET and tools/ reports, so the ratchet
+      # counts it (ADR-0188). The `web` job runs the same command as its gate;
+      # this run is the one whose report is merged.
+      - name: Web unit tests
+        run: |
+          npm --prefix src/web ci
+          npm --prefix src/web run test:coverage
+
       # The raw reports, the trx files included, for `coverage` to merge and
       # gate. Only this run reads them, so a day's retention is enough.
       # Temporary: act's artifact server rejects upload-artifact@v7
@@ -641,11 +651,34 @@ jobs:
       - name: npm ci
         run: npm --prefix src/web ci
 
+      # tsc --noEmit over src, test files included. Vite builds without
+      # type-checking, so this is the only place a type error fails.
+      - name: Type check
+        run: npm --prefix src/web run typecheck
+
+      # Vitest holds the logic of every split component, and every helper that
+      # has a colocated test, to 100% line, branch, function and statement
+      # coverage. Which files is decided by the files on disk, not a list
+      # (tools/web-coverage-scope.mjs, ADR-0188).
+      - name: Unit tests and coverage
+        run: npm --prefix src/web run test:coverage
+
+      # A view is markup only, and no shipped file imports test code. The
+      # strictness (every component split) is a constant in the script, not a
+      # flag here (ADR-0073).
+      - name: Component split
+        run: node tools/check-component-split.mjs
+
       - name: Build
         run: npm --prefix src/web run build
 
       - name: The bundle was produced
         run: test -s src/web/dist/index.html
+
+      # Test code is never part of a release (ADR-0188). The import rule above
+      # stops it at the source; this reads what was built.
+      - name: No test code in the bundle
+        run: node tools/check-web-bundle.mjs src/web/dist
 
       # The acceptance criterion from #11, checked rather than trusted: nothing
       # in the built bundle reaches Google for a font. The @font-face URLs in

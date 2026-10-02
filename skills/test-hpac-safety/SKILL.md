@@ -11,7 +11,11 @@ same section names.
 
 ## Tools and data
 
-- .NET: xUnit and Shouldly. JavaScript: `node:test`. Browser journeys:
+- .NET: xUnit and Shouldly. JavaScript tools: `node:test`. Web logic
+  (`src/web`): Vitest with Testing Library and jsdom, tests beside the code as
+  `Foo.test.tsx`, held to 100% coverage
+  ([ADR-0188](../../.spec/decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md);
+  [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md)). Browser journeys:
   Playwright.
 - Synthetic report and file fixtures only.
 - Seeded rows: the consent questions and the seeded question bank
@@ -36,8 +40,8 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 - Drop articles and empty predicates (`a`, `the`, `it is`); keep technical
   terms exact and any auxiliary that carries the voice.
 - Mark the body with `// Given`, `// When`, `// Then`.
-- **C# only.** `node:test` and Playwright titles are display strings and stay
-  prose.
+- **C# only.** `node:test`, Vitest and Playwright titles are display strings
+  and stay prose.
 
 ## Scenarios
 

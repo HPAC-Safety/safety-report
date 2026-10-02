@@ -19,7 +19,9 @@ const COPY_ATTRIBUTES = ['aria-label', 'alt', 'title', 'placeholder']
 
 // theme-preview.html is a dev-only token demo with no user-facing copy (see
 // its own header comment) and is a .html file, so it is naturally out of
-// scope for this .tsx/.ts scanner. No other files are excluded.
+// scope for this .tsx/.ts scanner. Unit tests (*.test.ts, *.test.tsx) are
+// excluded too: they assert on rendered copy and hold fixtures, never a
+// screen a reader sees (ADR-0188).
 export function collectSourceFiles(dir) {
   const files = []
   for (const entry of readdirSync(dir)) {
@@ -27,7 +29,7 @@ export function collectSourceFiles(dir) {
     const stats = statSync(path)
     if (stats.isDirectory()) {
       files.push(...collectSourceFiles(path))
-    } else if (['.ts', '.tsx'].includes(extname(path))) {
+    } else if (['.ts', '.tsx'].includes(extname(path)) && !/\.test\.tsx?$/.test(path)) {
       files.push(path)
     }
   }

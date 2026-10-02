@@ -115,6 +115,18 @@ describe('rejectExemption', () => {
 		assert.deepEqual(rejectExemption({ ...ok, category: 'test-only' }, ['tests/a.cs'], KNOWN), [])
 	})
 
+	it('accepts a test-only exemption that touched only web unit tests beside their code', () => {
+		const changed = ['src/web/src/lib/sortChoices.test.ts', 'src/web/src/Foo.test.tsx', 'tests/a.cs']
+
+		assert.deepEqual(rejectExemption({ ...ok, category: 'test-only' }, changed, KNOWN), [])
+	})
+
+	it('does not take a web file that merely mentions test as a test', () => {
+		const problems = rejectExemption({ ...ok, category: 'test-only' }, ['src/web/src/contest.tsx', 'src/web/src/Foo.test.tsx.bak'], KNOWN)
+
+		assert.match(problems[0], /"test-only" but these are not tests: src\/web\/src\/contest\.tsx, src\/web\/src\/Foo\.test\.tsx\.bak/)
+	})
+
 	it('contradicts a docs exemption that touched code', () => {
 		const problems = rejectExemption({ ...ok, category: 'docs' }, ['src/a.cs'], KNOWN)
 

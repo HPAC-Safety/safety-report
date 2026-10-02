@@ -6,7 +6,8 @@ type: guide
 
 # Testing conventions
 
-Use xUnit and Shouldly for .NET, `node:test` for JavaScript, Playwright for
+Use xUnit and Shouldly for .NET, `node:test` for the JavaScript tools,
+Vitest with Testing Library for web logic, Playwright for
 browser journeys, and Testcontainers for PostgreSQL/storage integration tests.
 `Xunit.Assert` is analyzer-banned.
 
@@ -28,7 +29,7 @@ Keep technical terms spelled as they are everywhere else — `TinyId`, `DTO`,
 `EXIF` — and keep an auxiliary that carries the voice, so
 `WhenActorColumnIsRead` keeps its `Is`.
 
-This governs C# identifiers only. A `node:test` or Playwright title is a
+This governs C# identifiers only. A `node:test`, Vitest or Playwright title is a
 display string printed to a human, so those stay readable prose.
 
 Use synthetic identities, sites, reports, and attachments. Never commit real
@@ -54,8 +55,19 @@ Common commands:
 dotnet test HpacSafety.slnx
 dotnet test HpacSafety.slnx --filter "Category!=Integration"
 node --test $(find tests/js -name '*.test.mjs')
+npm --prefix src/web run test:coverage   # Vitest, 100% on split components and tested helpers
+npm --prefix src/web run typecheck
+node tools/check-component-split.mjs
 npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
+
+Web logic is unit-tested with Vitest and Testing Library, in a `Foo.test.tsx`
+beside the code, and held to 100% line, branch, function and statement coverage
+([ADR-0188](../.spec/decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md)).
+Which files are held to it follows the files on disk, so a pull request that
+splits a component edits no configuration; see
+[`build-hpac-web-ui`](../skills/build-hpac-web-ui/SKILL.md). Test code is never
+part of a release: `tools/check-web-bundle.mjs` fails a build that carries any.
 
 Integration suites require Docker. Coverage retains the repository floor and
 added-code ratchet, but privacy and behavior assertions matter more than a high

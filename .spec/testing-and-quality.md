@@ -171,9 +171,9 @@ banned through the BannedApiAnalyzers analyzer and `tests/BannedSymbols.txt`,
 not through source grep (ADR-0013, ADR-0035).
 
 [Source inventory](../docs/source-inventory.md) maps every `src/` project and
-directory; `tools/check-inventories.mjs` fails the required `docs` job when it
+directory; `tools/docs/check-inventories.mjs` fails the required `docs` job when it
 drifts. [Issue traceability](../docs/issue-traceability.md) lists every open issue;
-`tools/issue-traceability.mjs` checks it daily and on every push to `main`
+`tools/spec/check-issue-traceability.mjs` checks it daily and on every push to `main`
 from its own non-required workflow, and keeps one drift issue open instead of
 failing a pull request, because open issues change without any commit
 ([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
@@ -191,4 +191,4 @@ step no definition matches fails the required `docs` job, and the generated
 scenario uses
 ([ADR-0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
 *Verified by: none — a rule about the specification and the tests together,
-enforced by `tools/bindings.mjs` rather than by a scenario.*
+enforced by `tools/spec/generate-bindings.mjs` rather than by a scenario.*

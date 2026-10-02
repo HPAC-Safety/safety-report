@@ -115,7 +115,7 @@ reasons:
 message, and the queue fixes that message when it builds the group: a body
 edited after queuing does not eject the entry, and no `commit-msg` hook runs
 on a server-side squash. On `merge_group` it checks each queued commit's
-message in `base_sha..HEAD` with `tools/agent-session-links.mjs`.
+message in `base_sha..HEAD` with `tools/github/check-agent-session-links.mjs`.
 
 ### Collision-sensitive checks really run on the merged tree
 
@@ -150,7 +150,7 @@ job skipped by a broken filter would be a check that silently passed, so:
 - The pull request comment step is skipped: a merge group has no pull request.
 - The baseline is only ever a successful `push` run on `main`
   (`gh run list --branch main --event push`) - not necessarily the newest one;
-  `tools/find-coverage-baseline.mjs` walks back to the newest run that
+  `tools/coverage/find-coverage-baseline.mjs` walks back to the newest run that
   actually carries a `coverage-report` artifact
   ([ADR-0165](ADR-0165-the-coverage-baseline-walks-back-to-the-newest-run-that-ran-coverage.md)).
   A merge group's `coverage-report` artifact never sets the bar.
@@ -283,7 +283,7 @@ Renovate is unaffected: its `automerge`/`platformAutomerge` configuration in
 `renovate.json` stays as is. This rule covers AI coding agents only.
 
 The tracked, team-wide `.claude/settings.json` carries a Claude Code
-`PreToolUse` hook, on the `Bash` matcher, running `tools/guard-pr-merge.mjs`:
+`PreToolUse` hook, on the `Bash` matcher, running `tools/github/guard-pr-merge.mjs`:
 it refuses a `Bash` tool call running `gh pr merge` in any form, and a
 `gh api graphql` call whose body names `enablePullRequestAutoMerge` or
 `enqueuePullRequest`, with a message that the owner enables auto-merge.
@@ -314,7 +314,7 @@ holding every green pull request for a click only delayed it.
 - An agent never merges directly: no `gh pr merge` without `--auto`, no
   `--admin`, no `enqueuePullRequest` or `mergePullRequest` mutation, and no
   REST `PUT .../merge`.
-- `tools/guard-pr-merge.mjs` enforces that line: it now allows `--auto`
+- `tools/github/guard-pr-merge.mjs` enforces that line: it now allows `--auto`
   without `--admin` and the `enablePullRequestAutoMerge` mutation, and still
   refuses everything else above. `AGENTS.md`, `deliver-change`, and
   `deliver-hpac-change` match.

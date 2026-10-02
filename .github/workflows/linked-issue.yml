@@ -127,7 +127,7 @@ jobs:
         if: github.event_name != 'merge_group'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-        run: node tools/agent-session-links.mjs
+        run: node tools/github/check-agent-session-links.mjs
 
       - name: Each queued commit message carries no agent session link
         if: github.event_name == 'merge_group'
@@ -144,7 +144,7 @@ jobs:
           for commit in $commits; do
             echo "::group::$(git log -1 --format=%s "$commit")"
             git log -1 --format=%B "$commit" > "$RUNNER_TEMP/message"
-            node tools/agent-session-links.mjs "$RUNNER_TEMP/message" || fail=1
+            node tools/github/check-agent-session-links.mjs "$RUNNER_TEMP/message" || fail=1
             echo "::endgroup::"
           done
           exit "$fail"
@@ -180,4 +180,4 @@ jobs:
           set -euo pipefail
           CHANGED_FILES=$(git diff --name-only "$BASE_SHA"...HEAD)
           export CHANGED_FILES
-          node tools/pr-screenshots.mjs
+          node tools/web/check-pr-screenshots.mjs

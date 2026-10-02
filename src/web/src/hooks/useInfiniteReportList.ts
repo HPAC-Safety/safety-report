@@ -35,7 +35,7 @@ export interface UseInfiniteReportListOptions<T> {
 	 * Fetches one page. `null` asks for the first page.
 	 *
 	 * A method signature rather than an arrow-typed property, on purpose:
-	 * tools/check-hardcoded-strings.mjs is a line scanner that misreads
+	 * tools/web/check-hardcoded-strings.mjs is a line scanner that misreads
 	 * `=> Promise<...>` on one line — see adminQuestions.ts.
 	 */
 	fetchPage(after: string | null): Promise<ReportPage<T>>
@@ -103,7 +103,7 @@ function documentNavigationType(): string {
 	}
 }
 
-// Signature split across lines on purpose: tools/check-hardcoded-strings.mjs
+// Signature split across lines on purpose: tools/web/check-hardcoded-strings.mjs
 // is a line scanner — see adminQuestions.ts.
 function readStored<T>(
 	key: string,

@@ -41,7 +41,7 @@ a failure.
 ## Scenario
 
 No scenario. This is a property of the delivery tooling, not of the system
-`.spec/features/` describes. `tests/js/traceability.test.mjs` proves it with
+`.spec/features/` describes. `tests/js/spec/generate-traceability.test.mjs` proves it with
 `git merge-file`.
 
 ## Skill

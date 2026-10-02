@@ -55,7 +55,7 @@ existing claim already states. It names those claims:
     No .feature scenario needed: <category> — <what changed, and why no behavior did>
     Claims preserved: REQ-SUB-012, REQ-SUB-013
 
-Four constraints, all enforced by `tools/feature-coverage.mjs`:
+Four constraints, all enforced by `tools/spec/check-feature-coverage.mjs`:
 
 1. **A closed category vocabulary** — `refactor`, `styling`, `dependency`,
    `test-only`, `build`, `revert`, `docs`. A new category is a decision

@@ -2,7 +2,7 @@
 # the same .NET runtime image `dev-up.sh`'s PublishContainer build uses, plus
 # the AWS Lambda Web Adapter (ADR-0042).
 #
-# Build it with tools/build-api-image.sh, never by hand — same convention as
+# Build it with tools/build/build-api-image.sh, never by hand — same convention as
 # the Worker's Dockerfile (ADR-0118): the build context is the publish output,
 # not the repository. Local development keeps using `dotnet publish
 # /t:PublishContainer` (dev-up.sh) — a plain Kestrel container needs no
@@ -20,7 +20,7 @@
 # public.ecr.aws/awsguru/aws-lambda-adapter, never from public.ecr.aws itself:
 # that registry limits anonymous pulls per source IP, and CI runners share
 # their IPs with everyone else's jobs (#629). The tag and digest are
-# upstream's, unchanged by the copy; tools/mirror-lambda-adapter.sh copies
+# upstream's, unchanged by the copy; tools/build/mirror-lambda-adapter.sh copies
 # this exact line's image before the release builds, and Renovate bumps it
 # against upstream.
 FROM ghcr.io/hpac-safety/aws-lambda-adapter:1.1.0@sha256:17cfd08eff1dfea3f6a9a1e9c65fdac80aa4919b6085e746615530f43f57d2f1 AS lambda-adapter

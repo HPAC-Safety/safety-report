@@ -84,10 +84,10 @@ today's Terraform differs" below for exactly what is still scaffolding.
    any other ref is refused before anything is created.
 2. **`build`** checks out that tag and, with no AWS credential of any kind,
    mirrors the Lambda Web Adapter into this org's GHCR if that version is not
-   there yet (`tools/mirror-lambda-adapter.sh`, #629 — `public.ecr.aws` limits
+   there yet (`tools/build/mirror-lambda-adapter.sh`, #629 — `public.ecr.aws` limits
    anonymous pulls per shared runner IP), then
-   builds the API image (the Lambda Web Adapter image, `tools/build-api-image.sh`,
-   #443), the Worker image (`tools/build-worker-image.sh`, ADR-0118), and the
+   builds the API image (the Lambda Web Adapter image, `tools/build/build-api-image.sh`,
+   #443), the Worker image (`tools/build/build-worker-image.sh`, ADR-0118), and the
    web bundle, each tagged by the commit SHA the release tag points to. All
    three are uploaded as workflow artifacts — nothing is pushed to either
    account's ECR yet.
@@ -204,7 +204,7 @@ outputs `nat_autoscaling_group_arn`, `secret_entries`, `site_urls`, and
 read from Terraform state (`terraform show -json`) right after the targeted
 apply that creates them, because `deploy_variables` also names resources a
 first release has not created yet.
-`node tools/check-terraform-outputs.mjs` (`ci.yml`'s `docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
+`node tools/infra/check-terraform-outputs.mjs` (`ci.yml`'s `docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
 reads an output name or JSON key `infra/outputs.tf` doesn't declare.
 
 Migrations apply at startup: the API and the Worker each run pending migrations

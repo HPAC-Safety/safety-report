@@ -7,7 +7,7 @@ type: readme
 # Specification index
 
 > **Generated file — do not edit by hand.**
-> Regenerate with `node tools/spec-index.mjs`. CI fails on a difference
+> Regenerate with `node tools/spec/generate-spec-index.mjs`. CI fails on a difference
 > ([ADR-0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).
 
 The authority rules, the product contract, and the simplicity guardrails are

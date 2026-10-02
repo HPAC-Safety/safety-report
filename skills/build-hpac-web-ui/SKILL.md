@@ -75,7 +75,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 - **The DOM stays identical** (elements, attributes, ids, `data-*`, classes,
   text, order). No `tests/e2e/**` file changes for a split; if one would, the
   split is wrong.
-- `node tools/check-component-split.mjs` enforces the view rules and the test
+- `node tools/web/check-component-split.mjs` enforces the view rules and the test
   boundary below. Its strict mode (every component has a view) is a constant in
   the script, and it is on: a new component is a pair from the start.
 - **One hook opens every native `<dialog>`:** `hooks/useModalDialog` shows it as
@@ -90,7 +90,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   (`foo.test.ts` for a helper); titles are prose.
 - Logic is held to **100% line, branch, function and statement coverage**;
   Playwright covers views, and `*.view.tsx` is excluded from the report.
-- **The scope needs no config edit.** `tools/web-coverage-scope.mjs` puts in
+- **The scope needs no config edit.** `tools/web/web-coverage-scope.mjs` puts in
   scope every `Foo.tsx` with a sibling `Foo.view.tsx`, and every `.ts` helper
   with a colocated test. Split a component and test it; the threshold follows.
 - Test with Testing Library by role and label, as a user would. `renderHook` a
@@ -119,7 +119,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 - The test packages stay in `devDependencies`. No file that is not a test
   imports a `*.test.*` file, `vitest`, `@vitest/*` or `@testing-library/*`
   (`check-component-split`).
-- `node tools/check-web-bundle.mjs src/web/dist` fails if the built bundle
+- `node tools/web/check-web-bundle.mjs src/web/dist` fails if the built bundle
   carries a test marker. The `web` job and the release build run it. The release
   ships the built `dist` only, never `src/`.
 

@@ -34,7 +34,7 @@ import { canTranslateDraft, groupByQuestion, wordingIn, type Draft } from "./typ
  * loading state, so the list stays mounted and the reviewer keeps their place.
  */
 
-// A call signature rather than an arrow type: tools/check-hardcoded-strings.mjs
+// A call signature rather than an arrow type: tools/web/check-hardcoded-strings.mjs
 // is a line scanner and reads an arrow's `>` as the end of a tag.
 type ReviewAction = { (): Promise<void> }
 

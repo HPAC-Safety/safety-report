@@ -23,7 +23,7 @@ name: Traceability matrix
 # newer push changed a file below, it started its own run, and this one is
 # superseded (ADR-0106). When it didn't — i18n-translate.yml committed its
 # French for the same push — nothing else will regenerate, so the commit is
-# replayed on top and pushed again (ADR-0113). tools/push-to-pr-branch.mjs
+# replayed on top and pushed again (ADR-0113). tools/github/push-to-pr-branch.mjs
 # decides which.
 #
 # A pull request merges through the merge queue (ADR-0147), where ci.yml's
@@ -36,10 +36,10 @@ on:
   pull_request_target:
     paths:
       - .spec/**
-      - tools/traceability.mjs
-      - tools/spec-index.mjs
-      - tools/spec-paths.mjs
-      - tools/bindings.mjs
+      - tools/spec/generate-traceability.mjs
+      - tools/spec/generate-spec-index.mjs
+      - tools/spec/spec-paths.mjs
+      - tools/spec/generate-bindings.mjs
       - tests/HpacSafety.Acceptance.Tests/**
       - tests/e2e/steps/**
       - .github/workflows/traceability.yml
@@ -98,17 +98,17 @@ jobs:
           set -euo pipefail
           for tool in traceability.mjs spec-index.mjs spec-paths.mjs bindings.mjs; do
             if ! cmp -s "base/tools/$tool" "head/tools/$tool"; then
-              echo "::notice::This pull request changes tools/$tool, so the base generators can't render its output. Regenerate locally with 'node tools/traceability.mjs && node tools/bindings.mjs && node tools/spec-index.mjs'; ci.yml checks the result."
+              echo "::notice::This pull request changes tools/$tool, so the base generators can't render its output. Regenerate locally with 'node tools/spec/generate-traceability.mjs && node tools/spec/generate-bindings.mjs && node tools/spec/generate-spec-index.mjs'; ci.yml checks the result."
               echo "changed=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           done
           cd head
-          node ../base/tools/traceability.mjs
-          node ../base/tools/spec-index.mjs
+          node ../base/tools/spec/generate-traceability.mjs
+          node ../base/tools/spec/generate-spec-index.mjs
           # Step files are read as text and their patterns compiled; nothing
           # in them runs. --no-fail: ci.yml's docs job is the gate (ADR-0184).
-          node ../base/tools/bindings.mjs --no-fail
+          node ../base/tools/spec/generate-bindings.mjs --no-fail
           if git diff --quiet -- .spec/traceability.md .spec/README.md .spec/bindings.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -146,9 +146,9 @@ jobs:
           git commit -m 'Regenerate the traceability matrix, step bindings, and specification index'
 
           # --paths is this workflow's pull_request_target paths, verbatim;
-          # tests/js/push-to-pr-branch.test.mjs fails if they disagree. The
+          # tests/js/github/push-to-pr-branch.test.mjs fails if they disagree. The
           # tool is the base branch's copy, like the generator.
-          node ../base/tools/push-to-pr-branch.mjs \
+          node ../base/tools/github/push-to-pr-branch.mjs \
             --branch "$HEAD_REF" \
             --event-sha "$HEAD_SHA" \
-            --paths '.spec/**,tools/traceability.mjs,tools/spec-index.mjs,tools/spec-paths.mjs,tools/bindings.mjs,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'
+            --paths '.spec/**,tools/spec/generate-traceability.mjs,tools/spec/generate-spec-index.mjs,tools/spec/spec-paths.mjs,tools/spec/generate-bindings.mjs,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'

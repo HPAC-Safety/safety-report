@@ -41,7 +41,7 @@ from, and who patches it, matters more than for most dependencies.
 .NET runtime image, pinned by digest, and runs as that image's non-root `app`
 user.**
 
-- **One build script.** `tools/build-worker-image.sh` publishes the Worker and
+- **One build script.** `tools/build/build-worker-image.sh` publishes the Worker and
   runs `docker build` with the publish output as the entire build context. It
   is the only way the image is built: `dev-up.sh`, CI, and `deploy-worker.yml`
   all call it, so the three cannot drift apart. The SDK still compiles the

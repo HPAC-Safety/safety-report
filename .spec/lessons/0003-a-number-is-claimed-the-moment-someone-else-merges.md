@@ -45,7 +45,7 @@ as correct, so nobody catches it.
 ## Spec delta
 
 [ADR-0091](../decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md) makes
-the number verified rather than assumed. `tools/adr-numbers.mjs --check` fails a
+the number verified rather than assumed. `tools/spec/adr-numbers.mjs --check` fails a
 duplicate and a filename disagreeing with its heading, in the pre-commit hook
 and in CI's `docs` job. `--next` counts every fetched remote branch, so a number
 an open pull request has taken is skipped rather than collided with. And
@@ -80,7 +80,7 @@ collision is the one moment the identifier is ambiguous.
 
 No scenario. This is a property of the repository's own records and tooling,
 not of the system the repository builds, so nothing in `.spec/features/` can assert
-it. `tests/js/adr-numbers.test.mjs` covers it directly, including a two-repository
+it. `tests/js/spec/adr-numbers.test.mjs` covers it directly, including a two-repository
 test that proves a number claimed only on an unmerged remote branch still counts
 as taken.
 

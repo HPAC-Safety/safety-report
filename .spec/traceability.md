@@ -7,7 +7,7 @@ type: guide
 # Traceability
 
 > **Generated file — do not edit by hand.**
-> Regenerate with `node tools/traceability.mjs`. CI fails on a difference
+> Regenerate with `node tools/spec/generate-traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 > One block per claim and per constraint, in ID order, and no totals, so
 > branches merge it without conflicting
@@ -3295,4 +3295,4 @@ testing-and-quality.md — verified by none — a rule about the tests themselve
 
 ### CON-TQ-010
 
-testing-and-quality.md — verified by none — a rule about the specification and the tests together, enforced by `tools/bindings.mjs` rather than by a scenario
+testing-and-quality.md — verified by none — a rule about the specification and the tests together, enforced by `tools/spec/generate-bindings.mjs` rather than by a scenario

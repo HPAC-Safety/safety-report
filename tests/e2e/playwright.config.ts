@@ -8,7 +8,7 @@ import { defineBddConfig } from "playwright-bdd"
 // its node_modules already exist.
 
 // Every run serves and tests on its own port, never a fixed default (#675).
-// tools/ci-local.sh puts act's jobs on the Docker VM's host network, so two
+// tools/dev/ci-local.sh puts act's jobs on the Docker VM's host network, so two
 // concurrent runs (different worktrees, or a local `CI=1 npm test` next to
 // one) would otherwise collide on a fixed port, or one would test the
 // other's build. E2E_PORT lets a caller pin one; otherwise a free port is

@@ -43,7 +43,7 @@ jobs:
   # another workflow file keeps its context, which is how `feature-coverage`
   # and `linked-issue` live in their own files while staying required.
   #
-  # tools/ci-local.sh runs only the cheap jobs by default: build, web, i18n,
+  # tools/dev/ci-local.sh runs only the cheap jobs by default: build, web, i18n,
   # docs, cucumber, agent-config (with the linked-issue and feature-coverage
   # workflows). test, coverage, and e2e run under act only with --full; GitHub
   # CI, here, is the full gate (ADR-0145, amended for #687). A new job is
@@ -79,7 +79,7 @@ jobs:
         id: filter
         continue-on-error: true
         with:
-          # Under act (tools/ci-local.sh) no pull request exists for the API to
+          # Under act (tools/dev/ci-local.sh) no pull request exists for the API to
           # list, so an empty token makes the filter diff the event's base SHA
           # with git instead. On GitHub env.ACT is empty and this is the
           # action's own default, github.token. ADR-0145.
@@ -94,8 +94,8 @@ jobs:
               - 'Directory.Packages.props'
               - 'coverlet.runsettings'
               - 'init-dev.sh'
-              - 'tools/ci-local.sh'
-              - 'tools/build-worker-image.sh'
+              - 'tools/dev/ci-local.sh'
+              - 'tools/build/build-worker-image.sh'
               - '.github/workflows/ci.yml'
             # The web bundle loads its catalogues from locales/ at the repository
             # root, so a copy change is a web change (lesson 0020).
@@ -122,10 +122,10 @@ jobs:
       # The hook is POSIX sh for the same reason, and it grew real branching
       # when its two checks were made independent (#207) — a bashism or an
       # unguarded cd there breaks committing, not CI, so it is worth linting.
-      # tools/ci-local.sh is POSIX sh too (ADR-0145): it is the pre-pull-request
+      # tools/dev/ci-local.sh is POSIX sh too (ADR-0145): it is the pre-pull-request
       # gate, so a bashism there stops every pull request before it opens.
       - name: shellcheck init-dev.sh, the pre-commit hook, and ci-local.sh
-        run: shellcheck -s sh init-dev.sh .githooks/pre-commit tools/ci-local.sh
+        run: shellcheck -s sh init-dev.sh .githooks/pre-commit tools/dev/ci-local.sh
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -143,10 +143,10 @@ jobs:
       # FfmpegVideoRemuxerTests against the runner's Ubuntu ffmpeg, the same
       # archive the image installs from.
       - name: shellcheck the Worker image build
-        run: shellcheck tools/build-worker-image.sh
+        run: shellcheck tools/build/build-worker-image.sh
       - name: Build the Worker image and prove ffmpeg runs inside it
         run: |
-          tools/build-worker-image.sh hpacsafety-worker:ci
+          tools/build/build-worker-image.sh hpacsafety-worker:ci
           docker run --rm --entrypoint ffmpeg hpacsafety-worker:ci -hide_banner -version
           docker run --rm --entrypoint ffprobe hpacsafety-worker:ci -hide_banner -version
           docker run --rm --entrypoint dotnet hpacsafety-worker:ci --list-runtimes
@@ -201,7 +201,7 @@ jobs:
       # emits ~440 lines into obj/ that no test will ever run.
       # No explicit trx filename: dotnet test runs one vstest host per project,
       # and a shared filename would make each one overwrite the last. Without
-      # one, each host gets a unique name and tools/test-count.mjs reads the
+      # one, each host gets a unique name and tools/coverage/report-test-counts.mjs reads the
       # project name back out of the trx's own `storage` attribute.
       - name: dotnet test
         run: >
@@ -244,7 +244,7 @@ jobs:
       # gate. Only this run reads them, so a day's retention is enough.
       # Temporary: act's artifact server rejects upload-artifact@v7
       # (nektos/act#6022), so under act the next step hands them over through
-      # the per-run directory tools/ci-local.sh mounts. Remove `&& !env.ACT`
+      # the per-run directory tools/dev/ci-local.sh mounts. Remove `&& !env.ACT`
       # and that step when act ships the fix. ADR-0145.
       - uses: actions/upload-artifact@v7
         if: "!env.ACT"
@@ -259,7 +259,7 @@ jobs:
       - name: Hand the raw reports to coverage under act
         if: env.ACT
         run: |
-          [ -d /ci-local-share ] || { echo "::error::/ci-local-share is not mounted; run this workflow through tools/ci-local.sh"; exit 1; }
+          [ -d /ci-local-share ] || { echo "::error::/ci-local-share is not mounted; run this workflow through tools/dev/ci-local.sh"; exit 1; }
           mkdir -p /ci-local-share/coverage
           cp -R ./artifacts/coverage/. /ci-local-share/coverage/
           chmod -R a+rwX /ci-local-share/coverage
@@ -296,41 +296,41 @@ jobs:
           node-version: 24
 
       - name: Every markdown file declares what it is
-        run: node tools/check-frontmatter.mjs
+        run: node tools/docs/check-frontmatter.mjs
 
       # Nothing else notices a link a move or a rename broke: GitHub renders it
       # as a 404 and the build stays green. ADR-0183.
       - name: Every relative link resolves
-        run: node tools/check-links.mjs
+        run: node tools/docs/check-links.mjs
 
       # The generic skills and role agents are reused elsewhere, so they name
       # nothing specific to this repository. ADR-0131.
       - name: Generic agent instructions name nothing specific to this repository
-        run: node tools/check-generic-instructions.mjs
+        run: node tools/docs/check-generic-instructions.mjs
 
       # An ADR's number is its identity and is claimed by naming a file, so two
       # branches can claim the same one and only a rebase notices. ADR-0091.
       - name: Decision records are numbered without collision
-        run: node tools/adr-numbers.mjs
+        run: node tools/spec/adr-numbers.mjs
 
       # The source inventory is kept at directory level, so a new directory
       # under src/ needs a row and a removed one loses its row. ADR-0143.
       - name: The source inventory lists every directory under src/
-        run: node tools/check-inventories.mjs
+        run: node tools/docs/check-inventories.mjs
 
       # A workflow that reads `terraform output NAME` (or a deploy_variables /
       # site_urls key) is trusting infra/outputs.tf to still declare it -
       # nothing else catches a renamed or removed output before a release
       # actually runs against AWS. #466.
       - name: Every workflow's terraform output reference is declared in infra/outputs.tf
-        run: node tools/check-terraform-outputs.mjs
+        run: node tools/infra/check-terraform-outputs.mjs
 
       # The .NET major lives in global.json, the target framework, the Worker's
       # base image, and Renovate's allowedVersions. Here, not behind the dotnet
       # path filter, because a renovate.json-only change must run it too.
       # ADR-0120.
       - name: The .NET major agrees everywhere it is declared
-        run: node tools/dotnet-major.mjs
+        run: node tools/build/check-dotnet-major.mjs
 
       # The matrix is generated from the claim tags and the CON ids, so a
       # scenario added without an id, a duplicate, or a constraint naming a
@@ -348,14 +348,14 @@ jobs:
       # area, constraint page, decision, and lesson, read from its own file.
       # traceability.yml commits it with the matrix. ADR-0183.
       - name: The specification index matches its files
-        run: node tools/spec-index.mjs --check
+        run: node tools/spec/generate-spec-index.mjs --check
 
       - name: The traceability matrix matches the specification
         run: |
           set -euo pipefail
-          node tools/traceability.mjs
+          node tools/spec/generate-traceability.mjs
           if ! git diff --exit-code --stat -- .spec/traceability.md; then
-            echo "::error file=.spec/traceability.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/traceability.mjs' and commit the result."
+            echo "::error file=.spec/traceability.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/spec/generate-traceability.mjs' and commit the result."
             git diff -- .spec/traceability.md
             exit 1
           fi
@@ -368,9 +368,9 @@ jobs:
       - name: Every built claim's steps are bound
         run: |
           set -euo pipefail
-          node tools/bindings.mjs
+          node tools/spec/generate-bindings.mjs
           if ! git diff --exit-code --stat -- .spec/bindings.md; then
-            echo "::error file=.spec/bindings.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/bindings.mjs' and commit the result."
+            echo "::error file=.spec/bindings.md::Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/spec/generate-bindings.mjs' and commit the result."
             git diff -- .spec/bindings.md
             exit 1
           fi
@@ -424,7 +424,7 @@ jobs:
       # `test` collected, at the paths it wrote them.
       # Temporary: act's artifact server rejects download-artifact@v8
       # (nektos/act#6022), so under act the next step reads them from the
-      # per-run directory tools/ci-local.sh mounts. Remove `&& !env.ACT` and
+      # per-run directory tools/dev/ci-local.sh mounts. Remove `&& !env.ACT` and
       # that step when act ships the fix. ADR-0145.
       - name: Download the raw reports
         if: "!env.ACT"
@@ -436,7 +436,7 @@ jobs:
       - name: The raw reports under act
         if: env.ACT
         run: |
-          [ -d /ci-local-share/coverage ] || { echo "::error::no raw reports in /ci-local-share/coverage; run this workflow through tools/ci-local.sh"; exit 1; }
+          [ -d /ci-local-share/coverage ] || { echo "::error::no raw reports in /ci-local-share/coverage; run this workflow through tools/dev/ci-local.sh"; exit 1; }
           mkdir -p ./artifacts/coverage
           cp -R /ci-local-share/coverage/. ./artifacts/coverage/
 
@@ -464,8 +464,8 @@ jobs:
       # (branch gh-readonly-queue/main/*) or a pull request run (ADR-0147).
       # main's newest green run does not always carry the artifact: the
       # coverage job is skipped on a docs-, infra-, or workflow-only change, so
-      # tools/find-coverage-baseline.mjs walks back to the newest run that
-      # actually ran coverage (#589, ADR-0165). tools/ci-local.sh calls the
+      # tools/coverage/find-coverage-baseline.mjs walks back to the newest run that
+      # actually ran coverage (#589, ADR-0165). tools/dev/ci-local.sh calls the
       # same script, so both pick the same run.
       - name: Fetch the main baseline
         id: baseline
@@ -474,7 +474,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
-          run_id=$(node tools/find-coverage-baseline.mjs --repo "$GITHUB_REPOSITORY" || true)
+          run_id=$(node tools/coverage/find-coverage-baseline.mjs --repo "$GITHUB_REPOSITORY" || true)
 
           if [ -z "${run_id:-}" ] || [ "$run_id" = "none" ]; then
             echo "path=none" >> "$GITHUB_OUTPUT"
@@ -492,13 +492,13 @@ jobs:
             echo "run-id=none" >> "$GITHUB_OUTPUT"
           fi
 
-      # Under act (tools/ci-local.sh) the job has no token, and GitHub answers an
+      # Under act (tools/dev/ci-local.sh) the job has no token, and GitHub answers an
       # anonymous artifact download with 401 even on a public repository. So the
       # wrapper downloads the same run's coverage-report on the host, with the
       # developer's gh login, into the gitignored .ci-local/baseline/, and this
       # reads it. Permanent: act never receives a token, and the wrapper fails a
       # run whose job reports holding one. ADR-0145.
-      - name: The main baseline tools/ci-local.sh fetched
+      - name: The main baseline tools/dev/ci-local.sh fetched
         id: baseline-local
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && env.ACT
         env:
@@ -526,7 +526,7 @@ jobs:
           set -o pipefail
           {
             echo "<!-- coverage-gate -->"
-            node tools/coverage-gate.mjs \
+            node tools/coverage/check-coverage.mjs \
               --report ./artifacts/report/Cobertura.xml \
               --baseline "${{ steps.baseline.outputs.path || steps.baseline-local.outputs.path || 'none' }}" \
               --baseline-run-id "${{ steps.baseline.outputs.run-id || steps.baseline-local.outputs.run-id || 'none' }}" \
@@ -571,7 +571,7 @@ jobs:
             echo ""
             echo "## Test counts"
             echo ""
-            node tools/test-count.mjs --section csharp --trx-dir ./artifacts/coverage
+            node tools/coverage/report-test-counts.mjs --section csharp --trx-dir ./artifacts/coverage
             if [ -f ./artifacts/test-count/e2e.md ]; then
               cat ./artifacts/test-count/e2e.md
             else
@@ -600,9 +600,9 @@ jobs:
       # Temporary: act keeps no job summary, and its artifact server rejects
       # upload-artifact@v7 (nektos/act#6022), so a local run prints the gate,
       # the test counts, the per-assembly detail, and the report's totals to
-      # the log, where tools/ci-local.sh finds them. Remove this step when act
+      # the log, where tools/dev/ci-local.sh finds them. Remove this step when act
       # ships the fix. ADR-0145.
-      - name: Coverage for tools/ci-local.sh
+      - name: Coverage for tools/dev/ci-local.sh
         if: always() && env.ACT
         run: |
           echo "ci-local:coverage:begin"
@@ -678,7 +678,7 @@ jobs:
       # Vitest holds the logic of every split component, and every helper that
       # has a colocated test, to 100% line, branch, function and statement
       # coverage. Which files is decided by the files on disk, not a list
-      # (tools/web-coverage-scope.mjs, ADR-0188).
+      # (tools/web/web-coverage-scope.mjs, ADR-0188).
       - name: Unit tests and coverage
         run: npm --prefix src/web run test:coverage
 
@@ -687,13 +687,13 @@ jobs:
       # the repository root, in the job the fast local gate runs, rather than
       # leaving the first proof to GitHub (#769).
       - name: Web coverage reaches the ratchet
-        run: node tools/check-web-lcov.mjs
+        run: node tools/web/check-web-lcov.mjs
 
       # A view is markup only, and no shipped file imports test code. The
       # strictness (every component split) is a constant in the script, not a
       # flag here (ADR-0073).
       - name: Component split
-        run: node tools/check-component-split.mjs
+        run: node tools/web/check-component-split.mjs
 
       - name: Build
         run: npm --prefix src/web run build
@@ -704,7 +704,7 @@ jobs:
       # Test code is never part of a release (ADR-0188). The import rule above
       # stops it at the source; this reads what was built.
       - name: No test code in the bundle
-        run: node tools/check-web-bundle.mjs src/web/dist
+        run: node tools/web/check-web-bundle.mjs src/web/dist
 
       # The acceptance criterion from #11, checked rather than trusted: nothing
       # in the built bundle reaches Google for a font. The @font-face URLs in
@@ -793,7 +793,7 @@ jobs:
         if: always()
         run: |
           mkdir -p ./artifacts/test-count
-          node tools/test-count.mjs --section e2e > ./artifacts/test-count/e2e.md
+          node tools/coverage/report-test-counts.mjs --section e2e > ./artifacts/test-count/e2e.md
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
@@ -894,19 +894,19 @@ jobs:
             echo "::notice::No locale files yet — added by #7. Skipping."
             exit 0
           fi
-          if [ ! -f tools/check-locales.mjs ]; then
-            echo "::error::locales/en-CA.json exists but tools/check-locales.mjs does not. See #8."
+          if [ ! -f tools/i18n/check-locales.mjs ]; then
+            echo "::error::locales/en-CA.json exists but tools/i18n/check-locales.mjs does not. See #8."
             exit 1
           fi
-          node tools/check-locales.mjs
+          node tools/i18n/check-locales.mjs
 
       - name: No hardcoded user-facing strings
         run: |
-          if [ ! -f tools/check-hardcoded-strings.mjs ]; then
+          if [ ! -f tools/web/check-hardcoded-strings.mjs ]; then
             echo "::notice::Hardcoded-string lint not written yet — added by #8. Skipping."
             exit 0
           fi
-          node tools/check-hardcoded-strings.mjs
+          node tools/web/check-hardcoded-strings.mjs
 
       # VERIFY ONLY. --check reads the three locale files and constructs no
       # translator, so no inference happens here and no locale file is written.
@@ -918,11 +918,11 @@ jobs:
       # No provider configuration is passed into this step, on purpose. There is
       # nothing here for it to use.
       #
-      # Under act (tools/ci-local.sh) the check takes the pre-commit hook's
+      # Under act (tools/dev/ci-local.sh) the check takes the pre-commit hook's
       # branch rule, --allow-pending-translation: French still pending as a
       # local `#` stub, or English reworded since it was translated, is a
       # notice. On GitHub i18n-translate.yml commits that French onto the
       # branch before this passes, and nothing runs it locally. ACT is unset
       # on GitHub, so the flag is never passed there (ADR-0145).
       - name: Locale translation is in step with English
-        run: node tools/translate-locale.mjs --check --locales locales ${ACT:+--allow-pending-translation}
+        run: node tools/i18n/translate-locale.mjs --check --locales locales ${ACT:+--allow-pending-translation}

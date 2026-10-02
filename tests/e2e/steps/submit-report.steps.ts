@@ -81,7 +81,7 @@ Then("the notice is shown in French", async ({ page }) => {
 
 	// The notice is still rendered, and its copy comes from the catalogue
 	// rather than the component. Asserting the text is *not* the English is
-	// deliberately left out: that is what tools/check-locales.mjs and the
+	// deliberately left out: that is what tools/i18n/check-locales.mjs and the
 	// `#`-stub gate enforce (ADR-0054), and duplicating it here would fail on
 	// any branch whose French has not been translated yet.
 	await expect(page.getByRole("heading", { level: 2 })).toBeVisible()

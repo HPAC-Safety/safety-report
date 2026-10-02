@@ -192,7 +192,7 @@ export function authorization(): Record<string, string> {
 	return session ? { Authorization: `Bearer ${session.accessToken}` } : {}
 }
 
-// Signature split across lines on purpose: tools/check-hardcoded-strings.mjs
+// Signature split across lines on purpose: tools/web/check-hardcoded-strings.mjs
 // is a line scanner, and `…RequestInit): Promise<T>` on one line reads to it
 // as JSX text between a `>` and a `<`.
 async function call<T>(

@@ -25,12 +25,12 @@
 # merge, or pull_request: terraform.yml owns the credential-free validation
 # and the PR plan against both accounts (CON-INF-007), and never applies.
 #
-# Built on #443 (the Lambda-adapter API image and tools/build-api-image.sh)
+# Built on #443 (the Lambda-adapter API image and tools/build/build-api-image.sh)
 # and #465/#588 (infra/staging.tfvars, infra/production.tfvars, the
 # multi-account Terraform, and every Terraform output deploy-environment.yml
 # reads by name from infra/outputs.tf: deploy_variables,
 # nat_autoscaling_group_arn, secret_entries, site_urls,
-# dns_records_to_publish). tools/check-terraform-outputs.mjs fails CI if
+# dns_records_to_publish). tools/infra/check-terraform-outputs.mjs fails CI if
 # either file drifts from what infra/outputs.tf actually declares.
 name: Release
 
@@ -139,22 +139,22 @@ jobs:
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ github.token }}
-        run: tools/mirror-lambda-adapter.sh
+        run: tools/build/mirror-lambda-adapter.sh
 
       - name: Log in to GHCR
         env:
           GHCR_TOKEN: ${{ github.token }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
 
-      # tools/build-api-image.sh is #443's (the Lambda Web Adapter image,
+      # tools/build/build-api-image.sh is #443's (the Lambda Web Adapter image,
       # ADR-0042). Built to the local Docker daemon only — nothing is pushed
       # from this job.
       - name: Build the API image
-        run: tools/build-api-image.sh "hpac-safety-api:${{ steps.sha.outputs.sha }}"
+        run: tools/build/build-api-image.sh "hpac-safety-api:${{ steps.sha.outputs.sha }}"
 
-      # tools/build-worker-image.sh already exists on main today (ADR-0118).
+      # tools/build/build-worker-image.sh already exists on main today (ADR-0118).
       - name: Build the Worker image
-        run: tools/build-worker-image.sh "hpac-safety-worker:${{ steps.sha.outputs.sha }}"
+        run: tools/build/build-worker-image.sh "hpac-safety-worker:${{ steps.sha.outputs.sha }}"
 
       - name: Save the images as artifacts
         run: |
@@ -179,7 +179,7 @@ jobs:
         run: |
           npm --prefix src/web ci
           npm --prefix src/web run build
-          node tools/check-web-bundle.mjs src/web/dist
+          node tools/web/check-web-bundle.mjs src/web/dist
           tar czf artifacts/release/web-dist.tar.gz -C src/web/dist .
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

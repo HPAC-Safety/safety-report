@@ -71,7 +71,7 @@ A person should never open a pull request to regenerate a generated file.
    fork.
 2. **No code the pull request wrote runs with the write token.** The
    generator comes from the base branch and is pointed at the head commit's
-   files as data. `tools/traceability.mjs` only reads the feature files and
+   files as data. `tools/spec/generate-traceability.mjs` only reads the feature files and
    the five docs pages, and writes one markdown file. The head is checked out
    by SHA without persisted credentials, and nothing is installed. A PR that
    changes the generator is skipped with a notice, because the base generator
@@ -127,7 +127,7 @@ A person should never open a pull request to regenerate a generated file.
   pulls before its next push.
 - A PR that falls behind `main` already had to be updated before it could
   merge. Now its `docs` check must also pass on the updated tree.
-- A PR that changes `tools/traceability.mjs`, and every fork PR, still
+- A PR that changes `tools/spec/generate-traceability.mjs`, and every fork PR, still
   regenerates locally. `ci.yml` says so when it fails.
 - A merge that uses the Admin bypass can still leave `main` stale. The `docs`
   check on `main` flags it, and the next same-repo PR that touches the

@@ -1,7 +1,7 @@
 # The Worker's container image: the host's `dotnet publish` output, on
 # Microsoft's .NET runtime image, plus Ubuntu's ffmpeg (ADR-0118).
 #
-# Build it with tools/build-worker-image.sh, never by hand: the build context is
+# Build it with tools/build/build-worker-image.sh, never by hand: the build context is
 # the publish output, not the repository, so nothing but the compiled Worker
 # reaches the image.
 #

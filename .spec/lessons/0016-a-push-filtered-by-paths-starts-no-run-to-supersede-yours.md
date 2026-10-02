@@ -29,14 +29,14 @@ same race would have ended green with `docs` still red.
 ## Spec delta
 
 [ADR-0113](../decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md):
-both bots push through `tools/push-to-pr-branch.mjs`. A newer push that
+both bots push through `tools/github/push-to-pr-branch.mjs`. A newer push that
 changed one of the workflow's trigger paths supersedes the run. A newer push
 that changed none gets the commit replayed on top of it.
 
 ## Scenario
 
 No scenario. This is a property of the delivery tooling, not of the system
-`.spec/features/` describes. `tests/js/push-to-pr-branch.test.mjs` proves it
+`.spec/features/` describes. `tests/js/github/push-to-pr-branch.test.mjs` proves it
 against real repositories, and fails when a workflow's `--paths` drifts from
 its trigger paths.
 
@@ -44,7 +44,7 @@ its trigger paths.
 
 [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md) now says
 that a workflow committing onto a pull request's branch pushes through
-`tools/push-to-pr-branch.mjs`, never a bare `git push`. "Someone else's run
+`tools/github/push-to-pr-branch.mjs`, never a bare `git push`. "Someone else's run
 will redo it" holds only when that push matches your workflow's `paths`.
 
 Since #492 the general rule lives in the generic

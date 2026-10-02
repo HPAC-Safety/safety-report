@@ -7,7 +7,7 @@ type: guide
 # Step bindings
 
 > **Generated file — do not edit by hand.**
-> Regenerate with `node tools/bindings.mjs`. CI fails on a difference, and on a
+> Regenerate with `node tools/spec/generate-bindings.mjs`. CI fails on a difference, and on a
 > built claim with a step no definition binds
 > ([ADR-0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
 > One block per claim, step, or definition, and no totals, so branches merge it

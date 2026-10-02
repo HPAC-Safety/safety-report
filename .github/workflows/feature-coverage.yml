@@ -14,7 +14,7 @@ name: Feature coverage
 # absurd.
 #
 # It also runs unconditionally rather than behind the `changes` path filter:
-# tools/feature-coverage.mjs already exits 0 when no behavior-bearing file
+# tools/spec/check-feature-coverage.mjs already exits 0 when no behavior-bearing file
 # changed, and a gate that decides for itself whether it applies cannot be
 # skipped by a filter that disagrees.
 #
@@ -78,7 +78,7 @@ jobs:
               | grep -v '/README\.md$' || true)
             CHANGED_FEATURES=$(git diff --name-only "$1" -- ':(glob).spec/features/**/*.feature' || true)
             export CHANGED_BEHAVIOR CHANGED_FEATURES
-            node tools/feature-coverage.mjs
+            node tools/spec/check-feature-coverage.mjs
           }
 
           if [ "$EVENT_NAME" != 'merge_group' ]; then

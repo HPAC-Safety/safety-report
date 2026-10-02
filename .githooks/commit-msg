@@ -16,4 +16,4 @@ cd "$REPO_ROOT" || exit 0
 
 command -v node >/dev/null 2>&1 || exit 0
 
-exec node tools/agent-session-links.mjs "$1"
+exec node tools/github/check-agent-session-links.mjs "$1"

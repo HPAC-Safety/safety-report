@@ -10,7 +10,7 @@ export interface SummaryHistoryProps {
 	isLive: boolean
 	canRestore: boolean
 	busy: boolean
-	// Split across lines on purpose: tools/check-hardcoded-strings.mjs is a line scanner.
+	// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line scanner.
 	onRestore: (revisionId: string) =>
 		Promise<boolean>
 }

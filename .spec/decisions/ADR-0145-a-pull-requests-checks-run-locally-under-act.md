@@ -1,6 +1,6 @@
 ---
 title: A pull request's checks run locally under act, against CI's own baseline
-description: tools/ci-local.sh runs the pull request workflows under nektos/act in a pinned local image, with a synthetic event that takes every fork branch, so the coverage ratchet and the body checks give CI's verdict before the pull request is opened.
+description: tools/dev/ci-local.sh runs the pull request workflows under nektos/act in a pinned local image, with a synthetic event that takes every fork branch, so the coverage ratchet and the body checks give CI's verdict before the pull request is opened.
 type: adr
 status: accepted
 date: 2026-09-26
@@ -38,7 +38,7 @@ removed" below, which replaces "Exit codes"' lock clause and the
 network, and everything it creates is deleted when it ends, pass or fail. See "Each run is its own group" and "Teardown is try/finally" below.
 
 **Amended 2026-09-29 (#687):** the default run is only the fast checks. Bare
-`tools/ci-local.sh --body <file>` runs the body checks (`linked-issue`,
+`tools/dev/ci-local.sh --body <file>` runs the body checks (`linked-issue`,
 `no-session-link`, `screenshots`), `feature-coverage`, and the cheap `ci.yml`
 jobs (`build`, `web`, `i18n`, `docs`, `cucumber`, `agent-config`). It skips
 `test`, `coverage`, `e2e`, and terraform `infra`. `--full` runs everything as
@@ -62,7 +62,7 @@ all.
 
 ## Decision
 
-**`tools/ci-local.sh --body <pr-body.md>` runs the pull request workflows under
+**`tools/dev/ci-local.sh --body <pr-body.md>` runs the pull request workflows under
 [nektos/act](https://github.com/nektos/act), version pinned in `.act-version`,
 and is the pre-pull-request gate.**
 
@@ -122,7 +122,7 @@ and is the pre-pull-request gate.**
   and a job intermittently found `setup-node@v7`'s `dist/cache-save/index.js`
   missing.
   `.secrets`, `.vars`, and `.actrc.local` are gitignored.
-- **The image**: `tools/act/Dockerfile`, built locally and never pushed.
+- **The image**: `tools/dev/act/Dockerfile`, built locally and never pushed.
   - Base: `catthehacker/ubuntu:act-24.04`, pinned by digest. It lacks `gh`
     (without it the coverage job's baseline step silently skips the ratchet)
     and `shellcheck`.
@@ -153,7 +153,7 @@ and is the pre-pull-request gate.**
   that changed a scenario failed `docs`, and one that added an English key
   failed `i18n`, although CI passed. Neither stand-in changes what GitHub
   runs.
-  - **The matrix**: the wrapper runs `node tools/traceability.mjs` in the clone
+  - **The matrix**: the wrapper runs `node tools/spec/generate-traceability.mjs` in the clone
     and, when the matrix changed, commits it there and moves `HEAD`,
     `origin/<branch>`, and the event's `head.sha` to that commit: the commit
     `traceability.yml` would push. Like that workflow, it skips a branch that
@@ -200,7 +200,7 @@ and is the pre-pull-request gate.**
       when a racing edit met the unique index rather than the in-memory
       check. A test now holds two edits at `SaveChanges` until both have
       loaded.
-    - `tools/adr-numbers.mjs`'s unreadable-file path: its test skipped as
+    - `tools/spec/adr-numbers.mjs`'s unreadable-file path: its test skipped as
       root, and act runs jobs as root. The test now uses a directory in place
       of a tracked file, which no user can read as a file.
 - **Memory**: a full run peaked at about 5 GiB of container memory
@@ -330,7 +330,7 @@ the lock protected is now kept apart per run instead of serialized:
   fixed ports on purpose, so the app is always at the same address in
   development. This ADR's lock existed only for `ci-local.sh`'s test runs.
 
-**Proof**: two full `tools/ci-local.sh --body pr-body.md` runs, from two
+**Proof**: two full `tools/dev/ci-local.sh --body pr-body.md` runs, from two
 separate worktrees on the same branch, started together, both passed with
 correct verdicts, and neither tested the other's build (logs in the pull
 request that made this change).

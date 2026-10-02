@@ -84,7 +84,7 @@ reasoning is invisible gets argued with rather than trusted.
   code and deletes covered code can flatter itself. The floor still catches the
   outcome, and the alternative — a real per-line diff — is a lot of machinery
   for a gate that is deliberately a floor, not a target.
-- `tools/coverage-gate.mjs` now exports its two decisions as pure functions, so
+- `tools/coverage/check-coverage.mjs` now exports its two decisions as pure functions, so
   `tests/js` can exercise the mode selection and the arithmetic directly.
 
 ## Alternatives rejected
@@ -110,6 +110,6 @@ the exact thing ADR-0014 added it for.
 ## Related
 
 - [ADR-0014](ADR-0014-coverage-gate.md) — the gate this amends
-- `tools/coverage-gate.mjs`, `tests/js/coverage-gate.test.mjs`
+- `tools/coverage/check-coverage.mjs`, `tests/js/coverage/check-coverage.test.mjs`
 - `docs/testing-conventions.md`
 - Issues #53, #6

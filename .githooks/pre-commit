@@ -13,13 +13,13 @@
 #
 # 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, an
 #    English `#`-stub, stale fr-CA.meta.json provenance, or a glossary
-#    mismatch. Before checking, tools/stub-missing-translations.mjs (ADR-0054)
+#    mismatch. Before checking, tools/i18n/stub-missing-translations.mjs (ADR-0054)
 #    runs first and re-stages the result: a key added to one language and not
 #    the other is filled into the missing side with a `#`-prefixed copy of the
 #    text it has, both directions, so a bare "add a key" commit never blocks
 #    on parity by itself — it only blocks on a stub CI still has to resolve.
 #    Then this runs the exact same checks as the "i18n" CI job
-#    (tools/check-locales.mjs, tools/translate-locale.mjs --check) but
+#    (tools/i18n/check-locales.mjs, tools/i18n/translate-locale.mjs --check) but
 #    locally, before the commit exists, instead of after a push.
 #
 #    Two exceptions, on a branch only, both reported and allowed through: a
@@ -54,13 +54,13 @@
 #    for anyone who skipped this hook.
 #
 # 4. Source inventory: when a file under src/ is added or deleted, or
-#    docs/source-inventory.md is staged, tools/check-inventories.mjs checks
+#    docs/source-inventory.md is staged, tools/docs/check-inventories.mjs checks
 #    that every directory under src/ holding a tracked file has a row, and
 #    every row names one (ADR-0143). It reads the index, so it judges exactly
 #    what this commit holds. CI's "docs" job re-checks as the backstop.
 #
 # 5. Component split: when a file under src/web/src is staged, or the guard
-#    itself, tools/check-component-split.mjs checks that every *.view.tsx is
+#    itself, tools/web/check-component-split.mjs checks that every *.view.tsx is
 #    markup only and that no shipped file imports test code (ADR-0188). It
 #    reads the working tree, as CI's "web" job does.
 #
@@ -102,7 +102,7 @@ if staged | grep -q '^locales/'; then
 		# captured before the stubber rewrites anything.
 		STAGED_LOCALES=$(staged | grep '^locales/' || true)
 
-		node tools/stub-missing-translations.mjs --locales locales
+		node tools/i18n/stub-missing-translations.mjs --locales locales
 
 		# fr-CA.json is generated and never hand-authored (ADR-0021,
 		# ADR-0056), so staging it is safe — and it is what makes the commit
@@ -123,10 +123,10 @@ if staged | grep -q '^locales/'; then
 			git add -- locales/en-CA.json
 		fi
 
-		node tools/check-locales.mjs || status=1
+		node tools/i18n/check-locales.mjs || status=1
 
 		# shellcheck disable=SC2086 # empty on main, one flag elsewhere
-		node tools/translate-locale.mjs --check --locales locales $pending_translation_flag || status=1
+		node tools/i18n/translate-locale.mjs --check --locales locales $pending_translation_flag || status=1
 	fi
 fi
 
@@ -138,27 +138,27 @@ if staged | grep -qE '\.(md|mdc)$'; then
 		STAGED_MARKDOWN=$(staged | grep -E '\.(md|mdc)$')
 
 		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
-		node tools/check-frontmatter.mjs $STAGED_MARKDOWN || status=1
+		node tools/docs/check-frontmatter.mjs $STAGED_MARKDOWN || status=1
 
 		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
-		node tools/check-links.mjs $STAGED_MARKDOWN || status=1
+		node tools/docs/check-links.mjs $STAGED_MARKDOWN || status=1
 
 		# The specification index is generated from .spec/ (ADR-0183).
 		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/'; then
-			node tools/spec-index.mjs --check || status=1
+			node tools/spec/generate-spec-index.mjs --check || status=1
 		fi
 
 		# A generic skill or role agent names nothing specific to this
 		# repository, so it can be reused elsewhere (ADR-0131).
 		if echo "$STAGED_MARKDOWN" | grep -qE '^(skills|agents)/'; then
-			node tools/check-generic-instructions.mjs || status=1
+			node tools/docs/check-generic-instructions.mjs || status=1
 		fi
 
 		# A decision record's number is claimed by naming a file, and two
 		# branches claim the same one often enough that it is worth catching
 		# here rather than after a rebase (ADR-0091, lesson 0003).
 		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/decisions/ADR-'; then
-			node tools/adr-numbers.mjs || status=1
+			node tools/spec/adr-numbers.mjs || status=1
 		fi
 	fi
 fi
@@ -167,7 +167,7 @@ fi
 # touched, so the whole tree is checked (ADR-0183).
 if git diff --cached --name-only --diff-filter=DR | grep -q .; then
 	if command -v node >/dev/null 2>&1; then
-		node tools/check-links.mjs || status=1
+		node tools/docs/check-links.mjs || status=1
 	fi
 fi
 
@@ -177,7 +177,7 @@ if git diff --cached --name-only --diff-filter=AD | grep -q '^src/' \
 		echo "pre-commit: node is not on PATH, cannot verify the source inventory — see README.md" >&2
 		status=1
 	else
-		node tools/check-inventories.mjs || status=1
+		node tools/docs/check-inventories.mjs || status=1
 	fi
 fi
 
@@ -186,7 +186,7 @@ if staged | grep -qE '^(src/web/src/|tools/check-component-split\.mjs$)'; then
 		echo "pre-commit: node is not on PATH, cannot check the component split — see README.md" >&2
 		status=1
 	else
-		node tools/check-component-split.mjs || status=1
+		node tools/web/check-component-split.mjs || status=1
 	fi
 fi
 

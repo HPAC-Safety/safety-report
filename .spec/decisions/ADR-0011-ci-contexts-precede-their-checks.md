@@ -44,7 +44,7 @@ artifact, emit a `::notice::` naming the issue that fills them in, and exit 0.**
 All seven become required status checks in a single ruleset change.
 
 Two of them are not purely inert. `i18n` fails — rather than skipping — if
-`locales/en-CA.json` exists without `tools/check-locales.mjs`, so the skip
+`locales/en-CA.json` exists without `tools/i18n/check-locales.mjs`, so the skip
 cannot outlive the reason for it. `coverage` already collects and uploads
 Cobertura; #5 adds the comparison, not the plumbing.
 

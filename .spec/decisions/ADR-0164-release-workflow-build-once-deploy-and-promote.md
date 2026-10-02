@@ -51,11 +51,11 @@ request, and nobody publishes a release before #464's `infra/bootstrap.sh`
 here was run against AWS to write it.
 
 This pull request is built on top of #443 (the Lambda-adapter API image,
-`tools/build-api-image.sh`) and #465/#588 (the multi-account Terraform,
+`tools/build/build-api-image.sh`) and #465/#588 (the multi-account Terraform,
 `infra/staging.tfvars`, `infra/production.tfvars`, and every Terraform
 output this workflow and `deploy-environment.yml` read by name), all now
 merged — every `terraform output` reference is aligned with the real
-`infra/outputs.tf`, and `tools/check-terraform-outputs.mjs` fails CI if that
+`infra/outputs.tf`, and `tools/infra/check-terraform-outputs.mjs` fails CI if that
 ever drifts again.
 
 ## Decision
@@ -77,8 +77,8 @@ production's copy is the failure this shape makes structurally impossible.
 `build` requests no AWS credential — no `id-token: write` permission is even
 usable inside it, since the workflow-level `permissions:` only grants
 `id-token: write` to the jobs that need it. It builds the API image
-(`tools/build-api-image.sh`, #443), the Worker image
-(`tools/build-worker-image.sh`, ADR-0118), and the web bundle, saves the two
+(`tools/build/build-api-image.sh`, #443), the Worker image
+(`tools/build/build-worker-image.sh`, ADR-0118), and the web bundle, saves the two
 images with `docker save | gzip`, and uploads all three as workflow
 artifacts. `deploy-environment.yml` downloads them, `docker load`s the
 images, and pushes them to that account's ECR. Because the loaded image is
@@ -147,7 +147,7 @@ hostname — staging has exactly one entry, production two — read by taking
 any one entry's `public` URL, since every hostname reaches the same
 distribution and the same `/api/health`).
 
-`tools/check-terraform-outputs.mjs` (added in this pull request, wired into
+`tools/infra/check-terraform-outputs.mjs` (added in this pull request, wired into
 `ci.yml`'s `docs` job) statically checks every `terraform output` name and
 JSON key either workflow reads against what `infra/outputs.tf` actually
 declares, and fails the build on a mismatch — the guard issue #466's review
@@ -202,11 +202,11 @@ new one, which is immaterial once the commit is fixed.
   `TF_STATE_BUCKET_<ACCOUNT>` in the same run, under their own "Repository
   variables" heading — no separate hand-run step, no config an operator has
   to invent from reading this ADR.
-- `tools/build-api-image.sh` and `src/HpacSafety.Api/Dockerfile` (#443), and
+- `tools/build/build-api-image.sh` and `src/HpacSafety.Api/Dockerfile` (#443), and
   `infra/outputs.tf`'s `nat_autoscaling_group_arn`, `secret_entries`, and
   `site_urls` outputs (#465/#588), are merged; `release.yml` and
   `deploy-environment.yml` read every one of them by its real name, verified
-  by `tools/check-terraform-outputs.mjs`.
+  by `tools/infra/check-terraform-outputs.mjs`.
 - `docs/deployment.md` "Release and promotion" and "Required GitHub
   configuration" carry the operator-facing half of this record; keep them
   and this ADR in agreement if either changes.

@@ -32,9 +32,9 @@ state, so "it can't be captured" became a reason to skip it.
   records the rule and its exemption line.
 - The template has a `## Screenshots` section, the
   `No screenshot needed: <reason>` line, and a checkbox.
-- `tools/pr-screenshots.mjs`, run by the `screenshots` job in
+- `tools/web/check-pr-screenshots.mjs`, run by the `screenshots` job in
   `linked-issue.yml`, fails a rendered web change whose body has neither a
-  pinned screenshot link nor that line. `tests/js/pr-screenshots.test.mjs`
+  pinned screenshot link nor that line. `tests/js/web/check-pr-screenshots.test.mjs`
   also keeps the template's section and exemption line in place.
 
 ## Scenario

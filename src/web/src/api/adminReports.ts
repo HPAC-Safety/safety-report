@@ -154,7 +154,7 @@ export interface AttachmentLink {
 /** The problem type the API sends when a review command was based on a stale view. */
 export const STALE_REPORT = "https://hpac.ca/problems/stale-report"
 
-// Signature split across lines on purpose: tools/check-hardcoded-strings.mjs
+// Signature split across lines on purpose: tools/web/check-hardcoded-strings.mjs
 // is a line scanner — see adminQuestions.ts.
 async function call<T>(
 	path: string,

@@ -30,7 +30,7 @@ same section names.
 - **The .NET major moves as one.** It lives in `global.json`,
   `<TargetFramework>`, the Worker's `Dockerfile` base image, and
   `renovate.json`'s `allowedVersions`. An upgrade changes all four in one pull
-  request; `node tools/dotnet-major.mjs` fails when they disagree
+  request; `node tools/build/check-dotnet-major.mjs` fails when they disagree
   ([ADR-0120](../../.spec/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
 - **No `Async` suffix** on a method this repository names — the return type
   says it is asynchronous

@@ -17,7 +17,7 @@ boundary that ADR describes (`pull_request` never translates, only a push to
 second, narrower path for pull requests opened from a branch of this
 repository itself. Amended by
 [ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md):
-the commit is pushed through `tools/push-to-pr-branch.mjs`, which replays it
+the commit is pushed through `tools/github/push-to-pr-branch.mjs`, which replays it
 on top of a traceability commit that landed first.
 
 ## Context
@@ -43,7 +43,7 @@ ADR-0021's security reasoning for keeping translation off `pull_request`
 is sound and does not change: `pull_request` runs fork-authored code, so a
 translator credential must never be in scope there — a malicious fork PR
 must never be able to spend the DeepL credential or smuggle unreviewed
-French text through a modified `tools/translator.mjs`. But that risk comes
+French text through a modified `tools/i18n/translator.mjs`. But that risk comes
 specifically from *untrusted* branches. A pull request opened from a branch
 of this repository itself (never a fork) is exactly as trusted as a direct
 push to `main` — the same people who can push branches here can push to

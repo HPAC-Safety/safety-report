@@ -63,7 +63,7 @@ The classification:
   links from ADRs, lessons, code comments, and scripts still resolve.
 - `AGENTS.md`'s skill table lists each generic skill beside the project skill
   that extends it.
-- `tools/check-generic-instructions.mjs` lists the generic files and fails when
+- `tools/docs/check-generic-instructions.mjs` lists the generic files and fails when
   one names anything specific to this repository. The pre-commit hook runs it
   when a skill or agent is staged, and the `docs` CI job is the backstop
   ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).

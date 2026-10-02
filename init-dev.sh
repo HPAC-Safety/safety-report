@@ -385,14 +385,14 @@ docker_running() { have docker && docker info >/dev/null 2>&1; }
 
 if docker_running; then
 	ok "Docker $(docker version --format '{{.Server.Version}}' 2>/dev/null || echo '') is running"
-	# A tools/ci-local.sh --full run peaked at about 5 GiB of container memory,
+	# A tools/dev/ci-local.sh --full run peaked at about 5 GiB of container memory,
 	# with the .NET, Testcontainers, and browser jobs side by side, so the VM
 	# wants DOCKER_MEM_RECOMMENDED_GB (ADR-0145).
 	DOCKER_MEM_MIB=$(( $(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0) / 1048576 ))
 	if [ "$DOCKER_MEM_MIB" -lt $((DOCKER_MEM_RECOMMENDED_GB * 1024)) ]; then
-		note "Docker has ${DOCKER_MEM_MIB} MiB of memory; tools/ci-local.sh --full recommends ${DOCKER_MEM_RECOMMENDED_GB} GB (Docker Desktop: Settings → Resources)"
+		note "Docker has ${DOCKER_MEM_MIB} MiB of memory; tools/dev/ci-local.sh --full recommends ${DOCKER_MEM_RECOMMENDED_GB} GB (Docker Desktop: Settings → Resources)"
 	else
-		ok "Docker has ${DOCKER_MEM_MIB} MiB of memory (tools/ci-local.sh --full recommends ${DOCKER_MEM_RECOMMENDED_GB} GB)"
+		ok "Docker has ${DOCKER_MEM_MIB} MiB of memory (tools/dev/ci-local.sh --full recommends ${DOCKER_MEM_RECOMMENDED_GB} GB)"
 	fi
 	if docker compose version >/dev/null 2>&1; then
 		ok "docker compose plugin"
@@ -478,7 +478,7 @@ fi
 
 # -------------------------------------------------------------------- Python --
 #
-# Not needed to build or test. `tools/extract-typeform.py` regenerates
+# Not needed to build or test. `tools/dev/extract-typeform.py` regenerates
 # docs/form-spec.md, and src/web/README.md serves the static site with
 # `python3 -m http.server`.
 
@@ -486,7 +486,7 @@ heading "Python 3 (optional)"
 if have python3; then
 	ok "$(python3 --version 2>&1)"
 elif [ "$CHECK_ONLY" -eq 1 ]; then
-	note "python3 is not installed — tools/extract-typeform.py will not run"
+	note "python3 is not installed — tools/dev/extract-typeform.py will not run"
 else
 	if install_pkg "python" "python3" "python3" "python" "Python.Python.3" "python3" && have python3; then
 		added "$(python3 --version 2>&1)"
@@ -510,7 +510,7 @@ fi
 
 # ----------------------------------------------------------------------- act --
 #
-# tools/ci-local.sh runs the pull request workflows' fast checks under act
+# tools/dev/ci-local.sh runs the pull request workflows' fast checks under act
 # before a pull request is opened, and every job with --full (ADR-0145). The version is pinned in .act-version, and the
 # SHA-256 of each platform's release asset in .act-checksums beside it. No
 # package manager installs an exact act, so this downloads the pinned release,
@@ -518,7 +518,7 @@ fi
 # again whenever the act on PATH is a different version. Optional: CI does not
 # need it, so a missing or different act is a note, never a failure.
 
-heading "act (optional, for tools/ci-local.sh)"
+heading "act (optional, for tools/dev/ci-local.sh)"
 ACT_VERSION=$(tr -d '[:space:]' < .act-version 2>/dev/null || true)
 ACT_HOME_INSTALL="$HOME/.local/bin/act"
 act_version_of() { "$1" --version 2>/dev/null | awk '{print $NF}'; }
@@ -568,7 +568,7 @@ elif [ "$CHECK_ONLY" -eq 1 ]; then
 	if have act; then
 		note "act $(act_version_of act) is on PATH; .act-version pins $ACT_VERSION — run ./init-dev.sh to install it"
 	else
-		note "act is not installed — run ./init-dev.sh to install $ACT_VERSION for tools/ci-local.sh"
+		note "act is not installed — run ./init-dev.sh to install $ACT_VERSION for tools/dev/ci-local.sh"
 	fi
 elif install_act; then
 	if have act && [ "$(act_version_of act)" = "$ACT_VERSION" ]; then
@@ -576,15 +576,15 @@ elif install_act; then
 	else
 		added "act $ACT_VERSION into $HOME/.local/bin"
 		# shellcheck disable=SC2016
-		manual 'Put $HOME/.local/bin first on your PATH so tools/ci-local.sh finds the pinned act: export PATH="$HOME/.local/bin:$PATH"'
+		manual 'Put $HOME/.local/bin first on your PATH so tools/dev/ci-local.sh finds the pinned act: export PATH="$HOME/.local/bin:$PATH"'
 	fi
 else
-	note "act $ACT_VERSION could not be installed; tools/ci-local.sh will not run until it is"
+	note "act $ACT_VERSION could not be installed; tools/dev/ci-local.sh will not run until it is"
 fi
 
 # ------------------------------------------------------------------------ gh --
 #
-# Optional. tools/ci-local.sh uses your login only on this machine, to
+# Optional. tools/dev/ci-local.sh uses your login only on this machine, to
 # download main's coverage baseline (GitHub serves no artifact anonymously)
 # and to name the pull request's author; act never receives it (ADR-0145).
 # The delivery skills use gh for issues and pull requests.
@@ -593,9 +593,9 @@ heading "GitHub CLI (optional)"
 if have gh; then
 	ok "$(gh --version 2>/dev/null | head -n 1)"
 	if gh auth status >/dev/null 2>&1; then
-		ok "gh is logged in; tools/ci-local.sh --full uses it only to download main's coverage baseline"
+		ok "gh is logged in; tools/dev/ci-local.sh --full uses it only to download main's coverage baseline"
 	else
-		note "gh is not logged in — run: gh auth login (tools/ci-local.sh --full needs it to download main's coverage baseline)"
+		note "gh is not logged in — run: gh auth login (tools/dev/ci-local.sh --full needs it to download main's coverage baseline)"
 	fi
 elif [ "$CHECK_ONLY" -eq 1 ]; then
 	note "gh is not installed — https://cli.github.com"

@@ -189,6 +189,29 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		listed.EnumerateArray().Select(attachment => attachment.GetProperty("id").GetString()).ShouldBe([attachmentId]);
 	}
 
+	[Fact]
+	public async Task GivenManyStaffAddingToOneReportAtOnce_WhenClaimed_ThenEveryClaimSucceedsWithoutDeadlock()
+	{
+		// Given — each add inserts one row and takes only a share lock on the report
+		// (#741), so staff adding at once cannot deadlock one another.
+		var root = await Root();
+		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		using var administrator = await SignedInClient.As(_factory, MemberRole.Administrator);
+		var staff = new[] { officer, administrator };
+		var uploads = await Task.WhenAll(Enumerable.Range(0, 16).Select(index => Send(staff[index % 2], root, new byte[32])));
+
+		// When
+		var answers = await Task.WhenAll(uploads.Select(async (uploadId, index) =>
+		{
+			using var added = await staff[index % 2].PostAsJsonAsync(root, new { uploadId, fileName = $"Synthetic {index}.zip" });
+			return added.StatusCode;
+		}));
+
+		// Then
+		answers.ShouldAllBe(status => status == HttpStatusCode.Created);
+		(await officer.GetFromJsonAsync<JsonElement>(root)).GetArrayLength().ShouldBe(16);
+	}
+
 	[Theory]
 	[InlineData("not-an-id")]
 	[InlineData("AAAAAAAAAAA")]

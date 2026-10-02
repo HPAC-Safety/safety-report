@@ -1,5 +1,6 @@
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -27,6 +28,7 @@ public sealed class ReporterImmutabilitySteps
 	private string _fingerprint = string.Empty;
 	private PostgresException? _refusal;
 	private int? _rows;
+	private ScratchHost? _scratch;
 
 	[Given(@"a submitted report with answers, a file, and a summary")]
 	public async Task GivenASubmittedReport()
@@ -66,8 +68,28 @@ public sealed class ReporterImmutabilitySteps
 	{
 		// CASCADE, so a foreign key cannot refuse it before the trigger does. It
 		// runs in a transaction that is always rolled back: should the trigger
-		// ever be missing, the shared test database still keeps every row.
+		// ever be missing, the database still keeps every row.
+		//
+		// On a database of its own, never the shared one. TRUNCATE takes an ACCESS
+		// EXCLUSIVE lock on the table and, through CASCADE, on every table pointing
+		// at it, before any trigger runs. Against the shared database that queued
+		// behind, and deadlocked with, whichever scenario was inserting a child row
+		// (a private attachment locks its own table, then wants a share lock on its
+		// report), failing that scenario with 40P01 (#741).
+		_scratch ??= await BootedApi.Scratch();
+		_reportId = await BootedReports.Seed(ReportStatus.Published, true, report => BootedReports.AddProcessedImage(report), host: _scratch.Host);
+		_table = string.Empty;
 		await Run(table, $"TRUNCATE {table} CASCADE", rollBack: true);
+	}
+
+	[AfterScenario]
+	public async Task DropTheScratchDatabase()
+	{
+		if (_scratch is not null)
+		{
+			await _scratch.DisposeAsync();
+			_scratch = null;
+		}
 	}
 
 	[When(@"a migration disables the reports trigger, sets language = 'fr-CA', and enables it again in one transaction")]
@@ -125,6 +147,12 @@ public sealed class ReporterImmutabilitySteps
 		ThenPostgresRefusesIt("reports.language");
 	}
 
+	/// <summary>The host the scenario's row lives on: its own scratch database once a truncation has moved it, else the shared one.</summary>
+	private async Task<WebApplicationFactory<Program>> HostOfTheRow()
+	{
+		return _scratch?.Host ?? await BootedApi.Factory();
+	}
+
 	private async Task Update(string table,
 							  string assignment)
 	{
@@ -145,7 +173,7 @@ public sealed class ReporterImmutabilitySteps
 		_refusal = null;
 		_rows = null;
 
-		var factory = await BootedApi.Factory();
+		var factory = await HostOfTheRow();
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -188,10 +216,10 @@ public sealed class ReporterImmutabilitySteps
 			: await Scalar($"SELECT to_jsonb(subject)::text FROM {_table} AS subject WHERE id = @id", _rowId) ?? string.Empty;
 	}
 
-	private static async Task<string?> Scalar(string sql,
-											  string id)
+	private async Task<string?> Scalar(string sql,
+									   string id)
 	{
-		var factory = await BootedApi.Factory();
+		var factory = await HostOfTheRow();
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var connection = database.Database.GetDbConnection();

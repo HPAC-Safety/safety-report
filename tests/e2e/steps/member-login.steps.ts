@@ -11,10 +11,18 @@ Given("a visitor activates the member-login action", async ({ page }) => {
 	await page.locator("header").getByRole("link", { name: "Member login" }).click()
 })
 
-Then("the login page shows a username field, a password field, and a login action", async ({ page }) => {
-	await expect(page.getByLabel("Username")).toBeVisible()
+Then("the login page shows an email field, a password field, and a login action", async ({ page }) => {
+	await expect(page.getByLabel("Email")).toBeVisible()
 	await expect(page.getByLabel("Password")).toBeVisible()
 	await expect(page.getByRole("button", { name: "Log in" })).toBeVisible()
+})
+
+Then("the email field is an email input, so a phone offers its email keyboard", async ({ page }) => {
+	const email = page.getByLabel("Email")
+	await expect(email).toHaveAttribute("type", "email")
+	await expect(email).toHaveAttribute("autocomplete", "email")
+	await expect(email).toHaveAttribute("autocapitalize", "none")
+	await expect(email).toHaveAttribute("spellcheck", "false")
 })
 
 Then("the login page shows no third-party sign-in option", async ({ page }) => {
@@ -49,7 +57,7 @@ Given(/^a visitor signs in as an? (Administrator|SafetyOfficer|User)$/, async ({
 Given("a visitor submits credentials that are not valid", async ({ page }) => {
 	await stubAuth(page)
 	await page.goto("/login")
-	await page.getByLabel("Username").fill("nobody")
+	await page.getByLabel("Email").fill("nobody")
 	await page.getByLabel("Password").fill("wrong")
 	await page.getByRole("button", { name: "Log in" }).click()
 })
@@ -60,7 +68,7 @@ Then("the login page shows one generic failure message", async ({ page }) => {
 	await expect(alerts).toBeVisible()
 })
 
-Then("the failure does not say whether the username or the password was wrong", async ({ page }) => {
+Then("the failure does not say whether the email or the password was wrong", async ({ page }) => {
 	// Whatever the message says, it must not name which half was at fault.
 	const message = (await page.getByRole("alert").textContent()) ?? ""
 	expect(message).not.toMatch(/unknown|no such|incorrect password|wrong password/i)

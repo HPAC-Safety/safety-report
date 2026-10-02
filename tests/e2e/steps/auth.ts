@@ -130,7 +130,7 @@ export async function signInAs(page: Page, role: Role) {
 
 	const { username, password } = CREDENTIALS[role]
 	// Either language: a scenario may choose French before the member signs in.
-	await page.getByLabel(/^(Username|Nom d'utilisateur)$/).fill(username)
+	await page.getByLabel(/^(Email|Courriel)$/).fill(username)
 	await page.getByLabel(/^(Password|Mot de passe)$/).fill(password)
 	await page.getByRole("button", { name: /^(Log in|Ouvrir une session)$/ }).click()
 

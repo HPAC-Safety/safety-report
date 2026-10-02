@@ -175,7 +175,7 @@ When("a visitor reads the report in French", async ({ page, context }) => {
 When("the visitor signs in from there", async ({ page }) => {
 	await stubAuth(page)
 	await page.getByRole("link", { name: "Sign in to comment" }).click()
-	await page.getByLabel("Username").fill(CREDENTIALS.user.username)
+	await page.getByLabel("Email").fill(CREDENTIALS.user.username)
 	await page.getByLabel("Password").fill(CREDENTIALS.user.password)
 	await page.getByRole("button", { name: "Log in" }).click()
 })

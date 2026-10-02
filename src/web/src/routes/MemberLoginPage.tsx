@@ -57,7 +57,10 @@ export function MemberLoginPage() {
 		<main className="mx-auto max-w-measure px-6 py-16">
 			<h1 className="font-display text-3xl font-bold">{t("page.login.title")}</h1>
 
-			<form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit}>
+			{/* noValidate: the field is type="email" for a phone's email keyboard, but
+			    Development's fixed accounts (ADR-0066) sign in as plain "admin" and
+			    the like, which the browser would otherwise refuse. */}
+			<form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
 				{failed && (
 					<p role="alert" className="rounded border border-rule bg-surface px-3 py-2 font-sans text-sm text-ink">
 						{t("page.login.errorGeneric")}
@@ -67,11 +70,14 @@ export function MemberLoginPage() {
 				<label className="flex flex-col gap-1 font-sans text-sm text-ink">
 					{t("page.login.usernameLabel")}
 					<input
-						type="text"
+						type="email"
 						name="username"
 						value={username}
 						onChange={(event) => setUsername(event.target.value)}
-						autoComplete="username"
+						autoComplete="email"
+						autoCapitalize="none"
+						autoCorrect="off"
+						spellCheck={false}
 						className="touch-target rounded border border-rule bg-surface px-3 text-ink"
 					/>
 				</label>

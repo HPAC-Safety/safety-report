@@ -9,7 +9,8 @@ Rule: Login and session
 @ui
 Scenario: In development the login page offers no third-party sign-in option
   Given a visitor activates the member-login action
-  Then the login page shows a username field, a password field, and a login action
+  Then the login page shows an email field, a password field, and a login action
+  And the email field is an email input, so a phone offers its email keyboard
   And the login page shows no third-party sign-in option
 
 @REQ-MOD-002
@@ -32,7 +33,7 @@ Scenario: Signing in with member credentials returns a session that survives a r
 Scenario: Bad credentials show one generic failure and no session
   Given a visitor submits credentials that are not valid
   Then the login page shows one generic failure message
-  And the failure does not say whether the username or the password was wrong
+  And the failure does not say whether the email or the password was wrong
   And the header still shows the member-login action
 
 @REQ-MOD-005

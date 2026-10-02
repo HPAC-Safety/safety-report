@@ -82,10 +82,10 @@
     },
     "login": {
       "title": "Connexion des membres",
-      "usernameLabel": "Nom d'utilisateur",
+      "usernameLabel": "Courriel",
       "passwordLabel": "Mot de passe",
       "googleButton": "Continuer avec Google",
-      "errorGeneric": "Nous n'avons pas pu vous connecter. Vérifiez votre nom d'utilisateur et votre mot de passe, puis réessayez.",
+      "errorGeneric": "Nous n'avons pas pu vous connecter. Vérifiez votre adresse courriel et votre mot de passe, puis réessayez.",
       "submitting": "Connexion en cours…",
       "submitButton": "Ouvrir une session"
     },

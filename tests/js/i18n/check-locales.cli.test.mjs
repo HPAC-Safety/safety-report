@@ -11,7 +11,7 @@ const SCRIPT = fileURLToPath(new URL('../../../tools/i18n/check-locales.mjs', im
 const run = (files) => {
 	const dir = mkdtempSync(join(tmpdir(), 'check-locales-'))
 	mkdirSync(join(dir, 'locales'))
-	for (const [name, value] of Object.entries(files)) writeFileSync(join(dir, 'locales', name), JSON.stringify(value))
+	for (const [name, value] of Object.entries(files)) writeFileSync(join(dir, 'locales', name), typeof value === 'string' ? value : JSON.stringify(value))
 	const result = spawnSync('node', [SCRIPT], { cwd: dir, encoding: 'utf8' })
 	rmSync(dir, { recursive: true })
 	return result
@@ -35,5 +35,35 @@ describe('check-locales', () => {
 		assert.equal(result.status, 1)
 		assert.match(result.stderr, /Missing key 'b'/)
 		assert.match(result.stderr, /Key 'c' is not in locales\/en-CA\.json/)
+	})
+
+	it('fails when a locale file is not valid JSON', () => {
+		const result = run({ 'en-CA.json': '{ nope' })
+		assert.equal(result.status, 1)
+		assert.match(result.stderr, /is not valid JSON/)
+	})
+
+	it('fails when English defines no keys', () => {
+		const result = run({ 'en-CA.json': {} })
+		assert.equal(result.status, 1)
+		assert.match(result.stderr, /defines no keys/)
+	})
+
+	it('fails on a key that flattens to the same path as another', () => {
+		const result = run({ 'en-CA.json': { 'a.b': 'x', a: { b: 'y' } } })
+		assert.equal(result.status, 1)
+		assert.match(result.stderr, /Duplicate keys: a\.b/)
+	})
+
+	it('skips the parity check when French does not exist yet', () => {
+		const result = run({ 'en-CA.json': { a: 'x' } })
+		assert.equal(result.status, 0)
+		assert.match(result.stdout, /fr-CA\.json does not exist yet/)
+	})
+
+	it('treats arrays and nulls as leaf values', () => {
+		const result = run({ 'en-CA.json': { a: [1], b: null }, 'fr-CA.json': { a: [2], b: null } })
+		assert.equal(result.status, 0)
+		assert.match(result.stdout, /2 keys in/)
 	})
 })

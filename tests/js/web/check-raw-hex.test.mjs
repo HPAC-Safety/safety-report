@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 import { INCLUDES, main, PATHS } from '../../../tools/web/check-raw-hex.mjs'
 
@@ -35,5 +37,16 @@ describe('check-raw-hex', () => {
 		assert.match(logs[1], /a\.tsx:2:/)
 		assert.doesNotMatch(logs[1], /a\.tsx:3:|b\.css/)
 		rmSync(dir, { recursive: true })
+	})
+})
+
+describe('check-raw-hex as a command', () => {
+	it('passes for a path with no raw hex', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'raw-hex-cli-'))
+		writeFileSync(join(dir, 'a.tsx'), 'export const a = 1\n')
+		const script = fileURLToPath(new URL('../../../tools/web/check-raw-hex.mjs', import.meta.url))
+		const result = spawnSync(process.execPath, [script, dir], { encoding: 'utf8' })
+		rmSync(dir, { recursive: true, force: true })
+		assert.equal(result.status, 0)
 	})
 })

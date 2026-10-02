@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 import { main } from '../../../tools/dev/install-skillfile.mjs'
 
@@ -32,5 +34,14 @@ describe('install-skillfile', () => {
 
 	it('needs RUNNER_TEMP', () => {
 		assert.throws(() => main({ env: {}, exec: () => assert.fail('ran') }), /RUNNER_TEMP is not set/)
+	})
+})
+
+describe('install-skillfile as a command', () => {
+	it('fails without RUNNER_TEMP', () => {
+		const script = fileURLToPath(new URL('../../../tools/dev/install-skillfile.mjs', import.meta.url))
+		const result = spawnSync(process.execPath, [script], { encoding: 'utf8', env: { PATH: process.env.PATH } })
+		assert.notEqual(result.status, 0)
+		assert.match(result.stderr, /RUNNER_TEMP is not set/)
 	})
 })

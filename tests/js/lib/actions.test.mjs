@@ -49,6 +49,33 @@ describe('setEnv and appendSummary', () => {
 	})
 })
 
+describe('without the Actions files', () => {
+	it('prints the output and the summary, and skips the environment line', (t) => {
+		const written = []
+		t.mock.method(process.stdout, 'write', (text) => { written.push(text); return true })
+		setOutput('sha', 'abc', {})
+		appendSummary('done', {})
+		setEnv('A', '1', {})
+		t.mock.restoreAll()
+		assert.deepEqual(written, ['sha=abc\n', 'done\n'])
+	})
+})
+
+describe('exec errors', () => {
+	it('throws when the command cannot start', () => {
+		assert.throws(() => exec('definitely-not-a-command-778'), /ENOENT/)
+	})
+
+	it('reports a signal-killed command as status 1, and a failure with no stderr', () => {
+		assert.equal(exec('node', ['-e', 'process.kill(process.pid, "SIGKILL")']).status, 1)
+		assert.throws(() => run('node', ['-e', 'process.exit(2)']), /exited 2$/)
+	})
+
+	it('streams output instead of capturing it when inherit is set', () => {
+		assert.equal(exec('node', ['-e', ''], { inherit: true }).stdout, '')
+	})
+})
+
 describe('annotation', () => {
 	it('formats a bare annotation', () => {
 		assert.equal(annotation('error', 'bad'), '::error::bad')
@@ -67,6 +94,12 @@ describe('required', () => {
 })
 
 describe('isMain', () => {
+	it('is false when there is no script argument', () => {
+		const saved = process.argv[1]
+		process.argv[1] = ''
+		try { assert.equal(isMain(import.meta.url), false) } finally { process.argv[1] = saved }
+	})
+
 	it('is false for a module that is imported', () => {
 		assert.equal(isMain(new URL('../../../tools/lib/actions.mjs', import.meta.url).href), false)
 	})

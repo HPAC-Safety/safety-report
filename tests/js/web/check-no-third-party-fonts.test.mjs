@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 import { main } from '../../../tools/web/check-no-third-party-fonts.mjs'
 
@@ -32,5 +34,16 @@ describe('check-no-third-party-fonts', () => {
 		assert.equal(main({ argv: [dir], log: (m) => logs.push(m) }), 1)
 		assert.equal(logs[1], join(dir, 'assets/a.css'))
 		rmSync(dir, { recursive: true })
+	})
+})
+
+describe('check-no-third-party-fonts as a command', () => {
+	it('passes for a dist with no Google Fonts reference', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'fonts-cli-'))
+		writeFileSync(join(dir, 'a.css'), 'body{}')
+		const script = fileURLToPath(new URL('../../../tools/web/check-no-third-party-fonts.mjs', import.meta.url))
+		const result = spawnSync(process.execPath, [script, dir], { encoding: 'utf8' })
+		rmSync(dir, { recursive: true, force: true })
+		assert.equal(result.status, 0)
 	})
 })

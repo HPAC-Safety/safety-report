@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 import { main, problems } from '../../../tools/docs/check-agent-symlinks.mjs'
 
@@ -52,5 +54,25 @@ describe('check-agent-symlinks', () => {
 		const logs = []
 		assert.equal(main({ root, log: (m) => logs.push(m) }), 1)
 		assert.equal(logs.length, 2)
+	})
+})
+
+describe('check-agent-symlinks as a command', () => {
+	it('reports every link missing, and falls back to the unresolved AGENTS.md path', () => {
+		const dir = realpathSync(mkdtempSync(join(tmpdir(), 'agent-symlinks-cli-')))
+		const script = fileURLToPath(new URL('../../../tools/docs/check-agent-symlinks.mjs', import.meta.url))
+		const result = spawnSync(process.execPath, [script], { cwd: dir, encoding: 'utf8', env: { PATH: process.env.PATH } })
+		rmSync(dir, { recursive: true, force: true })
+		assert.equal(result.status, 1)
+		assert.equal(result.stdout.split('\n').filter((line) => line.includes('Not a symlink')).length, 3)
+	})
+
+	it('resolves a link against a root with no AGENTS.md', () => {
+		const dir = realpathSync(mkdtempSync(join(tmpdir(), 'agent-symlinks-none-')))
+		symlinkSync('AGENTS.md', join(dir, 'CLAUDE.md'))
+		const found = problems(dir, { links: ['CLAUDE.md'] })
+		rmSync(dir, { recursive: true, force: true })
+		assert.equal(found.length, 1)
+		assert.match(found[0], /<broken>/)
 	})
 })

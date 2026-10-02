@@ -370,6 +370,28 @@ A group that is edited and stays a group gives each live child a new revision in
 the same save, still grouped under it (`REQ-QB-248`); an answered child forks, and
 its replacement is grouped under the group too.
 
+### The seeded groups on a database created from scratch
+
+The seed groups the reporter's name, phone, and email under **From**, the
+pilot's name under **Pilot**, and the aircraft's type, manufacturer, model, and
+certification under **Aircraft**. A database created from scratch must send each
+of those groups with its questions (`REQ-QB-259`).
+
+`RestoreSeededGroups` re-links a seeded question that lost its group on such a
+database (`REQ-QB-260` to `REQ-QB-264`,
+[ADR-0187](../../decisions/ADR-0187-a-migration-restores-the-seeded-groups-a-fresh-database-lost.md)).
+It acts only while no revision under that key ever had a group and the group is
+still live, so an Administrator's own grouping, ungrouping, or deleted group
+stands.
+
+The browser suite's seeded form, `tests/e2e/fixtures/seeded-questions.json`, is
+exactly what a freshly migrated database sends (`REQ-QB-265`). The scenario that
+checks it rewrites it when run with `HPAC_WRITE_SEEDED_FORM_FIXTURE=1`. The group
+pages are walked against it (`REQ-QB-266`).
+
+**Not built:** no change to `InitialSchema` or the seed writer, and no
+full-stack browser run against a real API.
+
 ## Current implementation divergence
 
 Main currently has a stable `Question` whose order, active flag, privacy, and

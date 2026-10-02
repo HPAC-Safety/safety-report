@@ -2495,6 +2495,47 @@ definition matches; a built claim may never have one.
 - [country.steps.ts](../tests/e2e/steps/country.steps.ts)
 - [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
 
+### REQ-QB-259
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-260
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-261
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-262
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-263
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-264
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-265
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs)
+
+### REQ-QB-266
+
+- [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
+- [seeded-groups.steps.ts](../tests/e2e/steps/seeded-groups.steps.ts)
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

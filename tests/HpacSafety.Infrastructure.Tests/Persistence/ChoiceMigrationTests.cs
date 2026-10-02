@@ -64,10 +64,10 @@ public sealed class ChoiceMigrationTests(PostgresFixture postgres)
 				""");
 		}
 
-		// When
+		// When — stopping at the migration under test: a later one changes these counts (#750)
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateTo(context, null);
+			await MigrateTo(context, "GiveEachQuestionItsOwnChoices");
 		}
 
 		// Then

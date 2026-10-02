@@ -153,7 +153,7 @@ Then("the phone field's placeholder is {string}", async ({ page }, placeholder: 
 })
 
 When(/^the reporter chooses (.+) in its country picker$/, async ({ page }, country: string) => {
-	const picker = page.getByRole("combobox", { name: "Country" })
+	const picker = page.locator(`${CONTACT}-country`)
 	// Each country is listed by flag, name, and calling code.
 	const option = picker.locator("option").filter({ hasText: new RegExp(` ${country} \\(\\+\\d+\\)$`) })
 	await picker.selectOption((await option.getAttribute("value"))!)

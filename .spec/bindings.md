@@ -2445,6 +2445,56 @@ definition matches; a built claim may never have one.
 - [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
 - [QuestionUngroupingSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionUngroupingSteps.cs)
 
+### REQ-QB-249
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-250
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-251
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-252
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-253
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-254
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-255
+
+- [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs)
+- [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs)
+
+### REQ-QB-256
+
+- [country.steps.ts](../tests/e2e/steps/country.steps.ts)
+- [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
+
+### REQ-QB-257
+
+- [country.steps.ts](../tests/e2e/steps/country.steps.ts)
+- [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
+
+### REQ-QB-258
+
+- [country.steps.ts](../tests/e2e/steps/country.steps.ts)
+- [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

@@ -183,7 +183,14 @@
 			"src/web/src/report-form/useStrayFileDropGuard*"
 		],
 		"public-feed": [
+			"src/HpacSafety.Api/PublicReports/OwnReport*",
 			"src/HpacSafety.Api/PublicReports/PublicReport*",
+			"src/HpacSafety.Core/Features/Reporting/BrowserReceipt.cs",
+			"src/HpacSafety.Infrastructure/Persistence/Configurations/OwnReportConfiguration.cs",
+			"src/HpacSafety.Infrastructure/Persistence/Sql/*ShowAReportersOwnReport*",
+			"src/HpacSafety.Infrastructure/Persistence/Views/OwnReport*",
+			"src/web/src/api/ownReports*",
+			"src/web/src/components/OwnReportPill*",
 			"src/HpacSafety.Infrastructure/Persistence/Configurations/PublicReportConfiguration.cs",
 			"src/HpacSafety.Infrastructure/Persistence/Sql/*KeepSystemQuestionsPrivate*",
 			"src/HpacSafety.Infrastructure/Persistence/Sql/*PublicReportSearch*",
@@ -247,6 +254,7 @@
 		"report-submission": [
 			"src/HpacSafety.Api/Reports/**",
 			"src/HpacSafety.Core/UploadId.cs",
+			"src/HpacSafety.Core/Features/Reporting/BrowserReceipt.cs",
 			"src/HpacSafety.Core/Features/Reporting/ContactAnswer.cs",
 			"src/HpacSafety.Core/Features/Reporting/Report.cs",
 			"src/HpacSafety.Core/Features/Reporting/ReportAnswer.cs",

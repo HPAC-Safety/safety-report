@@ -120,6 +120,14 @@ Examples:
   | public feed | Submit a safety report | report      |
   | public feed | Contact                | contact     |
 
+@REQ-WLD-049
+@ui
+Scenario: A page left open across a deploy keeps its interface text in both languages
+  Given a visitor has the page open in English
+  And a deploy has since removed every script file the page has not loaded
+  When the visitor switches the language toggle
+  Then the page shows its French interface text, not catalogue keys
+
 @REQ-WLD-010
 Scenario: Application chrome strings come from committed locale catalogues
   Given the UI renders chrome or a stable validation/error message

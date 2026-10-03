@@ -6,7 +6,7 @@ import { coverageScope } from "../../tools/web/web-coverage-scope.ts"
 
 // locales/ lives at the repository root, not under src/web (see
 // tools/i18n/check-locales.ts and .github/workflows/i18n-translate.yml).
-// src/web/src/i18n/loadCatalogue.ts reaches it with a relative
+// src/web/src/i18n/catalogueFor.ts reaches it with a relative
 // import.meta.glob; server.fs.allow lets the dev server serve a path outside
 // its own project root.
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url))

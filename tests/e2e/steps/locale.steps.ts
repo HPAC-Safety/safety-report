@@ -102,3 +102,26 @@ Then("the language choice persists to local storage across a reload", async ({ p
 Given(/^the interface language is (English|French)$/, async ({ context }, language: string) => {
 	await context.addInitScript((locale) => localStorage.setItem("hpac.locale", locale), language === "French" ? "fr-CA" : "en-CA")
 })
+
+// REQ-WLD-049. A deploy deletes the previous build's hashed files, and
+// CloudFront answers a missing one with index.html at 200 (infra/cdn.tf's SPA
+// fallback). Routing every later /assets/ request to that same answer is
+// what an open tab meets after a deploy.
+Given("a visitor has the page open in English", async ({ page, context }) => {
+	await context.addInitScript(() => localStorage.setItem("hpac.locale", "en-CA"))
+	await page.goto("/")
+	await expect(page).toHaveTitle("HPAC Safety")
+})
+
+Given("a deploy has since removed every script file the page has not loaded", async ({ page }) => {
+	await page.route("**/assets/**", (route) =>
+		route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><html><body></body></html>" }),
+	)
+})
+
+Then("the page shows its French interface text, not catalogue keys", async ({ page }) => {
+	await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA")
+	await expect(page).toHaveTitle("ACVL Sécurité")
+	await expect(page.getByRole("button", { name: /^Passer à/ })).toBeVisible()
+	await expect(page.locator("body")).not.toContainText("footer.copyright")
+})

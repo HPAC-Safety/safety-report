@@ -251,8 +251,26 @@ jobs:
       - name: Unpack the website bundle
         run: tar xzf artifacts/release/web-dist/web-dist.tar.gz -C /tmp/web-dist
 
-      - name: Sync the website bundle
-        run: aws s3 sync /tmp/web-dist "s3://${{ steps.tf.outputs.S3_BUCKET_SITE }}" --delete
+      # CON-INF-027 (#805). The files under assets/ are content-hashed, so
+      # they never change and are cached for a year. They are uploaded first,
+      # so no new page can name a file that is not there yet. The page and
+      # every unhashed file come next, as no-cache, so a returning visitor
+      # revalidates and gets this release. The previous release's assets are
+      # deleted last.
+      - name: Upload the website's hashed assets
+        run: |
+          aws s3 sync /tmp/web-dist/assets "s3://${{ steps.tf.outputs.S3_BUCKET_SITE }}/assets" \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: Upload the website's page and unhashed files
+        run: |
+          aws s3 sync /tmp/web-dist "s3://${{ steps.tf.outputs.S3_BUCKET_SITE }}" \
+            --exclude "assets/*" --cache-control "no-cache" --delete
+
+      - name: Delete the previous release's assets
+        run: |
+          aws s3 sync /tmp/web-dist/assets "s3://${{ steps.tf.outputs.S3_BUCKET_SITE }}/assets" \
+            --cache-control "public, max-age=31536000, immutable" --delete
 
       - name: Invalidate CloudFront
         run: |

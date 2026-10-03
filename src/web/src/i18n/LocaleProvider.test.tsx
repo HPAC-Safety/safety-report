@@ -4,20 +4,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_LOCALE as exportedDefault, LocaleContext, LocaleProvider, useLocaleProvider } from "./LocaleProvider"
 import { DEFAULT_LOCALE, STORAGE_KEY } from "./locales"
 
-const loadCatalogue = vi.fn<(locale: string) => Promise<Record<string, string>>>()
-vi.mock("./loadCatalogue", () => ({ loadCatalogue: (locale: string) => loadCatalogue(locale) }))
+const catalogueFor = vi.fn<(locale: string) => Record<string, string>>()
+vi.mock("./catalogueFor", () => ({ catalogueFor: (locale: string) => catalogueFor(locale) }))
 
 beforeEach(() => {
 	localStorage.clear()
 	document.title = "untitled"
-	loadCatalogue.mockImplementation((locale: string) =>
-		Promise.resolve(locale === "fr-CA" ? { "app.title": "Titre", hello: "Bonjour {name} {missing}" } : { "app.title": "Title", hello: "Hello {name} {missing}" }),
+	catalogueFor.mockImplementation((locale: string) =>
+		locale === "fr-CA" ? { "app.title": "Titre", hello: "Bonjour {name} {missing}" } : { "app.title": "Title", hello: "Hello {name} {missing}" },
 	)
 })
 
 afterEach(() => {
 	cleanup()
-	loadCatalogue.mockReset()
+	catalogueFor.mockReset()
 	vi.restoreAllMocks()
 	vi.unstubAllGlobals()
 })
@@ -69,7 +69,7 @@ describe("useLocaleProvider", () => {
 	})
 
 	it("keeps the document title when the catalogue has none", async () => {
-		loadCatalogue.mockResolvedValue({})
+		catalogueFor.mockReturnValue({})
 		renderHook(() => useLocaleProvider())
 
 		await act(async () => {})
@@ -99,22 +99,10 @@ describe("useLocaleProvider", () => {
 		await waitFor(() => expect(document.title).toBe("Titre"))
 	})
 
-	it("ignores a catalogue that arrives after the language changed", async () => {
-		let resolveEnglish: (catalogue: Record<string, string>) => void = () => {}
-		loadCatalogue.mockImplementation((locale: string) =>
-			locale === "en-CA" ? new Promise((done) => (resolveEnglish = done)) : Promise.resolve({ "app.title": "Titre" }),
-		)
-		localStorage.setItem(STORAGE_KEY, "en-CA")
+	it("translates on the first render, with no wait for a catalogue", () => {
 		const { result } = renderHook(() => useLocaleProvider())
 
-		act(() => result.current.setLocale("fr-CA"))
-		await waitFor(() => expect(document.title).toBe("Titre"))
-		await act(async () => {
-			resolveEnglish({ "app.title": "Title" })
-			await Promise.resolve()
-		})
-
-		expect(document.title).toBe("Titre")
+		expect(result.current.t("hello", { name: "Ada" })).toBe("Hello Ada {missing}")
 	})
 
 	it("still exports the default locale", () => {

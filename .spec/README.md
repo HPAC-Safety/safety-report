@@ -51,6 +51,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0191](decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md) | Each rule is stated once, and no status page is written by hand | accepted | 2026-10-03 |
 | [0190](decisions/ADR-0190-the-interface-catalogues-ship-in-the-page-bundle-and-the-page-is-never-cached-stale.md) | The interface catalogues ship in the page bundle, and the page is never cached stale | accepted | 2026-10-03 |
 | [0189](decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md) | A workflow step runs one command, and tools/ is grouped by domain | accepted | 2026-10-02 |
 | [0188](decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md) | A component's logic lives in Foo.tsx and its markup in Foo.view.tsx, and web logic is unit-tested | accepted | 2026-10-02 |
@@ -94,7 +95,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0146](decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md) | A question's choices may depend on another question's answer | superseded | 2026-09-26 |
 | [0145](decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md) | A pull request's checks run locally under act, against CI's own baseline | accepted | 2026-09-26 |
 | [0144](decisions/ADR-0144-the-wording-is-translated-on-request-in-a-chosen-direction.md) | The question wording is translated on request, in a direction the administrator chooses | accepted | 2026-09-26 |
-| [0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md) | Issue traceability drift opens an issue and gates nothing | accepted | 2026-09-26 |
+| [0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md) | Issue traceability drift opens an issue and gates nothing | partially-superseded | 2026-09-26 |
 | [0142](decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md) | A web UI pull request shows its screenshots | accepted | 2026-09-26 |
 | [0141](decisions/ADR-0141-a-choice-is-translated-on-request-in-a-chosen-direction.md) | A choice is translated on request, one at a time, in a direction the administrator chooses | accepted | 2026-09-26 |
 | [0140](decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md) | A type-ahead is a combobox the form draws | accepted | 2026-09-26 |
@@ -153,7 +154,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0087](decisions/ADR-0087-every-markdown-file-declares-itself.md) | Every markdown file declares what it is | accepted | 2026-09-22 |
 | [0086](decisions/ADR-0086-four-role-agents-defined-in-the-repository.md) | Four roles are defined as repository agents | accepted | 2026-09-22 |
 | [0085](decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md) | A lesson flows upstream into the specification | accepted | 2026-09-22 |
-| [0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md) | A claim has a stable ID, and the traceability matrix is generated | accepted | 2026-09-22 |
+| [0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md) | A claim has a stable ID, and the traceability matrix is generated | partially-superseded | 2026-09-22 |
 | [0083](decisions/ADR-0083-specification-driven-development.md) | Specification-driven development is how this repository works | accepted | 2026-09-22 |
 | [0082](decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md) | A deterministic marking pass precedes the one model call | accepted | 2026-09-22 |
 | [0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md) | Trust forwarded headers because the security group is the trust boundary, not a static proxy list | superseded | 2026-09-22 |

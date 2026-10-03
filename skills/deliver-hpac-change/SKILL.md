@@ -148,12 +148,14 @@ Rules:
   [`docs/source-inventory.md`](../../docs/source-inventory.md), and a removed
   one loses its row. `node tools/docs/check-inventories.ts` fails the pre-commit
   hook and the `docs` job otherwise.
-- A pull request that closes an issue removes its row from
-  [`docs/issue-traceability.md`](../../docs/issue-traceability.md). Filing an
-  issue needs no pull request. Drift never fails a pull request; it keeps an
-  "Issue traceability drift" issue open, and whoever resolves that issue adds
-  the missing rows
-  ([ADR-0143](../../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+- [`docs/issue-traceability.md`](../../docs/issue-traceability.md) is
+  generated from GitHub; never edit it by hand, and a pull request that
+  closes an issue leaves it alone. Drift never fails a pull request; it keeps
+  an "Issue traceability drift" issue open, and whoever resolves that issue
+  runs `node tools/spec/generate-issue-traceability.ts` in a pull request that
+  closes it
+  ([ADR-0143](../../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md),
+  [ADR-0191](../../.spec/decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md)).
 
 ### Lessons
 

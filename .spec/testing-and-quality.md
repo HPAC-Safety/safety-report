@@ -172,11 +172,14 @@ not through source grep (ADR-0013, ADR-0035).
 
 [Source inventory](../docs/source-inventory.md) maps every `src/` project and
 directory; `tools/docs/check-inventories.ts` fails the required `docs` job when it
-drifts. [Issue traceability](../docs/issue-traceability.md) lists every open issue;
-`tools/spec/check-issue-traceability.ts` checks it daily and on every push to `main`
-from its own non-required workflow, and keeps one drift issue open instead of
-failing a pull request, because open issues change without any commit
-([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+drifts. [Issue traceability](../docs/issue-traceability.md) lists every open issue,
+generated from GitHub by `tools/spec/generate-issue-traceability.ts`;
+`tools/spec/check-issue-traceability.ts` compares it with what the generator
+would write daily and on every push to `main` from its own non-required
+workflow, and keeps one drift issue open instead of failing a pull request,
+because open issues change without any commit
+([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md),
+[ADR-0191](decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md)).
 No test fixture or specification
 may contain a real reporter's personal information.
 *Verified by: none — a rule about the tests themselves, enforced by the suites

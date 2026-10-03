@@ -1,13 +1,13 @@
-name: Issue traceability
-
-# docs/issue-traceability.md lists every open issue (ADR-0143). Open issues change
-# without any commit, so this never runs on a pull request and is not a
-# required check: a pull request that closes an issue would have to keep its
-# row until it merged and leave it stale the moment it did, and filing any
-# issue would fail every open pull request. Instead, tools/spec/check-issue-traceability.ts
-# keeps one "Issue traceability drift" issue open while the page and the open
-# issues disagree, and closes it once they match. Only an issue this bot wrote
-# under that title is the drift issue.
+# docs/issue-traceability.md lists every open issue, generated from GitHub by
+# tools/spec/generate-issue-traceability.ts (ADR-0191, superseding ADR-0143).
+# Open issues change without any commit, so this never runs on a pull request
+# and is not a required check: a pull request that closes an issue would leave
+# the page stale the moment it merged, and filing any issue would fail every
+# open pull request. Instead, tools/spec/check-issue-traceability.ts keeps one
+# "Issue traceability drift" issue open while the committed page is not what the
+# generator would write now, and closes it once they match. Whoever takes the
+# drift issue regenerates the page in a pull request that closes it. Only an
+# issue this bot wrote under that title is the drift issue.
 #
 # Runs only on a schedule, a push to main, or dispatch — never on a
 # pull_request — so a fork cannot make this repository write issues.

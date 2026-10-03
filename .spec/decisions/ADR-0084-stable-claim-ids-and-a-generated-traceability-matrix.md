@@ -2,7 +2,7 @@
 title: A claim has a stable ID, and the traceability matrix is generated
 description: Every scenario carries one stable claim ID as a tag, every normative docs constraint carries a CON id naming what verifies it, and .spec/traceability.md is generated from both.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: traceability, claim IDs, Gherkin tags, generated documentation, CI gate, drift
@@ -18,6 +18,9 @@ to date to merge. Amended by
 the matrix carries no totals and one block per item, so git can merge it. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Partially superseded by
+[ADR-0191](ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md):
+the two narrative pages are no longer kept by hand.
 
 ## Context
 

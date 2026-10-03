@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// docs/issue-traceability.md lists every open issue (ADR-0143).
+// docs/issue-traceability.md lists every open issue, generated from GitHub by
+// tools/spec/generate-issue-traceability.ts (ADR-0191, superseding ADR-0143).
 //
-// This reports when an open issue has no row, or a row names an issue that is
-// no longer open. It never gates a pull request: checked against live GitHub
-// state, a pull request that closes an issue would have to keep that issue's
-// row until it merges and would leave it stale the moment it did, and filing
+// This reports when the page is not what the generator would write now: an
+// open issue has no row, a row's title, milestone, labels, or parent changed,
+// or a row names an issue that is no longer open. It never gates a pull
+// request: open issues change without any commit, so a pull request that
+// closes an issue would leave the page stale the moment it merged, and filing
 // any issue would fail every open pull request. So a scheduled workflow runs
 // it, and it keeps one drift issue current instead: opened (or the last one
 // reopened) when drift appears, updated while it lasts, closed when it is gone.
@@ -15,7 +17,8 @@
 //   GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/spec/check-issue-traceability.ts --sync   also keeps the drift issue
 //
 // With no token it reads nothing and exits 0 with a notice. Without --sync the
-// exit code says whether there is drift.
+// exit code says whether there is drift. The page and its rows are rendered
+// here, so the generator and this check cannot disagree.
 import { readFileSync } from 'node:fs'
 import { isMain } from '../lib/actions.ts'
 
@@ -30,6 +33,9 @@ export interface Issue {
 	title: string
 	body?: string | null | undefined
 	user?: string | undefined
+	milestone?: string | undefined
+	labels?: readonly string[] | undefined
+	parent?: number | undefined
 }
 
 /** What GitHub's REST API sends for an issue or a milestone, of which this reads a few fields. */
@@ -39,6 +45,9 @@ export interface Item {
 	body?: string | null | undefined
 	user?: { login: string } | null | undefined
 	pull_request?: object | undefined
+	milestone?: { title: string } | null | undefined
+	labels?: readonly ({ name?: string } | string)[] | undefined
+	parent_issue_url?: string | null | undefined
 }
 
 /** What `github` hands its `fetch`. */
@@ -75,28 +84,99 @@ const quoted = (title: string): string => `\`${title.replaceAll('`', "'")}\``
 export const escapeCommand = (text: string): string => text.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
 export const DRIFT_MILESTONE = 'Docs & spec hygiene'
 
+/**
+ * Labels that say who is working on an issue, not what it is. They change
+ * too often to be worth a regenerated page.
+ */
+export const TRANSIENT_LABELS: ReadonlySet<string> = new Set(['in progress'])
+
+/** Text made safe for one table cell, and for a link's text. */
+const cell = (text: string): string =>
+	text
+		.replace(/\s+/g, ' ')
+		.replace(/[|[\]]/g, (character) => `\\${character}`)
+		.trim()
+
+/** The one table row the page holds for `issue`. */
+export function issueRow(issue: Issue, repository: string): string {
+	const labels = (issue.labels ?? []).filter((label) => !TRANSIENT_LABELS.has(label)).toSorted()
+	const parent = issue.parent === undefined ? '—' : `[#${String(issue.parent)}](https://github.com/${repository}/issues/${String(issue.parent)})`
+	return [
+		'',
+		` [#${String(issue.number)} — ${cell(issue.title)}](https://github.com/${repository}/issues/${String(issue.number)}) `,
+		` ${issue.milestone ? cell(issue.milestone) : '—'} `,
+		` ${labels.length > 0 ? labels.map((label) => `\`${label}\``).join(', ') : '—'} `,
+		` ${parent} `,
+		'',
+	].join('|')
+}
+
+/** The whole page, as the generator writes it: every open issue but the drift issue, by number. */
+export function renderPage(openIssues: readonly Issue[], repository: string): string {
+	const rows = openIssues
+		.filter((issue) => !isDriftIssue(issue))
+		.toSorted((a, b) => a.number - b.number)
+		.map((issue) => issueRow(issue, repository))
+	return [
+		'---',
+		'title: Issue traceability',
+		'description: Every open GitHub issue with its milestone, labels, and parent, generated from GitHub.',
+		'type: guide',
+		'---',
+		'',
+		'# Issue traceability',
+		'',
+		'> **Generated file — do not edit by hand.**',
+		'> Regenerate with `node tools/spec/generate-issue-traceability.ts`, which reads',
+		'> the open issues with `GITHUB_TOKEN`, `GH_TOKEN`, or the `gh` login',
+		'> ([ADR-0191](../.spec/decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md)).',
+		'',
+		'Every open issue, with its milestone, labels, and parent. Closed issues are',
+		'not listed: their history is in GitHub, and what they decided lives in the',
+		'ADRs and `.spec/features`. What an issue asks for is in the issue itself.',
+		'',
+		'Nothing checks this page on a pull request. `.github/workflows/issue-traceability.yml`',
+		'compares it with GitHub daily and on every push to `main`, and keeps one',
+		'"Issue traceability drift" issue open while they differ.',
+		'',
+		'| Issue | Milestone | Labels | Parent |',
+		'|---|---|---|---|',
+		...rows,
+		'',
+	].join('\n')
+}
+
+/** Each table row of the page, by the issue number its first cell names. */
+export function listedRows(markdown: string): Map<number, string> {
+	const rows = new Map<number, string>()
+	for (const [line, number] of markdown.matchAll(/^\|\s*\[#(\d+)\b.*$/gm)) rows.set(Number(number), line)
+	return rows
+}
+
 /** The issue number each table row names in its first cell. */
 export function listedIssues(markdown: string): number[] {
-	return [...markdown.matchAll(/^\|\s*\[#(\d+)\b/gm)].map(([, number]) => Number(number))
+	return [...listedRows(markdown).keys()]
 }
 
 /**
  * What is wrong with the page, or an empty list. `openIssues` is every open
  * issue, pull requests excluded; the drift issue itself needs no row.
  */
-export function driftProblems({ openIssues, markdown }: { openIssues: readonly Issue[]; markdown: string }): string[] {
+export function driftProblems({ openIssues, markdown, repository }: { openIssues: readonly Issue[]; markdown: string; repository: string }): string[] {
 	const open = openIssues.filter((issue) => !isDriftIssue(issue))
 	const openNumbers = new Set(open.map((issue) => issue.number))
-	const listed = listedIssues(markdown)
-	const listedNumbers = new Set(listed)
+	const listed = listedRows(markdown)
 
 	const problems: string[] = []
-	for (const issue of [...open].sort((a, b) => a.number - b.number)) {
-		if (!listedNumbers.has(issue.number)) problems.push(`#${issue.number} (${quoted(issue.title)}) is open and has no row.`)
+	for (const issue of open.toSorted((a, b) => a.number - b.number)) {
+		const row = listed.get(issue.number)
+		if (row === undefined) problems.push(`#${String(issue.number)} (${quoted(issue.title)}) is open and has no row.`)
+		else if (row !== issueRow(issue, repository)) problems.push(`#${String(issue.number)} (${quoted(issue.title)}) has a row that is out of date.`)
 	}
-	for (const number of listed) {
-		if (!openNumbers.has(number)) problems.push(`#${number} has a row but is not an open issue.`)
+	for (const number of listed.keys()) {
+		if (!openNumbers.has(number)) problems.push(`#${String(number)} has a row but is not an open issue.`)
 	}
+	if (problems.length === 0 && markdown !== renderPage(openIssues, repository)) problems.push('The page differs from what the generator writes.')
 	return problems
 }
 
@@ -107,7 +187,7 @@ export function driftBody(problems: readonly string[], repository: string): stri
 		'',
 		...problems.map((problem) => `- ${problem}`),
 		'',
-		'Add a row for each open issue, saying how it stands against the specification, and remove the row of each closed one.',
+		'Regenerate it with `node tools/spec/generate-issue-traceability.ts` and open a pull request that closes this issue.',
 		'`.github/workflows/issue-traceability.yml` keeps this issue current and closes it once the page matches.',
 	].join('\n')
 }
@@ -153,7 +233,18 @@ export async function syncDriftIssue({ api, problems, openIssues, repository }: 
 	return `opened #${created.number}`
 }
 
-const summary = ({ number, title, body, user }: Item): Issue => ({ number, title, body, user: user?.login })
+const summary = ({ number, title, body, user, milestone, labels, parent_issue_url }: Item): Issue => {
+	const parent = /\/issues\/(\d+)$/.exec(parent_issue_url ?? '')?.[1]
+	return {
+		number,
+		title,
+		body,
+		user: user?.login,
+		milestone: milestone?.title,
+		labels: (labels ?? []).map((label) => (typeof label === 'string' ? label : (label.name ?? ''))).filter(Boolean),
+		parent: parent === undefined ? undefined : Number(parent),
+	}
+}
 
 /** Every open issue, pull requests excluded. */
 export async function openIssues(api: Api): Promise<Issue[]> {
@@ -200,9 +291,9 @@ export async function main({ api, markdown, sync, repository }: { api: Api | nul
 
 	try {
 		const issues = await openIssues(api)
-		const problems = driftProblems({ openIssues: issues, markdown })
+		const problems = driftProblems({ openIssues: issues, markdown, repository })
 
-		if (problems.length === 0) console.log(`::notice::${PAGE} lists every open issue and nothing else.`)
+		if (problems.length === 0) console.log(`::notice::${PAGE} is what the generator writes for the open issues.`)
 		for (const problem of problems) console.log(`::warning file=${PAGE}::${escapeCommand(problem)}`)
 
 		if (sync) {

@@ -25,7 +25,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { parseFrontmatter } from '../docs/check-frontmatter.ts'
-import { CONVENTIONS, DECISIONS, LESSONS } from './spec-paths.ts'
+import { readClaims, readConstraints } from './generate-traceability.ts'
+import { ADR_TEMPLATE, CONSTRAINT_PAGES, CONVENTIONS, DECISIONS, FEATURES, LESSONS } from './spec-paths.ts'
 import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
@@ -148,8 +149,11 @@ export function checkAdr(name: string, text: string): string[] {
 	return problems
 }
 
-/** Every problem with one lesson's shape. `skills` are the skill names that exist. */
-export function checkLesson(name: string, text: string, skills: ReadonlySet<string>, conventions: ReadonlySet<string>): string[] {
+/**
+ * Every problem with one lesson's shape. `skills`, `conventions`, and `claims`
+ * are the skill names, convention IDs, and REQ-/CON- IDs that exist.
+ */
+export function checkLesson(name: string, text: string, skills: ReadonlySet<string>, conventions: ReadonlySet<string>, claims: ReadonlySet<string>): string[] {
 	const path = `${LESSONS}/${name}`
 	const problems: string[] = []
 	const kind = frontmatter(text).kind ?? ''
@@ -174,8 +178,14 @@ export function checkLesson(name: string, text: string, skills: ReadonlySet<stri
 		if (!sections.includes(heading)) problems.push(`${path}: ${kind === 'incident' ? 'an' : 'a'} ${kind} lesson needs "## ${heading}"`)
 	}
 
-	if (kind === 'product' && !/\b(REQ|CON)-[A-Z]+-\d{3}\b/.test(section(text, 'Spec delta'))) {
-		problems.push(`${path}: a product lesson's "## Spec delta" names the REQ- or CON- claim that is its remedy (ADR-0192)`)
+	if (kind === 'product') {
+		const named = section(text, 'Spec delta').match(/\b(?:REQ|CON)-[A-Z]+-\d{3}\b/g) ?? []
+		// At least one named claim is live. A lesson is history: a claim it
+		// names may since have been deleted with its superseded scenario.
+		if (named.length === 0) problems.push(`${path}: a product lesson's "## Spec delta" names the REQ- or CON- claim that is its remedy (ADR-0192)`)
+		else if (!named.some((id) => claims.has(id))) {
+			problems.push(`${path}: its "## Spec delta" names ${[...new Set(named)].join(', ')}, none of which a scenario or constraint page carries (ADR-0192)`)
+		}
 	}
 
 	if (kind === 'process') {
@@ -228,12 +238,23 @@ export function checkRecords(root = ROOT): { problems: string[]; counts: { adrs:
 
 	const skills = new Set(list(root, 'skills', /^[a-z0-9-]+$/).filter((name) => existsSync(join(root, 'skills', name, 'SKILL.md'))))
 	const conventionIds = new Set(conventions.flatMap((name) => (CONVENTION_FILENAME.test(name) ? [`CONV-${name.slice(5, 8)}`] : [])))
+	const claims = new Set([
+		...list(root, FEATURES, /^[a-z0-9-]+$/).flatMap((area) => {
+			const feature = `${FEATURES}/${area}/${area}.feature`
+			return existsSync(join(root, feature)) ? readClaims(feature, readFileSync(join(root, feature), 'utf8')).claims.map((claim) => claim.id) : []
+		}),
+		...CONSTRAINT_PAGES.flatMap((page) => (existsSync(join(root, page)) ? readConstraints(page, readFileSync(join(root, page), 'utf8')).constraints.map((constraint) => constraint.id) : [])),
+	])
 
 	const problems = [
 		...adrs.flatMap((name) => checkAdr(name, read(DECISIONS, name))),
-		...lessons.flatMap((name) => checkLesson(name, read(LESSONS, name), skills, conventionIds)),
+		...lessons.flatMap((name) => checkLesson(name, read(LESSONS, name), skills, conventionIds, claims)),
 		...conventions.flatMap((name) => checkConvention(name, read(CONVENTIONS, name))),
 	]
+
+	if (adrs.length > 0 && !existsSync(join(root, ADR_TEMPLATE))) {
+		problems.push(`${ADR_TEMPLATE}: missing — every new ADR copies it (ADR-0192)`)
+	}
 
 	const seen = new Map<string, string>()
 	for (const name of conventions) {

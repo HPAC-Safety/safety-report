@@ -38,7 +38,7 @@ Findings flag for a reviewer; they never silently rewrite.
 
 ## Considered options
 
-None were recorded when this decision was accepted.
+Recorded inline above: each rejected option sits beside the part of the decision it bears on.
 
 ## Consequences
 

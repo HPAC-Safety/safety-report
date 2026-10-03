@@ -85,10 +85,15 @@ describe('checkStatus', () => {
 		assert.match(check({ 'ADR-0001-a.md': record('0001', 'draft', '**Status:** Draft.') })[0], /"status: draft" is not one of/)
 	})
 
-	it('accepts proposed, rejected, and deprecated records with no successor to link (ADR-0192)', () => {
-		for (const status of ['proposed', 'rejected', 'deprecated']) {
+	it('accepts proposed and rejected records with no successor to link (ADR-0192)', () => {
+		for (const status of ['proposed', 'rejected']) {
 			assert.deepEqual(check({ 'ADR-0001-a.md': record('0001', status, `**Status:** ${status}.`) }), [], status)
 		}
+	})
+
+	it('needs a deprecated record to link the ADR or convention that retired it', () => {
+		assert.match(check({ 'ADR-0001-a.md': record('0001', 'deprecated', '**Status:** Deprecated.') })[0], /linking the ADR or convention that retired it/)
+		assert.deepEqual(check({ 'ADR-0001-a.md': record('0001', 'deprecated', '**Status:** Deprecated by [CONV-001](../conventions/CONV-001-a.md).') }), [])
 	})
 
 	it('fails a deprecated record whose status line says another supersedes it', () => {

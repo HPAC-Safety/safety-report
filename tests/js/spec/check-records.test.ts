@@ -110,15 +110,25 @@ describe('checkLesson', () => {
 		Skill: 'None — the claim is the remedy.',
 		...overrides,
 	})
-	const check = (text: string): string[] => checkLesson('0001-a.md', text, skills, conventions)
+	const claims = new Set(['REQ-MED-001', 'CON-INF-027'])
+	const check = (text: string): string[] => checkLesson('0001-a.md', text, skills, conventions, claims)
 
 	it('passes a product lesson whose spec delta names a claim or constraint', () => {
 		assert.deepEqual(check(lesson('product', full())), [])
 		assert.deepEqual(check(lesson('product', full({ 'Spec delta': 'CON-INF-027 now orders the upload.' }))), [])
 	})
 
-	it('fails a product lesson whose spec delta names no claim', () => {
+	it('fails a product lesson whose spec delta names no claim, or only claims that do not exist', () => {
 		assert.match(check(lesson('product', full({ 'Spec delta': 'An ADR.' })))[0], /names the REQ- or CON- claim/)
+		assert.match(check(lesson('product', full({ 'Spec delta': 'REQ-MED-999 now says so.' })))[0], /names REQ-MED-999, none of which a scenario or constraint page carries/)
+	})
+
+	it('passes a product lesson naming a claim since deleted, beside one that is live', () => {
+		assert.deepEqual(check(lesson('product', full({ 'Spec delta': 'REQ-MED-999, later deleted, and REQ-MED-001.' }))), [])
+	})
+
+	it('lets an incident name a skill it changed', () => {
+		assert.deepEqual(check(lesson('incident', { Symptom: 'It broke.', 'Root cause': 'Why.', Skill: '`deliver-change` now says so.' })), [])
 	})
 
 	it('passes a process lesson naming a skill that exists, or a convention that exists', () => {
@@ -195,13 +205,19 @@ describe('checkRecords and main', () => {
 			'.spec/conventions/README.md': 'not a convention',
 			'.spec/conventions/CONV-001-a.md': convention('001'),
 			'skills/deliver-change/SKILL.md': 'x',
+			'.spec/features/media/media.feature': 'Feature: Media\n\n@REQ-MED-001\nScenario: One\n  Given a\n',
+			'.spec/lessons/0001-a.md': `---\ntitle: A\ndescription: B.\ntype: lesson\ndate: 2026-10-03\nissue: 1\nstatus: accepted\nkind: product\n---\n\n# Lesson 0001 — A\n\n## Symptom\n\na\n\n## Root cause\n\nb\n\n## Spec delta\n\nREQ-MED-001.\n\n## Scenario\n\nREQ-MED-001.\n\n## Skill\n\nNone.\n`,
 		})
 
-		assert.deepEqual(checkRecords(root), { problems: [], counts: { adrs: 1, lessons: 0, conventions: 1 } })
+		assert.deepEqual(checkRecords(root), { problems: [], counts: { adrs: 1, lessons: 1, conventions: 1 } })
 	})
 
 	it('passes a tree with no conventions directory', () => {
-		assert.deepEqual(checkRecords(tree({ '.spec/decisions/ADR-0001-a.md': goodAdr })).problems, [])
+		assert.deepEqual(checkRecords(tree({ '.spec/decisions/ADR-0001-a.md': goodAdr, '.spec/decisions/TEMPLATE.md': 't' })).problems, [])
+	})
+
+	it('fails a tree of ADRs with no TEMPLATE.md', () => {
+		assert.deepEqual(checkRecords(tree({ '.spec/decisions/ADR-0001-a.md': goodAdr })).problems, ['.spec/decisions/TEMPLATE.md: missing — every new ADR copies it (ADR-0192)'])
 	})
 
 	it('fails two conventions sharing a number', () => {
@@ -217,8 +233,8 @@ describe('checkRecords and main', () => {
 		console.error = (line: string) => errors.push(line)
 		console.log = (line: string) => logs.push(line)
 		try {
-			assert.equal(main(tree({ '.spec/decisions/ADR-0001-a.md': adr('0001', '**Status:** Accepted.', ['Context']) })), 1)
-			assert.equal(main(tree({ '.spec/decisions/ADR-0001-a.md': goodAdr })), 0)
+			assert.equal(main(tree({ '.spec/decisions/ADR-0001-a.md': adr('0001', '**Status:** Accepted.', ['Context']), '.spec/decisions/TEMPLATE.md': 't' })), 1)
+			assert.equal(main(tree({ '.spec/decisions/ADR-0001-a.md': goodAdr, '.spec/decisions/TEMPLATE.md': 't' })), 0)
 		} finally {
 			console.error = original.error
 			console.log = original.log

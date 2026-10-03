@@ -130,6 +130,9 @@ export function checkStatus(adrs: readonly Adr[], read: ReadAdr): string[] {
 		if (SUPERSEDED.includes(status) && !/\]\(/.test(line)) {
 			problems.push(`${DECISIONS}/${name}: "status: ${status}" needs a **Status:** line linking what replaced or narrowed it`)
 		}
+		if (status === 'deprecated' && !/\]\([^)]*(ADR-\d{4}|CONV-\d{3})[^)]*\)/.test(line)) {
+			problems.push(`${DECISIONS}/${name}: "status: deprecated" needs a **Status:** line linking the ADR or convention that retired it (ADR-0192)`)
+		}
 		for (const successor of successors) {
 			if (!numbers.has(successor)) problems.push(`${DECISIONS}/${name}: its status line names ADR-${successor}, which does not exist`)
 		}

@@ -59,6 +59,23 @@ being a record of what was decided when:
 - **Immutable records, a MADR template, conventions for new process rules,
   and mechanical normalization of the old records** — chosen.
 
+The implementation choices made under that decision:
+
+- **Conventions immutable, like ADRs.** Rejected: process rules change often,
+  which is what drove the amendments; a convention is edited in place and git
+  keeps its history.
+- **Immutability in force from a fixed date or commit.** Rejected: keyed on
+  this record existing on the pull request's base, the rule starts with the
+  merge that writes it, and that pull request can normalize the old records.
+- **No link may change.** Rejected: a moved or deleted file would leave a
+  dangling link the record could never fix; a link's target may change, its
+  text may not.
+- **Invent considered options for the records that lack them.** Rejected: it
+  would put words in an old decision's mouth. The heading says the options
+  sit inline, or that none were recorded.
+- **Grow the index generator into the validator.** Rejected: validation is a
+  separate tool, so the generator stays a generator.
+
 ## Decision
 
 ### An accepted ADR is immutable
@@ -66,15 +83,18 @@ being a record of what was decided when:
 - Once accepted, an ADR's body never changes. Only its frontmatter `status:`
   and its `**Status:**` line may, to record that a later ADR superseded it or
   that it was deprecated.
-- A link's target may be rewritten when the file it points to moves; its text
-  may not. A move must not leave a dangling link that the record cannot fix.
+- A link's target may be rewritten only when the file it points to moves or
+  is deleted (point it at a commit permalink); its text may not. A move must
+  not leave a dangling link that the record cannot fix.
 - A change to a decision is a new ADR. The record it changes becomes
   `superseded`, its status line linking the new one. A new ADR that changes
   only part of an older one still supersedes the whole record, and states what
   of it still holds, so the newest record is complete on its own.
 - No more appended amendment sections. The ones already written stay, as
   history, under one heading form: `## Amendment (YYYY-MM-DD)`, optionally
-  followed by ` — <subject>`.
+  followed by ` — <subject>`. Inline amendment notes in a record's opening
+  paragraphs (`**Amended …:**`, `**Provider:**`, and the like) stay as
+  written.
 - An ADR is never deleted. The seven numbers already missing are listed in
   [`README.md`](README.md) with why.
 
@@ -82,6 +102,10 @@ being a record of what was decided when:
 
 - `proposed`, `accepted`, `rejected`, `deprecated`, `superseded`.
 - A `proposed` record may change freely until it is accepted or rejected.
+- An `accepted` record may move only to `superseded` or `deprecated`.
+  `superseded`, `deprecated`, and `rejected` are terminal.
+- A `superseded` or `deprecated` record's status line links the record that
+  replaced or retired it: an ADR, or a convention.
 - `partially-superseded` is retired. The records that already carry it keep it;
   no record may newly take it. The last four to take it are ADR-0083,
   ADR-0085, ADR-0087, and ADR-0183, which this record narrows.
@@ -100,14 +124,15 @@ being a record of what was decided when:
 - `## Consequences`;
 - `## Related` (optional).
 
-A record numbered after this one uses those sections in that order and no
+A record from this one on uses those sections in that order and no
 others. An older record keeps its own sections, normalized mechanically
 without changing what it says:
 
 - every status is one `**Status:**` paragraph directly under the heading;
 - its alternatives heading is `## Considered options`;
-- a record that recorded no alternatives gets that heading with "None were
-  recorded when this decision was accepted." Nothing is invented;
+- a record whose rejected options sit inline gets that heading saying so; a
+  record that weighed none gets "None were recorded when this decision was
+  accepted." Nothing is invented;
 - its amendment headings take the one form above.
 
 ### What goes where
@@ -143,8 +168,8 @@ A product or process lesson keeps the five sections of
   convention's shape, in the pre-commit hook and the `docs` job.
 - `node tools/spec/check-adr-immutability.ts` fails a pull request whose diff
   to an ADR that existed on its base changes anything but the status or a
-  link's target, deletes the ADR, or moves it to `partially-superseded`. It applies from the first
-  base that carries this rule.
+  moved link's target, deletes the ADR, or makes a status move the lifecycle
+  above forbids. It applies from the first base that carries this record.
 - `tools/spec/adr-numbers.ts` accepts the five statuses, plus
   `partially-superseded` on the records that carry it.
 

@@ -127,8 +127,11 @@ Rules:
 - `@ignore` and superseded scenarios: also
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios". A leading
   scenario is `@ignore @issue-<N>`, and `feature-coverage` fails one whose
-  issue is closed, or a pull request that closes it while it is still
-  `@ignore`
+  issue is closed — on every pull request, until it is fixed — or a pull
+  request that closes it while it is still `@ignore`. Specification first is
+  two issues: the spec pull request adds the `@ignore @issue-<N>` scenario and
+  closes its own specification issue; the code pull request later builds it
+  and closes N
   ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
 - A built claim fails the `coverage` job unless its scenario passed in its
   engine's run; the job summary lists every claim's result

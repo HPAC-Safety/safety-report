@@ -216,7 +216,7 @@ describe('judge', () => {
 		const verdict = judge(change({ changed: ['src/a.cs'], features: ['.spec/features/report-submission/report-submission.feature'], scenarios: [] }))
 
 		assert.equal(verdict.ok, false)
-		assert.match(verdict.problems.join('\n'), /no scenario's text did \(only whitespace, comments, or descriptions\)/)
+		assert.match(verdict.problems.join('\n'), /no scenario's text did \(only whitespace, comments, or feature or Rule descriptions\)/)
 	})
 
 	it('passes when one of several changed scenarios is in a related area', () => {

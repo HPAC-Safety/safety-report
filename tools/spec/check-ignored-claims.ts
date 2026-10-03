@@ -16,17 +16,23 @@
 //   node tools/spec/check-ignored-claims.ts
 //
 // Environment: EVENT_NAME, PR_BODY, BASE_SHA (the merge group's base, to read
-// its queued commits' messages), GITHUB_REPOSITORY, and GH_TOKEN, optional: a
-// public repository answers anonymously, within its rate limit.
+// its queued commits' messages), GITHUB_REPOSITORY, and GH_TOKEN or
+// GITHUB_TOKEN, optional: a public repository answers anonymously, within its
+// rate limit of 60 calls an hour, spent only when an @ignore claim exists.
+// tools/dev/ci-local.sh gives act no token (ADR-0145), so a local run is
+// anonymous.
 //
 // The exit code is the contract.
 import { readFileSync } from 'node:fs'
 
-import { type Env, type Exec, annotation, exec as realExec, isMain } from '../lib/actions.ts'
+import { type Env, type Exec, annotation, errorMessage, exec as realExec, isMain } from '../lib/actions.ts'
 import { CLAIMS } from './spec-paths.ts'
 
 const ISSUE_TAG = /^@issue-(\d+)$/
-const CLOSES = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#(\d+)\b/gi
+// A closing keyword GitHub honors, not negated ("does not close #5"), naming
+// an issue as `#N`, `owner/repo#N`, or its URL.
+const CLOSES =
+	/(?<!\b(?:not|never|n't|won't|don't|doesn't)\s+)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+(?:https:\/\/github\.com\/([\w.-]+\/[\w.-]+)\/issues\/|([\w.-]+\/[\w.-]+)#|#)(\d+)\b/gi
 
 /** What this tool reads of .spec/claims.json. */
 interface IgnoredInput {
@@ -60,9 +66,12 @@ export function ignoredClaims(claimsJson: string): Ignored[] {
 		})
 }
 
-/** The issues a pull-request body or commit message closes. */
-export function closedBy(text: string): Set<number> {
-	return new Set([...text.matchAll(CLOSES)].map((match) => Number(match[1])))
+/** The issues of `repository` a pull-request body or commit message closes. */
+export function closedBy(text: string, repository: string): Set<number> {
+	const ours = (named: string | undefined): boolean => named === undefined || named.toLowerCase() === repository.toLowerCase()
+	// An unmatched group is undefined at run time, whatever the type says.
+	const named = (match: RegExpExecArray): string | undefined => [match[1], match[2]].find((group: string | undefined) => group !== undefined)
+	return new Set([...text.matchAll(CLOSES)].filter((match) => ours(named(match))).map((match) => Number(match[3])))
 }
 
 /** What GitHub says of one issue number. */
@@ -73,9 +82,14 @@ export type FetchIssue = (issue: number) => Promise<IssueState>
 /** Reads an issue from the REST API, with the token when there is one. */
 export function githubIssues(repository: string, token: string | undefined): FetchIssue {
 	return async (issue) => {
-		const response = await fetch(`https://api.github.com/repos/${repository}/issues/${issue}`, {
-			headers: { accept: 'application/vnd.github+json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-		})
+		let response: Response
+		try {
+			response = await fetch(`https://api.github.com/repos/${repository}/issues/${issue}`, {
+				headers: { accept: 'application/vnd.github+json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+			})
+		} catch (error) {
+			return { error: `GitHub could not be reached for #${issue} (${errorMessage(error)})` }
+		}
 		if (!response.ok) return { error: `GitHub answered ${response.status} for #${issue}` }
 		const body = (await response.json()) as { state: 'open' | 'closed'; pull_request?: unknown }
 		return { state: body.state, pullRequest: body.pull_request !== undefined }
@@ -95,7 +109,8 @@ export async function main({ env = process.env, claims = readFileSync(CLAIMS, 'u
 	const problems: { file?: string; message: string }[] = ignored.flatMap((claim) => (claim.problem ? [{ file: claim.file, message: claim.problem }] : []))
 
 	const named = [...new Set(ignored.map((claim) => claim.issue).filter((issue): issue is number => issue !== null))].sort((a, b) => a - b)
-	const fetchOne = fetchIssue ?? githubIssues(env.GITHUB_REPOSITORY ?? 'HPAC-Safety/safety-report', env.GH_TOKEN || undefined)
+	const repository = env.GITHUB_REPOSITORY ?? 'HPAC-Safety/safety-report'
+	const fetchOne = fetchIssue ?? githubIssues(repository, env.GH_TOKEN || env.GITHUB_TOKEN || undefined)
 	for (const issue of named) {
 		const state = await fetchOne(issue)
 		const owners = ignored.filter((claim) => claim.issue === issue)
@@ -111,7 +126,7 @@ export async function main({ env = process.env, claims = readFileSync(CLAIMS, 'u
 		env.EVENT_NAME === 'merge_group' && env.BASE_SHA
 			? [exec('git', ['log', '--format=%B', `${env.BASE_SHA}..HEAD`]).stdout]
 			: [env.PR_BODY ?? '']
-	for (const issue of closedBy(texts.join('\n'))) {
+	for (const issue of closedBy(texts.join('\n'), repository)) {
 		const owners = ignored.filter((claim) => claim.issue === issue)
 		if (owners.length === 0) continue
 		problems.push({

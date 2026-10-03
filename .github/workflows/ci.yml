@@ -103,7 +103,7 @@ jobs:
               - '.github/workflows/ci.yml'
               # A scenario changed with no code still has to pass its engine's
               # run, and the claim gate in `coverage` judges it (ADR-0195).
-              - '.spec/features/**'
+              - '.spec/features/**/*.feature'
               - 'tools/spec/check-claim-results.ts'
             # The web bundle loads its catalogues from locales/ at the repository
             # root, so a copy change is a web change (lesson 0020).
@@ -120,7 +120,7 @@ jobs:
               - 'locales/**'
               - 'tests/e2e/**'
               - '.github/workflows/ci.yml'
-              - '.spec/features/**'
+              - '.spec/features/**/*.feature'
 
   build:
     needs: changes
@@ -764,8 +764,6 @@ jobs:
         if: always()
         run: node tools/coverage/report-test-counts.ts --section e2e --out ./artifacts/test-count/e2e.md
 
-      # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
-      # act ships the fix. ADR-0145.
       # The playwright-bdd claim results, for the claim gate in `coverage`
       # (ADR-0195); written by the cucumberReporter in playwright.config.ts.
       # Temporary under act (nektos/act#6022).
@@ -781,6 +779,8 @@ jobs:
         if: "!cancelled() && env.ACT"
         run: node tools/coverage/hand-over-raw-reports.ts push claims
 
+      # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
+      # act ships the fix. ADR-0145.
       - uses: actions/upload-artifact@v7
         if: always() && !env.ACT
         with:

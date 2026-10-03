@@ -201,7 +201,7 @@ export interface Change {
 /** Why the scenarios the diff did touch do not count, for the failure message. */
 function unrelated({ features, scenarios, areas }: Change): string[] {
 	if (features.length > 0 && scenarios.length === 0) {
-		return [`${features.join(', ')} changed, but no scenario's text did (only whitespace, comments, or descriptions), so it covers nothing.`]
+		return [`${features.join(', ')} changed, but no scenario's text did (only whitespace, comments, or feature or Rule descriptions), so it covers nothing.`]
 	}
 	if (scenarios.length > 0) {
 		return [`${scenarios.map((scenario) => `${scenario.id} (${scenario.area})`).join(', ')} changed, but the changed code maps to ${list(areas)}, so none of them covers it.`]

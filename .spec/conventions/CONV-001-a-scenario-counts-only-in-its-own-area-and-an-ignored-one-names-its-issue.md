@@ -22,8 +22,8 @@ date: 2026-10-03
   binds nothing belongs to every area its engine serves.
 - A new behavior-bearing file joins the map in the pull request that adds it;
   a moved one moves its glob. The `docs` job fails an unmapped file, a glob
-  that matches nothing, and an area with no feature file
-  (`node tools/spec/check-area-paths.ts`).
+  that matches nothing, a key that is not a feature area, and a feature area
+  with no path (`node tools/spec/check-area-paths.ts`).
 - `feature-coverage` passes a behavior change only when:
   - a claim's scenario text changed — its tags, title, description, steps,
     tables, examples, or a Background it runs after — in an area the changed
@@ -31,9 +31,12 @@ date: 2026-10-03
     Rule descriptions change no scenario; or
   - its exemption is well formed (ADR-0090) and **every** claim it cites
     belongs to one of those areas.
-- A cross-cutting change maps to many areas and is judged against all of
-  them. A file that truly serves every area goes under `every`, not into
-  each area's list.
+- A change is judged against the areas of its files that are **not** under
+  `every`. A file under `every` adds no area beside them, so touching
+  `Program.cs` never makes an unrelated scenario count; only when every
+  changed file is under `every` is the change judged against all areas.
+- A file that truly serves every area goes under `every`, not into each
+  area's list. A file that serves a few areas is listed under each.
 
 ### `@ignore` may lead
 
@@ -51,6 +54,21 @@ date: 2026-10-03
   binds its steps, and closes the issue. A pull request that closes an issue
   an `@ignore` claim still names fails; build the claim there, or move its
   tag to the open issue that will.
+- Two issues, two pull requests, when the specification leads:
+  1. the specification issue's pull request adds the scenario as
+     `@ignore @issue-<N>`, where N is a separate, open implementation issue,
+     and closes the specification issue;
+  2. the implementation issue's pull request builds the claim, removes both
+     tags, and closes issue N.
+  The specification pull request never names N in a closing keyword.
+- **A closed owner fails every pull request.** The check reads every `@ignore`
+  claim in the tree, not only the changed ones, so an `@issue-<N>` whose issue
+  is closed by hand, outside a pull request, fails `feature-coverage` on every
+  pull request and queued commit until someone reopens N, builds the claim,
+  or moves its tag to an open issue. That is deliberate (owner decision,
+  2026-10-03): a scenario nobody owns is fixed at once, not discovered later.
+- A GitHub outage or rate limit fails the check with a clear error naming the
+  issue it could not read; re-run it.
 - `@ignore` still means "not built yet", never "no longer true": a superseded
   scenario is deleted.
 

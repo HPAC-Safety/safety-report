@@ -33,7 +33,16 @@ describe('ignoredClaims', () => {
 
 describe('closedBy', () => {
 	it('reads every closing keyword GitHub honors', () => {
-		assert.deepEqual([...closedBy('Closes #1\nfixes #2, Resolved: #3\nRelates to #4\nclose #5')], [1, 2, 3, 5])
+		assert.deepEqual([...closedBy('Closes #1\nfixes #2, Resolved: #3\nRelates to #4\nclose #5', 'o/r')], [1, 2, 3, 5])
+	})
+
+	it('reads owner/repo#N and an issue URL, for this repository only', () => {
+		const text = 'Closes o/r#6\nFixes https://github.com/O/R/issues/7\nCloses other/repo#8\nResolves https://github.com/other/repo/issues/9'
+		assert.deepEqual([...closedBy(text, 'o/r')], [6, 7])
+	})
+
+	it('does not read negated prose as closing', () => {
+		assert.deepEqual([...closedBy('This does not close #1, and it won\'t fix #2; it never resolves #3.', 'o/r')], [])
 	})
 })
 
@@ -113,6 +122,23 @@ describe('main', () => {
 			assert.deepEqual(auth, [undefined, undefined])
 			const { output } = await run({ claims: claims(claim('REQ-MED-001', ['@ignore', '@issue-9'])) })
 			assert.match(output, /Could not read #9/)
+		} finally {
+			globalThis.fetch = original
+		}
+	})
+
+	it('turns a network failure into a clear error, and reads GITHUB_TOKEN too', async () => {
+		const original = globalThis.fetch
+		const auth: (string | undefined)[] = []
+		globalThis.fetch = ((_url: string, init: { headers: Record<string, string> }) => {
+			auth.push(init.headers.authorization)
+			return Promise.reject(new Error('getaddrinfo ENOTFOUND api.github.com'))
+		}) as unknown as typeof fetch
+		try {
+			const { code, output } = await run({ env: { GITHUB_TOKEN: 'g' }, claims: claims(claim('REQ-MED-001', ['@ignore', '@issue-9'])) })
+			assert.equal(code, 1)
+			assert.match(output, /Could not read #9, named by REQ-MED-001: GitHub could not be reached for #9 \(getaddrinfo ENOTFOUND api\.github\.com\)/)
+			assert.deepEqual(auth, ['Bearer g'])
 		} finally {
 			globalThis.fetch = original
 		}

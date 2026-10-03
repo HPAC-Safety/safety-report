@@ -71,8 +71,10 @@ export default tseslint.config(
 	{
 		// This file is the only JavaScript left. The type-aware preset has nothing to
 		// read from it (no annotations, outside every tsconfig `include` that checks
-		// JavaScript), so it gets the strict (syntactic) preset.
-		files: ['eslint.config.mjs'],
+		// JavaScript), so it gets the strict (syntactic) preset. So do the five
+		// temporary tools/**/*.mjs shims main's i18n-translate.yml calls until #798
+		// merges; #800 deletes them.
+		files: ['eslint.config.mjs', 'tools/**/*.mjs'],
 		extends: [tseslint.configs.strict],
 	},
 	{
@@ -110,7 +112,7 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ['tools/**/*.ts', 'tests/js/**/*.ts', 'eslint.config.mjs', 'src/web/vite.config.ts'],
+		files: ['tools/**/*.ts', 'tools/**/*.mjs', 'tests/js/**/*.ts', 'eslint.config.mjs', 'src/web/vite.config.ts'],
 		languageOptions: { globals: globals.node },
 	},
 	{

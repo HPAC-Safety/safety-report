@@ -65,14 +65,30 @@ export function areasOf(path: string, map: AreaPaths, claims: readonly AreaClaim
 	return new Set(Object.entries(map.areas).filter(([, globs]) => globs.some((glob) => matchesGlob(path, glob))).map(([area]) => area))
 }
 
+const isEvery = (path: string, map: AreaPaths): boolean => !isStepFile(path) && map.every.some((glob) => matchesGlob(path, glob))
+
+/**
+ * The areas a change's files map to, together. A file under `every` belongs to
+ * every area only when nothing else changed: beside a file with areas of its
+ * own, it adds none, so a shared file cannot make an unrelated scenario count.
+ */
+export function areasOfChange(paths: readonly string[], map: AreaPaths, claims: readonly AreaClaim[]): Set<string> {
+	const specific = paths.filter((path) => !isEvery(path, map))
+	return new Set((specific.length > 0 ? specific : paths).flatMap((path) => [...areasOf(path, map, claims)]))
+}
+
 /**
  * What is wrong with the map against the tree: an area with no feature file, a
- * glob that matches no file, and a behavior file no glob maps.
+ * feature area with no glob, a glob that matches no file, and a behavior file
+ * no glob maps.
  */
 export function validate(map: AreaPaths, { files, areas }: { files: readonly string[]; areas: readonly string[] }): string[] {
 	const problems: string[] = []
 	for (const area of Object.keys(map.areas)) {
 		if (!areas.includes(area)) problems.push(`"${area}" is not a feature area; the areas are ${areas.join(', ')}`)
+	}
+	for (const area of areas) {
+		if ((map.areas[area] ?? []).length === 0) problems.push(`"${area}" is a feature area with no path; map the code its scenarios describe`)
 	}
 	const globs = [...map.every.map((glob) => ['every', glob] as const), ...Object.entries(map.areas).flatMap(([area, list]) => list.map((glob) => [area, glob] as const))]
 	for (const [where, glob] of globs) {

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { type AreaClaim, type AreaPaths, areaOfFeature, areasOf, parseAreaPaths, validate } from '../../../tools/spec/area-paths.ts'
+import { type AreaClaim, type AreaPaths, areaOfFeature, areasOf, areasOfChange, parseAreaPaths, validate } from '../../../tools/spec/area-paths.ts'
 import { featureAreas, main } from '../../../tools/spec/check-area-paths.ts'
 import type { Exec } from '../../../tools/lib/actions.ts'
 
@@ -54,6 +54,17 @@ describe('areasOf', () => {
 	})
 })
 
+describe('areasOfChange', () => {
+	it('judges a change by its specific files, so a shared file beside them adds no area', () => {
+		assert.deepEqual(sorted(areasOfChange(['src/Program.cs', 'src/Media/A.cs'], MAP, CLAIMS)), ['media'])
+		assert.deepEqual(sorted(areasOfChange(['src/Program.cs', 'tests/e2e/steps/comments.steps.ts'], MAP, CLAIMS)), ['comments'])
+	})
+
+	it('falls back to every area when every changed file is shared', () => {
+		assert.deepEqual(sorted(areasOfChange(['src/Program.cs'], MAP, CLAIMS)), ['comments', 'media'])
+	})
+})
+
 describe('validate', () => {
 	const tree = { files: ['src/Program.cs', 'src/Media/A.cs', 'src/web/src/components/AttachmentStrip.tsx', 'src/Comments/B.cs'], areas: ['comments', 'media'] }
 
@@ -65,6 +76,7 @@ describe('validate', () => {
 		const map: AreaPaths = { every: ['src/Program.cs'], areas: { media: ['src/Media/**', 'src/Gone/**'], typo: ['src/Comments/**'] } }
 		assert.deepEqual(validate(map, { files: [...tree.files, 'src/New.cs'], areas: tree.areas }), [
 			'"typo" is not a feature area; the areas are comments, media',
+			'"comments" is a feature area with no path; map the code its scenarios describe',
 			'media: "src/Gone/**" matches no behavior-bearing file',
 			'src/web/src/components/AttachmentStrip.tsx belongs to no area; add it to the area whose scenarios describe it, or to "every"',
 			'src/New.cs belongs to no area; add it to the area whose scenarios describe it, or to "every"',

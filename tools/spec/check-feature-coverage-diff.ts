@@ -23,7 +23,7 @@
 import { readFileSync } from 'node:fs'
 
 import { type Env, type Exec, exec, isMain, required } from '../lib/actions.ts'
-import { type AreaClaim, type AreaPaths, areaOfFeature, areasOf, parseAreaPaths } from './area-paths.ts'
+import { type AreaClaim, type AreaPaths, areaOfFeature, areasOfChange, parseAreaPaths } from './area-paths.ts'
 import { main as checkCoverage } from './check-feature-coverage.ts'
 import { changedScenarios } from './read-claims.ts'
 import { AREA_PATHS, CLAIMS, FEATURES, PLAYWRIGHT_STEPS, REQNROLL_STEPS } from './spec-paths.ts'
@@ -74,7 +74,7 @@ export function checkRange(from: string, to: string, body: string, { exec, claim
 	const features = diff(FEATURE_PATHSPECS)
 	const scenarios = features.flatMap((path) => changedScenarios(show(from, path), show(to, path)).map((id) => ({ id, area: areaOfFeature(FEATURES, path) })))
 	const known = (JSON.parse(claims) as { claims: AreaClaim[] }).claims
-	const areas = new Set([...changed, ...diff(STEP_PATHSPECS)].flatMap((path) => [...areasOf(path, areaPaths, known)]))
+	const areas = areasOfChange([...changed, ...diff(STEP_PATHSPECS)], areaPaths, known)
 	return checkCoverage({ changed, features, scenarios, areas, body, claims })
 }
 

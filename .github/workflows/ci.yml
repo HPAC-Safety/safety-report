@@ -228,7 +228,7 @@ jobs:
         run: |
           dotnet test HpacSafety.slnx \
             --configuration Release \
-            --filter "Category!=ui&Category!=REQ-AI-002" \
+            --filter "Category!=ui" \
             --collect:"XPlat Code Coverage" \
             --settings coverlet.runsettings \
             --logger trx \

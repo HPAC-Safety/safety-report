@@ -169,10 +169,12 @@ claims, and **no user record is stored anywhere**
 ([ADR-0064](../decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
 [ADR-0065](../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 There is no allowlist, no user table, no session store, no CSRF machinery, no
-password handling, and no Turnstile — except Development's members-site login
-([ADR-0079](../decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
-and, temporarily, staging's interim issuer
-([ADR-0172](../decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)),
-which never reach production. Requiring a member to submit is what let
-the last of those go
+password handling, and no Turnstile; requiring a member to submit is what let
+Turnstile go
 ([ADR-0068](../decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
+The one carve-out is the members-site login in Development and, temporarily,
+staging's interim issuer
+([ADR-0079](../decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md),
+[ADR-0172](../decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)):
+an email allowlist, a password checked for one call, and the members-site
+session handling. Neither reaches production.

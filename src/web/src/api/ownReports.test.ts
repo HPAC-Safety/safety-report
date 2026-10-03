@@ -36,6 +36,17 @@ describe("own reports api", () => {
 			expect(readReceipts()).toEqual([{ reportId: "r1", receipt: "new" }])
 		})
 
+		it("drops nothing, and writes nothing, when told to drop none", () => {
+			saveReceipt("r1", "rec1")
+			const write = vi.spyOn(Storage.prototype, "setItem")
+
+			dropReceipts([])
+
+			expect(write).not.toHaveBeenCalled()
+			expect(readReceipts()).toHaveLength(1)
+			vi.restoreAllMocks()
+		})
+
 		it("keeps only the newest fifty", () => {
 			for (let index = 0; index < 55; index++) saveReceipt(`r${index}`, `rec${index}`)
 

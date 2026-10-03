@@ -341,7 +341,7 @@ export function useReportForm() {
 			const result = await submitReport(locale, submitAnswers)
 			// The one thing kept about the filing, and only in this browser: it is how
 			// the reporter later sees their own report before it is published.
-			if (result.receipt) saveReceipt(result.id, result.receipt)
+			saveReceipt(result.id, result.receipt)
 			clearDraft()
 			setSubmit({ status: "submitted", id: result.id })
 		} catch (error) {

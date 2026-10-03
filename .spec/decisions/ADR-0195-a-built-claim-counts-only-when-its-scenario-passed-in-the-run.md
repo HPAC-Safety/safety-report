@@ -100,6 +100,10 @@ keywords: claims, test results, Cucumber Messages, Reqnroll, playwright-bdd, cov
 - A built claim whose scenario is skipped, filtered out, or never generated
   fails `coverage`, with its ID, scenario, and feature file in the
   annotation, where before it passed silently.
+- With its formatter on, Reqnroll 3.3.4 turns a scenario a hook skips at run
+  time into a failed test ("Stack empty"), so such a claim fails `test`
+  before `coverage` judges it; either way the build fails. The `@ui` hook
+  never runs in CI, where the category filter keeps those scenarios out.
 - A feature-file-only change now runs the .NET and browser suites.
 - The Reqnroll results file is about 8 MB and the playwright-bdd one about
   5 MB; each is kept for seven days.

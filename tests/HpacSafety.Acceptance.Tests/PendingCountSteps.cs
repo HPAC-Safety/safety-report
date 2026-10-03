@@ -69,7 +69,7 @@ public sealed class PendingCountSteps
 	[When(@"^an? (User|Safety Officer|Administrator) reads the pending counts$")]
 	public async Task WhenAMemberReadsTheCounts(string role)
 	{
-		_client = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role.Replace(" ", string.Empty)));
+		_client = await BootedApi.SignedInAs(GlossaryNames.Role(role));
 		_response = await _client.GetAsync(Counts);
 
 		if (_response.IsSuccessStatusCode)

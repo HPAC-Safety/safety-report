@@ -462,7 +462,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[Given(@"^a member signed in as (User|Safety Officer|Administrator)$")]
 	public void GivenAMemberSignedInAs(string role)
 	{
-		_role = Enum.Parse<MemberRole>(role.Replace(" ", string.Empty));
+		_role = GlossaryNames.Role(role);
 	}
 
 	[When(@"that member requests a translation")]

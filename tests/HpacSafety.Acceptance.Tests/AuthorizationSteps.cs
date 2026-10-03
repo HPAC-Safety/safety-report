@@ -103,7 +103,7 @@ public sealed class AuthorizationSteps
 	[Given(@"^a member has the (User|Safety Officer|Administrator) role$")]
 	public async Task GivenMemberHasRole(string role)
 	{
-		_role = Enum.Parse<MemberRole>(role.Replace(" ", string.Empty));
+		_role = GlossaryNames.Role(role);
 		_client = await BootedApi.SignedInAs(_role);
 	}
 

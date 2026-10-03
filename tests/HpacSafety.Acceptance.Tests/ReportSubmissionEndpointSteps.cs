@@ -1309,7 +1309,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	[Given(@"a reporter holds a valid member token with the (.*) role")]
 	public async Task GivenAReporterHoldsAValidMemberTokenWithTheRole(string role)
 	{
-		_reporter = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role.Replace(" ", string.Empty)));
+		_reporter = await BootedApi.SignedInAs(GlossaryNames.Role(role));
 		await EnsureConsentQuestion();
 	}
 

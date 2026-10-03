@@ -25,13 +25,10 @@ public sealed class ReviewLifecycleSteps
 	private ReportStatus _from;
 	private Exception? _refusal;
 
-	/// <summary>A status as the glossary names it ("Summary failed") to its <see cref="ReportStatus"/> value.</summary>
-	private static ReportStatus Status(string name) => Enum.Parse<ReportStatus>(name.Replace(" ", string.Empty), ignoreCase: true);
-
 	[Given(@"^a report is in state (\w+(?: failed)?)$")]
 	public void GivenAReportIsInState(string state)
 	{
-		_from = Status(state);
+		_from = GlossaryNames.Status(state);
 		_report = In(_from, consent: true);
 	}
 
@@ -74,7 +71,7 @@ public sealed class ReviewLifecycleSteps
 	[Then(@"^the report moves to state (\w+(?: failed)?)$")]
 	public void ThenTheReportMovesTo(string state)
 	{
-		_report.Status.ShouldBe(Status(state));
+		_report.Status.ShouldBe(GlossaryNames.Status(state));
 	}
 
 	[When(@"^an officer tries to (.+)$")]
@@ -101,7 +98,7 @@ public sealed class ReviewLifecycleSteps
 	[Then(@"^the report stays in state (\w+(?: failed)?)$")]
 	public void ThenTheReportStaysIn(string state)
 	{
-		_report.Status.ShouldBe(Status(state));
+		_report.Status.ShouldBe(GlossaryNames.Status(state));
 		_report.Status.ShouldBe(_from);
 	}
 

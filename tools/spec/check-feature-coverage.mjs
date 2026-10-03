@@ -63,17 +63,39 @@ export function claimsInMatrix(matrix) {
 	return new Set(matrix.match(CLAIM) ?? [])
 }
 
+// A line that starts something new rather than continuing the line above it.
+const DIRECTIVE = /^(No `?\.feature`? scenario needed:|Claims preserved:|#|[-*|>]|\d+\.\s)/i
+
+/**
+ * The lines after `index` that continue it, up to a blank line or a new
+ * directive. In the merge queue the check reads the squash commit's message,
+ * which GitHub hard-wraps at about 72 columns, so one exemption line arrives
+ * as several (#797).
+ */
+function continuation(lines, index) {
+	const following = []
+	for (const line of lines.slice(index + 1)) {
+		const text = line.trim()
+		if (text === '' || DIRECTIVE.test(text)) break
+		following.push(text)
+	}
+	return following
+}
+
 /** The exemption a pull-request body declares, if it declares one. */
 export function parseExemption(body) {
-	const declared = body.match(EXEMPTION)
-	if (!declared) return null
+	const lines = body.split(/\r?\n/)
+	const at = lines.findIndex((line) => EXEMPTION.test(line))
+	if (at === -1) return null
+	const declared = lines[at].match(EXEMPTION)
 
-	const preserved = body.match(PRESERVED)
+	const claimsAt = lines.findIndex((line) => PRESERVED.test(line))
+	const claimsText = claimsAt === -1 ? '' : [lines[claimsAt].match(PRESERVED)[1], ...continuation(lines, claimsAt)].join(' ')
 	return {
 		category: declared[1].toLowerCase(),
-		reason: declared[2].trim(),
-		claims: preserved ? [...new Set(preserved[1].match(CLAIM) ?? [])] : [],
-		citesClaims: preserved !== null,
+		reason: [declared[2].trim(), ...continuation(lines, at)].join(' '),
+		claims: [...new Set(claimsText.match(CLAIM) ?? [])],
+		citesClaims: claimsAt !== -1,
 	}
 }
 

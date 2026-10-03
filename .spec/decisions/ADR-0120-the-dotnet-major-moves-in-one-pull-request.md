@@ -50,7 +50,7 @@ rule matched nothing.
 - A `renovate.json` rule matching `dotnet-sdk` and `mcr.microsoft.com/dotnet/**`
   sets `allowedVersions` to `/^N\./`, where N is the current major. Digest,
   minor, and patch updates still flow. Renovate never offers the next major.
-- `tools/build/check-dotnet-major.mjs` reads the major from all four files and fails when
+- `tools/build/check-dotnet-major.ts` reads the major from all four files and fails when
   they disagree. It runs in the required `docs` job, which runs
   unconditionally, so a change to `renovate.json` alone is checked too.
 - The next major is a hand-made pull request that moves all four together, plus
@@ -90,7 +90,7 @@ ffprobe inside it.
   allowance says 10.
 - Upgrading to .NET 11 means editing `global.json`, `Directory.Build.props`, the
   Dockerfile's `FROM` (tag and digest), and `allowedVersions` to `/^11\./`, in
-  one pull request. `node tools/build/check-dotnet-major.mjs` confirms they agree.
+  one pull request. `node tools/build/check-dotnet-major.ts` confirms they agree.
 - A Worker base-image digest bump passes `feature-coverage` on its own.
 - A new Dockerfile on a `mcr.microsoft.com/dotnet` image joins the check
   automatically.

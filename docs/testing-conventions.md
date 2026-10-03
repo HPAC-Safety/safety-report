@@ -54,11 +54,12 @@ Common commands:
 ```bash
 dotnet test HpacSafety.slnx
 dotnet test HpacSafety.slnx --filter "Category!=Integration"
-node --test $(find tests/js -name '*.test.mjs')
+node --test $(find tests/js -name '*.test.ts')
+npm run typecheck                        # tsc over tools and tests/js (Node strips their types, never checks them)
 npm --prefix src/web run test:coverage   # Vitest, 100% on split components and tested helpers
 npm --prefix src/web run typecheck
-node tools/web/check-component-split.mjs
-npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm run lint   # ESLint (strict, type-checked): src/web, tools, tests/js, tests/e2e
+node tools/web/check-component-split.ts
+npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm --prefix tools/gherkin ci && npm run lint   # ESLint (strict, type-checked): src/web, tools, tests/js, tests/e2e
 npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 
@@ -68,7 +69,7 @@ beside the code, and held to 100% line, branch, function and statement coverage
 Which files are held to it follows the files on disk, so a pull request that
 splits a component edits no configuration; see
 [`build-hpac-web-ui`](../skills/build-hpac-web-ui/SKILL.md). Test code is never
-part of a release: `tools/web/check-web-bundle.mjs` fails a build that carries any.
+part of a release: `tools/web/check-web-bundle.ts` fails a build that carries any.
 Every `.ts` helper under `src/web/src` has a colocated test, so all web logic is
 under the gate; `api/` tests mock `fetch` and `XMLHttpRequest`. A `v8 ignore` or
 `istanbul ignore` hint is for a branch no input can reach, with its reason in the

@@ -4,7 +4,7 @@
 # (ADR-0107). The repository is public, and a squash merge makes the
 # pull-request body a commit message too; the "Linked issue" workflow checks
 # that body, and this checks every commit before it exists. The agents whose
-# links are refused are the collection in tools/github/check-agent-session-links.mjs.
+# links are refused are the collection in tools/github/check-agent-session-links.ts.
 #
 # This file is the tracked template; ./init-dev.sh copies it into the real
 # hooks directory — edit this copy, not the installed one.
@@ -16,4 +16,4 @@ cd "$REPO_ROOT" || exit 0
 
 command -v node >/dev/null 2>&1 || exit 0
 
-exec node tools/github/check-agent-session-links.mjs "$1"
+exec node tools/github/check-agent-session-links.ts "$1"

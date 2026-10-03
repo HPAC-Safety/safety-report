@@ -14,7 +14,7 @@ namespace HpacSafety.Infrastructure.Translation;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This deliberately mirrors <c>tools/i18n/translator.mjs</c>: the same provider,
+///         This deliberately mirrors <c>tools/i18n/translator.ts</c>: the same provider,
 ///         the same request shape, the same placeholder protection, and the same
 ///         formality default. Two translators that disagree about how to ask would
 ///         produce UI chrome and question text in noticeably different French.

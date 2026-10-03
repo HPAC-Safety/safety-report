@@ -88,6 +88,11 @@ jobs:
           sparse-checkout: tools
           persist-credentials: false
 
+      # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
       # Named, not opaque: a missing value fails here with the name that is
       # missing, not thirty steps later inside an AWS CLI error.
       - name: Required configuration is present
@@ -118,7 +123,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install the pinned Terraform
-        run: node .workflow-tools/tools/infra/install-terraform.mjs
+        run: node .workflow-tools/tools/infra/install-terraform.ts
 
       - name: terraform init
         run: |
@@ -135,7 +140,7 @@ jobs:
       # Untaint only those; the apply below then brings each one to its
       # configuration in place. Any other tainted resource is still replaced.
       - name: Untaint resources that must never be replaced
-        run: node .workflow-tools/tools/infra/deploy/untaint-protected-resources.mjs
+        run: node .workflow-tools/tools/infra/deploy/untaint-protected-resources.ts
 
       # A Lambda function is created from an image that must already be in
       # ECR (CreateFunction refuses a missing one), so on an account's first
@@ -153,7 +158,7 @@ jobs:
       # release.
       - name: Read the image registries
         id: ecr
-        run: node .workflow-tools/tools/infra/deploy/read-image-registries.mjs
+        run: node .workflow-tools/tools/infra/deploy/read-image-registries.ts
 
       - name: Log in to this account's ECR
         run: |
@@ -169,7 +174,7 @@ jobs:
           SHA: ${{ inputs.sha }}
           API_REPO: ${{ steps.ecr.outputs.api_repo }}
           WORKER_REPO: ${{ steps.ecr.outputs.worker_repo }}
-        run: node .workflow-tools/tools/infra/deploy/push-images.mjs
+        run: node .workflow-tools/tools/infra/deploy/push-images.ts
 
       # No plan-then-apply-the-plan-file here, unlike terraform.yml's old
       # `apply` job: a release environment auto-applies on staging and applies
@@ -192,16 +197,16 @@ jobs:
       - name: Re-plan and fail on drift
         env:
           TFVARS_FILE: ${{ inputs.tfvars_file }}
-        run: node .workflow-tools/tools/infra/deploy/fail-on-drift.mjs
+        run: node .workflow-tools/tools/infra/deploy/fail-on-drift.ts
 
       # The NAT instance is the one resource this system ever deletes and
       # recreates, every release (CON-INF-013).
       - name: Replace the NAT instance
-        run: node .workflow-tools/tools/infra/deploy/replace-nat-instance.mjs
+        run: node .workflow-tools/tools/infra/deploy/replace-nat-instance.ts
 
       - name: Read Terraform's deploy variables
         id: tf
-        run: node .workflow-tools/tools/infra/deploy/read-deploy-variables.mjs
+        run: node .workflow-tools/tools/infra/deploy/read-deploy-variables.ts
 
       # Same content pushed by every environment — same manifest digest in
       # every account's ECR. This is what "the same image digests, never a
@@ -211,13 +216,13 @@ jobs:
           ENVIRONMENT_NAME: ${{ inputs.environment_name }}
           API_DIGEST: ${{ steps.images.outputs.api_digest }}
           WORKER_DIGEST: ${{ steps.images.outputs.worker_digest }}
-        run: node .workflow-tools/tools/infra/deploy/report-image-digests.mjs
+        run: node .workflow-tools/tools/infra/deploy/report-image-digests.ts
 
       - name: Copy vendor keys into Secrets Manager
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
-        run: node .workflow-tools/tools/infra/deploy/copy-vendor-keys.mjs
+        run: node .workflow-tools/tools/infra/deploy/copy-vendor-keys.ts
 
       # The temporary interim issuer's one signing key (issue #648, ADR-0172,
       # TEMPORARY: deleted along with the whole feature once a real identity
@@ -226,19 +231,19 @@ jobs:
       - name: Generate the interim issuer signing key, if it does not exist yet
         env:
           ENVIRONMENT_NAME: ${{ inputs.environment_name }}
-        run: node .workflow-tools/tools/infra/deploy/generate-interim-issuer-key.mjs
+        run: node .workflow-tools/tools/infra/deploy/generate-interim-issuer-key.ts
 
       - name: Update the API Lambda function
         env:
           FUNCTION_NAME: ${{ steps.tf.outputs.LAMBDA_FUNCTION_API }}
           IMAGE_URI: ${{ steps.ecr.outputs.api_repo }}@${{ steps.images.outputs.api_digest }}
-        run: node .workflow-tools/tools/infra/deploy/update-lambda-function.mjs
+        run: node .workflow-tools/tools/infra/deploy/update-lambda-function.ts
 
       - name: Update the Worker Lambda function
         env:
           FUNCTION_NAME: ${{ steps.tf.outputs.LAMBDA_FUNCTION_WORKER }}
           IMAGE_URI: ${{ steps.ecr.outputs.worker_repo }}@${{ steps.images.outputs.worker_digest }}
-        run: node .workflow-tools/tools/infra/deploy/update-lambda-function.mjs
+        run: node .workflow-tools/tools/infra/deploy/update-lambda-function.ts
 
       - name: Create the website bundle directory
         run: mkdir -p /tmp/web-dist
@@ -269,10 +274,10 @@ jobs:
       - name: Smoke test /api/health
         env:
           PUBLIC_URL: ${{ steps.site.outputs.public_url }}
-        run: node .workflow-tools/tools/infra/deploy/smoke-test-health.mjs
+        run: node .workflow-tools/tools/infra/deploy/smoke-test-health.ts
 
       # Meaningful only the first time a production account is stood up
       # (issue #30 "Human work" H7), and harmless every other run.
       - name: DNS records to publish
         if: inputs.environment_name == 'hpac-safety-production'
-        run: node .workflow-tools/tools/infra/deploy/report-dns-records.mjs
+        run: node .workflow-tools/tools/infra/deploy/report-dns-records.ts

@@ -41,7 +41,7 @@ refused.** The refusal runs where the text is written:
   body clears the check without a rebuild. The job has no bot exemption,
   because no author may publish a session link.
 
-Both run `tools/github/check-agent-session-links.mjs`, whose `SESSION_LINKS` collection
+Both run `tools/github/check-agent-session-links.ts`, whose `SESSION_LINKS` collection
 holds one entry per agent: a name and the URL pattern its sessions use. Today
 it holds only Claude's (`claude.ai/code/session_…`). Supporting another agent
 is one more entry and one more test, with the link shape that agent actually

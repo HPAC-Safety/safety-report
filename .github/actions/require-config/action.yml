@@ -36,4 +36,4 @@ runs:
       # The action runs from its own checkout (a local action only resolves
       # after actions/checkout, so the repository tree is always there), and
       # GITHUB_ACTION_PATH is this directory: the script is three levels up.
-      run: node "$GITHUB_ACTION_PATH/../../../tools/infra/require-config.mjs"
+      run: node "$GITHUB_ACTION_PATH/../../../tools/infra/require-config.ts"

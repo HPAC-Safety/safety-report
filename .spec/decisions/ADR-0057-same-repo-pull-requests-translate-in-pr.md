@@ -17,25 +17,25 @@ boundary that ADR describes (`pull_request` never translates, only a push to
 second, narrower path for pull requests opened from a branch of this
 repository itself. Amended by
 [ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md):
-the commit is pushed through `tools/github/push-to-pr-branch.mjs`, which replays it
+the commit is pushed through `tools/github/push-to-pr-branch.ts`, which replays it
 on top of a traceability commit that landed first.
 
 ## Context
 
 ADR-0021 made "generate French" exclusively a post-merge action: a pull
-request adds English keys, CI only verifies (`translate-locale.mjs
+request adds English keys, CI only verifies (`translate-locale.ts
 --check`), and the real translation happens in a separate
 `i18n-translate.yml` run after the PR merges to `main`, which opens its own
 `chore/fr-CA-translations` pull request.
 
 That gap between "English key merges" and "French key exists" means every
 ordinary feature PR that adds a new string goes red on multiple checks for
-a reason that isn't a defect: `check-locales.mjs` (the `i18n` job and the
+a reason that isn't a defect: `check-locales.ts` (the `i18n` job and the
 pre-commit hook), the `web` job's build-drift check (the local `#`-stub
 mechanism from [ADR-0054](ADR-0054-local-build-stubs-missing-translations.md)
 shows up as an unexpected file change), and the .NET acceptance suite's
 `WebLocalizationAndDesignSteps`, which also shells out to
-`check-locales.mjs`. Observed concretely in #172 (the member-login stub):
+`check-locales.ts`. Observed concretely in #172 (the member-login stub):
 one new set of English-only keys failed `i18n`, `web`, `test`, and
 `coverage` simultaneously, all from the same cause.
 
@@ -43,7 +43,7 @@ ADR-0021's security reasoning for keeping translation off `pull_request`
 is sound and does not change: `pull_request` runs fork-authored code, so a
 translator credential must never be in scope there — a malicious fork PR
 must never be able to spend the DeepL credential or smuggle unreviewed
-French text through a modified `tools/i18n/translator.mjs`. But that risk comes
+French text through a modified `tools/i18n/translator.ts`. But that risk comes
 specifically from *untrusted* branches. A pull request opened from a branch
 of this repository itself (never a fork) is exactly as trusted as a direct
 push to `main` — the same people who can push branches here can push to
@@ -63,7 +63,7 @@ For a same-repo PR, the job:
 1. Checks out the PR's head commit by SHA (not by branch name — avoids a
    time-of-check/time-of-use race if the branch moves between the event
    firing and checkout).
-2. Runs `translate-locale.mjs --generate`, unchanged from the push-to-main
+2. Runs `translate-locale.ts --generate`, unchanged from the push-to-main
    path — same credential, same change-detection, same glossary pinning.
 3. If anything changed, commits `locales/fr-CA.json` and
    `locales/fr-CA.meta.json` directly onto the PR's own branch and pushes,
@@ -97,7 +97,7 @@ second pull request. Nothing here lets any French reach `main` unreviewed.
   == github.repository` is exactly the fork/no-fork boundary GitHub itself
   uses for permission purposes, so it can't drift out of sync with who
   actually has push access.
-- **Leave the gap and instead soften `check-locales.mjs`** to warn rather
+- **Leave the gap and instead soften `check-locales.ts`** to warn rather
   than fail when English has a key French lacks. Considered as a
   complementary, separate change (tracked in its own issue) — it would
   quiet the false-positive checks but wouldn't get real French into a PR

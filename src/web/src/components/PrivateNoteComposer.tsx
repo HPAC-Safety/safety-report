@@ -5,7 +5,7 @@ import { PrivateNoteComposerView } from "./PrivateNoteComposer.view"
 
 export type { PrivateAttachment } from "../api/adminReports"
 
-// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line
+// Split across lines on purpose: tools/web/check-hardcoded-strings.ts is a line
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 export type SaveNote = (text: string, attachmentId: string | null) =>
 	Promise<boolean>

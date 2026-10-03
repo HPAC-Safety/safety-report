@@ -56,7 +56,7 @@ and cite the claims they serve (REQ-QB-099, REQ-QB-102).
 publish" step 1 required a local coverage script to pass before a pull
 request touching `src/`, `tests/`, or `tools/` was opened. The script measured
 `origin/main` and the branch on the same machine with CI's own commands, and
-ran `tools/coverage/check-coverage.mjs` on the pair. Lesson 0025 replaced it.
+ran `tools/coverage/check-coverage.ts` on the pair. Lesson 0025 replaced it.
 
 Since #492 the general rule lives in the generic
 [`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above

@@ -26,7 +26,7 @@ repository-specific. #498 then added three generic files:
 It also made `persist-hpac-data` extend `design-ef-core-model`, and made
 `manage-hpac-migrations` extend `postgres-dba` for its schema conventions.
 ADR-0131's table still lists `persist-hpac-data` as repository-specific and
-names none of the new files. `tools/docs/check-generic-instructions.mjs` already
+names none of the new files. `tools/docs/check-generic-instructions.ts` already
 lists all three as generic.
 
 ## Decision
@@ -67,5 +67,5 @@ lists all three as generic.
 - `AGENTS.md` already names six role agents and lists `postgres-dba` and
   `design-ef-core-model` beside their project skills; nothing there changes.
 - A future generic skill or agent is added to
-  `tools/docs/check-generic-instructions.mjs` and to this classification, by an
+  `tools/docs/check-generic-instructions.ts` and to this classification, by an
   amendment like this one.

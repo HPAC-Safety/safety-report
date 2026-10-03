@@ -72,9 +72,9 @@ the repository delivery contract.
 - Open every markdown file with YAML frontmatter naming its `title`,
   `description`, and `type`
   ([ADR-0087](.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
-  `node tools/docs/check-frontmatter.mjs` checks the tree; the pre-commit hook
+  `node tools/docs/check-frontmatter.ts` checks the tree; the pre-commit hook
   checks what you staged.
-- Keep every relative link resolvable; `node tools/docs/check-links.mjs` checks
+- Keep every relative link resolvable; `node tools/docs/check-links.ts` checks
   them, in the pre-commit hook and in CI. A specification page goes under
   `.spec/`, a guide under `docs/`
   ([ADR-0183](.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)).

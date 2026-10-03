@@ -45,8 +45,8 @@ names and step numbers.
 
 - Why identifiers are claimed after the rebase:
   [lesson 0003](../../.spec/lessons/0003-a-number-is-claimed-the-moment-someone-else-merges.md).
-- ADR number: `node tools/spec/adr-numbers.mjs --next`.
-- Lost the race? `node tools/spec/adr-numbers.mjs --renumber <old> <new>` moves the
+- ADR number: `node tools/spec/adr-numbers.ts --next`.
+- Lost the race? `node tools/spec/adr-numbers.ts --renumber <old> <new>` moves the
   file and rewrites every reference.
 - Two records already share the number? Add `--file <name>` to say which
   moves. Bare `ADR-NNNN` mentions it leaves alone are ambiguous; resolve them
@@ -64,27 +64,27 @@ Everything the specification chain reads lives in `.spec/`
 ([ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)):
 
 - `.spec/features/<area>/` — the area's `.feature` file and its `README.md`;
-- the five constraint pages, `.spec/*.md`, listed in `tools/spec/spec-paths.mjs`;
+- the five constraint pages, `.spec/*.md`, listed in `tools/spec/spec-paths.ts`;
 - `.spec/decisions/` and `.spec/lessons/`;
 - three generated files, never edited by hand:
-  - `.spec/traceability.md` — `node tools/spec/generate-traceability.mjs`;
+  - `.spec/traceability.md` — `node tools/spec/generate-traceability.ts`;
   - `.spec/bindings.md`, the step-definition files that bind each claim —
-    `node tools/spec/generate-bindings.mjs` ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md));
+    `node tools/spec/generate-bindings.ts` ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md));
   - `.spec/README.md`, the index of every area, constraint page, decision, and
-    lesson — `node tools/spec/generate-spec-index.mjs`.
+    lesson — `node tools/spec/generate-spec-index.ts`.
 
 Rules:
 
 - A page goes in `.spec/` when the chain reads it — scenarios, `CON-*` IDs, a
   decision, a lesson. A page that explains how goes in `docs/`.
-- A new path the tools read is added to `tools/spec/spec-paths.mjs`, not written
-  into a tool; `tests/js/spec/spec-paths.test.mjs` ties the hooks and workflows to
+- A new path the tools read is added to `tools/spec/spec-paths.ts`, not written
+  into a tool; `tests/js/spec/spec-paths.test.ts` ties the hooks and workflows to
   it.
 - All three regenerate in post-merge and post-rewrite, in `traceability.yml`
   on a same-repo pull request (also when only a step file changed), and in
   `tools/dev/ci-local.sh`. The `docs` job fails any one stale. A stale
-  `.spec/README.md` in pre-commit: run `node tools/spec/generate-spec-index.mjs` and stage it.
-- `node tools/spec/generate-bindings.mjs` fails a built claim (not `@ignore`) with a step no
+  `.spec/README.md` in pre-commit: run `node tools/spec/generate-spec-index.ts` and stage it.
+- `node tools/spec/generate-bindings.ts` fails a built claim (not `@ignore`) with a step no
   step definition in its engine matches. The specification wins: fix the step
   definition, or the scenario only when it said the wrong thing. Stale
   `@ignore` claims, ambiguous steps, and unused step definitions are listed in
@@ -94,12 +94,12 @@ Rules:
   `Given("…")` or `Given(/…/)` from `createBdd()`; Cucumber parameters
   `{string}`, `{word}`, `{int}`, `{}`. Anything else fails it by name — teach
   the tool first.
-- `node tools/docs/check-links.mjs` fails a relative link or `#anchor` that does not
+- `node tools/docs/check-links.ts` fails a relative link or `#anchor` that does not
   resolve: pre-commit checks staged markdown, and the whole tree when a file is
   deleted or renamed; `docs` checks everything. Fix the link — never move a
   file without its references.
 - A file added under the old `docs/decisions/`, `docs/lessons/`, or `features/`
-  fails `check-frontmatter.mjs`: rebase, then move it under `.spec/`.
+  fails `check-frontmatter.ts`: rebase, then move it under `.spec/`.
 - After pulling this layout into an older clone: `rm .gitattributes && git
   checkout -- .gitattributes`, then `./init-dev.sh`, which installs the hooks
   and registers the `merge=ours` driver.
@@ -114,7 +114,7 @@ Rules:
 - A large area is grouped with Gherkin `Rule:` blocks inside its one `.feature`
   file, not split into new directories; a new scenario goes inside the Rule it
   belongs to. A Rule carries no tags — a claim's engine and status come from its
-  own scenario's tags, and `node tools/spec/generate-traceability.mjs` fails a tagged Rule
+  own scenario's tags, and `node tools/spec/generate-traceability.ts` fails a tagged Rule
   ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)
   amendment).
 
@@ -135,7 +135,7 @@ Rules:
 
 - A new directory under `src/` gets a row in
   [`docs/source-inventory.md`](../../docs/source-inventory.md), and a removed
-  one loses its row. `node tools/docs/check-inventories.mjs` fails the pre-commit
+  one loses its row. `node tools/docs/check-inventories.ts` fails the pre-commit
   hook and the `docs` job otherwise.
 - A pull request that closes an issue removes its row from
   [`docs/issue-traceability.md`](../../docs/issue-traceability.md). Filing an
@@ -160,7 +160,7 @@ Rules:
 
 ### ADRs
 
-- `node tools/spec/adr-numbers.mjs` fails a duplicate number or a filename and
+- `node tools/spec/adr-numbers.ts` fails a duplicate number or a filename and
   heading that disagree, in the pre-commit hook and CI
   ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 - It also fails a `status:` that disagrees with the record's own `**Status:**`
@@ -187,7 +187,7 @@ Rules:
   `isolation`, `background`. Nothing else
   ([ADR-0182](../../.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
 - The Worker's runtime prompts are exempt; their bytes are the model payload.
-- `node tools/docs/check-frontmatter.mjs` is the authority; the pre-commit hook runs
+- `node tools/docs/check-frontmatter.ts` is the authority; the pre-commit hook runs
   it over staged markdown.
 - Never include real report content.
 
@@ -250,7 +250,7 @@ Rules:
    owner does that by hand
    ([ADR-0147](../../.spec/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)
    second amendment; a repository-tracked `PreToolUse` hook,
-   `tools/github/guard-pr-merge.mjs`, refuses it too). Get the pull request's own
+   `tools/github/guard-pr-merge.ts`, refuses it too). Get the pull request's own
    required checks green. `main` has a merge queue: with auto-merge on, the
    pull request queues once its required checks pass, and the queue
    squash-merges it and deletes the branch. The
@@ -277,7 +277,7 @@ Rules:
      `No screenshot needed: <reason>` for a `src/web` change with nothing
      visible.
    - The `screenshots` job in `linked-issue.yml` runs
-     `tools/web/check-pr-screenshots.mjs`: it fails a change to a `.tsx` or `.css` under
+     `tools/web/check-pr-screenshots.ts`: it fails a change to a `.tsx` or `.css` under
      `src/web/src/` (not a test) whose body has neither a pinned
      `raw.githubusercontent.com/…/docs/screenshots/…` image nor that line. It
      does not judge the shots; review does
@@ -320,13 +320,13 @@ Rules:
 
 - A `run:` is one command; logic goes in a script under `tools/<group>/` with
   its test under `tests/js/<group>/`, and plain sequences become separate steps.
-  `tools/github/check-workflow-steps.mjs` fails anything else in pre-commit and
+  `tools/github/check-workflow-steps.ts` fails anything else in pre-commit and
   `docs`. Add the script to the workflow's path filter
   ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
 
 ## Workflows that push
 
-- **Onto a pull request's branch**: push through `tools/github/push-to-pr-branch.mjs`,
+- **Onto a pull request's branch**: push through `tools/github/push-to-pr-branch.ts`,
   passing the workflow's own `pull_request_target.paths`
   ([ADR-0113](../../.spec/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
   [lesson 0016](../../.spec/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).

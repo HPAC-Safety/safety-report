@@ -10,11 +10,19 @@ Every script a workflow, a git hook, or a contributor runs lives here, grouped
 by the domain it serves
 ([ADR-0189](../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
 A workflow step runs one command; its logic is a script here. Each script's test
-is `tests/js/<group>/<name>.test.mjs`.
+is `tests/js/<group>/<name>.test.ts`.
+
+Every script is TypeScript, run directly by Node 24's type stripping: no build
+step, no flag, only erasable syntax (no `enum`, `namespace`, or constructor
+parameter properties; `erasableSyntaxOnly` refuses them). Import a sibling with
+its `.ts` extension, and a type with `import type`. Node does not check types:
+`npm run typecheck` (tsc, in CI's `lint` job) and `npm run lint` do
+([ADR-0189](../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)
+amendment).
 
 | Group | Holds |
 |---|---|
-| `lib/` | Shared helpers: `actions.mjs` (exec, outputs, summary, annotations) |
+| `lib/` | Shared helpers: `actions.ts` (exec, outputs, summary, annotations) |
 | `spec/` | The specification's generators and gates: traceability, index, bindings, feature coverage, ADR numbers |
 | `docs/` | Markdown gates: frontmatter, links, generic instructions, source inventory |
 | `web/` | Web front-end gates: component split, hardcoded strings, bundle, coverage scope, screenshots |
@@ -40,5 +48,5 @@ is `tests/js/<group>/<name>.test.mjs`.
 | a noun | An importable module or a multi-mode command (`translator`, `adr-numbers`) |
 
 A script is dependency-free, exports pure functions plus a `main()` that returns
-an exit code, takes its effects through `lib/actions.mjs` so a test can stub
+an exit code, takes its effects through `lib/actions.ts` so a test can stub
 them, and reads its inputs from the environment.

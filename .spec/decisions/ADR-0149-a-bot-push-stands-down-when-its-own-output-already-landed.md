@@ -1,6 +1,6 @@
 ---
 title: A bot push stands down when its own output already landed
-description: tools/github/push-to-pr-branch.mjs gains a fourth outcome — when the branch gained a commit with this commit's subject and no trigger file changed, an earlier run of the same workflow already landed its output over the same inputs, so the run exits 0 instead of replaying into a conflict.
+description: tools/github/push-to-pr-branch.ts gains a fourth outcome — when the branch gained a commit with this commit's subject and no trigger file changed, an earlier run of the same workflow already landed its output over the same inputs, so the run exits 0 instead of replaying into a conflict.
 type: adr
 status: accepted
 date: 2026-09-26

@@ -58,7 +58,7 @@ Where that holds and every item's data line is separated from its neighbours
 by unchanged lines, git's merge of two correct matrices *is* the matrix of the
 merged tree. Regenerating after the merge changes nothing.
 
-1. **No totals in the file.** `node tools/spec/generate-traceability.mjs` prints them, and
+1. **No totals in the file.** `node tools/spec/generate-traceability.ts` prints them, and
    when `GITHUB_STEP_SUMMARY` is set, writes them to the CI job summary.
 2. **Sorted by area, then ID.** New claims append at the end of their area,
    and reordering a feature file changes nothing.
@@ -73,7 +73,7 @@ merged tree. Regenerating after the merge changes nothing.
    The job emits a notice and exits 0, and fails only when the branch has not
    moved.
 
-`tests/js/spec/generate-traceability.test.mjs` proves the property with `git merge-file`:
+`tests/js/spec/generate-traceability.test.ts` proves the property with `git merge-file`:
 status changes on neighbouring claims and new claims in different areas merge
 cleanly into exactly `render()` of the combined input.
 

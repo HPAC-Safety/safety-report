@@ -38,7 +38,7 @@ Two separate mechanisms, kept deliberately apart by where they run:
 
 1. **Locally, at build time — no credential, no API call.** `src/web`'s
    `dev` and `build` scripts gain a `pre`-hook running a new tool,
-   `tools/i18n/stub-missing-translations.mjs`. It compares `locales/en-CA.json`
+   `tools/i18n/stub-missing-translations.ts`. It compares `locales/en-CA.json`
    and `locales/fr-CA.json` and, for any key present on one side but
    missing on the other, writes that key into the missing file with its
    source text prefixed `#` — e.g. an English-only key `nav.contact:
@@ -49,7 +49,7 @@ Two separate mechanisms, kept deliberately apart by where they run:
    just a log line a developer might miss.
 
 2. **In CI, on push to main — the only place the credential exists.** The
-   existing `i18n-translate.yml` workflow and `tools/i18n/translate-locale.mjs
+   existing `i18n-translate.yml` workflow and `tools/i18n/translate-locale.ts
    --generate` are unchanged: they plan translation for any English key
    whose `fr-CA.meta.json` stamp is missing or stale, call DeepL once, and
    overwrite whatever was there — including a local `#`-stub, which has no
@@ -57,7 +57,7 @@ Two separate mechanisms, kept deliberately apart by where they run:
    real output replaces the stub; the `#` never reaches a human reviewer's
    eyes as anything but a transient local artifact.
 
-`tools/i18n/translate-locale.mjs --check` (the `i18n` CI job's verify step,
+`tools/i18n/translate-locale.ts --check` (the `i18n` CI job's verify step,
 ADR-0021) gains one more rule: a committed locale value that still starts
 with `#` fails the check, the same way a `provider: "stub"` stamp already
 does. A `#`-prefixed placeholder must never merge to main — if `--check`
@@ -101,7 +101,7 @@ job.
 
 **Reuses the generator's own change-detection.** `planTranslation` already
 queues any key with no matching `source_hash` stamp — a `#`-stub has none,
-so it needs no special-casing in `translate-locale.mjs` beyond the new
+so it needs no special-casing in `translate-locale.ts` beyond the new
 `--check` guard.
 
 ## Alternatives
@@ -118,9 +118,9 @@ so it needs no special-casing in `translate-locale.mjs` beyond the new
 
 ## Consequences
 
-- New file: `tools/i18n/stub-missing-translations.mjs`.
+- New file: `tools/i18n/stub-missing-translations.ts`.
 - `src/web/package.json`: `predev`/`prebuild` scripts added.
-- `tools/i18n/translate-locale.mjs`: `verifyLocales` rejects a `#`-prefixed
+- `tools/i18n/translate-locale.ts`: `verifyLocales` rejects a `#`-prefixed
   committed value.
 - `.gitignore`: `locales/fr-CA.json`, `locales/fr-CA.meta.json` added, later
   removed by [ADR-0056](ADR-0056-fr-ca-locale-files-are-tracked-not-gitignored.md).

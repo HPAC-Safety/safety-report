@@ -96,20 +96,20 @@ jobs:
               - 'init-dev.sh'
               - 'tools/dev/ci-local.sh'
               - 'tools/build/build-worker-image.sh'
-              - 'tools/build/smoke-test-worker-image.mjs'
-              - 'tools/build/check-clean-worktree.mjs'
+              - 'tools/build/smoke-test-worker-image.ts'
+              - 'tools/build/check-clean-worktree.ts'
               - 'tools/coverage/**'
-              - 'tools/lib/actions.mjs'
+              - 'tools/lib/actions.ts'
               - '.github/workflows/ci.yml'
             # The web bundle loads its catalogues from locales/ at the repository
             # root, so a copy change is a web change (lesson 0020).
             web:
               - 'src/web/**'
               - 'locales/**'
-              - 'tools/web/check-no-third-party-fonts.mjs'
-              - 'tools/web/check-raw-hex.mjs'
-              - 'tools/build/check-clean-worktree.mjs'
-              - 'tools/lib/actions.mjs'
+              - 'tools/web/check-no-third-party-fonts.ts'
+              - 'tools/web/check-raw-hex.ts'
+              - 'tools/build/check-clean-worktree.ts'
+              - 'tools/lib/actions.ts'
               - '.github/workflows/ci.yml'
             e2e:
               - 'src/web/**'
@@ -123,6 +123,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
       # Preinstalled on the runner. init-dev.sh is POSIX sh, not bash: Windows
       # contributors run it under Git Bash, so a bashism would break the one
@@ -153,7 +158,7 @@ jobs:
       - name: shellcheck the Worker image build
         run: shellcheck tools/build/build-worker-image.sh
       - name: Build the Worker image and prove ffmpeg runs inside it
-        run: node tools/build/smoke-test-worker-image.mjs hpacsafety-worker:ci
+        run: node tools/build/smoke-test-worker-image.ts hpacsafety-worker:ci
 
   # The one job that runs the .NET and JavaScript suites. It collects coverage
   # as it runs them and hands the raw reports to `coverage`, which gates them
@@ -204,7 +209,7 @@ jobs:
       # emits ~440 lines into obj/ that no test will ever run.
       # No explicit trx filename: dotnet test runs one vstest host per project,
       # and a shared filename would make each one overwrite the last. Without
-      # one, each host gets a unique name and tools/coverage/report-test-counts.mjs reads the
+      # one, each host gets a unique name and tools/coverage/report-test-counts.ts reads the
       # project name back out of the trx's own `storage` attribute.
       - name: dotnet test
         run: |
@@ -219,7 +224,7 @@ jobs:
       # The script passes the suite as an explicit file list, and writes the
       # lcov to ./artifacts/coverage/js/lcov.info for `coverage` to merge.
       - name: node --test
-        run: node tools/coverage/run-js-tests.mjs
+        run: node tools/coverage/run-js-tests.ts
 
       # The web logic's unit tests, for their lcov. vite.config.ts writes it to
       # artifacts/coverage/web/lcov.info, where the ReportGenerator glob in
@@ -248,7 +253,7 @@ jobs:
 
       - name: Hand the raw reports to coverage under act
         if: env.ACT
-        run: node tools/coverage/hand-over-raw-reports.mjs push
+        run: node tools/coverage/hand-over-raw-reports.ts push
 
   # Parses every .spec/features/**/*.feature file with the official @cucumber/gherkin
   # parser (the same parser cucumber-js uses), pinned in
@@ -267,7 +272,7 @@ jobs:
         run: npm --prefix tools/gherkin ci
 
       - name: Gherkin feature files parse
-        run: node tools/gherkin/verify.mjs
+        run: node tools/gherkin/verify.ts
 
   # Every tracked markdown file declares its title, description, and type
   # (ADR-0087). The Worker's runtime prompts are exempt - their bytes are the
@@ -283,46 +288,46 @@ jobs:
           node-version: 24
 
       - name: Every markdown file declares what it is
-        run: node tools/docs/check-frontmatter.mjs
+        run: node tools/docs/check-frontmatter.ts
 
       # Nothing else notices a link a move or a rename broke: GitHub renders it
       # as a 404 and the build stays green. ADR-0183.
       - name: Every relative link resolves
-        run: node tools/docs/check-links.mjs
+        run: node tools/docs/check-links.ts
 
       # The generic skills and role agents are reused elsewhere, so they name
       # nothing specific to this repository. ADR-0131.
       - name: Generic agent instructions name nothing specific to this repository
-        run: node tools/docs/check-generic-instructions.mjs
+        run: node tools/docs/check-generic-instructions.ts
 
       # A workflow step runs one command; its logic is a tested script under
       # tools/. ADR-0189.
       - name: Workflow steps run one command
-        run: node tools/github/check-workflow-steps.mjs
+        run: node tools/github/check-workflow-steps.ts
 
       # An ADR's number is its identity and is claimed by naming a file, so two
       # branches can claim the same one and only a rebase notices. ADR-0091.
       - name: Decision records are numbered without collision
-        run: node tools/spec/adr-numbers.mjs
+        run: node tools/spec/adr-numbers.ts
 
       # The source inventory is kept at directory level, so a new directory
       # under src/ needs a row and a removed one loses its row. ADR-0143.
       - name: The source inventory lists every directory under src/
-        run: node tools/docs/check-inventories.mjs
+        run: node tools/docs/check-inventories.ts
 
       # A workflow that reads `terraform output NAME` (or a deploy_variables /
       # site_urls key) is trusting infra/outputs.tf to still declare it -
       # nothing else catches a renamed or removed output before a release
       # actually runs against AWS. #466.
       - name: Every workflow's terraform output reference is declared in infra/outputs.tf
-        run: node tools/infra/check-terraform-outputs.mjs
+        run: node tools/infra/check-terraform-outputs.ts
 
       # The .NET major lives in global.json, the target framework, the Worker's
       # base image, and Renovate's allowedVersions. Here, not behind the dotnet
       # path filter, because a renovate.json-only change must run it too.
       # ADR-0120.
       - name: The .NET major agrees everywhere it is declared
-        run: node tools/build/check-dotnet-major.mjs
+        run: node tools/build/check-dotnet-major.ts
 
       # The matrix is generated from the claim tags and the CON ids, so a
       # scenario added without an id, a duplicate, or a constraint naming a
@@ -340,14 +345,14 @@ jobs:
       # area, constraint page, decision, and lesson, read from its own file.
       # traceability.yml commits it with the matrix. ADR-0183.
       - name: The specification index matches its files
-        run: node tools/spec/generate-spec-index.mjs --check
+        run: node tools/spec/generate-spec-index.ts --check
 
       - name: The traceability matrix matches the specification
         run: |
-          node tools/spec/check-generated-file.mjs \
-            --generator tools/spec/generate-traceability.mjs \
+          node tools/spec/check-generated-file.ts \
+            --generator tools/spec/generate-traceability.ts \
             --file .spec/traceability.md \
-            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/spec/generate-traceability.mjs' and commit the result."
+            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/spec/generate-traceability.ts' and commit the result."
 
       # Every built claim's steps are bound to a step definition in its engine,
       # and the committed map of which files bind which claim is current. The
@@ -356,10 +361,10 @@ jobs:
       # traceability.yml commits the map onto a same-repo PR. ADR-0184.
       - name: Every built claim's steps are bound
         run: |
-          node tools/spec/check-generated-file.mjs \
-            --generator tools/spec/generate-bindings.mjs \
+          node tools/spec/check-generated-file.ts \
+            --generator tools/spec/generate-bindings.ts \
             --file .spec/bindings.md \
-            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/spec/generate-bindings.mjs' and commit the result."
+            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/spec/generate-bindings.ts' and commit the result."
 
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this
@@ -421,7 +426,7 @@ jobs:
 
       - name: The raw reports under act
         if: env.ACT
-        run: node tools/coverage/hand-over-raw-reports.mjs pull
+        run: node tools/coverage/hand-over-raw-reports.ts pull
 
       # ReportGenerator merges every Cobertura and lcov file it finds into one
       # report, so the JS half needs no wiring here beyond producing lcov.
@@ -447,7 +452,7 @@ jobs:
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && !env.ACT
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node tools/coverage/fetch-coverage-baseline.mjs
+        run: node tools/coverage/fetch-coverage-baseline.ts
 
       # Under act (tools/dev/ci-local.sh) the job has no token, and GitHub answers an
       # anonymous artifact download with 401 even on a public repository. So the
@@ -460,7 +465,7 @@ jobs:
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && env.ACT
         env:
           JOB_TOKEN: ${{ github.token }}
-        run: node tools/coverage/read-local-baseline.mjs
+        run: node tools/coverage/read-local-baseline.ts
 
       # The script runs the gate once and keeps its output as comment.md, so the
       # comment step below does not re-run it (that duplicated the table in the
@@ -470,13 +475,13 @@ jobs:
         env:
           BASELINE_PATH: ${{ steps.baseline.outputs.path || steps.baseline-local.outputs.path || 'none' }}
           BASELINE_RUN_ID: ${{ steps.baseline.outputs.run-id || steps.baseline-local.outputs.run-id || 'none' }}
-        run: node tools/coverage/write-coverage-comment.mjs --min-line 80 --min-branch 70
+        run: node tools/coverage/write-coverage-comment.ts --min-line 80 --min-branch 70
 
       # The detailed per-file table, always, so a failure is diagnosable from
       # the run page without downloading anything.
       - name: Detail in the job summary
         if: always()
-        run: node tools/coverage/report-coverage-detail.mjs
+        run: node tools/coverage/report-coverage-detail.ts
 
       # Only present when the e2e job actually ran (needs.e2e.result ==
       # 'success'); a dotnet-only PR has nothing to download here, and the
@@ -495,7 +500,7 @@ jobs:
       # rather than a separate comment, per #263 - one table pair, not two
       # comments to scroll past.
       - name: Add test counts
-        run: node tools/coverage/append-test-counts.mjs
+        run: node tools/coverage/append-test-counts.ts
 
       # Skipped on fork pull requests, whose token cannot write, and on a merge
       # group, which has no pull request to comment on. The job summary above
@@ -522,7 +527,7 @@ jobs:
       # ships the fix. ADR-0145.
       - name: Coverage for tools/dev/ci-local.sh
         if: always() && env.ACT
-        run: node tools/coverage/print-ci-local-coverage.mjs
+        run: node tools/coverage/print-ci-local-coverage.ts
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
@@ -561,8 +566,18 @@ jobs:
       - name: npm ci, browser suite
         run: npm --prefix tests/e2e ci
 
+      # tools/gherkin/verify.ts imports the pinned Gherkin parser; without its
+      # types the rules see `any` there.
+      - name: npm ci, Gherkin check
+        run: npm --prefix tools/gherkin ci
+
       - name: ESLint
         run: npm run lint
+
+      # Node strips the types of tools/ and tests/js without checking them, so
+      # this is the only place a type error there fails (ADR-0189).
+      - name: Type check, tools and tests/js
+        run: npm run typecheck
 
   web:
     needs: changes
@@ -585,7 +600,7 @@ jobs:
       # Vitest holds the logic of every split component, and every helper that
       # has a colocated test, to 100% line, branch, function and statement
       # coverage. Which files is decided by the files on disk, not a list
-      # (tools/web/web-coverage-scope.mjs, ADR-0188).
+      # (tools/web/web-coverage-scope.ts, ADR-0188).
       - name: Unit tests and coverage
         run: npm --prefix src/web run test:coverage
 
@@ -594,13 +609,13 @@ jobs:
       # the repository root, in the job the fast local gate runs, rather than
       # leaving the first proof to GitHub (#769).
       - name: Web coverage reaches the ratchet
-        run: node tools/web/check-web-lcov.mjs
+        run: node tools/web/check-web-lcov.ts
 
       # A view is markup only, and no shipped file imports test code. The
       # strictness (every component split) is a constant in the script, not a
       # flag here (ADR-0073).
       - name: Component split
-        run: node tools/web/check-component-split.mjs
+        run: node tools/web/check-component-split.ts
 
       - name: Build
         run: npm --prefix src/web run build
@@ -611,24 +626,24 @@ jobs:
       # Test code is never part of a release (ADR-0188). The import rule above
       # stops it at the source; this reads what was built.
       - name: No test code in the bundle
-        run: node tools/web/check-web-bundle.mjs src/web/dist
+        run: node tools/web/check-web-bundle.ts src/web/dist
 
       # The acceptance criterion from #11, checked rather than trusted: nothing
       # in the built bundle reaches Google for a font. The @font-face URLs in
       # src/web/src/index.css are relative paths into src/web/assets/fonts.
       - name: No third-party font requests
-        run: node tools/web/check-no-third-party-fonts.mjs
+        run: node tools/web/check-no-third-party-fonts.ts
 
       # Raw hex in markup defeats the token system: a literal colour cannot be
       # re-themed. Hex values belong in src/web/src/index.css; the script scans
       # only source markup and components. See ADR-0024.
       - name: No raw hex in markup
-        run: node tools/web/check-raw-hex.mjs
+        run: node tools/web/check-raw-hex.ts
 
       # dist/ is generated and gitignored. If a build produces a tracked
       # change, something that should be generated has been committed.
       - name: No drift from building
-        run: node tools/build/check-clean-worktree.mjs "Building the app modified tracked files:"
+        run: node tools/build/check-clean-worktree.ts "Building the app modified tracked files:"
 
   e2e:
     needs: changes
@@ -657,7 +672,7 @@ jobs:
       # regenerating it — only this job has actually run Playwright. See #263.
       - name: Count Playwright tests
         if: always()
-        run: node tools/coverage/report-test-counts.mjs --section e2e --out ./artifacts/test-count/e2e.md
+        run: node tools/coverage/report-test-counts.ts --section e2e --out ./artifacts/test-count/e2e.md
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
@@ -675,13 +690,18 @@ jobs:
       # default on Linux runners. If that ever changes this job is what notices.
       - uses: actions/checkout@v7
 
+      # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
       - name: Agent instruction symlinks resolve to AGENTS.md
-        run: node tools/docs/check-agent-symlinks.mjs
+        run: node tools/docs/check-agent-symlinks.ts
 
       - name: Install skillfile
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node tools/dev/install-skillfile.mjs
+        run: node tools/dev/install-skillfile.ts
 
       # skillfile resolves each github-sourced entry through the GitHub API.
       # Unauthenticated, it shares the runner IP's 60-an-hour anonymous quota
@@ -720,7 +740,7 @@ jobs:
       # .claude/skills and .claude/agents are gitignored. If `skillfile install`
       # ever starts writing tracked files, that is drift worth failing on.
       - name: No drift from installing skills
-        run: node tools/build/check-clean-worktree.mjs "skillfile install modified tracked files:"
+        run: node tools/build/check-clean-worktree.ts "skillfile install modified tracked files:"
 
   i18n:
     runs-on: ubuntu-latest
@@ -731,10 +751,10 @@ jobs:
           node-version: 24
 
       - name: Locale key parity
-        run: node tools/i18n/check-locales.mjs
+        run: node tools/i18n/check-locales.ts
 
       - name: No hardcoded user-facing strings
-        run: node tools/web/check-hardcoded-strings.mjs
+        run: node tools/web/check-hardcoded-strings.ts
 
       # VERIFY ONLY. --check reads the three locale files and constructs no
       # translator, so no inference happens here and no locale file is written.
@@ -753,4 +773,4 @@ jobs:
       # branch before this passes, and nothing runs it locally. ACT is unset
       # on GitHub, so the flag is never passed there (ADR-0145).
       - name: Locale translation is in step with English
-        run: node tools/i18n/translate-locale.mjs --check --locales locales ${ACT:+--allow-pending-translation}
+        run: node tools/i18n/translate-locale.ts --check --locales locales ${ACT:+--allow-pending-translation}

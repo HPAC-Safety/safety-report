@@ -21,19 +21,19 @@ PR #470 changed the wording of the Typeform import notice. It claimed the
 The category vocabulary is closed on purpose
 ([ADR-0090](../decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)),
 but the list was written down in only two places: that ADR and
-`tools/spec/check-feature-coverage.mjs`. The pull request template, `AGENTS.md`, and the
+`tools/spec/check-feature-coverage.ts`. The pull request template, `AGENTS.md`, and the
 `deliver-hpac-change` skill all said "a closed category" without naming one.
 An author writing the body had nothing to choose from, so they guessed.
 
 A second trap sat beside it. The skill said to run
-`node tools/spec/check-feature-coverage.mjs` locally. The tool reads the changed files
+`node tools/spec/check-feature-coverage.ts` locally. The tool reads the changed files
 and the body from the environment, so a bare run checks nothing and passes.
 
 ## Spec delta
 
 - `.github/pull_request_template.md` shows the exemption shape and all seven
   categories with their meanings.
-- `tests/js/spec/check-feature-coverage.test.mjs` fails when the template's list differs
+- `tests/js/spec/check-feature-coverage.test.ts` fails when the template's list differs
   from the tool's `CATEGORIES`, and when the template itself would parse as an
   exemption.
 - `AGENTS.md` names the seven categories.

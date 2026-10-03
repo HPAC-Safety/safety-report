@@ -72,7 +72,7 @@ jobs:
           REPO: ${{ github.repository }}
           REF_TYPE: ${{ github.ref_type }}
           TAG: ${{ github.ref_name }}
-        run: node tools/github/find-release-run.mjs
+        run: node tools/github/find-release-run.ts
 
   production:
     needs: locate

@@ -73,7 +73,7 @@ public static class TranslationServiceCollectionExtensions
 
 			// `DEEPL_API_KEY` is the name the credential already has — in
 			// repository settings, in the deploy workflow, and in
-			// tools/i18n/translator.mjs.
+			// tools/i18n/translator.ts.
 			options.ApiKey ??= configuration["DEEPL_API_KEY"];
 		})
 			// Checked at startup, key or no key: an unsupported English target is

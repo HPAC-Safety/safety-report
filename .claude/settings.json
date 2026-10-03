@@ -6,7 +6,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "node \"$CLAUDE_PROJECT_DIR\"/tools/github/guard-pr-merge.mjs",
+						"command": "node \"$CLAUDE_PROJECT_DIR\"/tools/github/guard-pr-merge.ts",
 						"timeout": 10
 					}
 				]

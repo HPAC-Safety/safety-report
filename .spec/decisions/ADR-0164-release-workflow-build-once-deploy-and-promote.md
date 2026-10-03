@@ -55,7 +55,7 @@ This pull request is built on top of #443 (the Lambda-adapter API image,
 `infra/staging.tfvars`, `infra/production.tfvars`, and every Terraform
 output this workflow and `deploy-environment.yml` read by name), all now
 merged — every `terraform output` reference is aligned with the real
-`infra/outputs.tf`, and `tools/infra/check-terraform-outputs.mjs` fails CI if that
+`infra/outputs.tf`, and `tools/infra/check-terraform-outputs.ts` fails CI if that
 ever drifts again.
 
 ## Decision
@@ -147,7 +147,7 @@ hostname — staging has exactly one entry, production two — read by taking
 any one entry's `public` URL, since every hostname reaches the same
 distribution and the same `/api/health`).
 
-`tools/infra/check-terraform-outputs.mjs` (added in this pull request, wired into
+`tools/infra/check-terraform-outputs.ts` (added in this pull request, wired into
 `ci.yml`'s `docs` job) statically checks every `terraform output` name and
 JSON key either workflow reads against what `infra/outputs.tf` actually
 declares, and fails the build on a mismatch — the guard issue #466's review
@@ -206,7 +206,7 @@ new one, which is immaterial once the commit is fixed.
   `infra/outputs.tf`'s `nat_autoscaling_group_arn`, `secret_entries`, and
   `site_urls` outputs (#465/#588), are merged; `release.yml` and
   `deploy-environment.yml` read every one of them by its real name, verified
-  by `tools/infra/check-terraform-outputs.mjs`.
+  by `tools/infra/check-terraform-outputs.ts`.
 - `docs/deployment.md` "Release and promotion" and "Required GitHub
   configuration" carry the operator-facing half of this record; keep them
   and this ADR in agreement if either changes.

@@ -56,7 +56,7 @@ github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-
 # Names are explicit: every source file is called SKILL.md, so without a name
 # they would all infer the same one and overwrite each other on install.
 # Generic skills name nothing specific to this repository, so another project
-# can reuse them; tools/docs/check-generic-instructions.mjs enforces it (ADR-0131).
+# can reuse them; tools/docs/check-generic-instructions.ts enforces it (ADR-0131).
 local  skill  clarify-requirements  skills/clarify-requirements/SKILL.md
 local  skill  coding-conventions  skills/coding-conventions/SKILL.md
 local  skill  deliver-change  skills/deliver-change/SKILL.md

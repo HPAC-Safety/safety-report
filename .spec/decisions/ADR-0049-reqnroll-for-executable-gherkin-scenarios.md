@@ -17,7 +17,7 @@ keywords: Reqnroll, Gherkin, feature files, acceptance tests, xUnit
 `.spec/features/*.feature` files are the canonical specification
 ([`.spec/features/README.md`](../features/README.md)) — Gherkin scenarios that
 describe target behavior. Until now they were checked for syntax only
-(`tools/gherkin/verify.mjs`, using `@cucumber/gherkin`) and had no step
+(`tools/gherkin/verify.ts`, using `@cucumber/gherkin`) and had no step
 implementations; the comment at the top of that script said so explicitly.
 Most scenarios describe behavior that isn't built yet.
 
@@ -94,7 +94,7 @@ job would duplicate that mechanism for no reason.
   `@ignore` tag and adds its step definitions in the same PR — enforced the
   same way `deliver-hpac-change` already enforces touching `.spec/features` when
   behavior changes.
-- `tools/gherkin/verify.mjs`'s syntax check stays useful and unchanged
+- `tools/gherkin/verify.ts`'s syntax check stays useful and unchanged
   alongside Reqnroll; its header comment is updated to stop claiming there is
   no step implementation to run scenarios against.
 - Generated `*.feature.cs` files live under `obj/`, already gitignored

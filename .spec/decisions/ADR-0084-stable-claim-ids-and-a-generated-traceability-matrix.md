@@ -59,10 +59,10 @@ topology, a testing obligation — and leaving them anonymous would make the
 matrix quietly incomplete rather than visibly incomplete.
 
 **The matrix is generated from the artifacts, committed, and drift-checked.**
-`tools/spec/generate-traceability.mjs` reads the feature files and the `CON-*` claims and
+`tools/spec/generate-traceability.ts` reads the feature files and the `CON-*` claims and
 writes `.spec/traceability.md`. It is dependency-free, like every other tool in
 `tools/`: the grammar it consumes is two line shapes, and
-`tools/gherkin/verify.mjs` has already proved with the official Cucumber parser
+`tools/gherkin/verify.ts` has already proved with the official Cucumber parser
 that the files are valid Gherkin, so the generator never has to be the thing
 that discovers a syntax error. CI regenerates it and fails on a difference, in
 the same shape as the existing skill-install and `dotnet format` drift checks.
@@ -113,7 +113,7 @@ Tags are inert to both runners: Reqnroll turns a tag into an xUnit trait and
 
 ## Amendment (2026-09-30)
 
-The matrix is `.spec/traceability.md`, and the canonical constraint pages are the five `.spec/*.md` pages listed in `tools/spec/spec-paths.mjs`. A generated `.spec/README.md` indexes the areas, constraint pages, decisions, and lessons beside it. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
+The matrix is `.spec/traceability.md`, and the canonical constraint pages are the five `.spec/*.md` pages listed in `tools/spec/spec-paths.ts`. A generated `.spec/README.md` indexes the areas, constraint pages, decisions, and lessons beside it. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
 ## Amendment (2026-09-30, ADR-0184)
 

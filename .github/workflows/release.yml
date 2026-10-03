@@ -30,7 +30,7 @@
 # multi-account Terraform, and every Terraform output deploy-environment.yml
 # reads by name from infra/outputs.tf: deploy_variables,
 # nat_autoscaling_group_arn, secret_entries, site_urls,
-# dns_records_to_publish). tools/infra/check-terraform-outputs.mjs fails CI if
+# dns_records_to_publish). tools/infra/check-terraform-outputs.ts fails CI if
 # either file drifts from what infra/outputs.tf actually declares.
 name: Release
 
@@ -76,7 +76,7 @@ jobs:
           SHA: ${{ github.sha }}
           SERVER: ${{ github.server_url }}
           RUN_ID: ${{ github.run_id }}
-        run: node tools/github/create-release.mjs
+        run: node tools/github/create-release.ts
 
   # No AWS credential anywhere in this job, deliberately (see this file's
   # header). It builds each artifact exactly once, tagged by the commit SHA
@@ -164,7 +164,7 @@ jobs:
         run: npm --prefix src/web run build
 
       - name: Check the web bundle
-        run: node tools/web/check-web-bundle.mjs src/web/dist
+        run: node tools/web/check-web-bundle.ts src/web/dist
 
       - name: Pack the web bundle
         run: tar czf artifacts/release/web-dist.tar.gz -C src/web/dist .

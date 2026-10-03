@@ -1,38 +1,15 @@
 #!/usr/bin/env node
-// Reads the pinned Node major out of a workflow file and outputs it as `major`.
+// Temporary (#800): main's i18n-translate.yml runs on pull_request_target from
+// the base branch and still calls this .mjs path against the pull request that
+// converted tools/ to TypeScript (#798). Delete once that pull request has
+// merged and main's workflow calls tools/github/read-node-major.ts.
 //
-// The Node major is pinned in ci.yml and nowhere else (ADR-0015, and
-// skills/deliver-hpac-change/SKILL.md). Reading it rather than writing 24 again
-// keeps traceability.yml and i18n-translate.yml from silently disagreeing with
-// CI. They run it from the trusted checkout (the base branch in
-// traceability.yml), before actions/setup-node.
-//
-//   node tools/github/read-node-major.mjs <workflow-file>
-//
-// The first `node-version: <digits>` in the file wins. Fails, naming the file,
-// when there is none.
-import { readFileSync } from 'node:fs'
+// It re-runs the TypeScript script with the same arguments, environment and
+// standard streams, and exits with its status. Importing would not run it: the
+// script's command guard matches only its own path.
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
-import { isMain, setOutput } from '../lib/actions.mjs'
-
-/** The major in the first `node-version: N` line of the text, or null. */
-export function readNodeMajor(text) {
-	return text.match(/node-version: ([0-9]+)/)?.[1] ?? null
-}
-
-export function main({ argv = process.argv.slice(2), env = process.env, log = console.log } = {}) {
-	const [file] = argv
-	if (!file) {
-		log('::error::Usage: node tools/github/read-node-major.mjs <workflow-file>')
-		return 1
-	}
-	const major = readNodeMajor(readFileSync(file, 'utf8'))
-	if (!major) {
-		log(`::error::Could not read the pinned Node major out of ${file}.`)
-		return 1
-	}
-	setOutput('major', major, env)
-	return 0
-}
-
-if (isMain(import.meta.url)) process.exit(main())
+const script = fileURLToPath(new URL('./read-node-major.ts', import.meta.url))
+const run = spawnSync(process.execPath, [script, ...process.argv.slice(2)], { stdio: 'inherit' })
+process.exit(run.status ?? 1)

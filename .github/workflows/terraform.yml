@@ -69,12 +69,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
       # Versions come out of the files that pin them — infra/.terraform-version
       # and infra/.tflint-version — never out of this workflow. AGENTS.md: a tool
       # version is pinned in exactly one file, and a second copy is a copy that
       # will drift.
       - name: Install the pinned Terraform and tflint
-        run: node tools/infra/install-terraform.mjs --tflint
+        run: node tools/infra/install-terraform.ts --tflint
 
       # bootstrap.sh is POSIX sh for the same reason init-dev.sh is: it runs
       # under Git Bash on Windows, where a bashism breaks the one platform
@@ -164,6 +169,11 @@ jobs:
       # request checks out too, with the same read-only token it already has.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
       # A fork pull request gets no secrets and a read-only token, so it can
       # neither assume a role nor post a comment; the script checks explicitly
       # rather than relying on that. The role is hpac-safety-plan, NOT
@@ -176,11 +186,11 @@ jobs:
           SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           ACCOUNT: ${{ matrix.account }}
           ACCOUNT_UPPER: ${{ matrix.account_upper }}
-        run: node tools/infra/check-aws-configured.mjs
+        run: node tools/infra/check-aws-configured.ts
 
       - name: Install the pinned Terraform
         if: steps.configured.outputs.ready == 'true'
-        run: node tools/infra/install-terraform.mjs
+        run: node tools/infra/install-terraform.ts
 
       - if: steps.configured.outputs.ready == 'true'
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
@@ -227,7 +237,7 @@ jobs:
           PLAN_OUTCOME: ${{ steps.plan.outcome }}
           ACCOUNT: ${{ matrix.account }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: node tools/infra/comment-terraform-plan.mjs
+        run: node tools/infra/comment-terraform-plan.ts
 
       # continue-on-error above let the comment be posted for a FAILED plan too,
       # which is the case a reviewer most needs to see. The job still fails.

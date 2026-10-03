@@ -13,7 +13,7 @@ journeys. Use xUnit, Shouldly, Given/When/Then structure, Testcontainers,
 ```bash
 dotnet test HpacSafety.slnx
 dotnet test HpacSafety.slnx --filter "Category!=Integration"
-node --test $(find tests/js -name '*.test.mjs')
+node --test $(find tests/js -name '*.test.ts')
 npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 

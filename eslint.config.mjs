@@ -8,13 +8,13 @@
 //
 //   TypeScript  typescript-eslint strict-type-checked, with type information
 //               from `parserOptions.projectService`: src/web/tsconfig.json for
-//               src/web, tests/e2e/tsconfig.json for the browser suite
-//               (vite.config.ts, a Node script in neither, gets strict without
-//               types);
-//   JavaScript  typescript-eslint strict (no types: plain .mjs carries none),
-//               plus no-floating-promises, no-misused-promises,
-//               await-thenable and require-await, which need only inference,
-//               against the root tsconfig.json (allowJs, not checkJs);
+//               src/web, tests/e2e/tsconfig.json for the browser suite, the
+//               root tsconfig.json for tools and tests/js (vite.config.ts, a
+//               Node script in none, gets strict without types);
+//   this file   typescript-eslint strict (no types). It stays .mjs because
+//               ESLint 9 loads a TypeScript config only through jiti or an
+//               unstable Node flag, and a config is the one file that cannot
+//               lint itself with a tool it has not loaded yet;
 //   src/web     also the Rules of Hooks and exhaustive-deps, and jsx-a11y
 //               recommended. React rules apply to the web app only;
 //   every file  a disable comment states its reason after `--`.
@@ -42,7 +42,7 @@ const a11y = jsxA11y.flatConfigs.recommended
 
 export default tseslint.config(
 	{
-		ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', 'artifacts/**', '.claude/**', '.skillfile/**', 'graphify-out/**', 'tests/e2e/.features-gen/**', 'tests/e2e/test-results/**', 'tests/e2e/playwright-report/**'],
+		ignores: ['**/node_modules/**', '**/dist/**', 'coverage/**', 'src/web/coverage/**', 'artifacts/**', '.claude/**', '.skillfile/**', 'graphify-out/**', 'tests/e2e/.features-gen/**', 'tests/e2e/test-results/**', 'tests/e2e/playwright-report/**'],
 	},
 	js.configs.recommended,
 	{
@@ -69,19 +69,13 @@ export default tseslint.config(
 		extends: [tseslint.configs.strict],
 	},
 	{
-		// Plain JavaScript (tools, tests/js, this file) carries no annotations, so
-		// the type-aware presets would report `any` everywhere. It gets the strict
-		// (syntactic) preset, plus the type-aware rules that find real bugs without
-		// annotations, against the root tsconfig.json (allowJs, not checkJs).
-		files: ['**/*.{mjs,js,cjs}'],
+		// This file is the only JavaScript left. The type-aware preset has nothing to
+		// read from it (no annotations, outside every tsconfig `include` that checks
+		// JavaScript), so it gets the strict (syntactic) preset. So do the five
+		// temporary tools/**/*.mjs shims main's i18n-translate.yml calls until #798
+		// merges; #800 deletes them.
+		files: ['eslint.config.mjs', 'tools/**/*.mjs'],
 		extends: [tseslint.configs.strict],
-		languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
-		rules: {
-			'@typescript-eslint/no-floating-promises': 'error',
-			'@typescript-eslint/no-misused-promises': 'error',
-			'@typescript-eslint/await-thenable': 'error',
-			'@typescript-eslint/require-await': 'error',
-		},
 	},
 	{
 		// Test code. Three rules are off here, for the reasons in ADR-0188's
@@ -89,7 +83,7 @@ export default tseslint.config(
 		// it, so a `!` that fails is a failing test; `expect(mock.method)` reads
 		// a method to assert on it, which `unbound-method` reads as a bug; and an
 		// `async` callback with no `await` is the shape `act` and Playwright want.
-		files: ['src/web/src/**/*.test.{ts,tsx}', 'tests/e2e/**/*.ts', 'tests/js/**/*.mjs'],
+		files: ['src/web/src/**/*.test.{ts,tsx}', 'tests/e2e/**/*.ts', 'tests/js/**/*.ts'],
 		rules: {
 			'@typescript-eslint/no-non-null-assertion': 'off',
 			'@typescript-eslint/unbound-method': 'off',
@@ -98,7 +92,7 @@ export default tseslint.config(
 	},
 	{
 		// node:test registers a test with a call whose promise the runner awaits.
-		files: ['tests/js/**/*.mjs'],
+		files: ['tests/js/**/*.ts'],
 		rules: { '@typescript-eslint/no-floating-promises': 'off' },
 	},
 	{
@@ -118,7 +112,7 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ['tools/**/*.mjs', 'tests/js/**/*.mjs', 'eslint.config.mjs', 'src/web/vite.config.ts'],
+		files: ['tools/**/*.ts', 'tools/**/*.mjs', 'tests/js/**/*.ts', 'eslint.config.mjs', 'src/web/vite.config.ts'],
 		languageOptions: { globals: globals.node },
 	},
 	{

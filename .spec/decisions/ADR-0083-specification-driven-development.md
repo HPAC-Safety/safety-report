@@ -130,4 +130,4 @@ The chain's files moved into `.spec/`: scenarios to `.spec/features/<area>/<area
 
 ## Amendment (2026-09-30, ADR-0184)
 
-The chain is now checked from the specification down: `tools/spec/generate-bindings.mjs` resolves every scenario step to the step definition that binds it, fails a built claim with an unbound step, and writes the map to `.spec/bindings.md`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))
+The chain is now checked from the specification down: `tools/spec/generate-bindings.ts` resolves every scenario step to the step definition that binds it, fails a built claim with an unbound step, and writes the map to `.spec/bindings.md`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

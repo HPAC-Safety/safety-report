@@ -23,7 +23,7 @@ name: Traceability matrix
 # newer push changed a file below, it started its own run, and this one is
 # superseded (ADR-0106). When it didn't — i18n-translate.yml committed its
 # French for the same push — nothing else will regenerate, so the commit is
-# replayed on top and pushed again (ADR-0113). tools/github/push-to-pr-branch.mjs
+# replayed on top and pushed again (ADR-0113). tools/github/push-to-pr-branch.ts
 # decides which.
 #
 # A pull request merges through the merge queue (ADR-0147), where ci.yml's
@@ -36,14 +36,14 @@ on:
   pull_request_target:
     paths:
       - .spec/**
-      - tools/spec/generate-traceability.mjs
-      - tools/spec/generate-spec-index.mjs
-      - tools/spec/spec-paths.mjs
-      - tools/spec/generate-bindings.mjs
-      - tools/spec/regenerate-spec-docs.mjs
-      - tools/github/commit-to-pr-branch.mjs
-      - tools/github/read-node-major.mjs
-      - tools/lib/actions.mjs
+      - tools/spec/generate-traceability.ts
+      - tools/spec/generate-spec-index.ts
+      - tools/spec/spec-paths.ts
+      - tools/spec/generate-bindings.ts
+      - tools/spec/regenerate-spec-docs.ts
+      - tools/github/commit-to-pr-branch.ts
+      - tools/github/read-node-major.ts
+      - tools/lib/actions.ts
       - tests/HpacSafety.Acceptance.Tests/**
       - tests/e2e/steps/**
       - .github/workflows/traceability.yml
@@ -81,7 +81,7 @@ jobs:
       # The Node major is pinned in ci.yml and nowhere else (ADR-0015).
       - name: Read the pinned Node major
         id: node
-        run: node base/tools/github/read-node-major.mjs base/.github/workflows/ci.yml
+        run: node base/tools/github/read-node-major.ts base/.github/workflows/ci.yml
 
       - uses: actions/setup-node@v7
         with:
@@ -91,7 +91,7 @@ jobs:
       # from .spec/, so one run regenerates both and one commit carries them.
       - name: Regenerate the matrix and the index with the base branch's generators
         id: regenerate
-        run: node base/tools/spec/regenerate-spec-docs.mjs base head
+        run: node base/tools/spec/regenerate-spec-docs.ts base head
 
       # A push made with the built-in GITHUB_TOKEN does not trigger workflows
       # (GitHub's loop protection), so ci.yml would never re-run on this
@@ -109,12 +109,12 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         # --paths is this workflow's pull_request_target paths, verbatim;
-        # tests/js/github/push-to-pr-branch.test.mjs fails if they disagree. The
+        # tests/js/github/push-to-pr-branch.test.ts fails if they disagree. The
         # tool is the base branch's copy, like the generator, and pushes through
-        # tools/github/push-to-pr-branch.mjs.
+        # tools/github/push-to-pr-branch.ts.
         run: |
-          node ../base/tools/github/commit-to-pr-branch.mjs \
+          node ../base/tools/github/commit-to-pr-branch.ts \
           --adr ADR-0101 \
           --add '.spec/traceability.md,.spec/README.md,.spec/bindings.md' \
           --subject 'Regenerate the traceability matrix, step bindings, and specification index' \
-          --paths '.spec/**,tools/spec/generate-traceability.mjs,tools/spec/generate-spec-index.mjs,tools/spec/spec-paths.mjs,tools/spec/generate-bindings.mjs,tools/spec/regenerate-spec-docs.mjs,tools/github/commit-to-pr-branch.mjs,tools/github/read-node-major.mjs,tools/lib/actions.mjs,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'
+          --paths '.spec/**,tools/spec/generate-traceability.ts,tools/spec/generate-spec-index.ts,tools/spec/spec-paths.ts,tools/spec/generate-bindings.ts,tools/spec/regenerate-spec-docs.ts,tools/github/commit-to-pr-branch.ts,tools/github/read-node-major.ts,tools/lib/actions.ts,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'

@@ -11,7 +11,7 @@ This page lists every open issue and how it stands against the
 are not listed: their history is in GitHub, and what they decided lives in the
 ADRs and `.spec/features`. A pull request that closes an issue removes its row.
 
-`tools/spec/check-issue-traceability.mjs` compares this page with the open issues. It
+`tools/spec/check-issue-traceability.ts` compares this page with the open issues. It
 never fails a pull request: `.github/workflows/issue-traceability.yml` runs it
 daily and on every push to `main`, and keeps one "Issue traceability drift"
 issue open while an open issue has no row here or a row names a closed one

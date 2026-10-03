@@ -1,6 +1,6 @@
 ---
 title: A bot pushing onto a pull request replays its commit past another bot
-description: traceability.yml and i18n-translate.yml push through tools/github/push-to-pr-branch.mjs, which tells a newer push that started its own run from one that started none, and replays the commit on top of the second.
+description: traceability.yml and i18n-translate.yml push through tools/github/push-to-pr-branch.ts, which tells a newer push that started its own run from one that started none, and replays the commit on top of the second.
 type: adr
 status: accepted
 date: 2026-09-24
@@ -47,7 +47,7 @@ later run translates.
 
 ## Decision
 
-Both bots push through `tools/github/push-to-pr-branch.mjs`. When a push is
+Both bots push through `tools/github/push-to-pr-branch.ts`. When a push is
 rejected, the tool fetches the branch and lists the files it gained since the
 event's head SHA:
 
@@ -62,7 +62,7 @@ event's head SHA:
    pushes again, up to five times. A commit that does not apply fails the job.
 
 Each workflow passes its own `pull_request_target.paths` to the tool.
-`tests/js/github/push-to-pr-branch.test.mjs` fails when the two lists disagree, and
+`tests/js/github/push-to-pr-branch.test.ts` fails when the two lists disagree, and
 it drives every outcome against real repositories.
 
 `traceability.yml` runs the base branch's copy of the tool, as it already

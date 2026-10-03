@@ -35,7 +35,7 @@ any commit:
 
 ## Decision
 
-- **Source inventory: a required check.** `tools/docs/check-inventories.mjs` runs
+- **Source inventory: a required check.** `tools/docs/check-inventories.ts` runs
   in the pre-commit hook, when a file under `src/` is added or deleted or the
   inventory is staged, and in the `docs` job as the backstop
   ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It fails when a directory under `src/` holding tracked
@@ -43,7 +43,7 @@ any commit:
   takes the directories from `git ls-files`, so build output never counts. A
   directory holding only other directories needs no row.
 - **Issue traceability: a drift issue, never a failed check.**
-  `tools/spec/check-issue-traceability.mjs --sync` runs from
+  `tools/spec/check-issue-traceability.ts --sync` runs from
   `.github/workflows/issue-traceability.yml` daily, on push to `main`, and on
   dispatch from `main`, and never on a pull request. It keeps one "Issue
   traceability drift" issue:

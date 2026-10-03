@@ -61,10 +61,10 @@ the `Given`/`When`/`Then` text behind it.
 | `.claude/skills/`, `.claude/agents/` | `skillfile install` |
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/dev/extract-typeform.py` |
-| `.spec/traceability.md` | `node tools/spec/generate-traceability.mjs`; on a same-repo PR, `traceability.yml` commits it (ADR-0101) |
-| `.spec/README.md` | `node tools/spec/generate-spec-index.mjs`; committed with the matrix by `traceability.yml` (ADR-0183) |
-| `.spec/bindings.md` | `node tools/spec/generate-bindings.mjs`; committed with the matrix by `traceability.yml`, and fails `docs` when a built claim's step is unbound (ADR-0184) |
-| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/i18n/translate-locale.mjs` |
+| `.spec/traceability.md` | `node tools/spec/generate-traceability.ts`; on a same-repo PR, `traceability.yml` commits it (ADR-0101) |
+| `.spec/README.md` | `node tools/spec/generate-spec-index.ts`; committed with the matrix by `traceability.yml` (ADR-0183) |
+| `.spec/bindings.md` | `node tools/spec/generate-bindings.ts`; committed with the matrix by `traceability.yml`, and fails `docs` when a built claim's step is unbound (ADR-0184) |
+| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/i18n/translate-locale.ts` |
 | `src/web/dist/` | `npm --prefix src/web run build` |
 
 Question text is not generated from locale catalogues: every database question

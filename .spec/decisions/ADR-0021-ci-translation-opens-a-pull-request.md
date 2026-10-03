@@ -68,16 +68,16 @@ that updates rather than a queue of them.
 
 ```mermaid
 flowchart TD
-    pr["pull_request<br/>(including forks)"] --> chk["ci.yml · i18n<br/>translate-locale.mjs --check"]
+    pr["pull_request<br/>(including forks)"] --> chk["ci.yml · i18n<br/>translate-locale.ts --check"]
     chk --> reads["reads three files.<br/>constructs no translator."]
-    push["push to main"] --> gen["i18n-translate.yml<br/>translate-locale.mjs --generate"]
+    push["push to main"] --> gen["i18n-translate.yml<br/>translate-locale.ts --generate"]
     gen --> call["one batched provider call"]
     call --> prq["opens a pull request"]
     prq --> human["a human reads the French"]
     human --> main["main"]
 ```
 
-`--check` and `--generate` are separate modes of `tools/i18n/translate-locale.mjs`,
+`--check` and `--generate` are separate modes of `tools/i18n/translate-locale.ts`,
 and there is **no default mode** — running it with neither flag exits 2. A tool
 whose no-argument behaviour is the side-effecting one gets invoked that way by
 accident exactly once.
@@ -102,7 +102,7 @@ their absence look like first-run setup.
 ### The offline stub cannot reach `main`
 
 The test suite needs a translator that makes no network call, so
-`tools/i18n/translator.mjs` ships a `stub` provider. It stamps `provider: "stub"` in
+`tools/i18n/translator.ts` ships a `stub` provider. It stamps `provider: "stub"` in
 the provenance, and `--check` **fails** on that stamp. A development stand-in
 must never weaken a guarantee the production one makes — so the stand-in's
 output is rejected by the same gate that protects everything else, no matter

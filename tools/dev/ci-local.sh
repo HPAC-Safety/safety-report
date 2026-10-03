@@ -43,7 +43,7 @@
 #
 # Coverage parity: the coverage job runs as in CI. It gates against the same
 # baseline artifact, from the newest push run on main that ran coverage (found
-# by tools/coverage/find-coverage-baseline.mjs, #589), that CI does, and measures this
+# by tools/coverage/find-coverage-baseline.ts, #589), that CI does, and measures this
 # branch on Ubuntu 24.04 with the SDK global.json names. A run whose coverage
 # merged a different number of per-project reports than there are test
 # projects fails, because its verdict would not be CI's.
@@ -348,7 +348,7 @@ done
 # `docs`, and one that adds an English key fails `i18n`, although CI passes.
 #
 # The matrix is plain generated data, so the clone gets the commit
-# traceability.yml would push: `node tools/spec/generate-traceability.mjs`, committed on top
+# traceability.yml would push: `node tools/spec/generate-traceability.ts`, committed on top
 # when it changed anything, with HEAD and origin/<branch> moved to it. Like
 # traceability.yml, it skips a branch that changes the generator itself, whose
 # author regenerates by hand; the docs job then judges the committed matrix,
@@ -359,8 +359,8 @@ done
 # ci.yml's i18n job passes --allow-pending-translation under act instead,
 # the pre-commit hook's branch rule. Neither changes what runs on GitHub.
 
-if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-traceability.mjs tools/spec/generate-spec-index.mjs tools/spec/spec-paths.mjs tools/spec/generate-bindings.mjs; then
-	if (cd "$WORK/repo" && node tools/spec/generate-traceability.mjs >/dev/null 2>&1 && node tools/spec/generate-spec-index.mjs >/dev/null 2>&1 && node tools/spec/generate-bindings.mjs --no-fail >/dev/null 2>&1); then
+if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-traceability.ts tools/spec/generate-spec-index.ts tools/spec/spec-paths.ts tools/spec/generate-bindings.ts; then
+	if (cd "$WORK/repo" && node tools/spec/generate-traceability.ts >/dev/null 2>&1 && node tools/spec/generate-spec-index.ts >/dev/null 2>&1 && node tools/spec/generate-bindings.ts --no-fail >/dev/null 2>&1); then
 		if ! git -C "$WORK/repo" diff --quiet -- .spec/traceability.md .spec/README.md .spec/bindings.md; then
 			git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \
 				commit -q --no-verify -m "Regenerate the traceability matrix and specification index, as traceability.yml would" \
@@ -372,7 +372,7 @@ if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-trac
 		fi
 	else
 		git -C "$WORK/repo" checkout -q -- .spec/traceability.md .spec/README.md .spec/bindings.md 2>/dev/null || true
-		warn "node tools/spec/generate-traceability.mjs or tools/spec/generate-spec-index.mjs failed in the clone; the docs job will say why"
+		warn "node tools/spec/generate-traceability.ts or tools/spec/generate-spec-index.ts failed in the clone; the docs job will say why"
 	fi
 else
 	say "Traceability matrix and specification index: not regenerated, because this branch changes their generators (traceability.yml skips it too)."
@@ -381,7 +381,7 @@ fi
 # ------------------------------------------------------------ the baseline --
 #
 # The run CI's "Fetch the main baseline" step picks, found the same way -
-# tools/coverage/find-coverage-baseline.mjs, so the two can never pick a different run
+# tools/coverage/find-coverage-baseline.ts, so the two can never pick a different run
 # (ADR-0147, ADR-0165). main's newest green push run does not always carry the
 # artifact: the coverage job is skipped on a docs-, infra-, or workflow-only
 # change, so the script walks back to the newest run that actually ran
@@ -395,7 +395,7 @@ fi
 if [ "$NEED_BASELINE" -eq 1 ]; then
 	BASELINE="$WORK/repo/.ci-local/baseline"
 	mkdir -p "$BASELINE" || die "cannot create $BASELINE"
-	RUN_ID=$(node tools/coverage/find-coverage-baseline.mjs --repo "$REPOSITORY") \
+	RUN_ID=$(node tools/coverage/find-coverage-baseline.ts --repo "$REPOSITORY") \
 		|| die "could not find main's coverage baseline with gh; check gh auth status"
 	if [ "$RUN_ID" = "none" ]; then
 		say "Coverage baseline: none, no push run on main carries a non-expired coverage-report artifact; the floor alone applies, as in CI."

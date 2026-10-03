@@ -10,6 +10,8 @@ keywords: statement, group, question bank, collects no answer, grouped under, se
 
 # ADR-0076 — Statement and Group are question types again, and a Group has children
 
+**Status:** Accepted.
+
 ## Context
 
 `QuestionType.Statement` and `QuestionType.Group` (surfaced in the admin UI as
@@ -110,7 +112,7 @@ longer satisfies it, rather than left naming a heading that no longer exists.
   these types is why, pending "a correct question set") can finally be
   populated, from the Typeform import in ADR-0077.
 
-## Alternatives rejected
+## Considered options
 
 **Model instructional/heading content as static page copy in `locales/`
 instead of question-bank rows**, which is exactly what #222 left as the open

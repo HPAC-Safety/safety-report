@@ -27,7 +27,7 @@ does not implicitly approve the other.
 Publication is additionally gated on the reporter's consent answer. A report
 without consent is stored, summarized, and counted internally — never published.
 
-## Alternatives
+## Considered options
 
 - **Auto-publish with flagging.** Faster; makes the PII audit the last line of
   defence, which it is not good enough to be.

@@ -62,7 +62,9 @@ them depended on the gitignore entry to do their job — a developer's local
 stub now simply shows up as an ordinary uncommitted diff in `git status`,
 which is easier to notice, not harder.
 
-## Why this choice
+## Considered options
+
+### Why this choice
 
 **The two files were never at risk of an accidental `git add -A`, because
 they never existed to be added.** The gitignore entry protected against a

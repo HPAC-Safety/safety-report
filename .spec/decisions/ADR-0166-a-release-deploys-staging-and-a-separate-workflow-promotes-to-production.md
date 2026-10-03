@@ -10,9 +10,7 @@ keywords: release, promotion, promote.yml, GitHub Actions, concurrency, environm
 
 # ADR-0166 — A release deploys staging, and a separate workflow promotes a staged tag to production
 
-## Status
-
-**Amended by [ADR-0168](ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md)
+**Status:** **Amended by [ADR-0168](ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md)
 (#621):** Release runs on `main` and creates its own tag, so it is no longer
 titled `Release <tag>`; `promote.yml` finds the Release run by the tag's
 commit (`head_sha`). Promotion itself is unchanged.
@@ -75,7 +73,7 @@ release ran `staging` and then a `production` job waiting on approval:
   release's run, or dispatch `release.yml` on the tag once its artifacts have
   expired.
 
-## Alternatives considered
+## Considered options
 
 - **A pre-release flag.** Publish as a pre-release to deploy staging; untick
   it (`released` event) to promote. Rejected: publishing a full release

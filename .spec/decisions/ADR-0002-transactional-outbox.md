@@ -31,7 +31,7 @@ Target asynchronous work rides the same mechanism: one summary operation and
 one processing message per attachment. Retired translation/email stages are not
 additional message types to preserve.
 
-## Alternatives
+## Considered options
 
 - **In-process `BackgroundService`.** Simplest deploy, but the work dies with
   the API process and cannot scale separately.

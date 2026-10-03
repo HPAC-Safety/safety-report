@@ -130,7 +130,7 @@ erDiagram
     }
 ```
 
-## Rejected alternatives
+## Considered options
 
 - **A row in `report_files` with a private flag.** Every reporter-attachment
   reader would need to remember the flag, and one that forgot would put a

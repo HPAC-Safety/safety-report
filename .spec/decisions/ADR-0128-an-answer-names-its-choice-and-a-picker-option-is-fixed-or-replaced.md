@@ -10,9 +10,7 @@ keywords: choices, answers, picker, single-select, multi-select, type-ahead, cho
 
 # ADR-0128 — An answer names its choice, and a picker option is fixed in place or replaced
 
-## Status
-
-Accepted. This ADR:
+**Status:** Accepted. This ADR:
 
 - **partially supersedes**
   [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): its select rows
@@ -134,7 +132,7 @@ option was later relabelled or removed, gets a removed choice carrying that
 label in that language, so every old answer resolves. The stored text is left
 in place: answers are immutable (ADR-0080).
 
-## Rejected alternatives
+## Considered options
 
 - **Keep storing the label (ADR-0072).** It cannot tell which option an answer
   names, and nothing can be corrected for everybody.

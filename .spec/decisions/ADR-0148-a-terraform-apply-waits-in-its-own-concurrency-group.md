@@ -41,7 +41,7 @@ without a job, and never reported `infra`. That was 198 of the last 200.
   on reviewers holds the group, and a newer one queues behind it and replaces
   any older one still queued. So the newest commit applies next.
 
-## Alternatives considered
+## Considered options
 
 - **Cancel in progress on `main` too.** A newer push would cancel an apply
   mid-run, leaving the state lock held and AWS half-changed.

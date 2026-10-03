@@ -81,7 +81,7 @@ on the admin report detail page. One shared component renders it.
 - **Markdown stays hidden from users.** Textareas stay plain: no editor, toolbar,
   preview, or hint. A reviewer and a reporter who know Markdown can use it.
 
-## Alternatives rejected
+## Considered options
 
 - **One structured object per section** (`{ "description": ..., "action": ... }`)
   instead of Markdown in the two fields. It would change the stored shape

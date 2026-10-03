@@ -10,9 +10,7 @@ keywords: AppRegistry, myApplications, Resource Groups, grouping, awsApplication
 
 # ADR-0170 — Each account groups its resources by a tag-based Resource Group alone
 
-## Status
-
-Accepted. Amends "Grouping" and the deploy role's "Can manage" list in
+**Status:** Accepted. Amends "Grouping" and the deploy role's "Can manage" list in
 [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md), and
 the AppRegistry parts of
 [ADR-0169](ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md).
@@ -58,7 +56,7 @@ Resource Group as the replacement for grouping resources.
   account's deploy role. Until then they remain granted but unused; the
   deploy needs nothing new.
 
-## Alternatives considered
+## Considered options
 
 - **AWS Resource Explorer**: search across Regions and accounts. Not needed
   for one Region per account, and it adds an index to manage.

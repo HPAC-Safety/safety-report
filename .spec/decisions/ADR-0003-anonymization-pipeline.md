@@ -36,6 +36,10 @@ Five stages:
 
 Findings flag for a reviewer; they never silently rewrite.
 
+## Considered options
+
+None were recorded when this decision was accepted.
+
 ## Consequences
 
 - Anything a regular expression can remove reliably is removed before a model

@@ -10,9 +10,7 @@ keywords: graphify, knowledge graph, traceability, Gherkin, ingestion, vendoring
 
 # ADR-0088 — The generated matrix carries the specification into the graph
 
-## Status
-
-Accepted. Paths amended by
+**Status:** Accepted. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 
@@ -67,7 +65,7 @@ Two consequences are recorded rather than worked around:
   configuration change with this record explaining what it replaces.
 - Nothing in the repository depends on a graphify version's internals.
 
-## Alternatives
+## Considered options
 
 - **Fork or patch graphify to add `.feature` to `DOC_EXTENSIONS`.** Rejected:
   it makes every upgrade a merge, and buys a Gherkin parse the matrix already
@@ -93,6 +91,6 @@ Two consequences are recorded rather than worked around:
 
 The bridge file is `.spec/traceability.md`; graphify reads the `.spec/` dot-directory. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 The graph's bridge from the specification now reaches the tests: `.spec/bindings.md` links each claim to the step-definition files that bind it. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

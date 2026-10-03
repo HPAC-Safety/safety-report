@@ -10,9 +10,7 @@ keywords: type-ahead, autocomplete, reporter-added, choices, merge, review, safe
 
 # ADR-0129 — A type-ahead value is edited in place, merged, and reviewed by a safety officer
 
-## Status
-
-Accepted. This ADR:
+**Status:** Accepted. This ADR:
 
 - **supersedes**
   [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md). What still
@@ -162,7 +160,7 @@ ignoring case, against the question's values in both languages, in this order:
 - A picker option is never reviewed this way: only an Administrator authors
   it, and no reporter adds to it.
 
-## Rejected alternatives
+## Considered options
 
 - **Hold a new value until it is approved.** The next reporter at the same
   site would type it again, producing duplicates for the reviewer to merge,

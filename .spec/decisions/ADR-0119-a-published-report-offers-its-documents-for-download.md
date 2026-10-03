@@ -82,7 +82,7 @@ detail, author and tracked-change metadata, and embedded content they hold.
    endpoint answer 404 at once. A link already issued keeps working until it
    expires, at most 15 minutes. A file already downloaded cannot be recalled.
 
-## Rejected alternatives
+## Considered options
 
 - **A reviewer opts each document in.** It is the safer rule for bytes that
   nothing strips. The owner chose publish-by-default with after-the-fact

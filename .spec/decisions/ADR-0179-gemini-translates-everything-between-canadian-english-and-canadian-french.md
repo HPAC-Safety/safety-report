@@ -170,7 +170,7 @@ can chatter or drop a field:
 - the failure is a `TranslationUnavailableException` carrying the status or a
   fixed sentence, never the provider's body, the credential, or the text.
 
-## Rejected alternatives
+## Considered options
 
 - **Google Cloud Translation LLM.** It offers `en-CA`, but only in `global` or
   `us-central1`, adds a second vendor and a service-account credential, and

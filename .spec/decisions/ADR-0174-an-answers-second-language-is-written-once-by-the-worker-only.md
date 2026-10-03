@@ -112,7 +112,7 @@ writes it exactly once.**
   `translation_source` keeps its three values; `human` simply stops being
   written.
 
-## Alternatives rejected
+## Considered options
 
 **Remove `TranslationSource.Human` and rewrite existing rows to `Auto`.**
 Rejected: the owner decided existing `human` rows stay exactly as stored

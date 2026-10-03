@@ -198,7 +198,7 @@ CI ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It is
 - The foundation moved no component. Until the last area pull request, strict
   mode was off and unsplit components were neither guarded nor held to 100%.
 
-## Alternatives considered
+## Considered options
 
 - **Split only components with enough logic.** The economical reading of "the
   seam earns the pattern". Rejected by the owner for uniformity; see above.
@@ -289,7 +289,7 @@ is what "the writing of the test is the opt-in" meant. Each now has a colocated
 test at 100%, so all web logic falls under the gate. `vite.config.ts` and the
 scope rule are unchanged; the files simply have tests.
 
-## Amendment: strict, type-checked linting ([#781](https://github.com/HPAC-Safety/safety-report/issues/781))
+## Amendment (2026-10-03) — strict, type-checked linting ([#781](https://github.com/HPAC-Safety/safety-report/issues/781))
 
 Applies on the date of the pull request that closes #781. It replaces the
 "recommended presets" decision above; everything else in "Every TypeScript and
@@ -371,7 +371,7 @@ No behaviour or DOM changed. The fixes were, by kind:
 type checker now loads the web app. CI's lint job also installs two more
 packages. Locally, pre-commit lints only the staged files.
 
-## Amendment: tools and tests/js join the full preset ([#798](https://github.com/HPAC-Safety/safety-report/issues/798))
+## Amendment (2026-10-03) — tools and tests/js join the full preset ([#798](https://github.com/HPAC-Safety/safety-report/issues/798))
 
 Applies on the date of the pull request that closes #798. It replaces the
 **JavaScript** bullet of the strict-linting amendment; "Rules narrowed or
@@ -404,7 +404,7 @@ turned off" stands except where this changes a row.
 - The `**/coverage/**` ignore became `coverage/**` and `src/web/coverage/**`:
   it had also hidden `tools/coverage` and `tests/js/coverage` from the linter.
 
-## Amendment (2026-10-03): the follow-ups of [#796](https://github.com/HPAC-Safety/safety-report/issues/796)
+## Amendment (2026-10-03) — the follow-ups of [#796](https://github.com/HPAC-Safety/safety-report/issues/796)
 
 Found while delivering #756 and #781. Decided by the owner on 2026-10-03.
 
@@ -469,7 +469,7 @@ Converting `tools/` and `tests/js` to TypeScript under the full type-checked
 preset is tracked by [#798](https://github.com/HPAC-Safety/safety-report/issues/798);
 the preset for plain JavaScript above stands until it lands.
 
-## Amendment (2026-10-03): ESLint 10 ([#807](https://github.com/HPAC-Safety/safety-report/issues/807))
+## Amendment (2026-10-03) — ESLint 10 ([#807](https://github.com/HPAC-Safety/safety-report/issues/807))
 
 Decided by the owner on 2026-10-03. Reverses the hold of
 [#789](https://github.com/HPAC-Safety/safety-report/issues/789).

@@ -71,7 +71,7 @@ port for a retired feature, not something with exactly one caller.
   since moved; per `.spec/decisions/README.md` they are not corrected for this,
   the same way ADR-0018 was never corrected for earlier layouts it replaced.
 
-## Alternatives rejected
+## Considered options
 
 **Keep `SharedKernel/` and add `using HpacSafety.Core.SharedKernel;` as an
 implicit/global using.** Works, but hides the dependency: a global using makes

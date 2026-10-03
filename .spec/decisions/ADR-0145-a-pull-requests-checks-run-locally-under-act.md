@@ -467,7 +467,7 @@ An instruction that fights the default gets ignored on the day it matters.
 Rejected: re-running the suites in `coverage` under act only. It is simpler,
 but `--full` would keep running the suites twice.
 
-## Rejected
+## Considered options
 
 - **[wrkflw](https://github.com/bahdotsh/wrkflw)**: it emulates
   `setup-dotnet` from `dotnet-version` only (defaulting to 7.0, so the SDK 10

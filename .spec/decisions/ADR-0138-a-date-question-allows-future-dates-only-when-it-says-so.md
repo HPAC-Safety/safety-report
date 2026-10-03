@@ -10,9 +10,7 @@ keywords: answers, date, future dates, allow_future_dates, question revision, UT
 
 # ADR-0138 — A date question allows future dates only when it says so
 
-## Status
-
-Accepted. This ADR **extends**
+**Status:** Accepted. This ADR **extends**
 [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): a date answer is
 still stored as `yyyy-mm-dd`, and is now also checked against its revision's
 `allow_future_dates`. It adds a revision field under
@@ -94,7 +92,7 @@ file has no `hpac` object, so it imports every date question without it.
 - A phone's native picker may ignore `max`. The inline message on Next and the
   API's refusal still hold.
 
-## Alternatives considered
+## Considered options
 
 - **No future dates on any date question.** The first decision on #517,
   replaced by the owner the same day with the per-question setting: whether a

@@ -78,7 +78,7 @@ merge-group checks still judge each queued commit
   still on the old layout needed a rebase. The last amendment below replaces the
   copies with a shim.
 
-## Alternatives considered
+## Considered options
 
 - **A new `.github/scripts/` directory.** Rejected: it splits CI logic across two
   homes and re-wires test discovery and coverage that `tools/` already has.
@@ -87,7 +87,7 @@ merge-group checks still judge each queued commit
 - **Extract only the logic-heavy blocks.** Rejected by the owner: a threshold
   invites drift, and a check needs a crisp rule.
 
-## Amendment: tools and tests are TypeScript, run by type stripping ([#798](https://github.com/HPAC-Safety/safety-report/issues/798))
+## Amendment (2026-10-03) — tools and tests are TypeScript, run by type stripping ([#798](https://github.com/HPAC-Safety/safety-report/issues/798))
 
 Applies on the date of the pull request that closes #798. It replaces
 "Node script" and `.mjs` in decisions 2 and 4 above; everything else stands.
@@ -129,7 +129,7 @@ must satisfy the same `Exec` and `Env` types as the real thing. A script
 cannot use `enum` or `namespace`; the check is `npm run typecheck`, not review.
 The move edited historical ADR and lesson text only where it named a moved path.
 
-## Amendment (2026-10-03): the installed hooks are a shim ([#796](https://github.com/HPAC-Safety/safety-report/issues/796))
+## Amendment (2026-10-03) — the installed hooks are a shim ([#796](https://github.com/HPAC-Safety/safety-report/issues/796))
 
 The move above left every installed hook calling the old flat `tools/*.mjs`
 paths until `./init-dev.sh` was run again. A copy goes stale whenever anything

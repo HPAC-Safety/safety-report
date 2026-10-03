@@ -93,7 +93,7 @@ command line is typed is not a guard
   they do not recognize, and one shared file cannot be shaped for one of them
   without misrepresenting itself to the other two.
 
-## Alternatives
+## Considered options
 
 - **Require frontmatter only where a tool reads it.** Rejected: that is the
   status quo, and it is why a specification page and an audit page are

@@ -99,7 +99,7 @@ roles that consume the chain are decided in
 - Nothing about the product changes. This decision is about how the target is
   written and enforced, not about what the system does.
 
-## Alternatives
+## Considered options
 
 - **Leave it implicit.** Rejected: the rules already exist in four places —
   `AGENTS.md`, `.spec/features/README.md`, `skills/deliver-hpac-change`, and
@@ -128,6 +128,6 @@ roles that consume the chain are decided in
 
 The chain's files moved into `.spec/`: scenarios to `.spec/features/<area>/<area>.feature`, supporting detail to `.spec/features/<area>/README.md` and the constraint pages in `.spec/`. A page lives in `.spec/` when the chain reads it; `docs/` keeps guides. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 The chain is now checked from the specification down: `tools/spec/generate-bindings.ts` resolves every scenario step to the step definition that binds it, fails a built claim with an unbound step, and writes the map to `.spec/bindings.md`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

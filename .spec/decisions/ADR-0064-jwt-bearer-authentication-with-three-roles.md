@@ -91,7 +91,7 @@ An identity provider will happily hand over a name and an email address. This
 system has no use for either, and the narrowest possible read is the one that
 cannot leak.
 
-## Alternatives
+## Considered options
 
 - **The credential proxy (ADR-0005).** Rejected. It means holding real member
   passwords for a system we do not own, and depending on the exact markup of a

@@ -10,9 +10,7 @@ keywords: bootstrap.sh, hpac-safety-deploy, IAM, aws:ResourceTag, aws:RequestTag
 
 # ADR-0169 — The deploy role manages what is already tagged ours, and tags only as ours
 
-## Status
-
-Accepted. Amends the deploy-role policy described under "Deploy credentials"
+**Status:** Accepted. Amends the deploy-role policy described under "Deploy credentials"
 in [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md);
 everything else there stands. Issue
 [#626](https://github.com/HPAC-Safety/safety-report/issues/626).
@@ -63,6 +61,10 @@ parameters, a NAT network interface's `source_dest_check`, the release's own
   scope beside `hpac-safety-*`; RDS may create our database's `rds!db-*`
   master secret as the caller; security-group rules may be tagged at
   creation; AppRegistry's service-linked role may be created.
+
+## Considered options
+
+None were recorded when this decision was accepted.
 
 ## Consequences
 

@@ -10,9 +10,7 @@ keywords: attachments, uploads, quarantine, validation, sniffing, zip, DOCX, ODT
 
 # ADR-0134 — A claim reads a zip package's directory as well as its leading bytes
 
-## Status
-
-Accepted. **Partially supersedes**
+**Status:** Accepted. **Partially supersedes**
 [ADR-0126](ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)
 on one point: the claim reads "only as many leading bytes as sniffing needs",
 and "one small ranged read per upload". Everything else ADR-0126 decided
@@ -52,7 +50,7 @@ sniffing needs, never the whole file into memory.
 - A sniffer that one day needs more of a file than its header costs one window
   per region it reads, and never more than the file.
 
-## Alternatives rejected
+## Considered options
 
 - **Leading bytes only.** It refuses every DOCX and ODT whose directory falls
   past the first read.

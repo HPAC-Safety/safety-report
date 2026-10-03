@@ -77,7 +77,7 @@ placeholder. `docs/design-system.md` already records that no vector or
 high-resolution HPAC mark exists publicly and that one is needed before launch;
 committing the best available raster does not close that item.
 
-## Alternatives
+## Considered options
 
 - **Fetch fonts from `fonts.googleapis.com`.** What hpac.ca does. Rejected
   outright: it makes filing an occurrence report generate a request to Google

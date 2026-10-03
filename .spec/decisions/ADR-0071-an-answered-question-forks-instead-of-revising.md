@@ -113,7 +113,7 @@ is a named exception rather than a general escape hatch — it applies to
   reset, because the new question starts a fresh revision chain. The chain is no
   longer the history; the key is.
 
-## Alternatives rejected
+## Considered options
 
 **Keep the revision chain for everything.** No migration, no second mechanism,
 and the immutability guarantee already holds. Rejected by the owner: it records

@@ -96,7 +96,7 @@ A person should never open a pull request to regenerate a generated file.
 5. `ci.yml`'s check stays, as the backstop rather than the fixer. So do the
    local hooks, which keep a developer's own tree right between pushes.
 
-## Alternatives rejected
+## Considered options
 
 - **A pull request that regenerates the matrix after the fact**, by hand or
   opened by a push-to-main job as `i18n-translate.yml` does for French. It
@@ -139,6 +139,6 @@ A person should never open a pull request to regenerate a generated file.
 
 `traceability.yml` is triggered by any change under `.spec/` and regenerates both `.spec/traceability.md` and `.spec/README.md`, committing them in one bot commit. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 `traceability.yml` also regenerates `.spec/bindings.md`, with `--no-fail`, and is triggered by a change to a step-definition file; the required `docs` job remains the gate. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

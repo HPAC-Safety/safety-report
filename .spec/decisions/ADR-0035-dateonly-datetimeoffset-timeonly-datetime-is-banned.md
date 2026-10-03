@@ -227,7 +227,7 @@ and find, not to infer.
 - Anyone reaching for `DateTime` because a tutorial used it gets the reason at
   the point of the mistake instead of in review.
 
-## Alternatives rejected
+## Considered options
 
 **`DateTime` with a convention that it is always UTC.** This is the status quo
 in most .NET codebases, and it is the option this ADR exists to refuse. A

@@ -59,7 +59,9 @@ flowchart LR
     apialb --> api["API (Lambda, ADR-0042)"]
 ```
 
-## Why
+## Considered options
+
+### Why
 
 ADR-0031's reasoning for one origin still applies unchanged, now aimed at a
 container instead of a bucket: the admin bundle is static JS, byte-identical

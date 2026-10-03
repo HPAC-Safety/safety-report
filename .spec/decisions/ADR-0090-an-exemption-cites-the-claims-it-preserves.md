@@ -10,9 +10,7 @@ keywords: feature-coverage, exemption, escape hatch, gates, claim IDs, agents
 
 # ADR-0090 — An exemption cites the claims it preserves
 
-## Status
-
-Accepted. Hardens the gate widened by
+**Status:** Accepted. Hardens the gate widened by
 [ADR-0083](ADR-0083-specification-driven-development.md)'s delivery rules. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
 
@@ -99,7 +97,7 @@ it is why a well-formed exemption is evidence rather than an excuse.
   that becomes a burden, the gate's pathspec is the thing to revisit, not the
   citation.
 
-## Alternatives
+## Considered options
 
 - **Leave the free-text line.** Rejected: it is the failure this record exists
   to close, and the cost asymmetry means it degrades with use rather than

@@ -185,7 +185,7 @@ half-built aggregate, and `Core` still references nothing.
   they call into is ordinary code under `Persistence/Seeding` and is analysed
   and measured like everything else.
 
-## Alternatives rejected
+## Considered options
 
 **Volume or RDS storage encryption only.** Free, and it protects a stolen disk.
 Rejected as insufficient on its own: it leaves plaintext in every dump, replica,

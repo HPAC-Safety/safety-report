@@ -70,7 +70,7 @@ cites the claim ID.
 - A lesson that turns out to be wrong is corrected in place or marked
   superseded in its frontmatter status, like an ADR.
 
-## Alternatives
+## Considered options
 
 - **Fold lessons into ADRs as a lesson-flavoured record.** Rejected: an ADR is
   a decision with rejected alternatives. Most lessons record no decision at
@@ -93,7 +93,7 @@ cites the claim ID.
 - [ADR-0083](ADR-0083-specification-driven-development.md)
 - [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
 
-## Amendment, 2026-09-22 — a process lesson also updates a skill
+## Amendment (2026-09-22) — a process lesson also updates a skill
 
 This record sent a bug's cause upstream and stopped at `.spec/lessons/`. That
 closes the loop for a lesson about the **product**: the specification gains a

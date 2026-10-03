@@ -10,9 +10,7 @@ keywords: public search, public_reports, public_report_comments, pg_trgm, unacce
 
 # ADR-0157 — The public search privacy boundary
 
-## Status
-
-Accepted.
+**Status:** Accepted.
 
 ## Context
 
@@ -193,7 +191,7 @@ never substitutes for the other's rule.
   migration writes to no index it does not also cost the write path for
   nothing. Revisit together with ADR-0156 if real volume ever justifies one.
 
-## Rejected alternatives
+## Considered options
 
 - **Filter search results in C#, after reading candidate rows with LINQ.**
   Rejected: `ai_summary_en`/`ai_summary_fr` and comment text would have to be

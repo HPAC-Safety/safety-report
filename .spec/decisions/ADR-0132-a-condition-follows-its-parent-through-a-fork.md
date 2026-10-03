@@ -10,9 +10,7 @@ keywords: conditional questions, fork, dependency, choices, question bank, ADR-0
 
 # ADR-0132 — A condition follows its parent through a fork
 
-## Status
-
-Accepted. This ADR **amends**:
+**Status:** Accepted. This ADR **amends**:
 
 - [ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md): a fork leaves the questions that depend on the forked one as they are;
 - [ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md): a condition resolves its parent through a fork;
@@ -49,7 +47,7 @@ retired parents live questions still name, alongside the live bank.
 Saving a condition back unchanged keeps what is stored, the same as for a
 replaced choice, so opening and saving the dependent does not revise it.
 
-## Rejected alternatives
+## Considered options
 
 - **Revise each dependent when its parent forks.** An answered dependent would
   fork too, for an edit its Administrator never made. ADR-0128 rejected the

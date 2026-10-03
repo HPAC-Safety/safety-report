@@ -10,9 +10,7 @@ keywords: report form, routing, address bar, browser history, draft, local stora
 
 # ADR-0099 — A report page is addressed by its question key
 
-## Status
-
-Accepted. It builds on
+**Status:** Accepted. It builds on
 [ADR-0051](ADR-0051-react-router-for-client-side-navigation.md), whose
 declarative router it uses, and leaves AGENTS.md invariant 2 (the 15-day,
 browser-only draft) unchanged.
@@ -49,7 +47,7 @@ left off" to land on it (#366).
   questions, so a saved page survives a reworded question. A draft saved
   before this change names its page by revision ID and still reopens it.
 
-## Alternatives rejected
+## Considered options
 
 - **Keeping the page in `sessionStorage`.** It is cleared when the tab closes,
   which is exactly when a reporter comes back to continue.

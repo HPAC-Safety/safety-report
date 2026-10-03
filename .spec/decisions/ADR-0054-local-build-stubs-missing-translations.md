@@ -104,7 +104,7 @@ queues any key with no matching `source_hash` stamp — a `#`-stub has none,
 so it needs no special-casing in `translate-locale.ts` beyond the new
 `--check` guard.
 
-## Alternatives
+## Considered options
 
 - **A developer-supplied `DEEPL_API_KEY` for local generation.** Rejected —
   considered and dropped in favor of this design: it would put the real

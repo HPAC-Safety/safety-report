@@ -94,7 +94,7 @@ erDiagram
     }
 ```
 
-## Rejected alternatives
+## Considered options
 
 - **Showing the member's email address now.** It needs a claim ADR-0064 says
   the API never reads, and it would put a contact address on a public page.

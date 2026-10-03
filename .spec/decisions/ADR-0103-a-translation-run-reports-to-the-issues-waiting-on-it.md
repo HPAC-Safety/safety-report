@@ -44,7 +44,7 @@ ADR-0102 merged printed "Nothing to translate" and settled nothing (#381).
 - The translate job gains `issues: write`. The built-in `GITHUB_TOKEN` posts
   the comments, and `TRANSLATION_PR_TOKEN` is not used for them.
 
-## Alternatives rejected
+## Considered options
 
 - **A scheduled cloud agent that polls for the run.** It needs GitHub
   credentials that a cloud session may not have, reads logs after the fact,

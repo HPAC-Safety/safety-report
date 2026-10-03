@@ -237,6 +237,10 @@ viewer → ALB → API → RDS) never traverses it. Losing that AZ delays
 summarization, which is already asynchronous behind the outbox, until the NAT is
 recreated.
 
+## Considered options
+
+Recorded inline above: each rejected option sits beside the part of the decision it bears on.
+
 ## Consequences
 
 - Adding a second environment means extracting modules, and supersedes this ADR.

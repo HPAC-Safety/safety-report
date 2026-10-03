@@ -38,7 +38,9 @@ Wired in `Directory.Build.props` under the existing
 `$(MSBuildProjectName.EndsWith('.Tests'))` condition, so every current and
 future test project gets it without anyone remembering to opt in.
 
-## Why not a CI grep
+## Considered options
+
+### Why not a CI grep
 
 A grep was the cheaper option and is worse on every axis that matters:
 

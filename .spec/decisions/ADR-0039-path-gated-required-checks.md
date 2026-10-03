@@ -55,7 +55,7 @@ only the work behind it is conditional.
 `AGENTS.md`/`skills/`/`Skillfile`, and `i18n` reads `locales/`/`tools/`. Each
 already runs proportionally to what it actually depends on.
 
-## Alternatives considered
+## Considered options
 
 **A `paths:` filter on the trigger.** Rejected outright — this is the ADR-0011
 trap, applied to five checks instead of one.

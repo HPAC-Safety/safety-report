@@ -10,9 +10,7 @@ keywords: AWS accounts, staging, production, environments, release, promotion, G
 
 # ADR-0158 — Two AWS accounts, staging and production, released by date tag and promoted by approval
 
-## Status
-
-**Partially superseded by
+**Status:** **Partially superseded by
 [ADR-0166](ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)**:
 a release now deploys staging only, and a separate `promote.yml` sends a
 staged tag's same artifacts to production after the same approval. "Production
@@ -245,7 +243,7 @@ because this is the ADR that first writes the two-environment shape down:
 8. Boring over clever: an abstraction is added only when a second real
    implementation needs it (AGENTS.md).
 
-## Alternatives considered
+## Considered options
 
 - **One account, feature-flagged "environments" inside it.** Rejected: a
   Terraform bug or an over-broad IAM policy in "staging" could still reach

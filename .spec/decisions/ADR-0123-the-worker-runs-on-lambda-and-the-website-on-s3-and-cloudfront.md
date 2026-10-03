@@ -72,7 +72,7 @@ flowchart LR
     worker --> db
 ```
 
-## Rejected alternatives
+## Considered options
 
 - **The Worker as an always-on Fargate service** (ADR-0042's Worker row). It
   processes work within seconds and needs no code change, but it pays for an

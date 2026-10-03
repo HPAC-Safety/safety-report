@@ -70,7 +70,7 @@ The classification:
 - The generic files stay in this repository for now. Moving them to their own
   repository, installed here through `Skillfile`, is a separate task.
 
-## Rejected alternatives
+## Considered options
 
 - **Genericize every skill.** The repository-specific skills would lose the
   facts that make them useful, and no other project needs them.

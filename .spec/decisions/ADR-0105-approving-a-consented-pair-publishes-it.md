@@ -63,7 +63,7 @@ existing `EditedSummary`, `ApprovedReport`, `RejectedReport`, and
 `DeletedReport`. An approval that publishes writes one `ApprovedReport` entry;
 the publication is part of that action.
 
-## Rejected alternatives
+## Considered options
 
 - **Separate Approve and Publish buttons.** Matches the original table, but a
   second confirmation adds no review and a report left Approved-but-unpublished

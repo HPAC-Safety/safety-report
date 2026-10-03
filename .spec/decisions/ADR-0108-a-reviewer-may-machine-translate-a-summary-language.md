@@ -10,8 +10,6 @@ keywords: translation, summary, DeepL, reviewer, provenance, diff, ADR-0062, ADR
 
 # ADR-0108 — A reviewer may machine-translate one summary language from the other
 
-**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
-
 **Status:** Accepted. Amends the product invariant that machine translation
 "never touches a summary", and widens
 [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md)'s
@@ -22,6 +20,8 @@ and `source_fr`), not on the one `summaries` row, and saving the pair adds a
 revision rather than clearing approval — a draft on a report that is not live, and
 approved by its author on a Published one. The rules below about which source a
 language records are unchanged.
+
+**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 
 ## Context
 
@@ -61,7 +61,7 @@ is `manual`. A language the reviewer did not change keeps its source; a changed
 language is `human` unless it was filled by an accepted translation and not
 typed in since.
 
-## Rejected alternatives
+## Considered options
 
 - **Translating automatically on save.** Hides a machine-written language
   behind a human save, and would overwrite a deliberate edit in the other

@@ -10,16 +10,16 @@ keywords: typeform, import, export, question bank, bilingual, seeding, ref, exte
 
 # ADR-0077 — Question bank import/export uses Typeform's own JSON, not QSF
 
-**Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):** a multi-select no longer takes reporter additions,
-so `allow_other_choice` on a Typeform multi-select is ignored on import. The
-import creates no option set; each imported question owns its choices.
-
 **Status:** Amended by [ADR-0078](ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md):
 the EN/FR pairing rule and the branching-logic mapping, both below, changed
 once the mapper was built against real data. Everything else here stands.
 Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)
 (no option sets; multi-select additions withdrawn) and by [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md): duplicate type-ahead values are merged
 through the review page, not by hand in an option-set editor.
+
+**Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):** a multi-select no longer takes reporter additions,
+so `allow_other_choice` on a Typeform multi-select is ignored on import. The
+import creates no option set; each imported question owns its choices.
 
 ## Context
 
@@ -205,7 +205,7 @@ question set, ahead of any synthetic fixture test.
   Typeform's own import tool is unverified; "re-importable into Typeform" is
   a design goal this ADR enables, not a tested claim.
 
-## Alternatives rejected
+## Considered options
 
 **Support Qualtrics QSF**, the original framing. Rejected once the actual
 files were reviewed — the organization has no Qualtrics forms.

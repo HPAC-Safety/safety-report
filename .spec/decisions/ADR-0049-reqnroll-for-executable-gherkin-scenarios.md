@@ -74,7 +74,7 @@ live.
 `.Tests` project is discovered this way (`ADR-0011`); a Reqnroll-specific CI
 job would duplicate that mechanism for no reason.
 
-## Alternatives
+## Considered options
 
 - **A separate demo/smoke feature file, deferring the 7 canonical files.**
   Rejected: proves the wiring but leaves the actual specification

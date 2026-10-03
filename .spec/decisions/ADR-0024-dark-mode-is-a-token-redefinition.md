@@ -63,7 +63,7 @@ light one step for step and to clear WCAG AA for body text. They are the one
 part of the palette without provenance, and they are recorded as such here and
 in `docs/design-system.md` so a designer can replace them without archaeology.
 
-## Alternatives
+## Considered options
 
 - **`dark:` variants in markup.** Idiomatic Tailwind, and every component
   states its own dark appearance locally. Rejected: it doubles the class list

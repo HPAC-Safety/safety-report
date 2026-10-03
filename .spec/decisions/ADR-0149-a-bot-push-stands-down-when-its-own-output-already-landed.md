@@ -48,7 +48,7 @@ overwritten.
 The tool now fetches the branch without `--depth=1`. The checkout holds the
 event SHA, so the fetch stops there and brings exactly the gained commits.
 
-## Alternatives considered
+## Considered options
 
 - **Stand down whenever the branch gained any file this commit writes.** That
   would also swallow a human's hand edit. The job would stay green while the

@@ -77,7 +77,7 @@ working merely because its scaffold exists") exists to prevent for
 implementation. The same discipline applies to the specification's internal
 consistency.
 
-## Alternatives
+## Considered options
 
 - **Leave `AGENTS.md` rule 3 as the only rule, relying on it to eventually
   resolve any drift.** Rejected: rule 3 resolves drift after the fact, for a

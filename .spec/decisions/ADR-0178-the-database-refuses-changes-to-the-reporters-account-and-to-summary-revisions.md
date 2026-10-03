@@ -98,6 +98,10 @@ their own transaction.
   ([ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md),
   [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 
+## Considered options
+
+None were recorded when this decision was accepted.
+
 ## Consequences
 
 - A rewrite of a reporter's account, or of a saved revision, by any path fails

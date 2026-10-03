@@ -136,6 +136,10 @@ its provenance and its regeneration command written down beside it. The
 alternative was no HEIC test at all, on the format most likely to arrive
 carrying a GPS fix.
 
+## Considered options
+
+Recorded inline above: each rejected option sits beside the part of the decision it bears on.
+
 ## Consequences
 
 - `HpacSafety.Infrastructure` gains a native dependency. `Magick.NET-Q8-AnyCPU`

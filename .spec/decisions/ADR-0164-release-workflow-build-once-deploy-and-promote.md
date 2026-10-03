@@ -10,9 +10,7 @@ keywords: release, GitHub Actions, workflow_call, OIDC, rollback, NAT instance, 
 
 # ADR-0164 — The release workflow builds once through a reusable deploy job, and a pull request plans through separate repository-scoped credentials
 
-## Status
-
-**Partially superseded by
+**Status:** **Partially superseded by
 [ADR-0166](ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)**:
 `release.yml` now calls `deploy-environment.yml` for staging only, and
 `promote.yml` calls it for production with the release run's artifacts.
@@ -171,7 +169,7 @@ a rebuild" *within* one release's own build→staging→production chain; they
 differ only in whether that chain's `build` job is the original run's or a
 new one, which is immaterial once the commit is fixed.
 
-## Alternatives considered
+## Considered options
 
 - **Two independent jobs (`staging`, `production`) with the same steps
   copy-pasted.** Rejected: the one thing #30's design principles insist on

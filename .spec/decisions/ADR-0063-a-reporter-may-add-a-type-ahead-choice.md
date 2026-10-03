@@ -153,7 +153,7 @@ unchanged.
 - `QuestionView` gains `ChoicesComeFromLiveList`, so the authoring screen shows
   an administrator the same list a reporter would see.
 
-## Alternatives rejected
+## Considered options
 
 **Keep rendering the snapshot; reporter-added choices appear only after an
 administrator publishes a new revision.** Preserves ADR-0058 untouched.

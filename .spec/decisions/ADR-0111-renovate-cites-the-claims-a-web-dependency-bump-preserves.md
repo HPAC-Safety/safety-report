@@ -58,7 +58,7 @@ existence, and once by the browser, for truth. Between them the claims cover:
 `@vitejs/plugin-react`, would otherwise repeat a per-dependency line. The diff
 guard makes the reason checkable without naming the package.
 
-## Alternatives considered
+## Considered options
 
 - **Skip `feature-coverage` for Renovate's pull requests.** Rejected. It exempts
   an actor rather than a change. A Renovate pull request that one day touches a

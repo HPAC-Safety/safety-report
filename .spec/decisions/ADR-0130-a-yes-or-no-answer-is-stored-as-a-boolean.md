@@ -10,9 +10,7 @@ keywords: answers, yes/no, checkbox, consent, boolean, true, false, locale, tran
 
 # ADR-0130 — A yes or no answer is stored as a boolean
 
-## Status
-
-Accepted. This ADR:
+**Status:** Accepted. This ADR:
 
 - **supersedes**
   [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md)
@@ -130,7 +128,7 @@ every reader would still need the four-word vocabulary this decision removes.
 The exception covers this one migration. Any other rewrite of an answer needs
 its own argument on its own facts.
 
-## Rejected alternatives
+## Considered options
 
 - **Write `true`/`false` as text in `value`.** It needs no new column, but a
   yes/no would still be a string that every reader parses.

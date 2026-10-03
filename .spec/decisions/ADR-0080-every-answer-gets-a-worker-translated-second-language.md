@@ -10,8 +10,6 @@ keywords: translation, DeepL, ITranslator, worker, answers, provenance, immutabi
 
 # ADR-0080 — Every answer gets a Worker-translated second language; the submitted value is immutable
 
-**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
-
 **Status:** Narrowed by
 [ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md): only
 free text marked as needing translation, and a type-ahead value naming no
@@ -26,6 +24,8 @@ every stored yes/no and checkbox word to a boolean, once, in one migration.
 endpoint are removed. Only the Worker ever writes `value_translated`, and
 only once; `TranslationSource.Human` is kept solely for rows written before
 that change.
+
+**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 
 ## Context
 
@@ -143,7 +143,7 @@ unset.
   audit trail (no history of who/when), matching the level of provenance
   ADR-0062 already found sufficient ("an administrator pressed Save").
 
-## Alternatives rejected
+## Considered options
 
 **Use the summarization model to also translate each answer, in the same
 call.** One call total instead of one-plus-DeepL-calls. Rejected: it would

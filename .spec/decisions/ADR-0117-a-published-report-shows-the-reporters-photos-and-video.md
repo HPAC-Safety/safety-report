@@ -115,7 +115,7 @@ sequenceDiagram
     Note over V: on playback error: fetch a new link, seek back, resume
 ```
 
-## Rejected alternatives
+## Considered options
 
 - **A reviewer opts each file in.** Safer, and it puts a judgment in front of
   every photo. The owner chose to publish what the reporter shared and to

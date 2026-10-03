@@ -10,9 +10,7 @@ keywords: choices, dependent choices, parent choice, type-ahead, single-select, 
 
 # ADR-0146 — A question's choices may depend on another question's answer
 
-## Status
-
-Superseded by
+**Status:** Superseded by
 [ADR-0151](ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md):
 a dependent choice names one or more parent choices through a join table,
 wording is unique on the dependent question, a type-ahead merge unions parents,
@@ -149,7 +147,7 @@ its parent is not, naming both questions by key.
   hidden from everyone reading the C#. The one class that checks them is
   `ChoiceDependencies`.
 
-## Rejected alternatives
+## Considered options
 
 - **Resolve on read, as ADR-0132 does for conditions.** Every reader would
   need both questions loaded and the same chain of copy, replacement, and

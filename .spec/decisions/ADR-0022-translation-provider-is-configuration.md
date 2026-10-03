@@ -157,7 +157,7 @@ renders the same way across forty labels. That needs a glossary resource
 lifecycle (create, version, reference by id) that nothing here has, and it is
 deliberately not in this change. Worth its own issue.
 
-## Alternatives
+## Considered options
 
 - **GitHub Models.** The decision this supersedes. Retired; unavailable at any
   price.

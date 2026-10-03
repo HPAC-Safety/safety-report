@@ -63,7 +63,7 @@ control. There is no column to query, no permission to get wrong, and no
 retention rule to enforce. A future request to "just look up who filed this"
 has nothing to look up, which is the strongest form the promise can take.
 
-## Alternatives
+## Considered options
 
 - **Stay open.** Rejected. It leaves an unauthenticated write endpoint
   accepting narrative text and file uploads, and it accepts reports from people

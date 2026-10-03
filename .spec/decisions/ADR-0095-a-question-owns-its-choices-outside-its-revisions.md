@@ -10,9 +10,7 @@ keywords: question bank, choices, option sets, type-ahead, reporter-added, revis
 
 # ADR-0095 — A question owns its choices, outside its revisions
 
-## Status
-
-Accepted. This ADR:
+**Status:** Accepted. This ADR:
 
 - **supersedes** [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md);
 - **amends** [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md),
@@ -142,7 +140,7 @@ argument.
 - A report cannot reconstruct the exact list its reporter chose from. This is
   accepted, not an oversight.
 
-## Alternatives rejected
+## Considered options
 
 - **Keep shared lists as templates copied into a question.** This keeps two
   homes for choices and a page nobody uses, and a template edit reaching no

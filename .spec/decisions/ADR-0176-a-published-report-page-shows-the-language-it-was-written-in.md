@@ -10,9 +10,7 @@ keywords: public report, public_reports, report language, translated from, priva
 
 # ADR-0176 — A published report page shows the language it was written in
 
-## Status
-
-Accepted. It amends the public DTO allowlist stated by
+**Status:** Accepted. It amends the public DTO allowlist stated by
 [ADR-0116](ADR-0116-a-read-rule-lives-in-a-view.md) and REQ-MOD-036, which
 listed "report language" among what the public never sees. Part of
 [#682](https://github.com/HPAC-Safety/safety-report/issues/682).
@@ -46,6 +44,10 @@ detail page already shows it ("Written in English" / "Written in French").
   community, and the owner chose to show it for the reader's benefit. It does
   not generalize: no other private field becomes public by this decision, and
   a report without publication consent never reaches a public read at all.
+
+## Considered options
+
+None were recorded when this decision was accepted.
 
 ## Consequences
 

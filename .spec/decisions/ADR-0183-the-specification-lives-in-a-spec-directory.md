@@ -136,7 +136,7 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - The rewrite edited historical ADR and lesson text only where it named a
   moved path, so every reference still resolves.
 
-## Alternatives
+## Considered options
 
 - **A visible `spec/` directory.** Rejected: the owner chose the dot-directory
   convention this repository already uses for tool-facing roots.
@@ -166,6 +166,6 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)
 - [ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md)
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 `tools/spec/spec-paths.ts` also exports `BINDINGS` (`.spec/bindings.md`) and the two step-definition roots, `REQNROLL_STEPS` and `PLAYWRIGHT_STEPS`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

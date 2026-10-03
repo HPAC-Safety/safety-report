@@ -90,7 +90,7 @@ Tags are inert to both runners: Reqnroll turns a tag into an xUnit trait and
 - Renaming a scenario is now cheap and renumbering is forbidden, which is the
   opposite of the pressure prose names create.
 
-## Alternatives
+## Considered options
 
 - **No IDs; rely on scenario names.** Rejected: the scenario-to-test link is
   already mechanical, but the human-to-claim link is not. A finding that says
@@ -118,6 +118,6 @@ Tags are inert to both runners: Reqnroll turns a tag into an xUnit trait and
 
 The matrix is `.spec/traceability.md`, and the canonical constraint pages are the five `.spec/*.md` pages listed in `tools/spec/spec-paths.ts`. A generated `.spec/README.md` indexes the areas, constraint pages, decisions, and lessons beside it. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 The generated specification files are three: the matrix, the index (`.spec/README.md`), and the step-bindings map (`.spec/bindings.md`), which lists the step-definition files that bind each claim. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

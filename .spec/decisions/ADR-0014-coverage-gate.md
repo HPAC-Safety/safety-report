@@ -88,6 +88,10 @@ main run yet, and an expired or absent artifact. Both emit a `::notice::`, skip
 the ratchet, and **still apply the floor**. Failing closed here would block every
 pull request for a reason unrelated to the change.
 
+## Considered options
+
+Recorded inline above: each rejected option sits beside the part of the decision it bears on.
+
 ## Consequences
 
 - Artifact retention bounds the ratchet. If main goes quiet past the retention

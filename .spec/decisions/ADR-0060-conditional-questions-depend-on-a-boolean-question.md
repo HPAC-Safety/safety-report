@@ -86,7 +86,7 @@ unnecessarily.
   it lands with the reporter-facing form story, which is where "enabled" versus
   "hidden" gets settled.
 
-## Alternatives rejected
+## Considered options
 
 **A separate `question_conditions` table supporting several conditions and
 operators.** More capable, and the shape this would grow into if the need

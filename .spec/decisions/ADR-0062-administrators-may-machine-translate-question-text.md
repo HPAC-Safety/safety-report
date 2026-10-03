@@ -172,7 +172,7 @@ question wording being drafted.
   term list nobody has written yet; it is a separate piece of work, not
   something to fake.
 
-## Alternatives rejected
+## Considered options
 
 **Keep the rule; no translation at authoring time.** The strongest version of
 the "a question is what a reporter is asked" argument. Rejected by the owner:

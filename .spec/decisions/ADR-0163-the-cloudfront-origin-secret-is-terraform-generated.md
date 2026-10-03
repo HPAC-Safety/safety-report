@@ -10,9 +10,7 @@ keywords: CloudFront, origin secret, Secrets Manager, random_password, Terraform
 
 # ADR-0163 — The CloudFront origin secret is Terraform-generated, the one exception to "entries, never values"
 
-## Status
-
-Accepted — including holding this one value in Terraform state, confirmed by
+**Status:** Accepted — including holding this one value in Terraform state, confirmed by
 the owner on issues #30 and #465. Narrows
 [CON-INF-005](../infrastructure-and-operations.md) (secret values live in
 Secrets Manager and never in Terraform state) for exactly one entry: this
@@ -112,7 +110,7 @@ secret in this system. State access is already something to guard (the state
 bucket is private, encrypted, and reached only by the two OIDC roles); this
 is one more reason it needs to stay that way, not a new one.
 
-## Alternatives considered
+## Considered options
 
 - **A human-chosen value, entry only (the CON-INF-005 default).** Rejected
   for the reasons above: two places to keep in sync by hand, with drift that

@@ -10,9 +10,7 @@ keywords: translation, question bank, authoring, choices, direction switch, draf
 
 # ADR-0141 — A choice is translated on request, one at a time, in a direction the administrator chooses
 
-## Status
-
-Accepted. For **choices**, this ADR **partially supersedes**
+**Status:** Accepted. For **choices**, this ADR **partially supersedes**
 [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md),
 replacing its framing of Translate as "a draft in the empty box" with the rules
 below. When this record was accepted, the question wording's Translate,
@@ -102,7 +100,7 @@ step to every press and protect nothing that is not already on screen.
   switch. The wording's Translate is specified by REQ-QB-069 to REQ-QB-072 and
   REQ-QB-172 to REQ-QB-175, under ADR-0144.
 
-## Alternatives rejected
+## Considered options
 
 - **Bulk "Translate choices" that fills every empty side.** It was built first
   and rejected by the owner, because it drafts every brand name and place at

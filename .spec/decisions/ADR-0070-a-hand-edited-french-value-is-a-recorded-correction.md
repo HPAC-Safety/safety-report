@@ -97,7 +97,7 @@ be strict for its own sake — the same reasoning as the `#`-stub rule in
 being silently overwritten is wrong and was invisible. Somebody updating both
 languages together is neither.
 
-## Alternatives
+## Considered options
 
 - **Make French co-authoritative and back-translate into English.** Rejected:
   it makes generated text a source of truth, and an English string edited by a

@@ -10,6 +10,8 @@ keywords: drag and drop, dnd-kit, accessibility, reordering, owned abstraction
 
 # ADR-0059 — Reordering uses @dnd-kit, behind one owned component, and never requires a pointer
 
+**Status:** Accepted.
+
 ## Context
 
 The question bank is ordered, and an administrator rearranging a form expects
@@ -64,7 +66,7 @@ asserts.
   optimistically. Dragging is therefore not free, and the UI does not pretend
   it is.
 
-## Alternatives rejected
+## Considered options
 
 **Native HTML5 `dragstart`/`dragover`/`drop`.** No dependency at all.
 Rejected on accessibility and touch: no keyboard path exists, and mobile

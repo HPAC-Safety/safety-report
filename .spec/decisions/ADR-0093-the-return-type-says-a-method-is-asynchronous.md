@@ -10,9 +10,7 @@ keywords: naming, async, Task, ValueTask, conventions, csharp
 
 # ADR-0093 — The return type says a method is asynchronous, so the name does not
 
-## Status
-
-Accepted.
+**Status:** Accepted.
 
 ## Context
 
@@ -78,7 +76,7 @@ abstract base class, so they follow this record.
   `Stream.ReadAsync` into `Stream.Read` would compile and quietly turn
   asynchronous work synchronous. Those were changed by hand, not by pattern.
 
-## Alternatives
+## Considered options
 
 - **Keep the suffix.** Rejected: it is a solution to a problem this codebase
   does not have, and it is the majority of every async method name here.

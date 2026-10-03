@@ -71,7 +71,7 @@ text.
   ([ADR-0178](ADR-0178-the-database-refuses-changes-to-the-reporters-account-and-to-summary-revisions.md)),
   so no trigger is bypassed.
 
-## Alternatives rejected
+## Considered options
 
 - **Fork every labelled question.** It creates a duplicate question per label for a
   punctuation mark, and breaks the "one live question per key" history for no

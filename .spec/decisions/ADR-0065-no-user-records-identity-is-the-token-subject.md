@@ -101,7 +101,7 @@ Holding no user table at all is the strongest version of that, and it costs
 nothing here, because the allowlist was never the security boundary — the API
 was.
 
-## Alternatives
+## Considered options
 
 - **Keep an identity-only stub row** for referential integrity, created on
   first sight of a subject. Rejected: it reintroduces a user table, and a row

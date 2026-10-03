@@ -67,7 +67,7 @@ ffprobe inside it.
 **The SDK rule matches the dependency by name**, `matchPackageNames:
 ["dotnet-sdk"]`, so SDK updates are no longer automerged.
 
-## Alternatives considered
+## Considered options
 
 - **Disable major updates for these packages outright.** Rejected. It fixes
   #429, but nothing would name the major in `renovate.json`, so an upgrade

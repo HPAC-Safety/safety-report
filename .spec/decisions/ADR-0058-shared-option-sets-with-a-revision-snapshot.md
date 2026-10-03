@@ -122,7 +122,7 @@ offered — but reading a stored one does not.
   behaviour rather than a bug. The authoring screen shows the provenance so an
   administrator can create a fresh revision when they want the current list.
 
-## Alternatives rejected
+## Considered options
 
 **Point a revision at the shared set and read it at render time.** The
 smallest schema and the least duplication. Rejected because it breaks the one

@@ -10,9 +10,7 @@ keywords: answers, option codes, string values, ISO 8601, locale, translation, q
 
 # ADR-0072 — Every answer is stored as a string, in the reporter's language
 
-## Status
-
-Accepted; partially superseded by
+**Status:** Accepted; partially superseded by
 [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md):
 a yes or no answer is stored in the reporter's language (`oui`/`non` for a
 French reporter), and a stored `oui` is no longer a bug. The date, time, and
@@ -180,7 +178,7 @@ not the same statement, and a reviewer assessing a report needs the second.
 - A boolean answer is compared as text. `"yes"` is the only truthy form, and a
   stored `"oui"` is a bug rather than an alternative spelling.
 
-## Alternatives rejected
+## Considered options
 
 **Keep option codes.** Nothing to migrate, answers stay compact, and a
 relabelled option updates everywhere at once. Rejected by the owner: an answer

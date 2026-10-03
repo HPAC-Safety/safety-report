@@ -10,9 +10,7 @@ keywords: scroll, scroll restoration, navigation, React Router, BrowserRouter, b
 
 # ADR-0173 — A fresh navigation starts at the top, and only a return restores
 
-## Status
-
-Accepted. This ADR **amends**
+**Status:** Accepted. This ADR **amends**
 [ADR-0155](ADR-0155-infinite-scroll-replaces-load-more-on-both-report-lists.md):
 a report list still restores its accumulated results and scroll position on
 a back-button return, but only on a return to the history entry it was built
@@ -60,7 +58,7 @@ its top on a fresh navigation, with no page opting in or out.
   arrival (`PerformanceNavigationTiming.type`), never as a typed or linked
   navigation.
 
-## Rejected alternatives
+## Considered options
 
 - **Move to React Router's data router for its `<ScrollRestoration>`.**
   `<ScrollRestoration>` works only under `createBrowserRouter`/`RouterProvider`.

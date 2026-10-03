@@ -10,9 +10,7 @@ keywords: answers, phone, email, E.164, libphonenumber, libphonenumber-js, libph
 
 # ADR-0137 — A phone answer is stored in E.164
 
-## Status
-
-Accepted. This ADR **extends**
+**Status:** Accepted. This ADR **extends**
 [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md)'s storage forms
 with a phone and an email form, beside ADR-0072's date and time forms and
 [ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)'s boolean.
@@ -79,7 +77,7 @@ are neither rewritten nor revalidated.
   same formatted number, so a phone answer needs no second language
   ([ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
 
-## Alternatives considered
+## Considered options
 
 - **Store the number as typed.** Rejected: it keeps the ambiguity this change
   exists to remove, and loses the country the reporter chose.

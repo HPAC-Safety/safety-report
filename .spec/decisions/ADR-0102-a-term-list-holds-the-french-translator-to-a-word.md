@@ -59,7 +59,7 @@ or the severity scale. It can't express "this word, wherever it appears".
    any violation. The pull request carries the French to a reviewer, and
    `--check` fails on it there.
 
-## Alternatives rejected
+## Considered options
 
 - **A stored DeepL glossary** (`glossary_id`, v2 or v3). DeepL documents that
   a glossary with a base target language works with that language's variants

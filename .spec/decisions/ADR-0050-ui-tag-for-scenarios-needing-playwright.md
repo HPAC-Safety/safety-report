@@ -88,7 +88,7 @@ touching that decision.
 already load-bearing in this repository; adding a second tag costs nothing
 new to tool around and appears in the same place a reader already checks.
 
-## Alternatives
+## Considered options
 
 - **A separate `ui.feature` file per capability area.** Rejected: doubles
   the number of `.feature` files, fragments a capability's specification

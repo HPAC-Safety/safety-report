@@ -418,7 +418,7 @@ column exactly; re-adding the same identifier after a soft delete succeeds.
 - `AttachmentKind`/`ReportFile.Kind` exist in the schema ahead of the
   processing behavior that will use them fully (issue #81).
 
-## Alternatives rejected
+## Considered options
 
 **Keep `QuestionVersion`/`QuestionTranslation` and only add the missing
 columns.** Would have preserved the "translation pending" state the target

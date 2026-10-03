@@ -10,9 +10,7 @@ keywords: CloudFront, Lambda Function URL, ALB, origin secret, CloudFront-Viewer
 
 # ADR-0159 — CloudFront routes `/api/*` to the API's Function URL — no ALB
 
-## Status
-
-Accepted. **Amends** [ADR-0042](ADR-0042-lambda-hosted-api-with-fargate-migration-path.md):
+**Status:** Accepted. **Amends** [ADR-0042](ADR-0042-lambda-hosted-api-with-fargate-migration-path.md):
 the API stays on Lambda, but it is no longer fronted by an ALB. Its "ALB →
 Lambda target group" entry path, and the ALB row it assumed existed for the
 static sites and the `/admin/` route, do not carry forward.
@@ -110,7 +108,7 @@ request genuinely passed through CloudFront. `Program.cs` clears
 rejects any request without the correct origin secret before that middleware
 runs.
 
-## Alternatives considered
+## Considered options
 
 - **Keep the ALB, put CloudFront in front of it instead of the Function
   URL.** Adds a second load balancer to operate and pay for without adding

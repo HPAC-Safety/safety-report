@@ -165,7 +165,7 @@ so a clean database asks the real form immediately.
   recoverable, a stray administrator in production is not.
 - The French wording will read as machine-translated until somebody reviews it.
 
-## Alternatives rejected
+## Considered options
 
 **`HasData`.** Idiomatic EF, and the model snapshot then knows the rows. Rejected
 for exactly that reason — see above.

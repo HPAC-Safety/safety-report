@@ -25,7 +25,7 @@ coherent visual system, and it should resemble hpac.ca while looking current.
 Tailwind v4 via the **standalone CLI binary** — no npm, no node in the web build.
 HPAC's palette and type are declared once as `@theme` tokens.
 
-## Alternatives
+## Considered options
 
 - **Open Props.** Closest to "pure HTML and CSS", zero build step, ~1.5KB of
   tokens. Rejected because far more CSS ends up hand-authored, and agents have

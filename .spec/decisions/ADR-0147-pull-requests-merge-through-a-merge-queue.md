@@ -215,7 +215,7 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
   check on the merge group means it collides with something ahead of it:
   rebase onto `main`, fix the collision, and push. Auto-merge queues it again.
 
-## Alternatives considered
+## Considered options
 
 - **Turn off "require branches to be up to date".** Rejected by the owner:
   each pull request is green alone, and `main` breaks when two collide on a
@@ -299,7 +299,7 @@ way every other rule in this repository does — written into `AGENTS.md`
 (issue #427 decision 20). `AGENTS.md`, `deliver-change`, and
 `deliver-hpac-change` are amended to match. See issue #427.
 
-## Second amendment (2026-09-28, #625)
+## Amendment (2026-09-28) — the second, #625
 
 **An agent enables auto-merge on every pull request it opens; the owner
 still does every direct merge by hand.** This replaces the first amendment's

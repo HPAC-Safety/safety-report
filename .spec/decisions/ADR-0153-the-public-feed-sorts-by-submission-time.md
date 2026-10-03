@@ -10,9 +10,7 @@ keywords: public feed, public_reports view, keyset cursor, REQ-MOD-037, submitte
 
 # ADR-0153 — The public feed sorts by submission time
 
-## Status
-
-Accepted.
+**Status:** Accepted.
 
 ## Context
 
@@ -84,7 +82,7 @@ one sort key, everywhere.
   negligible next to the trip already being paid, and the price of never
   putting a timestamp on the wire.
 
-## Rejected alternatives
+## Considered options
 
 - **Keep `published_at` as the sort key and only fix the tie-break.** Rejected
   because it does not address the decision's actual complaint: two reports

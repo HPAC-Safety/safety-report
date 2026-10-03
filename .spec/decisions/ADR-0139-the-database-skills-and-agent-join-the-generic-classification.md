@@ -55,7 +55,7 @@ lists all three as generic.
   no physical deletion, no row content in an audit — come from `AGENTS.md`
   and the ADRs they already cite, and `hpac-role-agents` points it at them.
 
-## Rejected alternatives
+## Considered options
 
 - **Edit ADR-0131's table in place.** An ADR is a historical record of what
   was decided when; the amendment records when and why the table grew.

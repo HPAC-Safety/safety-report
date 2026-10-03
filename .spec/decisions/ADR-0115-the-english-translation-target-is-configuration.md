@@ -46,7 +46,7 @@ nobody noticed until a comment was written in French
 3. **French stays fixed at `FR-CA`**, which DeepL does offer as a target.
    French as a source is still plain `FR`.
 
-## Rejected alternatives
+## Considered options
 
 - **Plain `EN`.** It works today, but DeepL documents it as deprecated, and it
   is American English anyway. When the alias goes, every French-to-English

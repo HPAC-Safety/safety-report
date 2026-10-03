@@ -55,7 +55,9 @@ AWS, **`ca-central-1`** for every service that touches report data.
 | Runtime secrets | Secrets Manager |
 | Deploy identity | IAM role assumed by GitHub Actions via OIDC |
 
-## Why these choices
+## Considered options
+
+### Why these choices
 
 **ECS Fargate rather than App Runner.** App Runner is simpler and would suit the
 API, but it only runs HTTP services. The worker is a long-running process that

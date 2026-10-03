@@ -10,9 +10,7 @@ keywords: question role, QuestionRole, admin report list, admin_report_queue, re
 
 # ADR-0154 — Reporter and pilot names are read by question role
 
-## Status
-
-Accepted. It extends `QuestionRole` (ADR-0016) the same way ADR-0117 and
+**Status:** Accepted. It extends `QuestionRole` (ADR-0016) the same way ADR-0117 and
 ADR-0119 use it for the two consent questions, and amends `AGENTS.md`
 invariant 1 ("Two system questions are the only answers read by name") in the
 same pull request.
@@ -165,6 +163,10 @@ really-migrated database — across `HpacSafety.Acceptance.Tests`
 `CommentEndpointTests`, `ReportReviewEndpointTests`) — instead of inventing a
 second question, so the fixtures now hold the same invariant the database
 enforces.
+
+## Considered options
+
+None were recorded when this decision was accepted.
 
 ## Consequences
 

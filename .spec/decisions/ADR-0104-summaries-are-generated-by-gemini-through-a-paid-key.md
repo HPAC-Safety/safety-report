@@ -104,7 +104,7 @@ is the Worker's only external credential, and copying it into Secrets Manager
 buys nothing an operator cannot already get from GitHub's secret store. The key
 is never committed, logged, or returned in an error.
 
-## Rejected alternatives
+## Considered options
 
 - **Vertex AI in `northamerica-northeast1`.** Keeps processing in Canada, but
   needs Google Cloud service-account authentication and a second client shape.

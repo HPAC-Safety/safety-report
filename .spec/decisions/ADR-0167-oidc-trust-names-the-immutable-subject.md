@@ -10,9 +10,7 @@ keywords: OIDC, GitHub Actions, trust policy, immutable subject, bootstrap.sh, h
 
 # ADR-0167 — The OIDC trust policies name GitHub's immutable subject, with the organization and repository IDs
 
-## Status
-
-Accepted. Amends the subject form that
+**Status:** Accepted. Amends the subject form that
 [ADR-0032](ADR-0032-terraform-ci-without-an-aws-account.md),
 [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md), and
 [ADR-0164](ADR-0164-release-workflow-build-once-deploy-and-promote.md) quote
@@ -48,7 +46,7 @@ deploy job would have failed the same way.
 - Re-running `bootstrap.sh` in an account converges its trust policies; it
   changes nothing else.
 
-## Alternatives considered
+## Considered options
 
 - **Turn the repository's immutable subject off**, so tokens carry the
   name-only form the policies already expected. Rejected (owner,

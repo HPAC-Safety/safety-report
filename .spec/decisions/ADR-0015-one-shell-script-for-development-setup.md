@@ -76,7 +76,9 @@ something it did not do.** A green tick that means "installed, but you must log
 out before it works" is worse than no tick, because the next failure looks like
 a different problem.
 
-## Why not PowerShell
+## Considered options
+
+### Why not PowerShell
 
 `pwsh` genuinely runs on all three platforms, and on Windows it needs no
 bootstrap. It loses on the other two: a macOS or Linux contributor without
@@ -85,7 +87,7 @@ which is exactly the situation the script exists to fix. Solving that needs a
 documented shell one-liner to install `pwsh` first — at which point the shell,
 not PowerShell, is the thing that actually runs first.
 
-## Why not a `.sh` and a `.ps1` pair
+### Why not a `.sh` and a `.ps1` pair
 
 Two files is the conventional answer and it is what `gradlew`/`gradlew.bat` do.
 It was rejected because two implementations of the same logic drift, and the
@@ -99,7 +101,7 @@ arrive as text files containing a path — so every Windows contributor here
 already has `sh`. The shell is not a new dependency; it is one this repository
 had already taken.
 
-## Why not an `sh`/PowerShell polyglot
+### Why not an `sh`/PowerShell polyglot
 
 A single file that is valid in both parsers solves the bootstrap problem
 everywhere and needs no Git Bash. It was rejected as a parser trick: it is still
@@ -107,7 +109,7 @@ two implementations, now harder to read, and its correctness depends on
 tokenizer details of two shells rather than on anything either language
 documents.
 
-## Why not a devcontainer
+### Why not a devcontainer
 
 A `devcontainer.json` gives a genuinely reproducible environment and is the
 right answer for a project whose contributors all use one editor. It fails two

@@ -142,7 +142,7 @@ public sealed class AuthorizationSteps
 			"edit a report's summary" => await EditSummary(),
 			"publish a report" => await Review(ReportStatus.Pending, "publish", version => new { version }),
 			"unpublish a report" => await Review(ReportStatus.Published, "unpublish", version => new { version, note = "Synthetic note: duplicate." }),
-			"soft-delete a report" => await _client!.DeleteAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
+			"delete a report" => await _client!.DeleteAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
 			"create a question revision" => await CreateQuestion(),
 			"edit a question's choices" => await EditChoices(),
 			_ => throw new ArgumentOutOfRangeException(nameof(capability), capability, "Not a capability the role outlines name."),

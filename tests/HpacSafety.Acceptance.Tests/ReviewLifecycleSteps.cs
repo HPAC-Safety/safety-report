@@ -44,7 +44,7 @@ public sealed class ReviewLifecycleSteps
 				_report = In(ReportStatus.Submitted, consent: false);
 				_report.KeepUnpublished();
 				break;
-			case "a valid bilingual pair is saved":
+			case "a valid summary pair is saved":
 				_report.AttachSummary(Summary.Generate(_report.Id, "The pilot landed.", "Le pilote s'est posé.", "gemini-3.7-flash", "summarize-anonymize.v3", Now));
 				_report.AwaitReview();
 				break;

@@ -515,7 +515,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		{
 			case "the Worker produced the pair":
 				break;
-			case "a reviewer edited only the English text of a generated pair":
+			case "a reviewer edited only the English text of a summary pair":
 				_sourcesReport.EditSummary("The pilot landed firmly.", _sourcesReport.Summary!.AiSummaryFr, "subject-officer", at);
 				break;
 			case "a reviewer edited the English text and accepted its French translation":

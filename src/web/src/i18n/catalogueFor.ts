@@ -19,7 +19,7 @@ function flatten(value: unknown, prefix = ""): Catalogue {
 // vite.config.ts). Both catalogues are built into the page's own bundle
 // (eager), never fetched as a chunk afterwards: a deploy deletes the previous
 // build's hashed chunks, so a tab left open across one would fail to fetch a
-// lazy catalogue and show raw keys until reloaded (REQ-WLD-049, #805).
+// lazy catalogue and show raw keys until reloaded (REQ-WLD-049, ADR-0190).
 //
 // The glob names en-CA and fr-CA only, so the other files in locales/
 // (fr-CA.meta.json, glossary.json, terms.json) never reach the browser.

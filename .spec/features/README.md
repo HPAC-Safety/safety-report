@@ -35,11 +35,6 @@ it is never meant to have
 An unimplemented scenario carries an `@ignore` tag; implementing it means
 writing its step definitions — Reqnroll or `playwright-bdd`, whichever this
 scenario's tag calls for — and removing that tag in the same PR.
-It was derived from a file-by-file audit of the 135
-tracked paths under `src/`, all 69 tracked paths under `tests/`, the
-repository guidance and runtime prompts, and every open and closed GitHub issue
-through issue #82. The audited implementation baseline is main at
-`5f7340415e88706035a713bd8322e3dda466e821` on 2026-08-23.
 
 ## Authority and conflict rules
 
@@ -55,12 +50,15 @@ through issue #82. The audited implementation baseline is main at
    only drift inherited from ADRs older than it, never new drift. A change to
    one that affects the other updates both in the same pull request
    ([ADR-0047](../decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
-4. [Implementation status](../../docs/implementation-status.md) records gaps explicitly.
+4. A gap is recorded explicitly, as an `@ignore` scenario in the generated
+   [traceability matrix](../traceability.md) or an open issue, never in a
+   hand-written status page
+   ([ADR-0191](../decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md)).
    A documented target feature must not be described as already working merely
    because its domain scaffold exists.
-5. A future decision that changes the design must update the canonical page,
-   implementation-status matrix, issue traceability, and affected tests in the
-   same pull request.
+5. A future decision that changes the design must update the canonical page
+   and affected tests in the same pull request. Each rule is stated once, in
+   its scenario, constraint, or ADR; everything else links to it.
 6. Every user-facing requirement gets a `.feature` scenario; every durable
    architectural decision gets an ADR under `.spec/decisions/`. Neither is
    optional, and neither substitutes for the other: a `.feature` file never
@@ -106,9 +104,8 @@ Guides that describe the specification without being part of it:
 
 | Need | Guide |
 |---|---|
-| Target-to-main gap analysis | [Implementation status](../../docs/implementation-status.md) |
 | Every audited path under `src/` | [Source inventory](../../docs/source-inventory.md) |
-| Every GitHub issue and its relationship to this design | [Issue traceability](../../docs/issue-traceability.md) |
+| Every open GitHub issue, generated from GitHub | [Issue traceability](../../docs/issue-traceability.md) |
 | Shared terms | [Glossary](../../docs/glossary.md) |
 
 ## Product contract in one paragraph
@@ -121,10 +118,16 @@ an administrator has not made required
 must make an explicit publication-consent choice — and, when they consented and
 attached any file, a media-consent choice — and submits the
 answers once. Each optional attachment uploads as soon as it is attached, into
-private quarantine, and the submission claims it. Every answer is stored as one string —
-the words the reporter saw, in the language they saw them. The API saves the
-report, exact question revisions, files, and
-outbox work atomically. The Worker makes exactly one model call using one
+private quarantine, and the submission claims it. Every answer is immutable and
+stored in its own form: a choice answer names its choice by ID
+([ADR-0128](../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)),
+a yes/no or checkbox answer is a boolean
+([ADR-0130](../decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)),
+and every other answer is one string in the reporter's own words and language
+([ADR-0072](../decisions/ADR-0072-every-answer-is-stored-as-a-string.md)).
+The API saves the report, exact question revisions, answers, files, and
+outbox work atomically. For a report whose reporter consented to publication,
+the Worker makes exactly one model call using one
 versioned prompt to produce an anonymized English/French summary pair, using
 private answers only as recognition context. A safety officer reviews that pair
 and permitted attachments. Only a non-deleted, positively consented report
@@ -150,8 +153,12 @@ The file goes straight to storage through a pre-signed PUT the API mints, and
 the submission validates it
 ([ADR-0126](../decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
 It has no server-side report drafts, resumable upload protocol,
-deterministic text scrubber, separate PII-audit call, summary-translation
-call, specialized aircraft processing, outbound email, external publication
+deterministic text scrubber beyond the marking pass
+([ADR-0082](../decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)),
+separate PII-audit call, machine translation of the Worker's generated pair
+(a reviewer may draft one language from the other,
+[ADR-0108](../decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)),
+specialized aircraft processing, outbound email, external publication
 channels, application-layer field encryption, restore workflow, or automated
 raw-report purge. New abstractions are justified by a real boundary or a second
 implementation, not by a hypothetical future.
@@ -162,6 +169,10 @@ claims, and **no user record is stored anywhere**
 ([ADR-0064](../decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
 [ADR-0065](../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 There is no allowlist, no user table, no session store, no CSRF machinery, no
-password handling, and no Turnstile. Requiring a member to submit is what let
+password handling, and no Turnstile — except Development's members-site login
+([ADR-0079](../decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
+and, temporarily, staging's interim issuer
+([ADR-0172](../decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)),
+which never reach production. Requiring a member to submit is what let
 the last of those go
 ([ADR-0068](../decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).

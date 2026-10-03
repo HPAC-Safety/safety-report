@@ -68,6 +68,8 @@ Two hand-written pages restated what generated ones show:
   lags GitHub, and the drift issue says so.
 - The per-issue disposition prose is gone. Where it pointed at a constraint,
   the constraint itself says so.
+- ADR-0183's note that the status page stays in `docs/` no longer applies;
+  its placement rule stands.
 
 ## Alternatives rejected
 

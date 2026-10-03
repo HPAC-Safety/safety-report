@@ -83,6 +83,6 @@ about a person is written down
 ([ADR-0064](../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
 [ADR-0065](../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 
-Current-main gaps are explicit in
-[`implementation-status.md`](implementation-status.md); component
+Current-main gaps are explicit as `@ignore` claims in the generated
+[traceability matrix](../.spec/traceability.md); component
 READMEs must not describe a target feature as already implemented.

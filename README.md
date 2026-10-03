@@ -11,10 +11,9 @@ and Paragliding Association of Canada. It collects database-driven reports,
 creates an anonymized English/French safety-summary pair with one AI call, and
 requires human approval before publication.
 
-> **Implementation status:** the repository contains substantial domain,
-> persistence, media, web-asset, CI, and infrastructure scaffolding, but the
-> complete target flow is not implemented. The audited gaps are listed in
-> [`docs/implementation-status.md`](docs/implementation-status.md). Do not infer
+> **Implementation status:** a gap is an `@ignore` claim in the generated
+> [traceability matrix](.spec/traceability.md) or an open issue in the
+> generated [issue traceability](docs/issue-traceability.md) page. Do not infer
 > feature completion from an old closed issue or README.
 
 ## How this repository works

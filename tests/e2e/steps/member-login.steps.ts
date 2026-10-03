@@ -11,13 +11,13 @@ Given("a visitor activates the member sign-in action", async ({ page }) => {
 	await page.locator("header").getByRole("link", { name: "Member login" }).click()
 })
 
-Then("the sign-in page shows an email field, a password field, and a sign-in action", async ({ page }) => {
+Then("the sign-in page shows an email box, a password box, and a sign-in action", async ({ page }) => {
 	await expect(page.getByLabel("Email")).toBeVisible()
 	await expect(page.getByLabel("Password")).toBeVisible()
 	await expect(page.getByRole("button", { name: "Log in" })).toBeVisible()
 })
 
-Then("the email field is an email input, so a phone offers its email keyboard", async ({ page }) => {
+Then("the email box is an email input, so a phone offers its email keyboard", async ({ page }) => {
 	const email = page.getByLabel("Email")
 	await expect(email).toHaveAttribute("type", "email")
 	await expect(email).toHaveAttribute("autocomplete", "email")

@@ -193,19 +193,19 @@ Given(
 
 // -------------------------------------------------------------------- When --
 
-When(/^the reporter (clicks|tabs into) the date field$/, async ({ page }, how: string) => {
+When(/^the reporter (clicks|tabs into) the date question$/, async ({ page }, how: string) => {
 	if (how === "clicks") await page.locator(DATE_FIELD).click()
 	else await tabInto(page)
 })
 
-When("the reporter clicks the date field and chooses the 1st of today's month", async ({ page }) => {
+When("the reporter clicks the date question and chooses the 1st of today's month", async ({ page }) => {
 	await page.locator(DATE_FIELD).click()
 	const first = today()
 	first.setDate(1)
 	await dayButton(page, first).click()
 })
 
-When("the reporter clicks the date field and chooses the 1st of today's month again", async ({ page }) => {
+When("the reporter clicks the date question and chooses the 1st of today's month again", async ({ page }) => {
 	// Every text the status region holds from here on, in order, so a clear
 	// before the second announcement shows up.
 	await page.evaluate((selector) => {
@@ -221,7 +221,7 @@ When("the reporter clicks the date field and chooses the 1st of today's month ag
 	await dayButton(page, first).click()
 })
 
-When("the reporter types {string} into the date field and presses Next", async ({ page }, typed: string) => {
+When("the reporter types {string} into the date question and presses Next", async ({ page }, typed: string) => {
 	const field = page.locator(DATE_FIELD)
 	await field.click()
 	await field.pressSequentially(typed)
@@ -241,7 +241,7 @@ When("the reporter presses the calendar's background", async ({ page }) => {
 	await calendar(page).click({ position: { x: 4, y: 4 } })
 })
 
-When("the reporter tabs into the date field and presses ArrowDown", async ({ page }) => {
+When("the reporter tabs into the date question and presses ArrowDown", async ({ page }) => {
 	await tabInto(page)
 	await expect(calendar(page)).toBeVisible()
 	await page.keyboard.press("ArrowDown")
@@ -280,7 +280,7 @@ When(/^the reporter chooses the (\d+)(?:st|nd|rd|th)$/, async ({ page }, day: st
 })
 
 When(
-	"the device's picker sets the date field to {string} and the reporter presses Next",
+	"the device's picker sets the date question to {string} and the reporter presses Next",
 	async ({ page, $testInfo }, value: string) => {
 		const touch = active(page, $testInfo.testId)
 		await touch.locator(DATE_FIELD).fill(value)
@@ -290,7 +290,7 @@ When(
 
 // -------------------------------------------------------------------- Then --
 
-Then("a calendar labelled {string} opens under the field, showing today's month", async ({ page }, name: string) => {
+Then("a calendar labelled {string} opens under the question, showing today's month", async ({ page }, name: string) => {
 	const dialog = page.getByRole("dialog", { name })
 	await expect(dialog).toBeVisible()
 	await expect(page.locator(DATE_FIELD)).toHaveAttribute("aria-expanded", "true")
@@ -315,7 +315,7 @@ Then("it has {string} and {string} buttons", async ({ page }, previous: string, 
 	await expect(calendar(page).getByRole("button", { name: next, exact: true })).toBeVisible()
 })
 
-Then("the date field reads the 1st of today's month as yyyy-mm-dd", async ({ page }) => {
+Then("the date question reads the 1st of today's month as yyyy-mm-dd", async ({ page }) => {
 	const first = today()
 	first.setDate(1)
 	await expect(page.locator(DATE_FIELD)).toHaveValue(iso(first))
@@ -327,7 +327,7 @@ function dateCombobox(page: Page) {
 	return page.getByRole("combobox", { name: /On what date did it happen\?|À quelle date est-ce arrivé\?/ })
 }
 
-Then("the date field is a collapsed combobox with a dialog as its popup", async ({ page }) => {
+Then("the date question is a collapsed combobox with a dialog as its popup", async ({ page }) => {
 	const field = dateCombobox(page)
 	await expect(field).toHaveAttribute("aria-haspopup", "dialog")
 	await expect(field).toHaveAttribute("aria-expanded", "false")
@@ -335,14 +335,14 @@ Then("the date field is a collapsed combobox with a dialog as its popup", async 
 	await expect(page.getByRole("dialog")).toHaveCount(0)
 })
 
-Then("the date field is expanded and controls the dialog labelled {string}", async ({ page }, name: string) => {
+Then("the date question is expanded and controls the dialog labelled {string}", async ({ page }, name: string) => {
 	const dialog = page.getByRole("dialog", { name })
 	await expect(dialog).toBeVisible()
 	await expect(dateCombobox(page)).toHaveAttribute("aria-expanded", "true")
 	await expect(dateCombobox(page)).toHaveAttribute("aria-controls", present(await dialog.getAttribute("id")))
 })
 
-Then("the calendar stays open and focus is on the date field", async ({ page }) => {
+Then("the calendar stays open and focus is on the date question", async ({ page }) => {
 	await expect(calendar(page)).toBeVisible()
 	await expect(page.locator(DATE_FIELD)).toBeFocused()
 })
@@ -368,11 +368,11 @@ Then("the announcement is cleared and the chosen day is announced again", async 
 		.toEqual(["", words])
 })
 
-Then("the date field's placeholder is {string}", async ({ page }, placeholder: string) => {
+Then("the date question's placeholder is {string}", async ({ page }, placeholder: string) => {
 	await expect(page.locator(DATE_FIELD)).toHaveAttribute("placeholder", placeholder)
 })
 
-Then("the date field is described by the format {string}", async ({ page }, format: string) => {
+Then("the date question is described by the format {string}", async ({ page }, format: string) => {
 	const ids = ((await page.locator(DATE_FIELD).getAttribute("aria-describedby")) ?? "").split(/\s+/).filter(Boolean)
 	const texts = await Promise.all(ids.map((id) => page.locator(`[id="${id}"]`).textContent()))
 	expect(texts.map((text) => text?.trim())).toContain(format)
@@ -460,11 +460,11 @@ Then("the same day of the previous month has focus", async ({ page }) => {
 	await expectFocusOn(page, new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), lastOfPrevious)))
 })
 
-Then("the date field reads today as yyyy-mm-dd", async ({ page }) => {
+Then("the date question reads today as yyyy-mm-dd", async ({ page }) => {
 	await expect(page.locator(DATE_FIELD)).toHaveValue(iso(today()))
 })
 
-Then("focus is on the date field", async ({ page }) => {
+Then("focus is on the date question", async ({ page }) => {
 	await expect(page.locator(DATE_FIELD)).toBeFocused()
 })
 
@@ -475,11 +475,11 @@ Then(/^the calendar shows (\w+) (\d{4})$/, async ({ page }, month: string, shown
 	await expect(calendar(page).getByRole("grid", { name: `${month} ${year}` })).toBeVisible()
 })
 
-Then("the date field reads {string}", async ({ page }, value: string) => {
+Then("the date question reads {string}", async ({ page }, value: string) => {
 	await expect(page.locator(DATE_FIELD)).toHaveValue(value)
 })
 
-Then(/^the date field is a native date input (whose latest date is today|with no latest date)$/, async ({ page, $testInfo }, limit: string) => {
+Then(/^the date question is a native date input (whose latest date is today|with no latest date)$/, async ({ page, $testInfo }, limit: string) => {
 	const field = active(page, $testInfo.testId).locator(DATE_FIELD)
 	await expect(field).toHaveAttribute("type", "date")
 	if (limit === "with no latest date") await expect(field).not.toHaveAttribute("max")

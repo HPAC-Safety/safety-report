@@ -235,7 +235,7 @@ Scenario: A multi-select picker is a combobox that pops up a dialog of checkboxe
 @ui
 Scenario Outline: An email or phone question opens the matching keyboard
   Given the current page shows an optional <type> question
-  Then its field has type "<input type>", input mode "<input mode>", and autocomplete "<autocomplete>"
+  Then its input has type "<input type>", input mode "<input mode>", and autocomplete "<autocomplete>"
 
 Examples:
   | type  | input type | input mode | autocomplete |
@@ -276,7 +276,7 @@ Scenario: A phone number that is not valid for its country holds the reporter on
 Scenario: The phone country picker starts on Canada
   Given the current page shows an optional phone question
   Then its country picker shows "🇨🇦 +1"
-  And the phone field's placeholder is "(555) 555-5555"
+  And the phone question's placeholder is "(555) 555-5555"
 
 @REQ-SUB-090
 @ui
@@ -284,9 +284,9 @@ Scenario Outline: A phone number takes its chosen country's mask as it is typed
   Given the current page shows an optional phone question
   When the reporter chooses <country> in its country picker
   Then its country picker shows "<shown>"
-  And the phone field's placeholder is "<placeholder>"
+  And the phone question's placeholder is "<placeholder>"
   When the reporter types "<digits>" into it
-  Then the phone field reads "<masked>"
+  Then the phone question reads "<masked>"
 
 Examples:
   | country        | shown   | placeholder    | digits     | masked         |
@@ -313,7 +313,7 @@ Examples:
 Scenario: Before "@" is typed, every suggested domain is offered for what has been typed
   Given the current page shows an optional email question
   When the reporter types "chas" into it
-  Then the field is a combobox whose suggestion list is labelled "Suggested email addresses"
+  Then the question is a combobox whose suggestion list is labelled "Suggested email addresses"
   And the suggestions below it are, in order:
     | chas@gmail.com   |
     | chas@yahoo.com   |
@@ -340,11 +340,11 @@ Scenario: After "@", the suggestions narrow to the domains beginning with what f
 
 @REQ-SUB-094
 @ui
-Scenario Outline: Choosing a suggestion fills the field
+Scenario Outline: Choosing a suggestion fills the question
   Given the current page shows an optional email question
   When the reporter types "chase.florell@h" into it
   And the reporter chooses "chase.florell@hotmail.com" <how>
-  Then the email field reads "chase.florell@hotmail.com"
+  Then the email question reads "chase.florell@hotmail.com"
   And no suggestions are shown
 
 Examples:
@@ -361,10 +361,10 @@ Scenario: An address at a domain outside the suggestions is accepted
 
 @REQ-SUB-098
 @ui
-Scenario Outline: On a desktop, clicking or focusing a date field opens a one-month calendar under it
+Scenario Outline: On a desktop, clicking or focusing a date question opens a one-month calendar under it
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter <opens> the date field
-  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  When the reporter <opens> the date question
+  Then a calendar labelled "Choose a date" opens under the question, showing today's month
   And today is marked in it
   And it has "Previous month" and "Next month" buttons
 
@@ -375,27 +375,27 @@ Examples:
 
 @REQ-SUB-099
 @ui
-Scenario: Choosing a day fills the field as yyyy-mm-dd and closes the calendar
+Scenario: Choosing a day fills the question as yyyy-mm-dd and closes the calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter clicks the date field and chooses the 1st of today's month
-  Then the date field reads the 1st of today's month as yyyy-mm-dd
+  When the reporter clicks the date question and chooses the 1st of today's month
+  Then the date question reads the 1st of today's month as yyyy-mm-dd
   And the calendar closes
   And the chosen day is announced in words
-  When the reporter clicks the date field and chooses the 1st of today's month again
+  When the reporter clicks the date question and chooses the 1st of today's month again
   Then the announcement is cleared and the chosen day is announced again
 
 @REQ-SUB-112
 @ui
 Scenario: A date question with a placeholder of its own still names the yyyy-mm-dd format
   Given the current page shows a date question whose placeholder is "When did it happen?", on a desktop
-  Then the date field's placeholder is "When did it happen?"
-  And the date field is described by the format "yyyy-mm-dd"
+  Then the date question's placeholder is "When did it happen?"
+  And the date question is described by the format "yyyy-mm-dd"
 
 @REQ-SUB-100
 @ui
 Scenario Outline: The calendar disables the days after today unless the question allows future dates
   Given the current page shows a date question that <allows> future dates, on a desktop
-  When the reporter clicks the date field
+  When the reporter clicks the date question
   Then the calendar shows today's month
   And every day after today is <state>
 
@@ -408,7 +408,7 @@ Examples:
 @ui
 Scenario Outline: A typed date that is malformed, or in the future where not allowed, holds the reporter on its page
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter types "<typed>" into the date field and presses Next
+  When the reporter types "<typed>" into the date question and presses Next
   Then the reporter stays on the date page
   And an inline message says "<message>"
 
@@ -424,7 +424,7 @@ Examples:
 @ui
 Scenario: A date typed as yyyy-mm-dd is sent as typed
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter types "2024-02-29" into the date field and presses Next
+  When the reporter types "2024-02-29" into the date question and presses Next
   And the reporter submits the report from the next page
   Then the date answer is sent as "2024-02-29"
 
@@ -432,7 +432,7 @@ Scenario: A date typed as yyyy-mm-dd is sent as typed
 @ui
 Scenario Outline: The calendar is in the reader's language
   Given the current page shows a date question in <language>, on a desktop
-  When the reporter clicks the date field
+  When the reporter clicks the date question
   Then the calendar names today's month in <language>
   And its weekday headings start on <first day>
   And its buttons and pickers are labelled from the <language> catalogue
@@ -446,7 +446,7 @@ Examples:
 @ui
 Scenario: The calendar works from the keyboard
   Given the current page shows a date question that allows future dates, on a desktop
-  When the reporter tabs into the date field and presses ArrowDown
+  When the reporter tabs into the date question and presses ArrowDown
   Then today has focus in the calendar
   When the reporter presses ArrowLeft
   Then the day 1 day before today has focus
@@ -461,50 +461,50 @@ Scenario: The calendar works from the keyboard
   When the reporter presses PageDown
   Then today has focus in the calendar
   When the reporter presses Enter
-  Then the date field reads today as yyyy-mm-dd
+  Then the date question reads today as yyyy-mm-dd
   And the calendar closes
-  And focus is on the date field
+  And focus is on the date question
   When the reporter presses ArrowDown and then Escape
   Then the calendar closes
-  And focus is on the date field
+  And focus is on the date question
 
 @REQ-SUB-111
 @ui
-Scenario: Tabbing past a date field skips its calendar
+Scenario: Tabbing past a date question skips its calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter tabs into the date field
-  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  When the reporter tabs into the date question
+  Then a calendar labelled "Choose a date" opens under the question, showing today's month
   When the reporter presses Tab
   Then focus skips the calendar to the Next button, and the calendar closes
 
 @REQ-SUB-131
 @ui
-Scenario: A desktop date field is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus
+Scenario: A desktop date question is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus
   Given the current page shows a date question that does not allow future dates, on a desktop
-  Then the date field is a collapsed combobox with a dialog as its popup
-  When the reporter clicks the date field
-  Then the date field is expanded and controls the dialog labelled "Choose a date"
+  Then the date question is a collapsed combobox with a dialog as its popup
+  When the reporter clicks the date question
+  Then the date question is expanded and controls the dialog labelled "Choose a date"
   When the reporter presses the calendar's background
-  Then the calendar stays open and focus is on the date field
+  Then the calendar stays open and focus is on the date question
   When the reporter presses ArrowDown and then Escape
   Then the calendar closes
-  And focus is on the date field
+  And focus is on the date question
 
 @REQ-SUB-105
 @ui
 Scenario: The reporter jumps to a month and year a few years back
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter clicks the date field
+  When the reporter clicks the date question
   And the reporter chooses March in the calendar's month picker and 2023 in its year picker
   Then the calendar shows March 2023
   When the reporter chooses the 14th
-  Then the date field reads "2023-03-14"
+  Then the date question reads "2023-03-14"
 
 @REQ-SUB-106
 @ui
 Scenario Outline: On a touch device, a date question uses the device's own date picker
   Given the current page shows a date question that <allows> future dates, on a touch device
-  Then the date field is a native date input <limit>
+  Then the date question is a native date input <limit>
   And tapping it opens no calendar of the form's own
 
 Examples:
@@ -516,7 +516,7 @@ Examples:
 @ui
 Scenario: On a touch device, a future date the device's picker lets through still holds the reporter on its page
   Given the current page shows a date question that does not allow future dates, on a touch device
-  When the device's picker sets the date field to "9999-12-31" and the reporter presses Next
+  When the device's picker sets the date question to "9999-12-31" and the reporter presses Next
   Then the reporter stays on the date page
   And an inline message says "Choose a date that is not in the future."
 
@@ -529,7 +529,7 @@ Scenario: One answer entry per shown answer-producing revision
   And a type-ahead answer naming a value the question does not offer carries the typed text in "value" instead
   And every other answer uses "value", a single string, alongside the locale it was given in
   And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
-  And fields for the other answer shapes are null
+  And the other answer shapes are null
 
 @REQ-SUB-077
 @ui
@@ -1065,9 +1065,9 @@ Scenario: An expired saved report's uploads are erased
 
 @REQ-SUB-058
 @ui
-Scenario: The attachment field is a drop zone with a large choose-files control
+Scenario: The attachment question is a drop zone with a large choose-files control
   Given the current page shows a file-upload question
-  Then the field shows a drop zone with a large upload icon and a localized "drag files here, or choose files" prompt
+  Then the question shows a drop zone with a large upload icon and a localized "drag files here, or choose files" prompt
   And the type, count, and size guidance sits inside the drop zone
 
 @REQ-SUB-059

@@ -149,7 +149,7 @@ public sealed class InterimIssuerSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Then(@"the response carries only a public key, never a private key field")]
+	[Then(@"the response carries only a public key, never a private key")]
 	public async Task ThenResponseCarriesOnlyAPublicKey()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();

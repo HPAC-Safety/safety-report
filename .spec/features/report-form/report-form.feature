@@ -1,7 +1,7 @@
 @xunit:collection(QuestionBankRunsAlone)
 Feature: Report form
 The form a reporter fills in: how each answer is stored, how type-ahead and
-picker fields behave, the attachment and media-consent questions, the
+picker questions behave, the attachment and media-consent questions, the
 Country pick list, and the seeded groups each shown as one page.
 
 Background:
@@ -122,16 +122,16 @@ Scenario: A yes or no stored as anything but the four words stops the conversion
 
 @REQ-QB-159
 @ui
-Scenario Outline: A type-ahead question is a field the form draws, with no caret, and opens with a hint before 3 characters
+Scenario Outline: A type-ahead question is a control the form draws, with no caret, and opens with a hint before 3 characters
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  Then the question is a combobox field with no caret, described by its help text, and no browser suggestion list
-  When they open the field's list by <opening>
-  Then the list opens directly beneath the field, as wide as it, offering only the hint to type 3 or more letters
+  Then the question is a combobox with no caret, described by its help text, and no browser suggestion list
+  When they open the question's list by <opening>
+  Then the list opens directly beneath the question, as wide as it, offering only the hint to type 3 or more letters
 
 Examples:
   | opening                         |
-  | clicking the field              |
+  | clicking the question           |
   | pressing Alt and the down arrow |
   | typing "o"                      |
 
@@ -140,10 +140,10 @@ Examples:
 Scenario: Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they type "Mo" in the field
+  And they type "Mo" in the question
   Then the list offers only the hint to type 3 or more letters
-  When they type "u" in the field
-  Then a list as wide as the field opens directly beneath it, offering "Mount 7"
+  When they type "u" in the question
+  Then a list as wide as the question opens directly beneath it, offering "Mount 7"
   When they press Backspace
   Then the list offers only the hint to type 3 or more letters
 
@@ -152,29 +152,29 @@ Scenario: Typing 3 characters into a type-ahead reveals its matching choices, an
 Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they type "Mo" in the field
+  And they type "Mo" in the question
   And they press the down arrow
   And they press the up arrow
   And they press Enter
   Then the list offers only the hint to type 3 or more letters
-  And the field holds "Mo"
+  And the question holds "Mo"
 
 @REQ-QB-232
 @ui
 Scenario Outline: Reopening a type-ahead filters by what it already holds, however it is reopened
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   When a reporter using English opens that question
-  And they type "<typed>" in the field
+  And they type "<typed>" in the question
   And they press Escape
-  When they open the field's list by <opening>
+  When they open the question's list by <opening>
   Then <outcome>
 
 Examples:
   | typed | opening                          | outcome                                                                                    |
-  | Mou   | clicking the field               | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing Alt and the down arrow  | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing the down arrow          | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mo    | clicking the field               | the list offers only the hint to type 3 or more letters                                   |
+  | Mou   | clicking the question            | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing Alt and the down arrow  | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing the down arrow          | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mo    | clicking the question            | the list offers only the hint to type 3 or more letters                                      |
   | Mo    | pressing Alt and the down arrow  | the list offers only the hint to type 3 or more letters                                   |
   | Mo    | pressing the down arrow          | the list offers only the hint to type 3 or more letters                                   |
 
@@ -183,7 +183,7 @@ Examples:
 Scenario Outline: Typing into a type-ahead filters its list, ignoring case and accents
   Given a type-ahead question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
   When a reporter using French opens that question
-  And they type "<typed>" in the field
+  And they type "<typed>" in the question
   Then its list offers only <offered>
 
 Examples:
@@ -198,38 +198,38 @@ Examples:
 Scenario: A reporter picks a type-ahead choice from the keyboard
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   When a reporter using English opens that question
-  And they type "Mou" in the field and press the down arrow twice
-  Then "Mount Fromme" is the field's active choice
+  And they type "Mou" in the question and press the down arrow twice
+  Then "Mount Fromme" is the question's active choice
   When they press the up arrow
-  Then "Mount 7" is the field's active choice
+  Then "Mount 7" is the question's active choice
   When they press the down arrow
-  Then "Mount Fromme" is the field's active choice
+  Then "Mount Fromme" is the question's active choice
   When they press Enter
-  Then the list is closed and the field holds "Mount Fromme"
+  Then the list is closed and the question holds "Mount Fromme"
   When they press Alt and the down arrow
   Then its list is open
   When they press Escape
-  Then the list is closed and the field holds "Mount Fromme"
-  When they open the field's list by clicking the field
-  And they press outside the field
-  Then the list is closed and the field holds "Mount Fromme"
+  Then the list is closed and the question holds "Mount Fromme"
+  When they open the question's list by clicking the question
+  And they press outside the question
+  Then the list is closed and the question holds "Mount Fromme"
 
 @REQ-QB-162
 @ui
 Scenario: A reporter types a type-ahead value its list does not offer
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they type "A ridge nobody listed" in the field
+  And they type "A ridge nobody listed" in the question
   Then the list says no choice matches
   When they press Tab
-  Then the list is closed and the field holds "A ridge nobody listed"
+  Then the list is closed and the question holds "A ridge nobody listed"
 
 @REQ-QB-163
 @ui
 Scenario Outline: A type-ahead's or single-select's list fits a phone screen and scrolls when long
   Given a <type> question offers 30 choices
   When a reporter using English opens that question on a screen 360 pixels wide
-  And they open the field's list by <opening>
+  And they open the question's list by <opening>
   Then the list fits within the screen's width, and the page does not scroll sideways
   And the list scrolls within itself
 
@@ -243,7 +243,7 @@ Examples:
 Scenario: A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do
   Given the type-ahead "Model" question's choices depend on the single-select "Make" question
   When they answer "Make" with "Niviuk"
-  And they open "Model"'s list by clicking the field
+  And they open "Model"'s list by clicking the question
   Then "Model"'s list offers only the hint to type 3 or more letters
   When they type "Iku" in "Model"
   Then "Model"'s list offers only "Ikuma"
@@ -255,7 +255,7 @@ Scenario: A dependent type-ahead's choices show a hint below 3 characters and fi
 Scenario: A type-ahead choice picked from the list is sent as that choice, not matched by its wording
   Given a signed-in reporter answers a type-ahead question offering two choices both worded "Other"
   When they pick the second "Other" from the list
-  Then the list is closed and the field holds "Other"
+  Then the list is closed and the question holds "Other"
   When they consent on the next page and send the report
   Then the answer names the second "Other" choice's identifier and carries no typed text
 
@@ -264,14 +264,14 @@ Scenario: A type-ahead choice picked from the list is sent as that choice, not m
 Scenario Outline: A single-select question is a picker the form draws, not the browser's select
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  Then the question is a combobox field with a caret showing "Choose one", described by its help text, and no browser select
-  When they open the field's list by <opening>
-  Then a list as wide as the field opens directly beneath it, offering "Choose one", "Cooper's", "Mount 7", "Woodside"
+  Then the question is a combobox with a caret showing "Choose one", described by its help text, and no browser select
+  When they open the question's list by <opening>
+  Then a list as wide as the question opens directly beneath it, offering "Choose one", "Cooper's", "Mount 7", "Woodside"
   And the list is drawn like a type-ahead's list
 
 Examples:
   | opening                         |
-  | clicking the field              |
+  | clicking the question           |
   | pressing Enter                  |
   | pressing Space                  |
   | pressing Alt and the down arrow |
@@ -282,65 +282,65 @@ Examples:
 Scenario: A reporter picks a type-ahead choice with the pointer, and no choice ever takes focus
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they type "Coo" in the field
+  And they type "Coo" in the question
   And they click "Cooper's" in the list
-  Then the list is closed and the field holds "Cooper's"
-  And the field has focus
+  Then the list is closed and the question holds "Cooper's"
+  And the question has focus
 
 @REQ-QB-268
 @ui
 Scenario: A reporter picks a single-select choice with the pointer, and no choice ever takes focus
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they open the field's list by clicking the field
+  And they open the question's list by clicking the question
   And they click "Cooper's" in the list
-  Then the list is closed and the field holds "Cooper's"
-  And the field has focus
+  Then the list is closed and the question holds "Cooper's"
+  And the question has focus
 
 @REQ-QB-209
 @ui
 Scenario: A reporter picks a single-select choice from the keyboard and the pointer
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they open the field's list by pressing the down arrow
-  Then "Choose one" is the field's active choice
+  And they open the question's list by pressing the down arrow
+  Then "Choose one" is the question's active choice
   When they press the down arrow
-  Then "Cooper's" is the field's active choice
+  Then "Cooper's" is the question's active choice
   When they press End
-  Then "Woodside" is the field's active choice
+  Then "Woodside" is the question's active choice
   When they press Home
-  Then "Choose one" is the field's active choice
+  Then "Choose one" is the question's active choice
   When they type "m"
-  Then "Mount 7" is the field's active choice
+  Then "Mount 7" is the question's active choice
   When they press Enter
-  Then the list is closed and the field holds "Mount 7"
+  Then the list is closed and the question holds "Mount 7"
   When they press Space
   Then its list is open, with "Mount 7" chosen and active
   When they press the up arrow
   And they press Escape
-  Then the list is closed and the field holds "Mount 7"
-  When they open the field's list by pressing Alt and the down arrow
+  Then the list is closed and the question holds "Mount 7"
+  When they open the question's list by pressing Alt and the down arrow
   And they press the down arrow
   And they press Space
-  Then the list is closed and the field holds "Woodside"
-  When they open the field's list by clicking the field
+  Then the list is closed and the question holds "Woodside"
+  When they open the question's list by clicking the question
   And they point at "Cooper's"
-  Then "Cooper's" is the field's active choice
-  When they press outside the field
-  Then the list is closed and the field holds "Woodside"
-  When they open the field's list by pressing Enter
+  Then "Cooper's" is the question's active choice
+  When they press outside the question
+  Then the list is closed and the question holds "Woodside"
+  When they open the question's list by pressing Enter
   And they press Tab
-  Then the list is closed and the field holds "Woodside"
+  Then the list is closed and the question holds "Woodside"
 
 @REQ-QB-210
 @ui
 Scenario: A single-select answer can be cleared back to unanswered
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  And they pick "Mount 7" from the field's list
-  Then the list is closed and the field holds "Mount 7"
-  When they pick "Choose one" from the field's list
-  Then the list is closed and the field holds "Choose one"
+  And they pick "Mount 7" from the question's list
+  Then the list is closed and the question holds "Mount 7"
+  When they pick "Choose one" from the question's list
+  Then the list is closed and the question holds "Choose one"
   And the browser's saved report holds no answer to that question
 
 @REQ-QB-211

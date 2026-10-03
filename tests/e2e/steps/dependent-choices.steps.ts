@@ -464,7 +464,7 @@ When("they change {string} to {string}", async ({ page }, _parent: string, make:
 
 // ---- A dependent type-ahead's own hint and threshold (REQ-QB-231, ADR-0152) ----
 
-When("they open {string}'s list by clicking the field", async ({ page }, _child: string) => {
+When("they open {string}'s list by clicking the question", async ({ page }, _child: string) => {
 	await modelField(page).click()
 })
 

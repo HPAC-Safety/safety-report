@@ -508,15 +508,15 @@ When("they write the French wording and press Translate", async ({ page }) => {
 	await translateButton(page).click()
 })
 
-Then("the French field is filled with the translation", async ({ page }) => {
+Then("the French wording is filled with the translation", async ({ page }) => {
 	await expect(page.getByLabel("Question (French)")).toHaveValue("[fr-CA] Were you injured?")
 })
 
-Then("the English field is filled with the translation", async ({ page }) => {
+Then("the English wording is filled with the translation", async ({ page }) => {
 	await expect(page.getByLabel("Question (English)")).toHaveValue("[en-CA] Avez-vous été blessé ?")
 })
 
-Then("the French field remains editable", async ({ page }) => {
+Then("the French wording remains editable", async ({ page }) => {
 	// A translation is a draft, not a locked value — the administrator corrects
 	// it and what they save is theirs.
 	const french = page.getByLabel("Question (French)")
@@ -1082,11 +1082,11 @@ When("they add a choice written in English and press its Translate action", asyn
 	await choiceTranslate(thatChoice(page)).click()
 })
 
-Then("that choice's French field is filled with the translation", async ({ page }) => {
+Then("that choice's French wording is filled with the translation", async ({ page }) => {
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] Niviuk")
 })
 
-Then("that choice's French field remains editable", async ({ page }) => {
+Then("that choice's French wording remains editable", async ({ page }) => {
 	const french = thatChoice(page).getByLabel("Choice (French)")
 
 	await expect(french).not.toHaveAttribute("readonly", "")
@@ -1124,7 +1124,7 @@ When("they add a choice written in French and press its Translate action", async
 	await choiceTranslate(thatChoice(page)).click()
 })
 
-Then("that choice's English field is filled with the translation", async ({ page }) => {
+Then("that choice's English wording is filled with the translation", async ({ page }) => {
 	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("[en-CA] Voile de secours")
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("Voile de secours")
 })
@@ -1141,7 +1141,7 @@ Then("only that choice's wording is sent to be translated", ({ page }) => {
 	expect(choiceTraffic.get(page)?.translated).toEqual(["Speed wing"])
 })
 
-Then("only that choice's French field changes", async ({ page }) => {
+Then("only that choice's French wording changes", async ({ page }) => {
 	const before = choicesBefore.get(page) ?? []
 	const expected = before.map((wording, index) => (index === 1 ? { en: "Speed wing", fr: "[fr-CA] Speed wing" } : wording))
 
@@ -1204,7 +1204,7 @@ When("they press that choice's Translate action", async ({ page }) => {
 	await choiceTranslate(thatChoice(page)).click()
 })
 
-Then("that choice's French field is filled with the translation of its English", async ({ page }) => {
+Then("that choice's French wording is filled with the translation of its English", async ({ page }) => {
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] mount 7")
 	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("mount 7")
 	expect(choiceTraffic.get(page)?.translated).toEqual(["mount 7"])

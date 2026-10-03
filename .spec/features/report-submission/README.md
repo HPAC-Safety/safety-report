@@ -63,7 +63,7 @@ upload.
 
 ### The drop zone (#367)
 
-The field is a bordered drop zone rather than the browser's bare file control.
+The question is a bordered drop zone rather than the browser's bare file control.
 One button, holding a large upload icon and the prompt "Drag files here, or
 choose files", opens the file chooser; it is an ordinary button, so the
 keyboard reaches it and nothing depends on a pointer. The type, count, and
@@ -125,7 +125,7 @@ checks each against the other's answer before writing anything:
 Either refusal names both questions by key (`REQ-SUB-113`, `REQ-SUB-115`,
 [ADR-0151](../../decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)).
 
-Field names are camelCase on the wire (ASP.NET's default JSON casing), not
+Property names are camelCase on the wire (ASP.NET's default JSON casing), not
 the snake_case the Gherkin prose uses when it names them — the scenarios are
 talking about the concept, not literal JSON.
 
@@ -320,7 +320,7 @@ revalidated.
 naming the question by its key and never echoing the value, before anything
 is written.
 
-**The phone field.**
+**The phone question.**
 
 - It opens the telephone keypad (`type="tel"`, `inputmode="tel"`,
   `autocomplete="tel"`).
@@ -328,13 +328,13 @@ is written.
   calling code, and defaulting to Canada (🇨🇦 `+1`). Each country is listed by
   its flag, its name in the interface language, and its calling code.
 - The number is formatted as it is typed, by the chosen country's own
-  convention: `(604) 555-1234` for +1, `20 7946 0018` for +44. The field's
+  convention: `(604) 555-1234` for +1, `20 7946 0018` for +44. The question's
   placeholder is that country's pattern, every digit shown as `5`.
 - The number is validated against the chosen country's rules, and sent in
   E.164.
 - The saved report keeps the chosen country beside the typed number.
 
-**The email field.**
+**The email question.**
 
 - It opens the email keyboard (`type="email"`, `inputmode="email"`,
   `autocomplete="email"`).
@@ -345,12 +345,12 @@ is written.
     typed so far: `chas` offers `chas@gmail.com` through `chas@mail.com`.
   - After `@`, only the domains beginning with what follows it are offered:
     `chase.florell@g` offers only `chase.florell@gmail.com`.
-  - Nothing is offered for an empty field, for more than one `@`, or once the
-    field already holds a suggestion.
+  - Nothing is offered for an empty answer, for more than one `@`, or once the
+    question already holds a suggestion.
   - Choosing a suggestion, by pointer or by arrow keys and Enter, fills the
-    field. Escape closes the list.
+    question. Escape closes the list.
   - A suggestion never blocks an address at any other domain.
-- The field is a combobox (`role="combobox"`) controlling a labelled listbox,
+- The question is a combobox (`role="combobox"`) controlling a labelled listbox,
   with the highlighted suggestion named by `aria-activedescendant`.
 
 ## Date answers
@@ -377,7 +377,7 @@ refused future date gets `400` naming the question by its key, never the
 value, before anything is written. `GET /api/v1/questions/` carries each
 question's `allowFutureDates` so the form can apply the same rule.
 
-**On a desktop** (a fine pointer), the field is a text box that takes
+**On a desktop** (a fine pointer), the question is a text box that takes
 `yyyy-mm-dd` only, and says so to assistive technology even when the question
 has a placeholder of its own. Clicking or focusing it opens a calendar popover under it:
 
@@ -387,28 +387,28 @@ has a placeholder of its own. Clicking or focusing it opens a calendar popover u
 - when the question does not allow future dates, the days after today are
   disabled, and so are the pickers' later months and years; it always opens
   on the chosen date's month, or today's;
-- choosing a day fills the field as `yyyy-mm-dd`, closes the popover, and
+- choosing a day fills the question as `yyyy-mm-dd`, closes the popover, and
   announces the chosen day in words;
 - month and weekday names follow the reader's language, and the week starts
   on Sunday in English and Monday in French. Every button and picker is
   labelled from the locale catalogues;
-- the popover is a labelled dialog, and the text field is the combobox that
+- the popover is a labelled dialog, and the text box is the combobox that
   controls it: `role="combobox"`, `aria-haspopup="dialog"`, `aria-expanded`,
   and `aria-controls`, the WAI-ARIA 1.2 date-picker combobox pattern
   (`REQ-SUB-131`). A press on the popover's background does not take focus
-  from the field, so the popover does not close under the pointer. None of its
+  from the question, so the popover does not close under the pointer. None of its
   controls is in the Tab
-  order until focus is inside it, so Tab from the field goes on past it and
-  closes it. From the field, ArrowDown moves into it.
+  order until focus is inside it, so Tab from the question goes on past it and
+  closes it. From the question, ArrowDown moves into it.
   Inside it, the arrow keys move by a day or a week, Page Up and Page Down by a
   month, Enter chooses the focused day, and Escape closes it and returns focus
-  to the field.
+  to the question.
 
 Typed text that is not a real `yyyy-mm-dd` date, or a future date where the
 question does not allow one, shows an inline message in the reader's language
 when the reporter presses Next, and the form stays on that page.
 
-**On a touch device** (`(pointer: coarse)`), the field is a native
+**On a touch device** (`(pointer: coarse)`), the question is a native
 `<input type="date">`, so the phone shows its own picker. Its value is always
 `yyyy-mm-dd`. When the question does not allow future dates, its `max` is the
 reporter's local today; some mobile pickers ignore `max`, so the same inline

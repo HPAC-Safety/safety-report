@@ -187,7 +187,7 @@ Scenario: Reviewing a type-ahead value clears its flag
 Scenario: Typing a merged-away wording offers the survivor, hinting the alias that matched
   Given a type-ahead question offers "Cooper's Hill", one merged from "Coopers"
   When a reporter using English opens that question
-  And they type "Coopers" in the field
+  And they type "Coopers" in the question
   Then the list offers "Cooper's Hill", hinting "also: Coopers"
 
 @REQ-QB-234
@@ -195,7 +195,7 @@ Scenario: Typing a merged-away wording offers the survivor, hinting the alias th
 Scenario: A merged-away wording matches typing in the other language too
   Given a type-ahead question offers "Cooper's Hill" / "Colline Cooper", one merged from "Colline du Cooper"
   When a reporter using English opens that question
-  And they type "Colline du Cooper" in the field
+  And they type "Colline du Cooper" in the question
   Then the list offers "Cooper's Hill", hinting "also: Colline du Cooper"
 
 @REQ-QB-235
@@ -203,7 +203,7 @@ Scenario: A merged-away wording matches typing in the other language too
 Scenario: A chained merge offers the final survivor, hinting the first wording
   Given a type-ahead question offers "Cooper's Hill", merged from "Cooper's", itself merged from "Coopers"
   When a reporter using English opens that question
-  And they type "Coopers" in the field
+  And they type "Coopers" in the question
   Then the list offers "Cooper's Hill", hinting "also: Coopers"
 
 @REQ-QB-236
@@ -427,7 +427,7 @@ Scenario: Pressing Translate drafts the other language, still editable, and save
   Given a Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
-  Then that value's French field is filled with the translation and remains editable
+  Then that value's French wording is filled with the translation and remains editable
   And nothing is saved until they press Save correction
 
 @REQ-MOD-169
@@ -439,7 +439,7 @@ Scenario: The direction switch changes which language Translate reads from
   Then that value's direction switch translates English to French
   When they flip that value's direction switch to French to English
   And they write its French wording as "Site d'essai" and press Translate
-  Then that value's English field is filled with the translation
+  Then that value's English wording is filled with the translation
 
 @REQ-MOD-170
 @ui
@@ -456,7 +456,7 @@ Scenario: A failed translation says so on the value's row and drafts nothing
   When they open the review-type-ahead-values page
   And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
   Then that value's row says the translation failed
-  And that value's French field still reads ""
+  And that value's French wording still reads ""
   And that value's Translate action becomes available
 
 @REQ-MOD-172

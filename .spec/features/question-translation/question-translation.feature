@@ -32,8 +32,8 @@ Scenario: An Administrator drafts the French from the English
   Given an Administrator is authoring a new question
   Then the wording's direction switch translates English to French
   When they write the English wording and press Translate
-  Then the French field is filled with the translation
-  And the French field remains editable
+  Then the French wording is filled with the translation
+  And the French wording remains editable
 
 @REQ-QB-070
 @ui
@@ -41,7 +41,7 @@ Scenario: An Administrator drafts the English from the French
   Given an Administrator is authoring a new question
   When they flip the wording's direction switch to French to English
   And they write the French wording and press Translate
-  Then the English field is filled with the translation
+  Then the English wording is filled with the translation
 
 @REQ-QB-071
 @ui
@@ -76,7 +76,7 @@ Scenario: Translate replaces the French wording with drafts
 
 @REQ-QB-174
 @ui
-Scenario: The wording's Translate is unavailable after it translates, until a source field is edited again
+Scenario: The wording's Translate is unavailable after it translates, until its source wording is edited again
   Given an Administrator is editing a question whose wording is in both languages
   When they edit its English help text and press Translate
   Then the wording's Translate action is unavailable
@@ -93,7 +93,7 @@ Scenario: Translating the wording changes no choice
 
 @REQ-QB-176
 @ui
-Scenario: Translate leaves an unedited field written in both languages as it is
+Scenario: Translate leaves unedited wording written in both languages as it is
   Given an Administrator is editing a question whose wording is in both languages
   When they edit its English help text and press Translate
   Then only the English help text is sent to be translated
@@ -133,8 +133,8 @@ Scenario: A choice written in both languages offers Translate only once it is ed
 Scenario Outline: A choice's English is translated into its French as a draft
   Given an Administrator is authoring a new <type> question worded in both languages
   When they add a choice written in English and press its Translate action
-  Then that choice's French field is filled with the translation
-  And that choice's French field remains editable
+  Then that choice's French wording is filled with the translation
+  And that choice's French wording remains editable
   And nothing is saved until they press Save
 
   Examples:
@@ -151,7 +151,7 @@ Scenario: Flipping the direction translates a choice's French into its English
   When they flip the direction switch
   Then the direction switch translates French to English, and says so
   When they add a choice written in French and press its Translate action
-  Then that choice's English field is filled with the translation
+  Then that choice's English wording is filled with the translation
 
 @REQ-QB-167
 @ui
@@ -159,7 +159,7 @@ Scenario: Translating one choice changes no other choice
   Given an Administrator is editing a single-select question whose choices are written in both languages
   When they edit the English wording of one choice and press its Translate action
   Then only that choice's wording is sent to be translated
-  And only that choice's French field changes
+  And only that choice's French wording changes
 
 @REQ-QB-168
 @ui
@@ -184,4 +184,4 @@ Scenario: A choice written in one language can be translated without being edite
   Then that choice's Translate action is available
   And the choice written in both languages offers no Translate action
   When they press that choice's Translate action
-  Then that choice's French field is filled with the translation of its English
+  Then that choice's French wording is filled with the translation of its English

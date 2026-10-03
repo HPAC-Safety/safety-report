@@ -584,7 +584,7 @@ async function dropOnZone(page: Page, ...names: string[]) {
 }
 
 Then(
-	"the field shows a drop zone with a large upload icon and a localized {string} prompt",
+	"the question shows a drop zone with a large upload icon and a localized {string} prompt",
 	async ({ page }, _prompt: string) => {
 		await expect(chooseFilesButton(page)).toBeVisible()
 		const icon = chooseFilesButton(page).locator("svg")

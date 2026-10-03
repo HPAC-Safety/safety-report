@@ -64,7 +64,7 @@ Scenario: Publication consent revises in place even when answered
 Scenario: Editing a question copies the latest revision into a new one
   Given an Administrator requests to edit a question with an existing revision
   When the API prepares the edit DTO
-  Then it loads the latest revision and copies all fields into that DTO
+  Then it loads the latest revision and copies every setting into that DTO
   When the Administrator saves the edit
   Then the API validates both languages, then saves a new complete row rather than patching the existing revision
 
@@ -136,7 +136,7 @@ Scenario: Marking a non-text question as needing translation is refused
   Then saving that question is refused
 
 @REQ-QB-110
-Scenario: Whether a question needs translation is a revision field
+Scenario: Whether a question needs translation is a revision setting
   Given a short-text question that does not need translation
   When an Administrator marks it as needing translation while nobody has answered it
   Then a new revision records that it needs translation
@@ -160,7 +160,7 @@ Scenario: Only a date question can allow future dates
   Then the API refuses to save each one
 
 @REQ-QB-156
-Scenario: Whether a date question allows future dates is a revision field
+Scenario: Whether a date question allows future dates is a revision setting
   Given a date question that does not allow future dates
   When an Administrator allows future dates while nobody has answered it
   Then a new revision of the same question allows future dates, and the earlier revision still does not

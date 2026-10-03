@@ -96,7 +96,7 @@ Given(/^the current page shows an optional (email|phone) question$/, async ({ pa
 })
 
 Then(
-	"its field has type {string}, input mode {string}, and autocomplete {string}",
+	"its input has type {string}, input mode {string}, and autocomplete {string}",
 	async ({ page }, type: string, inputMode: string, autocomplete: string) => {
 		await expect(contactField(page)).toHaveAttribute("type", type)
 		await expect(contactField(page)).toHaveAttribute("inputmode", inputMode)
@@ -149,7 +149,7 @@ Then("its country picker shows {string}", async ({ page }, shown: string) => {
 	await expect(page.locator(`${CONTACT}-country-shown`)).toHaveText(shown)
 })
 
-Then("the phone field's placeholder is {string}", async ({ page }, placeholder: string) => {
+Then("the phone question's placeholder is {string}", async ({ page }, placeholder: string) => {
 	await expect(contactField(page)).toHaveAttribute("placeholder", placeholder)
 })
 
@@ -160,7 +160,7 @@ When(/^the reporter chooses (.+) in its country picker$/, async ({ page }, count
 	await picker.selectOption(await option.getAttribute("value"))
 })
 
-Then("the phone field reads {string}", async ({ page }, masked: string) => {
+Then("the phone question reads {string}", async ({ page }, masked: string) => {
 	await expect(contactField(page)).toHaveValue(masked)
 })
 
@@ -173,7 +173,7 @@ Then("the phone answer is sent as {string}", ({ page }, e164: string) => {
 	expect(sentValue(page)).toBe(e164)
 })
 
-Then("the field is a combobox whose suggestion list is labelled {string}", async ({ page }, label: string) => {
+Then("the question is a combobox whose suggestion list is labelled {string}", async ({ page }, label: string) => {
 	const combobox = page.getByRole("combobox", { name: "How can we reach you?" })
 	await expect(combobox).toHaveAttribute("aria-expanded", "true")
 	const list = page.getByRole("listbox", { name: label })
@@ -199,7 +199,7 @@ When(/^the reporter chooses "(.+)" (with the keyboard|with the pointer)$/, async
 	await contactField(page).press("Enter")
 })
 
-Then("the email field reads {string}", async ({ page }, address: string) => {
+Then("the email question reads {string}", async ({ page }, address: string) => {
 	await expect(contactField(page)).toHaveValue(address)
 })
 

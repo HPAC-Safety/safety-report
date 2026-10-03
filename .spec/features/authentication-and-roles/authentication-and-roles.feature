@@ -7,8 +7,8 @@ actions without report content.
 @ui
 Scenario: In development the sign-in page offers no third-party sign-in option
   Given a visitor activates the member sign-in action
-  Then the sign-in page shows an email field, a password field, and a sign-in action
-  And the email field is an email input, so a phone offers its email keyboard
+  Then the sign-in page shows an email box, a password box, and a sign-in action
+  And the email box is an email input, so a phone offers its email keyboard
   And the sign-in page shows no third-party sign-in option
 
 @REQ-MOD-002
@@ -244,7 +244,7 @@ Scenario: With the temporary interim issuer disabled, none of its endpoints exis
 Scenario: The temporary interim issuer's JWKS publishes only a public key
   Given the API is not running in development and the temporary interim issuer is enabled
   When the interim issuer's JWKS is requested
-  Then the response carries only a public key, never a private key field
+  Then the response carries only a public key, never a private key
 
 @REQ-MOD-025
 Scenario Outline: A User may only submit a report

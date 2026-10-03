@@ -11,7 +11,7 @@ prefix: REQ-QAU
 Supporting detail for [`question-authoring.feature`](question-authoring.feature)
 that doesn't fit Gherkin.
 
-## Revision fields
+## Revision settings
 
 Each revision contains:
 
@@ -23,7 +23,7 @@ Each revision contains:
 - `is_private`, `is_active`, `is_system`, and `is_required` flags;
 - `allow_future_dates`, `false` unless an Administrator allows future dates.
   Only a date question may set it, and changing it is a revision like any
-  other field
+  other setting
   ([ADR-0138](../../decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md));
 - creation timestamp and the revision it supersedes, when any;
 - a nullable `deleted` timestamp.
@@ -52,7 +52,7 @@ single-select domain type.
 A statement is shown to Administrators as **Instructional text**. It is a
 title and a description, not a question and help text, so the editor labels
 its wording that way and gives each description several lines (`REQ-QB-141`).
-Both still live in the revision's label and help-text fields; only the editor's
+Both still live in the revision's label and help text; only the editor's
 labels differ by type. The description is stored exactly as typed, line breaks
 included (`REQ-QB-142`), and the reporter's form shows it with its paragraphs
 wherever the statement appears: as the introduction, on a page of its own, or
@@ -132,4 +132,4 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Formatting in a statement's description: no Markdown, rich text, or links.
   Line breaks are the only structure it keeps (`REQ-QB-143`).
 - Renaming a statement's "Ask this question" behaviour checkbox, or relabelling
-  a group's fields. Only a statement's wording labels differ (`REQ-QB-141`).
+  a group's editor boxes. Only a statement's wording labels differ (`REQ-QB-141`).

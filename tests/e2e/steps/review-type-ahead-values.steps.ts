@@ -483,7 +483,7 @@ Then("that value's Translate action is unavailable and says why", async ({ page 
 	await expect(theValueRow(page).getByText("Translation is not available on this server.")).toBeVisible()
 })
 
-Then("that value's French field is filled with the translation and remains editable", async ({ page }) => {
+Then("that value's French wording is filled with the translation and remains editable", async ({ page }) => {
 	const french = theValueRow(page).getByLabel("French wording")
 
 	await expect(french).toHaveValue("[fr-CA] Cooper's")
@@ -518,7 +518,7 @@ When(/^they write its French wording as "([^"]+)" and press Translate$/, async (
 	await translateButton(theValueRow(page)).click()
 })
 
-Then("that value's English field is filled with the translation", async ({ page }) => {
+Then("that value's English wording is filled with the translation", async ({ page }) => {
 	await expect(theValueRow(page).getByLabel("English wording")).toHaveValue("[en-CA] Site d'essai")
 })
 
@@ -543,7 +543,7 @@ Then("that value's row says the translation failed", async ({ page }) => {
 	await expect(theValueRow(page).getByRole("alert")).toHaveText("The translation provider did not answer.")
 })
 
-Then(/^that value's French field still reads "([^"]*)"$/, async ({ page }, wording: string) => {
+Then(/^that value's French wording still reads "([^"]*)"$/, async ({ page }, wording: string) => {
 	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue(wording)
 })
 

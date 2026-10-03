@@ -66,7 +66,7 @@ wording ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-pi
 A single-select or multi-select question always keeps at least one live
 choice: one with none could not be answered, so saving it, retyping a question
 into it without choices, or removing its last choice is refused. A type-ahead
-may start with none, because reporters add to it. A Typeform field imported
+may start with none, because reporters add to it. A question imported from Typeform
 with no choices opens as a draft the Administrator completes before saving.
 
 ## Out of scope

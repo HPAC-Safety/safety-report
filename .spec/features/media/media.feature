@@ -79,7 +79,7 @@ Scenario: Every video is remuxed to strip metadata, never transcoded
   Given an accepted video attachment enters processing
   When its derivative is produced
   Then the video is remuxed through a controlled toolchain without decoding its picture
-  And the derivative carries no container metadata, location, device, creation, or filename fields
+  And the derivative carries no container metadata, location, device, creation, or filename entries
   And the derivative carries only the video and any audio stream, with timed-metadata, data, and subtitle tracks dropped
   And the derivative is verified to hold none of those before it is accepted
   And a byte-for-byte copy of the original video is never used as the derivative

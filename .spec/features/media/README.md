@@ -280,7 +280,7 @@ lists its file name, size, optional description, who added it (**You**, or
 the adder's opaque token subject), and when.
 
 Adding files uses the same dashed drop zone as the reporter form's attachment
-field (#658): dropped or chosen, several at once, each begins uploading the
+question (#658): dropped or chosen, several at once, each begins uploading the
 moment it is staged, with its own progress and its own Cancel or Remove
 control and description box. Removing a staged, already-uploaded row asks no
 API to erase it; its bytes simply expire by the 15-day quarantine lifecycle

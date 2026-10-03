@@ -203,7 +203,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	[Then(@"the submission DTO contains exactly one answer entry for each of those revisions")]
 	[Then(@"every other answer uses ""value"", a single string, alongside the locale it was given in")]
 	[Then(@"file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name")]
-	[Then(@"fields for the other answer shapes are null")]
+	[Then(@"the other answer shapes are null")]
 	public void ThenTheDtoShapeIsHonored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, "the API accepts a DTO built exactly this way");

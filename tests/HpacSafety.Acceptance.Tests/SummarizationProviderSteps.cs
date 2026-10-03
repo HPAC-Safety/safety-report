@@ -103,13 +103,13 @@ public sealed class SummarizationProviderSteps
 		}
 	}
 
-	[Then(@"a response with exactly two nonblank string fields ""ai_summary_en"" and ""ai_summary_fr"", each a summary written as Markdown, is accepted")]
+	[Then(@"a response with exactly two nonblank string keys ""ai_summary_en"" and ""ai_summary_fr"", each a summary written as Markdown, is accepted")]
 	public void ThenTheExactResponseIsAccepted()
 	{
 		_validations[0].Failure.ShouldBeNull();
 	}
 
-	[Then(@"a response with a Markdown fence around the JSON, commentary, an extra key, a null field, or only one language is rejected")]
+	[Then(@"a response with a Markdown fence around the JSON, commentary, an extra key, a null value, or only one language is rejected")]
 	public void ThenEveryOtherShapeIsRejected()
 	{
 		foreach (var (response, failure) in _validations.Skip(1))

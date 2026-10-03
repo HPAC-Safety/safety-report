@@ -414,7 +414,7 @@ Scenario: The form meets baseline accessibility requirements
   Given a reporter uses assistive technology to complete the form
   Then every control has a programmatic label and usable keyboard order
   And groups use fieldset/legend
-  And errors are linked to their fields and summarized
+  And errors are linked to their questions and summarized
   And focus is visible and status updates use appropriate live regions
   And motion respects reduced-motion and touch targets/contrast are sufficient
   And media previews are never required to complete a report

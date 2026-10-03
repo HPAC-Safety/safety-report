@@ -18,7 +18,7 @@ together. Its stable version identifier and the model identifier are stored on
 the resulting summary row. Historical prompt versions remain available through
 version control; they do not need parallel active pipelines.
 
-## Input DTO fields
+## Input DTO properties
 
 The Worker queries a purpose-built DTO containing the report ID, source
 locale, the two labeled `report_content`/`private_context` arrays, and the
@@ -26,9 +26,9 @@ locale, the two labeled `report_content`/`private_context` arrays, and the
 order of the revision each was answered under, so the model reads them in form
 order ([REQ-AI-032](ai-anonymization.feature)).
 
-Each field in `report_content` and `private_context` includes the stable
+Each entry in `report_content` and `private_context` includes the stable
 question key, the label in the reporter's language, and its rendered answer.
-Question labels delimit fields; answer text is untrusted data and cannot issue
+Question labels delimit answers; answer text is untrusted data and cannot issue
 instructions.
 
 A yes/no or checkbox answer is rendered as `true` or `false`, never as words in
@@ -49,7 +49,7 @@ yes/no would otherwise mark every literal `true` in the narrative
 Both texts summarize the same eligible facts; they are not expected to be
 word-for-word translations. Each is Markdown: headings, paragraphs, bold,
 italic, lists, and line breaks, and no other feature. The Worker validates
-syntax, field set, length, types, and headings before persisting anything.
+syntax, key set, length, types, and headings before persisting anything.
 
 ## Summary sections
 
@@ -99,7 +99,7 @@ generic phrase, never with an invented name and never with a word such as
 | Another person | the role the report supports — the instructor, the passenger, a witness, another pilot, the reporter | l'instructeur, le passager, un témoin, un autre pilote, le déclarant |
 | A person with no clear role | a person | une personne |
 | A launch site | the launch site | le site de décollage |
-| A landing field | the landing field | le champ d'atterrissage |
+| A landing zone | "the landing field" | "le champ d'atterrissage" |
 | Any other place | the location | le lieu |
 | An exact date | its month or season | son mois ou sa saison |
 | A time of day | kept as reported | conservée telle quelle |
@@ -205,7 +205,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   this change is done by hand on the development database, not built.
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
-- Per-sentence or per-field redaction output. The result is one summary pair.
+- Per-sentence or per-answer redaction output. The result is one summary pair.
 - A deterministic check of the model's output for leaked names, markers, or
   the word "redacted". The reviewer owns the final privacy decision
   ([ADR-0004](../../decisions/ADR-0004-human-review-required.md)).

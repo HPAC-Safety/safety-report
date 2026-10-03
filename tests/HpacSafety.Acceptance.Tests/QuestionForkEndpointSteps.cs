@@ -150,7 +150,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_dto = list.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == id);
 	}
 
-	[Then(@"it loads the latest revision and copies all fields into that DTO")]
+	[Then(@"it loads the latest revision and copies every setting into that DTO")]
 	public async Task ThenTheDtoCopiesTheLatestRevision()
 	{
 		var latest = (await LoadQuestion(_created.GetProperty("id").GetString()!)).CurrentRevision;

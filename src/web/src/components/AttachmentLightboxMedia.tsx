@@ -10,10 +10,7 @@ const MAX_CONSECUTIVE_FAILURES = 2
 export interface AttachmentLightboxMediaProps {
 	item: StripItem
 	label: string
-	// A method signature, not an arrow property: tools/web/check-hardcoded-strings.mjs
-	// is a line scanner and reads `=> Promise<string>` as JSX text between a `>`
-	// and a `<` — see AuthContext.tsx.
-	getLink(item: StripItem): Promise<string>
+	getLink: (item: StripItem) => Promise<string>
 	invalidateLink: (id: string) => void
 	onGone: () => void
 }

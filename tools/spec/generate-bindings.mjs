@@ -115,7 +115,8 @@ export function readScenarios(path, source) {
 
 		const step = line.match(STEP)
 		if (step && (block === 'background' || block === 'scenario')) {
-			let [, keyword, text] = step
+			const [, stepKeyword, text] = step
+			let keyword = stepKeyword
 			if (keyword === 'And' || keyword === 'But' || keyword === '*') {
 				if (previous === null) {
 					problems.push(`${path}:${index + 1}: "${keyword} ${text}" has no step before it to take its keyword from`)

@@ -4,16 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AuthContext, AuthProvider, useAuthProvider } from "./AuthContext"
 import type { MemberSession } from "./session"
 
-const fetchIdentity = vi.fn()
-const requestToken = vi.fn()
+const fetchIdentity = vi.fn<(token: string) => Promise<unknown>>()
+const requestToken = vi.fn<(username: string, password: string) => Promise<unknown>>()
 vi.mock("./authApi", () => ({
 	fetchIdentity: (token: string) => fetchIdentity(token),
 	requestToken: (username: string, password: string) => requestToken(username, password),
 }))
 
-const readSession = vi.fn()
-const writeSession = vi.fn()
-const clearSession = vi.fn()
+const readSession = vi.fn<() => MemberSession | null>()
+const writeSession = vi.fn<(session: MemberSession) => void>()
+const clearSession = vi.fn<() => void>()
 vi.mock("./session", () => ({
 	readSession: () => readSession(),
 	writeSession: (session: MemberSession) => writeSession(session),

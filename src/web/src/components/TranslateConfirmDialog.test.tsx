@@ -31,7 +31,7 @@ const showModal = vi.fn(function (this: HTMLDialogElement) {
 beforeEach(() => {
 	startOpen = false
 	showModal.mockClear()
-	HTMLDialogElement.prototype.showModal = showModal as unknown as () => void
+	HTMLDialogElement.prototype.showModal = showModal
 	HTMLDialogElement.prototype.close = vi.fn()
 })
 

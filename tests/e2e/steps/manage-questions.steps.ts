@@ -235,7 +235,7 @@ async function stubAdminApi(page: Page) {
 		// so an edit that changes only them leaves the version where it was
 		// (ADR-0095).
 		const current = questions[index]
-		const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion> & {
+		const saved = JSON.parse(route.request().postData() ?? "{}") as Omit<Partial<StubQuestion>, "options"> & {
 			options?: { code: string | null; labelEn: string; labelFr: string; pin?: string }[]
 		}
 		const options = (saved.options ?? []).map((option): StubOption => {
@@ -836,7 +836,7 @@ When(
 			(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/ddddddddddd"),
 		)
 		await page.getByRole("button", { name: "Save" }).click()
-		replacedBodies.set(page, JSON.parse((await saving).postData() ?? "{}"))
+		replacedBodies.set(page, JSON.parse((await saving).postData() ?? "{}") as { options: { code: string | null; labelEn: string; replace?: boolean }[] })
 	},
 )
 
@@ -956,7 +956,7 @@ Then(
 			(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/ddddddddddd"),
 		)
 		await page.getByRole("button", { name: "Save" }).click()
-		pinnedBodies.set(page, JSON.parse((await saving).postData() ?? "{}"))
+		pinnedBodies.set(page, JSON.parse((await saving).postData() ?? "{}") as { options: { code: string | null; labelEn: string; pin?: string }[] })
 
 		const pins = Object.fromEntries((pinnedBodies.get(page)?.options ?? []).map((option) => [option.labelEn, option.pin]))
 		expect(pins).toEqual({ [first]: "first", [last]: "last", [none]: "none" })

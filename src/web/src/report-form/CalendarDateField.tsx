@@ -112,6 +112,7 @@ export function useCalendarDateField({
 	/** Moves the roving day, keeping it on or before today where the future is not allowed. */
 	function moveTo(iso: string) {
 		const kept = isAfterToday(iso) ? today : iso
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kept is today or an ISO date already validated
 		const { year, month } = parseIsoDate(kept)!
 		setView({ year, month })
 		setFocusedDay(kept)
@@ -143,7 +144,7 @@ export function useCalendarDateField({
 
 	function onGridKeyDown(event: KeyboardEvent<HTMLTableElement>) {
 		if (!focusedDay) return
-		const moves: Record<string, () => string> = {
+		const moves: Partial<Record<string, () => string>> = {
 			ArrowLeft: () => addDays(focusedDay, -1),
 			ArrowRight: () => addDays(focusedDay, 1),
 			ArrowUp: () => addDays(focusedDay, -7),
@@ -173,7 +174,7 @@ export function useCalendarDateField({
 
 	// Closes once focus leaves the field and its calendar together.
 	function onWrapperBlur(event: FocusEvent<HTMLDivElement>) {
-		if (!event.currentTarget.contains(event.relatedTarget as Node | null)) close(false)
+		if (!event.currentTarget.contains(event.relatedTarget)) close(false)
 	}
 
 	// A press on the calendar's background keeps focus where it is, so the
@@ -188,6 +189,7 @@ export function useCalendarDateField({
 	}
 
 	function stepMonth(months: number) {
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- addMonths of the valid view month is a valid ISO date
 		const moved = parseIsoDate(addMonths(viewMonthKey, months))!
 		showMonth(moved.year, moved.month)
 	}
@@ -289,6 +291,7 @@ export function CalendarDateField(props: DateFieldProps) {
 
 /** The month a calendar opens on: the chosen date's, or today's. */
 function viewOf(value: string, today: string): { year: number; month: number } {
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- today is always a valid ISO date
 	const { year, month } = parseIsoDate(value) ?? parseIsoDate(today)!
 	return { year, month }
 }

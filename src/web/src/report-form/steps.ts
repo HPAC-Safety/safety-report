@@ -14,7 +14,7 @@ import { DEFAULT_PHONE_COUNTRY, isValidPhone } from "../lib/phoneNumber"
 import { choiceGroups } from "../lib/sortChoices"
 import type { DraftAnswer } from "./draft"
 
-export type AnswerMap = Record<string, DraftAnswer>
+export type AnswerMap = Partial<Record<string, DraftAnswer>>
 
 export type FormStep =
 	| { kind: "intro"; question: PublicQuestionView }
@@ -176,8 +176,8 @@ export function consistentAnswers(answers: AnswerMap, questionsById: Map<string,
 					: true)
 
 		if (!keep) {
-			consistent = { ...consistent }
-			delete consistent[question.revisionId]
+			const { [question.revisionId]: _dropped, ...rest } = consistent
+			consistent = rest
 		}
 	}
 

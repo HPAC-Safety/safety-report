@@ -28,7 +28,7 @@ import { SortableListView } from "./SortableList.view"
 export interface SortableListProps<T> {
 	items: T[]
 	getId: (item: T) => string
-	onReorder: (idsInOrder: string[]) => void
+	onReorder: (idsInOrder: string[]) => Promise<void> | void
 	children: (item: T, index: number) => ReactNode
 	label: string
 }
@@ -50,7 +50,7 @@ export function useSortableList<T>({ items, getId, onReorder }: SortableListProp
 		const next = [...ids]
 		const [moved] = next.splice(from, 1)
 		next.splice(to, 0, moved)
-		onReorder(next)
+		void onReorder(next)
 	}
 
 	function onDragEnd(event: DragEndEvent) {

@@ -24,10 +24,10 @@ export interface ManageQuestionsPageViewProps {
 	startImport: () => void
 	closeImport: () => void
 	reviewImported: (imported: ImportedQuestionDraftView) => void
-	exportBank: () => void
+	exportBank: () => Promise<void>
 	editQuestion: (question: QuestionView) => void
-	remove: (question: QuestionView) => void
-	reorder: (idsInOrder: string[]) => void
+	remove: (question: QuestionView) => Promise<void>
+	reorder: (idsInOrder: string[]) => Promise<void>
 }
 
 export function ManageQuestionsPageView({

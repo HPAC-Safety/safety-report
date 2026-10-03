@@ -19,9 +19,10 @@ export function hasFileAttached(attachments: AttachmentMap): boolean {
 export function savedAttachments(attachments: AttachmentMap): DraftAttachmentMap {
 	const saved: DraftAttachmentMap = {}
 	for (const [revisionId, rows] of Object.entries(attachments)) {
-		const uploaded = rows
-			.filter((row) => row.status === "uploaded" && row.uploadId)
-			.map((row) => ({ uploadId: row.uploadId!, name: row.name, size: row.size }))
+		const uploaded: DraftAttachmentMap[string] = []
+		for (const row of rows) {
+			if (row.status === "uploaded" && row.uploadId) uploaded.push({ uploadId: row.uploadId, name: row.name, size: row.size })
+		}
 		if (uploaded.length > 0) saved[revisionId] = uploaded
 	}
 	return saved

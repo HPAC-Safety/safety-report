@@ -64,9 +64,9 @@ describe("useCommentItem", () => {
 		const { result } = renderHook(() => useCommentItem(props))
 		act(() => result.current.startEditing())
 
-		await act(async () => void (await result.current.saveEdit("one")))
+		await act(async () => await result.current.saveEdit("one"))
 		expect(result.current.editing).toBe(true)
-		await act(async () => void (await result.current.saveEdit("two")))
+		await act(async () => await result.current.saveEdit("two"))
 
 		expect(props.onEdit).toHaveBeenLastCalledWith("two")
 		expect(result.current.editing).toBe(false)

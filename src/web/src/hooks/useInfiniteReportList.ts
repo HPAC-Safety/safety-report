@@ -33,12 +33,8 @@ export interface ReportPage<T> {
 export interface UseInfiniteReportListOptions<T> {
 	/**
 	 * Fetches one page. `null` asks for the first page.
-	 *
-	 * A method signature rather than an arrow-typed property, on purpose:
-	 * tools/web/check-hardcoded-strings.mjs is a line scanner that misreads
-	 * `=> Promise<...>` on one line — see adminQuestions.ts.
 	 */
-	fetchPage(after: string | null): Promise<ReportPage<T>>
+	fetchPage: (after: string | null) => Promise<ReportPage<T>>
 	/** The stable identity of an item, for de-duplication across pages. */
 	getId: (item: T) => string
 	/**
@@ -96,7 +92,7 @@ const DOCUMENT = `${Date.now().toString(36)}-${Math.random().toString(36).slice(
 /** How the browser arrived at this page load: "navigate", "reload", or "back_forward". */
 function documentNavigationType(): string {
 	try {
-		const [entry] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[]
+		const [entry] = performance.getEntriesByType("navigation") as (PerformanceNavigationTiming | undefined)[]
 		return entry?.type ?? "navigate"
 	} catch {
 		return "navigate"

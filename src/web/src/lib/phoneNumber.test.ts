@@ -78,7 +78,7 @@ describe("phoneCountries", () => {
 	it("falls back to the region code when no name is known", () => {
 		vi.spyOn(Intl, "DisplayNames").mockImplementation(function () {
 			return { of: () => undefined } as unknown as Intl.DisplayNames
-		} as unknown as typeof Intl.DisplayNames)
+		})
 		expect(phoneCountries("en-CA").find((country) => country.code === "CA")?.name).toBe("CA")
 	})
 

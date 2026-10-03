@@ -2,6 +2,16 @@ import { clearSession } from "../auth/session"
 import { ApiError, authorization } from "./adminQuestions"
 import { deleteUpload } from "./uploads"
 
+/** The problem-details body of a refused request; any field may be missing. */
+interface Problem {
+	detail?: string
+	title?: string
+	type?: string
+	expiredUploadIds?: unknown
+	refusedUploads?: unknown
+	reason?: unknown
+}
+
 /** A report's workflow status, as the API's lowercase code. */
 export type ReportStatus =
 	| "submitted"
@@ -162,6 +172,7 @@ async function call<T>(
 ): Promise<T> {
 	const response = await fetch(path, {
 		...init,
+		// eslint-disable-next-line @typescript-eslint/no-misused-spread -- every caller passes headers as a plain record, never an array or Headers
 		headers: { "Content-Type": "application/json", ...authorization(), ...init?.headers },
 	})
 
@@ -170,7 +181,7 @@ async function call<T>(
 	}
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(
 			response.status,
 			problem?.detail ?? problem?.title ?? response.statusText,
@@ -256,7 +267,7 @@ export function deleteReport(id: string): Promise<void> {
 /** An image or video opens its safe derivative; a document downloads its validated original. */
 /** Hides an image or video from the published report, or shows it again. Audited (REQ-MED-030). */
 export function setAttachmentHidden(reportId: string, attachmentId: string, hidden: boolean): Promise<void> {
-	return call<void>(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachmentId)}/${hidden ? "hide" : "show"}`, {
+	return call<undefined>(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachmentId)}/${hidden ? "hide" : "show"}`, {
 		method: "POST",
 	})
 }

@@ -684,7 +684,7 @@ Given("a reporter is filling in the form", async ({ page }) => {
 		route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*" }, body: "" }),
 	)
 	await page.route("**/api/v1/reports/", async (route) => {
-		form.submissions.push(JSON.parse(route.request().postData() ?? "{}"))
+		form.submissions.push(JSON.parse(route.request().postData() ?? "{}") as (typeof form.submissions)[number])
 		await route.fulfill({ status: 202, json: { id: "synthetic-report-id", status: "submitted" } })
 	})
 	await signInAs(page, "user")

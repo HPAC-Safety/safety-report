@@ -68,6 +68,6 @@ Then(/^the page is headed "(.+)" and asks exactly (.+)$/, async ({ page }, headi
 	// labelling span of a multi-select. The locale's colon is stripped (ADR-0181).
 	const prompts = group.locator('label[for^="question-"], span[id^="question-"][id$="-label"]')
 	await expect
-		.poll(() => prompts.evaluateAll((elements) => elements.map((element) => (element.textContent ?? "").trim().replace(/\s*:$/, ""))))
+		.poll(() => prompts.evaluateAll((elements) => elements.map((element) => element.textContent.trim().replace(/\s*:$/, ""))))
 		.toEqual(quoted(list))
 })

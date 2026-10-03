@@ -40,32 +40,32 @@ export function useAttachmentDropZone({ describedBy, guidanceId, onFiles }: Atta
 		dragging,
 		inputRef,
 		buttonDescribedBy: [guidanceId, describedBy].filter(Boolean).join(" "),
-		onDragEnter(event: DragEvent<HTMLDivElement>) {
+		onDragEnter: (event: DragEvent<HTMLDivElement>) => {
 			if (!carriesFiles(event)) return
 			event.preventDefault()
 			dragDepth.current += 1
 			setDragging(true)
 		},
-		onDragOver(event: DragEvent<HTMLDivElement>) {
+		onDragOver: (event: DragEvent<HTMLDivElement>) => {
 			if (!carriesFiles(event)) return
 			event.preventDefault()
 			event.dataTransfer.dropEffect = "copy"
 		},
-		onDragLeave(event: DragEvent<HTMLDivElement>) {
+		onDragLeave: (event: DragEvent<HTMLDivElement>) => {
 			if (!carriesFiles(event)) return
 			dragDepth.current = Math.max(0, dragDepth.current - 1)
 			if (dragDepth.current === 0) setDragging(false)
 		},
-		onDrop(event: DragEvent<HTMLDivElement>) {
+		onDrop: (event: DragEvent<HTMLDivElement>) => {
 			if (!carriesFiles(event)) return
 			event.preventDefault()
 			endDrag()
 			onFiles(Array.from(event.dataTransfer.files))
 		},
-		onChoose() {
+		onChoose: () => {
 			inputRef.current?.click()
 		},
-		onInputChange(event: ChangeEvent<HTMLInputElement>) {
+		onInputChange: (event: ChangeEvent<HTMLInputElement>) => {
 			onFiles(Array.from(event.target.files ?? []))
 			// Cleared so the same file can be chosen again after a removal.
 			event.target.value = ""

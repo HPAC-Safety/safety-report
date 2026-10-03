@@ -272,6 +272,7 @@
 			"groupName": "ESLint",
 			"matchPackageNames": [
 				"eslint",
+				"@eslint-community/eslint-plugin-eslint-comments",
 				"@eslint/js",
 				"eslint-plugin-jsx-a11y",
 				"eslint-plugin-react-hooks",

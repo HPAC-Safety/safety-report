@@ -518,7 +518,7 @@ describe("submitting", () => {
 
 	it("does not submit twice, or while a file is uploading", async () => {
 		let finish: (value: Awaited<ReturnType<typeof submitReport>>) => void = () => {}
-		vi.mocked(submitReport).mockReturnValue(new Promise((done) => (finish = done)) as ReturnType<typeof submitReport>)
+		vi.mocked(submitReport).mockReturnValue(new Promise((done) => (finish = done)))
 		const { result } = await renderForm()
 
 		act(() => result.current.onUploading("rev-files", true))

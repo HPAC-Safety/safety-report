@@ -72,7 +72,7 @@ describe("TypeAheadParentLink", () => {
 		expect(picker.getAttribute("data-picker")).toBe("type-ahead-value-parent-v1")
 		expect(picker.getAttribute("data-locked")).toBe("c1")
 		expect(picker.getAttribute("data-options")).toBe("Alpha,Zeta")
-		expect((screen.getByRole("button", { name: "typeAheadValues.relink" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "typeAheadValues.relink" }).disabled).toBe(true)
 	})
 
 	it("says when it is offered under nothing and does not lock when several are ticked", () => {
@@ -99,6 +99,6 @@ describe("TypeAheadParentLink", () => {
 
 	it("cannot relink with nothing chosen", () => {
 		render(<TypeAheadParentLink {...props({ chosen: [] })} />, { wrapper: wrapperFor("en-CA") })
-		expect((screen.getByRole("button", { name: "typeAheadValues.relink" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "typeAheadValues.relink" }).disabled).toBe(true)
 	})
 })

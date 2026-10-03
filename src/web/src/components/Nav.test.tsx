@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { Nav, useNav } from "./Nav"
 import type { NavViewProps } from "./Nav.view"
 
-const view = vi.fn()
+const view = vi.fn<(props: NavViewProps) => void>()
 vi.mock("./Nav.view", () => ({
 	NavView: (props: NavViewProps) => {
 		view(props)

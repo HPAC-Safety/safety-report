@@ -19,7 +19,7 @@ import {
 	uploadAttachment,
 } from "./uploads"
 
-const fetchMock = vi.fn()
+const fetchMock = vi.fn<(url: string, init: RequestInit & { headers: Record<string, string> }) => Promise<unknown>>()
 
 function file(name: string, type: string, size = 3): File {
 	const f = new File(["abc"], name, { type })

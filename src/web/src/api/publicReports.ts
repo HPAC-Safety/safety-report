@@ -20,6 +20,16 @@
 import { ApiError, authorization } from "./adminQuestions"
 import type { ReportAttachment } from "./adminReports"
 
+/** The problem-details body of a refused request; any field may be missing. */
+interface Problem {
+	detail?: string
+	title?: string
+	type?: string
+	expiredUploadIds?: unknown
+	refusedUploads?: unknown
+	reason?: unknown
+}
+
 export interface PublicReport {
 	id: string
 	aiSummaryEn: string
@@ -169,6 +179,7 @@ async function send<T>(
 ): Promise<T> {
 	const response = await fetch(path, {
 		...init,
+		// eslint-disable-next-line @typescript-eslint/no-misused-spread -- every caller passes headers as a plain record, never an array or Headers
 		headers: { "Content-Type": "application/json", ...authorization(), ...init?.headers },
 	})
 
@@ -177,7 +188,7 @@ async function send<T>(
 	}
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
 	}
 
@@ -204,15 +215,15 @@ export function editComment(reportId: string, commentId: string, text: string, l
 }
 
 export function deleteComment(reportId: string, commentId: string): Promise<void> {
-	return send<void>(`${commentsOf(reportId)}/${encodeURIComponent(commentId)}`, { method: "DELETE" })
+	return send<undefined>(`${commentsOf(reportId)}/${encodeURIComponent(commentId)}`, { method: "DELETE" })
 }
 
 export function hideMedia(reportId: string, mediaId: string): Promise<void> {
-	return send<void>(`/api/admin/reports/${encodeURIComponent(reportId)}/attachments/${encodeURIComponent(mediaId)}/hide`, {
+	return send<undefined>(`/api/admin/reports/${encodeURIComponent(reportId)}/attachments/${encodeURIComponent(mediaId)}/hide`, {
 		method: "POST",
 	})
 }
 
 export function hideComment(commentId: string): Promise<void> {
-	return send<void>(`/api/admin/comments/${encodeURIComponent(commentId)}/hide`, { method: "POST" })
+	return send<undefined>(`/api/admin/comments/${encodeURIComponent(commentId)}/hide`, { method: "POST" })
 }

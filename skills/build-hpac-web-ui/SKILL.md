@@ -104,15 +104,22 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 ### Lint
 
-- `npm ci && npm run lint` at the repository root runs ESLint over `src/web`,
-  `tools`, `tests/js` and `tests/e2e` (flat config `eslint.config.mjs`; CI's
-  `lint` job; pre-commit over the staged files). Rules are errors: `@eslint/js`
-  and `typescript-eslint` recommended everywhere; in `src/web` also
-  `react-hooks` (`rules-of-hooks`, `exhaustive-deps`) and `jsx-a11y`.
-- Fix the code, never the markup to please a rule. Where a fix would change
-  behaviour or the DOM, disable that rule on that line with the reason:
-  `// eslint-disable-next-line react-hooks/exhaustive-deps -- <why>`. A name
-  starting with `_` is unused on purpose.
+- `npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm run lint`
+  runs ESLint over `src/web`, `tools`, `tests/js` and `tests/e2e` (flat config
+  `eslint.config.mjs`; CI's `lint` job; pre-commit over the staged files). The
+  type-aware rules need the web app's and the browser suite's packages
+  installed. Rules are errors: `@eslint/js` and `typescript-eslint`
+  strict-type-checked for TypeScript (strict, with four promise rules, for
+  `.mjs`); in `src/web` also `react-hooks` (`rules-of-hooks`, `exhaustive-deps`)
+  and `jsx-a11y`.
+- Fix the code, never the markup to please a rule. Give a value its real type
+  at the boundary (`response.json()`, a saved draft) and keep the runtime guard
+  on untrusted data even where the type says it cannot fail. Where a fix would
+  change behaviour or the DOM, disable that rule on that line with the reason:
+  `// eslint-disable-next-line react-hooks/exhaustive-deps -- <why>`; a disable
+  without `-- <why>` is an error. A name starting with `_` is unused on purpose.
+  The rules relaxed for a kind of file are listed in ADR-0188's strict-linting
+  amendment.
 
 ### Tests are never part of a release
 

@@ -79,7 +79,7 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 		const [first, tail] = new URL(request.url()).pathname.split("/private-attachments")[1].split("/").filter(Boolean)
 
 		if (first === "uploads") {
-			const body = request.postDataJSON()
+			const body = request.postDataJSON() as { byteSize: number; contentType?: string }
 			const uploadId = `upload${String((sequence += 1)).padStart(16, "a")}`
 			pending.set(uploadId, body.byteSize)
 			return route.fulfill({
@@ -106,7 +106,7 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 					pendingClaimsByPage.set(page, waiting)
 				})
 			}
-			const body = request.postDataJSON()
+			const body = request.postDataJSON() as { fileName: string; uploadId: string; description: string | null }
 			const added: StubAttachment = {
 				id: `attach${String(attachments.length + 1).padStart(5, "a")}`,
 				fileName: body.fileName,
@@ -231,7 +231,7 @@ Given("the report carries the private attachment {string}", async ({ page }, fil
 
 		if (request.method() === "GET") return route.fulfill({ json: [...notes].reverse().map(view) })
 
-		const body = request.postDataJSON()
+		const body = request.postDataJSON() as { text: string; attachmentId: string | null }
 		const note = { id: `note${String(notes.length + 1).padStart(7, "a")}`, text: body.text, attachmentId: body.attachmentId }
 		notes.push(note)
 		return route.fulfill({ status: 201, json: view(note) })

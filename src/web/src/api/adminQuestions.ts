@@ -9,6 +9,16 @@
 
 import { clearSession, readSession } from "../auth/session"
 
+/** The problem-details body of a refused request; any field may be missing. */
+interface Problem {
+	detail?: string
+	title?: string
+	type?: string
+	expiredUploadIds?: unknown
+	refusedUploads?: unknown
+	reason?: unknown
+}
+
 /** Every type a question can be, in the order the authoring form offers them. */
 export const QUESTION_TYPES = [
 	"short_text",
@@ -204,6 +214,7 @@ async function call<T>(
 		headers: {
 			"Content-Type": "application/json",
 			...authorization(),
+			// eslint-disable-next-line @typescript-eslint/no-misused-spread -- every caller passes headers as a plain record, never an array or Headers
 			...init?.headers,
 		},
 	})
@@ -216,7 +227,7 @@ async function call<T>(
 	}
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
 	}
 
@@ -243,7 +254,7 @@ export function reorderQuestions(questionIdsInOrder: string[]): Promise<Question
 }
 
 export function deleteQuestion(id: string): Promise<void> {
-	return call<void>(`/api/admin/questions/${id}`, { method: "DELETE" })
+	return call<undefined>(`/api/admin/questions/${id}`, { method: "DELETE" })
 }
 
 /**
@@ -290,7 +301,7 @@ export interface TypeAheadValueView {
 	/** The question's other live values, any of which this one may be merged into; the survivor is offered under every parent either was (ADR-0151). */
 	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null; pin: string }[]
 	/** Every wording ever merged into this value, chains already flattened. Read-only: there is no un-merge (ADR-0129 amendment). */
-	aliases: { labelEn: string | null; labelFr: string | null }[]
+	aliases?: { labelEn: string | null; labelFr: string | null }[]
 	/** For a value whose question's choices depend on another's: that question, the choices it is offered under, and the choices it may be (ADR-0151). */
 	parent: {
 		questionId: string
@@ -309,12 +320,12 @@ export function listTypeAheadValuesAwaitingReview(): Promise<{
 }
 
 export function approveTypeAheadValue(id: string): Promise<void> {
-	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/approval`, { method: "POST" })
+	return call<undefined>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/approval`, { method: "POST" })
 }
 
 /** Corrects the value in place, so every answer that names it reads the correction. */
 export function correctTypeAheadValue(id: string, labelEn: string, labelFr: string): Promise<void> {
-	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, {
+	return call<undefined>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, {
 		method: "PUT",
 		body: JSON.stringify({ labelEn, labelFr }),
 	})
@@ -322,7 +333,7 @@ export function correctTypeAheadValue(id: string, labelEn: string, labelFr: stri
 
 /** Merges the value into another of its question: answers naming it read that one from now on. */
 export function mergeTypeAheadValue(id: string, intoId: string): Promise<void> {
-	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/merge`, {
+	return call<undefined>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/merge`, {
 		method: "POST",
 		body: JSON.stringify({ intoId }),
 	})
@@ -330,7 +341,7 @@ export function mergeTypeAheadValue(id: string, intoId: string): Promise<void> {
 
 /** Offers the value under exactly these choices of its question's parent: at least one, never none (ADR-0151). */
 export function setTypeAheadValueParents(id: string, parentChoiceIds: string[]): Promise<void> {
-	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/parent`, {
+	return call<undefined>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/parent`, {
 		method: "PUT",
 		body: JSON.stringify({ parentChoiceIds }),
 	})
@@ -338,5 +349,5 @@ export function setTypeAheadValueParents(id: string, parentChoiceIds: string[]):
 
 /** Removes the value from the form; every answer that names it still does. */
 export function removeTypeAheadValue(id: string): Promise<void> {
-	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, { method: "DELETE" })
+	return call<undefined>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, { method: "DELETE" })
 }

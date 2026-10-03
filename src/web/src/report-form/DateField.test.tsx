@@ -46,8 +46,8 @@ const dialog = () => document.getElementById("q-calendar") as HTMLElement
 const isOpen = () => !dialog().hidden
 const day = (iso: string) => document.querySelector<HTMLButtonElement>(`button[data-day="${iso}"]`)
 const status = () => document.querySelector("p[role='status']") as HTMLElement
-const month = () => screen.getByLabelText("report.date.month") as HTMLSelectElement
-const year = () => screen.getByLabelText("report.date.year") as HTMLSelectElement
+const month = () => screen.getByLabelText<HTMLSelectElement>("report.date.month")
+const year = () => screen.getByLabelText<HTMLSelectElement>("report.date.year")
 const pressOn = (element: Element, key: string, init: KeyboardEventInit = {}) => fireEvent.keyDown(element, { key, ...init })
 const openByClick = () => fireEvent.click(input())
 
@@ -413,7 +413,7 @@ describe("DateField calendar", () => {
 		render(<Harness />)
 		openByClick()
 
-		expect((screen.getByLabelText("report.date.nextMonth") as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByLabelText<HTMLButtonElement>("report.date.nextMonth").disabled).toBe(true)
 		expect(Array.from(month().options).filter((option) => option.disabled).map((option) => option.value)).toEqual(["7", "8", "9", "10", "11", "12"])
 	})
 
@@ -439,7 +439,7 @@ describe("DateField calendar", () => {
 		openByClick()
 		years = Array.from(year().options).map((option) => Number(option.value))
 		expect(years[0]).toBe(2036)
-		expect((screen.getByLabelText("report.date.nextMonth") as HTMLButtonElement).disabled).toBe(false)
+		expect(screen.getByLabelText<HTMLButtonElement>("report.date.nextMonth").disabled).toBe(false)
 	})
 
 	it("widens the years to a typed date outside the usual range", () => {

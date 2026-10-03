@@ -80,9 +80,9 @@ export function buildSubmitAnswers(
 					questionRevisionId: question.revisionId,
 					value: null,
 					choices: null,
-					attachments: (attachments[question.revisionId] ?? [])
-						.filter((row) => row.status === "uploaded" && row.uploadId)
-						.map((row) => ({ uploadId: row.uploadId!, fileName: row.name })),
+					attachments: (attachments[question.revisionId] ?? []).flatMap((row) =>
+						row.status === "uploaded" && row.uploadId ? [{ uploadId: row.uploadId, fileName: row.name }] : [],
+					),
 				})
 				continue
 			}

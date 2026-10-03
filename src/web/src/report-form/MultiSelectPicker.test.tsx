@@ -57,7 +57,7 @@ describe("MultiSelectPicker", () => {
 		const { onToggle } = renderPicker({ values: ["b"] })
 
 		fireEvent.click(trigger())
-		const [alpha, beta] = screen.getAllByRole("checkbox") as HTMLInputElement[]
+		const [alpha, beta] = screen.getAllByRole<HTMLInputElement>("checkbox")
 		expect(beta.checked).toBe(true)
 		fireEvent.click(alpha)
 
@@ -68,7 +68,7 @@ describe("MultiSelectPicker", () => {
 		renderPicker({ values: ["a"], locked: ["a"], lockedReason: "Needed by a child" })
 
 		fireEvent.click(trigger())
-		const [alpha, beta] = screen.getAllByRole("checkbox") as HTMLInputElement[]
+		const [alpha, beta] = screen.getAllByRole<HTMLInputElement>("checkbox")
 
 		expect(alpha.disabled).toBe(true)
 		expect(alpha.getAttribute("aria-describedby")).toBe("q-locked-reason")

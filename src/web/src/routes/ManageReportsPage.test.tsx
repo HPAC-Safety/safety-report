@@ -9,7 +9,7 @@ const api = vi.hoisted(() => ({
 	publishReport: vi.fn(),
 	unpublishReport: vi.fn(),
 }))
-const list = vi.hoisted(() => ({ options: undefined as unknown, mutate: vi.fn(), reload: vi.fn() }))
+const list = vi.hoisted((): { options: unknown; mutate: ReturnType<typeof vi.fn>; reload: ReturnType<typeof vi.fn> } => ({ options: undefined, mutate: vi.fn(), reload: vi.fn() }))
 const t = vi.hoisted(() => (key: string) => key)
 vi.mock("../i18n/useLocale", () => ({ useLocale: () => ({ locale: "en-CA", t }) }))
 vi.mock("../api/adminReports", async (original) => ({ ...(await original<typeof import("../api/adminReports")>()), ...api }))
@@ -81,7 +81,7 @@ describe("useManageReportsPage", () => {
 
 		await options.fetchPage("cursor")
 
-		expect(result.current).toMatchObject({ q: "abc", searchInput: "abc", filters: expect.arrayContaining(["all", "private"]) })
+		expect(result.current).toMatchObject({ q: "abc", searchInput: "abc", filters: expect.arrayContaining(["all", "private"]) as string[] })
 		expect(options.storageKey).toBe("admin:private:abc")
 		expect(options.getId(row("7"))).toBe("7")
 		expect(api.listReports).toHaveBeenCalledWith("private", "cursor", "abc")

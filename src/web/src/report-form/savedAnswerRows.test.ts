@@ -127,4 +127,7 @@ describe("clearedAnswerCount", () => {
 
 		expect(clearedAnswerCount(answers, { c: [] }, [])).toBe(0)
 	})
+	it("does not count an answer that is absent", () => {
+		expect(clearedAnswerCount({ a: undefined }, {}, [])).toBe(0)
+	})
 })

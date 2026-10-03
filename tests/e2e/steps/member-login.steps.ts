@@ -185,7 +185,7 @@ Then("every option is on one line and none is truncated", async ({ page }) => {
 					}
 				}
 				return {
-					text: item.textContent ?? "",
+					text: item.textContent,
 					lineBoxes: tops.size,
 					clientWidth: item.clientWidth,
 					scrollWidth: item.scrollWidth,

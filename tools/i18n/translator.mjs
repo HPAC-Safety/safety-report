@@ -244,6 +244,7 @@ function stubTranslator() {
 		name: 'stub',
 		buildRequest: (items, { instructions = [] } = {}) => ({ model: 'stub', messages: [], items, instructions }),
 		parseResponse: parseTranslations,
+		// eslint-disable-next-line @typescript-eslint/require-await -- the translator contract is an async method; this stand-in has nothing to await
 		async translate(items, { target }) {
 			return new Map(items.map(({ key, text }) => [key, `[${target} STUB] ${text}`]))
 		},

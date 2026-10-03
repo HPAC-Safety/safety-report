@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_LOCALE as exportedDefault, LocaleContext, LocaleProvider, useLocaleProvider } from "./LocaleProvider"
 import { DEFAULT_LOCALE, STORAGE_KEY } from "./locales"
 
-const loadCatalogue = vi.fn()
+const loadCatalogue = vi.fn<(locale: string) => Promise<Record<string, string>>>()
 vi.mock("./loadCatalogue", () => ({ loadCatalogue: (locale: string) => loadCatalogue(locale) }))
 
 beforeEach(() => {

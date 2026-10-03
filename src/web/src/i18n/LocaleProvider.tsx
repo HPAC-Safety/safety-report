@@ -15,18 +15,19 @@ function readStoredLocale(): string | null {
 
 function interpolate(text: string, params?: Record<string, string | number>): string {
 	if (!params) return text
-	return text.replace(/\{(\w+)\}/g, (match, token) => (token in params ? String(params[token]) : match))
+	return text.replace(/\{(\w+)\}/g, (match: string, token: string) => (token in params ? String(params[token]) : match))
 }
 
 export function useLocaleProvider(): LocaleContextValue {
 	const [locale, setLocaleState] = useState<Locale>(() =>
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- navigator.languages is absent in some older browsers
 		resolveInitialLocale(readStoredLocale(), navigator.languages ?? [navigator.language], window.location.hostname),
 	)
 	const [catalogue, setCatalogue] = useState<Catalogue>({})
 
 	useEffect(() => {
 		let cancelled = false
-		loadCatalogue(locale).then((loaded) => {
+		void loadCatalogue(locale).then((loaded) => {
 			if (!cancelled) setCatalogue(loaded)
 		})
 		return () => {

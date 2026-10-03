@@ -89,7 +89,7 @@ beforeEach(() => {
 	for (const fn of Object.values(mocked)) fn.mockReset()
 	queue(value("v1"))
 	mocked.available.mockResolvedValue({ available: true })
-	for (const fn of [mocked.approve, mocked.correct, mocked.merge, mocked.relink, mocked.remove]) fn.mockResolvedValue(undefined as never)
+	for (const fn of [mocked.approve, mocked.correct, mocked.merge, mocked.relink, mocked.remove]) fn.mockResolvedValue(undefined)
 })
 
 async function mountHook(locale: Locale = "en-CA") {
@@ -137,7 +137,7 @@ describe("the review page", () => {
 		await waitFor(() => expect(mocked.list).toHaveBeenCalledTimes(2))
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.remove" }))
 		await waitFor(() => expect(mocked.remove).toHaveBeenCalledWith("v1"))
-		const merge = screen.getByRole("button", { name: "typeAheadValues.merge" }) as HTMLButtonElement
+		const merge = screen.getByRole<HTMLButtonElement>("button", { name: "typeAheadValues.merge" })
 		expect(merge.disabled).toBe(true)
 		fireEvent.change(screen.getByRole("combobox"), { target: { value: "v2" } })
 		fireEvent.click(merge)
@@ -164,7 +164,7 @@ describe("the review page", () => {
 		render(<ReviewTypeAheadValuesPage />, { wrapper: wrapperFor() })
 		await screen.findByText("en-v1")
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.correct" }))
-		const [en, fr] = screen.getAllByRole("textbox") as HTMLInputElement[]
+		const [en, fr] = screen.getAllByRole<HTMLInputElement>("textbox")
 		expect([en.value, fr.value]).toEqual(["en-v1", "fr-v1"])
 		fireEvent.change(en, { target: { value: "Fixed" } })
 		fireEvent.change(fr, { target: { value: "Corrigé" } })
@@ -178,17 +178,17 @@ describe("the review page", () => {
 		render(<ReviewTypeAheadValuesPage />, { wrapper: wrapperFor() })
 		await screen.findByRole("button", { name: "typeAheadValues.correct" })
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.correct" }))
-		expect((screen.getByRole("button", { name: "typeAheadValues.saveCorrection" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "typeAheadValues.saveCorrection" }).disabled).toBe(true)
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.cancel" }))
 		expect(screen.queryAllByRole("textbox")).toHaveLength(0)
 	})
 
 	it("translates a draft in the chosen direction", async () => {
-		mocked.translate.mockResolvedValue({ texts: ["Bonjour"] } as never)
+		mocked.translate.mockResolvedValue({ texts: ["Bonjour"] })
 		render(<ReviewTypeAheadValuesPage />, { wrapper: wrapperFor() })
 		await screen.findByText("en-v1")
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.correct" }))
-		const [en, fr] = screen.getAllByRole("textbox") as HTMLInputElement[]
+		const [en, fr] = screen.getAllByRole<HTMLInputElement>("textbox")
 		fireEvent.change(fr, { target: { value: "" } })
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.translate.action" }))
 		await waitFor(() => expect(fr.value).toBe("Bonjour"))
@@ -196,7 +196,7 @@ describe("the review page", () => {
 		expect(en.value).toBe("en-v1")
 		fireEvent.click(screen.getByText("flip"))
 		fireEvent.change(fr, { target: { value: "Salut" } })
-		mocked.translate.mockResolvedValue({ texts: ["Hi"] } as never)
+		mocked.translate.mockResolvedValue({ texts: ["Hi"] })
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.translate.action" }))
 		await waitFor(() => expect(en.value).toBe("Hi"))
 	})
@@ -206,7 +206,7 @@ describe("the review page", () => {
 		render(<ReviewTypeAheadValuesPage />, { wrapper: wrapperFor() })
 		await screen.findByText("en-v1")
 		fireEvent.click(screen.getByRole("button", { name: "typeAheadValues.correct" }))
-		expect((screen.getByRole("button", { name: "typeAheadValues.translate.action" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "typeAheadValues.translate.action" }).disabled).toBe(true)
 		expect(screen.getByText("typeAheadValues.translate.unavailable")).toBeTruthy()
 	})
 
@@ -270,7 +270,7 @@ describe("useReviewTypeAheadValuesPage", () => {
 	})
 
 	it("treats a translation with no text as empty", async () => {
-		mocked.translate.mockResolvedValue({ texts: [] } as never)
+		mocked.translate.mockResolvedValue({ texts: [] })
 		const { card, result } = await mountHook()
 		act(() => card().onCorrect())
 		await act(async () => card().onTranslate())
@@ -283,13 +283,13 @@ describe("useReviewTypeAheadValuesPage", () => {
 		mocked.translate.mockImplementation(() => new Promise((resolve) => (finish = resolve as never)))
 		const { card } = await mountHook()
 		act(() => card().onCorrect())
-		act(() => void card().onTranslate())
+		act(() => card().onTranslate())
 		expect(card().draft?.translating).toBe(true)
 		act(() => card().onLabelEn("edited"))
 		await act(async () => finish({ texts: ["Stale"] }))
 		expect(card().draft).toMatchObject({ labelEn: "edited", labelFr: "fr-v1", translating: false })
 
-		act(() => void card().onTranslate())
+		act(() => card().onTranslate())
 		act(() => card().onDirection("toEnglish"))
 		await act(async () => finish({ texts: ["Stale"] }))
 		expect(card().draft).toMatchObject({ labelEn: "edited", translating: false })
@@ -301,7 +301,7 @@ describe("useReviewTypeAheadValuesPage", () => {
 		const { card } = await mountHook()
 		act(() => card().onCorrect())
 		const stale = card()
-		act(() => void stale.onTranslate())
+		act(() => stale.onTranslate())
 		act(() => stale.onCancel())
 		await act(async () => finish({ texts: ["Late"] }))
 		expect(card().draft).toBeUndefined()

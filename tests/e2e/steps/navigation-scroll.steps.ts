@@ -32,7 +32,7 @@ const scrollY = (page: Page) => page.evaluate(() => window.scrollY)
 async function settle(page: Page, name: string) {
 	await expect(page.getByRole("contentinfo")).toBeVisible()
 	if (name === "public feed") {
-		await expect(page.locator(`[data-report-id="${FEED[0]!.id}"]`)).toBeVisible()
+		await expect(page.locator(`[data-report-id="${FEED[0].id}"]`)).toBeVisible()
 	}
 }
 
@@ -41,7 +41,7 @@ Given(
 	async ({ page }, from: string) => {
 		await page.setViewportSize({ width: 1280, height: 240 })
 		await stubFeed(page)
-		await page.goto(PAGES[from]!)
+		await page.goto(PAGES[from])
 		await settle(page, from)
 		await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 		await expect.poll(() => scrollY(page)).toBeGreaterThan(0)

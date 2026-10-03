@@ -125,13 +125,13 @@ export function useReportForm() {
 	)
 
 	const steps = useMemo(() => (load.status === "ready" ? buildSteps(load.questions) : []), [load])
-	const questionsById = useMemo(() => (load.status === "ready" ? indexQuestionsById(load.questions) : new Map()), [load])
+	const questionsById = useMemo(() => (load.status === "ready" ? indexQuestionsById(load.questions) : new Map<string, PublicQuestionView>()), [load])
 	const hasAttachment = useMemo(() => hasFileAttached(attachments), [attachments])
 	const visible = useMemo(
 		() => visibleSteps(steps, answers, questionsById, hasAttachment),
 		// `locale` is not read here: it makes `visible` a new array when the language
 		// changes, which re-runs the effect below, so it stays (no behaviour change).
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- see the comment above: locale is a deliberate trigger
 		[steps, answers, questionsById, locale, hasAttachment],
 	)
 
@@ -143,12 +143,12 @@ export function useReportForm() {
 		if (visible.length === 0) return
 		if (!addressSettled) {
 			setAddressSettled(true)
-			if (stepKey) navigate("/report", { replace: true })
+			if (stepKey) void navigate("/report", { replace: true })
 			return
 		}
 		// Not on the form, or a conditional page not shown right now.
 		if (currentIndex < 0) {
-			navigate("/report", { replace: true })
+			void navigate("/report", { replace: true })
 			return
 		}
 		// Browser Forward obeys the same rule as Next: no page past an
@@ -158,7 +158,7 @@ export function useReportForm() {
 			.find((step) => blockingQuestions(step, answers, questionsById, hasAttachment).length > 0)
 		if (blocked) {
 			setAttemptedAdvance(true)
-			navigate(stepPath(blocked), { replace: true })
+			void navigate(stepPath(blocked), { replace: true })
 		}
 	}, [visible, addressSettled, currentIndex, stepKey, navigate, answers, questionsById, locale, hasAttachment])
 
@@ -219,6 +219,7 @@ export function useReportForm() {
 		const restoredFiles: AttachmentMap = {}
 		for (const row of pendingRows) {
 			if (row.kind === "answer") {
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- a row is listed only for an answer the draft holds
 				restored[row.revisionId] = draft.answers[row.revisionId]!
 				continue
 			}
@@ -243,7 +244,7 @@ export function useReportForm() {
 		const savedStep = steps.find((step) =>
 			draft.stepKey ? step.question.key === draft.stepKey : step.question.revisionId === draft.stepRevisionId,
 		)
-		if (savedStep) navigate(stepPath(savedStep), { replace: true })
+		if (savedStep) void navigate(stepPath(savedStep), { replace: true })
 		setPendingDraft(null)
 	}
 
@@ -270,15 +271,14 @@ export function useReportForm() {
 		setAttemptedAdvance(false)
 		setSubmit({ status: "idle" })
 		setConfirmingDiscard(false)
-		navigate("/report")
+		void navigate("/report")
 	}
 
 	function setAnswer(revisionId: string, answer: DraftAnswer | undefined) {
 		edited.current = true
 		setAnswers((prev) => {
-			const next = { ...prev }
-			if (answer) next[revisionId] = answer
-			else delete next[revisionId]
+			const { [revisionId]: _removed, ...without } = prev
+			const next = answer ? { ...prev, [revisionId]: answer } : without
 			// A changed parent answer clears a child answer it no longer allows (ADR-0146).
 			return consistentAnswers(next, questionsById)
 		})
@@ -287,7 +287,7 @@ export function useReportForm() {
 	// A history entry per page, so the browser's Back and Forward page too (REQ-SUB-053, REQ-SUB-054).
 	function goTo(step: FormStep) {
 		setAttemptedAdvance(false)
-		navigate(stepPath(step))
+		void navigate(stepPath(step))
 	}
 
 	// Fades the new step in on every change, including the very first render.
@@ -314,12 +314,12 @@ export function useReportForm() {
 			setAttemptedAdvance(true)
 			return
 		}
-		const next = visible[currentIndex + 1]
+		const next = visible[currentIndex + 1] as FormStep | undefined
 		if (next) goTo(next)
 	}
 
 	function handleBack() {
-		const previous = visible[currentIndex - 1]
+		const previous = visible[currentIndex - 1] as FormStep | undefined
 		if (previous) goTo(previous)
 	}
 

@@ -307,7 +307,7 @@ export async function stubSubmission(page: Page, options: SubmissionStubOptions 
 export async function readDraftFromBrowser(page: Page): Promise<unknown> {
 	return page.evaluate(() => {
 		const raw = localStorage.getItem("hpac.report.draft")
-		return raw ? JSON.parse(raw) : null
+		return raw ? (JSON.parse(raw) as unknown) : null
 	})
 }
 

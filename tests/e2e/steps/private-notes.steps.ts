@@ -71,7 +71,7 @@ async function stubNotes(page: Page, notes: StubNote[]) {
 			const added: StubNote = {
 				id: `note${String(notes.length + 1).padStart(7, "a")}`,
 				createdAt: at,
-				revisions: [{ number: 1, text: request.postDataJSON().text, writtenBy: ME, writtenAt: at, isMine: true }],
+				revisions: [{ number: 1, text: (request.postDataJSON() as { text: string }).text, writtenBy: ME, writtenAt: at, isMine: true }],
 			}
 			notes.push(added)
 			return route.fulfill({ status: 201, json: view(added) })
@@ -86,7 +86,7 @@ async function stubNotes(page: Page, notes: StubNote[]) {
 		}
 
 		if (request.method() === "PUT") {
-			const body = request.postDataJSON()
+			const body = request.postDataJSON() as { revision: number; text: string }
 			expect(body.revision).toBe(note.revisions.length)
 			note.revisions.push({ number: note.revisions.length + 1, text: body.text, writtenBy: ME, writtenAt: tick(), isMine: true })
 			return route.fulfill({ json: view(note) })

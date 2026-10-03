@@ -183,7 +183,7 @@ dotnet test HpacSafety.slnx
 node --test $(find tests/js -name '*.test.mjs')
 node tools/spec/generate-traceability.mjs && node tools/spec/generate-bindings.mjs
 npm --prefix src/web ci && npm --prefix src/web run build
-npm ci && npm run lint   # ESLint over src/web, tools, tests/js and tests/e2e (ADR-0188)
+npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm run lint   # ESLint, strict and type-checked, over src/web, tools, tests/js and tests/e2e (ADR-0188)
 ```
 
 Integration tests require Docker. See [`tests/README.md`](tests/README.md) and

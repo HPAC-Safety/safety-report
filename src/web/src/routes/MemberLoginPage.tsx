@@ -19,7 +19,7 @@ export function useMemberLoginPage() {
 	useEffect(() => {
 		let cancelled = false
 
-		loadAuthConfig().then((config) => {
+		void loadAuthConfig().then((config) => {
 			if (!cancelled) setThirdPartySignIn(config.thirdPartySignIn)
 		})
 
@@ -36,7 +36,7 @@ export function useMemberLoginPage() {
 
 		try {
 			await signInWithPassword(username, password)
-			navigate(returnTarget(searchParams.get("returnTo")))
+			void navigate(returnTarget(searchParams.get("returnTo")))
 		} catch {
 			// One message for every reason, matching what the API returns.
 			setFailed(true)

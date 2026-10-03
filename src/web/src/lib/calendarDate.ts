@@ -40,16 +40,22 @@ export function localToday(now: Date = new Date()): string {
 	return formatIsoDate({ year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() })
 }
 
+/** The parts of an ISO date that is known to be valid. */
+function partsOf(iso: string) {
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- every caller passes an ISO date the form built
+	return parseIsoDate(iso)!
+}
+
 /** `iso` moved by whole days. */
 export function addDays(iso: string, days: number): string {
-	const { year, month, day } = parseIsoDate(iso)!
+	const { year, month, day } = partsOf(iso)
 	const moved = new Date(year, month - 1, day + days)
 	return formatIsoDate({ year: moved.getFullYear(), month: moved.getMonth() + 1, day: moved.getDate() })
 }
 
 /** `iso` moved by whole months, keeping its day where the month has one and its last day otherwise. */
 export function addMonths(iso: string, months: number): string {
-	const { year, month, day } = parseIsoDate(iso)!
+	const { year, month, day } = partsOf(iso)
 	const index = year * 12 + (month - 1) + months
 	const target = { year: Math.floor(index / 12), month: (index % 12) + 1 }
 	return formatIsoDate({ ...target, day: Math.min(day, daysInMonth(target.year, target.month)) })
@@ -76,6 +82,6 @@ export function monthWeeks(year: number, month: number, firstWeekday: 0 | 1): (s
 
 /** The local-midnight `Date` of a calendar day, for `Intl` formatting only. */
 export function toLocalDate(iso: string): Date {
-	const { year, month, day } = parseIsoDate(iso)!
+	const { year, month, day } = partsOf(iso)
 	return new Date(year, month - 1, day)
 }

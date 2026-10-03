@@ -43,7 +43,7 @@ function Harness({ initial = "", initialKey, onValue }: { initial?: string; init
 	)
 }
 
-const input = () => screen.getByRole("combobox") as HTMLInputElement
+const input = () => screen.getByRole<HTMLInputElement>("combobox")
 const list = () => document.getElementById("q-list") as HTMLElement
 const isOpen = () => !list().hidden
 const active = () => input().getAttribute("aria-activedescendant")

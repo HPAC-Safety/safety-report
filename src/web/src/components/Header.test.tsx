@@ -9,12 +9,12 @@ import { Header, useHeader } from "./Header"
 import type { HeaderViewProps } from "./Header.view"
 
 const counts = { reportsNeedingAction: 1, typeAheadValuesAwaitingReview: 0 }
-const usePendingCounts = vi.fn()
+const usePendingCounts = vi.fn<(enabled: boolean) => unknown>()
 vi.mock("./usePendingCounts", () => ({ usePendingCounts: (enabled: boolean) => usePendingCounts(enabled) }))
 vi.mock("../../assets/hpac-light.svg", () => ({ default: "light.svg" }))
 vi.mock("../../assets/hpac-dark.svg", () => ({ default: "dark.svg" }))
 
-const view = vi.fn()
+const view = vi.fn<(props: HeaderViewProps) => void>()
 vi.mock("./Header.view", () => ({
 	HeaderView: (props: HeaderViewProps) => {
 		view(props)

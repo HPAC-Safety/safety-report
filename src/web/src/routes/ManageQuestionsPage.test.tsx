@@ -30,7 +30,7 @@ vi.mock("../api/adminQuestions", async (importOriginal) => ({
 vi.mock("../api/adminTypeformImport", () => ({ exportTypeform: vi.fn() }))
 vi.mock("../hooks/useUnsavedChangesGuard", () => ({ useUnsavedChangesGuard: vi.fn() }))
 
-const seen = vi.hoisted(() => ({ props: null as unknown }))
+const seen = vi.hoisted((): { props: unknown } => ({ props: null }))
 vi.mock("./ManageQuestionsPage.view", () => ({
 	ManageQuestionsPageView: (props: unknown) => {
 		seen.props = props
@@ -415,10 +415,10 @@ describe("useManageQuestionsPage the editor's lists", () => {
 
 	it("never offers the question being edited to itself", async () => {
 		const { result } = await load(bank())
-		act(() => result.current.editQuestion(bank()[2]!))
+		act(() => result.current.editQuestion(bank()[2]))
 
 		expect(result.current.editor?.conditionQuestions.map((q) => q.id)).not.toContain("pick")
-		act(() => result.current.editQuestion(bank()[0]!))
+		act(() => result.current.editQuestion(bank()[0]))
 		expect(result.current.editor?.groupQuestions).toEqual([])
 	})
 
@@ -432,10 +432,10 @@ describe("useManageQuestionsPage the editor's lists", () => {
 	it("offers only the questions asked before the one being edited", async () => {
 		const { result } = await load(bank())
 
-		act(() => result.current.editQuestion(bank()[3]!))
+		act(() => result.current.editQuestion(bank()[3]))
 		expect(result.current.editor?.choiceParentQuestions?.map((q) => q.id)).toEqual(["pick", "grouped"])
 
-		act(() => result.current.editQuestion(bank()[0]!))
+		act(() => result.current.editQuestion(bank()[0]))
 		expect(result.current.editor?.choiceParentQuestions).toEqual([])
 	})
 
@@ -443,7 +443,7 @@ describe("useManageQuestionsPage the editor's lists", () => {
 		const { result } = await load(bank())
 
 		// "grouped" is asked on the group's page (position 0), before "yes".
-		act(() => result.current.editQuestion(bank()[1]!))
+		act(() => result.current.editQuestion(bank()[1]))
 		expect(result.current.editor?.choiceParentQuestions?.map((q) => q.id)).toEqual(["grouped"])
 
 		// Two questions on the same page are ordered within it.
@@ -453,20 +453,20 @@ describe("useManageQuestionsPage the editor's lists", () => {
 			question("second", { type: "single_select", displayOrder: 3, groupedUnderQuestionId: "g" }),
 		]
 		const shared = await load(sharedPage)
-		act(() => shared.result.current.editQuestion(sharedPage[2]!))
+		act(() => shared.result.current.editQuestion(sharedPage[2]))
 		expect(shared.result.current.editor?.choiceParentQuestions?.map((q) => q.id)).toEqual(["first"])
-		act(() => shared.result.current.editQuestion(sharedPage[1]!))
+		act(() => shared.result.current.editQuestion(sharedPage[1]))
 		expect(shared.result.current.editor?.choiceParentQuestions).toEqual([])
 	})
 
 	it("offers no choice parent to a question other questions' choices already depend on", async () => {
 		const { result } = await load(bank())
 
-		act(() => result.current.editQuestion(bank()[2]!))
+		act(() => result.current.editQuestion(bank()[2]))
 
 		expect(result.current.editor?.choiceParentQuestions?.map((q) => q.id)).not.toContain("child")
 		expect(result.current.editor?.choiceParentQuestions).toEqual([])
-		act(() => result.current.editQuestion(bank()[3]!))
+		act(() => result.current.editQuestion(bank()[3]))
 		expect(result.current.editor?.choiceParentQuestions?.map((q) => q.id)).toEqual(["pick", "grouped"])
 	})
 })

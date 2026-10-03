@@ -31,7 +31,7 @@ export interface DraftAttachment {
 export interface ReportDraft {
 	locale: string
 	/** Keyed by question-revision ID, matching the revisions the reporter was actually shown. */
-	answers: Record<string, DraftAnswer>
+	answers: Partial<Record<string, DraftAnswer>>
 	/** Finished uploads per file-upload question, keyed by question-revision ID. */
 	attachments?: Record<string, DraftAttachment[]>
 	/** The key of the question heading the page the reporter was last on — the same key the page's address names. */
@@ -56,7 +56,7 @@ export interface DraftRead {
 
 function isDraft(value: unknown): value is ReportDraft {
 	if (!value || typeof value !== "object") return false
-	const candidate = value as Partial<ReportDraft>
+	const candidate = value as Record<string, unknown>
 	return (
 		typeof candidate.locale === "string" &&
 		typeof candidate.savedAtMs === "number" &&

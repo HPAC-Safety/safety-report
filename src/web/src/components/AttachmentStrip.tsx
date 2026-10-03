@@ -166,7 +166,7 @@ export function useAttachmentStrip({ reportId, media, staffAttachments, onChange
 		getLink,
 		invalidateLink,
 		remove,
-		closeLightbox() {
+		closeLightbox: () => {
 			setLightboxId(null)
 			returnFocusTo.current?.focus()
 		},
@@ -175,8 +175,8 @@ export function useAttachmentStrip({ reportId, media, staffAttachments, onChange
 			label: label(item),
 			onActivate: (trigger: HTMLElement) => void activate(item, trigger),
 			onGone: () => remove(item.id),
-			onHide: staff && (item.visibility === "public" || item.visibility === "when_published") ? () => hide(item.id) : null,
-			onShow: staff && item.visibility === "hidden" ? () => show(item.id) : null,
+			onHide: staff && (item.visibility === "public" || item.visibility === "when_published") ? () => void hide(item.id) : null,
+			onShow: staff && item.visibility === "hidden" ? () => void show(item.id) : null,
 		})),
 	}
 }

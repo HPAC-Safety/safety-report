@@ -22,7 +22,7 @@ export function isValidEmail(value: string): boolean {
  * already equals.
  */
 export function emailSuggestions(typed: string): string[] {
-	const [local, domain, ...rest] = typed.split("@")
+	const [local, domain, ...rest] = typed.split("@") as [string, string | undefined, ...string[]]
 	if (!local || rest.length > 0 || /\s/.test(typed)) return []
 	const lowered = (domain ?? "").toLowerCase()
 	const offered = SUGGESTED_EMAIL_DOMAINS.filter((candidate) => candidate.startsWith(lowered)).map((candidate) => `${local}@${candidate}`)

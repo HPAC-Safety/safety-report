@@ -242,8 +242,8 @@ export function useQuestionEditor({
 	 * row was removed, its source edited, or the direction flipped meanwhile.
 	 */
 	async function translateChoice(index: number) {
-		const row = rows[index]
-		const option = request.options[index]
+		const row = rows[index] as (typeof rows)[number] | undefined
+		const option = request.options[index] as (typeof request.options)[number] | undefined
 		if (!row || !option) return
 
 		const asked = direction
@@ -256,7 +256,7 @@ export function useQuestionEditor({
 			const drafted = texts[0] ?? ""
 			const now = latest.current
 			const at = now.rows.findIndex((candidate) => candidate.key === row.key)
-			const current = now.request.options[at]
+			const current = now.request.options[at] as (typeof now.request.options)[number] | undefined
 			if (at < 0 || !current || now.direction !== asked || sourceOf(current, asked) !== source) return
 
 			onChange((draft) => ({
@@ -339,7 +339,7 @@ export function useQuestionEditor({
 	}
 
 	const choiceItems: ChoiceItem[] = request.options.map((option, index) => {
-		const row = rows[index]
+		const row = rows[index] as (typeof rows)[number] | undefined
 		return {
 			option,
 			index,

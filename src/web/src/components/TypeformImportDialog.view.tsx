@@ -24,8 +24,8 @@ export interface TypeformImportDialogViewProps {
 	reviewedKeys: Set<string>
 	onEnglishChange: (file: File | null) => void
 	onFrenchChange: (file: File | null) => void
-	runImport: () => void
-	removePendingLogic: (id: string) => void
+	runImport: () => Promise<void>
+	removePendingLogic: (id: string) => Promise<void>
 	reviewDraft: (draft: ImportedQuestionDraftView) => void
 }
 

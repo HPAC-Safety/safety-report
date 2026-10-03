@@ -541,8 +541,9 @@ jobs:
   # ESLint over every TypeScript and JavaScript file: src/web, tools, tests/js and
   # tests/e2e (ADR-0188). It has no path filter: a change to any of them, or to
   # the root package.json or eslint.config.mjs, must be linted, and it costs
-  # seconds. The dependencies are the root package.json's; the web app's and the
-  # browser suite's own installs are not needed to lint.
+  # seconds. The rules are typescript-eslint's strict-type-checked, so the web
+  # app's and the browser suite's packages are installed too: without React's
+  # and Playwright's types every value from them would be `any`.
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -553,6 +554,12 @@ jobs:
 
       - name: npm ci
         run: npm ci
+
+      - name: npm ci, web
+        run: npm --prefix src/web ci
+
+      - name: npm ci, browser suite
+        run: npm --prefix tests/e2e ci
 
       - name: ESLint
         run: npm run lint

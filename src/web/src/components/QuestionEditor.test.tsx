@@ -13,7 +13,7 @@ vi.mock("../api/adminQuestions", async (importOriginal) => ({
 	translate: vi.fn(),
 }))
 
-const seen = vi.hoisted(() => ({ props: null as unknown }))
+const seen = vi.hoisted((): { props: unknown } => ({ props: null }))
 vi.mock("./QuestionEditor.view", () => ({
 	QuestionEditorView: (props: unknown) => {
 		seen.props = props

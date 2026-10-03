@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-02
 decision-makers: Chase Florell
-keywords: web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
+keywords: strict-type-checked, typescript-eslint, projectService, eslint-comments, web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
 ---
 
 # ADR-0188 — A component's logic lives in `Foo.tsx` and its markup in `Foo.view.tsx`, and web logic is unit-tested
@@ -278,8 +278,8 @@ markup, same focus, one `showModal()`, Escape still keeps).
 - **It runs** as the `lint` job in CI (no path filter), in `tools/ci-local.sh`'s
   fast set, and in pre-commit over the staged files (over everything when the
   config or the root `package.json` is staged).
-- **Not yet:** type-aware, strict rules. They are
-  [#781](https://github.com/HPAC-Safety/safety-report/issues/781).
+- **Type-aware, strict rules** came next; see the strict-linting amendment
+  below ([#781](https://github.com/HPAC-Safety/safety-report/issues/781)).
 
 ### Every web helper has a test
 
@@ -287,3 +287,87 @@ A `.ts` under `src/web/src` with no test was outside the coverage scope, which
 is what "the writing of the test is the opt-in" meant. Each now has a colocated
 test at 100%, so all web logic falls under the gate. `vite.config.ts` and the
 scope rule are unchanged; the files simply have tests.
+
+## Amendment: strict, type-checked linting ([#781](https://github.com/HPAC-Safety/safety-report/issues/781))
+
+Applies on the date of the pull request that closes #781. It replaces the
+"recommended presets" decision above; everything else in "Every TypeScript and
+JavaScript file is linted" stands.
+
+### What runs
+
+- **TypeScript** (`src/web`, `tests/e2e`): `typescript-eslint`
+  `strict-type-checked`, every rule an error.
+  - Type information comes from `parserOptions.projectService`. Each file
+    belongs to the nearest `tsconfig.json`: `src/web/tsconfig.json` and a new
+    `tests/e2e/tsconfig.json`. `src/web/vite.config.ts` is in neither (the web
+    job installs no `@types/node`, so it cannot join the first), and gets the
+    strict preset without type information.
+  - Type-aware rules are only as good as the types. The lint job therefore
+    installs the web app's and the browser suite's packages as well as the root
+    ones (`npm --prefix src/web ci`, `npm --prefix tests/e2e ci`, each its own
+    one-command step, ADR-0189), and pre-commit refuses to lint without them.
+    Without React's and Playwright's types every value from them is `any`.
+  - `tests/e2e/tsconfig.json` is for ESLint and editors. Nothing gates it:
+    16 type errors stood in the suite before this change and still stand,
+    because Playwright transpiles without checking.
+- **JavaScript** (`tools`, `tests/js`, `eslint.config.mjs`): the **strict**
+  preset without type information, plus four rules that need only inference —
+  `no-floating-promises`, `no-misused-promises`, `await-thenable`,
+  `require-await` — against a root `tsconfig.json` (`allowJs`, not `checkJs`).
+  - Why not the full type-checked preset: plain `.mjs` carries no annotations,
+    so it reported about 3,800 findings that were `any` propagating
+    (`no-unsafe-*`, `restrict-template-expressions`), and 1,186 that were
+    `node:test`'s `test()` call. Nothing else in `tools/` and `tests/js` was
+    wrong in a way the four rules miss: they found one `require-await` in
+    `tools/` and nothing else.
+  - Typing the scripts with JSDoc would make the full preset useful; that is a
+    separate, large change nobody has asked for.
+- **Every disable comment states its reason** after `--`:
+  `@eslint-community/eslint-comments/require-description` (an error), with
+  `no-unlimited-disable`. An unused disable was already an error.
+
+### Rules narrowed or turned off, and why
+
+| Setting | Where | Reason |
+|---|---|---|
+| `no-confusing-void-expression`: `ignoreArrowShorthand` | TypeScript | `onClick={() => setOpen(true)}` is how every handler here is written (750 occurrences); braces around each would be churn with no behavioural content. A void call used as a value anywhere else is still an error. |
+| `restrict-template-expressions`: `allowNumber` | TypeScript | A number in a template is predictable (`Step ${index + 1}`, a count). An object, array, `null`, `undefined`, boolean, `any` and `unknown` are still refused. |
+| `no-non-null-assertion` off | `*.test.ts(x)`, `tests/e2e`, `tests/js` | A test indexes a fixture it built a line earlier; a `!` that is wrong fails the test at the next line. In shipped code the rule stays on. |
+| `unbound-method` off | same | `expect(mock.method).toHaveBeenCalled()` reads the method to assert on it, never to call it. The rule cannot tell, and its Vitest-aware replacement is another dependency for no gain. |
+| `require-await` off | same | `await act(async () => result.current.save())` and Playwright steps need the `async` callback without an `await` in it. |
+| `no-floating-promises` off | `tests/js` | `node:test` registers a test with a call whose promise the runner awaits (1,186 calls). |
+
+Everything else is on, in shipped code and in tests.
+
+### Where the code changed instead
+
+No behaviour or DOM changed. The fixes were, by kind:
+
+- **Types said more than runtime does, so a guard looked dead.** Reads such as
+  `items[index]`, `answers[id]`, `performance.getEntriesByType(...)[0]` and
+  `match[3]` are typed as present because `noUncheckedIndexedAccess` is off. The
+  guard stays; the type now says what the guard knows
+  (`as T | undefined`, or `Partial<Record<string, T>>` for the answer maps).
+  A guard on untrusted data — a saved draft, an API body — is never removed
+  because its type says it cannot fail.
+- **`any` at a boundary** (`response.json()`, `request.postDataJSON()`,
+  `JSON.parse`, an untyped `vi.fn()`) is given the shape its reader already
+  assumed.
+- **Handlers that returned a promise to a `void` slot** (`no-misused-promises`)
+  gain `void` at the call, or the slot's type gains `Promise<void>`. React and
+  the tests that `await` them see the same value as before.
+- **`navigate(...)`** returns `void | Promise<void>` in React Router 7; it is
+  called with `void`, as before in effect.
+- **Method shorthand in a returned object** (`onDragEnter(event) { … }`) became
+  an arrow property, so destructuring it in the view is not an `unbound-method`.
+- A non-null assertion in shipped code either went (the code narrows instead)
+  or carries a line-level disable naming the invariant that makes it safe.
+- `delete obj[key]` became a rest-destructure or `Reflect.deleteProperty`.
+
+### Cost
+
+`npm run lint` took about 4 s before and about 16 s after, cold, on a laptop: the
+type checker now loads the web app. CI's lint job also installs two more
+packages. Locally, pre-commit lints only the staged files.
+

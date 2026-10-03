@@ -192,8 +192,10 @@ jobs:
         run: ./init-dev.sh --check
 
       # @ui-tagged scenarios execute via playwright-bdd (tests/e2e), not
-      # Reqnroll — see ADR-0053. The acceptance suite skips them itself, so a
-      # bare `dotnet test` is already correct (ADR-0073); this filter is a
+      # Reqnroll — see ADR-0053. The acceptance suite skips them itself, by a
+      # hook that throws xUnit's SkipException, which skips cleanly with the
+      # Cucumber Messages formatter below on or off, so a bare `dotnet test`
+      # is already correct (ADR-0073, ADR-0195); this filter is a
       # second line of defence, keeping the job green even if that hook
       # regresses. Reqnroll's xUnit generator emits a `[Trait("Category", tag)]`
       # per Gherkin tag, which is what this filters on. UiScenarioHooksTests is

@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-03
 decision-makers: Chase Florell
-keywords: claims, test results, Cucumber Messages, Reqnroll, playwright-bdd, coverage job, CI artifact, Built, Planned, Passing, Failing, Unexecuted, claims.json, ADR-0049, ADR-0053, ADR-0073, ADR-0193
+keywords: claims, test results, Cucumber Messages, Reqnroll, playwright-bdd, coverage job, CI artifact, Built, Planned, Passing, Failing, Unexecuted, claims.json, ADR-0049, ADR-0053, ADR-0073, ADR-0194
 ---
 
 # ADR-0195 — A built claim counts only when its scenario passed in the run
@@ -33,7 +33,7 @@ keywords: claims, test results, Cucumber Messages, Reqnroll, playwright-bdd, cov
 
 - A built claim must be proved by a run, not by a tag.
 - Keyed by the claim tag, never by matching titles or generated names.
-- `claims.json` stays deterministic and merge-friendly (ADR-0193): nothing
+- `claims.json` stays deterministic and merge-friendly (ADR-0194): nothing
   that changes per run is committed.
 - No new required check name, and runnable locally.
 
@@ -100,10 +100,12 @@ keywords: claims, test results, Cucumber Messages, Reqnroll, playwright-bdd, cov
 - A built claim whose scenario is skipped, filtered out, or never generated
   fails `coverage`, with its ID, scenario, and feature file in the
   annotation, where before it passed silently.
-- With its formatter on, Reqnroll 3.3.4 turns a scenario a hook skips at run
-  time into a failed test ("Stack empty"), so such a claim fails `test`
-  before `coverage` judges it; either way the build fails. The `@ui` hook
-  never runs in CI, where the category filter keeps those scenarios out.
+- With its formatter on, Reqnroll 3.3.4 fails a test ("Stack empty") whose
+  `BeforeScenario` hook calls `ITestRunner.SkipScenarioAsync`. The `@ui` hook
+  therefore throws xUnit's `SkipException`, which the generated
+  `[SkippableFact]` reports as skipped with the formatter on or off, so a
+  bare `dotnet test` still skips every `@ui` scenario and ADR-0073 holds
+  unchanged. `UiScenarioHooksTests` pins the mechanism.
 - A feature-file-only change now runs the .NET and browser suites.
 - The Reqnroll results file is about 8 MB and the playwright-bdd one about
   5 MB; each is kept for seven days.
@@ -113,13 +115,14 @@ keywords: claims, test results, Cucumber Messages, Reqnroll, playwright-bdd, cov
 
 ## Related
 
-- [ADR-0193](ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md):
+- [ADR-0194](ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md):
   `claims.json` is the canonical claim data; unchanged but for the status
   value.
 - [ADR-0049](ADR-0049-reqnroll-for-executable-gherkin-scenarios.md),
   [ADR-0053](ADR-0053-ui-scenarios-execute-via-playwright-bdd.md),
   [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md): which
-  engine runs which claim; unchanged.
+  engine runs which claim, and Reqnroll skipping a `@ui` scenario itself;
+  unchanged — only how the hook skips moved, as Consequences says.
 - [ADR-0145](ADR-0145-a-pull-requests-checks-run-locally-under-act.md): the
   local gate under act.
 - [CONV-001](../conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md):

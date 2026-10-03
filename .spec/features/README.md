@@ -29,9 +29,10 @@ used for a `@ui` scenario
 [ADR-0050](../decisions/ADR-0050-ui-tag-for-scenarios-needing-playwright.md),
 [ADR-0053](../decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
 The Reqnroll suite skips a `@ui` scenario itself, so it reports as skipped
-wherever that suite runs rather than failing for want of a C# step definition
-it is never meant to have
-([ADR-0073](../decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
+wherever that suite runs — with the claim gate's message formatter on or off —
+rather than failing for want of a C# step definition it is never meant to have
+([ADR-0073](../decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md),
+[ADR-0195](../decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
 An unimplemented scenario carries an `@ignore` tag and one `@issue-<N>` tag
 naming the open issue that will build it, so a scenario may merge ahead of its
 code

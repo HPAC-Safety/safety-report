@@ -27,4 +27,10 @@ public sealed class UiScenarioHooksTests
 		hook.ShouldNotBeNull();
 		hook.Tags.ShouldBe(["ui"]);
 	}
+
+	[Fact]
+	public void GivenUiScenario_WhenHookRuns_ThenItThrowsTheSkipThatSurvivesTheMessageFormatter()
+	{
+		Should.Throw<SkipException>(UiScenarioHooks.SkipUiScenario);
+	}
 }

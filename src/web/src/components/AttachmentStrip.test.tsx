@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ApiError } from "../api/adminQuestions"
 import { attachmentLink, attachmentOriginalLink, setAttachmentHidden, type ReportAttachment } from "../api/adminReports"
+import { fetchOwnMediaLink } from "../api/ownReports"
 import { fetchMediaLink, PublicReportNotFound, type PublicMedia } from "../api/publicReports"
 import { LocaleContext } from "../i18n/LocaleProvider"
 import { AttachmentStrip, type AttachmentStripProps } from "./AttachmentStrip"
@@ -18,6 +19,8 @@ vi.mock("../api/publicReports", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../api/publicReports")>()),
 	fetchMediaLink: vi.fn(),
 }))
+
+vi.mock("../api/ownReports", () => ({ fetchOwnMediaLink: vi.fn() }))
 
 const lightbox = vi.hoisted(() => ({ latest: null as null | { items: StripItem[]; getLink: (item: StripItem) => Promise<string>; invalidateLink: (id: string) => void; onClose: () => void; onGone: (id: string) => void } }))
 vi.mock("./AttachmentLightbox", () => ({
@@ -38,6 +41,7 @@ beforeEach(() => {
 	Object.defineProperty(window, "location", { value: { assign }, configurable: true })
 	vi.mocked(fetchMediaLink).mockReset().mockImplementation((_report, id) => Promise.resolve({ url: `https://pub/${id}`, expiresAt: future() }))
 	vi.mocked(attachmentLink).mockReset().mockImplementation((_report, a) => Promise.resolve({ url: `https://staff/${a.id}`, expiresAt: future(), fileName: "f" }))
+	vi.mocked(fetchOwnMediaLink).mockReset().mockImplementation((_report, id) => Promise.resolve({ url: `https://own/${id}`, expiresAt: future() }))
 	vi.mocked(attachmentOriginalLink).mockReset().mockResolvedValue({ url: "https://orig", expiresAt: future(), fileName: "f" })
 	vi.mocked(setAttachmentHidden).mockReset().mockResolvedValue(undefined)
 })
@@ -68,6 +72,23 @@ function mount(over: Partial<AttachmentStripProps> = {}) {
 }
 
 const button = (name: string) => screen.getByRole("button", { name })
+
+describe("AttachmentStrip for the holder of an unpublished report", () => {
+	it("downloads a document through the holder's own link, asked for with the receipt", async () => {
+		mount({ receipt: "rec" })
+		fireEvent.click(screen.getByRole("button", { name: /media.downloadLabel/ }))
+
+		await waitFor(() => expect(assign).toHaveBeenCalledWith("https://own/doc"))
+		expect(fetchOwnMediaLink).toHaveBeenCalledWith("r1", "doc", "rec")
+		expect(fetchMediaLink).not.toHaveBeenCalledWith("r1", "doc")
+	})
+
+	it("shows a thumbnail from the holder's own link", async () => {
+		mount({ receipt: "rec" })
+
+		await waitFor(() => expect(document.querySelector("img")?.getAttribute("src")).toBe("https://own/img"))
+	})
+})
 
 describe("AttachmentStrip for the public", () => {
 	it("renders nothing when there are no items", () => {

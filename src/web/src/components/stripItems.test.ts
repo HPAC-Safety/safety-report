@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ApiError } from "../api/adminQuestions"
 import { attachmentLink, type ReportAttachment } from "../api/adminReports"
+import { fetchOwnMediaLink } from "../api/ownReports"
 import { fetchMediaLink, PublicReportNotFound } from "../api/publicReports"
 import { isGone, itemsFromPublicMedia, itemsFromStaffAttachments, linkFor, type StripItem } from "./stripItems"
 
 vi.mock("../api/adminReports", () => ({ attachmentLink: vi.fn() }))
+vi.mock("../api/ownReports", () => ({ fetchOwnMediaLink: vi.fn() }))
 vi.mock("../api/publicReports", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../api/publicReports")>()),
 	fetchMediaLink: vi.fn(),
@@ -15,6 +17,7 @@ const link = { url: "https://files/x", expiresAt: "2030-01-01T00:00:00Z", fileNa
 beforeEach(() => {
 	vi.mocked(attachmentLink).mockReset().mockResolvedValue(link)
 	vi.mocked(fetchMediaLink).mockReset().mockResolvedValue(link)
+	vi.mocked(fetchOwnMediaLink).mockReset().mockResolvedValue(link)
 })
 
 describe("isGone", () => {
@@ -45,6 +48,12 @@ describe("the strip item shapes", () => {
 
 describe("linkFor", () => {
 	const item = (over: Partial<StripItem>): StripItem => ({ id: "i", kind: "image", format: null, state: "ready", visibility: "private", ...over })
+
+	it("asks with the receipt, and not the public link, for the holder of an unpublished report", async () => {
+		await expect(linkFor("r", item({ visibility: null }), false, "rec")).resolves.toBe(link)
+		expect(fetchOwnMediaLink).toHaveBeenCalledWith("r", "i", "rec")
+		expect(fetchMediaLink).not.toHaveBeenCalled()
+	})
 
 	it("uses the public link for a public viewer", async () => {
 		await expect(linkFor("r", item({ visibility: null }), false)).resolves.toBe(link)

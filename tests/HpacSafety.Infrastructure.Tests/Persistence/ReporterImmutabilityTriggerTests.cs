@@ -61,14 +61,16 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 		await MigrateTo(context, PriorMigration);
 		await using var connection = await Open(connectionString);
 		await Execute(connection, "INSERT INTO reports (id, language, status, submitted_at, consent_publish) VALUES ('rprior00001', 'en-CA', 'pending', TIMESTAMPTZ '2026-09-20T00:00:00Z', TRUE)");
-		var before = await Scalar(connection, "SELECT to_jsonb(r)::text FROM reports AS r WHERE id = 'rprior00001'");
+		// Without receipt_hash and first_published_at, columns a later migration adds (ADR-0196): this test is
+		// about the triggers, not about what other migrations add to the row.
+		var before = await Scalar(connection, "SELECT (to_jsonb(r) - 'receipt_hash' - 'first_published_at')::text FROM reports AS r WHERE id = 'rprior00001'");
 
 		// When
 		await MigrateTo(context, null);
 
 		// Then — installed, and the stored row is exactly as it was
 		(await Scalar(connection, TriggerNames)).ShouldBe(string.Join(',', Triggers));
-		(await Scalar(connection, "SELECT to_jsonb(r)::text FROM reports AS r WHERE id = 'rprior00001'")).ShouldBe(before);
+		(await Scalar(connection, "SELECT (to_jsonb(r) - 'receipt_hash' - 'first_published_at')::text FROM reports AS r WHERE id = 'rprior00001'")).ShouldBe(before);
 
 		// When
 		await MigrateTo(context, PriorMigration);

@@ -1,5 +1,6 @@
 import { ApiError } from "../api/adminQuestions"
 import { attachmentLink, type AttachmentVisibility, type ReportAttachment } from "../api/adminReports"
+import { fetchOwnMediaLink } from "../api/ownReports"
 import { fetchMediaLink, PublicReportNotFound, type PublicMedia } from "../api/publicReports"
 
 /** One strip item, normalized from either the public or the staff shape. */
@@ -36,7 +37,13 @@ export async function linkFor(
 	reportId: string,
 	item: StripItem,
 	staff: boolean,
+	receipt?: string,
 ): Promise<{ url: string; expiresAt: string }> {
+	// The holder of a not-yet-published report asks with its receipt, in a body.
+	if (receipt) {
+		return await fetchOwnMediaLink(reportId, item.id, receipt)
+	}
+
 	if (!staff || item.visibility === "public") {
 		return await fetchMediaLink(reportId, item.id)
 	}

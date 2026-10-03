@@ -7647,6 +7647,317 @@
 			"citedBy": {"decisions":["ADR-0180","ADR-0194"],"lessons":[]}
 		},
 		{
+			"id": "REQ-PUB-001",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Another visitor never sees a report that is not published",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John has submitted a report that is not published","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"Cheryl, signed in or not, holds no receipt for it","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"Cheryl lists the public feed and asks for that report's page","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the feed does not list it and the page answers 404","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"asking with a receipt that is not John's shows nothing either","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":["ADR-0196"],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-002",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Before a summary exists the holder's entry shows its submitted date and no summary",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report whose summary the Worker has not produced yet","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John's browser looks up its receipts","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is listed with its submitted date and no summary","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the entry carries only the report ID, its submitted date, whether it is for publication, its summary, and its attachment count, never an answer, a question, or any member data","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-003",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder reads the latest summary revision, approved or not",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a Pending report whose latest summary revision a reviewer edited and has not approved","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John's browser looks up its receipts","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the entry carries that latest revision's English and French text","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the entry is marked not yet published","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-004",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A report without publication consent is listed for its holder and never has a summary",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report whose reporter did not consent to publication","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John's browser looks up its receipts","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is listed as not for publication, with no summary","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it stays listed until a moderator deletes it","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-005",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A report a moderator deleted disappears for its holder",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report a moderator has deleted","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John's browser looks up its receipts","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is not listed","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the lookup tells the browser to drop that receipt","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-006",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A published report is no longer listed as the holder's own",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report that has since been published","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John's browser looks up its receipts","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is not listed among his own","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the lookup tells the browser to drop that receipt","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the public feed lists the report for everyone","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-007",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A receipt that does not match its report shows nothing, like an unknown report",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a report that is not published","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a lookup names it with a receipt that is not its own, a malformed receipt, or an unknown report","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"each answer is the same: nothing is listed and the receipt is settled","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no response says whether the report exists","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-008",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder's attachments follow exactly the public rules",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report with a verified image, a hidden image, an unverified image, and a validated document","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter consented to media and to documents","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the entry and page count and list only the verified image and the validated document","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the image is offered only as its verified derivative and the document only as a forced download","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter did not consent to media","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no attachment is counted or listed","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-009",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder opens their own report's page and its file links",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report that is not published and has a public image","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John asks for that report's page and for the image's link with his receipt","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the page carries its summary, submitted date, language, and image","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the link is a pre-signed URL that lives at most 15 minutes","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the same requests without his receipt answer 404","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-010",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder's own reports sit at the top of the first page of the feed, newest first",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a browser holds receipts for two of its own reports that are not published","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor opens View safety reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the two own reports are listed first, newest submitted first, each with its pill","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the public feed follows them","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor loads the later pages of the feed","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the own reports are still listed once, above the first page, and not among the later pages","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-011",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Each own report says it is not yet published and shows its summary as a draft",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a browser holds receipts for one report with a summary, one still without a summary, and one without publication consent","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor opens View safety reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the first shows its submitted date, the pill \"Not yet published\", and its summary labelled as a draft that may change","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the second shows its submitted date, the pill, and \"Summary in preparation\"","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the third shows the pill \"Not for publication\" and no summary","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no pill reads \"Unpublished\"","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-012",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The browser drops a receipt once its report is published or gone",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a browser holds receipts for a report that has been published and one a moderator deleted","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor opens View safety reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"neither is listed as the visitor's own","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser no longer holds either receipt","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-013",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A visitor without a receipt sees only the public feed and asks the server nothing",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a browser holds no receipt","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor opens View safety reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the feed lists only published reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser sends no receipt lookup","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-014",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder opens their own report's page",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a browser holds the receipt for a report that is not published","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor opens that report's address","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page shows the report with its pill, its submitted date, and its summary labelled as a draft","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page offers no comments","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the receipt is sent in the request body and not in any address","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-015",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A report that was ever published never returns to its holder's own reports",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report that was published and a reviewer has since unpublished it","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"John's browser looks up its receipts","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is not listed among his own","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the lookup tells the browser to drop that receipt","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-QB-001",
 			"area": "question-authoring",
 			"file": ".spec/features/question-authoring/question-authoring.feature",
@@ -13440,7 +13751,7 @@
 				{"keyword":"Given","text":"a submission passes validation and persists successfully","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the API responds","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response is 202 Accepted with an opaque report ID and the status \"submitted\"","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the response contains no raw answers or attachment URLs","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the response contains no raw answers or attachment URLs, and carries only the report ID, the status, and the browser receipt","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,
@@ -13566,7 +13877,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,
 			"constraints": ["CON-DP-006"],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0196"],"lessons":[]}
 		},
 		{
 			"id": "REQ-SUB-021",
@@ -13590,7 +13901,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,
 			"constraints": ["CON-DP-006","CON-IF-010"],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0196"],"lessons":[]}
 		},
 		{
 			"id": "REQ-SUB-022",
@@ -13638,7 +13949,7 @@
 			"stepFiles": ["tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0196"],"lessons":[]}
 		},
 		{
 			"id": "REQ-SUB-024",
@@ -13660,7 +13971,7 @@
 			"stepFiles": ["tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0196"],"lessons":[]}
 		},
 		{
 			"id": "REQ-SUB-025",
@@ -16209,6 +16520,102 @@
 			"citedBy": {"decisions":["ADR-0188"],"lessons":[]}
 		},
 		{
+			"id": "REQ-SUB-133",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "A successful submission returns a random browser receipt",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a reporter writes a report through POST /api/v1/reports and sends each attachment through a pre-signed PUT that POST /api/v1/uploads mints","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the report request is JSON that names each attachment by the upload ID the upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a submission passes validation and persists successfully","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the API responds","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the body carries a receipt of at least 256 random bits, base64url","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"two submissions by the same member return unrelated receipts","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":["ADR-0196"],"lessons":[]}
+		},
+		{
+			"id": "REQ-SUB-134",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "The report stores only the receipt's SHA-256 hash",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a reporter writes a report through POST /api/v1/reports and sends each attachment through a pre-signed PUT that POST /api/v1/uploads mints","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the report request is JSON that names each attachment by the upload ID the upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter submits a valid report while signed in","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the submission is committed","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the stored report holds the SHA-256 hash of the receipt it returned and nowhere else the receipt itself","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no log line records the receipt","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-DP-006"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-SUB-135",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "The receipt links a report to a browser, never to a member",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a reporter writes a report through POST /api/v1/reports and sends each attachment through a pre-signed PUT that POST /api/v1/uploads mints","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the report request is JSON that names each attachment by the upload ID the upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter submits a valid report while signed in","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the submission is committed","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the stored receipt hash is not derived from the subject","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-DP-006"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-SUB-136",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "The browser keeps the receipt after the 202 and never puts it in an address",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Covered",
+			"steps": [
+				{"keyword":"Given","text":"a reporter writes a report through POST /api/v1/reports and sends each attachment through a pre-signed PUT that POST /api/v1/uploads mints","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the report request is JSON that names each attachment by the upload ID the upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a signed-in member submits a valid report","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the API answers 202 with a receipt","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser keeps the report ID and the receipt in its own storage","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no request address, query string, or navigation carries the receipt","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-TF-001",
 			"area": "typeform-question-import-export",
 			"file": ".spec/features/typeform-question-import-export/typeform-question-import-export.feature",
@@ -17775,8 +18182,8 @@
 		{
 			"id": "CON-DP-006",
 			"page": ".spec/data-and-persistence.md",
-			"verifiedBy": ["REQ-SUB-020","REQ-SUB-021"],
-			"note": "REQ-SUB-020, REQ-SUB-021"
+			"verifiedBy": ["REQ-SUB-020","REQ-SUB-021","REQ-SUB-134","REQ-SUB-135"],
+			"note": "REQ-SUB-020, REQ-SUB-021, REQ-SUB-134, REQ-SUB-135"
 		},
 		{
 			"id": "CON-DP-007",
@@ -18831,10 +19238,10 @@
 			"id": "ADR-0067",
 			"file": ".spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md",
 			"title": "A reporter must be a member, and is not recorded",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0005","ADR-0063","ADR-0064","ADR-0068"],
+			"decisions": ["ADR-0005","ADR-0063","ADR-0064","ADR-0068","ADR-0196"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -20189,6 +20596,17 @@
 			"constraints": [],
 			"decisions": ["ADR-0084","ADR-0184","ADR-0192","ADR-0193"],
 			"supersedes": ["ADR-0193"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0196",
+			"file": ".spec/decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md",
+			"title": "A browser receipt shows a reporter their own unpublished report",
+			"status": "accepted",
+			"claims": ["REQ-PUB-001","REQ-SUB-020","REQ-SUB-021","REQ-SUB-023","REQ-SUB-024","REQ-SUB-133"],
+			"constraints": [],
+			"decisions": ["ADR-0067","ADR-0117","ADR-0119","ADR-0153","ADR-0177","ADR-0178"],
+			"supersedes": ["ADR-0067"],
 			"amends": []
 		}
 	],

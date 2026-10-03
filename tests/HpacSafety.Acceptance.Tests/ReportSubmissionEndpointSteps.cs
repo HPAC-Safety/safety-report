@@ -1028,12 +1028,96 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		body.GetProperty("id").GetString().ShouldNotBeNullOrWhiteSpace();
 	}
 
-	[Then(@"the response contains no raw answers or attachment URLs")]
+	[Then(@"the response contains no raw answers or attachment URLs, and carries only the report ID, the status, and the browser receipt")]
 	public async Task ThenTheResponseContainsNoRawAnswersOrAttachmentUrls()
 	{
 		var body = await ResponseBody();
 		var properties = body.EnumerateObject().Select(property => property.Name).ToList();
-		properties.ShouldBe(["id", "status"], ignoreOrder: true);
+		properties.ShouldBe(["id", "status", "receipt"], ignoreOrder: true);
+	}
+
+	// --- REQ-SUB-133 to REQ-SUB-135: the browser receipt (ADR-0196) ---
+
+	[Then(@"the body carries a receipt of at least 256 random bits, base64url")]
+	public async Task ThenTheBodyCarriesAReceipt()
+	{
+		var receipt = (await ResponseBody()).GetProperty("receipt").GetString();
+
+		receipt.ShouldNotBeNull();
+		System.Buffers.Text.Base64Url.IsValid(receipt).ShouldBeTrue();
+		System.Buffers.Text.Base64Url.DecodeFromChars(receipt).Length.ShouldBeGreaterThanOrEqualTo(32);
+	}
+
+	[Then(@"two submissions by the same member return unrelated receipts")]
+	public async Task ThenTwoSubmissionsReturnUnrelatedReceipts()
+	{
+		var first = (await ResponseBody()).GetProperty("receipt").GetString();
+
+		using var second = await Post(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
+		});
+		second.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+		var other = (await second.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("receipt").GetString();
+
+		other.ShouldNotBe(first);
+	}
+
+	[Then(@"the stored report holds the SHA-256 hash of the receipt it returned and nowhere else the receipt itself")]
+	public async Task ThenTheReportHoldsOnlyTheReceiptsHash()
+	{
+		var body = await SubmittedBody();
+		var receipt = body.GetProperty("receipt").GetString()!;
+		var stored = await StoredRowsOf(body.GetProperty("id").GetString()!);
+
+		var expected = System.Buffers.Text.Base64Url.EncodeToString(
+			System.Security.Cryptography.SHA256.HashData(System.Buffers.Text.Base64Url.DecodeFromChars(receipt)));
+
+		stored.Report.ShouldContain($"\"receipt_hash\": \"{expected}\"");
+		stored.Everything.ShouldNotContain(receipt, Case.Sensitive);
+	}
+
+	[Then(@"no log line records the receipt")]
+	public async Task ThenNoLogLineRecordsTheReceipt()
+	{
+		var receipt = (await SubmittedBody()).GetProperty("receipt").GetString()!;
+
+		_logs.Lines.ShouldNotBeEmpty();
+		_logs.Lines.ShouldAllBe(line => !line.Contains(receipt, StringComparison.Ordinal));
+	}
+
+	[Then(@"no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it")]
+	public async Task ThenNoStoredValueIsTheSubjectOrItsHash()
+	{
+		var stored = await StoredRowsOf((await SubmittedBody()).GetProperty("id").GetString()!);
+		var subject = System.Text.Encoding.UTF8.GetBytes(_submitterSubject!);
+		var forms = new[]
+		{
+			_submitterSubject!,
+			Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(subject)),
+			Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(subject)),
+			System.Buffers.Text.Base64Url.EncodeToString(System.Security.Cryptography.SHA256.HashData(subject)),
+		};
+
+		foreach (var form in forms)
+		{
+			stored.Everything.ShouldNotContain(form, Case.Insensitive);
+		}
+	}
+
+	[Then(@"the stored receipt hash is not derived from the subject")]
+	public async Task ThenTheReceiptHashIsNotDerivedFromTheSubject()
+	{
+		var body = await SubmittedBody();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var report = await database.Reports.AsNoTracking().SingleAsync(candidate => candidate.Id == TinyId.Parse(body.GetProperty("id").GetString()));
+
+		var subject = System.Text.Encoding.UTF8.GetBytes(_submitterSubject!);
+		report.ReceiptHash.ShouldNotBeNull();
+		report.ReceiptHash.ShouldNotBe(System.Buffers.Text.Base64Url.EncodeToString(System.Security.Cryptography.SHA256.HashData(subject)));
+		report.ReceiptHash.ShouldNotBe(System.Buffers.Text.Base64Url.EncodeToString(subject));
 	}
 
 	// --- An unauthenticated submission is rejected ---
@@ -1132,7 +1216,9 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportColumns = database.Model.FindEntityType(typeof(Report))!.GetProperties()
 			.Select(property => property.Name);
-		reportColumns.ShouldNotContain(name => name.Contains("Ip", StringComparison.OrdinalIgnoreCase));
+		// A whole word "Ip" in the PascalCase name — ClientIp, IpAddress — not the letters
+		// inside another word, such as ReceiptHash (ADR-0196).
+		reportColumns.ShouldNotContain(name => System.Text.RegularExpressions.Regex.IsMatch(name, "(?<![a-z])Ip(?![a-z])"));
 	}
 
 	// --- A request without CloudFront's origin-secret header is refused (ADR-0159) ---
@@ -1332,6 +1418,34 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	}
 
 	// --- Helpers ---
+
+	private async Task<JsonElement> SubmittedBody()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+		return await ResponseBody();
+	}
+
+	/// <summary>
+	///     Every stored row of one report, as text: its own row, its answers, and its
+	///     outbox messages. What a receipt or a subject must appear in none of.
+	/// </summary>
+	private static async Task<(string Report, string Everything)> StoredRowsOf(string reportId)
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var report = await database.Database
+			.SqlQuery<string>($"SELECT jsonb_pretty(to_jsonb(r)) AS \"Value\" FROM reports AS r WHERE r.id = {reportId}")
+			.SingleAsync();
+		var answers = await database.Database
+			.SqlQuery<string>($"SELECT to_jsonb(a)::text AS \"Value\" FROM report_answers AS a WHERE a.report_id = {reportId}")
+			.ToListAsync();
+		var outbox = await database.Database
+			.SqlQuery<string>($"SELECT to_jsonb(o)::text AS \"Value\" FROM outbox_messages AS o WHERE o.aggregate_id = {reportId}")
+			.ToListAsync();
+
+		return (report, string.Join('\n', [report, .. answers, .. outbox]));
+	}
 
 	private async Task<JsonElement> ResponseBody()
 	{

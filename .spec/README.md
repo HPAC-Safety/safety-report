@@ -33,11 +33,11 @@ the prefix shown after it
 | [Dependent choices](features/dependent-choices/dependent-choices.feature) | `REQ-DCH` (also `REQ-QB`) | 38 | 0 | 12 | [README](features/dependent-choices/README.md) — Supporting detail for choices offered under the answer to an earlier single-select or type-ahead question. |
 | [Domain and lifecycle](features/domain-and-lifecycle/domain-and-lifecycle.feature) | `REQ-DOM` | 28 | 0 | 0 | [README](features/domain-and-lifecycle/README.md) — Supporting detail for the report states, invariants, deletion, and retention scenarios. |
 | [Attachments](features/media/media.feature) | `REQ-MED` (also `REQ-MOD`) | 78 | 0 | 25 | [README](features/media/README.md) — Supporting detail for the image, video, document, quarantine, and derivative scenarios, and for the staff-only private attachments on a report. |
-| [Public feed](features/public-feed/public-feed.feature) | `REQ-PUB` (also `REQ-MOD`) | 32 | 0 | 16 | [README](features/public-feed/README.md) — Supporting detail for the public feed, a published report's own page, and public search. |
+| [Public feed](features/public-feed/public-feed.feature) | `REQ-PUB` (also `REQ-MOD`) | 47 | 0 | 21 | [README](features/public-feed/README.md) — Supporting detail for the public feed, a published report's own page, and public search. |
 | [Question authoring](features/question-authoring/question-authoring.feature) | `REQ-QAU` (also `REQ-QB`) | 81 | 0 | 26 | [README](features/question-authoring/README.md) — Supporting detail for the immutable bilingual question revisions, question types, conditions, groups, and the question editor. |
 | [Question translation](features/question-translation/question-translation.feature) | `REQ-QTR` (also `REQ-QB`) | 20 | 0 | 18 | [README](features/question-translation/README.md) — Supporting detail for machine-translating a question's wording and its choices while authoring. |
 | [Report form](features/report-form/report-form.feature) | `REQ-RFM` (also `REQ-QB`) | 52 | 0 | 21 | [README](features/report-form/README.md) — Supporting detail for the report form: stored answer forms, the type-ahead and picker fields, the seeded attachment and Country questions, and the seeded groups. |
-| [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 120 | 0 | 79 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
+| [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 124 | 0 | 80 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
 | [Review and publication](features/review-and-publication/review-and-publication.feature) | `REQ-REV` (also `REQ-MOD`) | 56 | 0 | 25 | [README](features/review-and-publication/README.md) — Supporting detail for reviewing a report, its summary revisions, publication, private notes, and how a reviewer reads an answer. |
 | [Typeform question import and export](features/typeform-question-import-export/typeform-question-import-export.feature) | `REQ-TF` | 23 | 0 | 1 | [README](features/typeform-question-import-export/README.md) — Supporting detail for importing and exporting the question bank as Typeform JSON. |
 | [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` (also `REQ-COM`, `REQ-MOD`, `REQ-QB`) | 55 | 0 | 31 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
@@ -61,6 +61,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
 | [0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md) | A split area keeps every claim ID, and a new claim takes the new area's prefix | accepted | 2026-10-03 |
 | [0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md) | The claims are generated as JSON, a graph fragment, and one slim matrix | superseded | 2026-10-03 |
 | [0192](decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md) | An accepted ADR is immutable, follows one MADR template, and process rules are conventions | accepted | 2026-10-03 |
@@ -184,7 +185,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0070](decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md) | A hand-edited French value is a recorded correction | accepted | 2026-09-21 |
 | [0069](decisions/ADR-0069-scannable-given-when-then-test-names.md) | Scannable Given/When/Then test names | accepted | 2026-09-21 |
 | [0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md) | The member token replaces Turnstile on submission | accepted | 2026-09-21 |
-| [0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md) | A reporter must be a member, and is not recorded | accepted | 2026-09-21 |
+| [0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md) | A reporter must be a member, and is not recorded | superseded | 2026-09-21 |
 | [0066](decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md) | A development identity provider, signed with a dev key | partially-superseded | 2026-09-21 |
 | [0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md) | No user records; identity is the token subject | accepted | 2026-09-21 |
 | [0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md) | JWT bearer authentication with three roles | accepted | 2026-09-21 |

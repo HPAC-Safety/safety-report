@@ -468,8 +468,17 @@ filed it, so "who filed this?" has no answer to retrieve. The form tells the
 reporter so, in their own language, because a guarantee they cannot see does
 not change what they are willing to write down.
 
-This also means a reporter cannot retrieve, amend, or withdraw a submission,
-and abuse cannot be attributed after the fact. Both are accepted costs.
+**The receipt is not an identity.** The `202` body also carries a receipt: at
+least 256 random bits from a cryptographically secure generator, base64url. The
+report stores only its SHA-256 hash, in a unique, nullable `receipt_hash`, and
+neither the receipt nor the member's subject is stored or logged
+([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-SUB-133` to `REQ-SUB-135`). The browser keeps
+`{ reportId, receipt }` in `localStorage` (`REQ-SUB-136`), which is how it later
+sees its own unpublished report (see the public-feed area's README). It proves
+"this browser filed it", never "this member filed it".
+
+A reporter still cannot retrieve, amend, or withdraw a submission from an
+account, and abuse cannot be attributed after the fact. Both are accepted costs.
 
 Turnstile is not used. The member token is the abuse control, alongside per-IP
 rate limiting
@@ -527,8 +536,9 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Keeping the saved page in `sessionStorage`. It would be gone when the tab
   closes, which is exactly when a reporter comes back to continue.
 - Recording who submitted a report — no subject, no user id, no audit line, no
-  log line
+  log line. The receipt hash identifies a browser, not a member, and never goes in a URL
   ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+- A "my reports" page, another device or browser seeing a report, editing or withdrawing a report, or a notification (see the public-feed area's README).
 - Calling a translation provider on the submission path.
 - Echoing submitted content back in a validation error.
 - A per-reporter throttle. Rate limiting is by trusted IP.

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { AttachmentCountBadge } from "../components/AttachmentCountBadge"
 import { InfiniteScrollStatus } from "../components/InfiniteScrollStatus"
+import { OwnReportPill } from "../components/OwnReportPill"
 
 /** One feed row, ready to show: its date and preview are already in the site's language. */
 export interface ViewReportsRow {
@@ -12,10 +13,21 @@ export interface ViewReportsRow {
 	attachmentCount: number
 }
 
+/** One of the visitor's own, not yet published reports, ready to show. */
+export interface ViewReportsOwnRow {
+	id: string
+	submitted: string
+	forPublication: boolean
+	/** Null before the Worker has made a summary, and always for a report not for publication. */
+	preview: string | null
+	attachmentCount: number
+}
+
 export interface ViewReportsPageViewProps {
 	q: string
 	searchBox: string
 	onSearchBoxChange: (value: string) => void
+	ownRows: ViewReportsOwnRow[]
 	rows: ViewReportsRow[]
 	loading: boolean
 	loadingMore: boolean
@@ -30,6 +42,7 @@ export function ViewReportsPageView({
 	q,
 	searchBox,
 	onSearchBoxChange,
+	ownRows,
 	rows,
 	loading,
 	loadingMore,
@@ -57,6 +70,37 @@ export function ViewReportsPageView({
 				placeholder={t("feed.search.placeholder")}
 				className="touch-target mt-6 w-full rounded border border-rule bg-surface px-4 font-sans text-ink placeholder:text-ink-muted"
 			/>
+
+			{ownRows.length > 0 && (
+				<ul aria-label={t("feed.own.listLabel")} data-own-reports className="mt-8 flex flex-col gap-4">
+					{ownRows.map((report) => (
+						<li key={report.id} data-own-report-id={report.id}>
+							<Link
+								to={`/reports/${report.id}`}
+								className="flex flex-col gap-2 rounded border border-ink bg-surface p-5 hover:bg-surface-2"
+							>
+								<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+									<OwnReportPill forPublication={report.forPublication} />
+									<span className="font-sans text-sm text-ink-muted">{t("feed.own.submittedAt", { at: report.submitted })}</span>
+								</span>
+								{report.forPublication &&
+									(report.preview === null ? (
+										<span className="font-sans text-ink-muted">{t("feed.own.summaryPending")}</span>
+									) : (
+										<>
+											<span className="line-clamp-3 whitespace-pre-line font-sans text-ink">{report.preview}</span>
+											<span className="font-sans text-sm text-ink-muted">{t("feed.own.draftNote")}</span>
+										</>
+									))}
+								<span className="flex flex-wrap items-center gap-x-4 font-sans text-sm">
+									<span className="font-medium text-brand-700 underline">{t("feed.read")}</span>
+									<AttachmentCountBadge count={report.attachmentCount} />
+								</span>
+							</Link>
+						</li>
+					))}
+				</ul>
+			)}
 
 			{loading ? (
 				<p className="mt-8 font-sans text-ink-muted">{t("feed.loading")}</p>

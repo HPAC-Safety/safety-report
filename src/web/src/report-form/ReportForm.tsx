@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 
 import { useLocale } from "../i18n/useLocale"
 import { fetchCurrentQuestions, type PublicQuestionView } from "../api/publicQuestions"
+import { saveReceipt } from "../api/ownReports"
 import { SubmissionNetworkError, SubmissionRejectedError, submitReport } from "../api/reportSubmission"
 import { MAX_ATTACHMENTS, deleteUpload } from "../api/uploads"
 import type { Attachment } from "./AttachmentField"
@@ -338,6 +339,9 @@ export function useReportForm() {
 
 		try {
 			const result = await submitReport(locale, submitAnswers)
+			// The one thing kept about the filing, and only in this browser: it is how
+			// the reporter later sees their own report before it is published.
+			saveReceipt(result.id, result.receipt)
 			clearDraft()
 			setSubmit({ status: "submitted", id: result.id })
 		} catch (error) {

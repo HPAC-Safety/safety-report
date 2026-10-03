@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
+import { fetchOwnReports, ownSummaryIn, type OwnReport } from "../api/ownReports"
 import { fetchPublicReports, summaryIn, type PublicReport } from "../api/publicReports"
 import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
 import { firstSectionPreview } from "../lib/markdownPreview"
-import { ViewReportsPageView, type ViewReportsRow } from "./ViewReportsPage.view"
+import { ViewReportsPageView, type ViewReportsOwnRow, type ViewReportsRow } from "./ViewReportsPage.view"
 
 /** How long to wait, after the visitor stops typing, before searching (ms). */
 const SEARCH_DEBOUNCE_MS = 300
@@ -68,7 +69,39 @@ export function useViewReportsPage() {
 		fetchPage: (after) => fetchPublicReports(after, q, locale),
 	})
 
+	// This browser's own reports that are not published yet, above the first page
+	// of the plain feed only (issue no. 820, ADR-0196): never under a search, never
+	// on a later page. Makes no request when the browser holds no receipt.
+	const [own, setOwn] = useState<OwnReport[]>([])
+
+	useEffect(() => {
+		if (q) {
+			setOwn([])
+			return
+		}
+
+		let current = true
+		void fetchOwnReports().then((reports) => {
+			if (current) setOwn((previous) => (previous.length === 0 && reports.length === 0 ? previous : reports))
+		})
+		return () => {
+			current = false
+		}
+	}, [q])
+
 	const published = new Intl.DateTimeFormat(locale, { dateStyle: "long" })
+
+	const ownRows: ViewReportsOwnRow[] = own.map((report) => {
+		const summary = ownSummaryIn(report, locale)
+
+		return {
+			id: report.id,
+			submitted: published.format(new Date(report.submittedAt)),
+			forPublication: report.forPublication,
+			preview: summary === null ? null : firstSectionPreview(summary),
+			attachmentCount: report.attachmentCount,
+		}
+	})
 
 	const rows: ViewReportsRow[] = reports.map((report) => ({
 		id: report.id,
@@ -79,7 +112,7 @@ export function useViewReportsPage() {
 	}))
 
 
-	return { q, searchBox, onSearchBoxChange, rows, loading, loadingMore, failed, hasMore, loadMore, sentinelRef, announcement }
+	return { q, searchBox, onSearchBoxChange, ownRows, rows, loading, loadingMore, failed, hasMore, loadMore, sentinelRef, announcement }
 }
 
 /*
@@ -94,6 +127,11 @@ export function useViewReportsPage() {
  * cursor is (issue no. 574, REQ-MOD-149), and folds into the infinite-scroll
  * hook's storage key so a changed search never restores another search's — or
  * the plain feed's — accumulated list. Anonymous.
+ *
+ * A browser that filed a report and still holds its receipt sees that report at
+ * the top of the first page, newest submitted first, marked not yet published
+ * (or not for publication), before the public feed; every other visitor sees
+ * nothing of it until it is published (issue no. 820, REQ-PUB-010).
  */
 export function ViewReportsPage() {
 	return <ViewReportsPageView {...useViewReportsPage()} />

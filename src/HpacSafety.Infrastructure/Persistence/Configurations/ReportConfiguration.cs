@@ -33,6 +33,17 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 
 		builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
+		// The SHA-256 of the random receipt the submitting browser was handed; null on
+		// a report filed before receipts existed. Identifies a browser, never a member,
+		// and is locked after submission (ADR-0196, ADR-0178).
+		builder.Property(report => report.ReceiptHash).HasMaxLength(BrowserReceipt.Length);
+		builder.HasIndex(report => report.ReceiptHash).IsUnique();
+
+		// Set once by the first publication and never cleared; locked by the ADR-0178
+		// trigger once written. Keeps a once-published report from returning to its
+		// holder's own reports (ADR-0196).
+		builder.Property(report => report.FirstPublishedAt);
+
 		// Reviewer-authored, reviewer-only (REQ-MOD-058).
 		builder.Property(report => report.UnpublishNote).HasMaxLength(Report.UnpublishNoteMaxLength);
 

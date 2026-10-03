@@ -90,3 +90,57 @@ public sealed record PublicCommentView(
 
 /// <summary>What a member writes: the text, and the language of the page they wrote it on.</summary>
 public sealed record WriteCommentRequest(string? Text, string? Locale);
+
+/// <summary>
+///     One report a browser says it filed: the report's ID and the receipt its
+///     submission returned. The receipt is a credential, so it only ever travels in a
+///     request body (ADR-0196).
+/// </summary>
+public sealed record OwnReportReceipt(string? ReportId, string? Receipt);
+
+/// <summary>Every receipt a browser holds, for one lookup.</summary>
+public sealed record OwnReportsRequest(IReadOnlyList<OwnReportReceipt>? Receipts);
+
+/// <summary>The one receipt that opens a holder's own report page or file link.</summary>
+public sealed record OwnReceiptRequest(string? Receipt);
+
+/// <summary>
+///     One of the holder's own reports, as it sits at the top of the feed. The
+///     summary is the latest revision, approved or not, in both languages, or null
+///     before the Worker has made one and always for a report without publication
+///     consent. <see cref="SubmittedAt" /> is shown only to the holder: the public
+///     feed never exposes it (ADR-0153). Nothing else about the report: no answer,
+///     question, consent value, or member (ADR-0196).
+/// </summary>
+public sealed record OwnReportView(
+	string Id,
+	DateTimeOffset SubmittedAt,
+	bool ForPublication,
+	string? AiSummaryEn,
+	string? AiSummaryFr,
+	int AttachmentCount);
+
+/// <summary>
+///     The holder's lookup answer. <see cref="Settled" /> names every report the
+///     browser asked about that is not, or is no longer, the holder's own —
+///     published, deleted, unknown, or named with a receipt that does not match —
+///     indistinguishably, so the browser can drop those receipts.
+/// </summary>
+public sealed record OwnReportsResponse(
+	IReadOnlyList<OwnReportView> Items,
+	IReadOnlyList<string> Settled);
+
+/// <summary>
+///     The holder's own report page: the list entry plus the language it was written
+///     in and the files the public will see once it is published, each as an opaque
+///     id, a kind, and for a document its coarse format.
+/// </summary>
+public sealed record OwnReportDetail(
+	string Id,
+	DateTimeOffset SubmittedAt,
+	bool ForPublication,
+	string? AiSummaryEn,
+	string? AiSummaryFr,
+	int AttachmentCount,
+	string Language,
+	IReadOnlyList<PublicMediaView> Media);

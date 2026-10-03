@@ -251,6 +251,48 @@
     "provider": "human",
     "reviewed": true
   },
+  "feed.own.draftNote": {
+    "source_hash": "f73298408ad383a2965e69262d650638f432c5597815d6bcaae999120a0b0779",
+    "target_hash": "fb1fa856d9b7880e9614ec0c8624a4ea605524406dbbc063a83ddc24aa58edec",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "feed.own.listLabel": {
+    "source_hash": "c75f46274b9ae7a6bffd23f59abbbffe1d92dea569701287a091aaf7bf9ff92d",
+    "target_hash": "48cdd3ac0af2c32ed9052dd2e09fcb723f6899d5ed51921da0872efec45bc879",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "feed.own.notForPublication": {
+    "source_hash": "d767b9616f073435adf6572b1808283176e77b9ba6098b19a54c17b5449de115",
+    "target_hash": "80ef73c73efbe273ca61343c1434279b355807fc76c97dc408b7b21bf32e0228",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "feed.own.notForPublicationNote": {
+    "source_hash": "9926c99f862375161403efac6563cc1a7cffdd91ba802bb85929ec31a4e5951f",
+    "target_hash": "0da6075394441fbd955e608ce9d5aea1e1281b03eb49504f84cf15a53128d151",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "feed.own.notYetPublished": {
+    "source_hash": "e2fe1366e5bf6bbdc44041a26a3b030fd4b43687f20073d4e8e68c46f2151b01",
+    "target_hash": "c189e4b12283e5792f620205bfb0d9f4bd5b33ca2041d73453732fabbc6dc178",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "feed.own.submittedAt": {
+    "source_hash": "6375a32e346a8280eb1845d8e3fa33b9aeee50dd0446d7840ed63ab9c651829b",
+    "target_hash": "2c0cb83c2453d6b102621adeb0419261eafac1c13e8b0d6bb36397c874282ee3",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "feed.own.summaryPending": {
+    "source_hash": "fe9f3cd23459f7509c4408c56f43ece8f558bdc76320c868b3cb117df13d4688",
+    "target_hash": "b631e94242f94d51a66948a251697ad27d78c3b6f56d9290f742e4107605b926",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
   "feed.publishedAt": {
     "source_hash": "48e32e7f6da22b0a0116384d5d48d6aa72ca986b7f1ef2d64f4e8e422538c7e2",
     "target_hash": "827691e95217a20637b67e83f019863424b919f260c388f448f69049f69d3a68",

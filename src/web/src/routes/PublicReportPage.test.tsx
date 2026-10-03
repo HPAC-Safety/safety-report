@@ -7,6 +7,14 @@ import { LocaleContext } from "../i18n/LocaleProvider"
 import { PublicReportPage, usePublicReportPage } from "./PublicReportPage"
 
 const fetchPublicReport = vi.hoisted(() => vi.fn())
+const receiptFor = vi.hoisted(() => vi.fn())
+const fetchOwnReport = vi.hoisted(() => vi.fn())
+vi.mock("../api/ownReports", () => ({
+	receiptFor,
+	fetchOwnReport,
+	ownSummaryIn: (report: { aiSummaryEn: string | null; aiSummaryFr: string | null }, locale: string) =>
+		locale === "fr-CA" ? report.aiSummaryFr : report.aiSummaryEn,
+}))
 vi.mock("../api/publicReports", () => {
 	class PublicReportNotFound extends Error {}
 	return {
@@ -44,6 +52,8 @@ afterEach(cleanup)
 beforeEach(() => {
 	vi.clearAllMocks()
 	fetchPublicReport.mockResolvedValue(report)
+	receiptFor.mockReturnValue(null)
+	fetchOwnReport.mockResolvedValue(null)
 })
 
 describe("usePublicReportPage", () => {
@@ -98,6 +108,51 @@ describe("usePublicReportPage", () => {
 
 		expect([officer.result.current.isReviewer, member.result.current.isReviewer, visitor.result.current.isReviewer]).toEqual([true, false, false])
 		await waitFor(() => expect(officer.result.current.loaded.state).toBe("ready"))
+	})
+})
+
+describe("usePublicReportPage: the holder's own report (issue no. 820)", () => {
+	const own = { id: "r1", submittedAt: "2026-01-02T00:00:00Z", forPublication: true, language: "en-CA", aiSummaryEn: "Draft", aiSummaryFr: "Brouillon", media: [], attachmentCount: 0 }
+
+	it("shows the holder's own page, with its draft summary, when the browser holds the receipt", async () => {
+		receiptFor.mockReturnValue("receipt-1")
+		fetchOwnReport.mockResolvedValue(own)
+		const { result } = renderHook(() => usePublicReportPage(), { wrapper: wrapper() })
+
+		await waitFor(() => expect(result.current.loaded).toEqual({ state: "own", report: own, receipt: "receipt-1", summary: "Draft" }))
+		expect(fetchPublicReport).not.toHaveBeenCalled()
+	})
+
+	it("reads the French draft under the French locale", async () => {
+		receiptFor.mockReturnValue("receipt-1")
+		fetchOwnReport.mockResolvedValue(own)
+		const { result } = renderHook(() => usePublicReportPage(), { wrapper: wrapper({ locale: "fr-CA" }) })
+
+		await waitFor(() => expect(result.current.loaded).toMatchObject({ state: "own", summary: "Brouillon" }))
+	})
+
+	it("reads the public page when the report is no longer the browser's own", async () => {
+		receiptFor.mockReturnValue("receipt-1")
+		fetchOwnReport.mockResolvedValue(null)
+		const { result } = renderHook(() => usePublicReportPage(), { wrapper: wrapper() })
+
+		await waitFor(() => expect(result.current.loaded).toMatchObject({ state: "ready" }))
+		expect(fetchPublicReport).toHaveBeenCalledWith("r1")
+	})
+
+	it("asks for nothing of its own without a receipt", async () => {
+		const { result } = renderHook(() => usePublicReportPage(), { wrapper: wrapper() })
+
+		await waitFor(() => expect(result.current.loaded.state).toBe("ready"))
+		expect(fetchOwnReport).not.toHaveBeenCalled()
+	})
+
+	it("reports a failed own lookup as failed", async () => {
+		receiptFor.mockReturnValue("receipt-1")
+		fetchOwnReport.mockRejectedValue(new Error("boom"))
+		const { result } = renderHook(() => usePublicReportPage(), { wrapper: wrapper() })
+
+		await waitFor(() => expect(result.current.loaded).toEqual({ state: "failed" }))
 	})
 })
 

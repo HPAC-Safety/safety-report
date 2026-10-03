@@ -299,7 +299,7 @@ export async function stubSubmission(page: Page, options: SubmissionStubOptions 
 		await route.fulfill({
 			status: options.status ?? 202,
 			contentType: "application/json",
-			body: JSON.stringify(options.body ?? { id: "synthetic-report-id", status: "submitted" }),
+			body: JSON.stringify(options.body ?? { id: "synthetic-report-id", status: "submitted", receipt: "synthetic-receipt-AAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }),
 		})
 	})
 }

@@ -93,6 +93,14 @@ describe('issueRow', () => {
 		assert.match(issueRow({ number: 47, title: 'x', labels: ['in progress', 'bug'] }, 'o/r'), /\| `bug` \|/)
 	})
 
+	it('escapes a backslash before the characters it escapes, so a title cannot undo an escape', () => {
+		assert.match(issueRow({ number: 47, title: 'a\\| b' }, 'o/r'), /\[#47 — a\\\\\\\| b\]/)
+	})
+
+	it('quotes a label with backticks replaced, so it cannot break out of its code span', () => {
+		assert.match(issueRow({ number: 47, title: 'x', labels: ['a`b'] }, 'o/r'), /\| `a'b` \|/)
+	})
+
 	it('escapes a title so it cannot break the table or the link', () => {
 		assert.match(issueRow({ number: 47, title: 'a | b [c]\nd' }, 'o/r'), /\[#47 — a \\\| b \\\[c\\\] d\]/)
 	})
@@ -408,8 +416,8 @@ describe('escapeCommand', () => {
 })
 
 describe('command line', () => {
-	it('skips with a notice and exits 0 when there is no token', () => {
-		const env = { ...process.env }
+	it('skips with a notice and exits 0 when there is no token and no gh login', () => {
+		const env: NodeJS.ProcessEnv = { ...process.env, PATH: '' }
 		delete env.GITHUB_TOKEN
 		delete env.GH_TOKEN
 

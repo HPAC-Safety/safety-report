@@ -2,8 +2,8 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import type { Exec } from '../../../tools/lib/actions.ts'
-import { type Api, PAGE, listedIssues } from '../../../tools/spec/check-issue-traceability.ts'
-import { findToken, main } from '../../../tools/spec/generate-issue-traceability.ts'
+import { type Api, PAGE, findToken, listedIssues } from '../../../tools/spec/check-issue-traceability.ts'
+import { main } from '../../../tools/spec/generate-issue-traceability.ts'
 
 const noLogin: Exec = () => ({ status: 1, stdout: '', stderr: 'not logged in' })
 const login: Exec = () => ({ status: 0, stdout: 'from-gh', stderr: '' })
@@ -40,6 +40,14 @@ describe('findToken', () => {
 
 	it('finds none without a variable or a login', () => {
 		assert.equal(findToken({ env: {}, exec: noLogin }), undefined)
+	})
+
+	it('finds none when gh is not installed', () => {
+		const missing: Exec = () => {
+			throw new Error('spawnSync gh ENOENT')
+		}
+
+		assert.equal(findToken({ env: {}, exec: missing }), undefined)
 	})
 })
 

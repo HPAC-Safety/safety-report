@@ -17,17 +17,9 @@
 import { writeFileSync } from 'node:fs'
 
 import { type Env, type Exec, exec as realExec, isMain } from '../lib/actions.ts'
-import { type Api, PAGE, github, openIssues, renderPage } from './check-issue-traceability.ts'
+import { type Api, PAGE, findToken, github, openIssues, renderPage } from './check-issue-traceability.ts'
 
 export const DEFAULT_REPOSITORY = 'HPAC-Safety/safety-report'
-
-/** The token to read GitHub with, or undefined when there is none. */
-export function findToken({ env, exec }: { env: Env; exec: Exec }): string | undefined {
-	const fromEnv = env.GITHUB_TOKEN || env.GH_TOKEN
-	if (fromEnv) return fromEnv
-	const login = exec('gh', ['auth', 'token'])
-	return login.status === 0 && login.stdout ? login.stdout : undefined
-}
 
 /** Reads the open issues and returns the page the generator writes. */
 export async function generate({ api, repository }: { api: Api; repository: string }): Promise<string> {

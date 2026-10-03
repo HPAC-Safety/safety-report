@@ -16,11 +16,12 @@
 //   GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/spec/check-issue-traceability.ts          reports drift
 //   GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/spec/check-issue-traceability.ts --sync   also keeps the drift issue
 //
-// With no token it reads nothing and exits 0 with a notice. Without --sync the
+// The token comes from GITHUB_TOKEN, then GH_TOKEN, then `gh auth token`.
+// With none it reads nothing and exits 0 with a notice. Without --sync the
 // exit code says whether there is drift. The page and its rows are rendered
 // here, so the generator and this check cannot disagree.
 import { readFileSync } from 'node:fs'
-import { isMain } from '../lib/actions.ts'
+import { type Env, type Exec, exec as realExec, isMain } from '../lib/actions.ts'
 
 export const PAGE = 'docs/issue-traceability.md'
 export const DRIFT_TITLE = 'Issue traceability drift'
@@ -84,6 +85,19 @@ const quoted = (title: string): string => `\`${title.replaceAll('`', "'")}\``
 export const escapeCommand = (text: string): string => text.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
 export const DRIFT_MILESTONE = 'Docs & spec hygiene'
 
+/** The token to read GitHub with: GITHUB_TOKEN, then GH_TOKEN, then the `gh` login; undefined when there is none. */
+export function findToken({ env, exec }: { env: Env; exec: Exec }): string | undefined {
+	const fromEnv = env.GITHUB_TOKEN || env.GH_TOKEN
+	if (fromEnv) return fromEnv
+	try {
+		const login = exec('gh', ['auth', 'token'])
+		return login.status === 0 && login.stdout ? login.stdout : undefined
+	} catch {
+		// No gh on the path: there is no login to fall back to.
+		return undefined
+	}
+}
+
 /**
  * Labels that say who is working on an issue, not what it is. They change
  * too often to be worth a regenerated page.
@@ -94,7 +108,7 @@ export const TRANSIENT_LABELS: ReadonlySet<string> = new Set(['in progress'])
 const cell = (text: string): string =>
 	text
 		.replace(/\s+/g, ' ')
-		.replace(/[|[\]]/g, (character) => `\\${character}`)
+		.replace(/[\\|[\]]/g, (character) => `\\${character}`)
 		.trim()
 
 /** The one table row the page holds for `issue`. */
@@ -105,7 +119,7 @@ export function issueRow(issue: Issue, repository: string): string {
 		'',
 		` [#${String(issue.number)} — ${cell(issue.title)}](https://github.com/${repository}/issues/${String(issue.number)}) `,
 		` ${issue.milestone ? cell(issue.milestone) : '—'} `,
-		` ${labels.length > 0 ? labels.map((label) => `\`${label}\``).join(', ') : '—'} `,
+		` ${labels.length > 0 ? labels.map((label) => quoted(label)).join(', ') : '—'} `,
 		` ${parent} `,
 		'',
 	].join('|')
@@ -312,7 +326,7 @@ export async function main({ api, markdown, sync, repository }: { api: Api | nul
 
 const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
-	const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+	const token = findToken({ env: process.env, exec: realExec })
 	const repository = process.env.GITHUB_REPOSITORY || 'HPAC-Safety/safety-report'
 	const api = token ? github({ token, repository }) : null
 	process.exitCode = await main({ api, repository, markdown: readFileSync(PAGE, 'utf8'), sync: process.argv.includes('--sync') })

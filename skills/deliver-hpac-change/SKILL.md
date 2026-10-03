@@ -162,15 +162,10 @@ Rules:
 - Lessons live under [`.spec/lessons/`](../../.spec/lessons/README.md)
   ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md),
   [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
-- Frontmatter `kind:` is `product`, `process`, or `incident`.
-  `node tools/spec/check-records.ts` fails, in pre-commit and `docs`:
-  - a section other than `## Symptom`, `## Root cause`, `## Spec delta`,
-    `## Scenario`, `## Skill`, or those out of order;
-  - a product or process lesson missing any of the five;
-  - a product lesson whose `## Spec delta` names no `REQ-` or `CON-` ID;
-  - a process lesson whose `## Skill` names no existing `` `skill-name` `` or
-    `CONV-NNN`;
-  - an incident missing `## Symptom` or `## Root cause`.
+- Frontmatter `kind:` is `product`, `process`, or `incident`;
+  `node tools/spec/check-records.ts` checks what each kind owes, in pre-commit
+  and `docs`. The rules: the table in
+  [`.spec/lessons/README.md`](../../.spec/lessons/README.md#the-shape).
 - A process lesson updates the generic skill when its rule transfers to any
   project, and this project's companion skill when the rule names this
   repository's tools or paths. The lesson's `## Skill` section names the skill
@@ -184,8 +179,8 @@ Rules:
 
 ### ADRs
 
-- The rules: [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md). Lifecycle, template, checks, and the missing numbers:
-  [`.spec/decisions/README.md`](../../.spec/decisions/README.md).
+- The rules: [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md). Lifecycle, template, checks, and the
+  missing numbers: [`.spec/decisions/README.md`](../../.spec/decisions/README.md).
 - Template: copy [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md).
   From ADR-0192 on, a record has exactly its sections, in its order.
 - Conventions: a new process, tooling, or agent-workflow rule is
@@ -195,32 +190,15 @@ Rules:
   stay in `.spec/decisions/`.
 - The upstream `documentation-and-adrs` skill's ADR template and lifecycle do
   not apply here; this section and ADR-0192 do.
-- `node tools/spec/adr-numbers.ts` fails a duplicate number or a filename and
-  heading that disagree, in the pre-commit hook and CI
-  ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
-- It also fails a `status:` that disagrees with the record's own `**Status:**`
-  line ([ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)):
-  - `status:` is `proposed`, `accepted`, `rejected`, `deprecated`, or
-    `superseded`; `partially-superseded` stays only on the records that
-    already carry it;
-  - a status line saying "superseded by [ADR-NNNN]" needs `superseded`, and
-    ADR-NNNN must exist;
-  - a superseded record's status line links what replaced it.
-- `node tools/spec/check-records.ts` fails, in pre-commit and `docs`:
-  - a status that is not one `**Status:**` paragraph directly under the
-    heading, or a `## Status` section;
-  - a record without exactly one `## Considered options`;
-  - an amendment heading other than `## Amendment (YYYY-MM-DD)`, optionally
-    ` — subject`;
-  - from ADR-0192 on: a section the template lacks, a missing required one,
-    sections out of order, `partially-superseded`, or a status line not
-    opening with its status (`Accepted`, `Superseded`, …).
-- `node tools/spec/check-adr-immutability.ts` fails a pull request, in the
-  `docs` job (`BASE_SHA` is the pull request's or merge group's base), whose
-  diff to an ADR on the base changes anything but its `status:`, its
-  `**Status:**` line, or a link's target; deletes one; or newly makes one
-  `partially-superseded`. A `proposed` record is exempt. Pre-commit runs it
-  with `--staged` against the merge base with `origin/main`.
+- Three checks run in pre-commit and the `docs` job; what each fails is in
+  [`.spec/decisions/README.md`](../../.spec/decisions/README.md#checks):
+  - `node tools/spec/adr-numbers.ts` — numbering and status agreement
+    ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md),
+    [ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md));
+  - `node tools/spec/check-records.ts` — the template and status line;
+  - `node tools/spec/check-adr-immutability.ts` — a pull request changes an
+    ADR on its base only in its status. CI passes `BASE_SHA`; pre-commit runs
+    it with `--staged`.
 - Superseding an older ADR: change its `status:` and its status line in the
   same pull request, and nothing else in it.
 - The root README is [`README.md`](../../README.md).

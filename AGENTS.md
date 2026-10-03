@@ -155,7 +155,8 @@ contributor who never invokes one is unaffected.
   [`.spec/lessons/`](.spec/lessons/README.md) in the same pull request
   ([ADR-0085](.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
   Its `kind` — product, process, or incident — decides what it owes
-  ([ADR-0192](.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)). What it contains and which skill it updates:
+  ([ADR-0192](.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+  What it contains and which skill it updates:
   [`deliver-change`](skills/deliver-change/SKILL.md) "Lessons".
 - Read lessons on a design pass, alongside `.spec/features` and the ADRs.
 

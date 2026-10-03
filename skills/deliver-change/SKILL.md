@@ -238,9 +238,9 @@ stronger one:
   the same pull request, and name it in the lesson's `## Skill` section. The
   skill holds the general rule; the lesson keeps the incident. Agents read
   skills, not the lessons index.
-- **Incident** (an operational failure no claim or skill change would have
-  prevented): symptom and root cause only. Never invent a rule to give it a
-  remedy.
+- **Incident** (an operational postmortem: something failed in running the
+  system): symptom and root cause are what it owes. It may also name a skill
+  it changed; never invent a rule just to give it one.
 - A lesson keeps the project's sections and no others; extra detail is a
   subsection of one of them.
 
@@ -260,15 +260,19 @@ stronger one:
   consequences. Considered options is required; a decision with no
   alternative worth naming says so there.
 - **An accepted ADR is immutable.** Only its status changes, and a link's
-  target when the file it points to moves.
+  target when the file it points to moves or is deleted (point it at a
+  permalink).
   - A change to the decision is a new ADR. The old one's status becomes
     `superseded`, its status line linking the new one.
   - A new ADR that changes part of an older one still supersedes the whole
-    record, and states what of it still holds.
+    record, and lists what of it still holds — by link or claim ID — never
+    restating it, so each rule keeps one source.
   - Never append an amendment, rewrite the body, or delete a record. A typo in
     an accepted ADR stays.
 - **Statuses**: `proposed` (may change freely), `accepted`, `rejected`,
-  `deprecated`, `superseded`. There is no partial supersession.
+  `deprecated`, `superseded`. An accepted record moves only to `superseded` or
+  `deprecated`, whose status line links the record that replaced or retired
+  it; the other three are terminal. There is no partial supersession.
 - An ADR's declared status agrees with its own status line, and a successor it
   names exists. Tools check both, and a CI check fails a pull request whose
   diff to an accepted ADR touches anything but its status.

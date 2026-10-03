@@ -50,10 +50,10 @@ for a mistake it has not made yet, which is why a process lesson that stops
 here is a story rather than a rule
 ([ADR-0085](../decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
 
-**An incident** (`kind: incident`) is an operational failure — a deploy, an
-account, a provider — whose cause no claim or skill change would have
-prevented. It records what happened and why, and owes nothing upstream. Do not
-invent a rule to hang on a skill.
+**An incident** (`kind: incident`) is an operational postmortem — a deploy, an
+account, a provider failed in running the system. It records what happened and
+why, and owes only that. When it did change a skill, its **Skill** section
+names it; never invent a rule just to give it one.
 
 ## The shape
 
@@ -76,7 +76,7 @@ others; anything more is a `###` under one of them:
 |---|---|---|
 | `product` | all five | Spec delta names a `REQ-` or `CON-` ID |
 | `process` | all five | Skill names a skill (`` `skill-name` ``) or a convention (`CONV-NNN`) that exists |
-| `incident` | Symptom, Root cause | — |
+| `incident` | Symptom, Root cause | may name a skill it changed |
 
 `node tools/spec/check-records.ts` checks all of it, in the pre-commit hook and
 the `docs` job.

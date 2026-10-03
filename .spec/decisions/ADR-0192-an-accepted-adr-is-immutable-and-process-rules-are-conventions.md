@@ -35,8 +35,8 @@ being a record of what was decided when:
   architecture. Process rules change often, which is what drove the
   amendments.
 - Lessons had no validated structure: 18 of 43 changed nothing upstream, and
-  0027–0036 are infrastructure incident write-ups that no claim or skill
-  change can follow.
+  0027–0036 are postmortems of infrastructure incidents, whose remedy, where
+  there was one, was a skill change rather than a claim.
 
 ## Decision drivers
 
@@ -60,6 +60,16 @@ being a record of what was decided when:
   and mechanical normalization of the old records** — chosen.
 
 The implementation choices made under that decision:
+
+- **Keep partial supersession, with a status naming what was narrowed.**
+  Rejected by the owner on 2026-10-03: a partly superseded record must be read
+  together with every record that narrowed it. A narrowing ADR supersedes the
+  whole older record and lists what still holds, by link or claim ID, without
+  restating it.
+- **An incident lesson owes a skill change, like a process lesson.**
+  Rejected by the owner on 2026-10-03: a postmortem's cause is often outside
+  anything a skill governs. It owes symptom and root cause, and may name a
+  skill it changed.
 
 - **Conventions immutable, like ADRs.** Rejected: process rules change often,
   which is what drove the amendments; a convention is edited in place and git
@@ -88,8 +98,9 @@ The implementation choices made under that decision:
   not leave a dangling link that the record cannot fix.
 - A change to a decision is a new ADR. The record it changes becomes
   `superseded`, its status line linking the new one. A new ADR that changes
-  only part of an older one still supersedes the whole record, and states what
-  of it still holds, so the newest record is complete on its own.
+  only part of an older one still supersedes the whole record, and **lists**
+  what of it still holds — by link or claim ID — **never restating it**, so
+  every rule keeps one source.
 - No more appended amendment sections. The ones already written stay, as
   history, under one heading form: `## Amendment (YYYY-MM-DD)`, optionally
   followed by ` — <subject>`. Inline amendment notes in a record's opening
@@ -154,8 +165,9 @@ Every lesson's frontmatter carries `kind`:
 - `product` — a claim is the remedy: its `## Spec delta` names a `REQ-` or
   `CON-` ID.
 - `process` — a skill or convention is the remedy: its `## Skill` names one.
-- `incident` — an operational failure with no claim or skill to change: only
-  `## Symptom` and `## Root cause` are required.
+- `incident` — an operational postmortem: what failed in running the system,
+  and why. It owes `## Symptom` and `## Root cause`, and may also name a
+  skill it changed.
 
 A product or process lesson keeps the five sections of
 [`../lessons/README.md`](../lessons/README.md); no lesson carries any other
@@ -179,7 +191,8 @@ A product or process lesson keeps the five sections of
   amendment on what an ADR records: a process rule is now a convention, and
   interface detail a scenario.
 - [ADR-0085](ADR-0085-a-lesson-flows-upstream-into-the-specification.md):
-  a lesson declares one of three kinds, and an incident owes no remedy.
+  a lesson declares one of three kinds, and an incident, a postmortem, owes
+  only its symptom and root cause.
 - [ADR-0087](ADR-0087-every-markdown-file-declares-itself.md): `convention`
   joins the types, and a lesson adds `kind`.
 - [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md): the

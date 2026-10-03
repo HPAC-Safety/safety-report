@@ -33,8 +33,8 @@ This is not discretionary. If in doubt, write the ADR. These do not:
   change, and a link's target when the file it points to moves or is deleted
   (point it at a commit permalink).
 - A change to a decision is a new ADR. The record it changes becomes
-  `superseded`, its status line linking the new one; the new one states what of
-  the old still holds.
+  `superseded`, its status line linking the new one; the new one lists what of
+  the old still holds, by link or claim ID, never restating it.
 - No new amendment sections. The ones written before ADR-0192 stay as history,
   headed `## Amendment (YYYY-MM-DD)`. Inline amendment notes in a record's
   opening paragraphs (`**Amended …:**`, `**Provider:**`, and the like) stay as

@@ -191,6 +191,15 @@ same closed-control shape as a single-select: one trigger labelled by the
 question, naming what is chosen, that opens a list of checkable options and
 stays open while several are checked. Escape or leaving it closes it.
 
+The trigger is a `role="combobox"` button, as the single-select's is
+(`REQ-QB-208`): `aria-expanded` and `aria-controls` name the list, and
+`aria-haspopup="dialog"` says what it is, because the list is a labelled
+non-modal dialog holding one real checkbox per option, not a listbox
+(`REQ-SUB-132`). A combobox is the role that supports `aria-invalid`, which the
+admin editor sets on an "Offered under" picker whose choice has no parent
+ticked (`REQ-QB-222`). A button with no role cannot carry it. Enter and Space
+still open it, as on any button, and Escape closes it and returns focus to it.
+
 ## Returning to a saved report (#344)
 
 When the report page opens and this browser holds an unexpired saved report,
@@ -383,7 +392,12 @@ has a placeholder of its own. Clicking or focusing it opens a calendar popover u
 - month and weekday names follow the reader's language, and the week starts
   on Sunday in English and Monday in French. Every button and picker is
   labelled from the locale catalogues;
-- the popover is a labelled dialog. None of its controls is in the Tab
+- the popover is a labelled dialog, and the text field is the combobox that
+  controls it: `role="combobox"`, `aria-haspopup="dialog"`, `aria-expanded`,
+  and `aria-controls`, the WAI-ARIA 1.2 date-picker combobox pattern
+  (`REQ-SUB-131`). A press on the popover's background does not take focus
+  from the field, so the popover does not close under the pointer. None of its
+  controls is in the Tab
   order until focus is inside it, so Tab from the field goes on past it and
   closes it. From the field, ArrowDown moves into it.
   Inside it, the arrow keys move by a day or a week, Page Up and Page Down by a

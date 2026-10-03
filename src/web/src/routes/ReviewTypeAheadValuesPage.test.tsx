@@ -16,6 +16,7 @@ import {
 import { LocaleContext } from "../i18n/LocaleProvider"
 import type { Locale } from "../i18n/locales"
 import { ReviewTypeAheadValuesPage, useReviewTypeAheadValuesPage } from "./ReviewTypeAheadValuesPage"
+import { present } from "../lib/present"
 
 vi.mock("../api/adminQuestions", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../api/adminQuestions")>()),
@@ -227,11 +228,11 @@ describe("the review page", () => {
 		)
 		render(<ReviewTypeAheadValuesPage />, { wrapper: wrapperFor() })
 		await screen.findByText("en-v1")
-		expect(document.querySelector("[data-parent]")!.getAttribute("data-chosen")).toBe("p1")
+		expect(present(document.querySelector("[data-parent]")).getAttribute("data-chosen")).toBe("p1")
 		fireEvent.click(screen.getByText("relink"))
 		await waitFor(() => expect(mocked.relink).toHaveBeenCalledWith("v1", ["p1"]))
 		fireEvent.click(screen.getByText("choose p2"))
-		expect(document.querySelector("[data-parent]")!.getAttribute("data-chosen")).toBe("p2")
+		expect(present(document.querySelector("[data-parent]")).getAttribute("data-chosen")).toBe("p2")
 	})
 })
 
@@ -264,7 +265,10 @@ describe("useReviewTypeAheadValuesPage", () => {
 
 	it("ignores Translate on a value with no correction open", async () => {
 		const { card } = await mountHook()
-		await act(async () => card().onTranslate())
+		await act(async () => {
+			card().onTranslate()
+			await Promise.resolve()
+		})
 		expect(mocked.translate).not.toHaveBeenCalled()
 		expect(card().translateDisabled).toBe(true)
 	})
@@ -273,7 +277,10 @@ describe("useReviewTypeAheadValuesPage", () => {
 		mocked.translate.mockResolvedValue({ texts: [] })
 		const { card, result } = await mountHook()
 		act(() => card().onCorrect())
-		await act(async () => card().onTranslate())
+		await act(async () => {
+			card().onTranslate()
+			await Promise.resolve()
+		})
 		expect(card().draft?.labelFr).toBe("")
 		expect(result.current.error).toBeNull()
 	})
@@ -286,12 +293,18 @@ describe("useReviewTypeAheadValuesPage", () => {
 		act(() => card().onTranslate())
 		expect(card().draft?.translating).toBe(true)
 		act(() => card().onLabelEn("edited"))
-		await act(async () => finish({ texts: ["Stale"] }))
+		await act(async () => {
+			finish({ texts: ["Stale"] })
+			await Promise.resolve()
+		})
 		expect(card().draft).toMatchObject({ labelEn: "edited", labelFr: "fr-v1", translating: false })
 
 		act(() => card().onTranslate())
 		act(() => card().onDirection("toEnglish"))
-		await act(async () => finish({ texts: ["Stale"] }))
+		await act(async () => {
+			finish({ texts: ["Stale"] })
+			await Promise.resolve()
+		})
 		expect(card().draft).toMatchObject({ labelEn: "edited", translating: false })
 	})
 
@@ -303,7 +316,10 @@ describe("useReviewTypeAheadValuesPage", () => {
 		const stale = card()
 		act(() => stale.onTranslate())
 		act(() => stale.onCancel())
-		await act(async () => finish({ texts: ["Late"] }))
+		await act(async () => {
+			finish({ texts: ["Late"] })
+			await Promise.resolve()
+		})
 		expect(card().draft).toBeUndefined()
 		act(() => stale.onDirection("toEnglish"))
 		expect(card().draft).toBeUndefined()
@@ -315,7 +331,10 @@ describe("useReviewTypeAheadValuesPage", () => {
 		const stale = card()
 		act(() => stale.onCancel())
 		mocked.translate.mockRejectedValue(new Error("late"))
-		await act(async () => stale.onTranslate())
+		await act(async () => {
+			stale.onTranslate()
+			await Promise.resolve()
+		})
 		expect(card().draft).toBeUndefined()
 	})
 
@@ -323,9 +342,15 @@ describe("useReviewTypeAheadValuesPage", () => {
 		mocked.translate.mockRejectedValueOnce(new ApiError(502, "Provider down")).mockRejectedValueOnce(new Error("offline"))
 		const { card } = await mountHook()
 		act(() => card().onCorrect())
-		await act(async () => card().onTranslate())
+		await act(async () => {
+			card().onTranslate()
+			await Promise.resolve()
+		})
 		expect(card().draft?.translationError).toBe("Provider down")
-		await act(async () => card().onTranslate())
+		await act(async () => {
+			card().onTranslate()
+			await Promise.resolve()
+		})
 		expect(card().draft?.translationError).toBe("typeAheadValues.translate.failed")
 	})
 })

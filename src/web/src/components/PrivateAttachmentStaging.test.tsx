@@ -59,7 +59,10 @@ describe("PrivateAttachmentStaging", () => {
 		act(() => report(0.5))
 		expect(screen.getByText('privateAttachments.progress {"percent":"50"}')).toBeTruthy()
 		expect(screen.getByRole<HTMLButtonElement>("button", { name: /addAll/ }).disabled).toBe(true)
-		await act(async () => finish({ uploadId: "u1", contentType: "text/plain" }))
+		await act(async () => {
+			finish({ uploadId: "u1", contentType: "text/plain" })
+			await Promise.resolve()
+		})
 		expect(screen.getByText('privateAttachments.descriptionLength {"count":"0","max":"500"}')).toBeTruthy()
 		expect(screen.getByRole<HTMLButtonElement>("button", { name: "privateAttachments.addAll.one" }).disabled).toBe(false)
 	})
@@ -72,7 +75,7 @@ describe("PrivateAttachmentStaging", () => {
 		await waitFor(() => expect(screen.queryByRole("list")).toBeNull())
 	})
 
-	it("abandons anything still uploading when the page is left", async () => {
+	it("abandons anything still uploading when the page is left", () => {
 		let signal: AbortSignal | undefined
 		vi.mocked(stagePrivateUpload).mockImplementation((_report, _file, _progress, s) => {
 			signal = s

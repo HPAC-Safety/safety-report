@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { useModalDialog } from "./useModalDialog"
+import { present } from "../lib/present"
 
 const showModal = vi.fn(function (this: HTMLDialogElement) {
 	this.setAttribute("open", "")
@@ -40,7 +41,7 @@ describe("useModalDialog", () => {
 	})
 
 	it("does not open a dialog that is already open", () => {
-		const open = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "open")!
+		const open = present(Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "open"))
 		Object.defineProperty(HTMLDialogElement.prototype, "open", { get: () => true, configurable: true })
 		try {
 			render(<Probe />)

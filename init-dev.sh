@@ -236,18 +236,22 @@ fi
 # on the C# files a rebase rewrote, because a rebase commits without running
 # pre-commit.
 #
-# Installed by copying each into the real hooks directory rather than by
-# setting core.hooksPath: that directory is where graphify's own `graphify
-# hook install` (below) puts post-checkout/post-commit, and core.hooksPath
-# repoints git at a single directory for *every* hook, which would silently
-# stop those from running. Every name here (pre-commit, commit-msg, post-merge,
-# post-rewrite) is distinct from post-checkout/post-commit, so all coexist
-# with no collision. Resolved with `git rev-parse --git-path hooks` rather
-# than a hardcoded `.git/hooks` because this repository is worked in
-# primarily through git worktrees (see skills/deliver-change/SKILL.md),
-# where `.git` is a file, not a directory, and hooks live in the shared
-# main-checkout gitdir instead. Idempotent by content comparison, so a second
-# run only touches a hook file when its tracked template changed.
+# Installed as a thin shim (tools/dev/git-hook-shim.sh), not a copy, into the
+# real hooks directory rather than by setting core.hooksPath: that directory is
+# where graphify's own `graphify hook install` (below) puts
+# post-checkout/post-commit, and core.hooksPath repoints git at a single
+# directory for *every* hook, which would silently stop those from running.
+# Every name here (pre-commit, commit-msg, post-merge, post-rewrite) is distinct
+# from post-checkout/post-commit, so all coexist with no collision. The shim
+# runs the tracked .githooks/<name> of the worktree git is working in, so a
+# tool that moves, or a hook that changes, is picked up at once with no
+# re-install, and each worktree runs its own branch's hooks (#796). Resolved
+# with `git rev-parse --git-path hooks` rather than a hardcoded `.git/hooks`
+# because this repository is worked in primarily through git worktrees (see
+# skills/deliver-change/SKILL.md), where `.git` is a file, not a directory, and
+# hooks live in the shared main-checkout gitdir instead. Idempotent by content
+# comparison, so a second run only touches a hook file when the shim changed
+# (which also replaces a full copy installed before the shim existed).
 #
 # A dev-machine convenience, not a CI gate — CI enforces the pre-commit
 # checks directly in the "i18n" and "build" jobs, and re-checks
@@ -257,17 +261,17 @@ fi
 HOOKS_DIR=$(git rev-parse --git-path hooks)
 for hook in pre-commit commit-msg post-merge post-rewrite; do
 	if [ "$CHECK_ONLY" -eq 1 ]; then
-		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s ".githooks/$hook" "$HOOKS_DIR/$hook"; then
+		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s "tools/dev/git-hook-shim.sh" "$HOOKS_DIR/$hook"; then
 			ok "git $hook hook"
 		else
-			note "git $hook hook not installed — run without --check"
+			note "git $hook hook is not the shim — run without --check"
 		fi
 	else
-		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s ".githooks/$hook" "$HOOKS_DIR/$hook"; then
+		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s "tools/dev/git-hook-shim.sh" "$HOOKS_DIR/$hook"; then
 			ok "git $hook hook already installed"
 		else
 			mkdir -p "$HOOKS_DIR"
-			cp ".githooks/$hook" "$HOOKS_DIR/$hook"
+			cp "tools/dev/git-hook-shim.sh" "$HOOKS_DIR/$hook"
 			chmod +x "$HOOKS_DIR/$hook"
 			added "git $hook hook"
 		fi

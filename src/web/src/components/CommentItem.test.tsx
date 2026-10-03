@@ -78,7 +78,10 @@ describe("useCommentItem", () => {
 
 		act(() => result.current.askDelete())
 		expect(result.current.confirming).toBe("delete")
-		await act(async () => result.current.confirmed())
+		await act(async () => {
+			result.current.confirmed()
+			await Promise.resolve()
+		})
 
 		expect(props.onDelete).toHaveBeenCalled()
 		expect(props.onHide).not.toHaveBeenCalled()
@@ -91,7 +94,10 @@ describe("useCommentItem", () => {
 
 		act(() => result.current.askHide())
 		expect(result.current.confirming).toBe("hide")
-		await act(async () => result.current.confirmed())
+		await act(async () => {
+			result.current.confirmed()
+			await Promise.resolve()
+		})
 
 		expect(props.onHide).toHaveBeenCalled()
 		expect(props.onDelete).not.toHaveBeenCalled()

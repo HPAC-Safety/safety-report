@@ -5,6 +5,7 @@ import { ApiError } from "../api/adminQuestions"
 import { LocaleContext } from "../i18n/LocaleProvider"
 import { AttachmentThumbnail, type AttachmentThumbnailProps } from "./AttachmentThumbnail"
 import type { StripItem } from "./stripItems"
+import { present } from "../lib/present"
 
 afterEach(cleanup)
 
@@ -75,10 +76,10 @@ describe("AttachmentThumbnail", () => {
 	it("retries once with a fresh link when the bytes fail, then leaves it blank", async () => {
 		const props = mount()
 		await waitFor(() => expect(document.querySelector("img")).toBeTruthy())
-		fireEvent.error(document.querySelector("img")!)
+		fireEvent.error(present(document.querySelector("img")))
 		expect(props.invalidateLink).toHaveBeenCalledWith("i")
 		await waitFor(() => expect(props.getLink).toHaveBeenCalledTimes(2))
-		fireEvent.error(document.querySelector("img")!)
+		fireEvent.error(present(document.querySelector("img")))
 		expect(props.invalidateLink).toHaveBeenCalledTimes(1)
 		expect(props.getLink).toHaveBeenCalledTimes(2)
 	})

@@ -19,6 +19,10 @@
 #   feature-coverage.yml  feature-coverage
 #   ci.yml                build, lint, web, i18n, docs, cucumber, agent-config
 #
+# `lint` runs ESLint and then the browser suite's type check (`npm run
+# typecheck:e2e`), which is why a type error in tests/e2e fails here without
+# running Playwright.
+#
 # It skips test, coverage, e2e, and terraform. Those are the slow ones, and
 # GitHub CI, the coverage ratchet included, is the full gate. So before opening
 # a pull request, run the tests for the code you changed natively: a filtered

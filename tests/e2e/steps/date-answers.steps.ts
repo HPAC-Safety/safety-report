@@ -5,6 +5,7 @@ import { devices, expect, type BrowserContext, type Page, type Request } from "@
 
 import { signInAs, stubAuth } from "./auth"
 import { stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then, After } = createBdd()
 
@@ -136,7 +137,7 @@ function daysBefore(days: number): Date {
 // The field's own calendar, in whichever language; its English name is
 // asserted where a scenario says what it is called.
 function calendar(page: Page) {
-	return page.locator(`${DATE_FIELD}-calendar[role="dialog"]`)
+	return page.locator(`dialog${DATE_FIELD}-calendar`)
 }
 
 function dayButton(page: Page, date: Date) {
@@ -208,7 +209,8 @@ When("the reporter clicks the date field and chooses the 1st of today's month ag
 	// Every text the status region holds from here on, in order, so a clear
 	// before the second announcement shows up.
 	await page.evaluate((selector) => {
-		const status = document.querySelector(selector)!.parentElement!.querySelector('[role="status"]')!
+		const status = document.querySelector(selector)?.parentElement?.querySelector('[role="status"]')
+		if (!status) throw new Error(`No status region beside ${selector}.`)
 		const seen: string[] = []
 		;(window as unknown as { seenAnnouncements: string[] }).seenAnnouncements = seen
 		new MutationObserver(() => seen.push(status.textContent)).observe(status, { childList: true, characterData: true, subtree: true })
@@ -232,6 +234,11 @@ When("the reporter submits the report from the next page", async ({ page }) => {
 	const request = page.waitForRequest((candidate) => candidate.url().includes("/api/v1/reports/") && candidate.method() === "POST")
 	await page.getByRole("button", { name: "Submit report" }).click()
 	sent.set(page, await request)
+})
+
+When("the reporter presses the calendar's background", async ({ page }) => {
+	// The calendar's own padding, clear of every control inside it.
+	await calendar(page).click({ position: { x: 4, y: 4 } })
 })
 
 When("the reporter tabs into the date field and presses ArrowDown", async ({ page }) => {
@@ -287,10 +294,10 @@ Then("a calendar labelled {string} opens under the field, showing today's month"
 	const dialog = page.getByRole("dialog", { name })
 	await expect(dialog).toBeVisible()
 	await expect(page.locator(DATE_FIELD)).toHaveAttribute("aria-expanded", "true")
-	await expect(page.locator(DATE_FIELD)).toHaveAttribute("aria-controls", (await dialog.getAttribute("id"))!)
+	await expect(page.locator(DATE_FIELD)).toHaveAttribute("aria-controls", present(await dialog.getAttribute("id")))
 
-	const field = (await page.locator(DATE_FIELD).boundingBox())!
-	const box = (await dialog.boundingBox())!
+	const field = present(await page.locator(DATE_FIELD).boundingBox())
+	const box = present(await dialog.boundingBox())
 	expect(box.y).toBeGreaterThanOrEqual(field.y + field.height)
 	expect(Math.abs(box.x - field.x)).toBeLessThan(2)
 
@@ -312,6 +319,32 @@ Then("the date field reads the 1st of today's month as yyyy-mm-dd", async ({ pag
 	const first = today()
 	first.setDate(1)
 	await expect(page.locator(DATE_FIELD)).toHaveValue(iso(first))
+})
+
+// The WAI-ARIA 1.2 date-picker combobox pattern (REQ-SUB-131): the text field is
+// the combobox, the calendar its dialog popup.
+function dateCombobox(page: Page) {
+	return page.getByRole("combobox", { name: /On what date did it happen\?|À quelle date est-ce arrivé\?/ })
+}
+
+Then("the date field is a collapsed combobox with a dialog as its popup", async ({ page }) => {
+	const field = dateCombobox(page)
+	await expect(field).toHaveAttribute("aria-haspopup", "dialog")
+	await expect(field).toHaveAttribute("aria-expanded", "false")
+	await expect(field).toHaveAttribute("aria-controls", `${DATE_FIELD.slice(1)}-calendar`)
+	await expect(page.getByRole("dialog")).toHaveCount(0)
+})
+
+Then("the date field is expanded and controls the dialog labelled {string}", async ({ page }, name: string) => {
+	const dialog = page.getByRole("dialog", { name })
+	await expect(dialog).toBeVisible()
+	await expect(dateCombobox(page)).toHaveAttribute("aria-expanded", "true")
+	await expect(dateCombobox(page)).toHaveAttribute("aria-controls", present(await dialog.getAttribute("id")))
+})
+
+Then("the calendar stays open and focus is on the date field", async ({ page }) => {
+	await expect(calendar(page)).toBeVisible()
+	await expect(page.locator(DATE_FIELD)).toBeFocused()
 })
 
 Then("the calendar closes", async ({ page }) => {
@@ -354,7 +387,7 @@ Then(/^every day after today is (disabled|offered)$/, async ({ page }, state: st
 	const days = calendar(page).locator("button[data-day]")
 	const after = iso(today())
 	for (const day of await days.all()) {
-		if ((await day.getAttribute("data-day"))! <= after) {
+		if (present(await day.getAttribute("data-day")) <= after) {
 			await expect(day).toBeEnabled()
 			continue
 		}
@@ -384,8 +417,8 @@ Then("an inline message says {string}", async ({ page, $testInfo }, message: str
 	await expect(current.locator(DATE_FIELD)).toHaveAttribute("aria-describedby", /rev-occurred_on-error/)
 })
 
-Then("the date answer is sent as {string}", async ({ page }, value: string) => {
-	const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
+Then("the date answer is sent as {string}", ({ page }, value: string) => {
+	const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
 	expect(body.answers.find((answer) => answer.questionRevisionId === "rev-occurred_on")?.value).toBe(value)
 })
 
@@ -399,7 +432,7 @@ Then(/^its weekday headings start on (Sunday|Monday)$/, async ({ page }, first: 
 	const headings = calendar(page).locator("thead th")
 	await expect(headings).toHaveCount(7)
 	// 4 January 1970 was a Sunday, and the 5th a Monday.
-	const locale = (await page.locator("html").getAttribute("lang"))!
+	const locale = present(await page.locator("html").getAttribute("lang"))
 	const expected = new Intl.DateTimeFormat(locale, { weekday: "long" }).format(new Date(1970, 0, first === "Sunday" ? 4 : 5))
 	await expect(headings.first()).toHaveAttribute("abbr", expected)
 })

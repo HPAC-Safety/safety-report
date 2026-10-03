@@ -32,4 +32,6 @@ Turn a claim into a test that fails for the right reason. Never make it pass.
 - Production code to pass your own test; hand it to the implementer.
 - Encoding a fact the scenario does not state; send the scenario back.
 - Weakening an assertion. A test that cannot fail proves nothing.
+- The clone's shared stash (a bare `git stash` or `git stash pop`): park work in
+  a WIP commit. `deliver-change` "Worktree and branch" has the rule.
 - Asserting exact model prose beyond the strict schema and required phrases.

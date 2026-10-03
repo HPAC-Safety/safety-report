@@ -1392,6 +1392,26 @@ Examples:
   | pressing Alt and the down arrow |
   | pressing the down arrow         |
 
+@REQ-QB-267
+@ui
+Scenario: A reporter picks a type-ahead choice with the pointer, and no option ever takes focus
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "Coo" in the field
+  And they click "Cooper's" in the list
+  Then the list is closed and the field holds "Cooper's"
+  And the field has focus
+
+@REQ-QB-268
+@ui
+Scenario: A reporter picks a single-select choice with the pointer, and no option ever takes focus
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they open the field's list by clicking the field
+  And they click "Cooper's" in the list
+  Then the list is closed and the field holds "Cooper's"
+  And the field has focus
+
 @REQ-QB-209
 @ui
 Scenario: A reporter picks a single-select choice from the keyboard and the pointer
@@ -1759,7 +1779,7 @@ Scenario Outline: Each choice of a dependent question picks the parent choices i
   Given a signed-in Administrator using <language> opens the manage-questions page
   When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
   Then every choice row, a new one included, has an "Offered under" multi-select listing "Niviuk", "Ozone", "Other"
-  And Save is refused while a choice is offered under nothing, naming that choice in <language>
+  And Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
   When they tick "Niviuk" and "Ozone" for one choice and "Ozone" for every other, and save
   Then the save sends each choice with every parent choice ticked for it
 

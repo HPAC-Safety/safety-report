@@ -3,6 +3,7 @@ import { expect, type Page, type Request } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -81,7 +82,7 @@ async function submitFromConsent(page: Page) {
 }
 
 function sentValue(page: Page): unknown {
-	const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
+	const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
 	return body.answers.find((answer) => answer.questionRevisionId === "rev-contact")?.value
 }
 
@@ -168,7 +169,7 @@ When("the reporter goes on to submit the report", async ({ page }) => {
 	await submitFromConsent(page)
 })
 
-Then("the phone answer is sent as {string}", async ({ page }, e164: string) => {
+Then("the phone answer is sent as {string}", ({ page }, e164: string) => {
 	expect(sentValue(page)).toBe(e164)
 })
 
@@ -177,7 +178,7 @@ Then("the field is a combobox whose suggestion list is labelled {string}", async
 	await expect(combobox).toHaveAttribute("aria-expanded", "true")
 	const list = page.getByRole("listbox", { name: label })
 	await expect(list).toBeVisible()
-	await expect(combobox).toHaveAttribute("aria-controls", (await list.getAttribute("id"))!)
+	await expect(combobox).toHaveAttribute("aria-controls", present(await list.getAttribute("id")))
 })
 
 Then("the suggestions below it are, in order:", async ({ page }, table: DataTable) => {
@@ -194,7 +195,7 @@ When(/^the reporter chooses "(.+)" (with the keyboard|with the pointer)$/, async
 	expect(index).toBeGreaterThanOrEqual(0)
 	for (let step = 0; step <= index; step++) await contactField(page).press("ArrowDown")
 	await expect(options.nth(index)).toHaveAttribute("aria-selected", "true")
-	await expect(contactField(page)).toHaveAttribute("aria-activedescendant", (await options.nth(index).getAttribute("id"))!)
+	await expect(contactField(page)).toHaveAttribute("aria-activedescendant", present(await options.nth(index).getAttribute("id")))
 	await contactField(page).press("Enter")
 })
 

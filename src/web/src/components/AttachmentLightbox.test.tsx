@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { LocaleContext } from "../i18n/LocaleProvider"
 import { AttachmentLightbox, useAttachmentLightbox, type AttachmentLightboxProps } from "./AttachmentLightbox"
 import type { StripItem } from "./stripItems"
+import { present } from "../lib/present"
 
 vi.mock("./AttachmentLightboxMedia", () => ({
 	AttachmentLightboxMedia: (props: { item: StripItem; onGone: () => void }) => (
@@ -58,7 +59,7 @@ describe("AttachmentLightbox", () => {
 	})
 
 	it("does not open a dialog that is already open", () => {
-		const open = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "open")!
+		const open = present(Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "open"))
 		Object.defineProperty(HTMLDialogElement.prototype, "open", { get: () => true, configurable: true })
 		try {
 			render(<AttachmentLightbox {...props()} />, { wrapper })

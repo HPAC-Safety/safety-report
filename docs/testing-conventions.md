@@ -60,6 +60,7 @@ npm --prefix src/web run test:coverage   # Vitest, 100% on split components and 
 npm --prefix src/web run typecheck
 node tools/web/check-component-split.ts
 npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm --prefix tools/gherkin ci && npm run lint   # ESLint (strict, type-checked): src/web, tools, tests/js, tests/e2e
+npm run typecheck:e2e   # tsc over tests/e2e: Playwright transpiles without checking
 npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 
@@ -76,7 +77,9 @@ under the gate; `api/` tests mock `fetch` and `XMLHttpRequest`. A `v8 ignore` or
 comment directly above, and the split guard fails one without it. Every
 TypeScript and JavaScript file is linted by ESLint at the repository root
 (`eslint.config.mjs`, CI's `lint` job, pre-commit); the rules are errors, and
-for TypeScript they are typescript-eslint's strict-type-checked set.
+for TypeScript they are typescript-eslint's strict-type-checked set. Test code
+gets no relaxation: a value a test needs is narrowed with `present(...)`, not
+asserted with `!`, and a spy is held in a variable, not read off an object.
 
 Integration suites require Docker. Coverage retains the repository floor and
 added-code ratchet, but privacy and behavior assertions matter more than a high

@@ -3,6 +3,7 @@ import { expect, type Page, type Request } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -110,8 +111,8 @@ When("the reporter submits the report", async ({ page }) => {
 
 Then(
 	/^the yes\/no answer is sent as the JSON boolean false and the consent answer as the JSON boolean true$/,
-	async ({ page }) => {
-		const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
+	({ page }) => {
+		const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
 		const valueOf = (revisionId: string) => body.answers.find((answer) => answer.questionRevisionId === revisionId)?.value
 
 		expect(valueOf("rev-injured")).toBe(false)

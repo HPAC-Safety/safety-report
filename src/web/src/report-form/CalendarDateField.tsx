@@ -164,7 +164,7 @@ export function useCalendarDateField({
 		}
 	}
 
-	function onDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+	function onDialogKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
 		if (event.key === "Escape") {
 			event.preventDefault()
 			event.stopPropagation()
@@ -178,9 +178,11 @@ export function useCalendarDateField({
 	}
 
 	// A press on the calendar's background keeps focus where it is, so the
-	// calendar does not close under the pointer.
+	// calendar does not close under the pointer. The field's own press is left
+	// alone, and so is a press on one of the calendar's controls.
 	function onDialogMouseDown(event: MouseEvent<HTMLDivElement>) {
-		if (!(event.target as HTMLElement).closest("select, button")) event.preventDefault()
+		const target = event.target as HTMLElement
+		if (target.closest("dialog") && !target.closest("select, button")) event.preventDefault()
 	}
 
 	function showMonth(year: number, month: number) {

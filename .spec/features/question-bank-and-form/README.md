@@ -286,12 +286,18 @@ type-ahead's alone. Each keeps its own input type
     answer (`REQ-QB-209`).
   - **Clearing.** "Choose one" is the list's first row; choosing it leaves
     the question unanswered (`REQ-QB-210`).
+  - **The pointer** picks a choice by a click on its row (`REQ-QB-268`). The
+    rows are `role="option"` and never take focus: the keyboard drives them
+    from the field through `aria-activedescendant`, as in the type-ahead
+    (`REQ-QB-267`), so a row has no key handler of its own and the click is
+    taken once, on the field's container, for whichever row it landed on.
   - **The answer** is held and sent by its choice's identifier, as before.
     Nothing can be typed into a single-select; that stays the type-ahead's.
   - **Disabled.** A dependent single-select waiting on its parent looks and
     behaves disabled, as a type-ahead does (`REQ-QB-197`).
   - **Small screens.** As the type-ahead's (`REQ-QB-163`).
-- **Multi-select.** The closed trigger is unchanged (`REQ-SUB-034`). Its open
+- **Multi-select.** The closed trigger is a combobox button
+  (`REQ-SUB-034`, `REQ-SUB-132`). Its open
   list takes the type-ahead's rows and separators, a real checkbox on each
   row, and the type-ahead's highlight on the row pointed at or focused. It
   stays open while several are checked (`REQ-QB-211`).

@@ -11,7 +11,7 @@ export function AttachmentLightboxMediaView({ item, label, url, video, failed, l
 	return item.kind === "image" ? (
 		<img src={url} alt={label} onError={failed} className="max-h-[70vh] w-full rounded object-contain" />
 	) : (
-		// eslint-disable-next-line jsx-a11y/media-has-caption -- a reporter's footage has no captions to offer, and a <track> would change the DOM
+		// eslint-disable-next-line jsx-a11y/media-has-caption -- a reporter's footage carries no captions, a deliberate position (REQ-MED-062)
 		<video
 			ref={video}
 			src={url}

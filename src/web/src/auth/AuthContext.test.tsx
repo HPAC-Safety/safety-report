@@ -82,7 +82,10 @@ describe("useAuthProvider", () => {
 		const { unmount } = renderHook(() => useAuthProvider())
 
 		unmount()
-		await act(async () => resolve({ subject: "new", role: "administrator" }))
+		await act(async () => {
+			resolve({ subject: "new", role: "administrator" })
+			await Promise.resolve()
+		})
 
 		expect(writeSession).not.toHaveBeenCalled()
 	})
@@ -94,7 +97,10 @@ describe("useAuthProvider", () => {
 		const { unmount } = renderHook(() => useAuthProvider())
 
 		unmount()
-		await act(async () => reject(new Error("offline")))
+		await act(async () => {
+			reject(new Error("offline"))
+			await Promise.resolve()
+		})
 
 		expect(clearSession).not.toHaveBeenCalled()
 	})

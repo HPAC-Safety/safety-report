@@ -176,7 +176,7 @@ async function stubAdminApi(page: Page) {
 
 			// The real API derives each choice's code from its English wording and
 			// refuses two that reduce to the same code, naming both wordings.
-			const wordings = (saved.options ?? []).map((option) => option.labelEn)
+			const wordings = (saved.options ?? []).map((option) => option.labelEn ?? "")
 			const alike = wordings.filter(
 				(wording, index) => wordings.findIndex((other) => codeOf(other) === codeOf(wording)) !== index,
 			)
@@ -644,7 +644,7 @@ When("they save the question with that choice", async ({ page }) => {
 	savedBodies.set(page, JSON.parse((await saving).postData() ?? "{}") as { options: { code: string | null }[] })
 })
 
-Then("the choice is sent without a code", async ({ page }) => {
+Then("the choice is sent without a code", ({ page }) => {
 	const body = savedBodies.get(page)
 
 	expect(body?.options).toEqual([{ code: null, labelEn: "King Eddy", labelFr: "King Eddy" }])
@@ -810,7 +810,7 @@ When(
 	},
 )
 
-Then("the saved question is sent with allowFutureDates true", async ({ page }) => {
+Then("the saved question is sent with allowFutureDates true", ({ page }) => {
 	expect(sentQuestions.get(page)?.allowFutureDates).toBe(true)
 })
 
@@ -840,7 +840,7 @@ When(
 	},
 )
 
-Then("the save sends that option to be replaced, under its old code with its new wording", async ({ page }) => {
+Then("the save sends that option to be replaced, under its old code with its new wording", ({ page }) => {
 	const options = replacedBodies.get(page)?.options ?? []
 
 	expect(options.find((option) => option.code === "paraglider")).toMatchObject({
@@ -1137,7 +1137,7 @@ When("they edit the English wording of one choice and press its Translate action
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] Speed wing")
 })
 
-Then("only that choice's wording is sent to be translated", async ({ page }) => {
+Then("only that choice's wording is sent to be translated", ({ page }) => {
 	expect(choiceTraffic.get(page)?.translated).toEqual(["Speed wing"])
 })
 
@@ -1274,7 +1274,7 @@ When("they edit its English question", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("Were you hurt?")
 })
 
-Then("only the wording is sent to be translated", async ({ page }) => {
+Then("only the wording is sent to be translated", ({ page }) => {
 	expect(choiceTraffic.get(page)?.translated).toEqual(["Any injury, however small."])
 })
 
@@ -1285,7 +1285,7 @@ Then("every choice keeps its wording", async ({ page }) => {
 	])
 })
 
-Then("only the English help text is sent to be translated", async ({ page }) => {
+Then("only the English help text is sent to be translated", ({ page }) => {
 	expect(choiceTraffic.get(page)?.translated).toEqual(["Any injury, however small."])
 })
 

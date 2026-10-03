@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen } from "@testing-library/react"
 import type { FormEvent } from "react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest"
 
 const guard = vi.hoisted(() => vi.fn())
 vi.mock("../hooks/useUnsavedChangesGuard", () => ({ useUnsavedChangesGuard: guard }))
@@ -11,7 +11,9 @@ vi.mock("./CommentComposer.view", () => ({
 import { COMMENT_MAX_LENGTH } from "../api/publicReports"
 import { CommentComposer, useCommentComposer, type CommentComposerProps } from "./CommentComposer"
 
-const event = () => ({ preventDefault: vi.fn() }) as unknown as FormEvent & { preventDefault: ReturnType<typeof vi.fn> }
+/** A submit event whose preventDefault is a spy held as a property, so asserting on it reads no unbound method. */
+type SpyEvent = Omit<FormEvent, "preventDefault"> & { preventDefault: Mock }
+const event = () => ({ preventDefault: vi.fn() }) as unknown as SpyEvent
 const base = (over: Partial<CommentComposerProps> = {}): CommentComposerProps => ({
 	onPost: vi.fn().mockResolvedValue(true),
 	...over,
@@ -41,7 +43,10 @@ describe("useCommentComposer", () => {
 		const { result } = renderHook(() => useCommentComposer(props))
 		const submitted = event()
 
-		await act(async () => result.current.submit(submitted))
+		await act(async () => {
+			result.current.submit(submitted)
+			await Promise.resolve()
+		})
 
 		expect(submitted.preventDefault).toHaveBeenCalled()
 		expect(props.onPost).not.toHaveBeenCalled()
@@ -53,7 +58,10 @@ describe("useCommentComposer", () => {
 
 		act(() => result.current.changeText("x".repeat(COMMENT_MAX_LENGTH + 1)))
 		expect(result.current.tooLong).toBe(true)
-		await act(async () => result.current.submit(event()))
+		await act(async () => {
+			result.current.submit(event())
+			await Promise.resolve()
+		})
 
 		expect(props.onPost).not.toHaveBeenCalled()
 	})
@@ -68,7 +76,10 @@ describe("useCommentComposer", () => {
 		expect(props.onPost).toHaveBeenCalledWith("hello")
 		expect(result.current.submitDisabled).toBe(true)
 
-		await act(async () => finish(true))
+		await act(async () => {
+			finish(true)
+			await Promise.resolve()
+		})
 		expect(result.current.text).toBe("")
 	})
 
@@ -77,7 +88,10 @@ describe("useCommentComposer", () => {
 		const { result } = renderHook(() => useCommentComposer(props))
 		act(() => result.current.changeText("hello"))
 
-		await act(async () => result.current.submit(event()))
+		await act(async () => {
+			result.current.submit(event())
+			await Promise.resolve()
+		})
 
 		expect(result.current.text).toBe("hello")
 	})
@@ -87,7 +101,10 @@ describe("useCommentComposer", () => {
 		const { result } = renderHook(() => useCommentComposer(props))
 		act(() => result.current.changeText("edited"))
 
-		await act(async () => result.current.submit(event()))
+		await act(async () => {
+			result.current.submit(event())
+			await Promise.resolve()
+		})
 
 		expect(result.current.text).toBe("edited")
 	})

@@ -17,7 +17,6 @@ const pear: ListChoice = { key: "p", label: "Pear", lang: "fr", hint: "also: Poi
 
 function renderOptions(overrides: Partial<Parameters<typeof ChoiceOptions>[0]> = {}) {
 	const onPoint = vi.fn()
-	const onPick = vi.fn()
 	const view = render(
 		<ul>
 			<ChoiceOptions
@@ -26,12 +25,11 @@ function renderOptions(overrides: Partial<Parameters<typeof ChoiceOptions>[0]> =
 				activeKey="a"
 				isSelected={(choice) => choice.key === "p"}
 				onPoint={onPoint}
-				onPick={onPick}
 				{...overrides}
 			/>
 		</ul>,
 	)
-	return { ...view, onPoint, onPick }
+	return { ...view, onPoint }
 }
 
 describe("ChoiceList", () => {
@@ -70,8 +68,8 @@ describe("ChoiceList", () => {
 		expect(container.querySelectorAll("[data-separator]")).toHaveLength(1)
 	})
 
-	it("points at a row it is not already on, and picks a clicked row", () => {
-		const { onPoint, onPick } = renderOptions()
+	it("points at a row it is not already on, and keeps focus out of a pressed row", () => {
+		const { onPoint } = renderOptions()
 		const [first, second] = screen.getAllByRole("option")
 
 		fireEvent.mouseMove(first)
@@ -80,7 +78,5 @@ describe("ChoiceList", () => {
 		expect(onPoint).toHaveBeenCalledWith(pear)
 
 		expect(fireEvent.mouseDown(second)).toBe(false)
-		fireEvent.click(second)
-		expect(onPick).toHaveBeenCalledWith(pear)
 	})
 })

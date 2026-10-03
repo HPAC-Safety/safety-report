@@ -20,8 +20,8 @@
 # 2. .spec/traceability.md is regenerated and staged if it changed.
 #
 # A dev-machine convenience, not a CI gate — see .githooks/post-merge. This
-# file is the tracked template; ./init-dev.sh copies it into the real hooks
-# directory — edit this copy, not the installed one.
+# file is the tracked hook, run by the shim ./init-dev.sh installs
+# (tools/dev/git-hook-shim.sh) — edit this file, not the installed one.
 
 set -u
 

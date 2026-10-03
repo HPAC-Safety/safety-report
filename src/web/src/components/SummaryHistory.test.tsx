@@ -76,11 +76,17 @@ describe("useSummaryHistory", () => {
 	it("restores the asked-about revision on confirm, and does nothing on a confirm with nothing asked", async () => {
 		const onRestore = vi.fn().mockResolvedValue(true)
 		const { result } = renderHook(() => useSummaryHistory(props(onRestore)), { wrapper })
-		await act(async () => result.current.onConfirm())
+		await act(async () => {
+			result.current.onConfirm()
+			await Promise.resolve()
+		})
 		expect(onRestore).not.toHaveBeenCalled()
 		act(() => result.current.onAskRestore(revision({ id: "a" })))
 		expect(result.current.restoring?.id).toBe("a")
-		await act(async () => result.current.onConfirm())
+		await act(async () => {
+			result.current.onConfirm()
+			await Promise.resolve()
+		})
 		expect(onRestore).toHaveBeenCalledWith("a")
 		expect(result.current.restoring).toBeNull()
 	})
@@ -102,7 +108,7 @@ describe("SummaryHistory", () => {
 		expect(container.querySelector("[data-revision-text='en']")?.textContent).toContain("English text")
 		fireEvent.click(screen.getByRole("button", { name: "reports.history.restore" }))
 		expect(container.querySelector("[data-dialog='2']")).not.toBeNull()
-		await act(async () => fireEvent.click(screen.getByText("confirm")))
+		await act(() => fireEvent.click(screen.getByText("confirm")))
 		expect(onRestore).toHaveBeenCalledWith("a")
 		expect(container.querySelector("[data-dialog]")).toBeNull()
 	})

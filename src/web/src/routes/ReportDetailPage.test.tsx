@@ -122,6 +122,7 @@ describe("useReportDetailPage", () => {
 		await act(async () => {
 			finish(report())
 			refuse(new Error("no"))
+			await Promise.resolve()
 		})
 
 		expect(first.result.current.report).toBeNull()
@@ -144,7 +145,10 @@ describe("useReportDetailPage", () => {
 		await act(async () => await result.current.unpublish("why"))
 		expect(api.unpublishReport).toHaveBeenCalledWith("r1", "v2", "why")
 
-		await act(async () => result.current.publish())
+		await act(async () => {
+			result.current.publish()
+			await Promise.resolve()
+		})
 		expect(api.publishReport).toHaveBeenCalledWith("r1", "v3")
 
 		await act(async () => await result.current.restore("rev1"))
@@ -160,7 +164,10 @@ describe("useReportDetailPage", () => {
 
 		act(() => result.current.publish())
 		expect(result.current.busy).toBe(true)
-		await act(async () => finish(report()))
+		await act(async () => {
+			finish(report())
+			await Promise.resolve()
+		})
 
 		expect(result.current.busy).toBe(false)
 	})
@@ -211,7 +218,10 @@ describe("useReportDetailPage", () => {
 		expect(result.current.confirmingDelete).toBe(false)
 
 		act(() => result.current.askDelete())
-		await act(async () => result.current.remove())
+		await act(async () => {
+			result.current.remove()
+			await Promise.resolve()
+		})
 
 		expect(api.deleteReport).toHaveBeenCalledWith("r1")
 		expect(path).toBe("/admin/reports")
@@ -221,10 +231,16 @@ describe("useReportDetailPage", () => {
 		const { result } = await loaded()
 		api.deleteReport.mockRejectedValueOnce(failure(500, "other", "detail")).mockRejectedValueOnce(new Error("no"))
 
-		await act(async () => result.current.remove())
+		await act(async () => {
+			result.current.remove()
+			await Promise.resolve()
+		})
 		expect(result.current.error).toBe("detail")
 		expect(result.current.busy).toBe(false)
-		await act(async () => result.current.remove())
+		await act(async () => {
+			result.current.remove()
+			await Promise.resolve()
+		})
 
 		expect(result.current.error).toBe("reports.error.unexpected")
 		expect(path).toBe("/admin/reports/r1")

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react"
 import type { ListChoice } from "./ChoiceList"
+import { optionRowId } from "./optionRowId"
 import { SingleSelectFieldView } from "./SingleSelectField.view"
 
 export interface SingleSelectFieldProps {
@@ -201,7 +202,11 @@ export function useSingleSelectField({
 		// The select-only pattern marks the chosen choice; the highlighted one is aria-activedescendant.
 		isSelected: (choice: ListChoice) => choice.key === (chosen?.key ?? ""),
 		onPoint: (choice: ListChoice) => setActive(all.findIndex((entry) => entry.key === choice.key)),
-		onPick: choose,
+		onListClick: (event: MouseEvent<HTMLElement>) => {
+			// A click on a row takes it; a click anywhere else in the container is not the list's.
+			const row = all.find((choice) => optionId(choice) === optionRowId(event.target))
+			if (row) choose(row)
+		},
 	}
 }
 

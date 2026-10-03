@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FocusEvent, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react"
 import type { ListChoice } from "./ChoiceList"
+import { optionRowId } from "./optionRowId"
 import { TypeAheadFieldView } from "./TypeAheadField.view"
 
 /** A type-ahead shows no choices below this many typed characters, trimmed (ADR-0140, ADR-0152). */
@@ -237,7 +238,11 @@ export function useTypeAheadField({
 		// The highlighted choice is the selected one: the combobox with list autocomplete.
 		isSelected: (choice: ListChoice) => choice.key === activeChoice?.key,
 		onPoint: (choice: ListChoice) => setActive(flat.findIndex((entry) => entry.key === choice.key)),
-		onPick: choose,
+		onListClick: (event: MouseEvent<HTMLElement>) => {
+			// A click on a row takes it; a click anywhere else in the container is not the list's.
+			const row = flat.find((choice) => optionId(choice) === optionRowId(event.target))
+			if (row) choose(row)
+		},
 	}
 }
 

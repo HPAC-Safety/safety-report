@@ -24,6 +24,7 @@ interface ObserverStub {
 }
 
 let observers: ObserverStub[] = []
+let scrollTo: ReturnType<typeof vi.spyOn>
 
 function setup(fetchPage: Fetch, storageKey = "k") {
 	return renderHook(
@@ -48,7 +49,7 @@ beforeEach(() => {
 		callback(0)
 		return 0
 	})
-	vi.spyOn(window, "scrollTo").mockImplementation(() => {})
+	scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {})
 })
 
 afterEach(() => {
@@ -136,7 +137,10 @@ describe("useInfiniteReportList loading", () => {
 		await waitFor(() => expect(result.current.loadingMore).toBe(true))
 		act(() => result.current.loadMore())
 		expect(fetchPage).toHaveBeenCalledTimes(2)
-		await act(async () => resolve({ items: [], next: null }))
+		await act(async () => {
+			resolve({ items: [], next: null })
+			await Promise.resolve()
+		})
 	})
 
 	it("ignores loadMore during the initial load", () => {
@@ -196,7 +200,7 @@ describe("useInfiniteReportList restoring", () => {
 		expect(result.current.items).toEqual([item("a")])
 		expect(result.current.hasMore).toBe(true)
 		expect(fetchPage).not.toHaveBeenCalled()
-		expect(window.scrollTo).toHaveBeenCalledWith(0, 120)
+		expect(scrollTo).toHaveBeenCalledWith(0, 120)
 	})
 
 	it("restores a finished list with no more pages", async () => {
@@ -215,10 +219,10 @@ describe("useInfiniteReportList restoring", () => {
 		const fetchPage = vi.fn<Fetch>().mockResolvedValue({ items: [item("new")], next: null })
 		const { result } = setup(fetchPage)
 		await waitFor(() => expect(result.current.items).toEqual([item("new")]))
-		expect(window.scrollTo).not.toHaveBeenCalled()
+		expect(scrollTo).not.toHaveBeenCalled()
 	})
 
-	it("restores an earlier page load's list on a reload or back-forward", async () => {
+	it("restores an earlier page load's list on a reload or back-forward", () => {
 		vi.spyOn(performance, "getEntriesByType").mockReturnValue([{ type: "reload" } as PerformanceNavigationTiming])
 		sessionStorage.setItem(
 			"hpac.reportList.k",

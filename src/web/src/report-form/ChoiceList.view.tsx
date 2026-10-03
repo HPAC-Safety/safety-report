@@ -60,13 +60,14 @@ export interface ChoiceOptionsProps {
 	isSelected: (choice: ListChoice) => boolean
 	/** Pointing at a choice highlights it, so hover and the keyboard's highlight are always the same one. */
 	onPoint: (choice: ListChoice) => void
-	onPick: (choice: ListChoice) => void
 }
 
 /** The `role="option"` rows of a listbox, with a separator between pin groups. */
-export function ChoiceOptions({ groups, leading, optionId, activeKey, isSelected, onPoint, onPick }: ChoiceOptionsProps) {
+export function ChoiceOptions({ groups, leading, optionId, activeKey, isSelected, onPoint }: ChoiceOptionsProps) {
+	// A row takes no click or key of its own: the keyboard drives the list from
+	// the field through aria-activedescendant, and the field's container takes
+	// the click for the row it reached (optionRowId, REQ-QB-267, REQ-QB-268).
 	const row = (choice: ListChoice, extra: Record<string, string> = {}) => (
-		// eslint-disable-next-line jsx-a11y/click-events-have-key-events -- an option of a combobox listbox: the keyboard drives it from the input through aria-activedescendant
 		<li
 			key={choice.key}
 			id={optionId(choice)}
@@ -81,7 +82,6 @@ export function ChoiceOptions({ groups, leading, optionId, activeKey, isSelected
 			}}
 			// Keep focus in the field while a choice is pressed.
 			onMouseDown={(event) => event.preventDefault()}
-			onClick={() => onPick(choice)}
 			{...extra}
 		>
 			{choice.label}

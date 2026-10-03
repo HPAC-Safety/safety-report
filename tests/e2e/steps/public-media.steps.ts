@@ -4,6 +4,7 @@ import { expect, type Page, type Route } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { mediaConsentFormQuestions, stubCurrentQuestions } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -90,7 +91,7 @@ async function stubReport(page: Page, media: StubMedia[], staffAttachments: Stub
 	// A staff page also uses it for an item whose visibility is "public"
 	// (decision 11), so the id may name a staff attachment too.
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/media\/[^/?]+$/, async (route) => {
-		const id = new URL(route.request().url()).pathname.split("/").pop()!
+		const id = present(new URL(route.request().url()).pathname.split("/").pop())
 		if (stub.gone.has(id) || (stub.issued[id] ?? 0) >= (stub.goneAfter[id] ?? Infinity)) {
 			await route.fulfill({ status: 404, body: "" })
 			return
@@ -120,7 +121,7 @@ async function stubReport(page: Page, media: StubMedia[], staffAttachments: Stub
 	// (issue #427 decisions 10, 15).
 	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(view|download|original)$/, async (route) => {
 		const parts = new URL(route.request().url()).pathname.split("/")
-		const id = parts.at(-2)!
+		const id = present(parts.at(-2))
 		if (stub.gone.has(id)) {
 			await route.fulfill({ status: 404, body: "" })
 			return
@@ -171,7 +172,7 @@ async function stubReport(page: Page, media: StubMedia[], staffAttachments: Stub
 
 	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(hide|show)$/, async (route) => {
 		const parts = new URL(route.request().url()).pathname.split("/")
-		const id = parts.at(-2)!
+		const id = present(parts.at(-2))
 		const verb = parts.at(-1)
 		const attachment = stub.staffAttachments?.find((candidate) => candidate.id === id)
 
@@ -235,6 +236,31 @@ Then("the report page shows a thumbnail strip in place of stacked embeds", async
 	// The full-size image only ever renders inside the lightbox, not here.
 	await expect(page.getByRole("img", { name: "Photo 1 of 1" })).toHaveCount(0)
 	await expect(lightbox(page)).toHaveCount(0)
+})
+
+// --- REQ-MED-062: a reporter's video carries no captions ---
+
+Given("a published report shows a video", async ({ page }) => {
+	await stubReport(page, [VIDEO])
+})
+
+When("the visitor activates the video's thumbnail", async ({ page }) => {
+	await thumbnail(page, "video").click()
+})
+
+Then("the lightbox shows the video with the browser's own controls", async ({ page }) => {
+	await expect(lightbox(page)).toBeVisible()
+	await expect(video(page)).toHaveAttribute("controls", "")
+})
+
+Then("the video offers no caption or subtitle track", async ({ page }) => {
+	await expect(video(page).locator("track")).toHaveCount(0)
+	expect(await video(page).evaluate((element: HTMLVideoElement) => element.textTracks.length)).toBe(0)
+})
+
+Then("the lightbox offers no caption control and no caption text of its own", async ({ page }) => {
+	await expect(lightbox(page).getByRole("button", { name: /caption|subtitle|transcript|sous-titre/i })).toHaveCount(0)
+	await expect(lightbox(page).getByText(/caption|subtitle|transcript|sous-titre/i)).toHaveCount(0)
 })
 
 When("the visitor activates the image's thumbnail", async ({ page }) => {
@@ -497,13 +523,13 @@ interface AdminFile {
 async function stubAdminReport(page: Page, status: string, files: AdminFile[]) {
 	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(hide|show)$/, async (route) => {
 		const parts = new URL(route.request().url()).pathname.split("/")
-		const file = files.find((candidate) => candidate.id === parts.at(-2))!
+		const file = present(files.find((candidate) => candidate.id === parts.at(-2)))
 		file.visibility = parts.at(-1) === "hide" ? "hidden" : "public"
 		await route.fulfill({ status: 204 })
 	})
 	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(view|download|original)$/, async (route) => {
 		const parts = new URL(route.request().url()).pathname.split("/")
-		const id = parts.at(-2)!
+		const id = present(parts.at(-2))
 		await route.fulfill({ json: { url: `${STORAGE}/${id}-1`, expiresAt: "2026-09-20T15:45:00Z", fileName: `${id}.bin` } })
 	})
 	// /download and /original are always forced downloads; /view (inline)
@@ -721,7 +747,7 @@ Then("the form asks the media consent question, and it must be answered to submi
 	await expect(media).toBeVisible()
 	await page.getByRole("button", { name: "Submit report" }).click()
 	await expect(page.getByText("This question is required.").first()).toBeVisible()
-	expect(forms.get(page)!.submissions).toHaveLength(0)
+	expect(present(forms.get(page)).submissions).toHaveLength(0)
 })
 
 When("they remove the file, or answer no to publication consent", async ({ page }) => {
@@ -741,8 +767,8 @@ When("they remove the file, or answer no to publication consent", async ({ page 
 Then("the form no longer asks it, and submits no answer to it", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Submit report" })).toBeVisible()
 	await page.getByRole("button", { name: "Submit report" }).click()
-	await expect.poll(() => forms.get(page)!.submissions.length).toBe(1)
-	const answered = forms.get(page)!.submissions[0].answers.map((answer) => answer.questionRevisionId)
+	await expect.poll(() => present(forms.get(page)).submissions.length).toBe(1)
+	const answered = present(forms.get(page)).submissions[0].answers.map((answer) => answer.questionRevisionId)
 	expect(answered).toContain("rev-consent")
 	expect(answered).not.toContain("rev-media_consent")
 })

@@ -6,8 +6,8 @@
 # that body, and this checks every commit before it exists. The agents whose
 # links are refused are the collection in tools/github/check-agent-session-links.ts.
 #
-# This file is the tracked template; ./init-dev.sh copies it into the real
-# hooks directory — edit this copy, not the installed one.
+# This file is the tracked hook, run by the shim ./init-dev.sh installs
+# (tools/dev/git-hook-shim.sh) — edit this file, not the installed one.
 
 set -u
 

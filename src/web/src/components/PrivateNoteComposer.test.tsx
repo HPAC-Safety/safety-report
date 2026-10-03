@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen } from "@testing-library/react"
 import type { FormEvent } from "react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest"
 
 const guard = vi.hoisted(() => vi.fn())
 vi.mock("../hooks/useUnsavedChangesGuard", () => ({ useUnsavedChangesGuard: guard }))
@@ -11,7 +11,9 @@ vi.mock("./PrivateNoteComposer.view", () => ({
 import { PRIVATE_NOTE_MAX_LENGTH } from "../api/adminReports"
 import { PrivateNoteComposer, usePrivateNoteComposer, type PrivateNoteComposerProps } from "./PrivateNoteComposer"
 
-const event = () => ({ preventDefault: vi.fn() }) as unknown as FormEvent & { preventDefault: ReturnType<typeof vi.fn> }
+/** A submit event whose preventDefault is a spy held as a property, so asserting on it reads no unbound method. */
+type SpyEvent = Omit<FormEvent, "preventDefault"> & { preventDefault: Mock }
+const event = () => ({ preventDefault: vi.fn() }) as unknown as SpyEvent
 const base = (over: Partial<PrivateNoteComposerProps> = {}): PrivateNoteComposerProps => ({
 	attachments: [],
 	onSave: vi.fn().mockResolvedValue(true),
@@ -56,7 +58,10 @@ describe("usePrivateNoteComposer", () => {
 		const { result } = renderHook(() => usePrivateNoteComposer(props))
 		const submitted = event()
 
-		await act(async () => result.current.submit(submitted))
+		await act(async () => {
+			result.current.submit(submitted)
+			await Promise.resolve()
+		})
 
 		expect(submitted.preventDefault).toHaveBeenCalled()
 		expect(props.onSave).not.toHaveBeenCalled()
@@ -69,7 +74,10 @@ describe("usePrivateNoteComposer", () => {
 		act(() => result.current.changeText("x".repeat(PRIVATE_NOTE_MAX_LENGTH + 1)))
 		expect(result.current.tooLong).toBe(true)
 		expect(result.current.submitDisabled).toBe(true)
-		await act(async () => result.current.submit(event()))
+		await act(async () => {
+			result.current.submit(event())
+			await Promise.resolve()
+		})
 
 		expect(props.onSave).not.toHaveBeenCalled()
 	})
@@ -85,7 +93,10 @@ describe("usePrivateNoteComposer", () => {
 		expect(props.onSave).toHaveBeenCalledWith("a note", "a1")
 		expect(result.current.submitDisabled).toBe(true)
 
-		await act(async () => finish(true))
+		await act(async () => {
+			finish(true)
+			await Promise.resolve()
+		})
 		expect(result.current).toMatchObject({ text: "", attachmentId: null, submitDisabled: true })
 	})
 
@@ -94,7 +105,10 @@ describe("usePrivateNoteComposer", () => {
 		const { result } = renderHook(() => usePrivateNoteComposer(props))
 		act(() => result.current.changeText("a note"))
 
-		await act(async () => result.current.submit(event()))
+		await act(async () => {
+			result.current.submit(event())
+			await Promise.resolve()
+		})
 
 		expect(result.current.text).toBe("a note")
 		expect(result.current.submitDisabled).toBe(false)
@@ -105,7 +119,10 @@ describe("usePrivateNoteComposer", () => {
 		const { result } = renderHook(() => usePrivateNoteComposer(props))
 		act(() => result.current.changeText("edited"))
 
-		await act(async () => result.current.submit(event()))
+		await act(async () => {
+			result.current.submit(event())
+			await Promise.resolve()
+		})
 
 		expect(props.onSave).toHaveBeenCalledWith("edited", null)
 		expect(result.current.text).toBe("edited")

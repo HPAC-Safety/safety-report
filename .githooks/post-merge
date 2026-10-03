@@ -13,9 +13,8 @@
 # A dev-machine convenience, not a CI gate (same framing as pre-commit). On a
 # same-repo pull request .github/workflows/traceability.yml regenerates and
 # commits the matrix too, and CI re-checks the whole tree in the "docs" job
-# (ADR-0101). This file is the tracked template; ./init-dev.sh
-# copies it into the real hooks directory — edit this copy, not the
-# installed one, and re-run ./init-dev.sh to pick up the change.
+# (ADR-0101). This file is the tracked hook, run by the shim ./init-dev.sh
+# installs (tools/dev/git-hook-shim.sh) — edit this file, not the installed one.
 
 set -u
 

@@ -579,6 +579,13 @@ jobs:
       - name: Type check, tools and tests/js
         run: npm run typecheck
 
+      # Playwright transpiles the browser suite without checking it, so a type
+      # error in a step would otherwise never fail. It sits in this job because
+      # the job already installs the suite's packages and runs on every change,
+      # and so the fast local gate (tools/dev/ci-local.sh runs this job) reaches it.
+      - name: Type check, browser suite
+        run: npm run typecheck:e2e
+
   web:
     needs: changes
     if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.web == 'true')"

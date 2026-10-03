@@ -47,6 +47,7 @@ vi.mock("./ManageReportsPage.view", () => ({
 import { ApiError } from "../api/adminQuestions"
 import { STALE_REPORT } from "../api/adminReports"
 import { ManageReportsPage, useManageReportsPage, type ReportListItem } from "./ManageReportsPage"
+import { present } from "../lib/present"
 
 let search = ""
 function Probe() {
@@ -61,7 +62,7 @@ const at = (url: string) => ({ children }: { children: ReactNode }) => (
 )
 const row = (id: string, over: Partial<ReportListItem> = {}) => ({ id, version: "v" + id, status: "pending", consent: true, isStuck: false, ...over }) as ReportListItem
 const failure = (type: string, detail: string) => new (ApiError as unknown as new (type: string, detail: string) => Error)(type, detail)
-const rows = () => (list.mutate.mock.calls.at(-1)![0] as (current: ReportListItem[]) => ReportListItem[])([row("1"), row("2")])
+const rows = () => (present(list.mutate.mock.calls.at(-1))[0] as (current: ReportListItem[]) => ReportListItem[])([row("1"), row("2")])
 
 describe("useManageReportsPage", () => {
 	beforeEach(() => {
@@ -162,7 +163,10 @@ describe("useManageReportsPage", () => {
 			api.publishReport.mockResolvedValue({ id: "1", status: "published", consent: true, isStuck: false, version: "v9" })
 			const { result } = renderHook(() => useManageReportsPage(), { wrapper: at("/admin/reports") })
 
-			await act(async () => result.current.act(row("1"), "publish"))
+			await act(async () => {
+				result.current.act(row("1"), "publish")
+				await Promise.resolve()
+			})
 
 			expect(api.publishReport).toHaveBeenCalledWith("1", "v1")
 			expect(rows()).toEqual([{ ...row("1"), status: "published", version: "v9" }, row("2")])
@@ -173,7 +177,10 @@ describe("useManageReportsPage", () => {
 			api.unpublishReport.mockResolvedValue({ id: "2", status: "unpublished", consent: true, isStuck: false, version: "v8" })
 			const { result } = renderHook(() => useManageReportsPage(), { wrapper: at("/admin/reports") })
 
-			await act(async () => result.current.act(row("2"), "unpublish"))
+			await act(async () => {
+				result.current.act(row("2"), "unpublish")
+				await Promise.resolve()
+			})
 
 			expect(api.unpublishReport).toHaveBeenCalledWith("2", "v2", "")
 			expect(rows()[1]).toMatchObject({ status: "unpublished", version: "v8" })
@@ -186,7 +193,10 @@ describe("useManageReportsPage", () => {
 
 			act(() => result.current.act(row("1"), "publish"))
 			expect(result.current.busyId).toBe("1")
-			await act(async () => finish({ id: "1", status: "published", consent: true, isStuck: false, version: "v9" }))
+			await act(async () => {
+				finish({ id: "1", status: "published", consent: true, isStuck: false, version: "v9" })
+				await Promise.resolve()
+			})
 
 			expect(result.current.busyId).toBeNull()
 		})
@@ -196,7 +206,10 @@ describe("useManageReportsPage", () => {
 			const { result } = renderHook(() => useManageReportsPage(), { wrapper: at("/admin/reports") })
 			act(() => result.current.act(row("1"), "delete"))
 
-			await act(async () => result.current.confirmDelete("1"))
+			await act(async () => {
+				result.current.confirmDelete("1")
+				await Promise.resolve()
+			})
 
 			expect(api.deleteReport).toHaveBeenCalledWith("1")
 			expect(rows()).toEqual([row("2")])
@@ -208,7 +221,10 @@ describe("useManageReportsPage", () => {
 			api.publishReport.mockRejectedValue(failure(STALE_REPORT, "stale"))
 			const { result } = renderHook(() => useManageReportsPage(), { wrapper: at("/admin/reports") })
 
-			await act(async () => result.current.act(row("1"), "publish"))
+			await act(async () => {
+				result.current.act(row("1"), "publish")
+				await Promise.resolve()
+			})
 			expect(result.current.stale).toBe(true)
 			expect(result.current.error).toBeNull()
 
@@ -221,23 +237,38 @@ describe("useManageReportsPage", () => {
 			api.publishReport.mockRejectedValueOnce(failure("other", "detail")).mockRejectedValueOnce(new Error("no"))
 			const { result } = renderHook(() => useManageReportsPage(), { wrapper: at("/admin/reports") })
 
-			await act(async () => result.current.act(row("1"), "publish"))
+			await act(async () => {
+				result.current.act(row("1"), "publish")
+				await Promise.resolve()
+			})
 			expect(result.current.error).toBe("detail")
-			await act(async () => result.current.act(row("1"), "publish"))
+			await act(async () => {
+				result.current.act(row("1"), "publish")
+				await Promise.resolve()
+			})
 			expect(result.current.error).toBe("reports.error.unexpected")
 		})
 
 		it("clears an earlier error when the next command starts, and when reloading", async () => {
 			api.publishReport.mockRejectedValueOnce(failure("other", "detail")).mockResolvedValueOnce({ id: "1", status: "published", consent: true, isStuck: false, version: "v9" })
 			const { result } = renderHook(() => useManageReportsPage(), { wrapper: at("/admin/reports") })
-			await act(async () => result.current.act(row("1"), "publish"))
+			await act(async () => {
+				result.current.act(row("1"), "publish")
+				await Promise.resolve()
+			})
 			expect(result.current.error).toBe("detail")
 
-			await act(async () => result.current.act(row("1"), "publish"))
+			await act(async () => {
+				result.current.act(row("1"), "publish")
+				await Promise.resolve()
+			})
 			expect(result.current.error).toBeNull()
 
 			api.deleteReport.mockRejectedValue(failure("other", "gone"))
-			await act(async () => result.current.confirmDelete("1"))
+			await act(async () => {
+				result.current.confirmDelete("1")
+				await Promise.resolve()
+			})
 			expect(result.current.error).toBe("gone")
 			act(() => result.current.reload())
 			expect(result.current.error).toBeNull()

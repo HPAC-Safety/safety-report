@@ -8,6 +8,7 @@ import {
 	SUMMARY_EN,
 	SUMMARY_FR,
 } from "./admin-report-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -115,7 +116,7 @@ Given("a published report whose summary contains {}", async ({ page }, markdown:
 
 	foreignRequests.set(page, [])
 	await page.route("https://example.test/**", async (route) => {
-		foreignRequests.get(page)!.push(route.request().url())
+		present(foreignRequests.get(page)).push(route.request().url())
 		await route.abort()
 	})
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?$/, (route) => route.fulfill({ json: [] }))
@@ -123,8 +124,8 @@ Given("a published report whose summary contains {}", async ({ page }, markdown:
 		route.fulfill({
 			json: {
 				id: PUBLIC_ID,
-				aiSummaryEn: chosen!.markdown,
-				aiSummaryFr: chosen!.markdown,
+				aiSummaryEn: present(chosen).markdown,
+				aiSummaryFr: present(chosen).markdown,
 				language: "en-CA",
 				publishedAt: "2026-09-20T15:30:00Z",
 				commentCount: 0,
@@ -141,7 +142,7 @@ When("a visitor opens its page", async ({ page }) => {
 })
 
 Then("the summary is rendered as {}", async ({ page }, result: string) => {
-	const check = chosen!.results[result]
+	const check = present(chosen).results[result]
 	expect(check, `no check for ${result}`).toBeDefined()
 	await check(page.locator('[data-summary="en-CA"]'))
 })

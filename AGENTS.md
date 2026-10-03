@@ -490,6 +490,10 @@ Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
   hand
   ([ADR-0147](.spec/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)
   second amendment). See `deliver-change` "Verify and publish".
+- Never a bare `git stash` or `git stash pop`: one stash is shared by every
+  worktree and session. Use a WIP commit
+  (`deliver-change` "Worktree and branch"). Nothing enforces this; it is written
+  only.
 - No `Co-Authored-By` trailer; this is a convention, and nothing checks it.
 - No agent session link: the `commit-msg` hook and `linked-issue.yml`'s
   `no-session-link` job refuse one

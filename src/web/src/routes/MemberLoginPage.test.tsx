@@ -32,7 +32,8 @@ function Where() {
 	return <p>{`at ${location.pathname}`}</p>
 }
 
-const submit = { preventDefault: vi.fn() } as unknown as FormEvent
+const preventDefault = vi.fn()
+const submit = { preventDefault } as unknown as FormEvent
 
 afterEach(cleanup)
 
@@ -56,7 +57,10 @@ describe("useMemberLoginPage", () => {
 		const { result, unmount } = renderHook(() => useMemberLoginPage(), { wrapper: wrapperAt("/login") })
 
 		unmount()
-		await act(async () => resolve({ thirdPartySignIn: true }))
+		await act(async () => {
+			resolve({ thirdPartySignIn: true })
+			await Promise.resolve()
+		})
 
 		expect(result.current.thirdPartySignIn).toBe(false)
 	})
@@ -72,7 +76,7 @@ describe("useMemberLoginPage", () => {
 		await act(async () => result.current.onSubmit(submit))
 
 		expect(signInWithPassword).toHaveBeenCalledWith("pilot@example.com", "secret")
-		expect(submit.preventDefault).toHaveBeenCalled()
+		expect(preventDefault).toHaveBeenCalled()
 	})
 
 	it("reports one failure for any refusal and stops submitting", async () => {
@@ -104,7 +108,10 @@ describe("MemberLoginPage navigation", () => {
 		}
 		render(<Probe />, { wrapper: wrapperAt("/login?returnTo=%2Freports%2F1") })
 
-		await act(async () => screen.getByText("go").click())
+		await act(async () => {
+			screen.getByText("go").click()
+			await Promise.resolve()
+		})
 
 		await waitFor(() => expect(screen.getByText("at /reports/1")).toBeTruthy())
 	})

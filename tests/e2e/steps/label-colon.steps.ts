@@ -4,6 +4,7 @@ import { expect } from "@playwright/test"
 import { openReport, reportDetail, stubReportDetail, type StubAnswer } from "./admin-report-fixture"
 import { signInAs, stubAuth } from "./auth"
 import { question, stubCurrentQuestions, type StubQuestion } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -70,7 +71,7 @@ When("a reporter opens the form in {word}", async ({ page }, language: string) =
 })
 
 Then("the question is labelled {string}", async ({ page }, shown: string) => {
-	const { type } = asked!
+	const { type } = present(asked)
 	const where = type === "statement" ? page.getByRole("heading", { level: 1 }) : type === "group" ? page.locator("fieldset > legend") : page.locator("label, legend, span[id$='-label']")
 
 	await expect(where.filter({ hasText: exactly(shown) })).toHaveCount(1)

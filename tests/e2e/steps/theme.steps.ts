@@ -1,5 +1,6 @@
 import { createBdd } from "playwright-bdd"
 import { expect } from "@playwright/test"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -35,5 +36,5 @@ Then("the theme choice persists to local storage across a reload", async ({ page
 	expect(stored).toBe(applied)
 
 	await page.reload()
-	await expect(page.locator("html")).toHaveAttribute("data-theme", applied!)
+	await expect(page.locator("html")).toHaveAttribute("data-theme", present(applied))
 })

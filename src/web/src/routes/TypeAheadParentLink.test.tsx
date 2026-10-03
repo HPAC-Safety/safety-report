@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { LocaleContext } from "../i18n/LocaleProvider"
 import type { Locale } from "../i18n/locales"
 import { TypeAheadParentLink, useTypeAheadParentLink, type TypeAheadParentLinkProps } from "./TypeAheadParentLink"
+import { present } from "../lib/present"
 
 vi.mock("../report-form/MultiSelectPicker", () => ({
 	MultiSelectPicker: (props: { fieldId: string; label: string; values: string[]; locked: string[]; groups: { key: string; label: string }[][]; onToggle: (id: string) => void }) => (
@@ -68,7 +69,7 @@ describe("TypeAheadParentLink", () => {
 	it("says where the value is offered now and locks the last parent", () => {
 		render(<TypeAheadParentLink {...props()} />, { wrapper: wrapperFor("en-CA") })
 		expect(screen.getByTestId("type-ahead-value-parent").textContent).toBe('typeAheadValues.offeredUnder {"question":"Aircraft type","choice":"Alpha"}')
-		const picker = document.querySelector("[data-picker]")!
+		const picker = present(document.querySelector("[data-picker]"))
 		expect(picker.getAttribute("data-picker")).toBe("type-ahead-value-parent-v1")
 		expect(picker.getAttribute("data-locked")).toBe("c1")
 		expect(picker.getAttribute("data-options")).toBe("Alpha,Zeta")
@@ -78,7 +79,7 @@ describe("TypeAheadParentLink", () => {
 	it("says when it is offered under nothing and does not lock when several are ticked", () => {
 		render(<TypeAheadParentLink {...props({ parent: { ...props().parent, parentChoiceIds: [] }, chosen: ["c1", "c2"] })} />, { wrapper: wrapperFor("en-CA") })
 		expect(screen.getByTestId("type-ahead-value-parent").textContent).toBe('typeAheadValues.offeredUnderNothing {"question":"Aircraft type"}')
-		expect(document.querySelector("[data-picker]")!.getAttribute("data-locked")).toBe("")
+		expect(present(document.querySelector("[data-picker]")).getAttribute("data-locked")).toBe("")
 	})
 
 	it("ticks and unticks through onChoose and relinks the selection", () => {

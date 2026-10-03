@@ -28,10 +28,11 @@ export function SingleSelectFieldView({
 	onKeyDown,
 	isSelected,
 	onPoint,
-	onPick,
+	onListClick,
 }: SingleSelectFieldViewProps) {
 	return (
-		<div ref={containerRef} className="relative mt-1" onBlur={onBlur}>
+		// Presentational: it only takes a click on a listbox row, for the row it reached (REQ-QB-268).
+		<div ref={containerRef} role="presentation" className="relative mt-1" onBlur={onBlur} onClick={onListClick}>
 			<button
 				ref={fieldRef}
 				id={fieldId}
@@ -63,7 +64,6 @@ export function SingleSelectFieldView({
 					activeKey={activeKey}
 					isSelected={isSelected}
 					onPoint={onPoint}
-					onPick={onPick}
 				/>
 			</ul>
 		</div>

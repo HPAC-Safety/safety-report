@@ -132,7 +132,10 @@ describe("useUnsavedChangesGuard", () => {
 			<RouterProvider router={router} />
 		</LocaleContext.Provider>,
 	)
-		await act(async () => screen.getByText("clean").click())
+		await act(async () => {
+			screen.getByText("clean").click()
+			await Promise.resolve()
+		})
 
 		await act(() => router.navigate("/b"))
 

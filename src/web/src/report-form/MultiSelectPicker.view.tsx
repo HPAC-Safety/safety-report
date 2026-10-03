@@ -33,11 +33,13 @@ export function MultiSelectPickerView({
 				{label}
 			</span>
 			<div className="relative">
-				{/* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- aria-invalid reports a required picker left empty; dropping it would change the DOM */}
+				{/* A combobox, as the single-select's field is, because only that role supports aria-invalid; its popup is a dialog of checkboxes (REQ-SUB-132). */}
 				<button
 					ref={triggerRef}
 					id={fieldId}
 					type="button"
+					role="combobox"
+					aria-haspopup="dialog"
 					aria-expanded={open}
 					aria-controls={panelId}
 					aria-labelledby={`${labelId} ${summaryId}`}
@@ -52,30 +54,32 @@ export function MultiSelectPickerView({
 					<Caret />
 				</button>
 				{open && (
-					<ul id={panelId} role="group" aria-labelledby={labelId} className={choiceListClassName}>
-						{groups.map((group, index) => (
-							<Fragment key={group[0].key}>
-								{index > 0 && <ChoiceSeparator />}
-								{group.map((option) => (
-									<li key={option.key} role="presentation">
-										{/* The type-ahead's row and highlight (ChoiceList), on the row pointed at or holding keyboard focus. */}
-										<label
-											className={`${choiceRowClassName} gap-2 hover:bg-surface-4 hover:shadow-[inset_4px_0_0_var(--color-focus)] has-[:focus-visible]:bg-surface-4 has-[:focus-visible]:shadow-[inset_4px_0_0_var(--color-focus)]`}
-										>
-											<input
-												type="checkbox"
-												checked={values.includes(option.key)}
-												disabled={locked.includes(option.key)}
-												aria-describedby={locked.includes(option.key) && lockedReason ? lockedReasonId : undefined}
-												onChange={() => onToggle(option.key)}
-											/>
-											{option.label}
-										</label>
-									</li>
-								))}
-							</Fragment>
-						))}
-					</ul>
+					<div id={panelId} role="dialog" aria-labelledby={labelId} className={choiceListClassName}>
+						<ul role="presentation">
+							{groups.map((group, index) => (
+								<Fragment key={group[0].key}>
+									{index > 0 && <ChoiceSeparator />}
+									{group.map((option) => (
+										<li key={option.key} role="presentation">
+											{/* The type-ahead's row and highlight (ChoiceList), on the row pointed at or holding keyboard focus. */}
+											<label
+												className={`${choiceRowClassName} gap-2 hover:bg-surface-4 hover:shadow-[inset_4px_0_0_var(--color-focus)] has-[:focus-visible]:bg-surface-4 has-[:focus-visible]:shadow-[inset_4px_0_0_var(--color-focus)]`}
+											>
+												<input
+													type="checkbox"
+													checked={values.includes(option.key)}
+													disabled={locked.includes(option.key)}
+													aria-describedby={locked.includes(option.key) && lockedReason ? lockedReasonId : undefined}
+													onChange={() => onToggle(option.key)}
+												/>
+												{option.label}
+											</label>
+										</li>
+									))}
+								</Fragment>
+							))}
+						</ul>
+					</div>
 				)}
 				{lockedReason && (
 					<span id={lockedReasonId} className="sr-only">

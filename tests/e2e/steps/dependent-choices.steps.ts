@@ -4,6 +4,7 @@ import { expect, type Page, type Request } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { pickChoice, stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -116,7 +117,7 @@ function parentPicker(page: Page, row: number) {
 /** Ticks exactly `labels` in one row's "Offered under" list, then closes it. */
 async function tickParents(page: Page, row: number, labels: string[]) {
 	const picker = parentPicker(page, row)
-	await picker.getByRole("button").click()
+	await picker.getByRole("combobox").click()
 	for (const checkbox of await picker.getByRole("checkbox").all()) {
 		const label = (await checkbox.locator("xpath=..").textContent())?.trim() ?? ""
 		if (labels.includes(label)) await checkbox.check()
@@ -153,7 +154,7 @@ When("they pick {string}, link every choice, and save", async ({ page }, parent:
 	await page.getByRole("button", { name: "Save" }).click()
 })
 
-Then("the save names {string} as the question its choices depend on", async ({ page }, _parent: string) => {
+Then("the save names {string} as the question its choices depend on", ({ page }, _parent: string) => {
 	const save = lastSave(page)
 	expect(save.choicesDependOnQuestionId).toBe("make")
 	expect(save.options.map((option) => option.parentChoiceIds)).toEqual([["niviuk"], ["niviuk"]])
@@ -165,7 +166,7 @@ When("they clear {string} and save", async ({ page }, _control: string) => {
 	await page.getByRole("button", { name: "Save" }).click()
 })
 
-Then("the save names no parent question and keeps every choice's link", async ({ page }) => {
+Then("the save names no parent question and keeps every choice's link", ({ page }) => {
 	const save = lastSave(page)
 	expect(save.choicesDependOnQuestionId).toBeNull()
 	expect(save.options.map((option) => option.parentChoiceIds)).toEqual([["niviuk"], ["niviuk"]])
@@ -197,7 +198,7 @@ Then(
 		const pickers = page.getByTestId("question-choice-parent")
 		await expect(pickers).toHaveCount(3)
 		for (let row = 0; row < 3; row++) {
-			const trigger = parentPicker(page, row).getByRole("button")
+			const trigger = parentPicker(page, row).getByRole("combobox")
 			await expect(trigger).toHaveAccessibleName(new RegExp(`^${control}`))
 			await trigger.click()
 			await expect(parentPicker(page, row).getByRole("checkbox")).toHaveCount(3)
@@ -224,13 +225,13 @@ function french(key: string): string | undefined {
 	return typeof node === "string" ? node : undefined
 }
 
-Then("Save is refused while a choice is offered under nothing, naming that choice in {word}", async ({ page }, language: string) => {
+Then("Save is refused while a choice is offered under nothing, naming that choice in {word}, with its multi-select marked invalid", async ({ page }, language: string) => {
 	await tickParents(page, 0, ["Niviuk"])
 	await tickParents(page, 1, ["Ozone"])
 	await expect(page.getByRole("button", { name: "Save" })).toBeDisabled()
 	// The row offered under nothing is marked invalid, and described by the refusal.
-	await expect(parentPicker(page, 2).getByRole("button")).toHaveAttribute("aria-invalid", "true")
-	await expect(parentPicker(page, 0).getByRole("button")).not.toHaveAttribute("aria-invalid", "true")
+	await expect(parentPicker(page, 2).getByRole("combobox")).toHaveAttribute("aria-invalid", "true")
+	await expect(parentPicker(page, 0).getByRole("combobox")).not.toHaveAttribute("aria-invalid", "true")
 	const refusal = page.getByTestId("question-choices-unlinked")
 	await expect(refusal).toContainText("Zeno 2")
 	await expect(refusal).not.toContainText("Mentor 7")
@@ -256,7 +257,7 @@ When("they tick {string} and {string} for one choice and {string} for every othe
 	await page.getByRole("button", { name: "Save" }).click()
 })
 
-Then("the save sends each choice with every parent choice ticked for it", async ({ page }) => {
+Then("the save sends each choice with every parent choice ticked for it", ({ page }) => {
 	const save = lastSave(page)
 	expect(save.choicesDependOnQuestionId).toBe("make")
 	expect(save.options.map((option) => [option.labelEn, [...(option.parentChoiceIds ?? [])].sort()])).toEqual([
@@ -407,17 +408,17 @@ async function answerMake(page: Page, make: string) {
 
 Given(
 	"a {word} {string} question's choices depend on a single-select {string} question offering {string} and {string}",
-	async ({ page }, childType: string, _child: string, _make: string, _first: string, _second: string) => {
+	({ page }, childType: string, _child: string, _make: string, _first: string, _second: string) => {
 		forms.set(page, wingForm("single_select", childType))
 	},
 )
 
 Given(
 	"{string} offers {string} and {string} linked to {string}, and {string} linked to {string}",
-	async ({ page }, _child: string, first: string, second: string, parent: string, third: string, otherParent: string) => {
-		const make = forms.get(page)![0].children[0]
-		const idOf = (label: string) => make.options.find((option) => option.labelEn === label)!.id
-		const model = forms.get(page)![0].children[1]
+	({ page }, _child: string, first: string, second: string, parent: string, third: string, otherParent: string) => {
+		const make = present(forms.get(page))[0].children[0]
+		const idOf = (label: string) => present(make.options.find((option) => option.labelEn === label)).id
+		const model = present(forms.get(page))[0].children[1]
 		model.options = [
 			formChoice(`${idOf(parent)}-${first}`, first, idOf(parent)),
 			formChoice(`${idOf(parent)}-${second}`, second, idOf(parent)),
@@ -427,7 +428,7 @@ Given(
 )
 
 When("a reporter using {word} opens the page asking both", async ({ page }, language: string) => {
-	await openForm(page, forms.get(page)!, language)
+	await openForm(page, present(forms.get(page)), language)
 })
 
 Then("{string} is disabled, and says to answer {string} first", async ({ page }, _child: string, parent: string) => {
@@ -561,8 +562,8 @@ When("they type {string} for {string} and send the report", async ({ page }, typ
 	sent.set(page, await request)
 })
 
-Then("{string} is sent as {string} and {string} as {string}, both as the words typed", async ({ page }, _parent: string, make: string, _child: string, model: string) => {
-	const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: string | null; choices: string[] | null }[] }
+Then("{string} is sent as {string} and {string} as {string}, both as the words typed", ({ page }, _parent: string, make: string, _child: string, model: string) => {
+	const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string; value: string | null; choices: string[] | null }[] }
 	expect(body.answers.find((answer) => answer.questionRevisionId === "rev-make")).toMatchObject({ value: make, choices: null })
 	expect(body.answers.find((answer) => answer.questionRevisionId === "rev-model")).toMatchObject({ value: model, choices: null })
 })
@@ -592,7 +593,7 @@ Given("a reporter answered {string} with {string} and {string} with {string}, an
 })
 
 When("they come back and continue the saved report", async ({ page }) => {
-	await openForm(page, forms.get(page)!)
+	await openForm(page, present(forms.get(page)))
 	await page.getByRole("dialog", { name: "Continue where you left off?" }).getByRole("button", { name: "Yes, continue" }).click()
 })
 
@@ -606,7 +607,7 @@ Then("a saved {string} answer no longer linked to the saved {string} answer is r
 	const page = await browser.newPage()
 	forms.set(page, wingForm("single_select", "autocomplete"))
 	await savedDraft(page, "ozone", { id: "mentor_7", label: "Mentor 7" })
-	await openForm(page, forms.get(page)!)
+	await openForm(page, present(forms.get(page)))
 	await page.getByRole("dialog", { name: "Continue where you left off?" }).getByRole("button", { name: "Yes, continue" }).click()
 	await expect(page.getByRole("combobox", { name: "Make" })).toHaveText("Ozone")
 	await expect(modelField(page)).toHaveValue("")
@@ -631,9 +632,9 @@ Then("the form moves on, because {string} cannot be answered until {string} is",
 Given(
 	"{string} offers {string} under {string} and {string}, {string} under {string}, and {string} under {string}",
 	async ({ page }, _child: string, shared: string, first: string, second: string, one: string, oneParent: string, other: string, otherParent: string) => {
-		const form = forms.get(page)!
+		const form = present(forms.get(page))
 		const make = form[0].children[0]
-		const idOf = (label: string) => make.options.find((option) => option.labelEn === label)!.id
+		const idOf = (label: string) => present(make.options.find((option) => option.labelEn === label)).id
 		form[0].children[1].options = [
 			formChoice("shared", shared, [idOf(first), idOf(second)]),
 			formChoice("one", one, idOf(oneParent)),
@@ -687,8 +688,8 @@ When("they press Next, consent, and send the report", async ({ page }) => {
 	sent.set(page, await request)
 })
 
-Then("{string} is sent as the words {string}", async ({ page }, _child: string, typed: string) => {
-	const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: string | null; choices: string[] | null }[] }
+Then("{string} is sent as the words {string}", ({ page }, _child: string, typed: string) => {
+	const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string; value: string | null; choices: string[] | null }[] }
 	expect(body.answers.find((answer) => answer.questionRevisionId === "rev-model")).toMatchObject({ value: typed, choices: null })
 })
 
@@ -720,7 +721,7 @@ Given(
 					questionId: "make",
 					questionLabelEn: "Make",
 					questionLabelFr: "Make",
-					parentChoiceIds: [choices.find((choice) => choice.labelEn === parentChoice)!.id],
+					parentChoiceIds: [present(choices.find((choice) => choice.labelEn === parentChoice)).id],
 					choices,
 				},
 			},
@@ -747,7 +748,7 @@ const reviewValues = new WeakMap<Page, { parent: { parentChoiceIds: string[] } }
 
 Given("{string} is also linked to {string}, a {string} value since removed", async ({ page }, _value: string, removed: string, _parent: string) => {
 	// The page lists only the parent's live values, so this link is never shown, counted, or sent.
-	reviewValues.get(page)![0].parent.parentChoiceIds.push(`${removed.toLowerCase()}-removed`)
+	present(reviewValues.get(page))[0].parent.parentChoiceIds.push(`${removed.toLowerCase()}-removed`)
 	await page.reload()
 })
 
@@ -760,7 +761,7 @@ Then("the value shows that it is offered under {string}", async ({ page }, paren
 })
 
 Then("its {string} control lists {string}'s choices", async ({ page }, control: string, _parent: string) => {
-	const trigger = valueParents(page).getByRole("button")
+	const trigger = valueParents(page).getByRole("combobox")
 	await expect(trigger).toHaveAccessibleName(new RegExp(`^${control}`))
 	await trigger.click()
 	await expect(valueParents(page).locator("li")).toHaveText(["Niviuk", "Ozone"])
@@ -774,14 +775,14 @@ When("they also tick {string}", async ({ page }, parentChoice: string) => {
 
 Then("the page sends {string} and {string}", async ({ page }, first: string, second: string) => {
 	await expect.poll(() => relinks.get(page)?.length ?? 0).toBe(1)
-	const sentIds = (relinks.get(page)![0].body as { parentChoiceIds: string[] }).parentChoiceIds
-	expect(relinks.get(page)![0].id).toBe("value-zeno")
+	const sentIds = (present(relinks.get(page))[0].body as { parentChoiceIds: string[] }).parentChoiceIds
+	expect(present(relinks.get(page))[0].id).toBe("value-zeno")
 	expect([...sentIds].sort()).toEqual([first.toLowerCase(), second.toLowerCase()].sort())
 })
 
 Then("the page does not let them untick the last parent choice, and says why", async ({ page }) => {
 	await page.reload()
-	await valueParents(page).getByRole("button").click()
+	await valueParents(page).getByRole("combobox").click()
 	const ozone = valueParents(page).getByRole("checkbox", { name: "Ozone" })
 	await expect(ozone).toBeChecked()
 	await expect(ozone).toBeDisabled()
@@ -798,8 +799,8 @@ When("they consent and send the report", async ({ page }) => {
 	sent.set(page, await request)
 })
 
-Then("the report is sent with no answer to {string}", async ({ page }, _child: string) => {
-	const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string }[] }
+Then("the report is sent with no answer to {string}", ({ page }, _child: string) => {
+	const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string }[] }
 	expect(body.answers.map((answer) => answer.questionRevisionId)).not.toContain("rev-model")
 	expect(body.answers.map((answer) => answer.questionRevisionId)).toContain("rev-consent")
 })

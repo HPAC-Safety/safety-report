@@ -5,6 +5,7 @@ import { expect, type Download, type Page } from "@playwright/test"
 
 import { signInAs } from "./auth"
 import { openReport, REPORT_ID, reportDetail, stubReportDetail, type StubAnswer } from "./admin-report-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -65,7 +66,7 @@ When("they follow the Admin menu to the review queue", async ({ page }) => {
 Then("the review queue loads on the same origin as the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 	await expect(page.getByRole("heading", { level: 1, name: "Manage reports" })).toBeVisible()
-	expect(new URL(page.url()).origin).toBe(reportPageOrigin.get(page)!.origin)
+	expect(new URL(page.url()).origin).toBe(present(reportPageOrigin.get(page)).origin)
 })
 
 Then("the browser does not load a new document", async ({ page }) => {
@@ -105,7 +106,7 @@ function catalogueText(locale: string, key: string, values: Record<string, strin
 }
 
 const reviewerLocale = new WeakMap<Page, string>()
-const reviewerText = (page: Page, key: string, values?: Record<string, string>) => catalogueText(reviewerLocale.get(page)!, key, values)
+const reviewerText = (page: Page, key: string, values?: Record<string, string>) => catalogueText(present(reviewerLocale.get(page)), key, values)
 
 Given(/^a reviewer whose language is (English|French) opens a report in the admin site$/, async ({ page, context }, language: string) => {
 	const locale = LOCALES[language]
@@ -261,8 +262,8 @@ Then("the admin site does not embed, preview, or inline-render the document cont
 	await expect(page).toHaveURL(new RegExp(`/admin/reports/${REPORT_ID}$`))
 })
 
-Then("the document is offered only as a download", async ({ page }) => {
-	expect(downloads.get(page)!.suggestedFilename()).toBe(`${DOCUMENT_ID}.pdf`)
+Then("the document is offered only as a download", ({ page }) => {
+	expect(present(downloads.get(page)).suggestedFilename()).toBe(`${DOCUMENT_ID}.pdf`)
 	// The download endpoint, never the inline /view one.
 	expect(adminRequests.get(page)).toEqual([`/api/admin/reports/${REPORT_ID}/attachments/${DOCUMENT_ID}/download`])
 })

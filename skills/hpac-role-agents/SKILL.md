@@ -40,6 +40,9 @@ roles and why each trusts only the artifact before it:
   | test-writer | sonnet | medium | Build: binds a written scenario |
   | ai-author | sonnet | medium | Build: rewrites wording, never rules |
 
+- No role uses the clone's shared stash, above all the implementer and the
+  test-writer, who edit files. The rule is written only; nothing enforces it
+  (`deliver-hpac-change` "Worktree and branch", #796).
 - `skillfile install` copies each agent verbatim into `.claude/agents/`. An
   orchestrator spawns a role by its `name` and gets these settings, unless it
   overrides `model` for one call.

@@ -22,16 +22,17 @@ Deployable ASP.NET Core HTTP surface. The target contract is in
 - Expose authenticated review/administration commands and minimal public
   read-only DTOs.
 
-The API never calls AI, issues pre-signed upload URLs, logs request content,
-or exposes attachment bytes publicly. Short-lived reviewer access is authorized
+The API never calls AI, logs request content, or passes attachment bytes
+through itself or exposes them publicly; it mints the pre-signed PUT an upload
+goes to quarantine by
+([ADR-0126](../../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)). Short-lived reviewer access is authorized
 per request.
 
 ## Current status
 
-Current main is mostly a host scaffold; several legacy Core/Infrastructure
-types describe the superseded upload and persistence design. See
-[`../../docs/implementation-status.md`](../../docs/implementation-status.md) and the
-linked implementation issues before extending them.
+A gap is an `@ignore` claim in the generated
+[traceability matrix](../../.spec/traceability.md) or an open issue in
+[issue traceability](../../docs/issue-traceability.md).
 
 ```bash
 docker compose up -d db

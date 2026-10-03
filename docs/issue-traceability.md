@@ -1,30 +1,39 @@
 ---
 title: Issue traceability
-description: Every open GitHub issue and how it relates to the target specification.
+description: Every open GitHub issue with its milestone, labels, and parent, generated from GitHub.
 type: guide
 ---
 
 # Issue traceability
 
-This page lists every open issue and how it stands against the
-[specification](../.spec/features/README.md), as of 2026-10-02 (#550). Closed issues
-are not listed: their history is in GitHub, and what they decided lives in the
-ADRs and `.spec/features`. A pull request that closes an issue removes its row.
+> **Generated file — do not edit by hand.**
+> Regenerate with `node tools/spec/generate-issue-traceability.ts`, which reads
+> the open issues with `GITHUB_TOKEN`, `GH_TOKEN`, or the `gh` login
+> ([ADR-0191](../.spec/decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md)).
 
-`tools/spec/check-issue-traceability.ts` compares this page with the open issues. It
-never fails a pull request: `.github/workflows/issue-traceability.yml` runs it
-daily and on every push to `main`, and keeps one "Issue traceability drift"
-issue open while an open issue has no row here or a row names a closed one
-([ADR-0143](../.spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+Every open issue, with its milestone, labels, and parent. Closed issues are
+not listed: their history is in GitHub, and what they decided lives in the
+ADRs and `.spec/features`. What an issue asks for is in the issue itself.
 
-| Issue | Area | Disposition |
-|---|---|---|
-| [#31 — Replace the Typeform with the new report form](https://github.com/HPAC-Safety/safety-report/issues/31) | Infrastructure | Open, phase 2. The cut-over after deployment. |
-| [#47 — Dependency Dashboard](https://github.com/HPAC-Safety/safety-report/issues/47) | — | Renovate's standing dashboard, not a task. |
-| [#387 — Evaluate AWS Bedrock as the summarization provider](https://github.com/HPAC-Safety/safety-report/issues/387) | AI | Open research spike. Summaries use Gemini today ([ADR-0104](../.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)); the provider is configuration behind `IAiMediator`. |
-| [#413 — Identify commenters by name and HPAC number once OIDC lands](https://github.com/HPAC-Safety/safety-report/issues/413) | Security | Open, waiting on the real identity provider ([ADR-0064](../.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)). Comments show "Member" until then ([ADR-0114](../.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
-| [#566 — Import historical Typeform report exports from Manage reports](https://github.com/HPAC-Safety/safety-report/issues/566) | API, web, i18n | Open, phase 2. An administrator imports HPAC's English and French Typeform `.xlsx` exports from **Manage reports**, re-runnable as newer exports arrive; needed before the cut-over in #31. |
-| [#607 — Deploy HPAC-Safety to production: HPAC's AWS account at safety.hpac.ca and securite.acvl.ca, promoted on approval](https://github.com/HPAC-Safety/safety-report/issues/607) | Infrastructure | Open, phase 2, blocked by #606. Replaces the production half of #30: the code, Terraform, and workflows are built, and what remains is the one-time setup in `infra/SETUP.md` Part 3, DNS, and the first approved promotion ([infrastructure and operations](../.spec/infrastructure-and-operations.md)). |
-| [#661 — Post a published report to HPAC's social channels (WhatsApp first)](https://github.com/HPAC-Safety/safety-report/issues/661) | API, web, Worker, infrastructure, i18n | Phase 3, after launch. Designs the specification for social channels; until it lands, [system overview](../.spec/system-overview.md) `CON-SO-009` and [interfaces and data flow](../.spec/interfaces-and-data-flow.md) `CON-IF-002` keep a publication channel out of scope. |
-| [#662 — Spike: how the safety bot reaches the WhatsApp group](https://github.com/HPAC-Safety/safety-report/issues/662) | Worker, infrastructure | Phase 3 spike under #661. Its answer decides the sender adapter and where it is hosted. |
-| [#690 — Staging: verify the 250 MB video upload and the 26 MB refusal once sign-in works](https://github.com/HPAC-Safety/safety-report/issues/690) | Infrastructure | Open, phase 2. The one acceptance check left from #606, waiting on sign-in in staging ([ADR-0172](../.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)). |
+Nothing checks this page on a pull request. `.github/workflows/issue-traceability.yml`
+compares it with GitHub daily and on every push to `main`, and keeps one
+"Issue traceability drift" issue open while they differ.
+
+| Issue | Milestone | Labels | Parent |
+|---|---|---|---|
+| [#31 — Replace the Typeform with the new report form](https://github.com/HPAC-Safety/safety-report/issues/31) | Phase 2 — Publish | `area:infra`, `phase:2` | — |
+| [#47 — Dependency Dashboard](https://github.com/HPAC-Safety/safety-report/issues/47) | — | — | — |
+| [#387 — Evaluate AWS Bedrock as the summarization provider](https://github.com/HPAC-Safety/safety-report/issues/387) | Phase 3 — After launch | — | — |
+| [#413 — Identify commenters by name and HPAC number once OIDC lands](https://github.com/HPAC-Safety/safety-report/issues/413) | Phase 3 — After launch | `area:security` | — |
+| [#566 — Import historical Typeform report exports from Manage reports](https://github.com/HPAC-Safety/safety-report/issues/566) | Phase 2 — Publish | `area:api`, `area:i18n`, `area:web`, `enhancement`, `phase:2` | [#31](https://github.com/HPAC-Safety/safety-report/issues/31) |
+| [#607 — Deploy HPAC-Safety to production: HPAC's AWS account at safety.hpac.ca and securite.acvl.ca, promoted on approval](https://github.com/HPAC-Safety/safety-report/issues/607) | Phase 2 — Publish | `area:infra`, `enhancement`, `phase:2` | — |
+| [#661 — Post a published report to HPAC's social channels (WhatsApp first)](https://github.com/HPAC-Safety/safety-report/issues/661) | Phase 3 — After launch | `area:api`, `area:i18n`, `area:infra`, `area:web`, `area:worker`, `enhancement` | — |
+| [#662 — Spike: how the safety bot reaches the WhatsApp group](https://github.com/HPAC-Safety/safety-report/issues/662) | Phase 3 — After launch | `area:infra`, `area:worker`, `enhancement` | [#661](https://github.com/HPAC-Safety/safety-report/issues/661) |
+| [#690 — Staging: verify the 250 MB video upload and the 26 MB refusal once sign-in works](https://github.com/HPAC-Safety/safety-report/issues/690) | Phase 2 — Publish | `area:infra`, `enhancement`, `phase:2` | — |
+| [#809 — Make the specification test-verified, single-sourced, and graph-indexed (SDD audit)](https://github.com/HPAC-Safety/safety-report/issues/809) | Docs & spec hygiene | `area:ci`, `enhancement` | — |
+| [#810 — Generate the claims as JSON, a deterministic graphify fragment, and one slim matrix](https://github.com/HPAC-Safety/safety-report/issues/810) | Docs & spec hygiene | `area:ci`, `enhancement` | [#809](https://github.com/HPAC-Safety/safety-report/issues/809) |
+| [#811 — State each product rule once: fix the drifted contract, slim AGENTS.md invariants, retire hand-kept status docs](https://github.com/HPAC-Safety/safety-report/issues/811) | Docs & spec hygiene | `area:ci`, `documentation` | [#809](https://github.com/HPAC-Safety/safety-report/issues/809) |
+| [#812 — Make accepted ADRs immutable on a MADR template, add conventions, and validate lesson kinds](https://github.com/HPAC-Safety/safety-report/issues/812) | Docs & spec hygiene | `area:ci`, `documentation` | [#809](https://github.com/HPAC-Safety/safety-report/issues/809) |
+| [#813 — Count a claim as covered only when its tests pass, and make feature-coverage check relevance](https://github.com/HPAC-Safety/safety-report/issues/813) | Docs & spec hygiene | `area:ci`, `enhancement` | [#809](https://github.com/HPAC-Safety/safety-report/issues/809) |
+| [#814 — Split the two oversized feature areas, keeping every claim ID](https://github.com/HPAC-Safety/safety-report/issues/814) | Docs & spec hygiene | `area:api`, `area:ci`, `area:web`, `tech-debt` | [#809](https://github.com/HPAC-Safety/safety-report/issues/809) |
+| [#815 — Write scenarios declaratively, one behavior each, in one glossary, enforced by lint](https://github.com/HPAC-Safety/safety-report/issues/815) | Docs & spec hygiene | `area:api`, `area:ci`, `area:web`, `tech-debt` | [#809](https://github.com/HPAC-Safety/safety-report/issues/809) |

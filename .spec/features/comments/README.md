@@ -39,8 +39,8 @@ toggle. As with a report's summary, there is no per-comment language control:
 - **Not translated yet:** the original, marked as awaiting translation, until
   the Worker supplies it.
 
-A visitor who is not signed in sees "Sign in to comment". It opens the member
-login with `returnTo` set to the report. The login page follows it only to a
+The sign-in invitation a signed-out visitor sees (`REQ-COM-016`) opens the
+member login with `returnTo` set to the report. The login page follows it only to a
 path on this site, and brings the member back to the report they were
 reading.
 

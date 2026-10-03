@@ -106,8 +106,8 @@ What not to build here. The global list in
 to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-development.md)).
 
 - A session setting, role, or runtime flag that bypasses an immutability trigger.
-  A migration that must change a locked column disables the trigger in its own
-  transaction and argues it in its own ADR (ADR-0178).
+  A migration that must change a locked column (`REQ-DOM-029`) also argues
+  it in its own ADR (ADR-0178).
 - Row-level security, `REVOKE`, or a separate database role.
 - Undelete, restore, or any path back from a soft deletion.
 - Physical deletion of an application record, or a cascade that removes rows

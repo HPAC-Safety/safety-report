@@ -2,7 +2,7 @@
 title: Issue traceability drift opens an issue and gates nothing
 description: The source inventory is checked in the required docs job, but the issue-traceability page is checked daily and on push to main by a non-required workflow that keeps one drift issue open, because open issues change without any commit.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-26
 decision-makers: Chase Florell
 keywords: issue traceability, source inventory, drift, docs job, required checks, scheduled workflow, GitHub issues
@@ -10,7 +10,10 @@ keywords: issue traceability, source inventory, drift, docs job, required checks
 
 # ADR-0143 — Issue traceability drift opens an issue and gates nothing
 
-**Status:** Accepted.
+**Status:** Partially superseded by
+[ADR-0191](ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md):
+the issue page is generated from GitHub, and drift asks for a regeneration.
+The source-inventory half stands.
 
 ## Context
 

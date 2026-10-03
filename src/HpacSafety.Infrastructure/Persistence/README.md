@@ -28,8 +28,8 @@ and purpose-built query DTO. The normative target is
 main with the rules above: complete bilingual `question_revisions`, a
 consent-only `reports` projection, one bilingual `summaries` row per report,
 `Deleted`/live-row filters everywhere except `audit_log`, and no application
-field cipher. Query DTOs, deletion commands, and full attachment processing
-remain later work — see `docs/implementation-status.md`.
+field cipher. Later migrations built on it; a remaining gap is an `@ignore`
+claim in `.spec/traceability.md`.
 
 Integration tests use PostgreSQL through Testcontainers and must cover schema,
 transactions, deletion filters/cascades, query DTOs, and the migration's data

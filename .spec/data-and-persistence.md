@@ -58,7 +58,7 @@ REQ-QB-131.*
 **CON-DP-005** **There is no user table.** Identity and role come from claims on a validated
 token, per request, and are never written down
 ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-`summaries.approved_by_subject`, `report_comments.author_subject`,
+`summary_revisions.author_subject` and `approved_by_subject`, `report_comments.author_subject`,
 `report_comments.hidden_by_subject`, `report_private_note_revisions.author_subject`,
 `report_private_attachments.added_by_subject` and `deleted_by_subject`,
 and `audit_log.actor_subject` hold the token's

@@ -61,6 +61,7 @@ the `Given`/`When`/`Then` text behind it.
 | `.claude/skills/`, `.claude/agents/` | `skillfile install` |
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/dev/extract-typeform.py` |
+| `docs/issue-traceability.md` | `node tools/spec/generate-issue-traceability.ts`, from GitHub; the drift issue `issue-traceability.yml` keeps asks for it (ADR-0191) |
 | `.spec/traceability.md` | `node tools/spec/generate-traceability.ts`; on a same-repo PR, `traceability.yml` commits it (ADR-0101) |
 | `.spec/README.md` | `node tools/spec/generate-spec-index.ts`; committed with the matrix by `traceability.yml` (ADR-0183) |
 | `.spec/bindings.md` | `node tools/spec/generate-bindings.ts`; committed with the matrix by `traceability.yml`, and fails `docs` when a built claim's step is unbound (ADR-0184) |

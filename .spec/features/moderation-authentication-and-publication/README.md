@@ -28,8 +28,8 @@ issued or expires.
 
 The role claim's **name** is configuration; its **values** are the invariant
 codes `user`, `safety_officer`, and `administrator`. A claim may be a string or
-an array, and the highest role present wins. A validated token with no
-recognized role authenticates as `User`.
+an array, and the highest role present wins; none means `User`
+(`REQ-MOD-017`).
 
 The production provider is not yet chosen — Auth0 and AWS Cognito are the
 candidates, and any provider emitting the claim shape above satisfies the
@@ -87,8 +87,7 @@ Submission is a membership capability rather than a privileged one, so any of
 the three roles may file a report — and the report records nothing about who
 did ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 
-`Administrator` is not a superuser. No Administrator, migration, background
-worker, or direct API caller can bypass a publication guard.
+`Administrator` is not a superuser (`REQ-MOD-035`).
 
 ## The admin report list
 
@@ -158,7 +157,7 @@ REQ-MOD-096).
 | Unpublished | Unpublished |
 | Summary failed | Summary failed |
 
-The chosen filter is kept in the address bar. The list carries status and
+The list carries status and
 timing only — never answer or summary text. Opening a report shows its detail
 view, and that read is audited as `ViewedRawReport`
 ([REQ-MOD-051](moderation-authentication-and-publication.feature)).
@@ -295,8 +294,7 @@ history publicly.
 
 Every action carries the version of the report the reviewer loaded. If another
 reviewer changed it since, the API answers `409` and nothing is saved; the page
-asks the reviewer to reload. Each action writes one content-free audit entry
-in the same transaction.
+asks the reviewer to reload. Each action is audited (`REQ-MOD-061`).
 
 ## Private notes (#508)
 

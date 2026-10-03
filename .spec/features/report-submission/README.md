@@ -242,9 +242,8 @@ returns to the introduction with no answers.
   revision) and for one forked since (ADR-0071). The API refuses any such
   revision at submission, so the form never sends one after a restore
   ([ADR-0185](../../decisions/ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md)).
-- When one or more saved answers were dropped, **one notice** says the form
-  changed since the report was saved, so some answers were cleared. It names
-  no question; a cleared question shows empty. It shows after the reporter
+- When one or more saved answers were dropped, one notice
+  says so (`REQ-SUB-125`). It names no question; a cleared question shows empty. It shows after the reporter
   continues, and never when nothing was dropped or the reporter declines.
 - If no saved answer is on the current form, there is nothing to continue: the
   saved report is removed, no dialog is shown, and the form opens at its

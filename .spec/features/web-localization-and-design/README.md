@@ -38,8 +38,7 @@ the browser's languages, then English. The hostname→locale mapping is a small
 literal object in `src/web/src/i18n/locales.ts` — one entry per production
 hostname, nothing speculative. An unrecognized host, including staging's
 `*.cloudfront.net` address, has no entry and falls through to the browser
-languages. Switching the language toggle changes only the locale, never the
-host.
+languages. The toggle never changes the host (`REQ-WLD-031`).
 
 Both interface catalogues, `locales/en-CA.json` and `locales/fr-CA.json`, are
 built into the page's own script bundle, not fetched afterwards

@@ -149,284 +149,153 @@ contributor who never invokes one is unaffected.
 
 ## Product invariants
 
-1. **Questions are immutable bilingual revisions from the database.**
-   - Editing an unanswered question creates a new revision. Editing an answered
-     one soft-deletes it and creates a new question with the same stable key,
-     so an old answer always matches the wording it was given under. Soft
-     deletion is irreversible; at most one question per key is live
-     ([ADR-0071](.spec/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)).
-   - Two system questions are the only answers read by name: publication
-     consent, and media consent — asked only when publication consent is yes
-     and a file is attached
-     ([ADR-0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
-     [ADR-0119](.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
-     Neither can be optional or deleted, so both revise in place even when
-     answered.
-   - Four more answers are read by name, on the admin report list only: the
-     reporter's and pilot's first and last names. Each stays optional and
-     ordinary — ordinary questions with a `QuestionRole`, not system
-     questions — identified by that role rather than by wording or position,
-     so a fork or a reworded label never loses them. A name shows blank when
-     unanswered; reporter and pilot are never collapsed even when they name
-     the same person
-     ([ADR-0154](.spec/decisions/ADR-0154-reporter-and-pilot-names-are-read-by-question-role.md)).
-   - **A label has no closing colon.** It is stored without one, and the
-     interface adds it after an answerable question's label in the locale's
-     style (`Label:` in en-CA, `Label :` in fr-CA; none after a statement, a
-     group, or a label ending in `?`). The editor and the API refuse a label
-     ending in `:`, and Typeform import strips it. One migration trimmed the
-     stored labels in place, creating no revision — a carved exception to the
-     rule above, argued in
-     [ADR-0181](.spec/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md).
-   - An administrator authors every other question's required state
-     ([ADR-0061](.spec/decisions/ADR-0061-administrators-may-require-any-question.md)).
-   - An administrator authors both languages, may use machine translation as a
-     drafting aid, and cannot save one language alone. The database holds only
-     what they saved
-     ([ADR-0062](.spec/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-   - **Choices sit outside revisions.** Each single-select, multi-select, or
-     type-ahead owns one editable list. Editing only the list never revises or
-     forks the question; a fork copies every choice; a removed choice is
-     hidden, never erased. No shared choice lists
-     ([ADR-0095](.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-   - **An answer names its choice by ID** and copies none of its wording. A
-     choice any answer names is never erased; removed, it only stops being
-     offered ([ADR-0128](.spec/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
-   - **Picker options** (single-select, multi-select): changing one's wording,
-     an administrator fixes it in place (every answer reads the fix) or
-     replaces it (the old choice is retired under its earlier answers; a
-     condition follows the replacement) ([ADR-0128](.spec/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
-   - **Type-ahead values**: a reporter may add a missing one — only to a
-     type-ahead. It is recorded at submission in the language typed, flagged
-     for review, offered at once, and given its other language by the Worker.
-     A Safety Officer or administrator reviews it: approves, corrects in place
-     for every answer, merges (answers are never rewritten; they read the
-     value merged into), or removes it ([ADR-0129](.spec/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
-   - **Answers**: immutable. A choice answer names its choice; a yes/no or
-     checkbox answer is a boolean; every other answer is one string, in the
-     reporter's own words and language.
-   - **Second language, only where needed**
-     ([ADR-0112](.spec/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)):
-     - free text an administrator marked as needing translation: filled off
-       the submission path, by the Worker through the question-authoring
-       translation port, exactly once — nothing, human included, ever
-       overwrites it ([ADR-0174](.spec/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md));
-     - a choice answer: reads its choice's other-language label — a lookup,
-       not a translation. A reporter-added type-ahead value's missing label is
-       filled on the choice by the Worker ([ADR-0129](.spec/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md));
-     - everything else (unmarked text, email, phone, date, time, number,
-       yes/no, checkbox): never has one;
-     - the source is recorded: `auto` or `choice`; `human` is retired
-       (ADR-0174) and kept only on rows written before that change.
-   - **Storage forms**: a yes/no or checkbox answer is `true`/`false` in
-     `value_boolean`, a JSON boolean on the wire, and never words in the
-     database; the interface renders it in the reader's language
-     ([ADR-0130](.spec/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
-     A date, time,
-     or date-and-time is ISO 8601 in the fitting shape. A phone answer is
-     E.164 (`+16045551234`), and an email answer one well-formed address;
-     either is refused malformed, and one stored earlier is left as stored
-     ([ADR-0137](.spec/decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md)). The domain still uses `DateOnly`,
-     `TimeOnly`, and `DateTimeOffset`
-     ([ADR-0072](.spec/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
-     [ADR-0080](.spec/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
-     [ADR-0035](.spec/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
-   - **Conditional questions** depend on a yes/no question, or on a
-     single-select naming one of its live choices by ID — which then cannot be
-     removed, only replaced. A condition follows a replaced choice and a forked
-     parent without revising the dependent question
-     ([ADR-0060](.spec/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
-     [ADR-0074](.spec/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
-     [ADR-0132](.spec/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
-   - **Dependent choices**: a single-select or type-ahead's choices may depend
-     on an earlier single-select or type-ahead, one level deep. Each choice
-     names one or more parent choices, and the form offers it under any of
-     them. Its wording is unique on the question. The dependency and the links
-     sit outside revisions; an unticked link is stamped, never erased. A
-     replace, merge, or fork re-points links when it happens, and a merge
-     unions parents. A parent choice is removed only while every child choice
-     under it keeps another live parent
-     ([ADR-0151](.spec/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)).
+Each line is the rule; the claims and ADRs after it hold the detail and win
+on any question of scope
+([ADR-0191](.spec/decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md)).
+Read them before touching the area.
+
+1. **Questions are immutable bilingual revisions from the database, and
+   answers are immutable.** An edit adds a revision or, once answered, forks;
+   choices sit outside revisions; an answer names its choice and stores a
+   boolean, ISO 8601, E.164, or one string; only the two consent questions and
+   four name roles are read by name; a label has no closing colon.
+   Claims: `REQ-QB-001`–`006`, `REQ-QB-015`, `REQ-QB-019`, `REQ-QB-025`,
+   `REQ-QB-053`, `REQ-QB-054`, `REQ-QB-071`, `REQ-QB-097`, `REQ-QB-113`,
+   `REQ-QB-122`–`135`, `REQ-QB-140`, `REQ-QB-179`, `REQ-QB-180`,
+   `REQ-QB-184`, `REQ-QB-213`, `REQ-QB-214`, `REQ-QB-240`–`246`,
+   `REQ-TF-024`, `REQ-SUB-071`, `REQ-SUB-096`, `REQ-SUB-097`, `REQ-SUB-119`,
+   `REQ-MOD-124`, `CON-DP-004`, `CON-DP-013`.
+   ADRs: [0035](.spec/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md),
+   [0060](.spec/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
+   [0061](.spec/decisions/ADR-0061-administrators-may-require-any-question.md),
+   [0062](.spec/decisions/ADR-0062-administrators-may-machine-translate-question-text.md),
+   [0071](.spec/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md),
+   [0072](.spec/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
+   [0074](.spec/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
+   [0080](.spec/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
+   [0095](.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md),
+   [0112](.spec/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
+   [0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+   [0119](.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md),
+   [0128](.spec/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md),
+   [0129](.spec/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md),
+   [0130](.spec/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md),
+   [0132](.spec/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md),
+   [0137](.spec/decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md),
+   [0151](.spec/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md),
+   [0154](.spec/decisions/ADR-0154-reporter-and-pilot-names-are-read-by-question-role.md),
+   [0174](.spec/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md),
+   [0181](.spec/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md).
 2. **Nothing reaches the server before final submission — except
-   attachments.**
-   - Unfinished answers and shown revision IDs stay only in that browser, for
-     15 days. No report, draft, reserved ID, or other respondent data is
-     written to a server or database.
-   - Each attachment uploads into private quarantine the moment it is
-     attached: the API mints an opaque upload ID and a pre-signed PUT of at
-     most 15 minutes, signed for that one key and the declared type and exact
-     size; the bytes never pass through the API. No database row, no member
-     named. Caps: 250 MB video, 25 MB image or document. It expires by
-     lifecycle rule 15 days after upload unless a submission claims it.
-     Removing the file erases it
-     ([ADR-0126](.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
-   - The submission validates every upload it claims — sniffed type, declared
-     type, and real size against the detected kind's cap — and refuses the
-     failures by ID before writing anything.
-   - The browser's saved report keeps each upload's ID and name beside the
-     answers, so files restore with it. Both share one window: 15 days from
-     the report's first save. Abandoning the report erases its uploads
-     ([ADR-0096](.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-     [ADR-0100](.spec/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
-   - One final request names those uploads. The API stores report, exact
-     question revisions, answers, files, and outbox work atomically, then
-     returns `202` without a model call.
-3. **One model call, only with consent.** This governs the summary call and
-   nothing else; machine translation is a separate port
-   ([ADR-0179](.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md),
-   "Machine translation" below).
-   - The Worker owns one versioned prompt and makes exactly one model call per
-     summary attempt, only for a report whose reporter consented to
-     publication. A report without consent never reaches the model.
-   - First, a deterministic marking pass replaces every exact or token-level
-     occurrence of a private answer's value in `report_content` with
-     `[PRIVATE:<question-key>]`
-     ([ADR-0082](.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
-   - `report_content` supplies eligible facts. Labeled `private_context`,
-     still sent in full, only helps recognize identifying text the marking pass
-     missed.
-   - The response is one strict English/French summary pair, each a Markdown
-     text with one `## ` section per public paragraph question on the report,
-     headed by its label, in form order; the Worker rejects a response whose
-     headings differ, and the retry budget applies
-     ([ADR-0180](.spec/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
-4. **Replace a private person's complete identity with a role.** A pilot's
-   name repeated in eligible narrative becomes exactly “the pilot” /
-   “le pilote,” with no fragment left. Private-only facts never become summary
-   facts.
+   attachments**, which upload by pre-signed PUT into private quarantine,
+   unnamed and rowless, and expire after 15 days unless claimed; one atomic
+   request stores the rest and returns `202` without a model call.
+   Claims: `REQ-SUB-001`, `REQ-SUB-003`, `REQ-SUB-013`–`015`, `REQ-SUB-045`,
+   `REQ-SUB-063`, `REQ-SUB-064`, `REQ-SUB-067`, `REQ-SUB-072`–`075`,
+   `REQ-MED-005`, `REQ-MED-016`, `REQ-MED-045`, `CON-IF-002`, `CON-DP-008`.
+   ADRs: [0096](.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+   [0100](.spec/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md),
+   [0126](.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md).
+3. **One model call, only with consent**: the Worker's one versioned prompt
+   summarizes a consented report after a deterministic marking pass, into one
+   strict English/French Markdown pair. It governs the summary call only;
+   machine translation is a separate port ("Machine translation" below).
+   Claims: `REQ-AI-001`–`007`, `REQ-AI-009`, `REQ-AI-011`, `REQ-AI-019`,
+   `REQ-AI-027`, `REQ-AI-031`–`036`, `REQ-DOM-006`, `CON-SO-004`,
+   `CON-SO-005`, `CON-IF-009`.
+   ADRs: [0082](.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md),
+   [0104](.spec/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md),
+   [0180](.spec/decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md).
+4. **Replace a private person's complete identity with a role** — exactly
+   “the pilot” / “le pilote”, no fragment left — and never turn a private-only
+   fact into a summary fact.
+   Claims: `REQ-AI-003`, `REQ-AI-007`, `REQ-AI-024`, `CON-SO-005`.
+   ADRs: [0028](.spec/decisions/ADR-0028-role-words-in-place-of-names.md),
+   [0082](.spec/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md).
 5. **Attachments are published only with media consent, and never
-   transformed for it.**
-   - Documents (PDF, DOC, DOCX, RTF, Markdown, text, ODT) are validated and
-     kept as they arrived. No malware scan (ADR-0089). Never anonymized,
-     transformed, parsed, sent to the model, or inline-rendered.
-   - An image or video is published only as its verified derivative, on a
-     published report whose reporter consented to media, through a pre-signed
-     URL of at most 15 minutes. A reviewer may hide it. Its original never is
-     published
-     ([ADR-0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
-   - A validated document is published the same way, unchanged, as a forced
-     download under a server-minted name. It needs a media-consent yes given
-     to wording that names documents
-     ([ADR-0119](.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+   transformed for it**: an image or video only as its verified derivative, a
+   document unchanged as a forced download, each through a pre-signed URL of
+   at most 15 minutes; a document is never sent to the model; no malware
+   scan.
+   Claims: `REQ-MED-008`, `REQ-MED-025`–`030`, `REQ-MED-037`–`041`,
+   `REQ-AI-016`, `CON-SO-003`.
+   ADRs: [0089](.spec/decisions/ADR-0089-no-malware-scanning-for-attachments.md),
+   [0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+   [0119](.spec/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md).
 6. **Publication** requires positive consent, a non-deleted report, and human
-   approval of the current bilingual pair.
-   - **A summary is an append-only list of revisions.** Each records its
-     author's opaque token subject and how each language was written. An edit
-     adds one; a rollback adds a new one that copies an earlier one; nothing
-     saved is rewritten.
-   - Approval belongs to a revision. Before a report is first published, an
-     edit is a draft and needs Approve & Publish.
-   - On a **Published** report, a saved revision (edit or rollback) is approved
-     by the person who saved it and is public at once. The report stays
-     Published, and `PublishedAt` keeps the first publish date.
-   - The public reads only the latest approved revision of a Published report,
-     through a SQL view
-     ([ADR-0177](.spec/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)).
-7. **Identity is a validated JWT, and nothing is stored about members.**
-   - The API reads the subject and the role claim, nothing else. The system
-     never handles a member's password.
-   - No user records of any kind: no user table, allowlist, or session store.
-     An approver or audit actor is an opaque token subject that joins to
-     nothing
-     ([ADR-0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
-     [ADR-0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-   - Three roles: `User`, `SafetyOfficer`, `Administrator`.
-   - Filing a report requires a member of any role and records nothing about
-     them; the form says so
-     ([ADR-0067](.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
-   - **Development-only exception**: a fourth sign-in path may verify a real
-     member's password against the live members site for the one call that
-     checks it, never logging or storing it. It never runs outside Development
-     and does not generalize
-     ([ADR-0079](.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
-     **Also staging, temporarily**: behind
-     `HpacSafety:Authentication:InterimIssuer:Enabled`, the same members-site
-     check and administrator allowlist run in staging too, signing RS256
-     tokens this API also validates, until a real identity provider is chosen
-     ([ADR-0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
-     Never set in production.
-8. **Managed encryption, no deletion.**
-   - Use managed encryption at rest and TLS. No application-level field
-     encryption.
-   - Never log report content. Never physically delete application records.
-   - The carved exceptions, none generalizing:
-     - dropping the legacy per-language question tables and `report_aircraft`
-       after folding their data forward
-       ([ADR-0040](.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md));
-     - dropping `admin_users`, which never held data in any deployed
-       environment
-       ([ADR-0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
-     - dropping the shared-choice-list and per-revision option tables after
-       copying every choice onto its question
-       ([ADR-0095](.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md));
-     - hard-deleting a `pending_import_logic` row, a transient Typeform import
-       note, when an administrator resolves it
-       ([ADR-0077](.spec/decisions/ADR-0077-typeform-json-import-and-export.md)).
-   - Any future `DROP TABLE` needs its own argument on its own facts.
-   - Rewriting stored revision text is not a deletion but is as rare: the one
-     in-place trim of label colons
-     ([ADR-0181](.spec/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md))
-     is the only one.
+   approval of the current bilingual pair; a summary is an append-only list of
+   revisions, and the public reads the latest approved one through a SQL view.
+   Claims: `REQ-DOM-003`, `REQ-DOM-005`, `REQ-DOM-024`, `REQ-DOM-025`,
+   `REQ-MOD-035`, `REQ-MOD-194`–`200`, `CON-SO-007`, `CON-DP-014`.
+   ADRs: [0177](.spec/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md).
+7. **Identity is a validated JWT, and nothing is stored about members**: the
+   API reads the subject and role claim (`User`, `SafetyOfficer`,
+   `Administrator`), never handles a password, and keeps no user record; a
+   reporter must be a member and is not recorded. The only exceptions are
+   Development's members-site login and, temporarily, staging's interim
+   issuer behind `InterimIssuer:Enabled`, which production never sets.
+   Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-SUB-019`–`021`,
+   `REQ-SUB-023`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
+   `CON-INF-004`.
+   ADRs: [0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+   [0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
+   [0067](.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md),
+   [0079](.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md),
+   [0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md).
+8. **Managed encryption, no deletion**: managed encryption at rest and TLS,
+   no application-level field encryption; never log report content; never
+   physically delete an application record. The carved exceptions, none
+   generalizing, are the table drops in
+   [ADR-0040](.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md),
+   [ADR-0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
+   and [ADR-0095](.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md),
+   the `pending_import_logic` hard delete in
+   [ADR-0077](.spec/decisions/ADR-0077-typeform-json-import-and-export.md),
+   and the label-colon trim in
+   [ADR-0181](.spec/decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md),
+   the only in-place rewrite of stored revision text. Any other `DROP TABLE`
+   or rewrite needs its own argument on its own facts.
+   Claims: `REQ-DOM-007`, `REQ-DOM-011`, `REQ-DOM-027`, `REQ-DOM-030`,
+   `CON-DP-003`, `CON-DP-015`, `CON-IF-010`, `CON-INF-008`.
+   ADRs: [0178](.spec/decisions/ADR-0178-the-database-refuses-changes-to-the-reporters-account-and-to-summary-revisions.md).
 
 ## Not built
 
-- **None of these exist**: a deterministic scrubber beyond the marking pass
-  (invariant 3), a separate PII auditor, specialized aircraft processing, an
-  outbound email flow, a server-side draft or resumable upload protocol, a
-  user table, an allowlist, a credential proxy, CSRF machinery, or Turnstile
-  verification.
-- **Two carved exceptions**: Development's members-site login (invariant 7)
-  carries a hardcoded, Development-only email allowlist for role, and
-  CSRF/session handling scoped entirely to that credential source. It never
-  reaches Production. **Temporarily, staging carries the same allowlist too**,
-  behind the interim issuer's flag, until a real identity provider exists
-  ([ADR-0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md));
-  production never sets it. Any other allowlist or credential-proxy-shaped
-  code needs its own argument on its own facts.
+- **None of these exist**: a deterministic scrubber beyond the marking pass, a
+  separate PII auditor, specialized aircraft processing, an outbound email
+  flow, a server-side draft or resumable upload protocol, a user table, an
+  allowlist, a credential proxy, CSRF machinery, or Turnstile verification.
+  Claims: `CON-SO-009`, `CON-IF-002`, `CON-IF-004`, `CON-IF-005`,
+  `CON-INF-004`.
+- **Two carved exceptions** carry an email allowlist and CSRF/session
+  handling scoped to the members-site credential source: Development's
+  members-site login
+  ([ADR-0079](.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
+  and, temporarily, staging's interim issuer
+  ([ADR-0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
+  Any other allowlist or credential-proxy-shaped code needs its own argument
+  on its own facts.
 
 ### Machine translation
 
-- **Never on the submission path.** Nothing a reporter's request touches calls a
-  translation provider.
-- Off that path it has five purposes:
-  1. drafting question wording while authoring;
-  2. the Worker mechanically supplying the second language of an answer that
-     needs one, exactly once — nothing else ever writes or overwrites it
-     ([ADR-0080](.spec/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
-     [ADR-0112](.spec/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
-     [ADR-0174](.spec/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md));
-  3. a reviewer drafting one language of a summary pair from the other;
-  4. the Worker translating each revision of a member's comment on a published
-     report
-     ([ADR-0114](.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md));
-  5. CI translating the English interface catalogue into `locales/fr-CA.json`
-     ([ADR-0021](.spec/decisions/ADR-0021-ci-translation-opens-a-pull-request.md),
-     [ADR-0057](.spec/decisions/ADR-0057-same-repo-pull-requests-translate-in-pr.md)).
-- The Worker's generated pair comes only from its one anonymized model call,
-  never a translation provider.
-- **Gemini translates, en-CA ⇄ fr-CA, in every environment and in CI**
-  ([ADR-0179](.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)):
-  - `ITranslator` has two implementations: `OpenAiTranslator`, registered,
-    and `DeepLTranslator`, kept dormant — code, tests, secret, IAM, and deploy
-    step — so DeepL can be switched back. Nothing registers DeepL.
-  - `OpenAiTranslator` and the Worker's `OpenAiSummarizer` are the two callers
-    of `IAiMediator`, which picks the provider handler by the request's model
-    name and is the only place that tells providers apart. `GeminiHandler`
-    claims `gemini-*`; there is no provider setting, and a model no handler
-    claims stops startup while a key is held.
-  - `ITranslator` is its own call, outside invariant 3. It receives the
-    strings and `locales/terms.json`, and nothing else: no report context, no
-    other answers. It runs for a report with or without publication consent.
-  - It reuses the summary's Gemini key — the ADR-0104 secret in each
-    environment, `GEMINI_API_KEY_DEV` in CI — with its own `Translation:Model`
-    and `Translation:ReasoningEffort`. Translation needs no key of its own;
-    the DeepL key and secret are kept dormant and nothing reads them.
-  - With no key it is unavailable in every environment; there is no stand-in.
-  - One versioned prompt, `locales/translation-prompt.v2.md`, serves runtime
-    and CI. A used version is never edited.
-- A reviewer's translation is a draft they confirm. Each saved language records
-  whether it was generated, written by a human, or machine-translated
-  ([ADR-0108](.spec/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)).
+- **Never on the submission path**, and never the source of the Worker's
+  summary pair. Off it, Gemini translates en-CA ⇄ fr-CA through
+  `ITranslator` for five purposes only: drafting question wording; the
+  Worker's once-only second language of an answer that needs one; a
+  reviewer's draft of one summary language; the Worker's translation of each
+  comment revision; and CI's `locales/fr-CA.json`. `ITranslator` receives
+  the strings and `locales/terms.json` only.
+  Claims: `REQ-SUB-080`, `REQ-SUB-119`, `REQ-SUB-120`, `REQ-QB-066`,
+  `REQ-MOD-069`–`074`, `REQ-COM-005`, `REQ-COM-006`, `REQ-WLD-010`,
+  `REQ-WLD-028`, `REQ-WLD-033`–`044`, `REQ-AI-030`.
+  ADRs: [0021](.spec/decisions/ADR-0021-ci-translation-opens-a-pull-request.md),
+  [0057](.spec/decisions/ADR-0057-same-repo-pull-requests-translate-in-pr.md),
+  [0062](.spec/decisions/ADR-0062-administrators-may-machine-translate-question-text.md),
+  [0108](.spec/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md),
+  [0114](.spec/decisions/ADR-0114-members-may-comment-on-a-published-report.md),
+  [0174](.spec/decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md),
+  [0179](.spec/decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)
+  (providers, `IAiMediator`, keys, and the shared prompt).
 
 ## Focused skills
 
@@ -515,7 +384,7 @@ Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
 |---|---|
 | Target product and architecture | [`.spec/features/README.md`](.spec/features/README.md) |
 | Every area, constraint page, decision, and lesson | [`.spec/README.md`](.spec/README.md) (generated) |
-| Current implementation gaps | [`docs/implementation-status.md`](docs/implementation-status.md) |
+| Current implementation gaps | `@ignore` claims in [`.spec/traceability.md`](.spec/traceability.md); open issues in [`docs/issue-traceability.md`](docs/issue-traceability.md) (both generated) |
 | Current Typeform question evidence | [`docs/form-spec.md`](docs/form-spec.md) |
 | Setup | [`README.md`](README.md), `./init-dev.sh` |
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |

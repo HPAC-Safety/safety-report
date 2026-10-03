@@ -2,7 +2,7 @@
 title: The specification lives in a .spec directory
 description: Everything the specification chain reads — feature areas, constraint pages, decisions, lessons, and the traceability matrix — moves into .spec/, whose README is a generated index. Every relative link is checked, and an ADR's status must agree with its status line. docs/ keeps guides only, and .gitattributes is tracked.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-30
 decision-makers: Chase Florell
 keywords: specification, .spec, directory layout, index, generated, link check, ADR status, lessons, decisions, traceability, gitattributes, drift, ADR-0083, ADR-0084, ADR-0085, ADR-0087, ADR-0091, ADR-0101, ADR-0106
@@ -22,6 +22,9 @@ paths in [ADR-0083](ADR-0083-specification-driven-development.md),
 [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md), and
 [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Partially superseded by
+[ADR-0191](ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md):
+`docs/implementation-status.md` no longer exists; the placement rule stands.
 
 ## Context
 

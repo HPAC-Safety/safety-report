@@ -11,10 +11,9 @@ and Paragliding Association of Canada. It collects database-driven reports,
 creates an anonymized English/French safety-summary pair with one AI call, and
 requires human approval before publication.
 
-> **Implementation status:** the repository contains substantial domain,
-> persistence, media, web-asset, CI, and infrastructure scaffolding, but the
-> complete target flow is not implemented. The audited gaps are listed in
-> [`docs/implementation-status.md`](docs/implementation-status.md). Do not infer
+> **Implementation status:** a gap is an `@ignore` claim in the generated
+> [traceability matrix](.spec/traceability.md) or an open issue in the
+> generated [issue traceability](docs/issue-traceability.md) page. Do not infer
 > feature completion from an old closed issue or README.
 
 ## How this repository works
@@ -246,7 +245,7 @@ it to reset.
 | [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and the React/Vite web app |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused coding-agent guidance: generic skills, and the project skills that extend them |
-| [`docs/`](docs/architecture.md) | Guides: architecture, setup, deployment, conventions, implementation status, and PR screenshots |
+| [`docs/`](docs/architecture.md) | Guides: architecture, setup, deployment, conventions, and PR screenshots |
 | [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding; [`infra/SETUP.md`](infra/SETUP.md) is the human setup checklist for staging and production |
 | [`locales/`](locales/en-CA.json) | Reviewed application UI catalogues |
 

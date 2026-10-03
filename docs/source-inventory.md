@@ -19,19 +19,18 @@ not here.
 ## HpacSafety.Api — the HTTP host
 
 It runs on Lambda
-([ADR-0042](../.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md);
-today's Terraform still uses ECS, #443). It validates tokens and applies
+([ADR-0042](../.spec/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)). It validates tokens and applies
 migrations at startup, and does no AI work.
 
 | Directory | Holds |
 |---|---|
-| [`src/HpacSafety.Api`](../src/HpacSafety.Api/) | The project, `Program.cs` (host, forwarded headers per ADR-0081, startup migrations per ADR-0055), and settings. |
+| [`src/HpacSafety.Api`](../src/HpacSafety.Api/) | The project, `Program.cs` (host, forwarded headers per ADR-0159, startup migrations per ADR-0055), and settings. |
 | [`Admin/`](../src/HpacSafety.Api/Admin/) | Reviewer and administrator endpoints: question authoring and Translate drafts (ADR-0062), report review and actions (ADR-0105), attachment links and hide/show (ADR-0117, ADR-0119), the answer-translation queue (ADR-0112), pending counts (ADR-0116), and Typeform import/export (ADR-0077, ADR-0078). |
-| [`Authentication/`](../src/HpacSafety.Api/Authentication/) | JWT bearer validation, the three role policies, the Development-only token issuer and credential sources, including the members-site sign-in (ADR-0064, ADR-0066, ADR-0079). |
+| [`Authentication/`](../src/HpacSafety.Api/Authentication/) | JWT bearer validation, the three role policies, the Development-only token issuer, the temporary staging interim issuer (ADR-0172), and the credential sources, including the members-site sign-in (ADR-0064, ADR-0066, ADR-0079). |
 | [`Properties/`](../src/HpacSafety.Api/Properties/) | Local launch profiles. |
 | [`PublicQuestions/`](../src/HpacSafety.Api/PublicQuestions/) | `GET /api/v1/questions`: the anonymous current form. |
 | [`PublicReports/`](../src/HpacSafety.Api/PublicReports/) | The public feed, a report's page, its media links (ADR-0117, ADR-0119), and member comments (ADR-0114). |
-| [`RateLimiting/`](../src/HpacSafety.Api/RateLimiting/) | Per-IP policies for submission and sign-in (ADR-0081). |
+| [`RateLimiting/`](../src/HpacSafety.Api/RateLimiting/) | Per-IP policies for submission and sign-in, keyed on `CloudFront-Viewer-Address` (ADR-0159). |
 | [`Reports/`](../src/HpacSafety.Api/Reports/) | `POST /api/v1/uploads`, which mints a pre-signed PUT to quarantine, and the JSON report submission that validates and claims each upload (ADR-0096, ADR-0098, ADR-0126). |
 | [`Security/`](../src/HpacSafety.Api/Security/) | The CloudFront origin-secret check, first in the pipeline and required at startup outside Development (ADR-0159). |
 
@@ -74,8 +73,7 @@ Core has no runtime package dependency.
 ## HpacSafety.Worker — outbox processing
 
 It runs on Lambda
-([ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md);
-today it is a polling loop on ECS, #443).
+([ADR-0123](../.spec/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
 
 | Directory | Holds |
 |---|---|

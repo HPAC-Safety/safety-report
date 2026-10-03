@@ -122,8 +122,8 @@ order (which breaks the moment the two language forms diverge).
 
 ## Current implementation status
 
-Built: every scenario above is bound and runs. See
-[implementation status](../../../docs/implementation-status.md).
+Built: every scenario above is bound and runs; the generated
+[traceability matrix](../../traceability.md) shows each claim's status.
 
 ## Out of scope
 

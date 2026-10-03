@@ -84,8 +84,8 @@ narrow private-value marking pass above, specialized aircraft processing,
 notification email, or extra model repair stage. Documents never enter model
 input.
 
-See [`../../docs/implementation-status.md`](../../docs/implementation-status.md)
-for the full capability matrix.
+A gap is an `@ignore` claim in the generated
+[traceability matrix](../../.spec/traceability.md).
 
 ```bash
 docker compose up -d db

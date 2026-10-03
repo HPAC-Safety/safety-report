@@ -112,9 +112,9 @@ current prompt carries every row of this table
 
 ## Provider configuration
 
-Only a report whose reporter consented to publication is summarized. A report
-without consent is never sent to the model, so its content never leaves Canada
-([REQ-AI-027](ai-anonymization.feature), REQ-DOM-006).
+A report without publication consent is never sent to the model
+([REQ-AI-027](ai-anonymization.feature), REQ-DOM-006), so its content never
+leaves Canada.
 
 The Worker's `AiChatClient` configuration section holds the key, the model, and
 the reasoning level together, with no provider setting: the model's name picks

@@ -68,15 +68,17 @@ the same policies. Only the issuer and the key differ
 Sign in with a real HPAC membership: `POST /api/auth/token` verifies the
 username and password against the live members site
 (`https://members.hpac.ca`) for that one call, never logging or storing the
-password. Role comes from two Development-only email allowlists in
-configuration — `MembersSiteLogin:AdministratorEmails` and
+password. Role comes from two email allowlists in configuration, used in Development
+and, through the temporary interim issuer, in staging ([ADR-0172](../.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)) — `MembersSiteLogin:AdministratorEmails` and
 `MembersSiteLogin:SafetyOfficerEmails` — falling back to `User` for any other
 verified member
 ([ADR-0079](../.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
 
-The development token endpoint is **not mapped outside Development** — the
-route returns 404 rather than 401, because there is no code path that maps it
-there. The third-party sign-in option is production-only; the browser learns
+The Development (HS256) issuer is **not mapped outside Development**. Until a
+provider is chosen, staging runs a temporary RS256 interim issuer in the API
+behind `HpacSafety:Authentication:InterimIssuer:Enabled`, which maps the same
+`POST /api/auth/token` route ([ADR-0172](../.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)). Production never sets the flag;
+there the route returns 404 rather than 401, because no code path maps it. The third-party sign-in option is production-only; the browser learns
 whether to offer it from `GET /api/auth/config`, never from a build flag.
 
 ## Filing a report

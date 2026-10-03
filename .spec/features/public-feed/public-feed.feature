@@ -37,7 +37,7 @@ Scenario: A Safety Officer sees every attachment on the public report page, each
 @ui
 Scenario Outline: A published report page offers a same-tab link to its report detail for a reviewer
   Given <visitor> visits a published report's page
-  Then the page offers a link to that report's report detail
+  Then the page offers a link to its report detail
   When the visitor activates that link
   Then the browser opens its report detail, in the same tab
 

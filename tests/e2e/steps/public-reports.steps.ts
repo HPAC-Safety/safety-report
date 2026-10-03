@@ -435,7 +435,7 @@ function adminLink(page: Page) {
 	return page.locator("[data-admin-link]")
 }
 
-Then("the page offers a link to that report's report detail", async ({ page }) => {
+Then("the page offers a link to its report detail", async ({ page }) => {
 	await expect(adminLink(page)).toBeVisible()
 	await expect(adminLink(page)).toHaveAttribute("href", `/admin/reports/${FIRST.id}`)
 })

@@ -65,7 +65,7 @@ own page, from the `public_reports` view's `language` column; the feed and its
 search never carry it. Not built: labelling comments or attachments.
 
 A reviewer sees a same-tab link, next to the
-published date, from a report's public page to that same report's report
+published date, from a report's public page to its own report
 detail (`/admin/reports/<id>`, #657). The public payload is unchanged —
 the link needs only the report ID the page already has, and the
 member's role decided from the token (invariant 7); the admin route's own

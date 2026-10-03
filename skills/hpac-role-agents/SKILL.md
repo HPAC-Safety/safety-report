@@ -55,7 +55,7 @@ roles and why each trusts only the artifact before it:
 - Run `node tools/spec/generate-traceability.ts`, `node tools/spec/generate-bindings.ts`, and
   `node tools/spec/generate-spec-index.ts` before finishing.
 - Decision records: [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md),
-  immutable once accepted; conventions: `.spec/conventions/` ([ADR-0191](../../.spec/decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+  immutable once accepted; conventions: `.spec/conventions/` ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
   `node tools/spec/check-records.ts` passes before finishing.
 
 ## test-writer
@@ -109,7 +109,7 @@ roles and why each trusts only the artifact before it:
   ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
 - Records: `node tools/spec/check-records.ts` and, with the pull request's
   base as `BASE_SHA`, `node tools/spec/check-adr-immutability.ts` both pass
-  ([ADR-0191](../../.spec/decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+  ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
 
 ## database-administrator
 

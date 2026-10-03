@@ -20,7 +20,7 @@ decision-makers: <names>
 keywords: <comma-separated terms, and the ADR numbers it touches>
 ---
 
-Rules (ADR-0191):
+Rules (ADR-0192):
 - status is proposed, accepted, rejected, deprecated, or superseded.
 - Once accepted, only `status:` and the **Status:** line ever change.
   A change to the decision is a new ADR that supersedes this one.

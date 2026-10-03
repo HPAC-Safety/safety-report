@@ -116,7 +116,7 @@ describe('main', () => {
 		const { root, base } = repository(false)
 		commit(root, ACCEPTED.replace('Why.', 'Normalized.'))
 
-		assert.match(run(root, { env: { BASE_SHA: base } }).log[0], /predates ADR-0191/)
+		assert.match(run(root, { env: { BASE_SHA: base } }).log[0], /predates ADR-0192/)
 		assert.match(run(root, { env: {} }).log[0], /No BASE_SHA/)
 	})
 

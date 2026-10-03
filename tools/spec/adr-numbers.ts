@@ -81,7 +81,7 @@ export function checkNumbering(adrs: readonly Adr[], read: ReadAdr): string[] {
 	return problems
 }
 
-// The lifecycle (ADR-0191). `partially-superseded` is retired: the records that
+// The lifecycle (ADR-0192). `partially-superseded` is retired: the records that
 // already carry it keep it, and check-records.ts and check-adr-immutability.ts
 // refuse it anywhere new.
 export const STATUSES: readonly string[] = ['proposed', 'accepted', 'rejected', 'deprecated', 'superseded', 'partially-superseded']
@@ -90,7 +90,7 @@ export const STATUSES: readonly string[] = ['proposed', 'accepted', 'rejected', 
 const SUPERSEDED: readonly string[] = ['superseded', 'partially-superseded']
 
 /**
- * An ADR's own status paragraph: the `**Status:**` paragraph (ADR-0191), or
+ * An ADR's own status paragraph: the `**Status:**` paragraph (ADR-0192), or
  * the first paragraph of the `## Status` section older branches may still
  * carry. Only this is read, because the rest of a record discusses other
  * records' supersession freely.

@@ -85,7 +85,7 @@ describe('checkStatus', () => {
 		assert.match(check({ 'ADR-0001-a.md': record('0001', 'draft', '**Status:** Draft.') })[0], /"status: draft" is not one of/)
 	})
 
-	it('accepts proposed, rejected, and deprecated records with no successor to link (ADR-0191)', () => {
+	it('accepts proposed, rejected, and deprecated records with no successor to link (ADR-0192)', () => {
 		for (const status of ['proposed', 'rejected', 'deprecated']) {
 			assert.deepEqual(check({ 'ADR-0001-a.md': record('0001', status, `**Status:** ${status}.`) }), [], status)
 		}

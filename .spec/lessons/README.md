@@ -29,7 +29,7 @@ claim ID.
 ## Three kinds, and what each one owes
 
 Every lesson declares its `kind` in frontmatter
-([ADR-0191](../decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+([ADR-0192](../decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
 
 **A product lesson** (`kind: product`) is about what the system does. Its
 remedy is a claim: a scenario is added or corrected, and the lesson's

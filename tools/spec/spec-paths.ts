@@ -21,12 +21,12 @@ export const LEGACY_DECISIONS = 'docs/decisions'
 
 export const LESSONS = '.spec/lessons'
 
-/** New process, tooling, and agent-workflow rules: `CONV-NNN-*.md` (ADR-0191). */
+/** New process, tooling, and agent-workflow rules: `CONV-NNN-*.md` (ADR-0192). */
 export const CONVENTIONS = '.spec/conventions'
 
 /**
  * The MADR shape every new ADR copies. Its presence on a pull request's base
- * is what puts ADR immutability in force (ADR-0191).
+ * is what puts ADR immutability in force (ADR-0192).
  */
 export const ADR_TEMPLATE = '.spec/decisions/TEMPLATE.md'
 

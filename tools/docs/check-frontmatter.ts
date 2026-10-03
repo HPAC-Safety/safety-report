@@ -35,7 +35,7 @@ export const TYPES = ['adr', 'spec', 'guide', 'readme', 'lesson', 'convention', 
 const EXTRA_KEYS: Readonly<Partial<Record<string, readonly string[]>>> = {
 	adr: ['status', 'date', 'decision-makers', 'keywords'],
 	spec: ['area'],
-	// `kind` decides what a lesson owes upstream (ADR-0191).
+	// `kind` decides what a lesson owes upstream (ADR-0192).
 	lesson: ['date', 'issue', 'status', 'kind'],
 	convention: ['status', 'date'],
 }

@@ -161,7 +161,7 @@ Rules:
 
 - Lessons live under [`.spec/lessons/`](../../.spec/lessons/README.md)
   ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md),
-  [ADR-0191](../../.spec/decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+  [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
 - Frontmatter `kind:` is `product`, `process`, or `incident`.
   `node tools/spec/check-records.ts` fails, in pre-commit and `docs`:
   - a section other than `## Symptom`, `## Root cause`, `## Spec delta`,
@@ -184,17 +184,17 @@ Rules:
 
 ### ADRs
 
-- The rules: [ADR-0191](../../.spec/decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md). Lifecycle, template, checks, and the missing numbers:
+- The rules: [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md). Lifecycle, template, checks, and the missing numbers:
   [`.spec/decisions/README.md`](../../.spec/decisions/README.md).
 - Template: copy [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md).
-  From ADR-0191 on, a record has exactly its sections, in its order.
+  From ADR-0192 on, a record has exactly its sections, in its order.
 - Conventions: a new process, tooling, or agent-workflow rule is
   `.spec/conventions/CONV-NNN-kebab-slug.md`
   ([`.spec/conventions/README.md`](../../.spec/conventions/README.md)). Take
-  the next unused number; it is never reused. The process ADRs before ADR-0191
+  the next unused number; it is never reused. The process ADRs before ADR-0192
   stay in `.spec/decisions/`.
 - The upstream `documentation-and-adrs` skill's ADR template and lifecycle do
-  not apply here; this section and ADR-0191 do.
+  not apply here; this section and ADR-0192 do.
 - `node tools/spec/adr-numbers.ts` fails a duplicate number or a filename and
   heading that disagree, in the pre-commit hook and CI
   ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
@@ -212,7 +212,7 @@ Rules:
   - a record without exactly one `## Considered options`;
   - an amendment heading other than `## Amendment (YYYY-MM-DD)`, optionally
     ` — subject`;
-  - from ADR-0191 on: a section the template lacks, a missing required one,
+  - from ADR-0192 on: a section the template lacks, a missing required one,
     sections out of order, `partially-superseded`, or a status line not
     opening with its status (`Accepted`, `Superseded`, …).
 - `node tools/spec/check-adr-immutability.ts` fails a pull request, in the
@@ -232,7 +232,7 @@ Rules:
   `convention`, `instructions`, `template` — plus the keys that type adds
   ([ADR-0087](../../.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)):
   - `adr`: `status`, `date`, `decision-makers`, `keywords`;
-  - `lesson`: `date`, `issue`, `status`, `kind` ([ADR-0191](../../.spec/decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md));
+  - `lesson`: `date`, `issue`, `status`, `kind` ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md));
   - `convention`: `status` (`accepted` or `superseded`) and `date`;
   - `spec`: `area`.
 - A `skills/*/SKILL.md` carries exactly `name` and `description` instead; its

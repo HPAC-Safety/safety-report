@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The shape of every decision record, lesson, and convention (ADR-0191).
+// The shape of every decision record, lesson, and convention (ADR-0192).
 //
 // adr-numbers.ts owns an ADR's number and whether its status agrees with its
 // status line. This owns the rest of its shape, and the shape of the other two
@@ -31,7 +31,7 @@ import { isMain } from '../lib/actions.ts'
 const ROOT = process.cwd()
 
 /** The first ADR written under the template; older records keep their sections. */
-export const FIRST_TEMPLATED_ADR = 191
+export const FIRST_TEMPLATED_ADR = 192
 
 /** The template's sections, in order (TEMPLATE.md). */
 export const ADR_SECTIONS = ['Context', 'Decision drivers', 'Considered options', 'Decision', 'Consequences', 'Related']
@@ -112,32 +112,32 @@ export function checkAdr(name: string, text: string): string[] {
 	const statusLine = firstBlock(text)
 
 	if (!statusLine.startsWith('**Status:**')) {
-		problems.push(`${path}: the first block under the heading is not its **Status:** line — a record states its status once, directly under its title (ADR-0191)`)
+		problems.push(`${path}: the first block under the heading is not its **Status:** line — a record states its status once, directly under its title (ADR-0192)`)
 	}
 	if ((body(text).match(/^\*\*Status:\*\*/gm) ?? []).length > 1) problems.push(`${path}: more than one **Status:** line`)
-	if (sections.includes('Status')) problems.push(`${path}: a "## Status" section — the status is the **Status:** line under the heading (ADR-0191)`)
+	if (sections.includes('Status')) problems.push(`${path}: a "## Status" section — the status is the **Status:** line under the heading (ADR-0192)`)
 
 	const options = sections.filter((heading) => heading === 'Considered options').length
 	if (options !== 1) {
-		problems.push(`${path}: ${options === 0 ? 'no' : options} "## Considered options" section${options === 0 ? '' : 's'} — every record names the options it weighed, or says none were recorded (ADR-0191)`)
+		problems.push(`${path}: ${options === 0 ? 'no' : options} "## Considered options" section${options === 0 ? '' : 's'} — every record names the options it weighed, or says none were recorded (ADR-0192)`)
 	}
 
 	for (const heading of sections.filter((heading) => /amendment/i.test(heading))) {
-		if (!AMENDMENT.test(`## ${heading}`)) problems.push(`${path}: "## ${heading}" — an amendment heading reads "## Amendment (YYYY-MM-DD)", optionally " — subject" (ADR-0191)`)
+		if (!AMENDMENT.test(`## ${heading}`)) problems.push(`${path}: "## ${heading}" — an amendment heading reads "## Amendment (YYYY-MM-DD)", optionally " — subject" (ADR-0192)`)
 	}
 
 	if (number >= FIRST_TEMPLATED_ADR) {
 		const unknown = sections.filter((heading) => !ADR_SECTIONS.includes(heading))
 		if (unknown.length > 0) {
-			problems.push(`${path}: ${unknown.map((heading) => `"## ${heading}"`).join(', ')} — a record follows TEMPLATE.md: ${ADR_SECTIONS.join(', ')}; anything else is a "### " under one of them. An accepted record takes no amendment; a change is a new ADR (ADR-0191)`)
+			problems.push(`${path}: ${unknown.map((heading) => `"## ${heading}"`).join(', ')} — a record follows TEMPLATE.md: ${ADR_SECTIONS.join(', ')}; anything else is a "### " under one of them. An accepted record takes no amendment; a change is a new ADR (ADR-0192)`)
 		}
 		for (const required of REQUIRED_ADR_SECTIONS) {
-			if (!sections.includes(required)) problems.push(`${path}: no "## ${required}" section (TEMPLATE.md, ADR-0191)`)
+			if (!sections.includes(required)) problems.push(`${path}: no "## ${required}" section (TEMPLATE.md, ADR-0192)`)
 		}
 		const known = sections.filter((heading) => ADR_SECTIONS.includes(heading))
 		if (!inOrder(known, ADR_SECTIONS)) problems.push(`${path}: sections out of order — TEMPLATE.md orders them ${ADR_SECTIONS.join(', ')}`)
 		if (status === 'partially-superseded') {
-			problems.push(`${path}: "status: partially-superseded" is retired — a record a later one changes is superseded by it (ADR-0191)`)
+			problems.push(`${path}: "status: partially-superseded" is retired — a record a later one changes is superseded by it (ADR-0192)`)
 		}
 		const word = STATUS_WORDS[status]
 		if (word && !new RegExp(`^\\*\\*Status:\\*\\*\\s+${word}\\b`).test(statusLine)) {
@@ -156,7 +156,7 @@ export function checkLesson(name: string, text: string, skills: ReadonlySet<stri
 	const sections = headings(text)
 
 	if (!LESSON_KINDS.includes(kind)) {
-		return [`${path}: "kind: ${kind}" is not one of ${LESSON_KINDS.join(', ')} — say whether a claim, a skill, or nothing upstream is its remedy (ADR-0191)`]
+		return [`${path}: "kind: ${kind}" is not one of ${LESSON_KINDS.join(', ')} — say whether a claim, a skill, or nothing upstream is its remedy (ADR-0192)`]
 	}
 
 	const unknown = sections.filter((heading) => !LESSON_SECTIONS.includes(heading))
@@ -175,7 +175,7 @@ export function checkLesson(name: string, text: string, skills: ReadonlySet<stri
 	}
 
 	if (kind === 'product' && !/\b(REQ|CON)-[A-Z]+-\d{3}\b/.test(section(text, 'Spec delta'))) {
-		problems.push(`${path}: a product lesson's "## Spec delta" names the REQ- or CON- claim that is its remedy (ADR-0191)`)
+		problems.push(`${path}: a product lesson's "## Spec delta" names the REQ- or CON- claim that is its remedy (ADR-0192)`)
 	}
 
 	if (kind === 'process') {
@@ -184,7 +184,7 @@ export function checkLesson(name: string, text: string, skills: ReadonlySet<stri
 		const conventionIds = skill.match(/\bCONV-\d{3}\b/g) ?? []
 		const real = named.filter((candidate) => skills.has(candidate)).length + conventionIds.filter((id) => conventions.has(id)).length
 		if (real === 0) {
-			problems.push(`${path}: a process lesson's "## Skill" names the skill or convention it changed, as \`skill-name\` or CONV-NNN, and that skill or convention exists (ADR-0191)`)
+			problems.push(`${path}: a process lesson's "## Skill" names the skill or convention it changed, as \`skill-name\` or CONV-NNN, and that skill or convention exists (ADR-0192)`)
 		}
 	}
 
@@ -260,7 +260,7 @@ export function main(root = ROOT): number {
 		}
 		return 1
 	}
-	console.log(`${counts.adrs} decision record(s), ${counts.lessons} lesson(s), and ${counts.conventions} convention(s) keep their shape (ADR-0191).`)
+	console.log(`${counts.adrs} decision record(s), ${counts.lessons} lesson(s), and ${counts.conventions} convention(s) keep their shape (ADR-0192).`)
 	return 0
 }
 

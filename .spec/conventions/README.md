@@ -8,7 +8,7 @@ type: guide
 
 A convention is a rule about how this repository is worked on — tooling, CI,
 hooks, the delivery workflow, what an agent is expected to do. Since
-[ADR-0191](../decisions/ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md),
+[ADR-0192](../decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md),
 a **new** rule of that kind is written here, not as an ADR. The process ADRs
 written before it stay in [`../decisions/`](../decisions/README.md).
 

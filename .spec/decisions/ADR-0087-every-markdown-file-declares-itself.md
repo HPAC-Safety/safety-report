@@ -15,7 +15,7 @@ keywords: frontmatter, YAML, markdown, documentation, validation, pre-commit, CI
 `agents/*.md` carries `name`, `description`, `model`, and `effort`. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
 Partially superseded by
-[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): `convention` joins the types, and a lesson adds `kind`.
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): `convention` joins the types, and a lesson adds `kind`.
 
 ## Context
 

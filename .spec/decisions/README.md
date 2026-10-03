@@ -22,19 +22,19 @@ This is not discretionary. If in doubt, write the ADR. These do not:
 - interface detail — wording, layout, a field's behavior — which is a scenario;
 - a new process, tooling, or agent-workflow rule, which is a
   [convention](../conventions/README.md). The process ADRs written before
-  [ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)
+  [ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)
   stay here.
 
 ## An accepted ADR is immutable
 
-[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md):
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md):
 
 - Once accepted, only its frontmatter `status:` and its `**Status:**` line ever
   change, and a link's target when the file it points to moves.
 - A change to a decision is a new ADR. The record it changes becomes
   `superseded`, its status line linking the new one; the new one states what of
   the old still holds.
-- No new amendment sections. The ones written before ADR-0191 stay as history,
+- No new amendment sections. The ones written before ADR-0192 stay as history,
   headed `## Amendment (YYYY-MM-DD)`.
 - An ADR is never deleted.
 
@@ -62,7 +62,7 @@ then `## Context`, `## Decision drivers` (optional), `## Considered options`
 that order. Take the number with `node tools/spec/adr-numbers.ts --next` after
 rebasing.
 
-The records before ADR-0191 keep their own sections, normalized once without
+The records before ADR-0192 keep their own sections, normalized once without
 changing what any says: one status line, and a `## Considered options`
 heading — over the options they weighed, or saying none were recorded.
 
@@ -81,7 +81,7 @@ All three run in the pre-commit hook and the `docs` job.
 
 ## Missing numbers
 
-Seven numbers have no record. Each went missing before ADR-0191 made deletion
+Seven numbers have no record. Each went missing before ADR-0192 made deletion
 impossible; none will be reused.
 
 | Number | Why |

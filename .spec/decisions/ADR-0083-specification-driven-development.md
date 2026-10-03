@@ -14,7 +14,7 @@ keywords: specification-driven development, SDD, Gherkin, agents, artifact chain
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
 Partially superseded by
-[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): of what the 2026-09-29 amendment below says an ADR records, a new
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): of what the 2026-09-29 amendment below says an ADR records, a new
 process rule is now a convention and interface detail a scenario.
 
 **Amended 2026-09-29 (#687):** an ADR records a real decision, meaning a new

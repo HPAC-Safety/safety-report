@@ -13,7 +13,7 @@ keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
 **Status:** Accepted Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
 Partially superseded by
-[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): a lesson declares a kind — product, process, or incident — that decides
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): a lesson declares a kind — product, process, or incident — that decides
 what it owes upstream, and an incident owes nothing.
 
 ## Context

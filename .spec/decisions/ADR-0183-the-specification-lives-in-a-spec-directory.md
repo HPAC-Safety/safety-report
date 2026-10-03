@@ -26,7 +26,7 @@ Partially superseded by
 [ADR-0191](ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md):
 `docs/implementation-status.md` no longer exists; the placement rule stands.
 Partially superseded by
-[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): an ADR's status is proposed, accepted, rejected, deprecated, or
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): an ADR's status is proposed, accepted, rejected, deprecated, or
 superseded, and the index lists conventions.
 
 ## Context

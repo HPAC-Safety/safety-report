@@ -63,35 +63,35 @@ describe('checkAdr, on a record older than the template', () => {
 })
 
 describe('checkAdr, on a templated record', () => {
-	const name = 'ADR-0191-new.md'
+	const name = 'ADR-0192-new.md'
 
 	it('passes the template, with its optional sections or without them', () => {
-		assert.deepEqual(checkAdr(name, adr('0191', '**Status:** Accepted. Decided today.', TEMPLATED)), [])
-		assert.deepEqual(checkAdr(name, adr('0191', '**Status:** Accepted.', ['Context', 'Considered options', 'Decision', 'Consequences'])), [])
+		assert.deepEqual(checkAdr(name, adr('0192', '**Status:** Accepted. Decided today.', TEMPLATED)), [])
+		assert.deepEqual(checkAdr(name, adr('0192', '**Status:** Accepted.', ['Context', 'Considered options', 'Decision', 'Consequences'])), [])
 	})
 
 	it('fails a section the template does not have, an amendment included', () => {
-		const problems = checkAdr(name, adr('0191', '**Status:** Accepted.', [...TEMPLATED, 'Amendment (2026-10-04)']))
+		const problems = checkAdr(name, adr('0192', '**Status:** Accepted.', [...TEMPLATED, 'Amendment (2026-10-04)']))
 
 		assert.equal(problems.length, 1)
 		assert.match(problems[0], /"## Amendment \(2026-10-04\)" — a record follows TEMPLATE\.md/)
 	})
 
 	it('fails a missing required section, and sections out of order', () => {
-		const missing = checkAdr(name, adr('0191', '**Status:** Accepted.', ['Context', 'Considered options', 'Decision']))
-		const reordered = checkAdr(name, adr('0191', '**Status:** Accepted.', ['Context', 'Decision', 'Considered options', 'Consequences']))
+		const missing = checkAdr(name, adr('0192', '**Status:** Accepted.', ['Context', 'Considered options', 'Decision']))
+		const reordered = checkAdr(name, adr('0192', '**Status:** Accepted.', ['Context', 'Decision', 'Considered options', 'Consequences']))
 
-		assert.deepEqual(missing, [`.spec/decisions/${name}: no "## Consequences" section (TEMPLATE.md, ADR-0191)`])
+		assert.deepEqual(missing, [`.spec/decisions/${name}: no "## Consequences" section (TEMPLATE.md, ADR-0192)`])
 		assert.match(reordered[0], /sections out of order/)
 	})
 
 	it('refuses partially-superseded, and a status line that does not open with its status', () => {
-		const partial = checkAdr(name, adr('0191', '**Status:** Partially superseded by [ADR-0192](ADR-0192-x.md).', TEMPLATED, 'partially-superseded'))
-		const disagreeing = checkAdr(name, adr('0191', '**Status:** Accepted.', TEMPLATED, 'superseded'))
+		const partial = checkAdr(name, adr('0192', '**Status:** Partially superseded by [ADR-0192](ADR-0192-x.md).', TEMPLATED, 'partially-superseded'))
+		const disagreeing = checkAdr(name, adr('0192', '**Status:** Accepted.', TEMPLATED, 'superseded'))
 
 		assert.match(partial[0], /is retired/)
 		assert.match(disagreeing[0], /does not open with "Superseded"/)
-		assert.deepEqual(checkAdr(name, adr('0191', '**Status:** Superseded by [ADR-0192](ADR-0192-x.md).', TEMPLATED, 'superseded')), [])
+		assert.deepEqual(checkAdr(name, adr('0192', '**Status:** Superseded by [ADR-0192](ADR-0192-x.md).', TEMPLATED, 'superseded')), [])
 	})
 })
 

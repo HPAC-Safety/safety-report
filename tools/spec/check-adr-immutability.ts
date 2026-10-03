@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// An accepted ADR's body never changes (ADR-0191). A change to a decision is a
+// An accepted ADR's body never changes (ADR-0192). A change to a decision is a
 // new ADR; the record it changes takes only a new status.
 //
 // Compares every ADR that existed on the base with the same-numbered ADR now,
@@ -66,16 +66,16 @@ export function compare(base: ReadonlyMap<string, string>, now: ReadonlyMap<stri
 
 		const currentName = current.get(number)
 		if (currentName === undefined) {
-			problems.push(`${DECISIONS}/${name}: deleted — an ADR is never deleted; supersede or deprecate it with a new one (ADR-0191)`)
+			problems.push(`${DECISIONS}/${name}: deleted — an ADR is never deleted; supersede or deprecate it with a new one (ADR-0192)`)
 			continue
 		}
 
 		const after = now.get(currentName) ?? ''
 		if (immutablePart(after) !== immutablePart(before)) {
-			problems.push(`${DECISIONS}/${currentName}: its body changed — an accepted ADR changes only its status; write a new ADR that supersedes it (ADR-0191)`)
+			problems.push(`${DECISIONS}/${currentName}: its body changed — an accepted ADR changes only its status; write a new ADR that supersedes it (ADR-0192)`)
 		}
 		if (statusOf(after) === 'partially-superseded' && was !== 'partially-superseded') {
-			problems.push(`${DECISIONS}/${currentName}: newly "partially-superseded", which is retired — the record a new ADR changes is superseded by it (ADR-0191)`)
+			problems.push(`${DECISIONS}/${currentName}: newly "partially-superseded", which is retired — the record a new ADR changes is superseded by it (ADR-0192)`)
 		}
 	}
 
@@ -114,7 +114,7 @@ export function main({ argv = [], env = process.env, exec: run = exec, cwd, log 
 	}
 
 	if (git('cat-file', '-e', `${base}:${ADR_TEMPLATE}`).status !== 0) {
-		log(`The base ${base.slice(0, 12)} predates ADR-0191 (no ${ADR_TEMPLATE}); nothing to compare.`)
+		log(`The base ${base.slice(0, 12)} predates ADR-0192 (no ${ADR_TEMPLATE}); nothing to compare.`)
 		return 0
 	}
 
@@ -140,7 +140,7 @@ export function main({ argv = [], env = process.env, exec: run = exec, cwd, log 
 		return 1
 	}
 
-	log(`${baseTexts.size} ADR(s) on ${base.slice(0, 12)} unchanged but for their status (ADR-0191).`)
+	log(`${baseTexts.size} ADR(s) on ${base.slice(0, 12)} unchanged but for their status (ADR-0192).`)
 	return 0
 }
 

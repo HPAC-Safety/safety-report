@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: ADR, MADR, immutability, supersession, status, partially-superseded, considered options, conventions, lessons, lesson kind, incident, template, ADR-0083, ADR-0085, ADR-0087, ADR-0091, ADR-0183
 ---
 
-# ADR-0191 — An accepted ADR is immutable, follows one MADR template, and process rules are conventions
+# ADR-0192 — An accepted ADR is immutable, follows one MADR template, and process rules are conventions
 
 **Status:** Accepted. Decided by the owner on 2026-10-03 in
 [#809](https://github.com/HPAC-Safety/safety-report/issues/809) (decisions 1

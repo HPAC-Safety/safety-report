@@ -315,13 +315,13 @@ jobs:
 
       # Every ADR keeps one status line and its considered options, a new one
       # follows TEMPLATE.md, every lesson declares a kind and owes what that
-      # kind owes, and every convention keeps its shape. ADR-0191.
+      # kind owes, and every convention keeps its shape. ADR-0192.
       - name: Decision records, lessons, and conventions keep their shape
         run: node tools/spec/check-records.ts
 
       # An accepted ADR is immutable: a pull request or merge group may change
       # only its status, never delete it. A push to main has no base and was
-      # checked on its pull request. ADR-0191.
+      # checked on its pull request. ADR-0192.
       - name: An accepted ADR changes only its status
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}

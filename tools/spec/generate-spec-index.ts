@@ -239,7 +239,7 @@ export function render({ areas, pages, decisions, lessons, conventions }: Inputs
 		'',
 		'## Conventions',
 		'',
-		'Process, tooling, and agent-workflow rules written since ADR-0191, newest',
+		'Process, tooling, and agent-workflow rules written since ADR-0192, newest',
 		'first. What a convention is: [`conventions/README.md`](conventions/README.md).',
 		'',
 	)

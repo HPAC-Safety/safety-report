@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-25
 issue: 473
 status: accepted
+kind: process
 ---
 
 # Lesson 0022 — A closed list kept where the author never looks

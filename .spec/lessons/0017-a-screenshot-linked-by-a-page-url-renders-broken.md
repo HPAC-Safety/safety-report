@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-24
 issue: 28
 status: accepted
+kind: process
 ---
 
 # Lesson 0017 — A screenshot linked by a page URL renders broken
@@ -48,7 +49,3 @@ now requires each screenshot to be referenced by its raw URL, pinned to the
 commit that added it. It says why neither a relative path nor a blob URL
 works, and requires checking each URL's content type before the PR is
 reported.
-
-Since #492 the general rule lives in the generic
-[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

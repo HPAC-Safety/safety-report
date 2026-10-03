@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 629
 status: accepted
+kind: incident
 ---
 
 # Lesson 0032 — A registry limit and a retry that outlasted nothing

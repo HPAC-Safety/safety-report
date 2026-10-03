@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-25
 issue: 437
 status: accepted
+kind: process
 ---
 
 # Lesson 0020 — A copy change that ran no browser test
@@ -45,7 +46,3 @@ directory the code lives in, not every input the build reads.
 that a job's path filter lists every input the job reads, including one
 outside its own directory. It also says a change to `locales/` runs the
 browser suite locally before the pull request.
-
-Since #492 the general rule lives in the generic
-[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

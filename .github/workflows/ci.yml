@@ -282,7 +282,10 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
+      # The whole history, so the ADR immutability check can read the base.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -309,6 +312,20 @@ jobs:
       # branches can claim the same one and only a rebase notices. ADR-0091.
       - name: Decision records are numbered without collision
         run: node tools/spec/adr-numbers.ts
+
+      # Every ADR keeps one status line and its considered options, a new one
+      # follows TEMPLATE.md, every lesson declares a kind and owes what that
+      # kind owes, and every convention keeps its shape. ADR-0191.
+      - name: Decision records, lessons, and conventions keep their shape
+        run: node tools/spec/check-records.ts
+
+      # An accepted ADR is immutable: a pull request or merge group may change
+      # only its status, never delete it. A push to main has no base and was
+      # checked on its pull request. ADR-0191.
+      - name: An accepted ADR changes only its status
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node tools/spec/check-adr-immutability.ts
 
       # The source inventory is kept at directory level, so a new directory
       # under src/ needs a row and a removed one loses its row. ADR-0143.

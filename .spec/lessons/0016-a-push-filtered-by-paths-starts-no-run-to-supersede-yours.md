@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-24
 issue: 394
 status: accepted
+kind: process
 ---
 
 # Lesson 0016 — A push filtered by paths starts no run to supersede yours
@@ -46,7 +47,3 @@ its trigger paths.
 that a workflow committing onto a pull request's branch pushes through
 `tools/github/push-to-pr-branch.ts`, never a bare `git push`. "Someone else's run
 will redo it" holds only when that push matches your workflow's `paths`.
-
-Since #492 the general rule lives in the generic
-[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

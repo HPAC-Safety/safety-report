@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-22
 issue: 342
 status: accepted
+kind: product
 ---
 
 # Lesson 0007 — A question key shown to the person who cannot choose it

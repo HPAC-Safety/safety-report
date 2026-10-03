@@ -165,6 +165,20 @@ if staged | grep -qE '\.(md|mdc)$'; then
 		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/decisions/ADR-'; then
 			node tools/spec/adr-numbers.ts || status=1
 		fi
+
+		# Every ADR, lesson, and convention keeps its shape (ADR-0191).
+		if echo "$STAGED_MARKDOWN" | grep -qE '^\.spec/(decisions|lessons|conventions)/'; then
+			node tools/spec/check-records.ts || status=1
+		fi
+	fi
+fi
+
+# An accepted ADR changes only its status and is never deleted (ADR-0191). The
+# index is judged against the merge base with origin/main, as CI judges the
+# pull request against its base.
+if git diff --cached --name-only --diff-filter=MDR | grep -q '^\.spec/decisions/ADR-'; then
+	if command -v node >/dev/null 2>&1; then
+		node tools/spec/check-adr-immutability.ts --staged || status=1
 	fi
 fi
 

@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-21
 issue: 215
 status: accepted
+kind: process
 ---
 
 # Lesson 0002 — Provenance that hashes only one side of a pair

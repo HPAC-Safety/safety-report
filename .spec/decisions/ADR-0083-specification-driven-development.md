@@ -2,7 +2,7 @@
 title: Specification-driven development is how this repository works
 description: The repository already behaves this way without saying so.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: specification-driven development, SDD, Gherkin, agents, artifact chain, traceability, out of scope
@@ -13,6 +13,9 @@ keywords: specification-driven development, SDD, Gherkin, agents, artifact chain
 **Status:** Accepted. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Partially superseded by
+[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): of what the 2026-09-29 amendment below says an ADR records, a new
+process rule is now a convention and interface detail a scenario.
 
 **Amended 2026-09-29 (#687):** an ADR records a real decision, meaning a new
 rule, a reversed rule, a privacy or data boundary, or an architecture choice.

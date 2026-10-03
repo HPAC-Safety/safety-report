@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-24
 issue: 403
 status: accepted
+kind: product
 ---
 
 # Lesson 0015 — A storage format shown as a display format
@@ -41,3 +42,7 @@ could not tell a date from free text.
 - `REQ-MOD-075`: date, time, and yes/no answers in English and French.
 - `REQ-MOD-076`: an unreadable date is shown as stored.
 - `REQ-SUB-068`: the continue dialog in English and French.
+
+## Skill
+
+None — the claim is the remedy.

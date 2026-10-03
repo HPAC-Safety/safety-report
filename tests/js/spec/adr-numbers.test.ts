@@ -82,7 +82,22 @@ describe('checkStatus', () => {
 	})
 
 	it('fails a status outside the closed set', () => {
-		assert.match(check({ 'ADR-0001-a.md': record('0001', 'proposed', '**Status:** Proposed.') })[0], /"status: proposed" is not one of/)
+		assert.match(check({ 'ADR-0001-a.md': record('0001', 'draft', '**Status:** Draft.') })[0], /"status: draft" is not one of/)
+	})
+
+	it('accepts proposed, rejected, and deprecated records with no successor to link (ADR-0191)', () => {
+		for (const status of ['proposed', 'rejected', 'deprecated']) {
+			assert.deepEqual(check({ 'ADR-0001-a.md': record('0001', status, `**Status:** ${status}.`) }), [], status)
+		}
+	})
+
+	it('fails a deprecated record whose status line says another supersedes it', () => {
+		const problems = check({
+			'ADR-0001-a.md': record('0001', 'deprecated', '**Status:** Deprecated, superseded by [ADR-0002](ADR-0002-b.md).'),
+			'ADR-0002-b.md': record('0002', 'accepted', '**Status:** Accepted.'),
+		})
+
+		assert.match(problems[0], /declares "status: deprecated" — make it superseded/)
 	})
 
 	it('reads a ## Status section when there is no bold status line', () => {
@@ -168,7 +183,7 @@ describe('a decision with no status line in its front matter', () => {
 		const adrs = [{ name: 'ADR-0001-one.md', number: '0001' }]
 		assert.deepEqual(
 			checkStatus(adrs, () => '---\ntitle: A\n---\n\n# ADR-0001 — A\n'),
-			['.spec/decisions/ADR-0001-one.md: "status: " is not one of ' + 'accepted, partially-superseded, superseded'],
+			['.spec/decisions/ADR-0001-one.md: "status: " is not one of ' + 'proposed, accepted, rejected, deprecated, superseded, partially-superseded'],
 		)
 	})
 })

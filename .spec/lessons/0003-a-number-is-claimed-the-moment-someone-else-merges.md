@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-22
 issue: 319
 status: accepted
+kind: process
 ---
 
 # Lesson 0003 — A number is claimed the moment someone else merges
@@ -55,7 +56,7 @@ pass, so losing the race costs a command.
 The delivery contract now says to rebase onto fresh `origin/main` **before
 committing**, not only before pushing, and to take the number after that rebase.
 
-## What the fix taught, the first time it ran
+### What the fix taught, the first time it ran
 
 The gate's own pull request found a fourth collision: ADR-0090 was claimed by
 "an exemption cites the claims it preserves" (#317) and again by "admin route
@@ -92,7 +93,3 @@ a shared identifier — a number, a name, a slug — from the tree as it is afte
 that rebase, never from the tree as it was when you started. It also names
 `--next` and `--renumber` so the recovery is a command rather than an
 investigation.
-
-Since #492 the general rule lives in the generic
-[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

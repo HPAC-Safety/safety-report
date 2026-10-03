@@ -5,6 +5,7 @@ type: lesson
 date: 2026-10-03
 issue: 805
 status: accepted
+kind: product
 ---
 
 # Lesson 0043 — A deploy deleted the catalogue an open page still needed
@@ -46,3 +47,7 @@ status: accepted
 REQ-WLD-049. After the page loads, its browser step answers every `/assets/`
 request the way CloudFront answers a deleted file, then switches to French.
 The step fails against the lazy catalogue and passes against the bundled one.
+
+## Skill
+
+None — the claim is the remedy.

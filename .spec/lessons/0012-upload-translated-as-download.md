@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-23
 issue: 377
 status: accepted
+kind: product
 ---
 
 # Lesson 0012 — Upload translated as download
@@ -37,13 +38,17 @@ the pipeline knew this:
 - [ADR-0102](../decisions/ADR-0102-a-term-list-holds-the-french-translator-to-a-word.md)
   records the design.
 
+### Fix
+
+#378 corrected the nine strings by hand. #379 adds `locales/terms.json`
+(`upload` → *téléverser*, never *télécharg…*), sends each term to the
+translator as an instruction, and makes `--check` fail on a forbidden form.
+
 ## Scenario
 
 REQ-WLD-026 and REQ-WLD-027 in
 `.spec/features/web-localization-and-design/web-localization-and-design.feature`.
 
-## Fix
+## Skill
 
-#378 corrected the nine strings by hand. #379 adds `locales/terms.json`
-(`upload` → *téléverser*, never *télécharg…*), sends each term to the
-translator as an instruction, and makes `--check` fail on a forbidden form.
+None — the claim is the remedy.

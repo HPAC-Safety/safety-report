@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 637
 status: accepted
+kind: incident
 ---
 
 # Lesson 0034 — Terraform arguments and tags never checked against AWS and the deploy role

@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-26
 issue: 530
 status: accepted
+kind: process
 ---
 
 # Lesson 0023 — A rule the template never asks for

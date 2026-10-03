@@ -2,7 +2,7 @@
 title: Every markdown file declares what it is
 description: Every tracked .md and .mdc file opens with a YAML frontmatter block.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: frontmatter, YAML, markdown, documentation, validation, pre-commit, CI gate
@@ -14,6 +14,8 @@ keywords: frontmatter, YAML, markdown, documentation, validation, pre-commit, CI
 [ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md): an
 `agents/*.md` carries `name`, `description`, `model`, and `effort`. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+Partially superseded by
+[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): `convention` joins the types, and a lesson adds `kind`.
 
 ## Context
 

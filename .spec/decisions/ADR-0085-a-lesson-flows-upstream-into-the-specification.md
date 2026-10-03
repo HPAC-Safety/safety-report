@@ -2,7 +2,7 @@
 title: A lesson flows upstream into the specification
 description: A bug fix that reveals a specification gap records a lesson under .spec/lessons/ stating symptom, root cause, spec delta, and the claim that now proves it.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
@@ -12,6 +12,9 @@ keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
 
 **Status:** Accepted Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+Partially superseded by
+[ADR-0191](ADR-0191-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): a lesson declares a kind — product, process, or incident — that decides
+what it owes upstream, and an incident owes nothing.
 
 ## Context
 

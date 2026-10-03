@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-24
 issue: 416
 status: accepted
+kind: process
 ---
 
 # Lesson 0018 — A persisted checkout token outranks the PAT on the remote
@@ -47,7 +48,3 @@ system that `.spec/features/` describes. The test above proves it.
 [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md) now says
 that a workflow pushing with a token on the remote URL checks out with
 `persist-credentials: false`.
-
-Since #492 the general rule lives in the generic
-[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

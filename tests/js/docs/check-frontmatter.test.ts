@@ -173,10 +173,11 @@ describe('checkFile', () => {
 		assert.match(problems[0], /missing "area"/)
 	})
 
-	it('requires a lesson to carry its date, issue, and status', () => {
+	it('requires a lesson to carry its date, issue, status, and kind', () => {
 		const problems = checkFile('.spec/lessons/0001-a-lesson.md', '---\ntitle: A\ndescription: B\ntype: lesson\n---\n')
 
-		assert.equal(problems.length, 3)
+		assert.equal(problems.length, 4)
+		assert.match(problems[3], /missing "kind"/)
 	})
 
 	it('holds a skill to the two keys its loader expects', () => {
@@ -192,10 +193,25 @@ describe('checkFile', () => {
 	})
 
 	it('refuses a lesson status outside the closed set', () => {
-		const lesson = (status: string): string => `---\ntitle: A\ndescription: B\ntype: lesson\ndate: 2026-09-30\nissue: 1\nstatus: ${status}\n---\n`
+		const lesson = (status: string): string => `---\ntitle: A\ndescription: B\ntype: lesson\ndate: 2026-09-30\nissue: 1\nstatus: ${status}\nkind: product\n---\n`
 
 		assert.deepEqual(checkFile('.spec/lessons/0001-a-lesson.md', lesson('accepted')), [])
 		assert.match(checkFile('.spec/lessons/0001-a-lesson.md', lesson('draft'))[0], /"status: draft" is not one of accepted, superseded/)
+	})
+
+	it('refuses a lesson kind outside product, process, and incident', () => {
+		const lesson = (kind: string): string => `---\ntitle: A\ndescription: B\ntype: lesson\ndate: 2026-09-30\nissue: 1\nstatus: accepted\nkind: ${kind}\n---\n`
+
+		for (const kind of ['product', 'process', 'incident']) assert.deepEqual(checkFile('.spec/lessons/0001-a-lesson.md', lesson(kind)), [])
+		assert.match(checkFile('.spec/lessons/0001-a-lesson.md', lesson('bug'))[0], /"kind: bug" is not one of product, process, incident/)
+	})
+
+	it('holds a convention to its status and date', () => {
+		const convention = (status: string): string => `---\ntitle: A\ndescription: B\ntype: convention\nstatus: ${status}\ndate: 2026-10-03\n---\n`
+
+		assert.deepEqual(checkFile('.spec/conventions/CONV-001-a-rule.md', convention('accepted')), [])
+		assert.match(checkFile('.spec/conventions/CONV-001-a-rule.md', convention('proposed'))[0], /"status: proposed" is not one of accepted, superseded/)
+		assert.match(checkFile('.spec/conventions/CONV-001-a-rule.md', convention('accepted').replace('type: convention', 'type: guide'))[0], /contradicts its location/)
 	})
 
 	it('refuses a specification file left where it lived before the move to .spec/', () => {
@@ -247,6 +263,7 @@ describe('expectationFor', () => {
 	it('assigns adr and lesson from the path', () => {
 		assert.equal(expectationFor('.spec/decisions/ADR-0042-a-decision.md').type, 'adr')
 		assert.equal(expectationFor('.spec/lessons/0001-a-lesson.md').type, 'lesson')
+		assert.equal(expectationFor('.spec/conventions/CONV-001-a-rule.md').type, 'convention')
 	})
 
 	it('leaves an ordinary page type to its author', () => {

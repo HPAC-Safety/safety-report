@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-26
 issue: 552
 status: accepted
+kind: process
 ---
 
 # Lesson 0026 — A run waiting on reviewers held every later run

@@ -5,6 +5,7 @@ type: lesson
 date: 2026-10-02
 issue: 788
 status: accepted
+kind: process
 ---
 
 # Lesson 0042 — A check nobody required let a broken bump merge

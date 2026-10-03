@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-30
 issue: 720
 status: accepted
+kind: product
 ---
 
 # Lesson 0040 — A group that stopped being one hid its questions

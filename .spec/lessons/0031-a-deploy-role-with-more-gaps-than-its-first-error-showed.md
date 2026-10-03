@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 626
 status: accepted
+kind: incident
 ---
 
 # Lesson 0031 — A deploy role with more gaps than its first error showed

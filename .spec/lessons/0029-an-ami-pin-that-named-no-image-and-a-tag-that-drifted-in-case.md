@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-28
 issue: 617
 status: accepted
+kind: incident
 ---
 
 # Lesson 0029 — An AMI pin that named no image, and a tag that drifted in case

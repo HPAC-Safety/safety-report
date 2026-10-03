@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-26
 issue: 522
 status: accepted
+kind: product
 ---
 
 # Lesson 0024 — A Translate that only filled the empty side

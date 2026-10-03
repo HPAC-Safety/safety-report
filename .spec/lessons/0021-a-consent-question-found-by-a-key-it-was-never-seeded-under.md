@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-25
 issue: 450
 status: accepted
+kind: product
 ---
 
 # Lesson 0021 — A consent question found by a key it was never seeded under
@@ -55,7 +56,3 @@ required a system question to be private.
 [`test-hpac-safety`](../../skills/test-hpac-safety/SKILL.md) now says that a
 test of a rule over seeded rows uses the rows the migrations seed, not a
 factory-built stand-in.
-
-Since #492 the general rule lives in the generic
-[`test-from-scenarios`](../../skills/test-from-scenarios/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

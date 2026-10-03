@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 680
 status: accepted
+kind: product
 ---
 
 # Lesson 0038 — A paused video that played on when its link was replaced

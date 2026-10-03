@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-28
 issue: 623
 status: accepted
+kind: incident
 ---
 
 # Lesson 0030 — A deploy job that ran steps before their own prerequisites

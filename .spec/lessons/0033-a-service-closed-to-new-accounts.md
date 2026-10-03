@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 633
 status: accepted
+kind: incident
 ---
 
 # Lesson 0033 — A service closed to new accounts

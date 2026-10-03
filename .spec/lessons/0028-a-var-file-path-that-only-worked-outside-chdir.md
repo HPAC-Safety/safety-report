@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-28
 issue: 615
 status: accepted
+kind: incident
 ---
 
 # Lesson 0028 — A -var-file path that only worked outside -chdir

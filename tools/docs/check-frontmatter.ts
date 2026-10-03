@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process'
 import { lstatSync, readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-import { DECISIONS, LESSONS } from '../spec/spec-paths.ts'
+import { CONVENTIONS, DECISIONS, LESSONS } from '../spec/spec-paths.ts'
 import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
@@ -29,13 +29,15 @@ export const EXEMPT_PREFIXES = ['src/HpacSafety.Worker/Prompts/', 'locales/trans
 
 export const CORE_KEYS = ['title', 'description', 'type']
 
-export const TYPES = ['adr', 'spec', 'guide', 'readme', 'lesson', 'instructions', 'template']
+export const TYPES = ['adr', 'spec', 'guide', 'readme', 'lesson', 'convention', 'instructions', 'template']
 
 // Keys a `type` adds on top of the core three.
 const EXTRA_KEYS: Readonly<Partial<Record<string, readonly string[]>>> = {
 	adr: ['status', 'date', 'decision-makers', 'keywords'],
 	spec: ['area'],
-	lesson: ['date', 'issue', 'status'],
+	// `kind` decides what a lesson owes upstream (ADR-0191).
+	lesson: ['date', 'issue', 'status', 'kind'],
+	convention: ['status', 'date'],
 }
 
 // A file a third-party loader parses keeps that loader's standard and nothing
@@ -69,12 +71,14 @@ const VENDOR_SHAPES: readonly VendorShape[] = [
 const TYPE_BY_PATH: readonly { match: (path: string) => boolean; type: string }[] = [
 	{ match: (path) => path.startsWith(`${DECISIONS}/`) && /\/ADR-\d{4}-.+\.md$/.test(path), type: 'adr' },
 	{ match: (path) => path.startsWith(`${LESSONS}/`) && /\/\d{4}-.+\.md$/.test(path), type: 'lesson' },
+	{ match: (path) => path.startsWith(`${CONVENTIONS}/`) && /\/CONV-\d{3}-.+\.md$/.test(path), type: 'convention' },
 ]
 
 // The values a key may hold, by type. An ADR's status is checked against its
 // own status line by adr-numbers.ts; a lesson has no status line, so here.
 const VALUES: Readonly<Partial<Record<string, Readonly<Record<string, readonly string[]>>>>> = {
-	lesson: { status: ['accepted', 'superseded'] },
+	lesson: { status: ['accepted', 'superseded'], kind: ['product', 'process', 'incident'] },
+	convention: { status: ['accepted', 'superseded'] },
 }
 
 // Where the specification lived before it moved to .spec/ (ADR-0183). A file

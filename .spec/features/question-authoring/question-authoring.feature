@@ -345,14 +345,14 @@ Scenario: A question can be made conditional only on a yes/no or single-select q
   When an Administrator tries to make another question conditional on it
   Then the attempt is refused
   And a yes/no question is accepted as the condition instead
-  And a single-select question naming one of its live options is accepted as the condition instead
+  And a single-select question naming one of its live choices is accepted as the condition instead
 
 @REQ-QB-054
-Scenario: A single-select parent's dependency records the required option
+Scenario: A single-select parent's dependency records the required choice
   Given a single-select question asking whether the pilot flies hang gliders or paragliders
-  When an Administrator makes a rating question depend on the "hang glider" option
-  And an Administrator makes a different rating question depend on the "paraglider" option
-  Then each rating question's saved dependency names its own required option
+  When an Administrator makes a rating question depend on the "hang glider" choice
+  And an Administrator makes a different rating question depend on the "paraglider" choice
+  Then each rating question's saved dependency names its own required choice
 
 @REQ-QB-055
 Scenario: A single-select dependency must name one of the parent's live choices
@@ -361,10 +361,10 @@ Scenario: A single-select dependency must name one of the parent's live choices
   Then the attempt is refused
 
 @REQ-QB-056
-Scenario: A yes/no dependency does not name an option
+Scenario: A yes/no dependency does not name a choice
   Given a yes/no question
   When an Administrator makes another question depend on it
-  Then the dependency needs no required option, because the condition is always "answered yes"
+  Then the dependency needs no required choice, because the condition is always "answered yes"
 
 @REQ-QB-057
 Scenario: A question cannot be conditional on itself or form a cycle
@@ -388,7 +388,7 @@ Scenario: Rearranging the form writes a new revision for every question that mov
   And no two questions are left claiming the same position
 
 @REQ-QB-060
-Scenario Outline: A question type either takes options or does not
+Scenario Outline: A question type either takes choices or does not
   Given an Administrator authors a <type> question
   When they supply bilingual choices with it
   Then the question <outcome>
@@ -447,10 +447,10 @@ Scenario: An Administrator authors a question from the question list
 
 @REQ-QB-077
 @ui
-Scenario: The options editor appears only for a type that takes options
+Scenario: The choices editor appears only for a type that takes choices
   Given an Administrator is authoring a new question
   When they choose the type-ahead list type
-  Then the page offers an option editor
+  Then the page offers a choice editor
   When they choose the single-line text type instead
   Then the page offers neither
 
@@ -462,12 +462,12 @@ Scenario: Only yes/no and single-select questions are offered as a condition
 
 @REQ-QB-079
 @ui
-Scenario: Naming a required option appears only for a single-select condition
+Scenario: Naming a required choice appears only for a single-select condition
   Given an Administrator is authoring a new question
   When they choose a yes/no question as the condition
-  Then no required-option control is offered
+  Then no required-choice control is offered
   When they choose a single-select question as the condition instead
-  Then a required-option control offers that question's live options
+  Then a required-choice control offers that question's live choices
 
 @REQ-QB-080
 @ui

@@ -1,7 +1,7 @@
 @xunit:collection(QuestionBankRunsAlone)
 Feature: Choices and type-ahead values
 A single-select, multi-select, or type-ahead question owns its choices
-outside its revisions. An answer names its choice; a picker option is fixed
+outside its revisions. An answer names its choice; a picker choice is fixed
 or replaced; a type-ahead value a reporter adds is reviewed, corrected,
 merged, or removed by a reviewer.
 
@@ -44,15 +44,15 @@ Examples:
   | autocomplete  |
 
 @REQ-QB-123
-Scenario: Fixing a picker option in place corrects every answer that named it
-  Given a single-select question has been answered with its option "Cooprs"
-  When an Administrator fixes that option's wording in place to "Coopers"
-  Then the option keeps its identifier
+Scenario: Fixing a picker choice in place corrects every answer that named it
+  Given a single-select question has been answered with its choice "Cooprs"
+  When an Administrator fixes that choice's wording in place to "Coopers"
+  Then the choice keeps its identifier
   And the earlier answer now reads "Coopers"
   And the question keeps its identifier and its current revision
 
 @REQ-QB-124
-Scenario: Replacing a picker option keeps the old option under every earlier answer
+Scenario: Replacing a picker choice keeps the old choice under every earlier answer
   Given a single-select question offering "foo", "bar", and "baz" has been answered with "baz"
   When an Administrator replaces "baz" with "fizz"
   Then the form offers "foo", "bar", and "fizz"
@@ -78,10 +78,10 @@ Scenario: A condition follows its parent question when the parent forks
 
 @REQ-QB-139
 @ui
-Scenario: An Administrator chooses to replace a picker option rather than fix it
+Scenario: An Administrator chooses to replace a picker choice rather than fix it
   Given an Administrator opens the manage-questions page
-  When they reword the "Paraglider" option of a single-select question and mark it to be replaced
-  Then the save sends that option to be replaced, under its old code with its new wording
+  When they reword the "Paraglider" choice of a single-select question and mark it to be replaced
+  Then the save sends that choice to be replaced, under its old code with its new wording
   And a type-ahead question's values offer no replace choice
 
 @REQ-QB-126
@@ -290,21 +290,21 @@ Scenario: Pinning a choice never revises or forks its question
 
 @REQ-QB-150
 @ui
-Scenario: An Administrator sets each option's position, and the editor lists options as the form does
+Scenario: An Administrator sets each choice's position, and the editor lists choices as the form does
   Given an Administrator opens the manage-questions page
   When they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
-  Then its options are listed "Hang glider", "Paraglider", "Other"
-  And each option offers the positions "Alphabetical", "Pin to top", and "Pin to bottom"
+  Then the editor lists its choices "Hang glider", "Paraglider", "Other"
+  And each choice offers the positions "Alphabetical", "Pin to top", and "Pin to bottom"
   When they reword "Hang glider" to "Speed wing" and set "Paraglider" to "Pin to top"
-  Then the options stay where they were while the Administrator edits
+  Then the choices stay where they were while the Administrator edits
   And the save sends "Paraglider" pinned first, "Other" pinned last, and "Speed wing" not pinned
 
 @REQ-QB-151
 @ui
-Scenario: The required-option control lists the parent's choices as the form does
+Scenario: The required-choice control lists the parent's choices as the form does
   Given an Administrator opens the manage-questions page
   When they make a question conditional on a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
-  Then the required-option control lists "Hang glider", "Paraglider", "Other"
+  Then the required-choice control lists "Hang glider", "Paraglider", "Other"
 
 @REQ-QB-152
 @ui

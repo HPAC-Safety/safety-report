@@ -312,7 +312,7 @@ Scenario: With no key, a translation model no provider handler claims leaves tra
 
 @REQ-WLD-014
 Scenario: Question content comes from the bilingual database revision
-  Given a question revision has English and French labels, help, and options authored by an Administrator
+  Given a question revision has English and French labels, help, and choices authored by an Administrator
   When the form renders that question
   Then both languages come from the database revision
   And no runtime or CI auto-translation service produces question rendering
@@ -339,7 +339,7 @@ Scenario: The form explains local storage and warns about attachments
 Scenario: The client shows inline validation before submission
   Given a reporter enters an answer
   When the client validates it before submission
-  Then the client shows inline validation using the same stable type/option rules and localized messages the API uses
+  Then the client shows inline validation using the same stable type/choice rules and localized messages the API uses
 
 @REQ-WLD-018
 Scenario: Client validation never replaces server validation

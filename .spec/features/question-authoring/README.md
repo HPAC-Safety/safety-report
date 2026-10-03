@@ -37,7 +37,7 @@ second guard, and an edit cannot remove it.
 
 The query the API uses to assemble the form is a read DTO; it does not expose
 persistence entities. It includes the revision ID, key, type, section, flags,
-bilingual copy, and bilingual options needed to render and validate the form.
+bilingual copy, and bilingual choices needed to render and validate the form.
 The response carries both translations so a locale toggle never has to replace
 the question identities already shown.
 
@@ -116,12 +116,12 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   ([ADR-0180](../../decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
 - A general-purpose form builder: scoring, surveys, quizzes, form templates, or
   arbitrary branching. A question may be conditional on a yes/no question or on
-  a single-select question naming a required option, and that is the whole of
+  a single-select question naming a required choice, and that is the whole of
   it ([ADR-0060](../../decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
   [ADR-0074](../../decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
 - Mutating a revision, reviving a retired question, or any edit that loses the
   wording an answer was given against.
-- An Administrator authoring, seeing, or recoding an option code. A new
+- An Administrator authoring, seeing, or recoding a choice code. A new
   choice's code is derived from its English wording, and a choice fixed in
   place keeps the code it has (`REQ-QB-092`).
 - An Administrator authoring, seeing, or changing a question key. A new

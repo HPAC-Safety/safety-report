@@ -210,7 +210,7 @@ public sealed class QuestionBankSteps
 			QuestionDependencies.EnsureDependencyAllowed(_questions, _question!.Id, _question.Id));
 	}
 
-	[Then(@"a single-select question naming one of its live options is accepted as the condition instead")]
+	[Then(@"a single-select question naming one of its live choices is accepted as the condition instead")]
 	public void ThenASingleSelectQuestionIsAccepted()
 	{
 		var parent = PilotType();
@@ -232,8 +232,8 @@ public sealed class QuestionBankSteps
 		GivenAPilotTypeQuestion();
 	}
 
-	[When(@"an Administrator makes a rating question depend on the ""(.*)"" option")]
-	[When(@"an Administrator makes a different rating question depend on the ""(.*)"" option")]
+	[When(@"an Administrator makes a rating question depend on the ""(.*)"" choice")]
+	[When(@"an Administrator makes a different rating question depend on the ""(.*)"" choice")]
 	public void WhenARatingQuestionDependsOnTheOption(string optionLabel)
 	{
 		var parent = _questions.Single(question => question.Key == "pilot_type");
@@ -251,7 +251,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(child);
 	}
 
-	[Then(@"each rating question's saved dependency names its own required option")]
+	[Then(@"each rating question's saved dependency names its own required choice")]
 	public void ThenEachRatingQuestionNamesItsOwnOption()
 	{
 		var parent = _questions.Single(question => question.Key == "pilot_type");
@@ -290,7 +290,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(_question);
 	}
 
-	[Then(@"the dependency needs no required option, because the condition is always ""answered yes""")]
+	[Then(@"the dependency needs no required choice, because the condition is always ""answered yes""")]
 	public void ThenTheDependencyNeedsNoOption()
 	{
 		_question!.DependsOnChoiceId.ShouldBeNull();

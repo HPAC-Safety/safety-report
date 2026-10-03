@@ -199,11 +199,11 @@ Scenario: A reporter picks a type-ahead choice from the keyboard
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   When a reporter using English opens that question
   And they type "Mou" in the field and press the down arrow twice
-  Then "Mount Fromme" is the field's active option
+  Then "Mount Fromme" is the field's active choice
   When they press the up arrow
-  Then "Mount 7" is the field's active option
+  Then "Mount 7" is the field's active choice
   When they press the down arrow
-  Then "Mount Fromme" is the field's active option
+  Then "Mount Fromme" is the field's active choice
   When they press Enter
   Then the list is closed and the field holds "Mount Fromme"
   When they press Alt and the down arrow
@@ -279,7 +279,7 @@ Examples:
 
 @REQ-QB-267
 @ui
-Scenario: A reporter picks a type-ahead choice with the pointer, and no option ever takes focus
+Scenario: A reporter picks a type-ahead choice with the pointer, and no choice ever takes focus
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
   And they type "Coo" in the field
@@ -289,7 +289,7 @@ Scenario: A reporter picks a type-ahead choice with the pointer, and no option e
 
 @REQ-QB-268
 @ui
-Scenario: A reporter picks a single-select choice with the pointer, and no option ever takes focus
+Scenario: A reporter picks a single-select choice with the pointer, and no choice ever takes focus
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
   And they open the field's list by clicking the field
@@ -303,15 +303,15 @@ Scenario: A reporter picks a single-select choice from the keyboard and the poin
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
   And they open the field's list by pressing the down arrow
-  Then "Choose one" is the field's active option
+  Then "Choose one" is the field's active choice
   When they press the down arrow
-  Then "Cooper's" is the field's active option
+  Then "Cooper's" is the field's active choice
   When they press End
-  Then "Woodside" is the field's active option
+  Then "Woodside" is the field's active choice
   When they press Home
-  Then "Choose one" is the field's active option
+  Then "Choose one" is the field's active choice
   When they type "m"
-  Then "Mount 7" is the field's active option
+  Then "Mount 7" is the field's active choice
   When they press Enter
   Then the list is closed and the field holds "Mount 7"
   When they press Space
@@ -325,7 +325,7 @@ Scenario: A reporter picks a single-select choice from the keyboard and the poin
   Then the list is closed and the field holds "Woodside"
   When they open the field's list by clicking the field
   And they point at "Cooper's"
-  Then "Cooper's" is the field's active option
+  Then "Cooper's" is the field's active choice
   When they press outside the field
   Then the list is closed and the field holds "Woodside"
   When they open the field's list by pressing Enter
@@ -352,9 +352,9 @@ Scenario: A multi-select's list is drawn like a type-ahead's list, with a checkb
   Then the list is drawn like a type-ahead's list
   And each choice is a row at least 44 pixels tall holding a checkbox
   When they point at "Brazil"
-  Then the "Brazil" row is highlighted as a type-ahead's active option is
+  Then the "Brazil" row is highlighted as a type-ahead's active choice is
   When they move to the "France" checkbox with the keyboard and press Space
-  Then the "France" row is highlighted as a type-ahead's active option is
+  Then the "France" row is highlighted as a type-ahead's active choice is
   And "France" is checked, and the list stays open
 
 @REQ-QB-104

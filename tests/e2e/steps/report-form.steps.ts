@@ -465,7 +465,7 @@ Then("consent_publish has no selected default and requires an explicit yes or no
 	await expect(page.getByRole("radio", { name: "No" })).not.toBeChecked()
 })
 
-Then("the client shows inline validation using the same stable type\\/option rules and localized messages the API uses", async ({ page }) => {
+Then("the client shows inline validation using the same stable type\\/choice rules and localized messages the API uses", async ({ page }) => {
 	await expect(page.getByText("This question is required.")).toBeVisible()
 })
 
@@ -570,7 +570,7 @@ Given("the current page shows a multi-select question", async ({ page }) => {
 	await goNext(page) // intro -> the multi-select page
 })
 
-Then("its options are hidden behind one closed picker labelled by the question", async ({ page }) => {
+Then("its choices are hidden behind one closed picker labelled by the question", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
 	await expect(picker).toContainText("Choose any")
@@ -588,7 +588,7 @@ When("the reporter opens the picker", async ({ page }) => {
 	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 })
 
-Then("the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each option", async ({ page }) => {
+Then("the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each choice", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "true")
 	const dialog = page.getByRole("dialog", { name: "Which conditions applied?" })
@@ -598,13 +598,13 @@ Then("the picker is expanded and controls a dialog labelled by the question, hol
 	for (const option of ["Gusty", "Thermic", "Turbulent"]) await expect(dialog.getByRole("checkbox", { name: option })).toBeVisible()
 })
 
-When("the reporter opens the picker and checks two options", async ({ page }) => {
+When("the reporter opens the picker and checks two choices", async ({ page }) => {
 	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 	await page.getByRole("checkbox", { name: "Gusty" }).check()
 	await page.getByRole("checkbox", { name: "Turbulent" }).check()
 })
 
-Then("the picker stays open with both options checked", async ({ page }) => {
+Then("the picker stays open with both choices checked", async ({ page }) => {
 	await expect(page.getByRole("combobox", { name: /Which conditions applied\?/ })).toHaveAttribute("aria-expanded", "true")
 	await expect(page.getByRole("checkbox", { name: "Gusty" })).toBeChecked()
 	await expect(page.getByRole("checkbox", { name: "Turbulent" })).toBeChecked()
@@ -615,7 +615,7 @@ When("the reporter presses Escape", async ({ page }) => {
 	await page.keyboard.press("Escape")
 })
 
-Then("the picker closes, returns focus to itself, and names both chosen options", async ({ page }) => {
+Then("the picker closes, returns focus to itself, and names both choices", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
 	await expect(picker).toBeFocused()
@@ -1170,7 +1170,7 @@ When("they type {string} in the field and press the down arrow twice", async ({ 
 	await page.keyboard.press("ArrowDown")
 })
 
-Then("{string} is the field's active option", async ({ page }, label: string) => {
+Then("{string} is the field's active choice", async ({ page }, label: string) => {
 	const option = typeAheadList(page).getByRole("option", { name: label, exact: true })
 	// A type-ahead selects the highlighted option; a single-select keeps aria-selected for the chosen one (ADR-0150).
 	if (!(await isSingleSelect(page))) await expect(option).toHaveAttribute("aria-selected", "true")
@@ -1276,7 +1276,7 @@ Then("each choice is a row at least 44 pixels tall holding a checkbox", async ({
 	}
 })
 
-Then("the {string} row is highlighted as a type-ahead's active option is", async ({ page }, label: string) => {
+Then("the {string} row is highlighted as a type-ahead's active choice is", async ({ page }, label: string) => {
 	await expectHighlighted(page, page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label }))
 })
 

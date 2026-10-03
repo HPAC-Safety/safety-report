@@ -58,15 +58,15 @@ Then("the Admin menu shows no count", async ({ page }) => {
 	await expect(adminButton(page).locator("[data-count-badge]")).toHaveCount(0)
 })
 
-Then(/^the ((?:manage|review)-[a-z-]+) option shows a count of (\d+)$/, async ({ page }, name: string, count: string) => {
+Then(/^the ((?:manage|review)-[a-z-]+) item shows a count of (\d+)$/, async ({ page }, name: string, count: string) => {
 	await expect(option(page, name)).toHaveAccessibleName(`${OPTIONS[name]} ${count} waiting`)
 })
 
-Then(/^the ((?:manage|review)-[a-z-]+) option shows no count$/, async ({ page }, name: string) => {
+Then(/^the ((?:manage|review)-[a-z-]+) item shows no count$/, async ({ page }, name: string) => {
 	await expect(option(page, name)).toHaveAccessibleName(OPTIONS[name])
 })
 
-Then("no option shows a count", async ({ page }) => {
+Then("no item shows a count", async ({ page }) => {
 	await expect(menu(page).getByRole("menuitem").first()).toBeVisible()
 	await expect(menu(page).locator("[data-count-badge]")).toHaveCount(0)
 })

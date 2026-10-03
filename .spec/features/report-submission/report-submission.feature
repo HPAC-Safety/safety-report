@@ -217,11 +217,11 @@ Scenario: The Next button becomes Submit on the final page
 @ui
 Scenario: A multi-select question is one closed picker, not a flat list
   Given the current page shows a multi-select question
-  Then its options are hidden behind one closed picker labelled by the question
-  When the reporter opens the picker and checks two options
-  Then the picker stays open with both options checked
+  Then its choices are hidden behind one closed picker labelled by the question
+  When the reporter opens the picker and checks two choices
+  Then the picker stays open with both choices checked
   When the reporter presses Escape
-  Then the picker closes, returns focus to itself, and names both chosen options
+  Then the picker closes, returns focus to itself, and names both choices
 
 @REQ-SUB-132
 @ui
@@ -229,7 +229,7 @@ Scenario: A multi-select picker is a combobox that pops up a dialog of checkboxe
   Given the current page shows a multi-select question
   Then its closed picker is a combobox labelled by the question, collapsed, with a dialog as its popup
   When the reporter opens the picker
-  Then the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each option
+  Then the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each choice
 
 @REQ-SUB-085
 @ui

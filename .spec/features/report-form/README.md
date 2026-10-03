@@ -27,7 +27,7 @@ as a place to type, not a picker to choose from
   opens the list.
 - **A hint below 3 characters.** Trimmed of spaces, fewer than 3 typed
   characters shows the open list with no choices, only a hint row: "Type 3 or
-  more letters to see matching choices, or enter your own." No option is
+  more letters to see matching choices, or enter your own." No choice is
   active there, so the up and down arrows and Enter do nothing. Reaching 3
   characters replaces the hint with the matching choices; deleting back below
   3 brings the hint back. This is announced to assistive technology through a

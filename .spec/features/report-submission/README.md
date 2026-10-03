@@ -189,13 +189,13 @@ here is a separate server concept:
 
 A `multi_select` ("Pick several") question renders as one closed picker, the
 same closed-control shape as a single-select: one trigger labelled by the
-question, naming what is chosen, that opens a list of checkable options and
+question, naming what is chosen, that opens a list of checkable choices and
 stays open while several are checked. Escape or leaving it closes it.
 
 The trigger is a `role="combobox"` button, as the single-select's is
 (`REQ-QB-208`): `aria-expanded` and `aria-controls` name the list, and
 `aria-haspopup="dialog"` says what it is, because the list is a labelled
-non-modal dialog holding one real checkbox per option, not a listbox
+non-modal dialog holding one real checkbox per choice, not a listbox
 (`REQ-SUB-132`). A combobox is the role that supports `aria-invalid`, which the
 admin editor sets on an "Offered under" picker whose choice has no parent
 ticked (`REQ-QB-222`). A button with no role cannot carry it. Enter and Space

@@ -53,19 +53,19 @@ Scenario: A member's signed-in session persists across a reload and clears on si
 
 @REQ-MOD-007
 @ui
-Scenario: An Administrator's Admin menu offers every option
+Scenario: An Administrator's Admin menu offers every item
   Given a visitor signs in as an Administrator
   Then the header shows an Admin menu and no other header nav change
   When the visitor activates the Admin menu
-  Then it opens with manage-reports, review-type-ahead-values, and manage-questions options
+  Then it opens with manage-reports, review-type-ahead-values, and manage-questions items
 
 @REQ-MOD-092
 @ui
 Scenario: A Safety Officer's Admin menu offers reports and type-ahead review
   Given a visitor signs in as a Safety Officer
   When the visitor activates the Admin menu
-  Then it opens with manage-reports and review-type-ahead-values options
-  And it offers no manage-questions option
+  Then it opens with manage-reports and review-type-ahead-values items
+  And it offers no manage-questions item
 
 @REQ-MOD-009
 @ui
@@ -76,21 +76,21 @@ Scenario: A User sees no Admin menu
 
 @REQ-MOD-010
 @ui
-Scenario: An open Admin menu keeps every option on a single line
+Scenario: An open Admin menu keeps every item on a single line
   Given a visitor signs in from the member sign-in page
   When the visitor activates the Admin menu
-  Then every option is on one line and none is truncated
+  Then every item is on one line and none is truncated
 
 @REQ-MOD-011
 @ui
-Scenario Outline: Activating an Admin menu option navigates to its page
+Scenario Outline: Activating an Admin menu item navigates to its page
   Given a visitor signs in from the member sign-in page
   When the visitor activates the Admin menu
-  And the visitor activates the <option> option
+  And the visitor activates the <item> item
   Then the browser navigates to the <destination> page
 
 Examples:
-  | option           | destination      |
+  | item             | destination      |
   | Manage reports   | manage-reports   |
   | Manage questions | manage-questions |
 
@@ -107,8 +107,8 @@ Scenario: An Administrator's Admin menu shows how much work is waiting
   And a visitor signs in as an Administrator
   Then the Admin menu shows a count of 3
   When the visitor activates the Admin menu
-  Then the manage-reports option shows a count of 3
-  And the manage-questions option shows no count
+  Then the manage-reports item shows a count of 3
+  And the manage-questions item shows no count
 
 @REQ-MOD-093
 @ui
@@ -117,8 +117,8 @@ Scenario: A Safety Officer's Admin menu counts reports and type-ahead values wai
   And a visitor signs in as a Safety Officer
   Then the Admin menu shows a count of 7
   When the visitor activates the Admin menu
-  Then the manage-reports option shows a count of 4
-  And the review-type-ahead-values option shows a count of 3
+  Then the manage-reports item shows a count of 4
+  And the review-type-ahead-values item shows a count of 3
 
 @REQ-MOD-089
 @ui
@@ -127,7 +127,7 @@ Scenario: With nothing waiting, the Admin menu shows no count
   And a visitor signs in as an Administrator
   Then the Admin menu shows no count
   When the visitor activates the Admin menu
-  Then no option shows a count
+  Then no item shows a count
 
 @REQ-MOD-013
 Scenario: A token signed by an unknown key is refused

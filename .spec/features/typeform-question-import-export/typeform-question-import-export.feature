@@ -141,7 +141,7 @@ Scenario: Export preserves data Typeform has no field for
 Scenario: Exporting and reimporting reproduces the same drafts
   Given the question bank has several live questions
   When an Administrator exports it and imports the result back in
-  Then the resulting drafts match the original questions' key, type, wording, and options
+  Then the resulting drafts match the original questions' key, type, wording, and choices
 
 @REQ-TF-022
 Scenario: A date question's Allow future dates setting survives an export and reimport

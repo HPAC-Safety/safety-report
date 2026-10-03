@@ -121,7 +121,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-123..125: a picker option is fixed in place or replaced (ADR-0128) ---
 
-	[Given(@"a single-select question has been answered with its option ""(.*)""")]
+	[Given(@"a single-select question has been answered with its choice ""(.*)""")]
 	public void GivenASingleSelectAnsweredWithItsOption(string label)
 	{
 		_question = Picker(label, "Mara");
@@ -142,7 +142,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_named = _question.OfferedChoiceLabelled(answered, Locale.EnCa);
 	}
 
-	[When(@"an Administrator fixes that option's wording in place to ""(.*)""")]
+	[When(@"an Administrator fixes that choice's wording in place to ""(.*)""")]
 	public void WhenAnAdministratorFixesTheOption(string wording)
 	{
 		Save([.. _question.Choices.Select(choice => choice == _named
@@ -162,7 +162,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 			: new QuestionOptionInput(choice.Code, choice.LabelEn, choice.LabelFr))]);
 	}
 
-	[Then(@"the option keeps its identifier")]
+	[Then(@"the choice keeps its identifier")]
 	public void ThenTheOptionKeepsItsIdentifier()
 	{
 		_question.Choices.ShouldContain(choice => choice.Id == _named!.Id);

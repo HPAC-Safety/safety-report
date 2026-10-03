@@ -354,7 +354,7 @@ When("they choose the single-line text type instead", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("short_text")
 })
 
-Then("the page offers an option editor", async ({ page }) => {
+Then("the page offers a choice editor", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Add a choice" })).toBeVisible()
 	await expect(page.getByLabel("Shared choice list")).toHaveCount(0)
 })
@@ -378,7 +378,7 @@ When(/^they choose a yes\/no question as the condition$/, async ({ page }) => {
 	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("aaaaaaaaaaa")
 })
 
-Then("no required-option control is offered", async ({ page }) => {
+Then("no required-choice control is offered", async ({ page }) => {
 	await expect(page.getByLabel("Required answer")).toBeHidden()
 })
 
@@ -386,7 +386,7 @@ When("they choose a single-select question as the condition instead", async ({ p
 	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("ddddddddddd")
 })
 
-Then("a required-option control offers that question's live options", async ({ page }) => {
+Then("a required-choice control offers that question's live choices", async ({ page }) => {
 	const picker = page.getByLabel("Required answer")
 	const offered = await picker.locator("option").allTextContents()
 
@@ -823,7 +823,7 @@ function questionRow(page: Page, label: string) {
 }
 
 When(
-	'they reword the "Paraglider" option of a single-select question and mark it to be replaced',
+	'they reword the "Paraglider" choice of a single-select question and mark it to be replaced',
 	async ({ page }) => {
 		await questionRow(page, "Hang glider or paraglider?").getByRole("button", { name: "Edit" }).click()
 		const choice = page.getByTestId("question-choice").nth(1)
@@ -840,7 +840,7 @@ When(
 	},
 )
 
-Then("the save sends that option to be replaced, under its old code with its new wording", ({ page }) => {
+Then("the save sends that choice to be replaced, under its old code with its new wording", ({ page }) => {
 	const options = replacedBodies.get(page)?.options ?? []
 
 	expect(options.find((option) => option.code === "paraglider")).toMatchObject({
@@ -918,11 +918,11 @@ When(
 	},
 )
 
-Then("its options are listed {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+Then("the editor lists its choices {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
 	expect(await editorOptions(page)).toEqual([first, second, third])
 })
 
-Then("each option offers the positions {string}, {string}, and {string}", async ({ page }, none: string, top: string, bottom: string) => {
+Then("each choice offers the positions {string}, {string}, and {string}", async ({ page }, none: string, top: string, bottom: string) => {
 	const choices = page.getByTestId("question-choice")
 	const count = await choices.count()
 	expect(count).toBeGreaterThan(0)
@@ -945,7 +945,7 @@ When(
 	},
 )
 
-Then("the options stay where they were while the Administrator edits", async ({ page }) => {
+Then("the choices stay where they were while the Administrator edits", async ({ page }) => {
 	expect(await editorOptions(page)).toEqual(["Speed wing", "Paraglider", "Other"])
 })
 
@@ -972,7 +972,7 @@ When(
 	},
 )
 
-Then("the required-option control lists {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+Then("the required-choice control lists {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
 	const picker = page.getByLabel("Required answer")
 
 	await expect(picker).toBeVisible()

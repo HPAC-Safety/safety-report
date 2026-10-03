@@ -218,7 +218,7 @@ public sealed class TypeformImportEndpointSteps
 		_reimportedPreview = await reimported.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	[Then(@"the resulting drafts match the original questions' key, type, wording, and options")]
+	[Then(@"the resulting drafts match the original questions' key, type, wording, and choices")]
 	public void ThenTheResultingDraftsMatchTheOriginalQuestions()
 	{
 		var drafts = _reimportedPreview.GetProperty("drafts").EnumerateArray().ToList();

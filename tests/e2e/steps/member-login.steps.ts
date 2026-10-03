@@ -138,7 +138,7 @@ When("the visitor activates the Admin menu", async ({ page }) => {
 })
 
 Then(
-	"it opens with manage-reports, review-type-ahead-values, and manage-questions options",
+	"it opens with manage-reports, review-type-ahead-values, and manage-questions items",
 	async ({ page }) => {
 		const menu = page.getByRole("menu", { name: "Admin" })
 		await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
@@ -151,14 +151,14 @@ Then(
 	},
 )
 
-Then("it opens with manage-reports and review-type-ahead-values options", async ({ page }) => {
+Then("it opens with manage-reports and review-type-ahead-values items", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
 	await expect(menu.getByRole("menuitem", { name: "Type-ahead values to review" })).toBeVisible()
 	await expect(menu.getByRole("menuitem")).toHaveCount(2)
 })
 
-Then("it offers no manage-questions option", async ({ page }) => {
+Then("it offers no manage-questions item", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeHidden()
 })
@@ -167,7 +167,7 @@ Then("the header shows a sign-out action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
 })
 
-Then("every option is on one line and none is truncated", async ({ page }) => {
+Then("every item is on one line and none is truncated", async ({ page }) => {
 	const options = await page
 		.getByRole("menu", { name: "Admin" })
 		.getByRole("menuitem")
@@ -205,7 +205,7 @@ const ADMIN_MENU_DESTINATIONS: Record<string, string> = {
 	"manage-questions": "/admin/questions",
 }
 
-When(/^the visitor activates the (.+) option$/, async ({ page }, option: string) => {
+When(/^the visitor activates the (.+) item$/, async ({ page }, option: string) => {
 	await page.getByRole("menuitem", { name: option }).click()
 })
 

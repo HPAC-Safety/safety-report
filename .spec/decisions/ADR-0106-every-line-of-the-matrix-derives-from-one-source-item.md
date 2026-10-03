@@ -2,7 +2,7 @@
 title: Every line of the traceability matrix derives from one source item
 description: .spec/traceability.md drops its whole-tree totals line, sorts by ID, and gives each claim and constraint its own block, so git merges two correct matrices into the correct one; and traceability.yml treats a push rejected by a newer head as superseded.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-23
 decision-makers: Chase Florell
 keywords: traceability, generated documentation, merge conflicts, git merge, pull_request_target, ADR-0084, ADR-0101
@@ -10,7 +10,7 @@ keywords: traceability, generated documentation, merge conflicts, git merge, pul
 
 # ADR-0106 — Every line of the traceability matrix derives from one source item
 
-**Status:** Accepted. Amends
+**Status:** Superseded. Amends
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
 on the matrix's format, and
 [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md) on how
@@ -22,6 +22,8 @@ on point 4: a push moved by the other bot started no run, so the commit is
 replayed on top of it rather than dropped. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Superseded by
+[ADR-0193](ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md).
 
 ## Context
 

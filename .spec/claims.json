@@ -18853,10 +18853,10 @@
 			"id": "ADR-0083",
 			"file": ".spec/decisions/ADR-0083-specification-driven-development.md",
 			"title": "Specification-driven development is how this repository works",
-			"status": "accepted",
+			"status": "partially-superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0047","ADR-0049","ADR-0053","ADR-0084","ADR-0085","ADR-0086","ADR-0183","ADR-0184"],
+			"decisions": ["ADR-0047","ADR-0049","ADR-0053","ADR-0084","ADR-0085","ADR-0086","ADR-0183","ADR-0184","ADR-0192"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -18864,10 +18864,10 @@
 			"id": "ADR-0084",
 			"file": ".spec/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md",
 			"title": "A claim has a stable ID, and the traceability matrix is generated",
-			"status": "partially-superseded",
+			"status": "superseded",
 			"claims": ["REQ-SUB-005"],
 			"constraints": [],
-			"decisions": ["ADR-0049","ADR-0053","ADR-0073","ADR-0083","ADR-0101","ADR-0106","ADR-0183","ADR-0184","ADR-0193"],
+			"decisions": ["ADR-0049","ADR-0053","ADR-0073","ADR-0083","ADR-0101","ADR-0106","ADR-0183","ADR-0184","ADR-0191","ADR-0193"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -18875,10 +18875,10 @@
 			"id": "ADR-0085",
 			"file": ".spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md",
 			"title": "A lesson flows upstream into the specification",
-			"status": "accepted",
+			"status": "partially-superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0070","ADR-0073","ADR-0083","ADR-0084","ADR-0183"],
+			"decisions": ["ADR-0070","ADR-0073","ADR-0083","ADR-0084","ADR-0183","ADR-0192"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -18897,10 +18897,10 @@
 			"id": "ADR-0087",
 			"file": ".spec/decisions/ADR-0087-every-markdown-file-declares-itself.md",
 			"title": "Every markdown file declares what it is",
-			"status": "accepted",
+			"status": "partially-superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0001","ADR-0047","ADR-0073","ADR-0083","ADR-0084","ADR-0182","ADR-0183"],
+			"decisions": ["ADR-0001","ADR-0047","ADR-0073","ADR-0083","ADR-0084","ADR-0182","ADR-0183","ADR-0192"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -18908,7 +18908,7 @@
 			"id": "ADR-0088",
 			"file": ".spec/decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md",
 			"title": "The generated matrix carries the specification into the graph",
-			"status": "partially-superseded",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0049","ADR-0083","ADR-0084","ADR-0183","ADR-0184","ADR-0193"],
@@ -19106,7 +19106,7 @@
 			"id": "ADR-0106",
 			"file": ".spec/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md",
 			"title": "Every line of the traceability matrix derives from one source item",
-			"status": "partially-superseded",
+			"status": "superseded",
 			"claims": ["REQ-WLD-014","REQ-WLD-026"],
 			"constraints": [],
 			"decisions": ["ADR-0084","ADR-0088","ADR-0090","ADR-0101","ADR-0113","ADR-0183","ADR-0184","ADR-0193"],
@@ -19513,10 +19513,10 @@
 			"id": "ADR-0143",
 			"file": ".spec/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md",
 			"title": "Issue traceability drift opens an issue and gates nothing",
-			"status": "accepted",
+			"status": "partially-superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0073"],
+			"decisions": ["ADR-0073","ADR-0191"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -19909,10 +19909,10 @@
 			"id": "ADR-0183",
 			"file": ".spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md",
 			"title": "The specification lives in a .spec directory",
-			"status": "accepted",
+			"status": "partially-superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0047","ADR-0083","ADR-0084","ADR-0085","ADR-0087","ADR-0088","ADR-0090","ADR-0091","ADR-0101","ADR-0106","ADR-0182","ADR-0184"],
+			"decisions": ["ADR-0047","ADR-0083","ADR-0084","ADR-0085","ADR-0087","ADR-0088","ADR-0090","ADR-0091","ADR-0101","ADR-0106","ADR-0182","ADR-0184","ADR-0191","ADR-0192"],
 			"supersedes": [],
 			"amends": ["ADR-0083","ADR-0084","ADR-0085","ADR-0087","ADR-0088","ADR-0090","ADR-0091","ADR-0101","ADR-0106"]
 		},
@@ -19920,7 +19920,7 @@
 			"id": "ADR-0184",
 			"file": ".spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md",
 			"title": "A generated map binds every claim to its step definitions",
-			"status": "partially-superseded",
+			"status": "superseded",
 			"claims": [],
 			"constraints": ["CON-TQ-010"],
 			"decisions": ["ADR-0049","ADR-0053","ADR-0073","ADR-0083","ADR-0084","ADR-0088","ADR-0101","ADR-0106","ADR-0183","ADR-0193"],
@@ -19994,13 +19994,35 @@
 			"amends": []
 		},
 		{
+			"id": "ADR-0191",
+			"file": ".spec/decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md",
+			"title": "Each rule is stated once, and no status page is written by hand",
+			"status": "accepted",
+			"claims": [],
+			"constraints": [],
+			"decisions": ["ADR-0037","ADR-0084","ADR-0128","ADR-0130","ADR-0143","ADR-0183"],
+			"supersedes": ["ADR-0084","ADR-0143","ADR-0183"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0192",
+			"file": ".spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md",
+			"title": "An accepted ADR is immutable, follows one MADR template, and process rules are conventions",
+			"status": "accepted",
+			"claims": [],
+			"constraints": [],
+			"decisions": ["ADR-0002","ADR-0047","ADR-0073","ADR-0083","ADR-0084","ADR-0085","ADR-0087","ADR-0091","ADR-0143","ADR-0183","ADR-0188","ADR-0191"],
+			"supersedes": ["ADR-0083","ADR-0085","ADR-0087","ADR-0183"],
+			"amends": []
+		},
+		{
 			"id": "ADR-0193",
 			"file": ".spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md",
 			"title": "The claims are generated as JSON, a graph fragment, and one slim matrix",
 			"status": "accepted",
 			"claims": ["REQ-WLD-049"],
 			"constraints": [],
-			"decisions": ["ADR-0084","ADR-0088","ADR-0101","ADR-0106","ADR-0183","ADR-0184","ADR-0190"],
+			"decisions": ["ADR-0084","ADR-0088","ADR-0101","ADR-0106","ADR-0113","ADR-0183","ADR-0184","ADR-0190"],
 			"supersedes": ["ADR-0084","ADR-0088","ADR-0106","ADR-0184"],
 			"amends": []
 		}
@@ -20014,7 +20036,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0053","ADR-0073"],
-			"skills": ["coding-conventions","hpac-safety-conventions"]
+			"skills": ["hpac-safety-conventions"]
 		},
 		{
 			"id": "0002",
@@ -20034,7 +20056,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0081","ADR-0082","ADR-0089","ADR-0090","ADR-0091"],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0004",
@@ -20044,7 +20066,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": [],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0005",
@@ -20084,7 +20106,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": [],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0009",
@@ -20104,7 +20126,7 @@
 			"claims": ["REQ-QB-099","REQ-QB-102"],
 			"constraints": [],
 			"decisions": ["ADR-0145"],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0011",
@@ -20114,7 +20136,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": [],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0012",
@@ -20134,7 +20156,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0101","ADR-0106"],
-			"skills": ["coding-conventions","hpac-safety-conventions"]
+			"skills": ["hpac-safety-conventions"]
 		},
 		{
 			"id": "0014",
@@ -20144,7 +20166,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0110"],
-			"skills": ["test-from-scenarios","test-hpac-safety"]
+			"skills": ["test-hpac-safety"]
 		},
 		{
 			"id": "0015",
@@ -20164,7 +20186,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0106","ADR-0113"],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0017",
@@ -20174,7 +20196,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": [],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0018",
@@ -20184,7 +20206,7 @@
 			"claims": [],
 			"constraints": [],
 			"decisions": [],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0019",
@@ -20194,7 +20216,7 @@
 			"claims": ["REQ-WLD-028","REQ-WLD-029"],
 			"constraints": [],
 			"decisions": ["ADR-0115"],
-			"skills": ["test-from-scenarios","test-hpac-safety"]
+			"skills": ["test-hpac-safety"]
 		},
 		{
 			"id": "0020",
@@ -20204,7 +20226,7 @@
 			"claims": ["REQ-MOD-075"],
 			"constraints": [],
 			"decisions": ["ADR-0039"],
-			"skills": ["deliver-change","deliver-hpac-change"]
+			"skills": ["deliver-hpac-change"]
 		},
 		{
 			"id": "0021",
@@ -20214,7 +20236,7 @@
 			"claims": ["REQ-AI-009","REQ-QB-027"],
 			"constraints": [],
 			"decisions": [],
-			"skills": ["test-from-scenarios","test-hpac-safety"]
+			"skills": ["test-hpac-safety"]
 		},
 		{
 			"id": "0022",

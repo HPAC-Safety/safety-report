@@ -2,7 +2,7 @@
 title: A generated map binds every claim to its step definitions
 description: tools/spec/generate-bindings.ts resolves every scenario step to the step definition its runner would bind and writes .spec/bindings.md — per claim, the files that bind it. A built claim with an unbound step fails the docs job; stale @ignore claims, unused step definitions, and ambiguous steps are listed, not failed. The specification is the authority.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-30
 decision-makers: Chase Florell
 keywords: traceability, step definitions, bindings, Reqnroll, playwright-bdd, Cucumber Expressions, specification, drift, knowledge graph, generated file, ADR-0083, ADR-0084, ADR-0088, ADR-0101, ADR-0106, ADR-0183
@@ -10,7 +10,7 @@ keywords: traceability, step definitions, bindings, Reqnroll, playwright-bdd, Cu
 
 # ADR-0184 — A generated map binds every claim to its step definitions
 
-**Status:** Accepted. Decided by the owner on 2026-09-30 in
+**Status:** Superseded. Decided by the owner on 2026-09-30 in
 [#710](https://github.com/HPAC-Safety/safety-report/issues/710). Amends
 [ADR-0083](ADR-0083-specification-driven-development.md),
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md),
@@ -21,6 +21,8 @@ and [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
 Amended on 2026-09-30 by
 [#711](https://github.com/HPAC-Safety/safety-report/issues/711): a large area is
 grouped with `Rule:` blocks.
+Superseded by
+[ADR-0193](ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md).
 
 ## Context
 

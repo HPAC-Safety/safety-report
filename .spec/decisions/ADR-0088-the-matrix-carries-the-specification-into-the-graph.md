@@ -2,7 +2,7 @@
 title: The generated matrix carries the specification into the graph
 description: graphify cannot ingest a .feature file and this repository does not fork it; .spec/traceability.md is markdown, so the claims reach the graph through the matrix instead.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: graphify, knowledge graph, traceability, Gherkin, ingestion, vendoring
@@ -10,9 +10,11 @@ keywords: graphify, knowledge graph, traceability, Gherkin, ingestion, vendoring
 
 # ADR-0088 — The generated matrix carries the specification into the graph
 
-**Status:** Accepted. Paths amended by
+**Status:** Superseded. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Superseded by
+[ADR-0193](ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md).
 
 ## Context
 

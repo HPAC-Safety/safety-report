@@ -5,15 +5,14 @@ type: adr
 status: accepted
 date: 2026-10-03
 decision-makers: Chase Florell
-keywords: traceability, claims, JSON, JSON Schema, generated file, step bindings, graphify, knowledge graph, merge, ADR-0084, ADR-0088, ADR-0101, ADR-0106, ADR-0184
+keywords: traceability, claims, JSON, JSON Schema, generated file, step bindings, graphify, knowledge graph, merge, ADR-0084, ADR-0088, ADR-0101, ADR-0106, ADR-0183, ADR-0184
 ---
 
 # ADR-0193 — The claims are generated as JSON, a graph fragment, and one slim matrix
 
 **Status:** Accepted. Decided by the owner on 2026-10-03 in
 [#810](https://github.com/HPAC-Safety/safety-report/issues/810), part of
-[#809](https://github.com/HPAC-Safety/safety-report/issues/809). Partially
-supersedes
+[#809](https://github.com/HPAC-Safety/safety-report/issues/809). Supersedes
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md),
 [ADR-0088](ADR-0088-the-matrix-carries-the-specification-into-the-graph.md),
 [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md),
@@ -40,6 +39,37 @@ So the graph knew a claim only as a heading in a generated file, with no edge
 to its scenario, its tests, or the ADRs and lessons that cite it. The local
 graph lacked ADR-0190, lesson 0043, and REQ-WLD-049 until someone re-ran the
 semantic extraction.
+
+## Decision drivers
+
+- One canonical, machine-readable record of every claim, for tools and CI.
+- A matrix a person can read in one screen per area.
+- Every claim, ADR, and lesson findable in the local graph with no LLM pass,
+  and still there after `graphify update`.
+- Generated files that git merges when branches change different claims.
+- graphify is not forked, and the generators run with no `npm install`.
+
+## Considered options
+
+- **Keep `traceability.md` and `bindings.md`, and add JSON beside them.**
+  Rejected: three generated copies of one fact, and the two Markdown files
+  stay unreadable.
+- **Inject the fragment with `graphify merge-graphs`.** Rejected: it prefixes
+  every node ID with a repository tag and composes undirected graphs for a
+  cross-repository view, so merged into this repository's own graph it would
+  duplicate every file node instead of joining it.
+- **Seed graphify's extraction cache.** Rejected: the AST cache is namespaced
+  by graphify's version and the semantic cache by a fingerprint of its LLM
+  prompt, so a seeded entry is silently dropped on the next upgrade, and
+  `graphify update` never reads the semantic cache at all.
+- **Track the graph fragment.** Rejected: it is a pure function of
+  `claims.json`, so tracking it would double every merge conflict for nothing.
+- **Fork graphify to read `.feature` files.** Rejected, as ADR-0088 already
+  did; the fragment needs no change to graphify.
+- **A JSON Schema library.** Rejected: the generator runs from the base branch
+  with no `npm install`, and the keywords the schema uses fit in 80 lines.
+- **`claims.json`, one slim matrix, and semantic-tier nodes written straight
+  into `graph.json`** — chosen.
 
 ## Decision
 
@@ -94,45 +124,57 @@ semantic extraction.
    graphify is not forked (ADR-0088).
 
 6. **Where the merge runs.** `.githooks/post-merge` and `post-rewrite` after
-   regenerating, and on `main` too, since the graph is untracked; and
-   `init-dev.sh` after building the graph, falling back to `graphify update`
-   when no LLM backend is available. `generate-traceability.ts --fragment
+   regenerating; `init-dev.sh` after building the graph, falling back to
+   `graphify update` when no LLM backend is available. On the primary
+   checkout's `main` the hooks still regenerate and stage nothing, but they do
+   run the merge (owner decision, 2026-10-03): it writes only the untracked
+   `graphify-out/`, so `main` stays exactly `origin/main`, as #802 requires,
+   and a pull is when new claims arrive. `generate-traceability.ts --fragment
    <path>` writes the same extraction to a file.
 
-### How the fragment survives graphify (spike, graphify 0.9.69)
+### How the fragment survives graphify (graphify 0.9.69)
 
-- **`graphify merge-graphs`** — rejected. It prefixes every node ID with a
-  repository tag and composes undirected graphs for a cross-repository view;
-  merged into the same repository's graph it would duplicate every file node
-  instead of joining it.
-- **Seeding the extraction cache** — rejected. The AST cache is namespaced by
-  graphify's version and the semantic cache by a fingerprint of its LLM
-  prompt, so a seeded entry is silently dropped on the next upgrade, and
-  `graphify update` never reads the semantic cache at all.
-- **Writing semantic-tier items into `graph.json`** — adopted. Every node and
-  edge carries `_origin: "semantic"` and `spec_fragment: true`. `graphify
-  update`, full or incremental (as the post-commit hook runs it), re-extracts
-  only the AST tier and keeps a semantic item while its `source_file` exists.
-  A merge first drops every `spec_fragment` item, so it never accumulates
-  stale claims. Which `source_file` each node carries decides the rest:
-  - **Never a Markdown page.** graphify treats a `.md` file carrying any
-    non-AST node as already covered by its LLM pass and stops re-scanning it,
-    so an ADR, lesson, or constraint page given a fragment node would never
-    get a new heading again, and a newly pulled one never its file node.
-  - **Never a file graphify extracts.** An incremental rebuild of a changed
-    source evicts every node naming it, semantic or not; with
-    `.spec/claims.json` as the source, every commit that changed it dropped
-    the records, and graphify's shrink guard then refused to write the graph
-    at all.
-  - So a claim and an area name their `.feature` file, which graphify has no
-    extractor for, and an ADR, lesson, or constraint names the directory it
-    lives in (`.spec/decisions`, `.spec/lessons`, `.spec`); its own page is in
-    `path`, and in `source_location` so a query shows it.
+Every node and edge carries `_origin: "semantic"` and `spec_fragment: true`.
+`graphify update`, full or incremental (as the post-commit hook runs it),
+re-extracts only the AST tier and keeps a semantic item while its
+`source_file` exists. A merge first drops every `spec_fragment` item, so it
+never accumulates stale claims. Which `source_file` each node carries decides
+the rest:
 
-  Verified on this repository: every fragment node and edge survived a full
-  `graphify update .` and an incremental rebuild of `claims.json`, an ADR, a
-  constraint page, a feature file, and a new lesson page, and the new page got
-  its file node and headings, refreshed again when it changed.
+- **Never a Markdown page.** graphify treats a `.md` file carrying any
+  non-AST node as already covered by its LLM pass and stops re-scanning it,
+  so an ADR, lesson, or constraint page given a fragment node would never
+  get a new heading again, and a newly pulled one never its file node.
+- **Never a file graphify extracts.** An incremental rebuild of a changed
+  source evicts every node naming it, semantic or not; with
+  `.spec/claims.json` as the source, every commit that changed it dropped
+  the records, and graphify's shrink guard then refused to write the graph
+  at all.
+- So a claim and an area name their `.feature` file, which graphify has no
+  extractor for, and an ADR, lesson, or constraint names the directory it
+  lives in (`.spec/decisions`, `.spec/lessons`, `.spec`); its own page is in
+  `path`, and in `source_location` so a query shows it.
+
+Verified on this repository: every fragment node and edge survived a full
+`graphify update .` and an incremental rebuild of `claims.json`, an ADR, a
+constraint page, a feature file, and a new lesson page, and the new page got
+its file node and headings, refreshed again when it changed.
+
+### What still holds of the records this supersedes
+
+- [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md): every scenario carries one stable `@REQ-*` claim ID and every
+  normative constraint a `CON-*` ID naming the claims that verify it; an ID is
+  never reused or renumbered; a duplicate, malformed, missing, or dangling ID
+  fails the build.
+- [ADR-0088](ADR-0088-the-matrix-carries-the-specification-into-the-graph.md): graphify is not forked, and it never reads a `.feature` file.
+- [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md): decision 4, a rejected push that lost to a newer head is a
+  superseded run (as amended by
+  [ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md));
+  no totals in a generated file; items in ID order.
+- [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md): the rules by which each runner's step definitions are matched; the
+  specification is the authority; a built claim with an unbound step fails,
+  while stale `@ignore` claims, ambiguous steps, and unused step definitions
+  are recorded, not failed; a large area is grouped with `Rule:` blocks.
 
 ## Consequences
 
@@ -157,20 +199,11 @@ semantic extraction.
   `generate-traceability.ts --check`; `tools/spec/check-generated-file.ts` is
   deleted, having no other caller.
 
-## Alternatives rejected
-
-- **Keep `traceability.md` and `bindings.md` and add JSON beside them.** Three
-  generated copies of one fact, and the two Markdown files stay unreadable.
-- **Track the graph fragment.** It is a pure function of `claims.json`;
-  tracking it would double every merge conflict for nothing.
-- **Fork graphify to read `.feature` files.** ADR-0088 rejected that, and the
-  fragment needs no change to graphify.
-- **A JSON Schema library.** The generator runs from the base branch with no
-  `npm install`; the keywords the schema uses fit in 80 lines.
-
 ## Related
 
 - [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md): CI
   regenerates the generated files onto a same-repo pull request; unchanged.
 - [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md): the
   specification and its generated files live in `.spec/`; unchanged.
+- [#802](https://github.com/HPAC-Safety/safety-report/issues/802): a hook never
+  leaves a tracked change on `main`.

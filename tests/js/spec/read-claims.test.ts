@@ -59,6 +59,10 @@ describe('changedScenarios', () => {
 		assert.deepEqual(changedScenarios(FEATURE, FEATURE.replace('Given a video', 'Given a long video')), ['REQ-MED-002'])
 	})
 
+	it('reads a stray tag at the end of the file as the start of nothing', () => {
+		assert.deepEqual([...scenarioTexts(`${FEATURE}\n  @wip\n`).keys()], ['REQ-MED-001', 'REQ-MED-002'])
+	})
+
 	it('finds an added and a removed scenario', () => {
 		assert.deepEqual(changedScenarios('', FEATURE), ['REQ-MED-001', 'REQ-MED-002'])
 		assert.deepEqual(changedScenarios(FEATURE, ''), ['REQ-MED-001', 'REQ-MED-002'])

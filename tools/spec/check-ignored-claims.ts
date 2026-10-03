@@ -92,7 +92,7 @@ export interface MainOptions {
 
 export async function main({ env = process.env, claims = readFileSync(CLAIMS, 'utf8'), exec = realExec, fetchIssue, log = console.log }: MainOptions = {}): Promise<number> {
 	const ignored = ignoredClaims(claims)
-	const problems: { file?: string; message: string }[] = ignored.filter((claim) => claim.problem).map((claim) => ({ file: claim.file, message: claim.problem ?? '' }))
+	const problems: { file?: string; message: string }[] = ignored.flatMap((claim) => (claim.problem ? [{ file: claim.file, message: claim.problem }] : []))
 
 	const named = [...new Set(ignored.map((claim) => claim.issue).filter((issue): issue is number => issue !== null))].sort((a, b) => a - b)
 	const fetchOne = fetchIssue ?? githubIssues(env.GITHUB_REPOSITORY ?? 'HPAC-Safety/safety-report', env.GH_TOKEN || undefined)

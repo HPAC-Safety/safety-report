@@ -55,6 +55,8 @@ export interface ClaimInput {
 /** One claim's verdict for this run. */
 export interface ClaimResult {
 	id: string
+	title: string
+	file: string
 	engine: Engine
 	status: RunStatus
 	/** Each pickle's final outcome, in the order the run reported it. */
@@ -74,7 +76,7 @@ const worse = (a: StepStatus, b: string): StepStatus => {
 }
 
 interface Envelope {
-	pickle?: { id: string; tags?: { name: string }[] }
+	pickle?: { id: string; tags: { name: string }[] }
 	testCase?: { id: string; pickleId: string }
 	testCaseStarted?: { id: string; testCaseId: string; attempt?: number }
 	testStepFinished?: { testCaseStartedId: string; testStepResult: { status: string } }
@@ -89,8 +91,8 @@ interface Envelope {
 export function readMessages(ndjson: string): { rows: Map<string, string[]>; problems: string[] } {
 	const pickleClaims = new Map<string, string[]>()
 	const casePickle = new Map<string, string>()
-	const startedCase = new Map<string, string>()
-	const worst = new Map<string, StepStatus>()
+	// Each attempt: its test case, and its worst step so far.
+	const attempts = new Map<string, { testCase: string; status: StepStatus }>()
 	const retried = new Set<string>()
 	const problems: string[] = []
 
@@ -106,16 +108,15 @@ export function readMessages(ndjson: string): { rows: Map<string, string[]>; pro
 		if (envelope.pickle) {
 			pickleClaims.set(
 				envelope.pickle.id,
-				(envelope.pickle.tags ?? []).map((tag) => CLAIM.exec(tag.name)?.[1]).filter((id): id is string => id !== undefined),
+				envelope.pickle.tags.map((tag) => CLAIM.exec(tag.name)?.[1]).filter((id): id is string => id !== undefined),
 			)
 		} else if (envelope.testCase) {
 			casePickle.set(envelope.testCase.id, envelope.testCase.pickleId)
 		} else if (envelope.testCaseStarted) {
-			startedCase.set(envelope.testCaseStarted.id, envelope.testCaseStarted.testCaseId)
-			worst.set(envelope.testCaseStarted.id, 'UNKNOWN')
+			attempts.set(envelope.testCaseStarted.id, { testCase: envelope.testCaseStarted.testCaseId, status: 'UNKNOWN' })
 		} else if (envelope.testStepFinished) {
-			const id = envelope.testStepFinished.testCaseStartedId
-			worst.set(id, worse(worst.get(id) ?? 'UNKNOWN', envelope.testStepFinished.testStepResult.status))
+			const attempt = attempts.get(envelope.testStepFinished.testCaseStartedId)
+			if (attempt) attempt.status = worse(attempt.status, envelope.testStepFinished.testStepResult.status)
 		} else if (envelope.testCaseFinished?.willBeRetried) {
 			retried.add(envelope.testCaseFinished.testCaseStartedId)
 		}
@@ -124,11 +125,10 @@ export function readMessages(ndjson: string): { rows: Map<string, string[]>; pro
 	// A pickle's outcome is its last attempt's: a retried attempt that a later
 	// one replaced is not the verdict, as it is not Playwright's.
 	const outcome = new Map<string, string>()
-	for (const [started, testCase] of startedCase) {
+	for (const [started, { testCase, status }] of attempts) {
 		if (retried.has(started)) continue
 		const pickle = casePickle.get(testCase)
 		if (pickle === undefined) continue
-		const status = worst.get(started) ?? 'UNKNOWN'
 		const previous = outcome.get(pickle)
 		// The same pickle run twice to completion (two projects, say): any
 		// failure is the verdict, then any non-pass.
@@ -166,10 +166,11 @@ export function judge(claims: readonly ClaimInput[], results: ReadonlyMap<Engine
 	return {
 		problems,
 		results: claims.map((claim): ClaimResult => {
-			if (claim.status === 'Planned') return { id: claim.id, engine: claim.engine, status: 'Planned', rows: [] }
-			if (!results.has(claim.engine)) return { id: claim.id, engine: claim.engine, status: 'NotRun', rows: [] }
-			const rows = rowsByEngine.get(claim.engine)?.get(claim.id) ?? []
-			return { id: claim.id, engine: claim.engine, status: statusOf(rows), rows }
+			const { id, title, file, engine } = claim
+			if (claim.status === 'Planned') return { id, title, file, engine, status: 'Planned', rows: [] }
+			if (!results.has(engine)) return { id, title, file, engine, status: 'NotRun', rows: [] }
+			const rows = rowsByEngine.get(engine)?.get(id) ?? []
+			return { id, title, file, engine, status: statusOf(rows), rows }
 		}),
 	}
 }
@@ -177,8 +178,7 @@ export function judge(claims: readonly ClaimInput[], results: ReadonlyMap<Engine
 const failed = (result: ClaimResult): boolean => result.status === 'Failing' || result.status === 'Unexecuted'
 
 /** The job summary: totals per engine, every claim that fails the gate, then every claim. */
-export function summary(claims: readonly ClaimInput[], results: readonly ClaimResult[], judged: ReadonlyMap<Engine, string | null>, { every = true }: { every?: boolean } = {}): string {
-	const byId = new Map(claims.map((claim) => [claim.id, claim]))
+export function summary(results: readonly ClaimResult[], judged: ReadonlyMap<Engine, string | null>, { every = true }: { every?: boolean } = {}): string {
 	const lines = ['## Claim results', '', '| Engine | Judged | Passing | Failing | Unexecuted | Planned |', '|---|---|---|---|---|---|']
 	for (const engine of ENGINES) {
 		const mine = results.filter((result) => result.engine === engine)
@@ -191,8 +191,7 @@ export function summary(claims: readonly ClaimInput[], results: readonly ClaimRe
 	if (failures.length > 0) {
 		lines.push('', '### Built claims with no passing run', '', '| Claim | Engine | Status | Rows | Scenario |', '|---|---|---|---|---|')
 		for (const result of failures) {
-			const claim = byId.get(result.id)
-			lines.push(`| ${result.id} | ${result.engine} | ${result.status} | ${result.rows.join(', ') || '—'} | ${(claim?.title ?? '').replace(/\|/g, '\\|')} |`)
+			lines.push(`| ${result.id} | ${result.engine} | ${result.status} | ${result.rows.join(', ') || '—'} | ${result.title.replace(/\|/g, '\\|')} |`)
 		}
 	}
 
@@ -264,16 +263,14 @@ export function main({
 	const verdict = judge(input, judged)
 	for (const problem of verdict.problems) log(annotation('error', problem))
 
-	const byId = new Map(input.map((claim) => [claim.id, claim]))
 	const failures = verdict.results.filter(failed)
 	for (const result of failures) {
-		const claim = byId.get(result.id)
 		const why = result.status === 'Failing' ? 'failed' : 'has no passing execution'
-		log(annotation('error', `${result.id} (${result.engine}) ${why}: "${claim?.title ?? ''}". Rows: ${result.rows.join(', ') || 'none ran'}.`, { file: claim?.file }))
+		log(annotation('error', `${result.id} (${result.engine}) ${why}: "${result.title}". Rows: ${result.rows.join(', ') || 'none ran'}.`, { file: result.file }))
 	}
 
 	// The job summary lists every claim; a log (act keeps no summary) only what failed.
-	appendSummary(summary(input, verdict.results, judged, { every: Boolean(env.GITHUB_STEP_SUMMARY) }), env)
+	appendSummary(summary(verdict.results, judged, { every: Boolean(env.GITHUB_STEP_SUMMARY) }), env)
 	const out = argv[argv.indexOf('--out') + 1]
 	if (argv.includes('--out') && out) write(out, `${JSON.stringify({ engines: Object.fromEntries([...judged].map(([engine, ndjson]) => [engine, ndjson !== null])), claims: verdict.results }, null, '\t')}\n`)
 

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -61,6 +61,23 @@ describe('readMessages', () => {
 			]),
 		)
 		assert.deepEqual(rows.get('REQ-MED-001'), ['PASSED', 'NOT RUN'])
+	})
+
+	it('lets a failing run of a pickle outweigh a passing one, and ignores events it cannot place', () => {
+		const lines = [
+			{ pickle: { id: 'p1', tags: [{ name: '@REQ-MED-001' }] } },
+			{ testCase: { id: 'c1', pickleId: 'p1' } },
+			{ testCase: { id: 'c2', pickleId: 'p1' } },
+			{ testCaseStarted: { id: 's1', testCaseId: 'c1' } },
+			{ testStepFinished: { testCaseStartedId: 's1', testStepResult: { status: 'PASSED' } } },
+			{ testCaseStarted: { id: 's2', testCaseId: 'c2' } },
+			{ testStepFinished: { testCaseStartedId: 's2', testStepResult: { status: 'SKIPPED' } } },
+			{ testCaseStarted: { id: 's3', testCaseId: 'unknown' } },
+			{ testStepFinished: { testCaseStartedId: 'nowhere', testStepResult: { status: 'FAILED' } } },
+		]
+		assert.deepEqual(readMessages(lines.map((line) => JSON.stringify(line)).join('\n')).rows.get('REQ-MED-001'), ['SKIPPED'])
+		const failing = [...lines.slice(0, 5), { testCaseStarted: { id: 's2', testCaseId: 'c2' } }, { testStepFinished: { testCaseStartedId: 's2', testStepResult: { status: 'FAILED' } } }]
+		assert.deepEqual(readMessages(failing.map((line) => JSON.stringify(line)).join('\n')).rows.get('REQ-MED-001'), ['FAILED'])
 	})
 
 	it('reports a line that is not JSON', () => {
@@ -125,6 +142,14 @@ describe('engines', () => {
 		assert.deepEqual([...(engines([], { REQNROLL_RESULTS: 'a.ndjson', PLAYWRIGHT_BDD_RESULTS: '' }) as Map<string, string>)], [['Reqnroll', 'a.ndjson']])
 	})
 
+	it('reads playwright-bdd from the environment', () => {
+		assert.deepEqual([...(engines([], { PLAYWRIGHT_BDD_RESULTS: 'b.ndjson' }) as Map<string, string>)], [['playwright-bdd', 'b.ndjson']])
+	})
+
+	it('refuses a --results with nothing after it', () => {
+		assert.match(engines(['--results'], {}) as string, /got ""/)
+	})
+
 	it('refuses an unknown engine', () => {
 		assert.match(engines(['--results', 'Cucumber=a'], {}) as string, /engine one of Reqnroll, playwright-bdd/)
 	})
@@ -133,12 +158,13 @@ describe('engines', () => {
 describe('summary', () => {
 	it('lists the claims that failed the gate and says which engines were judged', () => {
 		const claims = [claim('REQ-MED-001'), claim('REQ-WLD-001', 'playwright-bdd')]
-		const text = summary(claims, judge(claims, new Map([['Reqnroll', '']])).results, new Map([['Reqnroll', '']]))
+		const text = summary(judge(claims, new Map([['Reqnroll', '']])).results, new Map([['Reqnroll', '']]))
 		assert.match(text, /\| Reqnroll \| yes \| 0 \| 0 \| 1 \| 0 \|/)
 		assert.match(text, /\| playwright-bdd \| no — its job did not run \|/)
 		assert.match(text, /\| REQ-MED-001 \| Reqnroll \| Unexecuted \| — \| Scenario REQ-MED-001 \|/)
 		assert.match(text, /Every claim/)
-		assert.doesNotMatch(summary(claims, [], new Map(), { every: false }), /Every claim/)
+		assert.match(summary([], new Map([['Reqnroll', null]])), /\| Reqnroll \| yes — results missing \|/)
+		assert.doesNotMatch(summary([], new Map(), { every: false }), /Every claim/)
 	})
 })
 
@@ -187,6 +213,20 @@ describe('main', () => {
 		const { code, output } = run(['--results', 'playwright-bdd=missing.ndjson'], {})
 		assert.equal(code, 1)
 		assert.match(output.join('\n'), /playwright-bdd was named but missing\.ndjson does not exist/)
+	})
+
+	it('fails a results file that is not Cucumber Messages', () => {
+		const { code, output } = run(['--results', 'Reqnroll=r.ndjson'], { 'r.ndjson': `${passing}\nnot json` })
+		assert.equal(code, 1)
+		assert.match(output.join('\n'), /::error::Reqnroll results: line \d+ is not JSON/)
+	})
+
+	it('writes --out through the default writer, making its directory', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'claim-out-'))
+		const out = join(dir, 'nested', 'out.json')
+		const code = main({ argv: ['--results', 'Reqnroll=r.ndjson', '--out', out], env: { GITHUB_STEP_SUMMARY: join(dir, 's.md') }, claims, read: () => passing, log: () => undefined })
+		assert.equal(code, 0)
+		assert.match(readFileSync(out, 'utf8'), /"Reqnroll": true/)
 	})
 
 	it('refuses to judge nothing', () => {

@@ -2,7 +2,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import type { Exec } from '../../../tools/lib/actions.ts'
-import { type FetchIssue, type IssueState, closedBy, ignoredClaims, main } from '../../../tools/spec/check-ignored-claims.ts'
+import { type FetchIssue, type IssueState, closedBy, githubIssues, ignoredClaims, main } from '../../../tools/spec/check-ignored-claims.ts'
 
 const claim = (id: string, tags: string[], status: 'Built' | 'Planned' = 'Planned') => ({ id, file: '.spec/features/media/media.feature', status, tags })
 const claims = (...list: ReturnType<typeof claim>[]): string => JSON.stringify({ claims: list })
@@ -75,6 +75,47 @@ describe('main', () => {
 		})
 		assert.equal(code, 1)
 		assert.match(output, /This closes #842, which REQ-MED-001 still name as @ignore/)
+	})
+
+	it('passes a pull request that closes an issue no @ignore claim names', async () => {
+		const { code } = await run({ env: { EVENT_NAME: 'pull_request', PR_BODY: 'Closes #1' }, claims: claims(claim('REQ-MED-001', [], 'Built')) })
+		assert.equal(code, 0)
+	})
+
+	it('asks GitHub for the repository it runs in, with its token', async () => {
+		const original = globalThis.fetch
+		const asked: { url: string; auth: string | undefined }[] = []
+		globalThis.fetch = ((url: string, init: { headers: Record<string, string> }) => {
+			asked.push({ url, auth: init.headers.authorization })
+			return Promise.resolve(new Response(JSON.stringify({ state: 'open' }), { status: 200 }))
+		}) as unknown as typeof fetch
+		try {
+			const { code } = await run({ env: { GITHUB_REPOSITORY: 'o/r', GH_TOKEN: 't' }, claims: claims(claim('REQ-MED-001', ['@ignore', '@issue-7'])) })
+			assert.equal(code, 0)
+			assert.deepEqual(asked, [{ url: 'https://api.github.com/repos/o/r/issues/7', auth: 'Bearer t' }])
+		} finally {
+			globalThis.fetch = original
+		}
+	})
+
+	it('reads a pull request, an error, and anonymous access from GitHub', async () => {
+		const original = globalThis.fetch
+		const answers = [new Response(JSON.stringify({ state: 'open', pull_request: {} }), { status: 200 }), new Response('', { status: 403 })]
+		const auth: (string | undefined)[] = []
+		globalThis.fetch = ((_url: string, init: { headers: Record<string, string> }) => {
+			auth.push(init.headers.authorization)
+			return Promise.resolve(answers.shift() ?? new Response('', { status: 500 }))
+		}) as unknown as typeof fetch
+		try {
+			const fetchIssue = githubIssues('o/r', undefined)
+			assert.deepEqual(await fetchIssue(1), { state: 'open', pullRequest: true })
+			assert.deepEqual(await fetchIssue(2), { error: 'GitHub answered 403 for #2' })
+			assert.deepEqual(auth, [undefined, undefined])
+			const { output } = await run({ claims: claims(claim('REQ-MED-001', ['@ignore', '@issue-9'])) })
+			assert.match(output, /Could not read #9/)
+		} finally {
+			globalThis.fetch = original
+		}
 	})
 
 	it('reads every queued commit message in a merge group', async () => {

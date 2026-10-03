@@ -172,6 +172,7 @@ Read them before touching the area.
    [0071](.spec/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md),
    [0072](.spec/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
    [0074](.spec/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
+   [0080](.spec/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
    [0095](.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md),
    [0112](.spec/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
    [0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
@@ -214,7 +215,8 @@ Read them before touching the area.
 5. **Attachments are published only with media consent, and never
    transformed for it**: an image or video only as its verified derivative, a
    document unchanged as a forced download, each through a pre-signed URL of
-   at most 15 minutes; no malware scan.
+   at most 15 minutes; a document is never sent to the model; no malware
+   scan.
    Claims: `REQ-MED-008`, `REQ-MED-025`–`030`, `REQ-MED-037`–`041`,
    `REQ-AI-016`, `CON-SO-003`.
    ADRs: [0089](.spec/decisions/ADR-0089-no-malware-scanning-for-attachments.md),
@@ -231,7 +233,7 @@ Read them before touching the area.
    `Administrator`), never handles a password, and keeps no user record; a
    reporter must be a member and is not recorded. The only exceptions are
    Development's members-site login and, temporarily, staging's interim
-   issuer; production never sets it.
+   issuer behind `InterimIssuer:Enabled`, which production never sets.
    Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-SUB-019`–`021`,
    `REQ-SUB-023`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
    `CON-INF-004`.
@@ -265,8 +267,9 @@ Read them before touching the area.
   allowlist, a credential proxy, CSRF machinery, or Turnstile verification.
   Claims: `CON-SO-009`, `CON-IF-002`, `CON-IF-004`, `CON-IF-005`,
   `CON-INF-004`.
-- **Two carved exceptions** carry an email allowlist and, for Development
-  alone, CSRF/session handling: Development's members-site login
+- **Two carved exceptions** carry an email allowlist and CSRF/session
+  handling scoped to the members-site credential source: Development's
+  members-site login
   ([ADR-0079](.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
   and, temporarily, staging's interim issuer
   ([ADR-0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
@@ -280,7 +283,8 @@ Read them before touching the area.
   `ITranslator` for five purposes only: drafting question wording; the
   Worker's once-only second language of an answer that needs one; a
   reviewer's draft of one summary language; the Worker's translation of each
-  comment revision; and CI's `locales/fr-CA.json`.
+  comment revision; and CI's `locales/fr-CA.json`. `ITranslator` receives
+  the strings and `locales/terms.json` only.
   Claims: `REQ-SUB-080`, `REQ-SUB-119`, `REQ-SUB-120`, `REQ-QB-066`,
   `REQ-MOD-069`–`074`, `REQ-COM-005`, `REQ-COM-006`, `REQ-WLD-010`,
   `REQ-WLD-028`, `REQ-WLD-033`–`044`, `REQ-AI-030`.

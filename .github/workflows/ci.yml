@@ -375,6 +375,12 @@ jobs:
       - name: The .NET major agrees everywhere it is declared
         run: node tools/build/check-dotnet-major.ts
 
+      # Scenarios and area READMEs use the glossary's words: one per concept,
+      # with the banned synonyms read from .spec/glossary.md's tables (#815,
+      # CONV-003). No baseline: it passes only at zero.
+      - name: Scenarios and area READMEs use the glossary's words
+        run: node tools/spec/check-glossary.ts
+
       # The specification index is generated from .spec/: every area,
       # constraint page, decision, and lesson, read from its own file.
       # traceability.yml commits it with the claims. ADR-0183.

@@ -18,6 +18,10 @@ name: Feature coverage
 # changed, and a gate that decides for itself whether it applies cannot be
 # skipped by a filter that disagrees.
 #
+# Relevance (CONV-001): a scenario counts only when its text changed and its
+# area is one the changed code maps to in .spec/area-paths.json, and an
+# exemption's claims must belong to those areas too.
+#
 # merge_group: the merge queue runs this on the tree that will become main
 # (ADR-0147). A merge group has no pull request body, but each pull request in
 # it is one squash commit whose message is that body (PR_BODY), so the check

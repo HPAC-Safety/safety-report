@@ -395,6 +395,13 @@ jobs:
       - name: The claims and the matrix match the specification
         run: node tools/spec/generate-traceability.ts --check
 
+      # feature-coverage judges a pull request's scenarios and cited claims by
+      # the feature areas its changed files map to, so every behavior-bearing
+      # file must map to one, every glob must still match a file, and every
+      # area must exist (CONV-001).
+      - name: Every behavior-bearing file belongs to a feature area
+        run: node tools/spec/check-area-paths.ts
+
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this
     # merges and gates the reports it handed over (#694). It also holds the

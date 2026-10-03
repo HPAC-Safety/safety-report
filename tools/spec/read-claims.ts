@@ -124,3 +124,89 @@ export function readConstraints(path: string, source: string): { constraints: Co
 
 	return { constraints, problems }
 }
+
+const BACKGROUND = /^\s*Background:/
+const EXAMPLES = /^\s*(Examples|Scenarios):/
+const FEATURE = /^\s*Feature:/
+
+/**
+ * Each claim's scenario as text that only a real change alters: its tags,
+ * title, description, steps, tables, and examples — plus the Background steps
+ * that run before it — with comments, blank lines, and whitespace dropped.
+ * Two versions of a feature file whose texts for a claim are equal changed
+ * nothing that claim says (CONV-001).
+ */
+export function scenarioTexts(source: string): Map<string, string> {
+	const lines = source.split('\n').map((line) => line.trim().replace(/\s+/g, ' '))
+	const texts = new Map<string, string>()
+	let featureBackground: string[] = []
+	let ruleBackground: string[] = []
+	let inRule = false
+	let collecting: string[] | null = null
+	let claim: string | null = null
+	let tags: string[] = []
+
+	const close = (): void => {
+		if (claim !== null && collecting !== null) texts.set(claim, [...featureBackground, ...ruleBackground, ...collecting].join('\n'))
+		claim = null
+		collecting = null
+	}
+	// A tag line above `Examples:` belongs to the scenario it sits in.
+	const nextIsExamples = (from: number): boolean => {
+		for (const line of lines.slice(from + 1)) {
+			if (line === '' || line.startsWith('#') || line.startsWith('@')) continue
+			return EXAMPLES.test(line)
+		}
+		return false
+	}
+
+	for (const [index, line] of lines.entries()) {
+		if (line === '' || line.startsWith('#')) continue
+		if (line.startsWith('@') && !(claim !== null && nextIsExamples(index))) {
+			close()
+			tags.push(line)
+			continue
+		}
+		if (FEATURE.test(line)) {
+			close()
+			featureBackground = []
+			ruleBackground = []
+			inRule = false
+			tags = []
+			continue
+		}
+		if (RULE.test(line)) {
+			close()
+			ruleBackground = []
+			inRule = true
+			tags = []
+			continue
+		}
+		if (BACKGROUND.test(line)) {
+			close()
+			// A Background before any Rule is the feature's; inside a Rule, the Rule's.
+			collecting = []
+			if (inRule) ruleBackground = collecting
+			else featureBackground = collecting
+			tags = []
+			continue
+		}
+		const scenario = SCENARIO.exec(line)
+		if (scenario) {
+			close()
+			claim = tags.flatMap((tag) => tag.split(' ')).map((tag) => CLAIM_TAG.exec(tag)?.[1]).find((id) => id !== undefined) ?? null
+			collecting = [...tags, line]
+			tags = []
+			continue
+		}
+		if (collecting !== null) collecting.push(line)
+	}
+	close()
+	return texts
+}
+
+/** The claims whose scenario text differs between two versions of a feature file, added and removed ones included. */
+export function changedScenarios(before: string, after: string): string[] {
+	const [old, current] = [scenarioTexts(before), scenarioTexts(after)]
+	return [...new Set([...old.keys(), ...current.keys()])].filter((id) => old.get(id) !== current.get(id)).sort()
+}

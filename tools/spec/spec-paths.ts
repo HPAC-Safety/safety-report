@@ -54,3 +54,10 @@ export const REQNROLL_STEPS = 'tests/HpacSafety.Acceptance.Tests'
 
 /** Where playwright-bdd step definitions live: every claim tagged @ui. */
 export const PLAYWRIGHT_STEPS = 'tests/e2e/steps'
+
+/**
+ * Which feature areas each behavior-bearing path belongs to, checked in and
+ * validated by tools/spec/check-area-paths.ts; feature-coverage reads it to
+ * judge whether a pull request's scenarios relate to its code (CONV-001).
+ */
+export const AREA_PATHS = '.spec/area-paths.json'

@@ -18,11 +18,14 @@
 // The ids must exist in the generated claims (.spec/claims.json), the category must be one of a
 // closed set, and the categories that can be checked against the diff are.
 //
-// The exit code is the contract.
-import { readFileSync } from 'node:fs'
-
-import { CLAIMS } from './spec-paths.ts'
-import { isMain } from '../lib/actions.ts'
+// Both halves are judged for relevance (CONV-001). Every changed file maps to
+// feature areas (.spec/area-paths.json, tools/spec/area-paths.ts): a scenario
+// counts only when its text changed — not whitespace or a comment — and its
+// area is one the changed code maps to; a cited claim counts only when its
+// area is.
+//
+// The judgement only; tools/spec/check-feature-coverage-diff.ts reads the diff
+// and is the command line.
 
 // Why a scenario might genuinely be unnecessary. Deliberately closed: a new
 // category is a decision somebody argues for, not a word somebody types.
@@ -59,10 +62,10 @@ const DEPENDENCY_MANIFESTS = [
 	/(^|\/)Dockerfile$/,
 ]
 
-/** Every claim id .spec/claims.json declares: its claims, not every ID it mentions. */
-export function declaredClaims(claimsJson: string): Set<string> {
-	const { claims } = JSON.parse(claimsJson) as { claims: { id: string }[] }
-	return new Set(claims.map((claim) => claim.id))
+/** Every claim .spec/claims.json declares, with its area: its claims, not every ID it mentions. */
+export function declaredClaims(claimsJson: string): Map<string, string> {
+	const { claims } = JSON.parse(claimsJson) as { claims: { id: string; area: string }[] }
+	return new Map(claims.map((claim) => [claim.id, claim.area]))
 }
 
 // A line that starts something new rather than continuing the line above it.
@@ -120,7 +123,7 @@ const isDependencyManifest = (path: string): boolean => DEPENDENCY_MANIFESTS.som
  * Why this exemption is not acceptable, or an empty list. Checks the shape
  * first, then the categories whose honesty the diff can settle on its own.
  */
-export function rejectExemption(exemption: Exemption, changed: readonly string[], knownClaims: ReadonlySet<string>): string[] {
+export function rejectExemption(exemption: Exemption, changed: readonly string[], knownClaims: ReadonlyMap<string, string>, areas: ReadonlySet<string> = new Set(knownClaims.values())): string[] {
 	const problems: string[] = []
 
 	if (!Object.hasOwn(CATEGORIES, exemption.category)) {
@@ -141,7 +144,9 @@ export function rejectExemption(exemption: Exemption, changed: readonly string[]
 		problems.push('"Claims preserved:" names no claim id.')
 	} else {
 		for (const claim of exemption.claims) {
-			if (!knownClaims.has(claim)) problems.push(`${claim} is not a claim any scenario declares.`)
+			const area = knownClaims.get(claim)
+			if (area === undefined) problems.push(`${claim} is not a claim any scenario declares.`)
+			else if (!areas.has(area)) problems.push(`${claim} belongs to ${area}, which none of the changed files maps to (${list(areas)}). Cite a claim the change leaves standing in its own area.`)
 		}
 	}
 
@@ -165,18 +170,51 @@ export function rejectExemption(exemption: Exemption, changed: readonly string[]
 	return problems
 }
 
+const list = (areas: ReadonlySet<string>): string => (areas.size > 0 ? [...areas].sort().join(', ') : 'none')
+
+/** A claim whose scenario text the diff changed, and its area. */
+export interface ChangedScenario {
+	id: string
+	area: string
+}
+
 /** Whether a pull request passes, with the note or problems that say why. */
 export type Verdict =
 	| { ok: true; note: string; exemption?: Exemption }
 	| { ok: false; changed: readonly string[]; problems: string[]; exemption?: Exemption }
 
-/**
- * The verdict for one pull request. `changed` is the behavior-bearing files it
- * touched, `features` the `.feature` files it touched.
- */
-export function judge({ changed, features, body, knownClaims }: { changed: readonly string[]; features: readonly string[]; body: string; knownClaims: ReadonlySet<string> }): Verdict {
+/** What one pull request changed, as the verdict reads it. */
+export interface Change {
+	/** The behavior-bearing files it touched. */
+	changed: readonly string[]
+	/** The `.feature` files it touched. */
+	features: readonly string[]
+	/** The claims whose scenario text changed. */
+	scenarios: readonly ChangedScenario[]
+	/** The areas its behavior-bearing and step-definition files map to. */
+	areas: ReadonlySet<string>
+	body: string
+	/** Every claim at HEAD, with its area. */
+	knownClaims: ReadonlyMap<string, string>
+}
+
+/** Why the scenarios the diff did touch do not count, for the failure message. */
+function unrelated({ features, scenarios, areas }: Change): string[] {
+	if (features.length > 0 && scenarios.length === 0) {
+		return [`${features.join(', ')} changed, but no scenario's text did (only whitespace, comments, or descriptions), so it covers nothing.`]
+	}
+	if (scenarios.length > 0) {
+		return [`${scenarios.map((scenario) => `${scenario.id} (${scenario.area})`).join(', ')} changed, but the changed code maps to ${list(areas)}, so none of them covers it.`]
+	}
+	return []
+}
+
+/** The verdict for one pull request. */
+export function judge(change: Change): Verdict {
+	const { changed, scenarios, areas, body, knownClaims } = change
 	if (changed.length === 0) return { ok: true, note: 'No behavior-bearing file changed.' }
-	if (features.length > 0) return { ok: true, note: `Scenarios changed alongside: ${features.join(', ')}.` }
+	const relevant = scenarios.filter((scenario) => areas.has(scenario.area))
+	if (relevant.length > 0) return { ok: true, note: `Scenarios changed alongside, in an area the code maps to: ${relevant.map((scenario) => `${scenario.id} (${scenario.area})`).join(', ')}.` }
 
 	// A diff that touches nothing but dependency manifests needs no exemption
 	// line at all — there is no author to write one on a Renovate pull request,
@@ -191,43 +229,41 @@ export function judge({ changed, features, body, knownClaims }: { changed: reado
 		const malformed = ATTEMPTED.test(body)
 			? ['The exemption line is not in the required shape: "No .feature scenario needed: <category> — <reason>", with a "Claims preserved:" line naming real claim ids.']
 			: []
-		return { ok: false, changed, problems: malformed }
+		return { ok: false, changed, problems: [...unrelated(change), ...malformed] }
 	}
 
-	const problems = rejectExemption(exemption, changed, knownClaims)
+	const problems = rejectExemption(exemption, changed, knownClaims, areas)
 	if (problems.length > 0) return { ok: false, changed, exemption, problems }
 
 	return { ok: true, exemption, note: `Exempt as "${exemption.category}", preserving ${exemption.claims.join(', ')}.` }
 }
 
-const lines = (value: string): string[] => value.split('\n').map((line) => line.trim()).filter(Boolean)
-
 /**
  * Reports the way the command line does, without exiting, so a test can
  * exercise every outcome in-process. Returns the exit code.
  */
-export function main({ changed, features, body, claims }: { changed: readonly string[]; features: readonly string[]; body: string; claims: string }): number {
-	const verdict = judge({ changed, features, body, knownClaims: declaredClaims(claims) })
+export function main({ claims, ...change }: Omit<Change, 'knownClaims'> & { claims: string }): number {
+	const verdict = judge({ ...change, knownClaims: declaredClaims(claims) })
 
 	if (verdict.ok) {
 		console.log(`::notice::${verdict.note}`)
 		return 0
 	}
 
-	if (verdict.problems.length > 0) {
+	if (verdict.exemption) {
 		console.error('::error::This pull request claims an exemption from scenario coverage, and the claim does not hold.')
-		for (const problem of verdict.problems) console.error(`::error::${problem}`)
 	} else {
-		console.error('::error::This pull request changes behavior under src/ or in an e2e spec and touches no .spec/features/**/*.feature file.')
+		console.error('::error::This pull request changes behavior under src/ or in an e2e spec and changes no scenario in an area that code maps to.')
 	}
+	for (const problem of verdict.problems) console.error(`::error::${problem}`)
 
 	console.error('')
-	console.error('Changed files with no matching scenario:')
+	console.error(`Changed files with no matching scenario (their areas: ${list(change.areas)}):`)
 	for (const path of verdict.changed) console.error(`  ${path}`)
 	console.error('')
-	console.error('Write the scenario. The specification is authored before the')
-	console.error('implementation, and a change that alters behavior updates it in the')
-	console.error('same pull request (ADR-0083).')
+	console.error('Write the scenario, in an area the code maps to (.spec/area-paths.json).')
+	console.error('The specification is authored before the implementation, and a change')
+	console.error('that alters behavior updates it in the same pull request (ADR-0083).')
 	console.error('')
 	console.error('If this change genuinely alters no behavior, say so in the pull-request')
 	console.error('body and name the claims it leaves standing:')
@@ -238,18 +274,7 @@ export function main({ changed, features, body, claims }: { changed: readonly st
 	console.error(`Categories: ${Object.entries(CATEGORIES).map(([name, meaning]) => `${name} (${meaning})`).join('; ')}.`)
 	console.error('')
 	console.error('An exemption is a citation, not an assertion — the claims are checked')
-	console.error('against .spec/claims.json (ADR-0090).')
+	console.error('against .spec/claims.json (ADR-0090), and each must belong to an area')
+	console.error('the changed files map to (CONV-001).')
 	return 1
-}
-
-const runAsCommand = isMain(import.meta.url)
-if (runAsCommand) {
-	process.exit(
-		main({
-			changed: lines(process.env.CHANGED_BEHAVIOR ?? ''),
-			features: lines(process.env.CHANGED_FEATURES ?? ''),
-			body: process.env.PR_BODY ?? '',
-			claims: readFileSync(CLAIMS, 'utf8'),
-		}),
-	)
 }

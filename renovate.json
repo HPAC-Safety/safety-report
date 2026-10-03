@@ -268,7 +268,7 @@
 			]
 		},
 		{
-			"description": "ESLint and the plugins the root lint config loads move as one group. ESLint stays on a major until every plugin's peer range accepts the next one: until then npm ci cannot resolve the group's lock file, the required lint check fails, and the pull request cannot merge (#784, lesson 0042). A plugin release that widens its range lands first, and Renovate rebases the held pull request onto it; once it resolves and every required check passes, it automerges, major included (#789).",
+			"description": "ESLint and the plugins the root lint config loads move as one group. A plugin whose peer range lags a new ESLint major makes npm ci unable to resolve the group's lock file; the required lint check then fails and the pull request cannot merge (#784, lesson 0042). ESLint 10 was taken despite eslint-plugin-jsx-a11y 6.10.2 declaring ESLint up to 9, after lint passed and its rules were seen firing on 10: the root package.json overrides that one peer range (#807, which reverses #789's hold). Remove the override when a jsx-a11y release accepts ESLint 10. Once the group resolves and every required check passes, it automerges, major included (#789).",
 			"groupName": "ESLint",
 			"matchPackageNames": [
 				"eslint",

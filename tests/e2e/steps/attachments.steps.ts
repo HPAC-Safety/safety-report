@@ -350,7 +350,7 @@ When("the reporter attaches one more", async ({ page }) => {
 	await attach(page, "six.png")
 })
 
-Then("that file is not uploaded", async ({ page }) => {
+Then("that file is not uploaded", ({ page }) => {
 	expect(stubFor(page).requests).toBe(5)
 	expect(stubFor(page).puts).toHaveLength(5)
 })
@@ -402,7 +402,7 @@ Then("that file's row shows a localized message stating the limit for each kind"
 	).toBeVisible()
 })
 
-Then("nothing is sent to the API or to storage for it", async ({ page }) => {
+Then("nothing is sent to the API or to storage for it", ({ page }) => {
 	expect(stubFor(page).requests).toBe(0)
 	expect(stubFor(page).puts).toHaveLength(0)
 })
@@ -547,7 +547,7 @@ Then("the browser asks the API to delete each of those uploads", async ({ page }
 	await expect.poll(() => [...stub.deleted].sort()).toEqual([...stub.saved].sort())
 })
 
-Then("no upload is deleted", async ({ page }) => {
+Then("no upload is deleted", ({ page }) => {
 	expect(stubFor(page).deleted).toEqual([])
 })
 

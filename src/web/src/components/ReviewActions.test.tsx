@@ -128,7 +128,10 @@ describe("useReviewActions", () => {
 		act(() => result.current.type("fr", ""))
 		act(() => result.current.type("en", "changed"))
 
-		await act(async () => result.current.translateFrom("en"))
+		await act(async () => {
+			result.current.translateFrom("en")
+			await Promise.resolve()
+		})
 
 		expect(translate).toHaveBeenCalledWith(["changed"], "en-CA", "fr-CA")
 		expect(result.current.draft.fr).toBe("TRANSLATED")
@@ -142,7 +145,10 @@ describe("useReviewActions", () => {
 		const { result } = open()
 		act(() => result.current.type("fr", "autre"))
 
-		await act(async () => result.current.translateFrom("fr"))
+		await act(async () => {
+			result.current.translateFrom("fr")
+			await Promise.resolve()
+		})
 		expect(translate).toHaveBeenCalledWith(["autre"], "fr-CA", "en-CA")
 		expect(result.current.proposal).toEqual({ target: "en", text: "PROPOSED" })
 		expect(result.current.draft.en).toBe("EN")
@@ -156,7 +162,10 @@ describe("useReviewActions", () => {
 		translate.mockResolvedValue({ texts: ["PROPOSED"] })
 		const { result } = open()
 
-		await act(async () => result.current.translateFrom("fr"))
+		await act(async () => {
+			result.current.translateFrom("fr")
+			await Promise.resolve()
+		})
 		act(() => result.current.keepCurrent())
 
 		expect(result.current.proposal).toBeNull()
@@ -167,7 +176,10 @@ describe("useReviewActions", () => {
 		translate.mockResolvedValue({ texts: [] })
 		const { result } = open()
 
-		await act(async () => result.current.translateFrom("fr"))
+		await act(async () => {
+			result.current.translateFrom("fr")
+			await Promise.resolve()
+		})
 
 		expect(result.current.proposal).toEqual({ target: "en", text: "" })
 	})
@@ -176,11 +188,17 @@ describe("useReviewActions", () => {
 		translate.mockRejectedValueOnce(new (ApiError as unknown as new (detail: string) => Error)("quota")).mockRejectedValueOnce(new Error("no"))
 		const { result } = open()
 
-		await act(async () => result.current.translateFrom("en"))
+		await act(async () => {
+			result.current.translateFrom("en")
+			await Promise.resolve()
+		})
 		expect(result.current.translateError).toBe("quota")
 		expect(result.current.translating).toBe(false)
 
-		await act(async () => result.current.translateFrom("en"))
+		await act(async () => {
+			result.current.translateFrom("en")
+			await Promise.resolve()
+		})
 		expect(result.current.translateError).toBe("reports.translate.error")
 
 		act(() => result.current.openEditor())
@@ -192,10 +210,16 @@ describe("useReviewActions", () => {
 		const props = base()
 		const { result } = open(props)
 		act(() => result.current.type("en", "changed"))
-		await act(async () => result.current.translateFrom("en"))
+		await act(async () => {
+			result.current.translateFrom("en")
+			await Promise.resolve()
+		})
 		act(() => result.current.accept("fr", "TRANSLATED"))
 
-		await act(async () => result.current.submitEdit())
+		await act(async () => {
+			result.current.submitEdit()
+			await Promise.resolve()
+		})
 
 		expect(props.onSave).toHaveBeenCalledWith("changed", "TRANSLATED", "human", "machine")
 		expect(result.current.mode).toBe("view")
@@ -206,7 +230,10 @@ describe("useReviewActions", () => {
 		const { result } = open(props)
 		act(() => result.current.type("en", "changed"))
 
-		await act(async () => result.current.submitEdit())
+		await act(async () => {
+			result.current.submitEdit()
+			await Promise.resolve()
+		})
 
 		expect(result.current.mode).toBe("edit")
 	})
@@ -217,7 +244,10 @@ describe("useReviewActions", () => {
 		act(() => result.current.openUnpublish())
 		act(() => result.current.changeNote("why"))
 
-		await act(async () => result.current.submitUnpublish())
+		await act(async () => {
+			result.current.submitUnpublish()
+			await Promise.resolve()
+		})
 
 		expect(props.onUnpublish).toHaveBeenCalledWith("why")
 		expect(result.current.mode).toBe("view")
@@ -230,7 +260,10 @@ describe("useReviewActions", () => {
 		act(() => result.current.openUnpublish())
 		act(() => result.current.changeNote("why"))
 
-		await act(async () => result.current.submitUnpublish())
+		await act(async () => {
+			result.current.submitUnpublish()
+			await Promise.resolve()
+		})
 
 		expect(result.current.mode).toBe("unpublish")
 		expect(result.current.note).toBe("why")

@@ -376,6 +376,16 @@ Scenario: A 404 on the only remaining lightbox item closes it
   When the image's link answers 404 because the image is no longer public
   Then the image's thumbnail is removed from the strip and the lightbox closes, since nothing remains to show
 
+@REQ-MED-062
+@ui
+Scenario: A reporter's video in the lightbox carries no captions, and the lightbox does not suggest it might
+  Given a published report shows a video
+  When a visitor opens the report
+  And the visitor activates the video's thumbnail
+  Then the lightbox shows the video with the browser's own controls
+  And the video offers no caption or subtitle track
+  And the lightbox offers no caption control and no caption text of its own
+
 @REQ-MED-059
 @ui
 Scenario: The admin report page uses the same strip and lightbox, and works for an unpublished report

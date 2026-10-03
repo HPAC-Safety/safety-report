@@ -174,6 +174,26 @@ ends. A video plays with native controls and its audio, and stops when the
 lightbox moves away from it or closes. Labels stay generic ("Photo 1 of 3",
 "Video 1 of 2") — no reviewer-authored text.
 
+**A reporter's footage carries no captions (`REQ-MED-062`).** This is a
+deliberate position, not a gap. The lightbox plays the verified derivative as
+it is, with the browser's own controls, and offers no caption or subtitle
+track, no caption control, and no text implying that captions exist.
+
+- Captions would have to be made from what the footage says. Speech-to-text is
+  a model call, and the only one this system makes is the summary's, for a
+  consenting report and over text, never over media
+  ([AGENTS.md](../../../AGENTS.md) invariants 3 and 5). A person writing them
+  would be handling the reporter's footage in a way nothing here provides for.
+- The published report's anonymized text summary is the accessible account of
+  what happened. The video is the reporter's own, offered with their media
+  consent, and adds to it.
+- The lightbox's own controls (Previous, Next, Close) and labels are text and
+  remain operable by keyboard and screen reader (`REQ-MED-056`).
+- The `<video>` in `AttachmentLightboxMedia.view.tsx` therefore disables
+  `jsx-a11y/media-has-caption` on that line, with a reason naming this claim.
+  If the position changes, this paragraph, the scenario, and that disable
+  change together.
+
 **Who sees what, on both pages:**
 
 - The public (anonymous visitors and `User`) sees only what `public_report_media`
@@ -268,8 +288,10 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   publication. A public document is exactly what the reporter uploaded.
 - Showing the reporter's filename to the public.
 - A CDN-served, public-bucket, or long-lived copy of any attachment.
-- Reviewer-authored alt text, captions, or transcripts. A public file carries
-  a generic localized label.
+- Reviewer-authored alt text, captions, or transcripts, and captions or
+  transcripts made from a video by a model or a person. A public file carries
+  a generic localized label, and a reporter's video carries no captions
+  (`REQ-MED-062`).
 - Blurring, cropping, muting, or otherwise editing media before publication,
   and a pre-publication media review step.
 - Choosing, per file, which attachments to share. Media consent covers all of

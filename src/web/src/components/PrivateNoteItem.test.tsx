@@ -68,7 +68,10 @@ describe("usePrivateNoteItem", () => {
 		const { result } = renderHook(() => usePrivateNoteItem(props))
 		act(() => result.current.askRemove())
 
-		await act(async () => result.current.confirmRemove())
+		await act(async () => {
+			result.current.confirmRemove()
+			await Promise.resolve()
+		})
 
 		expect(props.onRemove).toHaveBeenCalled()
 		expect(result.current.confirming).toBe(false)
@@ -78,11 +81,17 @@ describe("usePrivateNoteItem", () => {
 		history.mockResolvedValue(revisions)
 		const { result } = renderHook(() => usePrivateNoteItem(base()))
 
-		await act(async () => result.current.toggleHistory())
+		await act(async () => {
+			result.current.toggleHistory()
+			await Promise.resolve()
+		})
 		expect(history).toHaveBeenCalledWith("r1", "n1")
 		expect(result.current.history).toEqual(revisions)
 
-		await act(async () => result.current.toggleHistory())
+		await act(async () => {
+			result.current.toggleHistory()
+			await Promise.resolve()
+		})
 		expect(result.current.history).toBeNull()
 	})
 
@@ -90,10 +99,16 @@ describe("usePrivateNoteItem", () => {
 		history.mockRejectedValueOnce(new Error("no")).mockResolvedValueOnce(revisions)
 		const { result } = renderHook(() => usePrivateNoteItem(base()))
 
-		await act(async () => result.current.toggleHistory())
+		await act(async () => {
+			result.current.toggleHistory()
+			await Promise.resolve()
+		})
 		expect(result.current.historyFailed).toBe(true)
 
-		await act(async () => result.current.toggleHistory())
+		await act(async () => {
+			result.current.toggleHistory()
+			await Promise.resolve()
+		})
 		expect(result.current.historyFailed).toBe(false)
 		expect(result.current.history).toEqual(revisions)
 	})
@@ -102,7 +117,10 @@ describe("usePrivateNoteItem", () => {
 		history.mockResolvedValue(revisions)
 		const props = base()
 		const { result } = renderHook(() => usePrivateNoteItem(props))
-		await act(async () => result.current.toggleHistory())
+		await act(async () => {
+			result.current.toggleHistory()
+			await Promise.resolve()
+		})
 		act(() => result.current.startEditing())
 
 		let saved = false
@@ -120,7 +138,10 @@ describe("usePrivateNoteItem", () => {
 		history.mockResolvedValue(revisions)
 		const props = base({ onEdit: vi.fn().mockResolvedValue(false) })
 		const { result } = renderHook(() => usePrivateNoteItem(props))
-		await act(async () => result.current.toggleHistory())
+		await act(async () => {
+			result.current.toggleHistory()
+			await Promise.resolve()
+		})
 		act(() => result.current.startEditing())
 
 		let saved = true

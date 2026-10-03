@@ -10,8 +10,8 @@ vi.mock("./loadCatalogue", () => ({ loadCatalogue: (locale: string) => loadCatal
 beforeEach(() => {
 	localStorage.clear()
 	document.title = "untitled"
-	loadCatalogue.mockImplementation(async (locale: string) =>
-		locale === "fr-CA" ? { "app.title": "Titre", hello: "Bonjour {name} {missing}" } : { "app.title": "Title", hello: "Hello {name} {missing}" },
+	loadCatalogue.mockImplementation((locale: string) =>
+		Promise.resolve(locale === "fr-CA" ? { "app.title": "Titre", hello: "Bonjour {name} {missing}" } : { "app.title": "Title", hello: "Hello {name} {missing}" }),
 	)
 })
 
@@ -109,7 +109,10 @@ describe("useLocaleProvider", () => {
 
 		act(() => result.current.setLocale("fr-CA"))
 		await waitFor(() => expect(document.title).toBe("Titre"))
-		await act(async () => resolveEnglish({ "app.title": "Title" }))
+		await act(async () => {
+			resolveEnglish({ "app.title": "Title" })
+			await Promise.resolve()
+		})
 
 		expect(document.title).toBe("Titre")
 	})

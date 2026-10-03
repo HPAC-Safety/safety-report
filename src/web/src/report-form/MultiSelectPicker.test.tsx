@@ -41,6 +41,19 @@ describe("MultiSelectPicker", () => {
 		expect(trigger().getAttribute("aria-invalid")).toBe("true")
 	})
 
+	it("is a combobox whose popup is a dialog of checkboxes labelled by the question", () => {
+		renderPicker()
+
+		expect(trigger().getAttribute("role")).toBe("combobox")
+		expect(trigger().getAttribute("aria-haspopup")).toBe("dialog")
+		expect(trigger().getAttribute("aria-expanded")).toBe("false")
+		fireEvent.click(trigger())
+		expect(trigger().getAttribute("aria-expanded")).toBe("true")
+		expect(trigger().getAttribute("aria-controls")).toBe("q-options")
+		expect(panel()?.getAttribute("role")).toBe("dialog")
+		expect(panel()?.getAttribute("aria-labelledby")).toBe("q-label")
+	})
+
 	it("opens and closes on the trigger, with a separator between groups", () => {
 		const { container } = renderPicker()
 

@@ -568,6 +568,10 @@ A processing or failed image's staff tile offers a raw-original download, never 
 
 A 404 on the only remaining lightbox item closes it — *playwright-bdd, Covered*
 
+### REQ-MED-062
+
+A reporter's video in the lightbox carries no captions, and the lightbox does not suggest it might — *playwright-bdd, Covered*
+
 ## Claims: moderation-authentication-and-publication
 
 ### REQ-MOD-001
@@ -2272,6 +2276,14 @@ The browser suite's seeded form is what a freshly migrated database sends — *R
 
 Each seeded group is one page with its heading and exactly its questions — *playwright-bdd, Covered*
 
+### REQ-QB-267
+
+A reporter picks a type-ahead choice with the pointer, and no option ever takes focus — *playwright-bdd, Covered*
+
+### REQ-QB-268
+
+A reporter picks a single-select choice with the pointer, and no option ever takes focus — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -2745,6 +2757,14 @@ Leaving the report form for another page while a file is still uploading says th
 ### REQ-SUB-130
 
 Closing or reloading the tab while a file is still uploading triggers the browser's own prompt — *playwright-bdd, Covered*
+
+### REQ-SUB-131
+
+A desktop date field is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus — *playwright-bdd, Covered*
+
+### REQ-SUB-132
+
+A multi-select picker is a combobox that pops up a dialog of checkboxes — *playwright-bdd, Covered*
 
 ## Claims: typeform-question-import-export
 

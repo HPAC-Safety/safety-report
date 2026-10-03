@@ -28,8 +28,11 @@ function stubVideo(element: HTMLVideoElement, state: { currentTime: number; paus
 	Object.defineProperty(element, "currentTime", { value: state.currentTime, writable: true, configurable: true })
 	Object.defineProperty(element, "paused", { value: state.paused, configurable: true })
 	Object.defineProperty(element, "readyState", { value: state.readyState, configurable: true })
-	element.pause = vi.fn()
-	element.play = vi.fn().mockResolvedValue(undefined)
+	const pause = vi.fn()
+	const play = vi.fn().mockResolvedValue(undefined)
+	element.pause = pause
+	element.play = play
+	return { pause, play }
 }
 
 describe("AttachmentLightboxMedia", () => {
@@ -78,10 +81,10 @@ describe("AttachmentLightboxMedia", () => {
 		fireEvent.timeUpdate(videoElement())
 		fireEvent.error(videoElement())
 		await waitFor(() => expect(videoElement()).toBeTruthy())
-		stubVideo(videoElement(), { currentTime: 0, paused: true, readyState: 4 })
+		const { play } = stubVideo(videoElement(), { currentTime: 0, paused: true, readyState: 4 })
 		fireEvent.loadedMetadata(videoElement())
 		expect(videoElement().currentTime).toBe(12)
-		expect(videoElement().play).toHaveBeenCalled()
+		expect(play).toHaveBeenCalled()
 	})
 
 	it("keeps a paused video paused after its link is replaced", async () => {
@@ -91,21 +94,21 @@ describe("AttachmentLightboxMedia", () => {
 		fireEvent.pause(videoElement())
 		fireEvent.error(videoElement())
 		await waitFor(() => expect(props.getLink).toHaveBeenCalledTimes(2))
-		stubVideo(videoElement(), { currentTime: 0, paused: false, readyState: 4 })
+		const { pause, play } = stubVideo(videoElement(), { currentTime: 0, paused: false, readyState: 4 })
 		fireEvent.loadedMetadata(videoElement())
 		expect(videoElement().currentTime).toBe(5)
-		expect(videoElement().pause).toHaveBeenCalled()
-		expect(videoElement().play).not.toHaveBeenCalled()
+		expect(pause).toHaveBeenCalled()
+		expect(play).not.toHaveBeenCalled()
 	})
 
 	it("loads normally when there is nothing to resume, and does not track a video that has not loaded", async () => {
 		mount({ item: video, label: "Video 1 of 1" })
 		await screen.findByLabelText("Video 1 of 1")
-		stubVideo(videoElement(), { currentTime: 3, paused: false, readyState: 0 })
+		const { pause } = stubVideo(videoElement(), { currentTime: 3, paused: false, readyState: 0 })
 		fireEvent.play(videoElement())
 		fireEvent.loadedMetadata(videoElement())
 		expect(videoElement().currentTime).toBe(3)
-		expect(videoElement().pause).not.toHaveBeenCalled()
+		expect(pause).not.toHaveBeenCalled()
 	})
 
 	it("does not record the position while a resume is pending", async () => {
@@ -129,9 +132,10 @@ describe("AttachmentLightboxMedia", () => {
 		fireEvent.error(videoElement())
 		await act(async () => {})
 		stubVideo(videoElement(), { currentTime: 0, paused: true, readyState: 4 })
-		videoElement().play = vi.fn().mockRejectedValue(new Error("blocked"))
+		const play = vi.fn().mockRejectedValue(new Error("blocked"))
+		videoElement().play = play
 		fireEvent.loadedMetadata(videoElement())
 		await act(async () => {})
-		expect(videoElement().play).toHaveBeenCalled()
+		expect(play).toHaveBeenCalled()
 	})
 })

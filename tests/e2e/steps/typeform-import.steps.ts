@@ -109,7 +109,7 @@ When("they choose to export the question bank", async ({ page }) => {
 	exportedDownload = download
 })
 
-Then("a zip file download begins", async () => {
+Then("a zip file download begins", () => {
 	expect(exportedDownload?.suggestedFilename()).toBe("question-bank.zip")
 })
 

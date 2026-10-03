@@ -40,6 +40,13 @@ names and step numbers.
   (and the later relabels in "Verify and publish").
 - Why the first-edit check exists:
   [lesson 0004](../../.spec/lessons/0004-a-rule-read-once-is-not-a-rule-checked-again.md).
+- The shared-stash rule (#796) is written, not enforced: git has no pre-stash
+  hook, and the owner chose not to add an agent tool hook for it.
+- Git hooks: `./init-dev.sh` installs `tools/dev/git-hook-shim.sh` under each
+  name, and it runs the tracked `.githooks/<name>` of the current worktree. Edit
+  `.githooks/<name>`, never the installed file; a moved tool needs no re-install
+  ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)
+  amendment).
 
 ### Commit, rebase, claim identifiers
 

@@ -6,6 +6,7 @@ import { signInAs, stubAuth } from "./auth"
 import { stubReports } from "./manage-reports.steps"
 import { stubFeed } from "./public-reports.steps"
 import { defaultFormQuestions, forgetDraftInBrowser, stubCurrentQuestions } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -39,7 +40,7 @@ When(/^they open (the report form|the report form showing its errors|the public 
 		await expect(page.locator("[data-report-id]").first()).toBeVisible()
 	} else {
 		const questions = defaultFormQuestions()
-		questions.find((q) => q.key === "narrative")!.isRequired = true
+		present(questions.find((q) => q.key === "narrative")).isRequired = true
 		await stubCurrentQuestions(page, questions)
 		await signInAs(page, "user")
 		await page.goto("/report")
@@ -62,7 +63,19 @@ When(/^they open (the report form|the report form showing its errors|the public 
 // one token class that carries it, and nothing else, is excluded from the scan.
 const BRAND_RED_TEXT = ".text-brand-700"
 
+/**
+ * Waits until every running CSS transition has finished. The form fades in
+ * over 200 ms, and axe reads the colour a transition has reached so far, so a
+ * scan taken mid-fade blends the text with the page behind it and reports
+ * contrast the settled page does not have. Only transitions are awaited: an
+ * infinite animation never finishes.
+ */
+async function settleTransitions(page: Page) {
+	await page.evaluate(() => Promise.allSettled(document.getAnimations().filter((animation) => animation instanceof CSSTransition).map((animation) => animation.finished)))
+}
+
 Then(/^an accessibility scan reports no color-contrast violation, except for text set in the HPAC brand red.*$/, async ({ page }) => {
+	await settleTransitions(page)
 	const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).exclude(BRAND_RED_TEXT).analyze()
 	const summary = results.violations.flatMap((violation) =>
 		violation.nodes.map((node) => `${node.target.join(" ")}: ${node.any[0]?.message ?? violation.help}`),
@@ -72,9 +85,11 @@ Then(/^an accessibility scan reports no color-contrast violation, except for tex
 
 Then("the focused control shows a visible focus indicator", async ({ page }) => {
 	await focusFirstControl(page)
+	await settleTransitions(page)
 
 	const indicator = await page.evaluate(() => {
-		const style = getComputedStyle(document.activeElement!)
+		if (!document.activeElement) throw new Error("No element has focus.")
+		const style = getComputedStyle(document.activeElement)
 		return { outlineStyle: style.outlineStyle, outlineWidth: parseFloat(style.outlineWidth), boxShadow: style.boxShadow }
 	})
 	const hasOutline = indicator.outlineStyle !== "none" && indicator.outlineWidth > 0

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 import { CATEGORIES, claimsInMatrix, judge, main, parseExemption, rejectExemption } from '../../../tools/spec/check-feature-coverage.ts'
+import { present } from '../helpers/present.ts'
 import { render } from '../../../tools/spec/generate-traceability.ts'
 
 // Rendered by the real generator, so this fixture follows the matrix format.
@@ -46,7 +47,7 @@ describe('parseExemption', () => {
 	})
 
 	it('reads the category, the reason, and the claims', () => {
-		const exemption = parseExemption(exempt('refactor', 'extracted the ingest loop, same behavior', 'REQ-SUB-012, REQ-SUB-013'))!
+		const exemption = present(parseExemption(exempt('refactor', 'extracted the ingest loop, same behavior', 'REQ-SUB-012, REQ-SUB-013')))
 
 		assert.equal(exemption.category, 'refactor')
 		assert.match(exemption.reason, /extracted the ingest loop/)
@@ -54,13 +55,13 @@ describe('parseExemption', () => {
 	})
 
 	it('accepts the backticked spelling the old gate used', () => {
-		const exemption = parseExemption('No `.feature` scenario needed: docs — wording only, nothing executes\nClaims preserved: REQ-SUB-012\n')!
+		const exemption = present(parseExemption('No `.feature` scenario needed: docs — wording only, nothing executes\nClaims preserved: REQ-SUB-012\n'))
 
 		assert.equal(exemption.category, 'docs')
 	})
 
 	it('records that no claims line was given, rather than inventing one', () => {
-		const exemption = parseExemption('No .feature scenario needed: refactor — moved the loop somewhere better\n')!
+		const exemption = present(parseExemption('No .feature scenario needed: refactor — moved the loop somewhere better\n'))
 
 		assert.equal(exemption.citesClaims, false)
 		assert.deepEqual(exemption.claims, [])
@@ -80,7 +81,7 @@ describe('parseExemption', () => {
 			'REQ-SUB-099 is mentioned later and is not a preserved claim.',
 		].join('\n')
 
-		const exemption = parseExemption(message)!
+		const exemption = present(parseExemption(message))
 
 		assert.equal(exemption.reason, 'lint configuration and type-level fixes only; every handler, guard, request and rendered element behaves and renders exactly as before.')
 		assert.deepEqual(exemption.claims, ['REQ-SUB-013', 'REQ-SUB-053', 'REQ-SUB-054', 'REQ-WLD-032'])
@@ -89,14 +90,14 @@ describe('parseExemption', () => {
 
 	it('stops a wrapped reason at a blank line, a heading, a list item, or the next directive', () => {
 		for (const next of ['', '## Screenshots', '- a list item', 'Claims preserved: REQ-SUB-012']) {
-			const exemption = parseExemption(`No .feature scenario needed: refactor — moved the loop\nsomewhere better\n${next}\nnot part of it`)!
+			const exemption = present(parseExemption(`No .feature scenario needed: refactor — moved the loop\nsomewhere better\n${next}\nnot part of it`))
 
 			assert.equal(exemption.reason, 'moved the loop somewhere better', JSON.stringify(next))
 		}
 	})
 
 	it('reads a body with Windows line endings', () => {
-		const exemption = parseExemption('No .feature scenario needed: refactor — moved the loop\r\nsomewhere better\r\nClaims preserved: REQ-SUB-012\r\n')!
+		const exemption = present(parseExemption('No .feature scenario needed: refactor — moved the loop\r\nsomewhere better\r\nClaims preserved: REQ-SUB-012\r\n'))
 
 		assert.equal(exemption.reason, 'moved the loop somewhere better')
 		assert.deepEqual(exemption.claims, ['REQ-SUB-012'])

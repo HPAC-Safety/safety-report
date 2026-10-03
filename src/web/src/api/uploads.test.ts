@@ -28,16 +28,14 @@ function file(name: string, type: string, size = 3): File {
 }
 
 function json(status: number, body: unknown): Response {
-	return { status, ok: status >= 200 && status < 300, json: async () => body } as unknown as Response
+	return { status, ok: status >= 200 && status < 300, json: () => Promise.resolve(body) } as unknown as Response
 }
 
 function brokenJson(status: number): Response {
 	return {
 		status,
 		ok: false,
-		json: async () => {
-			throw new Error("bad")
-		},
+		json: () => Promise.reject(new Error("bad")),
 	} as unknown as Response
 }
 
@@ -146,9 +144,9 @@ describe("uploadAttachment", () => {
 	it("rethrows the abort while minting", async () => {
 		const controller = new AbortController()
 		const abort = new DOMException("Aborted", "AbortError")
-		fetchMock.mockImplementationOnce(async () => {
+		fetchMock.mockImplementationOnce(() => {
 			controller.abort()
-			throw abort
+			return Promise.reject(abort)
 		})
 		await expect(uploadAttachment(file("a.png", "image/png"), controller.signal)).rejects.toBe(abort)
 	})
@@ -189,9 +187,9 @@ describe("uploadAttachment", () => {
 	it("rethrows the abort during the PUT", async () => {
 		const controller = new AbortController()
 		const abort = new DOMException("Aborted", "AbortError")
-		fetchMock.mockResolvedValueOnce(json(201, minted)).mockImplementationOnce(async () => {
+		fetchMock.mockResolvedValueOnce(json(201, minted)).mockImplementationOnce(() => {
 			controller.abort()
-			throw abort
+			return Promise.reject(abort)
 		})
 		fetchMock.mockResolvedValue(json(204, null))
 		await expect(uploadAttachment(file("a.png", "image/png"), controller.signal)).rejects.toBe(abort)

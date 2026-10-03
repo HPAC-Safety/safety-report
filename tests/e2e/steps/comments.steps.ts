@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page } from "@playwright/test"
 
 import { CREDENTIALS, signInAs, stubAuth } from "./auth"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -85,7 +86,7 @@ async function stubReport(page: Page, comments: StubComment[]) {
 
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/[^/?]+$/, async (route) => {
 		const request = route.request()
-		const id = new URL(request.url()).pathname.split("/").pop()!
+		const id = present(new URL(request.url()).pathname.split("/").pop())
 		const index = comments.findIndex((candidate) => candidate.id === id)
 		if (request.method() === "DELETE") {
 			comments.splice(index, 1)

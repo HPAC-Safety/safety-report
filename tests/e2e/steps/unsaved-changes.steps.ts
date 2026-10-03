@@ -3,6 +3,7 @@ import { expect, type Dialog, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { readDraftFromBrowser, stubCurrentQuestions } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -91,7 +92,7 @@ Then(
 		const draft = (await readDraftFromBrowser(page)) as { startedAtMs: number } | null
 		expect(draft).not.toBeNull()
 		const fifteenDaysMs = 15 * 24 * 60 * 60 * 1000
-		const until = new Intl.DateTimeFormat("en-CA", { dateStyle: "long" }).format(new Date(draft!.startedAtMs + fifteenDaysMs))
+		const until = new Intl.DateTimeFormat("en-CA", { dateStyle: "long" }).format(new Date(present(draft).startedAtMs + fifteenDaysMs))
 		const dialog = reportSavedDialog(page)
 		await expect(dialog).toBeVisible()
 		await expect(dialog).toContainText(`Your answers are saved in this browser until ${until}.`)
@@ -122,7 +123,7 @@ When("the reporter reloads the tab", async ({ page }) => {
 	await page.reload() // Completes only if no unload prompt held it.
 })
 
-Then("no unload prompt appears", async ({ page }) => {
+Then("no unload prompt appears", ({ page }) => {
 	expect(unloadPrompts.get(page)).toEqual([])
 })
 

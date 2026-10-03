@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { present } from '../helpers/present.ts'
 
 import {
 	type Api,
@@ -45,15 +46,15 @@ function fakeApi({ issues = [], closed = [], milestones = [] }: { issues?: Item[
 	const writes: { method: string; path: string; body: Record<string, unknown> }[] = []
 	return {
 		writes,
-		async list(path) {
-			if (path.startsWith('/issues?state=closed')) return closed
-			if (path.startsWith('/issues')) return issues
-			if (path.startsWith('/milestones')) return milestones
-			throw new Error(`unexpected list ${path}`)
+		list(path) {
+			if (path.startsWith('/issues?state=closed')) return Promise.resolve(closed)
+			if (path.startsWith('/issues')) return Promise.resolve(issues)
+			if (path.startsWith('/milestones')) return Promise.resolve(milestones)
+			return Promise.reject(new Error(`unexpected list ${path}`))
 		},
-		async request(method, path, body) {
+		request(method, path, body) {
 			writes.push({ method, path, body: body as Record<string, unknown> })
-			return { number: 900 }
+			return Promise.resolve({ number: 900 })
 		},
 	}
 }
@@ -208,11 +209,11 @@ describe('openIssues', () => {
 describe('github', () => {
 	it('sends the token and pages a list until a short page', async () => {
 		const calls: { url: string; init: Parameters<Fetch>[1] }[] = []
-		const fetch: Fetch = async (url, init) => {
+		const fetch: Fetch = (url, init) => {
 			calls.push({ url, init })
 			const page = Number(new URL(url).searchParams.get('page'))
 			const items = page === 1 ? Array.from({ length: 100 }, (_, i) => ({ number: i })) : [{ number: 100 }]
-			return { ok: true, status: 200, json: async () => items }
+			return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(items) })
 		}
 
 		const items = await github({ token: 't', repository: 'o/r', fetch }).list('/issues?state=open')
@@ -225,9 +226,9 @@ describe('github', () => {
 
 	it('pages a path with no query of its own', async () => {
 		const calls: string[] = []
-		const fetch: Fetch = async (url) => {
+		const fetch: Fetch = (url) => {
 			calls.push(url)
-			return { ok: true, status: 200, json: async () => [] }
+			return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) })
 		}
 
 		await github({ token: 't', repository: 'o/r', fetch }).list('/milestones')
@@ -237,29 +238,30 @@ describe('github', () => {
 
 	it('sends a write as JSON and returns the answer', async () => {
 		let sent: { url: string; init: Parameters<Fetch>[1] } | undefined
-		const fetch: Fetch = async (url, init) => {
+		const fetch: Fetch = (url, init) => {
 			sent = { url, init }
-			return { ok: true, status: 200, json: async () => ({ number: 7 }) }
+			return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ number: 7 }) })
 		}
 
 		const answer = await github({ token: 't', repository: 'o/r', fetch }).request('PATCH', '/issues/7', { state: 'closed' })
 
 		assert.deepEqual(answer, { number: 7 })
-		assert.equal(sent!.init.method, 'PATCH')
-		assert.equal(sent!.init.body, '{"state":"closed"}')
+		const written = present(sent, 'the write')
+		assert.equal(written.init.method, 'PATCH')
+		assert.equal(written.init.body, '{"state":"closed"}')
 	})
 
 	it('throws on a failed call', async () => {
-		const fetch: Fetch = async () => ({ ok: false, status: 403, json: async () => ({}) })
+		const fetch: Fetch = () => Promise.resolve({ ok: false, status: 403, json: () => Promise.resolve({}) })
 
 		await assert.rejects(github({ token: 't', repository: 'o/r', fetch }).request('GET', '/issues'), { status: 403, message: /answered 403/ })
 	})
 
 	it('throws when a page fails partway through a list', async () => {
-		const fetch: Fetch = async (url) => {
+		const fetch: Fetch = (url) => {
 			const page = Number(new URL(url).searchParams.get('page'))
-			if (page === 2) return { ok: false, status: 502, json: async () => ({}) }
-			return { ok: true, status: 200, json: async () => Array.from({ length: 100 }, (_, i) => ({ number: i })) }
+			if (page === 2) return Promise.resolve({ ok: false, status: 502, json: () => Promise.resolve({}) })
+			return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(Array.from({ length: 100 }, (_, i) => ({ number: i }))) })
 		}
 
 		await assert.rejects(github({ token: 't', repository: 'o/r', fetch }).list('/issues'), { status: 502 })

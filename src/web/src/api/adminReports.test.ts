@@ -43,7 +43,7 @@ function reply(status: number, body: unknown = {}, statusText = "Text"): Respons
 		status,
 		statusText,
 		ok: status >= 200 && status < 300,
-		json: async () => body,
+		json: () => Promise.resolve(body),
 	} as unknown as Response
 }
 
@@ -143,9 +143,7 @@ describe("request plumbing", () => {
 			status: 502,
 			statusText: "Bad Gateway",
 			ok: false,
-			json: async () => {
-				throw new Error("bad")
-			},
+			json: () => Promise.reject(new Error("bad")),
 		})
 		await expect(getReport("1")).rejects.toMatchObject({ status: 502, detail: "Bad Gateway" })
 		expect(clearSession).not.toHaveBeenCalled()

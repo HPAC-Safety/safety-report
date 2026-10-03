@@ -1,5 +1,6 @@
 import { createBdd } from "playwright-bdd"
-import { expect, type Download, type Page } from "@playwright/test"
+import { expect, type Dialog, type Download, type Page } from "@playwright/test"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -70,7 +71,7 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 	// A minted-but-unclaimed upload is erased through the reporter upload
 	// route; private uploads share the same quarantine (ADR-0126).
 	await page.route(/\/api\/v1\/uploads\/[^/]+$/, (route) => {
-		erased.push(route.request().url().split("/").pop()!)
+		erased.push(present(route.request().url().split("/").pop()))
 		return route.fulfill({ status: 204, body: "" })
 	})
 
@@ -156,7 +157,7 @@ async function stubAttachments(page: Page, attachments: StubAttachment[]) {
 		}
 
 		const id = request.url().split("/").pop()
-		const attachment = attachments.find((candidate) => candidate.id === id)!
+		const attachment = present(attachments.find((candidate) => candidate.id === id))
 		return route.fulfill({
 			status: 200,
 			headers: {
@@ -215,7 +216,7 @@ Given("the report carries the private attachment {string}", async ({ page }, fil
 	await page.route(/\/api\/admin\/reports\/[^/]+\/private-notes$/, async (route) => {
 		const request = route.request()
 		const view = (note: StubNote) => {
-			const attachment = attachmentsByPage.get(page)!.find((candidate) => candidate.id === note.attachmentId)
+			const attachment = present(attachmentsByPage.get(page)).find((candidate) => candidate.id === note.attachmentId)
 			return {
 				id: note.id,
 				text: note.text,
@@ -277,7 +278,7 @@ Then(
 		await expect(item.locator("[data-private-attachment-size]")).not.toBeEmpty()
 
 		// The file went straight to storage, once, under the type the mint signed.
-		const puts = putsByPage.get(page)!
+		const puts = present(putsByPage.get(page))
 		expect(puts).toHaveLength(1)
 		expect(puts[0]).toEqual({ contentType: "application/zip", size: CONTENT.length })
 		// Added: gone from the staging list entirely, not just cleared.
@@ -291,7 +292,7 @@ When("the safety officer downloads the private attachment {string}", async ({ pa
 })
 
 Then("the browser saves a file named {string}", async ({ page }, fileName: string) => {
-	const download = await downloadsByPage.get(page)!
+	const download = await present(downloadsByPage.get(page))
 	expect(download.suggestedFilename()).toBe(fileName)
 })
 
@@ -350,7 +351,7 @@ Then("the staged attachment {string} is gone from the staging list", async ({ pa
 })
 
 Then("the cancelled upload is erased", async ({ page }) => {
-	await expect.poll(() => erasedByPage.get(page)!.length).toBe(1)
+	await expect.poll(() => present(erasedByPage.get(page)).length).toBe(1)
 })
 
 // --- Several files staged at once (REQ-MOD-173, REQ-MOD-174) ---
@@ -465,7 +466,7 @@ Then("{string} stays disabled while {string} uploads", async ({ page }, buttonLa
 	await expect(stagedRow(page, fileName).getByRole("progressbar")).toBeVisible()
 })
 
-When("storage finishes accepting the staged upload", async ({ page }) => {
+When("storage finishes accepting the staged upload", ({ page }) => {
 	releasePendingPuts(page)
 })
 
@@ -519,7 +520,7 @@ Then(
 	},
 )
 
-When("the report finishes accepting the private attachment", async ({ page }) => {
+When("the report finishes accepting the private attachment", ({ page }) => {
 	const waiting = pendingClaimsByPage.get(page) ?? []
 	pendingClaimsByPage.set(page, [])
 	for (const resolve of waiting) resolve()

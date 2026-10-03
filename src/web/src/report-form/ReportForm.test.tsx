@@ -145,7 +145,10 @@ describe("loading the questions", () => {
 		const { unmount } = renderHook(() => useReportForm(), { wrapper: routed("/report") })
 		unmount()
 
-		await act(async () => resolve(questions))
+		await act(async () => {
+			resolve(questions)
+			await Promise.resolve()
+		})
 		expect(readDraft().draft).toBeNull()
 	})
 
@@ -155,7 +158,10 @@ describe("loading the questions", () => {
 		const { unmount } = renderHook(() => useReportForm(), { wrapper: routed("/report") })
 		unmount()
 
-		await act(async () => reject(new Error("late")))
+		await act(async () => {
+			reject(new Error("late"))
+			await Promise.resolve()
+		})
 		expect(readDraft().draft).toBeNull()
 	})
 
@@ -531,7 +537,10 @@ describe("submitting", () => {
 		await act(async () => result.current.onSubmit())
 		expect(submitReport).toHaveBeenCalledTimes(1)
 
-		await act(async () => finish({ id: "r2" } as Awaited<ReturnType<typeof submitReport>>))
+		await act(async () => {
+			finish({ id: "r2" } as Awaited<ReturnType<typeof submitReport>>)
+			await Promise.resolve()
+		})
 		expect(result.current.submit).toEqual({ status: "submitted", id: "r2" })
 	})
 

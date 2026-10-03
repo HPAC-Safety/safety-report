@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { useState } from "react"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest"
 import type { ListChoice } from "./ChoiceList"
 import { SingleSelectField, type SingleSelectFieldProps } from "./SingleSelectField"
 
@@ -36,10 +36,13 @@ const list = () => document.getElementById("q-list") as HTMLElement
 const isOpen = () => !list().hidden
 const press = (key: string, init: KeyboardEventInit = {}) => fireEvent.keyDown(combobox(), { key, ...init })
 
+let scrollIntoView: Mock<() => void>
+
 beforeEach(() => {
 	vi.useFakeTimers({ toFake: ["Date"] })
 	vi.setSystemTime(new Date("2026-01-01T00:00:00Z"))
-	Element.prototype.scrollIntoView = vi.fn()
+	scrollIntoView = vi.fn<() => void>()
+	Element.prototype.scrollIntoView = scrollIntoView
 })
 
 afterEach(() => {
@@ -70,7 +73,7 @@ describe("SingleSelectField", () => {
 		fireEvent.click(combobox(), { detail: 1 })
 		expect(isOpen()).toBe(true)
 		expect(combobox().getAttribute("aria-activedescendant")).toBe("q-option-banana")
-		expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+		expect(scrollIntoView).toHaveBeenCalled()
 
 		fireEvent.click(combobox(), { detail: 1 })
 		expect(isOpen()).toBe(false)

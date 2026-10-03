@@ -1,5 +1,6 @@
 import { createBdd } from "playwright-bdd"
 import { expect } from "@playwright/test"
+import { present } from "./present"
 
 const { Given, Then } = createBdd()
 
@@ -14,7 +15,8 @@ Then("the footer sits flush with the bottom of the viewport", async ({ page }) =
 	const viewport = page.viewportSize()
 	expect(box).not.toBeNull()
 	expect(viewport).not.toBeNull()
-	expect(Math.round(box!.y + box!.height)).toBe(viewport!.height)
+	const { y, height } = present(box, "the footer's box")
+	expect(Math.round(y + height)).toBe(present(viewport, "the viewport").height)
 })
 
 Given("a visitor loads a page whose content is taller than the viewport", async ({ page }) => {
@@ -32,5 +34,5 @@ Then("the footer sits below the content, not pinned to the viewport", async ({ p
 	expect(viewport).not.toBeNull()
 	// A pinned/sticky footer would already be visible at the bottom of the
 	// viewport here. This one only appears once the content above it ends.
-	expect(box!.y).toBeGreaterThan(viewport!.height)
+	expect(present(box, "the footer's box").y).toBeGreaterThan(present(viewport, "the viewport").height)
 })

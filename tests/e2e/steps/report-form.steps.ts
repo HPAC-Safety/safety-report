@@ -21,6 +21,7 @@ import {
 	type StubOption,
 	type StubQuestion,
 } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -36,7 +37,7 @@ const { Given, When, Then } = createBdd()
 
 const submittedRequests: string[] = []
 
-async function trackSubmissions(page: Page) {
+function trackSubmissions(page: Page) {
 	page.on("request", (request) => {
 		if (request.url().includes("/api/v1/reports/") && request.method() === "POST") {
 			submittedRequests.push(request.url())
@@ -48,7 +49,7 @@ async function openForm(page: Page, questions: StubQuestion[] = defaultFormQuest
 	submittedRequests.length = 0
 	await stubAuth(page)
 	await stubCurrentQuestions(page, questions)
-	await trackSubmissions(page)
+	trackSubmissions(page)
 	await signInAs(page, "user")
 	await page.goto("/report")
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
@@ -185,7 +186,7 @@ Given("a group question has children grouped under it", async ({ page }) => {
 
 Given("the current page shows a required, unanswered question", async ({ page }) => {
 	const questions = defaultFormQuestions()
-	const narrative = questions.find((question) => question.key === "narrative")!
+	const narrative = present(questions.find((question) => question.key === "narrative"))
 	narrative.isRequired = true
 	await openForm(page, questions)
 	await goNext(page) // intro -> narrative, left empty
@@ -299,7 +300,7 @@ When("a reporter views the form", async () => {})
 
 When("the client validates it before submission", async ({ page }) => {
 	const questions = defaultFormQuestions()
-	const narrative = questions.find((q) => q.key === "narrative")!
+	const narrative = present(questions.find((q) => q.key === "narrative"))
 	narrative.isRequired = true
 	await stubCurrentQuestions(page, questions)
 	await forgetDraftInBrowser(page)
@@ -322,10 +323,10 @@ When("the browser detects the failure", async ({ page }) => {
 
 Then("the selected locale, shown question-revision IDs, and entered answers exist only in local browser storage with a 15-day expiry", async ({ page }) => {
 	const draft = (await readDraftFromBrowser(page)) as { locale: string; answers: Record<string, unknown>; savedAtMs: number } | null
-	expect(draft).not.toBeNull()
-	expect(draft!.locale).toBe("en-CA")
-	expect(Object.keys(draft!.answers).length).toBeGreaterThan(0)
-	expect(Date.now() - draft!.savedAtMs).toBeLessThan(60_000)
+	const saved = present(draft, "a saved draft")
+	expect(saved.locale).toBe("en-CA")
+	expect(Object.keys(saved.answers).length).toBeGreaterThan(0)
+	expect(Date.now() - saved.savedAtMs).toBeLessThan(60_000)
 })
 
 Then("no image, video, or document file is placed in browser storage, only each finished upload's ID, name, and size", async ({ page }) => {
@@ -341,7 +342,7 @@ Then("no image, video, or document file is placed in browser storage, only each 
 	}
 })
 
-Then("no server draft, report ID reservation, or resumable upload protocol exists", async () => {
+Then("no server draft, report ID reservation, or resumable upload protocol exists", () => {
 	expect(submittedRequests).toHaveLength(0)
 })
 
@@ -482,7 +483,7 @@ Then("groups use fieldset\\/legend", async ({ page }) => {
 
 Then("errors are linked to their fields and summarized", async ({ page }) => {
 	const questions = defaultFormQuestions()
-	const narrative = questions.find((q) => q.key === "narrative")!
+	const narrative = present(questions.find((q) => q.key === "narrative"))
 	narrative.isRequired = true
 	await stubCurrentQuestions(page, questions)
 	await forgetDraftInBrowser(page)
@@ -518,14 +519,14 @@ Then("no private data is exposed", async ({ page }) => {
 	await expect(page.locator("body")).toBeVisible()
 })
 
-Then("nothing is silently published", async () => {
+Then("nothing is silently published", () => {
 	expect(submittedRequests).toHaveLength(0)
 })
 
 Then("saved local answers are not erased", async ({ page }) => {
 	const draft = (await readDraftFromBrowser(page)) as { answers: Record<string, unknown> } | null
 	expect(draft).not.toBeNull()
-	expect(Object.keys(draft!.answers).length).toBeGreaterThan(0)
+	expect(Object.keys(present(draft).answers).length).toBeGreaterThan(0)
 })
 
 Then("the browser keeps the local report state", async ({ page }) => {
@@ -570,20 +571,41 @@ Given("the current page shows a multi-select question", async ({ page }) => {
 })
 
 Then("its options are hidden behind one closed picker labelled by the question", async ({ page }) => {
-	const picker = page.getByRole("button", { name: /Which conditions applied\?/ })
+	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
 	await expect(picker).toContainText("Choose any")
 	await expect(page.getByRole("checkbox")).toHaveCount(0)
 })
 
+Then("its closed picker is a combobox labelled by the question, collapsed, with a dialog as its popup", async ({ page }) => {
+	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
+	await expect(picker).toHaveAttribute("aria-haspopup", "dialog")
+	await expect(picker).toHaveAttribute("aria-expanded", "false")
+	await expect(page.getByRole("dialog")).toHaveCount(0)
+})
+
+When("the reporter opens the picker", async ({ page }) => {
+	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
+})
+
+Then("the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each option", async ({ page }) => {
+	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
+	await expect(picker).toHaveAttribute("aria-expanded", "true")
+	const dialog = page.getByRole("dialog", { name: "Which conditions applied?" })
+	await expect(dialog).toBeVisible()
+	await expect(picker).toHaveAttribute("aria-controls", present(await dialog.getAttribute("id")))
+	await expect(dialog.getByRole("checkbox")).toHaveCount(3)
+	for (const option of ["Gusty", "Thermic", "Turbulent"]) await expect(dialog.getByRole("checkbox", { name: option })).toBeVisible()
+})
+
 When("the reporter opens the picker and checks two options", async ({ page }) => {
-	await page.getByRole("button", { name: /Which conditions applied\?/ }).click()
+	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 	await page.getByRole("checkbox", { name: "Gusty" }).check()
 	await page.getByRole("checkbox", { name: "Turbulent" }).check()
 })
 
 Then("the picker stays open with both options checked", async ({ page }) => {
-	await expect(page.getByRole("button", { name: /Which conditions applied\?/ })).toHaveAttribute("aria-expanded", "true")
+	await expect(page.getByRole("combobox", { name: /Which conditions applied\?/ })).toHaveAttribute("aria-expanded", "true")
 	await expect(page.getByRole("checkbox", { name: "Gusty" })).toBeChecked()
 	await expect(page.getByRole("checkbox", { name: "Turbulent" })).toBeChecked()
 	await expect(page.getByRole("checkbox", { name: "Thermic" })).not.toBeChecked()
@@ -594,7 +616,7 @@ When("the reporter presses Escape", async ({ page }) => {
 })
 
 Then("the picker closes, returns focus to itself, and names both chosen options", async ({ page }) => {
-	const picker = page.getByRole("button", { name: /Which conditions applied\?/ })
+	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
 	await expect(picker).toBeFocused()
 	await expect(picker).toHaveAccessibleName("Which conditions applied? Gusty, Turbulent")
@@ -613,7 +635,8 @@ Then("a table below the buttons lists each saved question with its saved answer"
 	const table = dialog.getByRole("table")
 	const buttonsBox = await dialog.getByRole("button", { name: "Yes, continue" }).boundingBox()
 	const tableBox = await table.boundingBox()
-	expect(tableBox!.y).toBeGreaterThan(buttonsBox!.y + buttonsBox!.height)
+	const below = present(buttonsBox, "the buttons' box")
+	expect(present(tableBox, "the table's box").y).toBeGreaterThan(below.y + below.height)
 
 	const rows = table.getByRole("row").filter({ has: page.getByRole("rowheader") })
 	await expect(rows).toHaveText([
@@ -738,7 +761,7 @@ Given("a reporter is on the form's introduction at \\/report", async ({ page }) 
 
 Given("a reporter has answered a required question and pressed Next", async ({ page }) => {
 	const questions = defaultFormQuestions()
-	questions.find((question) => question.key === "narrative")!.isRequired = true
+	present(questions.find((question) => question.key === "narrative")).isRequired = true
 	await openForm(page, questions)
 	await goNext(page) // intro -> narrative
 	await fillNarrative(page, "A synthetic occurrence narrative.")
@@ -906,6 +929,15 @@ async function listedChoices(page: Page, expected?: string[]): Promise<string[]>
 	const main = page.getByRole("main")
 	await expect(main.getByText("Which one applies?").first()).toBeVisible()
 
+	// A multi-select's trigger is a combobox too, whose popup is a dialog of checkboxes (REQ-SUB-132), not a listbox.
+	const trigger = main.getByRole("combobox", { name: /Which one applies\?/ }).and(main.locator('[aria-haspopup="dialog"]'))
+	if ((await trigger.count()) > 0) {
+		if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
+		return main
+			.locator('[id$="-options"] label, [id$="-options"] [data-separator]')
+			.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : entry.textContent.trim())))
+	}
+
 	const combobox = main.getByRole("combobox")
 	if ((await combobox.count()) > 0) {
 		const isInput = (await combobox.evaluate((element) => element.tagName)) === "INPUT"
@@ -937,11 +969,7 @@ async function listedChoices(page: Page, expected?: string[]): Promise<string[]>
 		return listEntries(page, { placeholder: false })
 	}
 
-	const trigger = main.getByRole("button", { name: /Which one applies\?/ })
-	if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
-	return main
-		.locator('[id$="-options"] label, [id$="-options"] [data-separator]')
-		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : entry.textContent.trim())))
+	throw new Error("The question has no field to read a list from.")
 }
 
 // The full expected order the last "its choices are listed" step asserted,
@@ -1048,7 +1076,8 @@ Then(
 		const rule = await field.evaluate((element) => {
 			const probe = document.createElement("div")
 			probe.style.color = "var(--color-rule)"
-			element.parentElement!.appendChild(probe)
+			if (!element.parentElement) throw new Error("The field has no parent to draw the probe in.")
+			element.parentElement.appendChild(probe)
 			const color = getComputedStyle(probe).color
 			probe.remove()
 			return color
@@ -1067,7 +1096,7 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 	}
 	if (opening === "pressing the caret") {
 		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0152).
-		const box = (await field.boundingBox())!
+		const box = present(await field.boundingBox())
 		await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
 	} else if (opening === "clicking the field") await field.click()
 	else if (keys[opening]) {
@@ -1085,10 +1114,10 @@ async function expectListBeneathField(page: Page) {
 	const field = typeAheadField(page)
 	await expect(field).toHaveAttribute("aria-expanded", "true")
 	const list = typeAheadList(page)
-	await expect(field).toHaveAttribute("aria-controls", (await list.getAttribute("id"))!)
+	await expect(field).toHaveAttribute("aria-controls", present(await list.getAttribute("id")))
 
-	const fieldBox = (await field.boundingBox())!
-	const listBox = (await list.boundingBox())!
+	const fieldBox = present(await field.boundingBox())
+	const listBox = present(await list.boundingBox())
 	expect(Math.abs(listBox.x - fieldBox.x)).toBeLessThanOrEqual(1)
 	expect(Math.abs(listBox.width - fieldBox.width)).toBeLessThanOrEqual(1)
 	expect(listBox.y).toBeGreaterThanOrEqual(fieldBox.y + fieldBox.height)
@@ -1145,7 +1174,7 @@ Then("{string} is the field's active option", async ({ page }, label: string) =>
 	const option = typeAheadList(page).getByRole("option", { name: label, exact: true })
 	// A type-ahead selects the highlighted option; a single-select keeps aria-selected for the chosen one (ADR-0150).
 	if (!(await isSingleSelect(page))) await expect(option).toHaveAttribute("aria-selected", "true")
-	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", (await option.getAttribute("id"))!)
+	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", present(await option.getAttribute("id")))
 	await expectHighlighted(page, option)
 	await expect(typeAheadField(page)).toBeFocused()
 })
@@ -1155,7 +1184,7 @@ Then("its list is open, with {string} chosen and active", async ({ page }, label
 	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
 	await expect(option).toHaveAttribute("aria-selected", "true")
 	await expect(typeAheadList(page).locator('[role="option"][aria-selected="true"]')).toHaveCount(1)
-	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", (await option.getAttribute("id"))!)
+	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", present(await option.getAttribute("id")))
 })
 
 When("they press Home", async ({ page }) => {
@@ -1179,6 +1208,16 @@ When("they point at {string}", async ({ page }, label: string) => {
 	const multi = page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label })
 	if ((await multi.count()) > 0) await multi.hover()
 	else await typeAheadList(page).getByRole("option", { name: label, exact: true }).hover()
+})
+
+// REQ-QB-267/268: the pointer picks a row by a click; no row is ever focusable.
+When("they click {string} in the list", async ({ page }, label: string) => {
+	await typeAheadList(page).getByRole("option", { name: label, exact: true }).click()
+})
+
+Then("the field has focus", async ({ page }) => {
+	await expect(typeAheadField(page)).toBeFocused()
+	await expect(page.locator('[role="option"][tabindex]')).toHaveCount(0)
 })
 
 When("they pick {string} from the field's list", async ({ page }, label: string) => {
@@ -1223,14 +1262,14 @@ Then("the list is drawn like a type-ahead's list", async ({ page }) => {
 })
 
 When("they open the multi-select's list", async ({ page }) => {
-	await page.getByRole("main").getByRole("button", { name: /Which one applies\?/ }).click()
+	await page.getByRole("main").getByRole("combobox", { name: /Which one applies\?/ }).click()
 })
 
 Then("each choice is a row at least 44 pixels tall holding a checkbox", async ({ page }) => {
 	const rows = page.getByRole("main").locator('[id$="-options"] label')
 	await expect(rows).toHaveCount(6)
 	for (const row of await rows.all()) {
-		expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+		expect(present(await row.boundingBox()).height).toBeGreaterThanOrEqual(44)
 		await expect(row.getByRole("checkbox")).toHaveCount(1)
 		// The type-ahead's row inset (ChoiceList).
 		await expect(row).toHaveCSS("padding-left", "12px")
@@ -1285,7 +1324,7 @@ When("they press Escape", async ({ page }) => {
 When("they press outside the field", async ({ page }) => {
 	await expect(typeAheadList(page)).toBeVisible()
 	// The page's left margin: outside the field, its caret, its label, and its list.
-	const field = (await typeAheadField(page).boundingBox())!
+	const field = present(await typeAheadField(page).boundingBox())
 	await page.mouse.click(Math.max(1, field.x - 20), field.y + field.height / 2)
 })
 
@@ -1309,8 +1348,8 @@ Then("the list says no choice matches", async ({ page }) => {
 })
 
 Then("the list fits within the screen's width, and the page does not scroll sideways", async ({ page }) => {
-	const listBox = (await typeAheadList(page).boundingBox())!
-	const width = page.viewportSize()!.width
+	const listBox = present(await typeAheadList(page).boundingBox())
+	const width = present(page.viewportSize()).width
 	expect(listBox.x).toBeGreaterThanOrEqual(0)
 	expect(listBox.x + listBox.width).toBeLessThanOrEqual(width)
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)

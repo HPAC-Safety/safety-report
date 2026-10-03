@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 
 import { signInAs } from "./auth"
 import { expect, type Page } from "@playwright/test"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -119,6 +120,12 @@ const DETAIL = {
 	],
 }
 
+/** The summary a review page shows; whoever approved it is known only once someone has. */
+type SummaryStub = Omit<typeof DETAIL.summary, "approvedBySubject" | "approvedAt"> & {
+	approvedBySubject: string | null
+	approvedAt: string | null
+}
+
 interface SummaryRevisionStub {
 	id: string
 	sequence: number
@@ -208,7 +215,7 @@ export async function stubReports(page: Page) {
 			})
 		}
 
-		const row = stub.rows.find((candidate) => candidate.id === id)!
+		const row = present(stub.rows.find((candidate) => candidate.id === id))
 		row.status = path.endsWith("/unpublish") ? "unpublished" : "published"
 		row.version = `${row.version}+`
 		return route.fulfill({ json: { ...DETAIL, ...row } })
@@ -246,7 +253,7 @@ Given("a safety officer is signed in and reports exist in several states", async
 
 Given("a safety officer is signed in and Manage reports holds a report with attachments and one with none", async ({ page }) => {
 	await stubReports(page)
-	listStubs.get(page)!.rows.find((candidate) => candidate.id === "pendingaaaa")!.attachmentCount = 3
+	present(present(listStubs.get(page)).rows.find((candidate) => candidate.id === "pendingaaaa")).attachmentCount = 3
 	await signInAs(page, "safety_officer")
 })
 
@@ -397,9 +404,9 @@ const STATUS_BY_WORD: Record<string, StubStatus> = {
 interface ReviewStub {
 	detail: Omit<typeof DETAIL, "summary" | "consent" | "status" | "summaryError"> & {
 		status: string
-		consent: string
+		consent: boolean | null
 		summaryError: string | null
-		summary: typeof DETAIL.summary | null
+		summary: SummaryStub | null
 		version: string
 		unpublishNote: string | null
 		publishedAt: string | null
@@ -480,7 +487,7 @@ function detailWithHistory() {
 
 	return {
 		...detail,
-		summary: { ...detail.summary!, aiSummaryEn: current.aiSummaryEn, aiSummaryFr: current.aiSummaryFr, sourceEn: "human", sourceFr: "human" },
+		summary: { ...present(detail.summary), aiSummaryEn: current.aiSummaryEn, aiSummaryFr: current.aiSummaryFr, sourceEn: "human", sourceFr: "human" },
 		summaryRevisions: [...revisions].reverse(),
 	}
 }
@@ -516,7 +523,7 @@ function withRevision(
 		status: isLive ? "published" : "pending",
 		publishedAt: isLive ? detail.publishedAt : null,
 		summary: {
-			...detail.summary!,
+			...present(detail.summary),
 			aiSummaryEn: text.en,
 			aiSummaryFr: text.fr,
 			sourceEn: sources.en,
@@ -535,7 +542,7 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 		detail: word.startsWith("private-")
 			? { ...detail, consent: false, summary: null }
 			: word === "machine-translated"
-				? { ...detail, summary: { ...detail.summary!, sourceEn: "human", sourceFr: "machine" } }
+				? { ...detail, summary: { ...present(detail.summary), sourceEn: "human", sourceFr: "machine" } }
 				: detail,
 		stale: false,
 		requests: [],
@@ -595,7 +602,7 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 			)
 			return route.fulfill({ json: stub.detail })
 		} else if (path.endsWith("/rollback")) {
-			const target = stub.detail.summaryRevisions.find((revision) => path.includes(`/revisions/${revision.id}/`))!
+			const target = present(stub.detail.summaryRevisions.find((revision) => path.includes(`/revisions/${revision.id}/`)))
 			stub.detail = withRevision(
 				stub.detail,
 				{ en: target.aiSummaryEn, fr: target.aiSummaryFr },
@@ -620,8 +627,8 @@ Given("a safety officer is signed in and a pending report with four summary revi
 	await signInAs(page, "safety_officer")
 })
 
-Given("another reviewer has changed that report since it was opened", async ({ page }) => {
-	reviewStubs.get(page)!.stale = true
+Given("another reviewer has changed that report since it was opened", ({ page }) => {
+	present(reviewStubs.get(page)).stale = true
 })
 
 When("the safety officer opens that report", async ({ page }) => {
@@ -636,7 +643,7 @@ Then("the offered actions are {}", async ({ page }, list: string) => {
 	await expect(group.getByRole("button")).toHaveText(expected)
 
 	// A report without consent was never summarized, so it has no summary panel.
-	if (reviewStubs.get(page)!.detail.consent === false) {
+	if (present(reviewStubs.get(page)).detail.consent === false) {
 		await expect(page.locator("#summary-heading")).toHaveCount(0)
 	}
 })
@@ -676,7 +683,7 @@ Then("the report shows the {string} badge", async ({ page }, badge: string) => {
 
 Then("the saved English text is shown", async ({ page }) => {
 	await expect(page.locator('[data-summary="en"]')).toHaveText("The pilot landed firmly after the collapse.")
-	const sent = reviewStubs.get(page)!.requests
+	const sent = present(reviewStubs.get(page)).requests
 	expect(sent).toContain("PUT /api/admin/reports/reviewaaaaa/summary")
 })
 
@@ -729,7 +736,7 @@ Then("that revision's English and French text is shown", async ({ page }) => {
 
 Then("the current summary is unchanged", async ({ page }) => {
 	await expect(page.locator('[data-summary="en"]')).toHaveText("The pilot made a firm landing after the collapse of the wind.")
-	expect(reviewStubs.get(page)!.requests.filter((request) => !request.startsWith("GET"))).toEqual([])
+	expect(present(reviewStubs.get(page)).requests.filter((request) => !request.startsWith("GET"))).toEqual([])
 })
 
 When("the safety officer chooses Restore this version on the first revision", async ({ page }) => {
@@ -743,7 +750,7 @@ Then("a confirmation asks whether to restore that version", async ({ page }) => 
 })
 
 Then("nothing has been restored yet", async ({ page }) => {
-	expect(reviewStubs.get(page)!.requests.some((request) => request.includes("/rollback"))).toBe(false)
+	expect(present(reviewStubs.get(page)).requests.some((request) => request.includes("/rollback"))).toBe(false)
 	await expect(page.locator("[data-summary-history] [data-revision]")).toHaveCount(4)
 })
 
@@ -753,7 +760,7 @@ When("the safety officer confirms the restore", async ({ page }) => {
 
 Then("the browser asks the API to restore that revision", async ({ page }) => {
 	await expect
-		.poll(() => reviewStubs.get(page)!.requests)
+		.poll(() => present(reviewStubs.get(page)).requests)
 		.toContain("POST /api/admin/reports/reviewaaaaa/summary/revisions/revisionaa1/rollback")
 })
 
@@ -777,17 +784,17 @@ Then("a message says the report changed and offers to reload it", async ({ page 
 
 Then("a confirmation asks whether to delete the report", async ({ page }) => {
 	await expect(page.getByRole("dialog", { name: "Delete this report?" })).toBeVisible()
-	expect(reviewStubs.get(page)!.requests).not.toContain("DELETE /api/admin/reports/reviewaaaaa")
+	expect(present(reviewStubs.get(page)).requests).not.toContain("DELETE /api/admin/reports/reviewaaaaa")
 })
 
 Then("the browser returns to Manage reports", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports$/)
-	expect(reviewStubs.get(page)!.requests).toContain("DELETE /api/admin/reports/reviewaaaaa")
+	expect(present(reviewStubs.get(page)).requests).toContain("DELETE /api/admin/reports/reviewaaaaa")
 })
 
 Then("the browser requests that attachment's download link", async ({ page }) => {
 	await expect
-		.poll(() => reviewStubs.get(page)!.requests)
+		.poll(() => present(reviewStubs.get(page)).requests)
 		.toContain(`GET /api/admin/reports/reviewaaaaa/attachments/${DETAIL.attachments[0].id}/download`)
 })
 
@@ -992,8 +999,8 @@ Then("the answer is listed {string}, {string}, {string}", async ({ page }, first
 
 // ── Quick actions on each row of Manage reports (REQ-MOD-120..123) ──
 
-Given("another reviewer has changed the pending report since the list was loaded", async ({ page }) => {
-	listStubs.get(page)!.stale.add(ROW_BY_WORD.pending)
+Given("another reviewer has changed the pending report since the list was loaded", ({ page }) => {
+	present(listStubs.get(page)).stale.add(ROW_BY_WORD.pending)
 })
 
 Then("the {word} row offers {}", async ({ page }, word: string, list: string) => {
@@ -1028,8 +1035,8 @@ Then("the {word} row shows the {string} badge and offers {word}", async ({ page 
 	await expect(rowButtons(page, word).first()).toHaveAccessibleName(action)
 })
 
-Then("each row action sent the version its row was listed with", async ({ page }) => {
-	expect(listStubs.get(page)!.sent).toEqual([
+Then("each row action sent the version its row was listed with", ({ page }) => {
+	expect(present(listStubs.get(page)).sent).toEqual([
 		{ method: "POST", path: "/api/admin/reports/pendingaaaa/publish", version: "11.1" },
 		{ method: "POST", path: "/api/admin/reports/publishedaa/unpublish", version: "13.1" },
 	])
@@ -1037,18 +1044,18 @@ Then("each row action sent the version its row was listed with", async ({ page }
 
 Then("a confirmation asks whether to delete it", async ({ page }) => {
 	await expect(page.getByRole("dialog", { name: "Delete this report?" })).toBeVisible()
-	expect(listStubs.get(page)!.sent).toEqual([])
+	expect(present(listStubs.get(page)).sent).toEqual([])
 })
 
 Then("the pending row is still listed and nothing was deleted", async ({ page }) => {
 	await expect(page.getByRole("dialog")).toHaveCount(0)
 	await expect(row(page, "pending")).toBeVisible()
-	expect(listStubs.get(page)!.sent).toEqual([])
+	expect(present(listStubs.get(page)).sent).toEqual([])
 })
 
 Then("the pending row is no longer listed and it was deleted", async ({ page }) => {
 	await expect(row(page, "pending")).toHaveCount(0)
-	expect(listStubs.get(page)!.sent).toEqual([{ method: "DELETE", path: "/api/admin/reports/pendingaaaa", version: undefined }])
+	expect(present(listStubs.get(page)).sent).toEqual([{ method: "DELETE", path: "/api/admin/reports/pendingaaaa", version: undefined }])
 })
 
 Then("a message says the report changed and offers to reload the list", async ({ page }) => {

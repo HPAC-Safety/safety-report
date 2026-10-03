@@ -31,7 +31,7 @@ amendment).
 | `build/` | Container images and the .NET major |
 | `github/` | Pull-request, issue, release, and hook glue |
 | `infra/` | Terraform and deployment steps |
-| `dev/` | Local-only helpers: `ci-local.sh`, session label, Typeform extraction, the act runner image |
+| `dev/` | Local-only helpers: `ci-local.sh`, session label, Typeform extraction, the act runner image, `git-hook-shim.sh` (the installed git hook, which runs the tracked `.githooks/<name>`) |
 | `gherkin/` | Gherkin syntax check, with its own `package.json` |
 
 ## Names

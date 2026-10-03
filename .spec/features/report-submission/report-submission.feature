@@ -223,6 +223,14 @@ Scenario: A multi-select question is a picker dropdown, not a flat list
   When the reporter presses Escape
   Then the picker closes, returns focus to itself, and names both chosen options
 
+@REQ-SUB-132
+@ui
+Scenario: A multi-select picker is a combobox that pops up a dialog of checkboxes
+  Given the current page shows a multi-select question
+  Then its closed picker is a combobox labelled by the question, collapsed, with a dialog as its popup
+  When the reporter opens the picker
+  Then the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each option
+
 @REQ-SUB-085
 @ui
 Scenario Outline: An email or phone question opens the matching keyboard
@@ -468,6 +476,19 @@ Scenario: Tabbing past a date field skips its calendar
   Then a calendar labelled "Choose a date" opens under the field, showing today's month
   When the reporter presses Tab
   Then focus skips the calendar to the Next button, and the calendar closes
+
+@REQ-SUB-131
+@ui
+Scenario: A desktop date field is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  Then the date field is a collapsed combobox with a dialog as its popup
+  When the reporter clicks the date field
+  Then the date field is expanded and controls the dialog labelled "Choose a date"
+  When the reporter presses the calendar's background
+  Then the calendar stays open and focus is on the date field
+  When the reporter presses ArrowDown and then Escape
+  Then the calendar closes
+  And focus is on the date field
 
 @REQ-SUB-105
 @ui

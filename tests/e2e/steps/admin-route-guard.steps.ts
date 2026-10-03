@@ -70,6 +70,6 @@ Then("the page shows the not-found view", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible()
 })
 
-Then("no request for that route's data is made, the Admin menu's pending counts aside", async ({ page }) => {
+Then("no request for that route's data is made, the Admin menu's pending counts aside", ({ page }) => {
 	expect(adminRequestsSeenAfterNavigation.get(page) ?? []).toEqual([])
 })

@@ -125,6 +125,18 @@ stronger one:
   `[#<number>]` before the pull request exists), even a one-line report.
 - Do all work in the worktree. It comes down once the pull request is open
   (step 8).
+- **Never use a bare `git stash` or `git stash pop` in a worktree.** There is
+  one stash per clone, shared by every worktree and session: a bare stash
+  takes another session's files, and a pop applies whatever entry is on top,
+  which may be someone else's.
+  - Park work in a WIP commit (`git commit -m "wip"`), and amend or reset it
+    later.
+  - A stash that cannot be a commit is tagged and applied by SHA:
+    `git stash push -m <tag>`, note `git rev-parse stash@{0}`, then
+    `git stash apply <sha>`. Never `pop`, `drop`, or `clear`.
+  - Nothing enforces this. Git has no pre-stash hook, so no git hook can refuse
+    a stash, and the rule is not backed by an agent tool hook either. It is a
+    written rule, and agents and people follow it by reading it.
 
 ### Commit, rebase, claim identifiers
 

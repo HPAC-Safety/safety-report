@@ -7,6 +7,7 @@ import { fetchMediaLink, PublicReportNotFound, type PublicMedia } from "../api/p
 import { LocaleContext } from "../i18n/LocaleProvider"
 import { AttachmentStrip, type AttachmentStripProps } from "./AttachmentStrip"
 import type { StripItem } from "./stripItems"
+import { present } from "../lib/present"
 
 vi.mock("../api/adminReports", () => ({
 	attachmentLink: vi.fn(),
@@ -27,14 +28,16 @@ vi.mock("./AttachmentLightbox", () => ({
 }))
 
 const assign = vi.fn()
+/** The lightbox the strip last rendered; a test that calls it has opened one. */
+const openLightbox = () => present(lightbox.latest, "the open lightbox")
 const future = () => new Date(Date.now() + 60_000).toISOString()
 
 beforeEach(() => {
 	assign.mockReset()
 	lightbox.latest = null
 	Object.defineProperty(window, "location", { value: { assign }, configurable: true })
-	vi.mocked(fetchMediaLink).mockReset().mockImplementation(async (_report, id) => ({ url: `https://pub/${id}`, expiresAt: future() }))
-	vi.mocked(attachmentLink).mockReset().mockImplementation(async (_report, a) => ({ url: `https://staff/${a.id}`, expiresAt: future(), fileName: "f" }))
+	vi.mocked(fetchMediaLink).mockReset().mockImplementation((_report, id) => Promise.resolve({ url: `https://pub/${id}`, expiresAt: future() }))
+	vi.mocked(attachmentLink).mockReset().mockImplementation((_report, a) => Promise.resolve({ url: `https://staff/${a.id}`, expiresAt: future(), fileName: "f" }))
 	vi.mocked(attachmentOriginalLink).mockReset().mockResolvedValue({ url: "https://orig", expiresAt: future(), fileName: "f" })
 	vi.mocked(setAttachmentHidden).mockReset().mockResolvedValue(undefined)
 })
@@ -102,13 +105,13 @@ describe("AttachmentStrip for the public", () => {
 		await waitFor(() => expect(screen.queryByTestId("attachment-strip")).toBeNull())
 	})
 
-	it("opens the lightbox on an image and returns focus to its thumbnail on close", async () => {
+	it("opens the lightbox on an image and returns focus to its thumbnail on close", () => {
 		mount()
 		const trigger = button('media.photoLabel {"index":1,"count":1}')
 		fireEvent.click(trigger)
 		expect(screen.getByTestId("lightbox").getAttribute("data-open")).toBe("img")
 		expect(lightbox.latest?.items.map((item) => item.id)).toEqual(["img", "vid"])
-		act(() => lightbox.latest!.onClose())
+		act(() => openLightbox().onClose())
 		expect(screen.queryByTestId("lightbox")).toBeNull()
 		expect(document.activeElement).toBe(trigger)
 	})
@@ -117,22 +120,22 @@ describe("AttachmentStrip for the public", () => {
 		mount()
 		await waitFor(() => expect(fetchMediaLink).toHaveBeenCalledTimes(1))
 		fireEvent.click(button('media.photoLabel {"index":1,"count":1}'))
-		await expect(lightbox.latest!.getLink(lightbox.latest!.items[0])).resolves.toBe("https://pub/img")
+		await expect(openLightbox().getLink(openLightbox().items[0])).resolves.toBe("https://pub/img")
 		expect(fetchMediaLink).toHaveBeenCalledTimes(1)
-		lightbox.latest!.invalidateLink("img")
-		await lightbox.latest!.getLink(lightbox.latest!.items[0])
+		openLightbox().invalidateLink("img")
+		await openLightbox().getLink(openLightbox().items[0])
 		expect(fetchMediaLink).toHaveBeenCalledTimes(2)
 		vi.mocked(fetchMediaLink).mockResolvedValueOnce({ url: "https://pub/short", expiresAt: new Date(Date.now() + 1000).toISOString() })
-		lightbox.latest!.invalidateLink("img")
-		await lightbox.latest!.getLink(lightbox.latest!.items[0])
-		await lightbox.latest!.getLink(lightbox.latest!.items[0])
+		openLightbox().invalidateLink("img")
+		await openLightbox().getLink(openLightbox().items[0])
+		await openLightbox().getLink(openLightbox().items[0])
 		expect(fetchMediaLink).toHaveBeenCalledTimes(4)
 	})
 
 	it("removes an item the lightbox reports gone", () => {
 		mount()
 		fireEvent.click(button('media.photoLabel {"index":1,"count":1}'))
-		act(() => lightbox.latest!.onGone("vid"))
+		act(() => openLightbox().onGone("vid"))
 		expect(screen.getAllByRole("listitem")).toHaveLength(2)
 	})
 

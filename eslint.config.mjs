@@ -9,8 +9,9 @@
 //   TypeScript  typescript-eslint strict-type-checked, with type information
 //               from `parserOptions.projectService`: src/web/tsconfig.json for
 //               src/web, tests/e2e/tsconfig.json for the browser suite, the
-//               root tsconfig.json for tools and tests/js (vite.config.ts, a
-//               Node script in none, gets strict without types);
+//               root tsconfig.json for tools and tests/js, and
+//               src/web/tsconfig.node.json for vite.config.ts, a Node script
+//               in none of the others;
 //   this file   typescript-eslint strict (no types). It stays .mjs because
 //               ESLint 9 loads a TypeScript config only through jiti or an
 //               unstable Node flag, and a config is the one file that cannot
@@ -49,7 +50,6 @@ export default tseslint.config(
 		// strict-type-checked for TypeScript: it has real types. Each package's
 		// tsconfig.json (src/web, tests/e2e) is the project its files belong to.
 		files: ['**/*.{ts,tsx}'],
-		ignores: ['src/web/vite.config.ts'],
 		extends: [tseslint.configs.strictTypeChecked],
 		languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
 		rules: {
@@ -63,32 +63,18 @@ export default tseslint.config(
 	},
 	{
 		// vite.config.ts is a Node build script outside src/web/tsconfig.json (its
-		// `include` is `src`, and the web job installs no @types/node), so it has no
-		// project to take types from: the strict preset without them.
+		// `include` is `src`, and Node's globals do not belong in the app), so it
+		// names the project that does hold it. src/web/package.json carries
+		// @types/node, so this resolves in every job that installs src/web.
 		files: ['src/web/vite.config.ts'],
-		extends: [tseslint.configs.strict],
+		languageOptions: { parserOptions: { projectService: false, project: ['src/web/tsconfig.node.json'], tsconfigRootDir: import.meta.dirname } },
 	},
 	{
 		// This file is the only JavaScript left. The type-aware preset has nothing to
 		// read from it (no annotations, outside every tsconfig `include` that checks
-		// JavaScript), so it gets the strict (syntactic) preset. So do the five
-		// temporary tools/**/*.mjs shims main's i18n-translate.yml calls until #798
-		// merges; #800 deletes them.
-		files: ['eslint.config.mjs', 'tools/**/*.mjs'],
+		// JavaScript), so it gets the strict (syntactic) preset.
+		files: ['eslint.config.mjs'],
 		extends: [tseslint.configs.strict],
-	},
-	{
-		// Test code. Three rules are off here, for the reasons in ADR-0188's
-		// 2026-10-02 strict-linting amendment: a fixture is indexed after the test built
-		// it, so a `!` that fails is a failing test; `expect(mock.method)` reads
-		// a method to assert on it, which `unbound-method` reads as a bug; and an
-		// `async` callback with no `await` is the shape `act` and Playwright want.
-		files: ['src/web/src/**/*.test.{ts,tsx}', 'tests/e2e/**/*.ts', 'tests/js/**/*.ts'],
-		rules: {
-			'@typescript-eslint/no-non-null-assertion': 'off',
-			'@typescript-eslint/unbound-method': 'off',
-			'@typescript-eslint/require-await': 'off',
-		},
 	},
 	{
 		// node:test registers a test with a call whose promise the runner awaits.
@@ -112,7 +98,7 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ['tools/**/*.ts', 'tools/**/*.mjs', 'tests/js/**/*.ts', 'eslint.config.mjs', 'src/web/vite.config.ts'],
+		files: ['tools/**/*.ts', 'tests/js/**/*.ts', 'eslint.config.mjs', 'src/web/vite.config.ts'],
 		languageOptions: { globals: globals.node },
 	},
 	{

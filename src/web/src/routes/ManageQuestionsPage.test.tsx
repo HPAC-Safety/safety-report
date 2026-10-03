@@ -17,6 +17,7 @@ import { LocaleContext } from "../i18n/LocaleProvider"
 import { blankDraft } from "../components/questionDraft"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import { ManageQuestionsPage, useManageQuestionsPage } from "./ManageQuestionsPage"
+import { present } from "../lib/present"
 
 vi.mock("../api/adminQuestions", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../api/adminQuestions")>()),
@@ -272,10 +273,10 @@ describe("useManageQuestionsPage saving", () => {
 	it("creates a new question, closes the editor and reloads", async () => {
 		const { result } = await load()
 		act(() => result.current.startNew())
-		const draft = result.current.editor!.draft
+		const draft = present(result.current.editor).draft
 		list.mockResolvedValue([question("made")])
 
-		await act(() => result.current.editor!.onSave(draft))
+		await act(() => present(result.current.editor).onSave(draft))
 
 		expect(create).toHaveBeenCalledWith(draft.request)
 		expect(revise).not.toHaveBeenCalled()
@@ -286,9 +287,9 @@ describe("useManageQuestionsPage saving", () => {
 	it("revises the question being edited", async () => {
 		const { result } = await load([question("a")])
 		act(() => result.current.editQuestion(question("a")))
-		const draft = result.current.editor!.draft
+		const draft = present(result.current.editor).draft
 
-		await act(() => result.current.editor!.onSave(draft))
+		await act(() => present(result.current.editor).onSave(draft))
 
 		expect(revise).toHaveBeenCalledWith("a", draft.request)
 		expect(result.current.editing).toBeNull()
@@ -299,7 +300,7 @@ describe("useManageQuestionsPage saving", () => {
 		const { result } = await load()
 		act(() => result.current.startNew())
 
-		await act(() => result.current.editor!.onSave(result.current.editor!.draft))
+		await act(() => present(result.current.editor).onSave(present(result.current.editor).draft))
 
 		expect(result.current.error).toBe("Label required")
 		expect(result.current.editor).not.toBeNull()

@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-02
 decision-makers: Chase Florell
-keywords: strict-type-checked, node:test, no-floating-promises, typescript-eslint, projectService, eslint-comments, web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
+keywords: jsx-a11y, combobox, dialog, captions, strict-type-checked, node:test, no-floating-promises, typescript-eslint, projectService, eslint-comments, web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
 ---
 
 # ADR-0188 — A component's logic lives in `Foo.tsx` and its markup in `Foo.view.tsx`, and web logic is unit-tested
@@ -333,12 +333,11 @@ JavaScript file is linted" stands.
 |---|---|---|
 | `no-confusing-void-expression`: `ignoreArrowShorthand` | TypeScript | `onClick={() => setOpen(true)}` is how every handler here is written (750 occurrences); braces around each would be churn with no behavioural content. A void call used as a value anywhere else is still an error. |
 | `restrict-template-expressions`: `allowNumber` | TypeScript | A number in a template is predictable (`Step ${index + 1}`, a count). An object, array, `null`, `undefined`, boolean, `any` and `unknown` are still refused. |
-| `no-non-null-assertion` off | `*.test.ts(x)`, `tests/e2e`, `tests/js` | A test indexes a fixture it built a line earlier; a `!` that is wrong fails the test at the next line. In shipped code the rule stays on. |
-| `unbound-method` off | same | `expect(mock.method).toHaveBeenCalled()` reads the method to assert on it, never to call it. The rule cannot tell, and its Vitest-aware replacement is another dependency for no gain. |
-| `require-await` off | same | `await act(async () => result.current.save())` and Playwright steps need the `async` callback without an `await` in it. |
 | `no-floating-promises` off | `tests/js` | `node:test` registers a test with a call whose promise the runner awaits (1,186 calls). |
 
-Everything else is on, in shipped code and in tests.
+Everything else is on, in shipped code and in tests. (The first version of this
+table also turned off `no-non-null-assertion`, `unbound-method` and
+`require-await` for test code; the 2026-10-03 amendment below removes all three.)
 
 ### Where the code changed instead
 
@@ -403,3 +402,68 @@ turned off" stands except where this changes a row.
   about 80 files.
 - The `**/coverage/**` ignore became `coverage/**` and `src/web/coverage/**`:
   it had also hidden `tools/coverage` and `tests/js/coverage` from the linter.
+
+## Amendment (2026-10-03): the follow-ups of [#796](https://github.com/HPAC-Safety/safety-report/issues/796)
+
+Found while delivering #756 and #781. Decided by the owner on 2026-10-03.
+
+### Test code is linted like shipped code
+
+`no-non-null-assertion`, `unbound-method` and `require-await` are on for
+`*.test.ts(x)`, `tests/e2e` and `tests/js`, which removes the three rows the
+table above first carried. About 280 findings were fixed without weakening a
+test:
+
+- **A non-null assertion** became `present(value, what)`, which fails the test
+  in words where the `!` would have failed on a property of `null`:
+  `src/web/src/lib/present.ts` for Vitest and `tests/e2e/steps/present.ts` for
+  the browser suite. Code that runs inside `page.evaluate` cannot import it and
+  guards on its own.
+- **`unbound-method`**: a spy is held in a variable (`const play = vi.fn()`),
+  or typed as a property (`preventDefault: Mock`), so asserting on it reads no
+  method off an object.
+- **`require-await`**: a Playwright-bdd step is a plain function when it only
+  asserts, because the runner awaits whatever a step returns. A mock that must
+  hand back a promise returns `Promise.resolve(...)`. `await act(async () => …)`
+  stays where its point is to let a handler's promise settle, and then awaits
+  `Promise.resolve()` inside, so the `async` is earned; where the callback
+  returns the promise itself, it is `act(() => promise)`.
+- `no-floating-promises` stays off for `tests/js` only: `node:test` registers a
+  test with a call whose promise the runner awaits.
+
+### The browser suite is type-checked
+
+`npm run typecheck:e2e` (`tsc --noEmit -p tests/e2e`) runs as a step of CI's
+`lint` job, which already installs the suite's packages and has no path filter,
+so `tools/dev/ci-local.sh`'s fast gate runs it too, and in pre-commit when a file
+under `tests/e2e` is staged. The standing type errors were fixed.
+
+### `vite.config.ts` has type information
+
+It is a Node script outside `src/web/tsconfig.json`, whose types must not give
+the app Node's globals. `src/web/tsconfig.node.json` holds it with
+`types: ["node"]`; ESLint reads that project for the file, and
+`npm --prefix src/web run typecheck` checks it. `@types/node` is a `devDependency`
+of `src/web`, so the `web` job, which installs only `src/web`, resolves it.
+
+### The `jsx-a11y` disables are fixed, or recorded
+
+Each kept the DOM unchanged during the split, as the refactor required. These
+four were real debt, fixed with a scenario first, and the disables are gone:
+
+| Disable | Now | Claim |
+|---|---|---|
+| `role-supports-aria-props`, date text input | The input is `role="combobox"` with `aria-haspopup="dialog"`, the WAI-ARIA 1.2 date-picker combobox | `REQ-SUB-131` |
+| `no-noninteractive-element-interactions`, calendar dialog | A native non-modal `<dialog>` takes the key and focus events, which the rule allows on a dialog; the background press is taken by the field's presentational container | `REQ-SUB-131` |
+| `role-supports-aria-props`, multi-select trigger | The trigger is `role="combobox"` (the role that supports `aria-invalid`), `aria-haspopup="dialog"`, and its list is a labelled `role="dialog"` of checkboxes | `REQ-SUB-132`, `REQ-QB-222` |
+| `click-events-have-key-events`, choice-list option | An option takes no click of its own: the field's presentational container takes the click for the `role="option"` row it reached. The keyboard still drives the list through `aria-activedescendant`, so a row never needs a key handler | `REQ-QB-267`, `REQ-QB-268` |
+
+The fifth, `media-has-caption` on the lightbox `<video>`, stays, with its reason
+now naming a recorded position: a reporter's footage carries no captions
+(`REQ-MED-062`). No DOM changed for it.
+
+### Plain JavaScript is a separate decision
+
+Converting `tools/` and `tests/js` to TypeScript under the full type-checked
+preset is tracked by [#798](https://github.com/HPAC-Safety/safety-report/issues/798);
+the preset for plain JavaScript above stands until it lands.

@@ -35,6 +35,8 @@ Make a red test green. The cited claims are the whole brief.
 - The no-scenario exemption to reach green. It covers only a change that
   alters no behavior and names the claims it preserves.
 - Weakening or deleting a test.
+- The clone's shared stash (a bare `git stash` or `git stash pop`): park work in
+  a WIP commit. `deliver-change` "Worktree and branch" has the rule.
 - Logging anything on the never-log list.
 - Breaking a convention the project skill names, or hand-editing a generated
   file.

@@ -2,10 +2,11 @@
 	"name": "hpac-safety-tooling",
 	"private": true,
 	"type": "module",
-	"description": "Repository-wide TypeScript tooling: ESLint (strict, type-checked) over src/web, tools, tests/js and tests/e2e (ADR-0188), and tsc over tools and tests/js, which Node runs by type stripping (ADR-0189). The web app's own dependencies stay in src/web/package.json and the browser suite's in tests/e2e/package.json; the type-aware rules read both.",
+	"description": "Repository-wide TypeScript tooling: ESLint (strict, type-checked) over src/web, tools, tests/js and tests/e2e (ADR-0188), and tsc over tools and tests/js, which Node runs by type stripping (ADR-0189), and over the browser suite, which Playwright transpiles without checking. The web app's own dependencies stay in src/web/package.json and the browser suite's in tests/e2e/package.json; the type-aware rules read both.",
 	"scripts": {
 		"lint": "eslint .",
-		"typecheck": "tsc -p tsconfig.json"
+		"typecheck": "tsc -p tsconfig.json",
+		"typecheck:e2e": "tsc --noEmit -p tests/e2e"
 	},
 	"devDependencies": {
 		"@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",

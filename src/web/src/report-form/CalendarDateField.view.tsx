@@ -43,12 +43,14 @@ export function CalendarDateFieldView({
 	onDayFocus,
 }: CalendarDateFieldViewProps) {
 	return (
-		<div className="relative" onBlur={onWrapperBlur}>
-			{/* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- a text field that opens a calendar dialog; giving it role=combobox would change the DOM and how it is announced */}
+		// Presentational: it only sees the focus leaving, and a press inside the calendar's own background.
+		<div className="relative" role="presentation" onBlur={onWrapperBlur} onMouseDown={onDialogMouseDown}>
+			{/* The date-picker combobox pattern (WAI-ARIA 1.2): the text field is the combobox, the calendar its dialog popup (REQ-SUB-131). */}
 			<input
 				ref={inputRef}
 				id={fieldId}
 				type="text"
+				role="combobox"
 				inputMode="numeric"
 				autoComplete="off"
 				aria-haspopup="dialog"
@@ -70,15 +72,13 @@ export function CalendarDateFieldView({
 			<p role="status" className="sr-only">
 				{announcement}
 			</p>
-			{/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the dialog takes the keys, pointer and focus events bubbling up from the controls inside it */}
-			<div
+			{/* A native, non-modal <dialog>: the element that takes the keys and the focus bubbling up from the controls inside it. */}
+			<dialog
 				id={dialogId}
-				role="dialog"
 				aria-label={t("report.date.calendar")}
-				hidden={!open}
+				open={open}
 				className="absolute left-0 top-full z-40 mt-1 w-80 max-w-full rounded border border-rule bg-surface p-3 font-sans text-ink shadow-lg"
 				onKeyDown={onDialogKeyDown}
-				onMouseDown={onDialogMouseDown}
 				onFocus={onDialogFocus}
 			>
 				{open && (
@@ -173,7 +173,7 @@ export function CalendarDateFieldView({
 						</table>
 					</>
 				)}
-			</div>
+			</dialog>
 		</div>
 	)
 }

@@ -28,10 +28,11 @@ export function TypeAheadFieldView({
 	onKeyDown,
 	isSelected,
 	onPoint,
-	onPick,
+	onListClick,
 }: TypeAheadFieldViewProps) {
 	return (
-		<div ref={containerRef} className="relative mt-1" onBlur={onBlur}>
+		// Presentational: it only takes a click on a listbox row, for the row it reached (REQ-QB-267).
+		<div ref={containerRef} role="presentation" className="relative mt-1" onBlur={onBlur} onClick={onListClick}>
 			<input
 				ref={inputRef}
 				id={fieldId}
@@ -65,7 +66,6 @@ export function TypeAheadFieldView({
 						activeKey={activeKey}
 						isSelected={isSelected}
 						onPoint={onPoint}
-						onPick={onPick}
 					/>
 				)}
 			</ul>

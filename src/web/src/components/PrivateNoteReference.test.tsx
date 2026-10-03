@@ -26,7 +26,10 @@ describe("usePrivateNoteReference", () => {
 		download.mockResolvedValue(undefined)
 		const { result } = renderHook(() => usePrivateNoteReference(props))
 
-		await act(async () => result.current.download("a1"))
+		await act(async () => {
+			result.current.download("a1")
+			await Promise.resolve()
+		})
 
 		expect(download).toHaveBeenCalledWith("r1", "a1")
 		expect(result.current.failed).toBe(false)
@@ -36,10 +39,16 @@ describe("usePrivateNoteReference", () => {
 		download.mockRejectedValueOnce(new Error("no")).mockResolvedValueOnce(undefined)
 		const { result } = renderHook(() => usePrivateNoteReference(props))
 
-		await act(async () => result.current.download("a1"))
+		await act(async () => {
+			result.current.download("a1")
+			await Promise.resolve()
+		})
 		expect(result.current.failed).toBe(true)
 
-		await act(async () => result.current.download("a1"))
+		await act(async () => {
+			result.current.download("a1")
+			await Promise.resolve()
+		})
 		expect(result.current.failed).toBe(false)
 	})
 })

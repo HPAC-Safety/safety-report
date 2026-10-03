@@ -42,8 +42,8 @@ function Harness({
 }
 
 const input = () => document.getElementById("q") as HTMLInputElement
-const dialog = () => document.getElementById("q-calendar") as HTMLElement
-const isOpen = () => !dialog().hidden
+const dialog = () => document.getElementById("q-calendar") as HTMLDialogElement
+const isOpen = () => dialog().open
 const day = (iso: string) => document.querySelector<HTMLButtonElement>(`button[data-day="${iso}"]`)
 const status = () => document.querySelector("p[role='status']") as HTMLElement
 const month = () => screen.getByLabelText<HTMLSelectElement>("report.date.month")
@@ -106,6 +106,18 @@ describe("DateField calendar", () => {
 		expect(isOpen()).toBe(false)
 		expect(dialog().getAttribute("aria-label")).toBe("report.date.calendar")
 		expect(input().getAttribute("aria-expanded")).toBe("false")
+	})
+
+	it("is the combobox that controls its calendar, a native non-modal dialog", () => {
+		render(<Harness />)
+
+		expect(input().getAttribute("role")).toBe("combobox")
+		expect(input().getAttribute("aria-haspopup")).toBe("dialog")
+		expect(input().getAttribute("aria-controls")).toBe("q-calendar")
+		expect(dialog().tagName).toBe("DIALOG")
+		openByClick()
+		expect(input().getAttribute("aria-expanded")).toBe("true")
+		expect(screen.getByRole("dialog", { name: "report.date.calendar" })).toBe(dialog())
 	})
 
 	it("shows the question's own placeholder, and names only the format when nothing describes it", () => {
@@ -493,6 +505,7 @@ describe("DateField calendar", () => {
 		expect(fireEvent.mouseDown(dialog())).toBe(false)
 		expect(fireEvent.mouseDown(month())).toBe(true)
 		expect(fireEvent.mouseDown(day("2026-06-10") as HTMLElement)).toBe(true)
+		expect(fireEvent.mouseDown(input())).toBe(true)
 	})
 
 	it("cancels a pending announcement when it unmounts", () => {

@@ -1,5 +1,6 @@
 import { createBdd } from "playwright-bdd"
 import { expect } from "@playwright/test"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -30,12 +31,12 @@ function hostnameIn(text: string): string | undefined {
 const e2ePort = process.env.E2E_PORT
 
 // eslint-disable-next-line no-empty-pattern -- Playwright reads the fixtures a step needs from this destructuring pattern, and this one needs none
-Given(/^a visitor has ((?:an explicit stored language choice|no stored choice).+)$/, async ({}, signal: string) => {
+Given(/^a visitor has ((?:an explicit stored language choice|no stored choice).+)$/, ({}, signal: string) => {
 	const hostname = hostnameIn(signal)
 	if (signal.startsWith("an explicit stored language choice of")) {
 		pendingSignal = { storedLocale: localeCodeIn(signal), hostname }
 	} else if (signal.startsWith("no stored choice but a supported browser language of")) {
-		pendingSignal = { browserLanguages: [localeCodeIn(signal)!], hostname }
+		pendingSignal = { browserLanguages: [present(localeCodeIn(signal))], hostname }
 	} else if (hostname) {
 		pendingSignal = { hostname }
 	} else {
@@ -62,7 +63,7 @@ Given(/^a visitor loads the page at ([\w.-]+)$/, async ({ page }, hostname: stri
 	await page.goto(`http://${hostname}:${e2ePort}/`)
 })
 
-Then(/^the browser stays on ([\w.-]+)$/, async ({ page }, hostname: string) => {
+Then(/^the browser stays on ([\w.-]+)$/, ({ page }, hostname: string) => {
 	expect(new URL(page.url()).hostname).toBe(hostname)
 })
 

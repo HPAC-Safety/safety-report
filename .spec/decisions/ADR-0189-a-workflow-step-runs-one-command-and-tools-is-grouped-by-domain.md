@@ -73,9 +73,10 @@ merge-group checks still judge each queued commit
 - The move edited historical ADR and lesson text only where it named a moved
   path, as [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md)
   did, so every reference resolves.
-- Git hooks are copies installed by `init-dev.sh` into the shared hooks
-  directory; they read the new paths once re-installed, and a worktree still on
-  the old layout needs a rebase.
+- Git hooks were copies installed by `init-dev.sh` into the shared hooks
+  directory, so they read the new paths only once re-installed, and a worktree
+  still on the old layout needed a rebase. The last amendment below replaces the
+  copies with a shim.
 
 ## Alternatives considered
 
@@ -127,3 +128,27 @@ Consequences: a script's signature is its documentation, and a fake in a test
 must satisfy the same `Exec` and `Env` types as the real thing. A script
 cannot use `enum` or `namespace`; the check is `npm run typecheck`, not review.
 The move edited historical ADR and lesson text only where it named a moved path.
+
+## Amendment (2026-10-03): the installed hooks are a shim ([#796](https://github.com/HPAC-Safety/safety-report/issues/796))
+
+The move above left every installed hook calling the old flat `tools/*.mjs`
+paths until `./init-dev.sh` was run again. A copy goes stale whenever anything
+it calls moves, and nothing says so.
+
+- **`./init-dev.sh` installs `tools/dev/git-hook-shim.sh` under each hook name**
+  (`pre-commit`, `commit-msg`, `post-merge`, `post-rewrite`), instead of a copy
+  of `.githooks/<name>`.
+- **The shim holds no logic.** It runs `.githooks/<its own name>` from the
+  worktree git is working in (`git rev-parse --show-toplevel`), with the hook's
+  arguments, standard input and exit status. A tool that moves, or a hook that
+  changes, is therefore live in every worktree with no re-install, and a
+  worktree runs its own branch's hooks, not the main checkout's.
+- **A missing tracked hook runs nothing and succeeds**, so a branch from before
+  a hook existed is never blocked. The tracked file need not be executable: the
+  shim runs it with `sh`.
+- **It is tested** (`tests/js/dev/git-hook-shim.test.ts`): a real repository
+  and a real worktree commit through it. `init-dev.sh` replaces a full copy
+  installed earlier, because it compares each installed hook with the shim.
+- **Where the shim cannot help:** a repository whose installed hooks are still
+  the old copies until `./init-dev.sh` runs once. That one run is the last
+  re-install a move will need.

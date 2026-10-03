@@ -620,6 +620,10 @@ definition matches; a built claim may never have one.
 
 - [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts)
 
+### REQ-MED-062
+
+- [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts)
+
 ## Claims: moderation-authentication-and-publication
 
 ### REQ-MOD-001
@@ -2536,6 +2540,16 @@ definition matches; a built claim may never have one.
 - [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
 - [seeded-groups.steps.ts](../tests/e2e/steps/seeded-groups.steps.ts)
 
+### REQ-QB-267
+
+- [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+
+### REQ-QB-268
+
+- [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts)
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -3106,6 +3120,16 @@ definition matches; a built claim may never have one.
 - [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts)
 - [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
 - [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts)
+
+### REQ-SUB-131
+
+- [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
+
+### REQ-SUB-132
+
+- [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts)
+- [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts)
 
 ## Claims: typeform-question-import-export
 

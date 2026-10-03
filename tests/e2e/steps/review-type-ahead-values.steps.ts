@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -229,8 +230,8 @@ When('they approve "Mount 7", correct "coopers" to "Cooper\'s", and remove "Test
 })
 
 Then("the API is asked to approve, correct, and remove exactly those values", async ({ page }) => {
-	await expect.poll(() => reviews.get(page)!.length).toBe(3)
-	const [approve, correct, remove] = reviews.get(page)!
+	await expect.poll(() => present(reviews.get(page)).length).toBe(3)
+	const [approve, correct, remove] = present(reviews.get(page))
 
 	expect(approve).toMatchObject({ method: "POST", id: "value-mount7" })
 	expect(correct).toMatchObject({ method: "PUT", id: "value-coopers", body: { labelEn: "Cooper's", labelFr: "" } })
@@ -323,7 +324,7 @@ When(
 				break
 			case "relink": {
 				const parentControl = row.getByTestId("type-ahead-value-parent-choice")
-				await parentControl.getByRole("button").click()
+				await parentControl.getByRole("combobox").click()
 				await parentControl.getByRole("checkbox", { name: "Choice B" }).check()
 				await page.keyboard.press("Escape")
 				await row.getByRole("button", { name: "Change" }).click()
@@ -495,8 +496,8 @@ Then("nothing is saved until they press Save correction", async ({ page }) => {
 	expect(reviews.get(page)?.length ?? 0).toBe(0)
 
 	await theValueRow(page).getByRole("button", { name: "Save correction" }).click()
-	await expect.poll(() => reviews.get(page)!.length).toBe(1)
-	expect(reviews.get(page)![0]).toMatchObject({ method: "PUT", id: "value-coopers" })
+	await expect.poll(() => present(reviews.get(page)).length).toBe(1)
+	expect(present(reviews.get(page))[0]).toMatchObject({ method: "PUT", id: "value-coopers" })
 })
 
 Then("that value's direction switch translates English to French", async ({ page }) => {
@@ -555,7 +556,7 @@ When("they flip that value's direction switch while the translation is still out
 
 When("the translation then answers", async ({ page }) => {
 	await expect.poll(() => heldTranslation.has(page)).toBe(true)
-	heldTranslation.get(page)!()
+	present(heldTranslation.get(page))()
 })
 
 Then("its answer is dropped and Translate is no longer shown as working", async ({ page }) => {

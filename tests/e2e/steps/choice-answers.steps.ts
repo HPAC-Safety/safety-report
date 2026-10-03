@@ -3,6 +3,7 @@ import { expect, type Page, type Request } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { pickChoice, stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
 
@@ -100,7 +101,7 @@ Given(
 		await pickChoice(page, "Type of wing", "Hang glider")
 		await page.getByRole("button", { name: "Next" }).click()
 
-		await page.getByRole("button", { name: /Which conditions applied\?/ }).click()
+		await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 		await page.getByRole("checkbox", { name: "Gusty" }).check()
 		await page.getByRole("checkbox", { name: "Turbulent" }).check()
 		await page.keyboard.press("Escape") // closes the picker over the page's buttons
@@ -122,17 +123,17 @@ When("the reporter sends the report", async ({ page }) => {
 type SentAnswer = { questionRevisionId: string; value: string | null; choices: string[] | null }
 
 function answerTo(page: Page, revisionId: string): SentAnswer | undefined {
-	const body = sent.get(page)!.postDataJSON() as { answers: SentAnswer[] }
+	const body = present(sent.get(page)).postDataJSON() as { answers: SentAnswer[] }
 	return body.answers.find((answer) => answer.questionRevisionId === revisionId)
 }
 
-Then("the wing type and both conditions are sent as their choices' identifiers", async ({ page }) => {
+Then("the wing type and both conditions are sent as their choices' identifiers", ({ page }) => {
 	expect(answerTo(page, "rev-wing")).toMatchObject({ value: null, choices: ["choice-hang_glider"] })
 	expect(answerTo(page, "rev-conditions")?.value).toBeNull()
 	expect([...(answerTo(page, "rev-conditions")?.choices ?? [])].sort()).toEqual(["choice-gusty", "choice-turbulent"])
 })
 
-Then("the launch site is sent as the words typed", async ({ page }) => {
+Then("the launch site is sent as the words typed", ({ page }) => {
 	expect(answerTo(page, "rev-launch")).toMatchObject({ value: "A ridge nobody listed", choices: null })
 })
 
@@ -182,6 +183,6 @@ When("they consent on the next page and send the report", async ({ page }) => {
 	sent.set(page, await request)
 })
 
-Then("the answer names the second {string} choice's identifier and carries no typed text", async ({ page }, _wording: string) => {
+Then("the answer names the second {string} choice's identifier and carries no typed text", ({ page }, _wording: string) => {
 	expect(answerTo(page, "rev-launch")).toMatchObject({ value: null, choices: ["choice-other-south"] })
 })

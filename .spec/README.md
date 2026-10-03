@@ -305,4 +305,6 @@ What the specification should have said, newest first. When to write one:
 Process, tooling, and agent-workflow rules written since ADR-0192, newest
 first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
-None yet.
+| Convention | Title | Status | Date |
+|---|---|---|---|
+| [CONV-002](conventions/CONV-002-an-area-past-800-lines-is-split-and-its-scenarios-keep-their-ids.md) | An area past about 800 lines is split, and its scenarios keep their IDs | accepted | 2026-10-03 |

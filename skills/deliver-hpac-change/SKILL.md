@@ -127,19 +127,10 @@ Rules:
 - `@ignore` and superseded scenarios: also
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios".
 - Each `.spec/features/<area>/README.md` records what **not** to build.
-- An area is one concern. One grown past about 800 lines is split into new
-  areas, not grouped with `Rule:` blocks:
-  - each new area gets its own `.feature`, a README with "Out of scope", and a
-    new `prefix:` in that README's frontmatter;
-  - every moved scenario keeps its ID; the split area's prefix joins
-    `RETIRED_PREFIXES` in `tools/spec/claim-prefixes.ts` at its last number;
-  - rescope every `[Scope(Feature = …)]` that named the old feature, and keep
-    each moved scenario's `Background` and `@xunit:collection` tag;
-  - an accepted ADR's link to a deleted area file points at a permalink to it
-    ([ADR-0194](../../.spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).
-- A `Rule:` block, where one is used, states a business rule and carries no
-  tags: a claim's engine and status come from its own scenario's tags, and
-  `node tools/spec/generate-traceability.ts` fails a tagged Rule.
+- An area past about 800 lines is split, not grouped with `Rule:` blocks, and
+  its scenarios keep their IDs: the procedure, and the next ID with
+  `node tools/spec/claim-prefixes.ts --next <area>`, are
+  [CONV-002](../../.spec/conventions/CONV-002-an-area-past-800-lines-is-split-and-its-scenarios-keep-their-ids.md).
 
 ### The `feature-coverage` exemption
 

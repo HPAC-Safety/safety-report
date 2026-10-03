@@ -374,7 +374,7 @@ describe('readPlaywrightBindings', () => {
 const step = (keyword: string, text: string): Step => ({ keyword, text, line: 1 })
 
 describe('resolve', () => {
-	const claim = (id: string, steps: Step[], { engine = 'Reqnroll', status = 'Covered', area = 'media' }: { engine?: Claim['engine']; status?: Claim['status']; area?: string } = {}): ReadScenario => ({
+	const claim = (id: string, steps: Step[], { engine = 'Reqnroll', status = 'Built', area = 'media' }: { engine?: Claim['engine']; status?: Claim['status']; area?: string } = {}): ReadScenario => ({
 		id,
 		area,
 		scenario: id,
@@ -486,7 +486,7 @@ describe('the real tree', () => {
 
 		assert.deepEqual(result.problems, [])
 		assert.deepEqual(
-			result.claims.filter((claim) => claim.status === 'Covered' && claim.unbound.length > 0).map((claim) => claim.id),
+			result.claims.filter((claim) => claim.status === 'Built' && claim.unbound.length > 0).map((claim) => claim.id),
 			[],
 		)
 	})

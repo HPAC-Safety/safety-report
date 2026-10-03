@@ -26,7 +26,7 @@ export interface Claim {
 	area: string
 	scenario: string
 	engine: 'playwright-bdd' | 'Reqnroll'
-	status: 'Planned' | 'Covered'
+	status: 'Planned' | 'Built'
 	/** The scenario's other tags, in file order: `@ui`, `@ignore`, and the like. */
 	tags: string[]
 }
@@ -87,7 +87,7 @@ export function readClaims(path: string, source: string): { claims: Claim[]; pro
 			area: posix.relative(FEATURES, path).split('/')[0],
 			scenario: scenario[2],
 			engine: split.includes('@ui') ? 'playwright-bdd' : 'Reqnroll',
-			status: split.includes('@ignore') ? 'Planned' : 'Covered',
+			status: split.includes('@ignore') ? 'Planned' : 'Built',
 			tags: split,
 		})
 		pending = []

@@ -57,7 +57,7 @@ export interface ClaimRecord {
 	rule: string | null
 	tags: string[]
 	engine: 'playwright-bdd' | 'Reqnroll'
-	status: 'Planned' | 'Covered'
+	status: 'Planned' | 'Built'
 	steps: ClaimStep[]
 	stepFiles: string[]
 	/** `@ignore`, yet every step is already bound. */
@@ -277,7 +277,7 @@ export function build(root = ROOT): Build {
 	}
 
 	const gaps = resolution.claims
-		.filter((claim) => claim.status === 'Covered')
+		.filter((claim) => claim.status === 'Built')
 		.flatMap((claim) => claim.unbound.map((step) => ({ id: claim.id, file: claim.path, line: step.line, engine: claim.engine, step: `${step.keyword} ${step.text}` })))
 	return { data, json: serialize(data), matrix: render(data), problems, gaps, lines: new Map(resolution.claims.map((claim) => [claim.id, claim.line])) }
 }

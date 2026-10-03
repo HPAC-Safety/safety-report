@@ -16,7 +16,7 @@ const claim: ClaimRecord = {
 	rule: null,
 	tags: ['@ui'],
 	engine: 'playwright-bdd',
-	status: 'Covered',
+	status: 'Built',
 	steps: [{ keyword: 'Given', text: 'a visitor has the page open', files: ['tests/e2e/steps/locale.steps.ts'], ambiguous: false }],
 	stepFiles: ['tests/e2e/steps/locale.steps.ts'],
 	staleIgnore: false,

@@ -73,7 +73,7 @@ describe('readClaims', () => {
 		const { claims, problems } = readClaims('.spec/features/media/media.feature', `Feature: Media\n\n${scenario('REQ-MED-001', 'A thing happens')}`)
 
 		assert.deepEqual(problems, [])
-		assert.deepEqual(claims, [{ id: 'REQ-MED-001', area: 'media', scenario: 'A thing happens', engine: 'Reqnroll', status: 'Covered', tags: [] }])
+		assert.deepEqual(claims, [{ id: 'REQ-MED-001', area: 'media', scenario: 'A thing happens', engine: 'Reqnroll', status: 'Built', tags: [] }])
 	})
 
 	it('routes a @ui scenario to playwright-bdd and marks an @ignore one Planned', () => {
@@ -92,7 +92,7 @@ describe('readClaims', () => {
 			claims.map(({ id, engine, status }) => ({ id, engine, status })),
 			[
 				{ id: 'REQ-MED-006', engine: 'playwright-bdd', status: 'Planned' },
-				{ id: 'REQ-MED-007', engine: 'Reqnroll', status: 'Covered' },
+				{ id: 'REQ-MED-007', engine: 'Reqnroll', status: 'Built' },
 			],
 		)
 	})
@@ -234,7 +234,7 @@ describe('build', () => {
 			rule: 'Uploads',
 			tags: ['@ui'],
 			engine: 'playwright-bdd',
-			status: 'Covered',
+			status: 'Built',
 			steps: [
 				{ keyword: 'Given', text: 'a thing', files: ['tests/e2e/steps/thing.steps.ts'], ambiguous: false },
 				{ keyword: 'Then', text: 'it holds', files: ['tests/e2e/steps/thing.steps.ts'], ambiguous: true },
@@ -278,7 +278,7 @@ describe('build', () => {
 	})
 })
 
-const claim = (id: string, area: string, status: ClaimRecord['status'] = 'Covered', stepFiles: string[] = []): ClaimRecord => ({
+const claim = (id: string, area: string, status: ClaimRecord['status'] = 'Built', stepFiles: string[] = []): ClaimRecord => ({
 	id,
 	area,
 	file: `.spec/features/${area}/${area}.feature`,
@@ -343,7 +343,7 @@ describe('render', () => {
 
 describe('serialize', () => {
 	it('puts each claim and each step on lines of their own, and parses back to the same data', () => {
-		const value = data([claim('REQ-MED-001', 'media', 'Covered', ['A.cs'])], [{ id: 'CON-SO-001', page: '.spec/system-overview.md', verifiedBy: ['REQ-MED-001'], note: 'REQ-MED-001' }])
+		const value = data([claim('REQ-MED-001', 'media', 'Built', ['A.cs'])], [{ id: 'CON-SO-001', page: '.spec/system-overview.md', verifiedBy: ['REQ-MED-001'], note: 'REQ-MED-001' }])
 		const json = serialize(value)
 
 		assert.deepEqual(JSON.parse(json), value)
@@ -366,15 +366,15 @@ describe('the generated files merge the way the tree does', () => {
 	const matrix = (claims: ClaimRecord[]): string => render(data(claims))
 
 	it('merges status changes to two neighbouring claims cleanly in claims.json', () => {
-		const ours = changed(base, 'REQ-DOM-001', { status: 'Covered' })
-		const theirs = changed(base, 'REQ-DOM-002', { status: 'Covered' })
-		both(json, ours, theirs, changed(ours, 'REQ-DOM-002', { status: 'Covered' }))
+		const ours = changed(base, 'REQ-DOM-001', { status: 'Built' })
+		const theirs = changed(base, 'REQ-DOM-002', { status: 'Built' })
+		both(json, ours, theirs, changed(ours, 'REQ-DOM-002', { status: 'Built' }))
 	})
 
 	it('merges status changes to two claims a row apart cleanly in the matrix', () => {
-		const ours = changed(base, 'REQ-DOM-001', { status: 'Covered' })
-		const theirs = changed(base, 'REQ-DOM-003', { status: 'Covered' })
-		both(matrix, ours, theirs, changed(ours, 'REQ-DOM-003', { status: 'Covered' }))
+		const ours = changed(base, 'REQ-DOM-001', { status: 'Built' })
+		const theirs = changed(base, 'REQ-DOM-003', { status: 'Built' })
+		both(matrix, ours, theirs, changed(ours, 'REQ-DOM-003', { status: 'Built' }))
 	})
 
 	it('merges new claims in two different areas cleanly in both files', () => {
@@ -420,7 +420,7 @@ describe('difference', () => {
 		const lines = difference(before, after)
 
 		assert.match(lines[0], /first difference at line \d+/)
-		assert.match(lines[1], /"status": "Covered"/)
+		assert.match(lines[1], /"status": "Built"/)
 		assert.match(lines[2], /"status": "Planned"/)
 		assert.equal(lines[3], '  claims that differ: REQ-MED-002')
 		assert.deepEqual(difference('a\n', 'a\nb\n').slice(1, 3), ['  - ', '  + b'])

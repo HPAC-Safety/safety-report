@@ -108,13 +108,16 @@ generated [specification index](../README.md), each row read from its own file.
 Every claim and constraint, with what verifies it, is in the generated
 [traceability matrix](../traceability.md).
 
+Scenarios and area READMEs use the words of the
+[glossary](../glossary.md); `node tools/spec/check-glossary.ts` refuses its
+banned synonyms.
+
 Guides that describe the specification without being part of it:
 
 | Need | Guide |
 |---|---|
 | Every audited path under `src/` | [Source inventory](../../docs/source-inventory.md) |
 | Every open GitHub issue, generated from GitHub | [Issue traceability](../../docs/issue-traceability.md) |
-| Shared terms | [Glossary](../../docs/glossary.md) |
 
 ## Product contract in one paragraph
 

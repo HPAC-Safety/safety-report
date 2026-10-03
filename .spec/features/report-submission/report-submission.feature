@@ -566,7 +566,7 @@ Scenario: A submitted choice must be one the question offers
   Given a reporter submits a single-select, multi-select, or type-ahead answer naming choices by identifier
   When the API validates the submission
   Then the answer is accepted only if every named choice is a live choice of that question
-  And a removed choice, or another question's choice, is rejected
+  And a removed choice, or another question's choice, is refused
   And only a type-ahead also accepts typed text naming a value it does not yet offer
 
 @REQ-SUB-113
@@ -671,10 +671,10 @@ Scenario: There is no API endpoint left to supply or correct an answer's transla
   And no endpoint lists answers waiting for one
 
 @REQ-SUB-008
-Scenario Outline: The API rejects a malformed submission DTO
+Scenario Outline: The API refuses a malformed submission DTO
   Given a submission DTO contains <problem>
   When the API validates it
-  Then the API rejects the submission
+  Then the API refuses the submission
 
 Examples:
   | problem                                             |
@@ -706,7 +706,7 @@ Examples:
 Scenario Outline: A malformed email or phone answer is refused by its question key
   Given a reporter writing in English submits <submitted> as the answer to an <type> question
   When the submission is made
-  Then the submission is rejected
+  Then the submission is refused
   And the refusal names the question by its key
   And no stored answer carries that value
 
@@ -727,7 +727,7 @@ Examples:
 Scenario Outline: A future date is refused by its question key unless the question allows future dates
   Given a reporter writing in English submits <date> as the answer to a date question that does not allow future dates
   When the submission is made
-  Then the submission is rejected
+  Then the submission is refused
   And the refusal names the question by its key
   And the refusal says the question does not allow a date after today
   And no stored answer carries that value
@@ -808,17 +808,17 @@ Scenario: The UI prevents duplicate submission while a request is in flight
   And clears saved local state only after a definite 202 response
 
 @REQ-SUB-017
-Scenario: A rate-limited submission is rejected
+Scenario: A rate-limited submission is refused
   Given a submission request arrives
   When the per-IP rate limit is exceeded
-  Then the API rejects the request with 429 and a safe retry signal
+  Then the API refuses the request with 429 and a safe retry signal
   And the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a member cannot forge, and is never stored on the report
 
 @REQ-SUB-018
-Scenario: An unauthenticated submission is rejected
+Scenario: An unauthenticated submission is refused
   Given a submission request carries no bearer token
   When the API processes the submission
-  Then the API rejects it before any report state is created
+  Then the API refuses it before any report state is created
 
 @REQ-SUB-019
 Scenario Outline: A member of any role may submit a report
@@ -883,7 +883,7 @@ Scenario: Minting an upload returns a pre-signed PUT for one quarantine key and 
 Scenario Outline: A declared file the API will not accept gets no upload URL
   Given a member asks to upload <file>
   When the API checks the declared type and size
-  Then the API rejects it with a safe rejection reason of "<reason>"
+  Then the API refuses it with a safe refusal reason of "<reason>"
   And no upload URL is minted
 
 Examples:
@@ -912,8 +912,8 @@ Examples:
 Scenario Outline: A submission validates every upload it claims
   Given a submission claims an upload whose stored file is <file>
   When the API validates the submission
-  Then the API rejects the submission with 400
-  And the response names that upload ID with a safe rejection reason of "<reason>"
+  Then the API refuses the submission with 400
+  And the response names that upload ID with a safe refusal reason of "<reason>"
   And no report, answer, file, or outbox row is created
   And the API read only the upload's size and the bytes sniffing needs, never the whole file into memory
 
@@ -927,7 +927,7 @@ Examples:
 Scenario: A submission naming an expired or unknown upload is refused by name
   Given a submission names an upload ID that no longer exists in quarantine
   When the API validates the submission
-  Then the API rejects the submission with 400
+  Then the API refuses the submission with 400
   And the response lists exactly the upload IDs it could not find
   And no report, answer, file, or outbox row is created
 
@@ -939,16 +939,16 @@ Scenario: A claimed upload leaves quarantine once the report commits
   And the upload is removed from quarantine, with the lifecycle rule as the backstop if that removal fails
 
 @REQ-SUB-043
-Scenario: An unauthenticated upload is rejected
+Scenario: An unauthenticated upload is refused
   Given an upload request carries no bearer token
   When the API receives it
-  Then the API rejects it before anything is written to object storage
+  Then the API refuses it before anything is written to object storage
 
 @REQ-SUB-044
-Scenario: A rate-limited upload is rejected
+Scenario: A rate-limited upload is refused
   Given an upload request arrives
   When the per-IP upload rate limit is exceeded
-  Then the API rejects the request with 429 and a safe retry signal
+  Then the API refuses the request with 429 and a safe retry signal
 
 @REQ-SUB-045
 @ui
@@ -1111,7 +1111,7 @@ Scenario: A request that reached the API without CloudFront's origin-secret head
 Scenario: The rate limiter partitions by the CloudFront viewer address, not the shared connection
   Given the per-IP submission rate limit is exhausted for one CloudFront viewer address
   When a submission request arrives from a different CloudFront viewer address
-  Then the API does not reject it
+  Then the API does not refuse it
 
 @REQ-SUB-118
 Scenario: A successful submission nudges the Worker

@@ -184,7 +184,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 			.ShouldAllBe(status => status == HttpStatusCode.Accepted);
 	}
 
-	[Then(@"a removed choice, or another question's choice, is rejected")]
+	[Then(@"a removed choice, or another question's choice, is refused")]
 	public void ThenARemovedOrForeignChoiceIsRejected()
 	{
 		foreach (var (submission, response) in _refused)
@@ -621,12 +621,6 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await MalformedSubmissionFor(_problem!);
 	}
 
-	[Then(@"the API rejects the submission")]
-	public void ThenTheApiRejectsTheSubmission()
-	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
 	// --- REQ-WLD-018: client validation never replaces server validation ---
 
 	[Given(@"a submission reaches the API")]
@@ -843,7 +837,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_uploadId = _refusedUploadId;
 	}
 
-	[Then(@"the response names that upload ID with a safe rejection reason of ""(.*)""")]
+	[Then(@"the response names that upload ID with a safe refusal reason of ""(.*)""")]
 	public async Task ThenTheResponseNamesThatUploadWithReason(string reason)
 	{
 		var problem = await ResponseBody();
@@ -862,7 +856,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThan(_refusedUploadSize);
 	}
 
-	[Then(@"the API rejects the submission with 400")]
+	[Then(@"the API refuses the submission with 400")]
 	public void ThenTheApiRejectsTheSubmissionWith400()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -1145,7 +1139,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await anonymous.PostAsync(Submit, content);
 	}
 
-	[Then(@"the API rejects it before any report state is created")]
+	[Then(@"the API refuses it before any report state is created")]
 	public async Task ThenTheApiRejectsItBeforeAnyReportStateIsCreated()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -1199,7 +1193,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await DirectUpload.Mint(_reporter!, "application/pdf", 15);
 	}
 
-	[Then(@"the API rejects the request with 429 and a safe retry signal")]
+	[Then(@"the API refuses the request with 429 and a safe retry signal")]
 	public void ThenTheApiRejectsTheRequestWith429AndASafeRetrySignal()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
@@ -1287,7 +1281,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[Then(@"the API does not reject it")]
+	[Then(@"the API does not refuse it")]
 	public void ThenTheApiDoesNotRejectIt()
 	{
 		_response!.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);

@@ -31,10 +31,10 @@ Examples:
   | English  | short_text | a line of prose | that line, as typed                     |
 
 @REQ-QB-118
-Scenario Outline: An answer not in its written form is rejected
+Scenario Outline: An answer not in its written form is refused
   Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
   When the submission is made
-  Then the submission is rejected
+  Then the submission is refused
   And no stored answer carries that value
 
 Examples:
@@ -390,10 +390,10 @@ Scenario: An attachment question an Administrator already reworded is left alone
 Scenario: Media consent is a system question that can never be removed or made conditional
   Given the consent_media question exists
   When an Administrator tries to delete it
-  Then the attempt is rejected
-  And trying to stop asking it is rejected the same way
-  And trying to make it conditional on another question is rejected the same way
-  And trying to give it another role is rejected the same way
+  Then the attempt is refused
+  And trying to stop asking it is refused the same way
+  And trying to make it conditional on another question is refused the same way
+  And trying to give it another role is refused the same way
   And an Administrator may still change its wording in both languages
 
 @REQ-QB-113
@@ -427,7 +427,7 @@ Examples:
 Scenario: A media consent answer must be an explicit yes or no
   Given a submission answers the consent_media question with a value that is neither yes nor no
   When the reporter submits it
-  Then the API rejects the submission
+  Then the submission is refused as invalid
 
 @REQ-QB-116
 Scenario: A media consent answer covers documents when it answers the wording the form showed
@@ -442,7 +442,7 @@ Scenario: A media consent answer naming an earlier wording is refused, so no doc
   Given a submission answers yes to publication consent and attaches a document
   And it answers yes to the consent_media question's earlier, superseded revision
   When the reporter submits it
-  Then the API rejects the submission
+  Then the submission is refused as invalid
 
 @REQ-QB-117
 Scenario: Media consent names documents and says they are published as uploaded

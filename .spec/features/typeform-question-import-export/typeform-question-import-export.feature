@@ -11,7 +11,7 @@ Background:
 @REQ-TF-001
 Scenario: Import requires both languages
   When an Administrator submits only one of the two files
-  Then the import is rejected
+  Then the import is refused
   And no draft is produced
 
 @REQ-TF-002
@@ -81,7 +81,7 @@ Scenario: The generated answer-recap screen is not imported
   Then no draft is produced for it
 
 @REQ-TF-011
-Scenario: A field type with no equivalent is rejected, not silently dropped
+Scenario: A field type with no equivalent is refused, not silently dropped
   Given a Typeform field of a type this system does not support
   When the pair is mapped
   Then the import report lists it as not imported
@@ -163,7 +163,7 @@ Scenario: A choice dependency survives an export and reimport
 Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role
   When that member attempts to import or export
-  Then the API rejects both attempts
+  Then the API refuses both attempts
 
 @REQ-TF-024
 Scenario: Importing a question strips a trailing colon from its title

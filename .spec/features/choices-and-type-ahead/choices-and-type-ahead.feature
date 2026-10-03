@@ -26,8 +26,8 @@ Scenario Outline: Only a type-ahead grows from reporters' answers
 Examples:
   | type          | outcome                                                     |
   | autocomplete  | the report is accepted and the question gains the value     |
-  | single_select | the submission is rejected and the question is unchanged    |
-  | multi_select  | the submission is rejected and the question is unchanged    |
+  | single_select | the submission is refused and the question is unchanged     |
+  | multi_select  | the submission is refused and the question is unchanged     |
 
 @REQ-QB-122
 Scenario Outline: An answer names the choice it was given under
@@ -157,7 +157,7 @@ Scenario: Merges resolve in a chain and never form a cycle
 Scenario Outline: Only a type-ahead value can be merged or edited by a Safety Officer
   Given a <type> question has two choices
   When a Safety Officer tries to <action> one of them
-  Then the attempt is <outcome>
+  Then the merge or correction is <outcome>
 
 Examples:
   | type          | action                     | outcome  |

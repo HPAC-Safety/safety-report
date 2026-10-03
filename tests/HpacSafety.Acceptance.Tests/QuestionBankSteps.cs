@@ -132,7 +132,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(Ordinary("were_you_injured", QuestionType.YesNo));
 	}
 
-	[Then(@"trying to make it conditional on another question is rejected the same way")]
+	[Then(@"trying to make it conditional on another question is refused the same way")]
 	public void ThenMakingItConditionalIsRejected()
 	{
 		var other = _questions.Find(question => question.Key == "were_you_injured")!;
@@ -140,7 +140,7 @@ public sealed class QuestionBankSteps
 		Should.Throw<DomainRuleViolationException>(() => _question!.DependOn(other.Id, null, Noon.AddHours(1)));
 	}
 
-	[Then(@"trying to give it another role is rejected the same way")]
+	[Then(@"trying to give it another role is refused the same way")]
 	public void ThenGivingItAnotherRoleIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() => _question!.AssignRole(QuestionRole.None));
@@ -188,7 +188,7 @@ public sealed class QuestionBankSteps
 		_rejection = Record(() => _question!.DependOn(other.Id, null, Noon.AddHours(1)));
 	}
 
-	[Then(@"the attempt is rejected")]
+	[Then(@"the attempt is refused")]
 	public void ThenTheAttemptIsRejected()
 	{
 		_rejection.ShouldBeOfType<DomainRuleViolationException>();
@@ -203,7 +203,7 @@ public sealed class QuestionBankSteps
 		Should.NotThrow(() => QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id));
 	}
 
-	[Then(@"a question offered as its own condition is rejected the same way")]
+	[Then(@"a question offered as its own condition is refused the same way")]
 	public void ThenSelfDependencyIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() =>
@@ -557,7 +557,7 @@ public sealed class QuestionBankSteps
 		_question!.Key.ShouldBe("occurrence_date");
 	}
 
-	[Then(@"a key that reduces to nothing at all is rejected")]
+	[Then(@"a key that reduces to nothing at all is refused")]
 	public void ThenAnEmptyKeyIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() =>
@@ -603,7 +603,7 @@ public sealed class QuestionBankSteps
 		_question!.Deleted.ShouldBe(Noon.AddHours(1));
 	}
 
-	[Then(@"the deletion is rejected")]
+	[Then(@"the deletion is refused")]
 	public void ThenDeletionIsRejected()
 	{
 		_rejection.ShouldNotBeNull();
@@ -648,13 +648,13 @@ public sealed class QuestionBankSteps
 		_rejection = Record(() => _question!.Delete(false, Noon.AddHours(1)));
 	}
 
-	[Then(@"trying to stop asking it is rejected the same way")]
+	[Then(@"trying to stop asking it is refused the same way")]
 	public void ThenDeactivatingConsentIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() => _question!.Deactivate(Noon.AddHours(1)));
 	}
 
-	[Then(@"an ordinary edit that clears its active flag is rejected the same way")]
+	[Then(@"an ordinary edit that clears its active flag is refused the same way")]
 	public void ThenAnOrdinaryEditCannotDeactivateConsent()
 	{
 		// The dedicated method refused this all along; the administrator's

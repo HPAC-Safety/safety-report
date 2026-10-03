@@ -32,7 +32,7 @@ stateDiagram-v2
 ```
 
 A report is Pending, Published, or Unpublished once the Worker is done with
-it; there is no Approved or Rejected status
+it; there is no `Approved` or `Rejected` status
 ([ADR-0125](../../decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
 Review exists only to check a summary. Publishing approves the current pair
 and makes the report public at once, and unpublishing takes it off the public
@@ -121,5 +121,5 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 - A way to publish, summarize, or acknowledge a report whose reporter did not
   consent, or to change that consent after submission.
-- An Approved, Rejected, or Reopened status; Publish and Unpublish cover them
+- An `Approved`, `Rejected`, or `Reopened` status; Publish and Unpublish cover them
   ([ADR-0125](../../decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).

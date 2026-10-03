@@ -57,7 +57,7 @@ public sealed class TypeformImportEndpointSteps
 		_response = await _client.PostAsync(Import, content);
 	}
 
-	[Then(@"the import is rejected")]
+	[Then(@"the import is refused")]
 	public void ThenTheImportIsRejected()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -407,7 +407,7 @@ public sealed class TypeformImportEndpointSteps
 		_secondResponse = await _client.GetAsync(Export);
 	}
 
-	[Then(@"the API rejects both attempts")]
+	[Then(@"the API refuses both attempts")]
 	public void ThenTheApiRejectsTheAttempt()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

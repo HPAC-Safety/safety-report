@@ -38,8 +38,8 @@ Scenario: Bad credentials show one generic failure and no session
 Scenario: Repeated sign-in attempts for one identity are rate limited
   Given repeated sign-in attempts arrive for the same username
   When the sign-in rate limit for that identity is exceeded
-  Then the API rejects further attempts with 429 and a safe retry signal
-  And the rejection does not reveal whether any attempted username or password was valid
+  Then the API refuses further attempts with 429 and a safe retry signal
+  And the refusal does not reveal whether any attempted username or password was valid
 
 @REQ-MOD-006
 @ui
@@ -130,26 +130,26 @@ Scenario: With nothing waiting, the Admin menu shows no count
   Then no option shows a count
 
 @REQ-MOD-013
-Scenario: A token signed by an unknown key is rejected
+Scenario: A token signed by an unknown key is refused
   Given a bearer token signed with a key the API does not trust
   When it is presented to any authenticated endpoint
   Then the API refuses the request
   And it does not disclose why the token was refused
 
 @REQ-MOD-014
-Scenario: A token whose signature has been altered is rejected
+Scenario: A token whose signature has been altered is refused
   Given a validly issued bearer token whose signature segment has been changed
   When it is presented to any authenticated endpoint
   Then the API refuses the request
 
 @REQ-MOD-015
-Scenario: An expired token is rejected
+Scenario: An expired token is refused
   Given a bearer token whose expiry has passed
   When it is presented to any authenticated endpoint
   Then the API refuses the request
 
 @REQ-MOD-016
-Scenario: A token for the wrong audience is rejected
+Scenario: A token for the wrong audience is refused
   Given a bearer token issued for a different audience
   When it is presented to any authenticated endpoint
   Then the API refuses the request
@@ -211,7 +211,7 @@ Scenario: An unauthenticated request to an admin endpoint is refused before the 
 Scenario: Every operation is authorized by the API, not just the UI
   Given a member without the required role calls an admin operation
   When the API processes the request
-  Then the API rejects the operation regardless of what the UI would have shown
+  Then the API refuses the operation regardless of what the UI would have shown
 
 @REQ-MOD-156
 Scenario: An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token
@@ -363,7 +363,7 @@ Scenario: A successful sign-in writes an audit row
 @REQ-MOD-045
 Scenario: A failed sign-in attempt writes an audit row
   Given a sign-in attempt uses credentials that are not valid
-  When the attempt is rejected
+  When the attempt is refused
   Then an audit entry records a sign-in-failed action and the time
   And it never records the attempted credentials
   And the actor is recorded as the attempted identity rather than left blank

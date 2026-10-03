@@ -488,7 +488,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		});
 	}
 
-	[Then(@"^the attempt is (accepted|refused)$")]
+	[Then(@"^the merge or correction is (accepted|refused)$")]
 	public void ThenTheAttemptIs(string outcome)
 	{
 		if (outcome == "accepted")
@@ -576,7 +576,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
 	}
 
-	[Then(@"the submission is rejected and the question is unchanged")]
+	[Then(@"the submission is refused and the question is unchanged")]
 	public void ThenRejectedAndUnchanged()
 	{
 		_refusal.ShouldNotBeNull();

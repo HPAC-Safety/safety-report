@@ -422,7 +422,7 @@ The API performs, in order:
    checks;
 2. DTO syntax, locale, duplicate, and count checks;
 3. revision lookup including deleted rows;
-4. rejection of unknown, deleted, and non-current revisions (any revision but
+4. refusal of unknown, deleted, and non-current revisions (any revision but
    the highest-numbered one of a live question) and validation against that
    revision's type and the question's live choices, including the written
    form of a date, time, email, or phone answer, and a date after today in
@@ -494,7 +494,7 @@ is the one public entry point for the API, reached on the path `/api/*`
 ([ADR-0159](../../decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
 superseding [ADR-0081](../../decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
 The client IP is used only in memory for the rate-limiter partition key; it is
-never persisted on a report or logged. A rejected request gets `429` with a
+never persisted on a report or logged. A refused request gets `429` with a
 safe, content-free problem response.
 
 Administrative operations are authorized by role on the same token; see

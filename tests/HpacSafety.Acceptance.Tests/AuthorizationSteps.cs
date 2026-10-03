@@ -286,7 +286,7 @@ public sealed class AuthorizationSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 	}
 
-	[Then(@"the API rejects the operation regardless of what the UI would have shown")]
+	[Then(@"the API refuses the operation regardless of what the UI would have shown")]
 	public async Task ThenRejectedRegardlessOfUi()
 	{
 		// 403, not 401: they are signed in, and it is still not theirs.

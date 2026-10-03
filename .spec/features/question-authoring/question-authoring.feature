@@ -42,7 +42,7 @@ Scenario: An answer on a deleted report still forces a fork
 Scenario: A retired question can never be brought back
   Given a question has been marked deleted
   When anything attempts to restore, revive, or revise it
-  Then the attempt is rejected
+  Then the attempt is refused
   And an Administrator who wants it back authors it again as a new question
 
 @REQ-QB-005
@@ -50,7 +50,7 @@ Scenario: Only one question per key is live at a time
   Given a question key has a retired question and a live one
   When anything resolves that key
   Then it resolves to the live question
-  And a second live question for the same key is rejected
+  And a second live question for the same key is refused
 
 @REQ-QB-006
 Scenario: Publication consent revises in place even when answered
@@ -107,7 +107,7 @@ Scenario: The current form's response includes a question's conditional dependen
 Scenario: consent_publish can never be optional
   Given the form is assembled for a reporter
   When the reporter submits without an answer to consent_publish
-  Then the API rejects the submission
+  Then the submission is refused as invalid
   And an Administrator cannot save a consent_publish revision that is optional
 
 @REQ-QB-015
@@ -130,10 +130,10 @@ Examples:
   | date       | records that its answers do not need translation |
 
 @REQ-QB-109
-Scenario: Marking a non-text question as needing translation is rejected
+Scenario: Marking a non-text question as needing translation is refused
   Given an Administrator authors an email, date, yes/no, or select question
   When they mark it as needing translation
-  Then saving that question is rejected
+  Then saving that question is refused
 
 @REQ-QB-110
 Scenario: Whether a question needs translation is a revision field
@@ -177,7 +177,7 @@ Scenario: The migration leaves the occurrence date refusing future dates, with n
 Scenario: consent_publish must resolve to an explicit yes or no
   Given the consent_publish revision has no preselected value
   When the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no
-  Then the API rejects the submission
+  Then the submission is refused as invalid
 
 @REQ-QB-025
 Scenario: Only consent is projected onto the report aggregate
@@ -213,7 +213,7 @@ Scenario: A revision can be deleted only when no answer references it
 Scenario: A referenced revision can never be deleted
   Given a question revision is referenced by at least one answer, including an answer on a deleted report
   When an Administrator attempts to delete it
-  Then the deletion is rejected
+  Then the deletion is refused
   And the revision remains available as history indefinitely
   And deactivating it through a new revision is the normal way to remove it from future forms
 
@@ -288,19 +288,19 @@ Scenario: A form renders a question together with its group heading and siblings
 Scenario: Only a group question may be a grouping parent
   Given a question that is not a group
   When an Administrator tries to group another question under it
-  Then the attempt is rejected
+  Then the attempt is refused
 
 @REQ-QB-049
 Scenario: A group cannot itself be grouped under another group
   Given two group questions exist
   When an Administrator tries to group one under the other
-  Then the attempt is rejected
+  Then the attempt is refused
 
 @REQ-QB-050
 Scenario: A question cannot be grouped under itself
   Given a group question exists
   When an Administrator tries to group it under itself
-  Then the attempt is rejected
+  Then the attempt is refused
 
 @REQ-QB-051
 Scenario: Grouping is unaffected by conditional dependency and vice versa
@@ -343,7 +343,7 @@ Examples:
 Scenario: A question can be made conditional only on a yes/no or single-select question
   Given an active question asks for something other than yes/no or single-select
   When an Administrator tries to make another question conditional on it
-  Then the attempt is rejected
+  Then the attempt is refused
   And a yes/no question is accepted as the condition instead
   And a single-select question naming one of its live options is accepted as the condition instead
 
@@ -358,7 +358,7 @@ Scenario: A single-select parent's dependency records the required option
 Scenario: A single-select dependency must name one of the parent's live choices
   Given a single-select question offering hang glider and paraglider
   When an Administrator tries to make another question depend on a choice the parent does not offer
-  Then the attempt is rejected
+  Then the attempt is refused
 
 @REQ-QB-056
 Scenario: A yes/no dependency does not name an option
@@ -370,14 +370,14 @@ Scenario: A yes/no dependency does not name an option
 Scenario: A question cannot be conditional on itself or form a cycle
   Given a question is already conditional on a yes/no question
   When an Administrator tries to make that yes/no question conditional on it
-  Then the attempt is rejected
-  And a question offered as its own condition is rejected the same way
+  Then the attempt is refused
+  And a question offered as its own condition is refused the same way
 
 @REQ-QB-058
 Scenario: Publication consent can never be made conditional
   Given the consent_publish question exists
   When an Administrator tries to make it conditional on another question
-  Then the attempt is rejected
+  Then the attempt is refused
 
 @REQ-QB-059
 Scenario: Rearranging the form writes a new revision for every question that moved
@@ -406,7 +406,7 @@ Examples:
 Scenario: A question key is normalized and cannot be reused
   Given an Administrator authors a question with a loosely typed key
   Then the stored key is lowercase and underscore-separated
-  And a key that reduces to nothing at all is rejected
+  And a key that reduces to nothing at all is refused
 
 @REQ-QB-062
 Scenario: Retiring a question keeps it and its history
@@ -419,9 +419,9 @@ Scenario: Retiring a question keeps it and its history
 Scenario: Publication consent can never be deleted or deactivated
   Given the consent_publish question exists
   When an Administrator tries to delete it
-  Then the attempt is rejected
-  And trying to stop asking it is rejected the same way
-  And an ordinary edit that clears its active flag is rejected the same way
+  Then the attempt is refused
+  And trying to stop asking it is refused the same way
+  And an ordinary edit that clears its active flag is refused the same way
 
 @REQ-QB-074
 @ui
@@ -525,7 +525,7 @@ Scenario: Deleting a question removes it from the list
 
 @REQ-QB-086
 @ui
-Scenario: A rejected save tells the Administrator why
+Scenario: A refused save tells the Administrator why
   Given an Administrator is authoring a new question
   When they save a question whose two choices read alike
   Then the page shows the reason the save was refused

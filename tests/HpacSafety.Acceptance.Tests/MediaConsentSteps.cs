@@ -187,8 +187,8 @@ public sealed class MediaConsentSteps
 		};
 	}
 
-	[Then(@"the API rejects the submission")]
-	public void ThenTheApiRejectsTheSubmission()
+	[Then(@"the submission is refused as invalid")]
+	public void ThenTheSubmissionIsRefusedAsInvalid()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 

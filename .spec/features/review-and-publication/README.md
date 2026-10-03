@@ -149,7 +149,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Editing one language without the other in separate saves: the pair is
   saved together.
 - Showing an unpublishing note anywhere but the admin report view.
-- An Approve step separate from Publish, or a Reject or Reopen action
+- An Approve step separate from Publish, or a `Reject` or `Reopen` action
   ([ADR-0125](../../decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.

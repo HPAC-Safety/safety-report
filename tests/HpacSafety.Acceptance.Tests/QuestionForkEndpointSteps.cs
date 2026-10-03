@@ -111,7 +111,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_resolvedFromDatabase!.Id.Value.ShouldBe(_liveId);
 	}
 
-	[Then(@"a second live question for the same key is rejected")]
+	[Then(@"a second live question for the same key is refused")]
 	public async Task ThenASecondLiveQuestionIsRejected()
 	{
 		var key = Key();

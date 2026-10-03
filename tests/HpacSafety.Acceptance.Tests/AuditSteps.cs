@@ -88,7 +88,7 @@ public sealed class AuditSteps
 			"/api/auth/token", new { username = _attemptedUsername, password = "not-the-real-password" });
 	}
 
-	[When(@"the attempt is rejected")]
+	[When(@"the attempt is refused")]
 	public void WhenAttemptIsRejected()
 	{
 		_response!.IsSuccessStatusCode.ShouldBeFalse();

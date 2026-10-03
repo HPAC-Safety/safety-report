@@ -160,7 +160,7 @@ public sealed class AttachmentUploadSteps
 		};
 	}
 
-	[Then(@"the API rejects it with a safe rejection reason of ""(.*)""")]
+	[Then(@"the API refuses it with a safe refusal reason of ""(.*)""")]
 	public async Task ThenTheApiRejectsItWithReason(string reason)
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -260,7 +260,7 @@ public sealed class AttachmentUploadSteps
 		_response = await DirectUpload.Mint(anonymous, _declaredType, _declaredSize);
 	}
 
-	[Then(@"the API rejects it before anything is written to object storage")]
+	[Then(@"the API refuses it before anything is written to object storage")]
 	public async Task ThenTheApiRejectsItBeforeAnythingIsStored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -287,7 +287,7 @@ public sealed class AttachmentUploadSteps
 		await _response.Content.LoadIntoBufferAsync();
 	}
 
-	[Then(@"the API rejects the attachment")]
+	[Then(@"the API refuses the attachment")]
 	public async Task ThenTheApiRejectsTheAttachment()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

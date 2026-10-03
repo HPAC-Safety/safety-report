@@ -41,7 +41,7 @@ Examples:
 Scenario: Declared content type must agree with detected content type
   Given an attachment's declared content type differs from its detected, allowlisted type
   When the API validates the attachment
-  Then the API rejects the attachment
+  Then the API refuses the attachment
   And the file extension and client filename are never trusted as the basis for acceptance
 
 @REQ-MED-003

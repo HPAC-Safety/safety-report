@@ -160,14 +160,14 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "user", password = "still-wrong" });
 	}
 
-	[Then(@"the API rejects further attempts with 429 and a safe retry signal")]
+	[Then(@"the API refuses further attempts with 429 and a safe retry signal")]
 	public void ThenTheApiRejectsFurtherAttemptsWith429AndASafeRetrySignal()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the rejection does not reveal whether any attempted username or password was valid")]
+	[Then(@"the refusal does not reveal whether any attempted username or password was valid")]
 	public async Task ThenTheRejectionDoesNotRevealCredentialValidity()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();

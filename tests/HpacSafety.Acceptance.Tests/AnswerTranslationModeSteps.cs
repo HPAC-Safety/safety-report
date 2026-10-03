@@ -322,7 +322,7 @@ public sealed class AnswerTranslationModeSteps
 		};
 	}
 
-	[Then(@"saving that question is rejected")]
+	[Then(@"saving that question is refused")]
 	public void ThenSavingIsRejected()
 	{
 		_attempt!.Invoke();

@@ -9,7 +9,7 @@ prefix: REQ-COM
 # Comments
 
 Supporting detail for [`comments.feature`](comments.feature). The decision and
-its rejected alternatives are in
+the alternatives it considered are in
 [ADR-0114](../../decisions/ADR-0114-members-may-comment-on-a-published-report.md).
 
 ## Who may do what

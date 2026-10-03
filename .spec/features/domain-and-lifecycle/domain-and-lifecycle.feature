@@ -10,19 +10,19 @@ Scenario Outline: A report follows the defined lifecycle transitions
   Then the report moves to state <to>
 
 Examples:
-  | from          | event                                            | to            |
-  | Submitted     | Worker claims the summary job and consent is yes | Summarizing   |
-  | Submitted     | Worker claims the summary job and consent is no  | Unpublished   |
-  | Summarizing   | a valid summary pair is saved                  | Pending       |
-  | Summarizing   | bounded retries are exhausted                    | Summary failed |
-  | Summary failed | an officer writes both texts                     | Pending       |
-  | Pending       | either summary text is edited                    | Pending       |
-  | Pending       | an officer publishes the pair                    | Published     |
-  | Pending       | an officer unpublishes the report                | Unpublished   |
-  | Published     | either summary text is edited                    | Published     |
-  | Published     | an officer unpublishes the report                | Unpublished   |
-  | Unpublished   | an officer publishes the pair                    | Published     |
-  | Unpublished   | either summary text is edited                    | Pending       |
+  | from           | event                                            | to             |
+  | Submitted      | Worker claims the summary job and consent is yes | Summarizing    |
+  | Submitted      | Worker claims the summary job and consent is no  | Unpublished    |
+  | Summarizing    | a valid summary pair is saved                    | Pending        |
+  | Summarizing    | bounded retries are exhausted                    | Summary failed |
+  | Summary failed | an officer writes both texts                     | Pending        |
+  | Pending        | either summary text is edited                    | Pending        |
+  | Pending        | an officer publishes the pair                    | Published      |
+  | Pending        | an officer unpublishes the report                | Unpublished    |
+  | Published      | either summary text is edited                    | Published      |
+  | Published      | an officer unpublishes the report                | Unpublished    |
+  | Unpublished    | an officer publishes the pair                    | Published      |
+  | Unpublished    | either summary text is edited                    | Pending        |
 
 @REQ-DOM-014
 Scenario Outline: A review action outside its states is refused and changes nothing
@@ -32,14 +32,14 @@ Scenario Outline: A review action outside its states is refused and changes noth
   And the report stays in state <from>
 
 Examples:
-  | from          | action               |
-  | Submitted     | publish the pair     |
-  | Summarizing   | unpublish the report |
+  | from           | action               |
+  | Submitted      | publish the pair     |
+  | Summarizing    | unpublish the report |
   | Summary failed | publish the pair     |
-  | Published     | publish the pair     |
-  | Unpublished   | unpublish the report |
-  | Pending       | write a manual pair  |
-  | Published     | write a manual pair  |
+  | Published      | publish the pair     |
+  | Unpublished    | unpublish the report |
+  | Pending        | write a manual pair  |
+  | Published      | write a manual pair  |
 
 @REQ-DOM-015
 Scenario Outline: A report without publication consent is unpublished for good

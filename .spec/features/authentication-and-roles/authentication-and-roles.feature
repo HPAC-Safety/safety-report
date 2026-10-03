@@ -261,7 +261,7 @@ Examples:
   | edit a report's summary        | forbids |
   | publish a report               | forbids |
   | unpublish a report             | forbids |
-  | delete a report           | forbids |
+  | delete a report                | forbids |
   | create a question revision     | forbids |
   | edit a question's choices      | forbids |
 
@@ -280,7 +280,7 @@ Examples:
   | edit a report's summary        | allows  |
   | publish a report               | allows  |
   | unpublish a report             | allows  |
-  | delete a report           | allows  |
+  | delete a report                | allows  |
   | create a question revision     | forbids |
   | edit a question's choices      | forbids |
 
@@ -299,7 +299,7 @@ Examples:
   | edit a report's summary        | allows  |
   | publish a report               | allows  |
   | unpublish a report             | allows  |
-  | delete a report           | allows  |
+  | delete a report                | allows  |
   | create a question revision     | allows  |
   | edit a question's choices      | allows  |
 

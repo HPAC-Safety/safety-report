@@ -170,13 +170,13 @@ Scenario Outline: Reopening a type-ahead filters by what it already holds, howev
   Then <outcome>
 
 Examples:
-  | typed | opening                          | outcome                                                                                    |
-  | Mou   | clicking the question            | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing Alt and the down arrow  | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing the down arrow          | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mo    | clicking the question            | the list offers only the hint to type 3 or more letters                                      |
-  | Mo    | pressing Alt and the down arrow  | the list offers only the hint to type 3 or more letters                                   |
-  | Mo    | pressing the down arrow          | the list offers only the hint to type 3 or more letters                                   |
+  | typed | opening                         | outcome                                                                                      |
+  | Mou   | clicking the question           | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing Alt and the down arrow | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing the down arrow         | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mo    | clicking the question           | the list offers only the hint to type 3 or more letters                                      |
+  | Mo    | pressing Alt and the down arrow | the list offers only the hint to type 3 or more letters                                      |
+  | Mo    | pressing the down arrow         | the list offers only the hint to type 3 or more letters                                      |
 
 @REQ-QB-160
 @ui

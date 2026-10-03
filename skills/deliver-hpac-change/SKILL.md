@@ -137,6 +137,11 @@ Rules:
   engine's run; the job summary lists every claim's result
   ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
 - Each `.spec/features/<area>/README.md` records what **not** to build.
+- Scenarios and area READMEs use the words of
+  [`.spec/glossary.md`](../../.spec/glossary.md);
+  `node tools/spec/check-glossary.ts` fails a banned synonym in the `docs`
+  job, which `tools/dev/ci-local.sh` runs. No git hook runs it
+  ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
 - An area past about 800 lines is split, not grouped with `Rule:` blocks, and
   its scenarios keep their IDs: the procedure, and the next ID with
   `node tools/spec/claim-prefixes.ts --next <area>`, are

@@ -62,8 +62,13 @@ roles and why each trusts only the artifact before it:
   the `prefix:` in the area's README. `REQ-QB` and `REQ-MOD` are retired: their
   claims keep their IDs in whichever area holds them, and nothing new takes
   them ([ADR-0194](../../.spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).
-- Run `node tools/spec/generate-traceability.ts` and
-  `node tools/spec/generate-spec-index.ts` before finishing.
+- Words: each concept as [`.spec/glossary.md`](../../.spec/glossary.md) names
+  it; quote interface copy and page titles. A renamed step renames its step
+  definition's text in the same commit
+  ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+- Run `node tools/spec/generate-traceability.ts`,
+  `node tools/spec/generate-spec-index.ts`, and
+  `node tools/spec/check-glossary.ts` before finishing.
 - Decision records: [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md),
   immutable once accepted; conventions: `.spec/conventions/` ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
   `node tools/spec/check-records.ts` passes before finishing.
@@ -119,6 +124,9 @@ roles and why each trusts only the artifact before it:
   touches; no new entry in `unusedStepDefinitions` or `ambiguousSteps`, and no
   new `"staleIgnore": true`, the diff caused
   ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
+- Words: `node tools/spec/check-glossary.ts` passes; a banned synonym is a
+  specification delta, never a matter of taste
+  ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
 - Records: `node tools/spec/check-records.ts` and, with the pull request's
   base as `BASE_SHA`, `node tools/spec/check-adr-immutability.ts` both pass
   ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).

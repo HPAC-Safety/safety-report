@@ -56,6 +56,10 @@ need (issue)
    the commit message.
 4. **Say what not to build.** Record the boundary where the area's scenarios
    are read, not only in [`.spec/system-overview.md`](.spec/system-overview.md).
+5. **Use the glossary's words.** Scenarios and area READMEs name each concept
+   as [`.spec/glossary.md`](.spec/glossary.md) does; `check-glossary` fails a
+   banned synonym
+   ([CONV-003](.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
 
 ### The `feature-coverage` exemption
 

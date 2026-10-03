@@ -59,7 +59,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0186](decisions/ADR-0186-the-country-question-is-a-pinned-country-pick-list-and-province-follows-it.md) | The Country question is a pinned country pick list, and Province follows it | accepted | 2026-10-02 |
 | [0185](decisions/ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md) | A submission answers only current revisions, and the browser drops stale saved answers | accepted | 2026-09-30 |
 | [0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md) | A generated map binds every claim to its step definitions | accepted | 2026-09-30 |
-| [0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md) | The specification lives in a .spec directory | accepted | 2026-09-30 |
+| [0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md) | The specification lives in a .spec directory | partially-superseded | 2026-09-30 |
 | [0182](decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md) | A role agent declares its model and effort | accepted | 2026-09-30 |
 | [0181](decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md) | A one-time migration trims label colons in place | accepted | 2026-09-30 |
 | [0180](decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md) | A summary is Markdown with one section per public paragraph question | accepted | 2026-09-30 |

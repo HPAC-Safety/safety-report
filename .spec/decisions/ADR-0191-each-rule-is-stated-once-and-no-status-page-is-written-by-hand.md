@@ -17,7 +17,10 @@ Supersedes
 [ADR-0143](ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)
 for the issue page; its source-inventory half stands. Supersedes the part of
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
-that kept the two narrative pages.
+that kept the two narrative pages, and the part of
+[ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md)
+that kept `docs/implementation-status.md` in `docs/`; its placement rule
+stands.
 
 ## Context
 
@@ -30,14 +33,15 @@ a yes/no answer a boolean.
 Two hand-written pages restated what generated ones show:
 
 - `docs/implementation-status.md`, a prose matrix of main against the target.
-  Its audit baseline was months old, and every gap it named is now an
-  `@ignore` claim, an ADR, or an open issue.
+  Its audit baseline was months old. No claim is `@ignore` today, and every
+  gap it still named is closed, decided by an ADR, or tracked by an open
+  issue.
 - `docs/issue-traceability.md`, a disposition per open issue. ADR-0143 made
   its drift visible as an issue, but the fix was still a person writing rows.
 
 ## Decision
 
-- **`AGENTS.md` states each product invariant in one line**, keeping its
+- **`AGENTS.md` states each product invariant in one short statement**, keeping its
   number, and links the claims (`REQ-*`, `CON-*`) and ADRs that hold the
   detail. The "Not built" and "Machine translation" sections do the same. A
   rule that lives nowhere else stays in full until a scenario, constraint, or
@@ -68,8 +72,6 @@ Two hand-written pages restated what generated ones show:
   lags GitHub, and the drift issue says so.
 - The per-issue disposition prose is gone. Where it pointed at a constraint,
   the constraint itself says so.
-- ADR-0183's note that the status page stays in `docs/` no longer applies;
-  its placement rule stands.
 
 ## Alternatives rejected
 

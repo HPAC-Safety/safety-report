@@ -35,7 +35,7 @@ cannot say which claims it satisfies, a review finding cannot point at the
 claim a diff exceeded, and an issue cannot list the claims that close it.
 
 The traceability that exists is narrative and hand-written:
-`docs/implementation-status.md` and
+[`docs/implementation-status.md`](https://github.com/HPAC-Safety/safety-report/blob/46af5841/docs/implementation-status.md) and
 [`docs/issue-traceability.md`](../../docs/issue-traceability.md). Both are valuable as
 an audit of where main stands against the target, and both are maintained by a
 person remembering to maintain them.

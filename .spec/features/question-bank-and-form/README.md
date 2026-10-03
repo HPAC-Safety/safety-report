@@ -165,9 +165,8 @@ both.
   a single-select child with nothing under the parent's answer, which says so.
   The form leaves such a child out of the submission, and the API records
   nothing for it (`REQ-QB-201`, `REQ-QB-204`, `REQ-SUB-114`). A polite live
-  region tells a screen reader when the parent's answer opens the child. A
-  parent answered with a new typed value leaves a type-ahead child nothing to
-  pick and a value to type (`REQ-QB-199`). A saved report restores both
+  region tells a screen reader when the parent's answer opens the child. A parent
+  answered with a new typed value is covered by `REQ-QB-199`. A saved report restores both
   answers, dropping a child answer no longer under the parent's
   (`REQ-QB-200`, `REQ-QB-223`).
 - **A parent the form does not ask** — deactivated, or deleted rather than
@@ -184,8 +183,7 @@ both.
 - **Review.** A Safety Officer or an Administrator adds or removes a value's
   parents on the type-ahead review page, never down to none. A merged value's
   parents are not changed: it reads as its target (`REQ-QB-220`,
-  `REQ-QB-224`). Merging two values offers the survivor under every parent
-  either was under (`REQ-QB-221`).
+  `REQ-QB-224`); a merge keeps every parent (`REQ-QB-221`).
 - **The API.** A submission naming a child choice not offered under the
   parent's answer, or answering the child while the parent is unanswered, is
   refused by question key before anything is written (`REQ-SUB-113`,
@@ -222,11 +220,7 @@ as a place to type, not a dropdown to pick from
   [ADR-0152](../../decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
   A dependent type-ahead follows the same rule, on top of its own narrowing by
   the parent's answer (`REQ-QB-231`, ADR-0146).
-- **Reopening filters by what the field holds.** Closing the list and opening
-  it again — by any of the ways above — filters by the field's current text
-  exactly as typing it would: the hint below 3 characters, only the matching
-  choices at 3 or more. It never shows every choice unfiltered on reopen,
-  whatever the field holds (`REQ-QB-232`, ADR-0152).
+- **Reopening filters by what the field holds** (`REQ-QB-232`, ADR-0152).
 - **Filtering.** At 3 or more characters, what the reporter typed narrows the
   list to the choices whose wording contains it anywhere, ignoring case and
   accents, in the reader's language (`REQ-QB-160`). The list keeps the order

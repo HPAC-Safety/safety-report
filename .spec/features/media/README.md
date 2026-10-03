@@ -232,7 +232,7 @@ feed item carries only the count — no ids, kinds, names, or links.
   `DownloadedOriginalMedia` for a raw original), one row per mint. The
   lightbox reuses a thumbnail's link while it is valid; a refresh after an
   error writes another row and resumes playback position.
-  A 404 removes the item from both the strip and the lightbox.
+  A 404 drops the item (`REQ-MED-058`).
 
 See [ADR-0117](../../decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md#amendment-2026-09-28)
 for the full record.

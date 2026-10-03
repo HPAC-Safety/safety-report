@@ -11,6 +11,7 @@
 // error. Issue #8 owns the wider i18n tooling and may well replace this with
 // something richer; the contract it has to keep is the exit code.
 import { readFileSync, existsSync } from 'node:fs'
+import { errorMessage } from '../lib/actions.ts'
 
 const source = 'locales/en-CA.json'
 const targets = ['locales/fr-CA.json']
@@ -27,7 +28,7 @@ const read = (path: string): string[] => {
   try {
     return flatten(JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>)
   } catch (error) {
-    console.error(`::error file=${path}::${path} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`)
+    console.error(`::error file=${path}::${path} is not valid JSON: ${errorMessage(error)}`)
     process.exit(1)
   }
 }

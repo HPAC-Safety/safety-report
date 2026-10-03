@@ -30,7 +30,7 @@
 // blanked first so a line number stays true.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { isMain } from '../lib/actions.ts'
 
 export const ROOT = 'src/web/src'
 export const STRICT = true
@@ -353,4 +353,4 @@ export function main(root: string = ROOT, options: CheckOptions = {}): number {
 	return 0
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) process.exit(main())
+if (isMain(import.meta.url)) process.exit(main())

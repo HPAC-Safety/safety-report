@@ -19,6 +19,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { flatten, unflatten, type Entry, type LocaleTree } from './translate-locale.ts'
+import { isMain } from '../lib/actions.ts'
 
 const SOURCE_LOCALE = 'en-CA'
 const TARGET_LOCALE = 'fr-CA'
@@ -45,13 +46,8 @@ export function stubMissingKeys(source: LocaleTree, target: LocaleTree): { value
 	}
 
 	// Key order follows source first, then anything target-only already had.
-	const ordered = [...sourceEntries.map(([key]) => key), ...targetByKey.keys()].filter(
-		(key, index, all) => all.indexOf(key) === index,
-	)
-	const merged = ordered.flatMap((key): Entry[] => {
-		const text = targetByKey.get(key)
-		return text === undefined ? [] : [[key, text]]
-	})
+	// A Map keeps the position of a key's first insertion and takes the value of its last.
+	const merged: Entry[] = [...new Map<string, string>([...sourceEntries.map(([key]): Entry => [key, '']), ...targetByKey])]
 
 	return { value: unflatten(merged), changed }
 }
@@ -90,5 +86,5 @@ export function parseArgs(argv: readonly string[]): { dir: string } {
 	return { dir }
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/stub-missing-translations.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) main(parseArgs(process.argv.slice(2)).dir)

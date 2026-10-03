@@ -17,6 +17,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { posix } from 'node:path'
+import { isMain } from '../lib/actions.ts'
 
 export interface InventoryInput {
 	files: readonly string[]
@@ -92,8 +93,7 @@ export function main({ files, markdown }: InventoryInput): number {
 	return 1
 }
 
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/check-inventories.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
 	const files = execFileSync('git', ['ls-files', '--', 'src'], { encoding: 'utf8' }).split('\n').filter(Boolean)
 	process.exit(main({ files, markdown: readFileSync(INVENTORY, 'utf8') }))

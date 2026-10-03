@@ -257,6 +257,15 @@ describe('the translator adapter', () => {
 		})
 	})
 
+	describe('given a reply that is empty or JSON but not an object', () => {
+		it('when it is parsed then it is refused, never read as translations', () => {
+			// Given / When / Then
+			assert.throws(() => parseTranslations(null, two), /did not return JSON/)
+			assert.throws(() => parseTranslations(undefined, two), /did not return JSON/)
+			assert.throws(() => parseTranslations('[1, 2]', two), /without a "translations" array/)
+		})
+	})
+
 	describe('given the wrong number of translations', () => {
 		it('when it is parsed then it refuses rather than mapping keys to the wrong French', () => {
 			// Given — position is the only thing tying a translation to its key, so a
@@ -448,6 +457,17 @@ describe('the dormant DeepL adapter (ADR-0179)', () => {
 			assert.deepEqual(body.text, ['© <ph>{year}</ph> HPAC Safety'])
 			assert.equal(body.tag_handling, 'xml')
 			assert.deepEqual(body.ignore_tags, ['ph'])
+		})
+	})
+
+	describe('given a DeepL response that is not an object', () => {
+		it('when it is parsed then it is refused', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: 'k' })
+
+			// When / Then
+			assert.throws(() => translator.parseResponse(null, [{ key: 'a', text: 'A' }]), /no translations array/)
+			assert.throws(() => translator.parseResponse({ translations: 'x' }, [{ key: 'a', text: 'A' }]), /no translations array/)
 		})
 	})
 

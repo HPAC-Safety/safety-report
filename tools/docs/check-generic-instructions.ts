@@ -11,6 +11,7 @@
 // The exit code is the contract.
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
 
@@ -84,6 +85,5 @@ export function main(root: string = ROOT, files: readonly string[] = GENERIC_FIL
 	return 0
 }
 
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/check-generic-instructions.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main())

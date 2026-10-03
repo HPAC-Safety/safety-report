@@ -17,6 +17,7 @@ import { lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { DECISIONS, LEGACY_DECISIONS } from './spec-paths.ts'
+import { isMain, errorMessage } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
 const FILENAME = /^ADR-(\d{4})-[a-z0-9-]+\.md$/
@@ -320,7 +321,7 @@ export function main(argv: readonly string[] = [], root = ROOT): number {
 		try {
 			result = renumber(root, oldNumber, newNumber, { file: flag === -1 ? undefined : argv[flag + 1] })
 		} catch (error) {
-			console.error(`::error::${error instanceof Error ? error.message : String(error)}`)
+			console.error(`::error::${errorMessage(error)}`)
 			return 1
 		}
 
@@ -351,5 +352,5 @@ export function main(argv: readonly string[] = [], root = ROOT): number {
 	return 0
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/adr-numbers.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(process.argv.slice(2)))

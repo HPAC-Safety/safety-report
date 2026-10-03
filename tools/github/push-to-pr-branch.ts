@@ -26,6 +26,7 @@
 // --paths repeats the workflow's own `pull_request_target.paths`;
 // tests/js/github/push-to-pr-branch.test.ts fails if the two lists disagree.
 import { execFileSync, spawnSync } from 'node:child_process'
+import { isMain } from '../lib/actions.ts'
 
 const ATTEMPTS = 5
 
@@ -143,6 +144,5 @@ export function main(argv: readonly string[] = [], cwd: string = process.cwd()):
 	return 1
 }
 
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/push-to-pr-branch.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(process.argv.slice(2)))

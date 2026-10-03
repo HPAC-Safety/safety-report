@@ -17,6 +17,7 @@ import { lstatSync, readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
 import { DECISIONS, LESSONS } from '../spec/spec-paths.ts'
+import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
 
@@ -273,6 +274,5 @@ export function main(root: string = ROOT, paths: readonly string[] = []): number
 
 // Given paths, checks only those — the pre-commit hook passes the staged
 // markdown so a commit pays for its own files and nothing else.
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/check-frontmatter.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(ROOT, process.argv.slice(2)))

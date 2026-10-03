@@ -26,6 +26,7 @@
 // `wget` invocation is still caught, including one wrapped in flags, an
 // alias, or a different-cased command.
 import { readFileSync } from 'node:fs'
+import { isMain } from '../lib/actions.ts'
 
 // Commands able to make the network call a bypass needs — the mutation-name
 // scan (which must catch a rewrap through curl/wget, not just `gh` itself)
@@ -255,8 +256,7 @@ export function main(input: string): number {
 	return 2
 }
 
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/guard-pr-merge.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
 	process.exit(main(readFileSync(0, 'utf8')))
 }

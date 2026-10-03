@@ -31,7 +31,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { exec, isMain, required, type Env, type Exec } from '../lib/actions.ts'
+import { exec, isMain, required, type Env, type Exec, errorMessage } from '../lib/actions.ts'
 import { main as push } from './push-to-pr-branch.ts'
 
 export const BOT_NAME = 'github-actions[bot]'
@@ -88,7 +88,7 @@ export function main({ argv = process.argv.slice(2), env = process.env, exec: ru
 		const body = options['body-env'] ? ['-m', `${env[options['body-env']] ?? ''}.`] : []
 		git('commit', '-m', options.subject, ...body)
 	} catch (error) {
-		log(`::error::${error instanceof Error ? error.message : String(error)}`)
+		log(`::error::${errorMessage(error)}`)
 		return 1
 	}
 

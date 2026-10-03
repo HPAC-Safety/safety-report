@@ -67,6 +67,7 @@ import { appendFileSync, existsSync, readFileSync, unlinkSync, writeFileSync } f
 import { join } from 'node:path'
 
 import { TranslatorNotConfiguredError, configFromEnv, createTranslator, type AnyTranslator } from './translator.ts'
+import { isMain, errorMessage } from '../lib/actions.ts'
 
 /** A nested locale object, or any JSON object read where one was expected. */
 export type LocaleTree = Record<string, unknown>
@@ -129,7 +130,7 @@ export interface Verification {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 
-const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error))
+const messageOf = errorMessage
 
 const SOURCE_LOCALE = 'en-CA'
 const TARGET_LOCALE = 'fr-CA'
@@ -627,7 +628,7 @@ export function checkVerdict({ problems, pending }: Pick<Verification, 'problems
 // --- the command ------------------------------------------------------------
 
 /** True when this file was run as a command rather than imported by a test. */
-const runAsCommand = process.argv.at(1)?.endsWith('/translate-locale.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 
 function parseArgs(argv: readonly string[]) {
 	const flags = new Set<string>()

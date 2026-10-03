@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { annotation, appendSummary, exec, isMain, required, run, setEnv, setOutput } from '../../../tools/lib/actions.ts'
+import { annotation, appendSummary, errorMessage, exec, isMain, required, run, setEnv, setOutput } from '../../../tools/lib/actions.ts'
 
 const tempFile = () => path.join(mkdtempSync(path.join(tmpdir(), 'actions-')), 'file')
 
@@ -102,5 +102,13 @@ describe('isMain', () => {
 
 	it('is false for a module that is imported', () => {
 		assert.equal(isMain(new URL('../../../tools/lib/actions.ts', import.meta.url).href), false)
+	})
+})
+
+describe('errorMessage', () => {
+	it('gives an Error its message and any other thrown value as text', () => {
+		assert.equal(errorMessage(new Error('boom')), 'boom')
+		assert.equal(errorMessage('plain'), 'plain')
+		assert.equal(errorMessage(42), '42')
 	})
 })

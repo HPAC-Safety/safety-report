@@ -30,7 +30,7 @@ import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { exec, isMain, required, type Env, type Exec, type ExecOptions, type ExecResult } from '../lib/actions.ts'
+import { exec, isMain, required, type Env, type Exec, type ExecOptions, type ExecResult, errorMessage } from '../lib/actions.ts'
 import { BOT_EMAIL, BOT_NAME } from '../github/commit-to-pr-branch.ts'
 
 export const WARNING =
@@ -108,7 +108,7 @@ export function main({ env = process.env, exec: run = exec, log = console.log, c
 			if (created.stdout) log(created.stdout)
 		}
 	} catch (error) {
-		log(`::error::${error instanceof Error ? error.message : String(error)}`)
+		log(`::error::${errorMessage(error)}`)
 		return 1
 	}
 	return 0

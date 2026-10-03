@@ -144,6 +144,35 @@ function localAdrsOf(files: Record<string, string>): { name: string; number: str
 		.map((name) => ({ name, number: name.match(/^ADR-(\d{4})-[a-z0-9-]+\.md$/)?.[1] ?? null }))
 }
 
+describe('a decision file whose name carries no number', () => {
+	const files = { 'ADR-0001-one.md': adr('0001'), 'ADR-draft.md': '---\ntitle: Draft\n---\n' }
+
+	it('is skipped by the status check and claims no number', () => {
+		const root = repository(files)
+		const adrs = [{ name: 'ADR-0001-one.md', number: '0001' }, { name: 'ADR-draft.md', number: null }]
+		assert.deepEqual(checkStatus(adrs, (name) => files[name as keyof typeof files]), [])
+		assert.deepEqual([...claimedNumbers(root, { remote: false })], ['0001'])
+	})
+
+	it('is refused by a renumber that names it, because it has no number to move', () => {
+		assert.throws(() => renumber(repository(files), '0001', '0002', { file: 'ADR-draft.md' }), /ADR-draft\.md/)
+	})
+
+	it('is refused by a renumber of a file that does not exist', () => {
+		assert.throws(() => renumber(repository(files), '0001', '0002', { file: 'ADR-9999-none.md' }), /No ADR-9999-none\.md in/)
+	})
+})
+
+describe('a decision with no status line in its front matter', () => {
+	it('is reported with an empty status', () => {
+		const adrs = [{ name: 'ADR-0001-one.md', number: '0001' }]
+		assert.deepEqual(
+			checkStatus(adrs, () => '---\ntitle: A\n---\n\n# ADR-0001 — A\n'),
+			['.spec/decisions/ADR-0001-one.md: "status: " is not one of ' + 'accepted, partially-superseded, superseded'],
+		)
+	})
+})
+
 describe('nextNumber', () => {
 	it('is one past the highest claimed, not one past the count', () => {
 		assert.equal(nextNumber(new Set(['0001', '0089'])), '0090')

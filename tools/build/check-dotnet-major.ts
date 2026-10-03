@@ -17,6 +17,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isMain } from '../lib/actions.ts'
 
 // Renovate's rule is found by what it matches, not by its description, so
 // rewording the description cannot hide it from this check.
@@ -116,5 +117,5 @@ export function main(root: string): number {
 	return 1
 }
 
-const runAsCommand = (process.argv.at(1) ?? '').endsWith('/check-dotnet-major.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(process.cwd()))

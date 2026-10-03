@@ -21,6 +21,7 @@
 //
 // The exit code is the contract.
 import { execFileSync } from 'node:child_process'
+import { isMain } from '../lib/actions.ts'
 
 // A file whose change can alter what a page looks like: a component or a
 // stylesheet under the web source tree. A test beside it renders nothing.
@@ -151,5 +152,5 @@ export function main(input: ScreenshotInput | { error: string }): number {
 	return 1
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/check-pr-screenshots.ts') === true
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(readInput(process.env)))

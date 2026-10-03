@@ -13,6 +13,7 @@
 // locale catalogue and anything else is flagged.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { extname, join } from 'node:path'
+import { isMain } from '../lib/actions.ts'
 
 const ROOT = 'src/web/src'
 const COPY_ATTRIBUTES = ['aria-label', 'alt', 'title', 'placeholder']
@@ -122,5 +123,5 @@ export function main(root: string = ROOT): number {
   return 0
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/check-hardcoded-strings.ts') === true
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main())

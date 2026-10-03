@@ -12,6 +12,7 @@
 //
 // The exit code is the contract.
 import { readFileSync } from 'node:fs'
+import { isMain } from '../lib/actions.ts'
 
 // One entry per agent whose session links are refused. Supporting another agent
 // is one more entry here, with the URL shape its sessions actually use.
@@ -46,8 +47,7 @@ export function main(text: string, source: string): number {
 	return 1
 }
 
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/check-agent-session-links.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
 	const file = process.argv[2]
 	process.exit(file ? main(readFileSync(file, 'utf8'), 'The commit message') : main(process.env.PR_BODY ?? '', 'The pull-request body'))

@@ -32,6 +32,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
+import { isMain } from '../lib/actions.ts'
 
 const args = new Map<string, string | undefined>()
 for (let i = 2; i < process.argv.length; i += 2) {
@@ -39,7 +40,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 
 /** True when this file was run as a command rather than imported by a test. */
-const runAsCommand = process.argv[1]?.endsWith('/find-coverage-baseline.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 
 const repo = args.get('repo')
 const workflow = args.get('workflow') ?? 'CI'

@@ -33,6 +33,7 @@ import { join, posix } from 'node:path'
 
 import { BINDINGS, FEATURES, PLAYWRIGHT_STEPS, REQNROLL_STEPS, SPEC_ROOT } from './spec-paths.ts'
 import { type Claim, readClaims } from './generate-traceability.ts'
+import { isMain, errorMessage } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
 
@@ -47,7 +48,7 @@ export interface Step {
 }
 
 interface ExamplesTable {
-	header: string[] | null
+	header: string[] // empty until the first row of the table is read
 	rows: string[][]
 }
 
@@ -86,7 +87,7 @@ export function readScenarios(path: string, source: string): { feature: string; 
 	let target: Step[] | null = null // the step list being filled
 	let previous: string | null = null // the keyword And/But inherit
 	let current: ScenarioDraft | null = null // the scenario being read
-	let examples: ExamplesTable | null = null // the Examples table being read
+	let examples: ExamplesTable = { header: [], rows: [] } // the Examples table being read
 	let docString: string | null = null
 
 	for (const [index, raw] of lines.entries()) {
@@ -117,7 +118,7 @@ export function readScenarios(path: string, source: string): { feature: string; 
 				previous = null
 			} else if (keyword === 'Examples' || keyword === 'Scenarios') {
 				if (!current) problems.push(`${path}:${index + 1}: Examples outside a scenario`)
-				examples = { header: null, rows: [] }
+				examples = { header: [], rows: [] }
 				current?.examples.push(examples)
 				block = 'examples'
 			} else {
@@ -133,8 +134,7 @@ export function readScenarios(path: string, source: string): { feature: string; 
 		if (line.startsWith('|')) {
 			if (block === 'examples') {
 				const cells = line.slice(1, line.endsWith('|') ? -1 : undefined).split('|').map((cell) => cell.trim())
-				if (examples === null) continue
-				if (examples.header === null) examples.header = cells
+				if (examples.header.length === 0) examples.header = cells
 				else examples.rows.push(cells)
 			}
 			// Any other table is a step argument; the binding takes it as a
@@ -180,7 +180,7 @@ export function readScenarios(path: string, source: string): { feature: string; 
 /** A scenario's steps; an outline's once per Examples row, deduplicated. */
 function expand(scenario: ScenarioDraft): Step[] {
 	const rows = scenario.examples.flatMap((table) =>
-		table.rows.map((cells) => Object.fromEntries((table.header ?? []).map((name, at) => [name, cells[at] ?? '']))),
+		table.rows.map((cells) => Object.fromEntries(table.header.map((name, at) => [name, cells[at] ?? '']))),
 	)
 	const steps: Step[] = []
 	const seen = new Set<string>()
@@ -330,13 +330,13 @@ export function unescapeString(body: string): string {
 export function readPlaywrightBindings(path: string, source: string): { bindings: PlaywrightBinding[]; problems: string[] } {
 	const problems: string[] = []
 	const bindings: PlaywrightBinding[] = []
-	if (!/const\s*\{[^}]*\}\s*=\s*createBdd\(/.test(source)) {
+	const created = /const\s*\{([^}]*)\}\s*=\s*createBdd\(/.exec(source)
+	if (!created) {
 		if (TS_ANY_STEP.test(source)) problems.push(`${path}: steps are declared without "const { Given, When, Then } = createBdd()"`)
 		TS_ANY_STEP.lastIndex = 0
 		return { bindings, problems }
 	}
-	const destructured = /const\s*\{([^}]*)\}\s*=\s*createBdd\(/.exec(source)?.[1] ?? ''
-	if (/:/.test(destructured)) problems.push(`${path}: createBdd() is destructured with an alias — this tool reads Given, When, and Then by name`)
+	if (/:/.test(created[1])) problems.push(`${path}: createBdd() is destructured with an alias — this tool reads Given, When, and Then by name`)
 
 	const lineAt = (offset: number): number => source.slice(0, offset).split('\n').length
 	for (const match of source.matchAll(TS_STEP)) {
@@ -524,7 +524,7 @@ export function resolve(features: readonly FeatureScenarios[], csBindings: reado
 			try {
 				return [{ ...binding, regex: matcher(binding.pattern) }]
 			} catch (error) {
-				problems.push(`${binding.file}:${binding.line}: ${error instanceof Error ? error.message : String(error)}`)
+				problems.push(`${binding.file}:${binding.line}: ${errorMessage(error)}`)
 				return []
 			}
 		})
@@ -587,7 +587,7 @@ export function resolve(features: readonly FeatureScenarios[], csBindings: reado
 
 // ---------------------------------------------------------------- rendering --
 
-const byId = (a: { id: string }, b: { id: string }): number => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+const byId = (a: { id: string }, b: { id: string }): number => Number(a.id > b.id) - Number(a.id < b.id)
 const code = (text: string): string => (text.includes('`') ? `\`\` ${text} \`\`` : `\`${text}\``)
 const link = (file: string): string => `[${posix.basename(file)}](${posix.relative(SPEC_ROOT, file)})`
 
@@ -646,8 +646,8 @@ export function render({ claims, unused, ambiguous }: Pick<Resolution, 'claims' 
 		'',
 		'A step more than one definition matches. The runner fails it; name one.',
 	)
-	for (const label of [...ambiguous.keys()].sort()) {
-		lines.push('', `### ${code(label)}`, '', [...(ambiguous.get(label) ?? [])].sort().map(link).join(' · '))
+	for (const [label, files] of [...ambiguous].sort(([a], [b]) => Number(a > b) - Number(a < b))) {
+		lines.push('', `### ${code(label)}`, '', [...files].sort().map(link).join(' · '))
 	}
 
 	lines.push(
@@ -755,5 +755,5 @@ export function main(root = ROOT, { check = false, fail = true }: { check?: bool
 	return result.problems.length > 0 || gaps.length > 0 ? 1 : 0
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/generate-bindings.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(ROOT, { check: process.argv.includes('--check'), fail: !process.argv.includes('--no-fail') }))

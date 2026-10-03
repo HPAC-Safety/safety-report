@@ -22,6 +22,7 @@
 import { readFileSync } from 'node:fs'
 
 import { TRACEABILITY } from './spec-paths.ts'
+import { isMain } from '../lib/actions.ts'
 
 // Why a scenario might genuinely be unnecessary. Deliberately closed: a new
 // category is a decision somebody argues for, not a word somebody types.
@@ -93,9 +94,9 @@ export interface Exemption {
 /** The exemption a pull-request body declares, if it declares one. */
 export function parseExemption(body: string): Exemption | null {
 	const lines = body.split(/\r?\n/)
-	const at = lines.findIndex((line) => EXEMPTION.test(line))
-	if (at === -1) return null
-	const declared = EXEMPTION.exec(lines[at])
+	const declarations = lines.map((line) => EXEMPTION.exec(line))
+	const at = declarations.findIndex((match) => match !== null)
+	const declared = declarations[at]
 	if (!declared) return null
 
 	const claimsAt = lines.findIndex((line) => PRESERVED.test(line))
@@ -240,7 +241,7 @@ export function main({ changed, features, body, matrix }: { changed: readonly st
 	return 1
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/check-feature-coverage.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
 	process.exit(
 		main({

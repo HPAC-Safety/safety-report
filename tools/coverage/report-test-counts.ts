@@ -142,7 +142,7 @@ function main(): void {
 			? trxFiles(trxDir).flatMap(f => readTrxTests(f, assemblyCasing(testsDir)))
 			: []
 		const xunitRows = countBy(allTests.filter(t => t.feature === null).map(t => t.assembly))
-		const reqnrollRows = countBy(allTests.filter(t => t.feature !== null).map(t => t.feature ?? ''))
+		const reqnrollRows = countBy(allTests.flatMap(t => (t.feature === null ? [] : [t.feature])))
 
 		const xunit = table('xUnit', 'Assembly', xunitRows)
 		lines.push(...(xunit ?? ['_No .trx results found in this run._', '']))

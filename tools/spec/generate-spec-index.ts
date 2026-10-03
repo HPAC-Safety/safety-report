@@ -22,6 +22,7 @@ import { join, posix } from 'node:path'
 import { parseFrontmatter } from '../docs/check-frontmatter.ts'
 import { CONSTRAINT_PAGES, DECISIONS, FEATURES, LESSONS, SPEC_INDEX, SPEC_ROOT } from './spec-paths.ts'
 import { readClaims, readConstraints } from './generate-traceability.ts'
+import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
 
@@ -268,5 +269,5 @@ export function main(root = ROOT, { check = false }: { check?: boolean } = {}): 
 	return 0
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/generate-spec-index.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(ROOT, { check: process.argv.includes('--check') }))

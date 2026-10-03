@@ -21,6 +21,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs'
 import { join, posix, relative, sep } from 'node:path'
 
 import { anchors, links } from './markdown-links.ts'
+import { isMain } from '../lib/actions.ts'
 
 export interface LinkIndex {
 	files: Set<string>
@@ -163,6 +164,5 @@ export function main(root: string = ROOT, paths: readonly string[] = []): number
 	return 0
 }
 
-const [, script = ''] = process.argv
-const runAsCommand = script.endsWith('/check-links.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main(ROOT, process.argv.slice(2)))

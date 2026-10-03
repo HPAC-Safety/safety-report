@@ -13,7 +13,7 @@
 // Usage: node tools/web/check-web-bundle.ts [dist-dir]
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { isMain } from '../lib/actions.ts'
 
 export const DEFAULT_DIST = 'src/web/dist'
 
@@ -97,4 +97,4 @@ export function main(argv: readonly string[]): number {
 	return 0
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) process.exit(main(process.argv.slice(2)))
+if (isMain(import.meta.url)) process.exit(main(process.argv.slice(2)))

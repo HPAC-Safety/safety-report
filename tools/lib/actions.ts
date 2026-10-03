@@ -99,6 +99,11 @@ export function required(env: Env, name: string): string {
 	return value
 }
 
+/** The message of a thrown value: an Error's message, else the value as text. */
+export function errorMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error)
+}
+
 /** Whether a module is being run as the command, rather than imported by a test. */
 export function isMain(metaUrl: string): boolean {
 	if (!process.argv[1]) return false

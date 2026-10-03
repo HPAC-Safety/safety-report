@@ -16,6 +16,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isMain } from '../lib/actions.ts'
 
 export const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 export const DEFAULT_LCOV = 'artifacts/coverage/web/lcov.info'
@@ -36,8 +37,8 @@ export function globMatches(glob: string, path: string): boolean {
 		if (glob.startsWith('**/', i)) {
 			pattern += '(?:[^/]+/)*'
 			i += 2
-		} else if (glob[i] === '*') pattern += '[^/]*'
-		else pattern += (glob[i] ?? '').replace(/[.+?^${}()|[\]\\]/, '\\$&')
+		} else if (glob.charAt(i) === '*') pattern += '[^/]*'
+		else pattern += glob.charAt(i).replace(/[.+?^${}()|[\]\\]/, '\\$&')
 	}
 	return new RegExp(`^${pattern}$`).test(path)
 }
@@ -94,4 +95,4 @@ export function main(argv: readonly string[], root: string = REPO_ROOT): number 
 	return 0
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) process.exit(main(process.argv.slice(2)))
+if (isMain(import.meta.url)) process.exit(main(process.argv.slice(2)))

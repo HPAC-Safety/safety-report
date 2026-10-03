@@ -43,6 +43,7 @@
  */
 
 import { readFileSync, appendFileSync } from 'node:fs'
+import { isMain, errorMessage } from '../lib/actions.ts'
 
 const args = new Map<string, string | undefined>()
 for (let i = 2; i < process.argv.length; i += 2) {
@@ -50,7 +51,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 
 /** True when this file was run as a command rather than imported by a test. */
-const runAsCommand = process.argv[1]?.endsWith('/check-coverage.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 
 const reportPath = args.get('report')
 const baselinePath = args.get('baseline')
@@ -163,7 +164,7 @@ function main(reportPath: string): void {
 		try {
 			baseline = readTotals(baselinePath)
 		} catch (error) {
-			console.log(`::notice::No usable baseline (${error instanceof Error ? error.message : String(error)}). Ratchet skipped.`)
+			console.log(`::notice::No usable baseline (${errorMessage(error)}). Ratchet skipped.`)
 		}
 	}
 

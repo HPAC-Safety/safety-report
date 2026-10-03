@@ -17,6 +17,7 @@
 // With no token it reads nothing and exits 0 with a notice. Without --sync the
 // exit code says whether there is drift.
 import { readFileSync } from 'node:fs'
+import { isMain } from '../lib/actions.ts'
 
 export const PAGE = 'docs/issue-traceability.md'
 export const DRIFT_TITLE = 'Issue traceability drift'
@@ -218,7 +219,7 @@ export async function main({ api, markdown, sync, repository }: { api: Api | nul
 	}
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/check-issue-traceability.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
 	const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
 	const repository = process.env.GITHUB_REPOSITORY || 'HPAC-Safety/safety-report'

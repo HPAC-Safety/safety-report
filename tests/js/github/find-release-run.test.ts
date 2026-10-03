@@ -80,4 +80,10 @@ describe('find release run', () => {
 			'### Promoting 2026.10.02-1\n- Release run: https://github.com/o/r/actions/runs/99\n- Commit: `deadbeef`\n',
 		)
 	})
+	it('writes a summary link without a host when the server URL is not set', () => {
+		const t = setup(['deadbeef', '99', 'api-image\nworker-image\nweb-dist'])
+		const { GITHUB_SERVER_URL: _unset, ...env } = t.env
+		assert.equal(main({ ...t, env }), 0)
+		assert.match(readFileSync(t.env.GITHUB_STEP_SUMMARY, 'utf8'), /- Release run: \/o\/r\/actions\/runs\/99\n/)
+	})
 })

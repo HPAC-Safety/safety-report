@@ -18,6 +18,7 @@ import { appendFileSync, readFileSync, readdirSync, statSync, writeFileSync } fr
 import { join, posix } from 'node:path'
 
 import { CONSTRAINT_PAGES, FEATURES, SPEC_ROOT, TRACEABILITY } from './spec-paths.ts'
+import { isMain } from '../lib/actions.ts'
 
 export { CONSTRAINT_PAGES }
 
@@ -271,5 +272,5 @@ export function main(root = ROOT, { write = true }: { write?: boolean } = {}): n
 	return 0
 }
 
-const runAsCommand = process.argv.at(1)?.endsWith('/generate-traceability.ts') ?? false
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) process.exit(main())

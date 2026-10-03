@@ -1061,3 +1061,50 @@ describe('the instructions a translator is given', () => {
 		})
 	})
 })
+
+describe('a locale or glossary that is empty, missing or malformed', () => {
+	it('given a missing locale when it is flattened then it has no entries', () => {
+		assert.deepEqual(flatten(null), [])
+		assert.deepEqual(flatten(undefined), [])
+	})
+
+	it('given a commentary key when it is looked up then it is never a pin', () => {
+		assert.equal(glossaryFrench('_note', { _note: 'ignored' }), undefined)
+	})
+
+	it('given no glossary at all when a key is looked up then nothing is pinned', () => {
+		assert.equal(glossaryFrench('form.submit'), undefined)
+		assert.equal(glossaryFrench('form.submit', null), undefined)
+	})
+
+	it('given a glossary entry that is an object with no French when it is looked up then it refuses', () => {
+		assert.throws(() => glossaryFrench('form.submit', { 'form.submit': { note: 'x' } }), /'form.submit' has no fr-CA wording/)
+	})
+
+	it('given no terms file when it is read then there are no terms', () => {
+		assert.deepEqual(termEntries(null), [])
+	})
+
+	it('given a term whose entry is not an object when it is read then it refuses and names the term', () => {
+		assert.throws(() => termEntries({ upload: 'téléverser' }), /'upload' has no fr-CA rendering/)
+	})
+
+	it('given a term with a French rendering and no list of forbidden forms when it is read then it refuses', () => {
+		assert.throws(() => termEntries({ upload: { 'fr-CA': 'téléverser' } }), /upload/)
+	})
+})
+
+describe('applying a plan that records no hand edits', () => {
+	it('given a plan with no record list when it is applied then the French and provenance are unchanged', () => {
+		const source = english()
+		const result = applyPlan({
+			french: frenchFor(source),
+			meta: metaFor(source),
+			plan: { translate: [], pin: [], remove: [] },
+			translations: new Map(),
+			provider: 'test-provider',
+		})
+		assert.deepEqual(result.french, frenchFor(source))
+		assert.deepEqual(result.meta, metaFor(source))
+	})
+})

@@ -471,7 +471,7 @@ function deeplTranslator({ apiKey, endpoint, formality }: TranslatorConfig): Dee
 	return {
 		// DeepL has no model id, so the provenance records what actually
 		// determines the output instead: the target variant and the formality.
-		name: `deepl:${DEEPL_CODES['fr-CA'] ?? ''}:${chosenFormality}`,
+		name: `deepl:${codeFor('fr-CA')}:${chosenFormality}`,
 		endpoint: resolved,
 		buildRequest,
 		parseResponse,

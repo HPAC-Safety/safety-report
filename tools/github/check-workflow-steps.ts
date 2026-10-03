@@ -56,7 +56,7 @@ export function runSteps(text: string): RunStep[] {
 }
 
 function leadingWidth(line: string): number {
-	return (/^\s*/.exec(line) ?? [''])[0].length
+	return line.length - line.trimStart().length
 }
 
 function dedent(lines: string[]): string[] {

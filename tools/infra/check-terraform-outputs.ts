@@ -25,6 +25,7 @@
 //
 // The exit code is the contract.
 import { globSync, readFileSync } from 'node:fs'
+import { isMain } from '../lib/actions.ts'
 
 export const OUTPUTS_FILE = 'infra/outputs.tf'
 export const WORKFLOWS_GLOB = '.github/workflows/*.yml'
@@ -209,9 +210,7 @@ export function main({ outputsHcl, workflows }: CheckInput): number {
 	return 1
 }
 
-const argv: (string | undefined)[] = process.argv
-const scriptPath = argv[1]
-const runAsCommand = (scriptPath ?? 'undefined').endsWith('/check-terraform-outputs.ts')
+const runAsCommand = isMain(import.meta.url)
 if (runAsCommand) {
 	const outputsHcl = readFileSync(OUTPUTS_FILE, 'utf8')
 	const workflows = [...globSync(WORKFLOWS_GLOB), ...globSync(SCRIPTS_GLOB)].map((path) => ({ path, text: readFileSync(path, 'utf8') }))

@@ -208,6 +208,21 @@ describe('readScenarios', () => {
 		)
 	})
 
+	it('reads an Examples row that has no closing bar, and fills a cell the row leaves out with nothing', () => {
+		const source = [
+			'Feature: A',
+			'@REQ-MED-001',
+			'Scenario Outline: B',
+			'  Given a <kind> file named <name>',
+			'  Examples:',
+			'    | kind | name',
+			'    | image',
+		].join('\n')
+		const { scenarios: [claim] } = scenarios(source)
+
+		assert.deepEqual(claim.steps.map((step) => step.text), ['a image file named '])
+	})
+
 	it('ignores data tables, doc strings, comments, and tags', () => {
 		const source = [
 			'Feature: A',
@@ -420,6 +435,12 @@ describe('resolve', () => {
 		const result = resolve(features(claim('REQ-MED-001', [step('Given', 'x')])), [cs('Given', 'x', 'A.cs'), cs('Given', '{}', 'B.cs')], [])
 
 		assert.deepEqual([...(result.ambiguous.get('Given x') ?? [])].sort(), ['A.cs', 'B.cs'])
+	})
+
+	it('lists unused definitions by file, then by what they match', () => {
+		const result = resolve(features(), [cs('Given', 'b', 'Z.cs'), cs('Given', 'b', 'A.cs'), cs('Given', 'a', 'A.cs')], [])
+
+		assert.deepEqual(result.unused.map((binding) => [binding.file, binding.pattern]), [['A.cs', 'a'], ['A.cs', 'b'], ['Z.cs', 'b']])
 	})
 
 	it('records an unbound step, and counts a binding a planned claim uses as used', () => {

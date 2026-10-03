@@ -29,7 +29,7 @@ ADR-0102 merged printed "Nothing to translate" and settled nothing (#381).
 `i18n-translate.yml` reports its own outcome to every open issue labelled
 `verify:translation-run`.
 
-- `translate-locale.mjs --generate` outputs `translated`, the number of keys
+- `translate-locale.ts --generate` outputs `translated`, the number of keys
   actually sent to the provider, and `translated_keys`. The existing `keys`
   also counts glossary pins, hand-edits recorded as human, and removals. None of
   those reach a provider, so `keys` can't show that the provider was exercised.

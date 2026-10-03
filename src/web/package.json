@@ -3,9 +3,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"predev": "node ../../tools/i18n/stub-missing-translations.mjs --locales ../../locales",
+		"predev": "node ../../tools/i18n/stub-missing-translations.ts --locales ../../locales",
 		"dev": "vite",
-		"prebuild": "node ../../tools/i18n/stub-missing-translations.mjs --locales ../../locales",
+		"prebuild": "node ../../tools/i18n/stub-missing-translations.ts --locales ../../locales",
 		"build": "vite build",
 		"preview": "vite preview",
 		"typecheck": "tsc --noEmit -p .",

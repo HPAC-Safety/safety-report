@@ -1,6 +1,6 @@
 ---
 title: A generated map binds every claim to its step definitions
-description: tools/spec/generate-bindings.mjs resolves every scenario step to the step definition its runner would bind and writes .spec/bindings.md — per claim, the files that bind it. A built claim with an unbound step fails the docs job; stale @ignore claims, unused step definitions, and ambiguous steps are listed, not failed. The specification is the authority.
+description: tools/spec/generate-bindings.ts resolves every scenario step to the step definition its runner would bind and writes .spec/bindings.md — per claim, the files that bind it. A built claim with an unbound step fails the docs job; stale @ignore claims, unused step definitions, and ambiguous steps are listed, not failed. The specification is the authority.
 type: adr
 status: accepted
 date: 2026-09-30
@@ -45,7 +45,7 @@ truth, and the code second.
 
 ## Decision
 
-`tools/spec/generate-bindings.mjs` writes `.spec/bindings.md`, a generated file beside the
+`tools/spec/generate-bindings.ts` writes `.spec/bindings.md`, a generated file beside the
 matrix.
 
 - **The map.** For each claim, it lists the step-definition files that bind its
@@ -149,9 +149,9 @@ of them — following the sections of the area's README.
   map regenerate byte-identical.
 - **A Rule carries no tags.** Gherkin would let a tag on a Rule reach every
   scenario beneath it, but the matrix takes a claim's engine and status from
-  the scenario's own tags only. So `tools/spec/generate-traceability.mjs` fails a tagged
+  the scenario's own tags only. So `tools/spec/generate-traceability.ts` fails a tagged
   Rule rather than let the two disagree.
-- **A Rule may have its own Background**, which `tools/spec/generate-bindings.mjs` adds to the
+- **A Rule may have its own Background**, which `tools/spec/generate-bindings.ts` adds to the
   scenarios in that Rule only.
 - **Rejected:** splitting each area into new directories. It would rename areas,
   rescope four step-definition classes, and rewrite some forty links for no

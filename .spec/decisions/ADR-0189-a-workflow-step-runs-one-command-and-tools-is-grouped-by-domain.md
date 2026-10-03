@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-02
 decision-makers: Chase Florell
-keywords: GitHub Actions, workflow, run step, inline shell, tools, scripts, node:test, naming convention, grouping, check-workflow-steps, lesson 0001, ADR-0039, ADR-0052, ADR-0090, ADR-0101, ADR-0113, ADR-0145, ADR-0147, ADR-0183
+keywords: type stripping, TypeScript, erasableSyntaxOnly, tsc, GitHub Actions, workflow, run step, inline shell, tools, scripts, node:test, naming convention, grouping, check-workflow-steps, lesson 0001, ADR-0039, ADR-0052, ADR-0090, ADR-0101, ADR-0113, ADR-0145, ADR-0147, ADR-0183
 ---
 
 # ADR-0189 — A workflow step runs one command, and `tools/` is grouped by domain
@@ -41,7 +41,7 @@ mixed names.
 2. **Logic lives in a Node script under `tools/<group>/`**, dependency-free,
    with pure exported functions, a `main()` that returns an exit code, and its
    effects (`exec`, `env`, outputs, summary) injectable through
-   `tools/lib/actions.mjs`. Its test is `tests/js/<group>/<name>.test.mjs`.
+   `tools/lib/actions.ts`. Its test is `tests/js/<group>/<name>.test.ts`.
    Inputs reach it through the step's `env:`, never `${{ }}` interpolated into
    script text.
 3. **`tools/` is grouped by the domain a script serves:** `lib/`, `spec/`,
@@ -55,7 +55,7 @@ mixed names.
    (`translator`, `spec-paths`, `adr-numbers`) is an importable module or a
    multi-mode command. [`tools/README.md`](../../tools/README.md) lists the
    groups.
-5. **`tools/github/check-workflow-steps.mjs` enforces rule 1** in the
+5. **`tools/github/check-workflow-steps.ts` enforces rule 1** in the
    pre-commit hook and the `docs` job.
 
 What the extraction keeps unchanged: path gates include each workflow's scripts
@@ -85,3 +85,45 @@ merge-group checks still judge each queued commit
   runner, and no line in the coverage ratchet.
 - **Extract only the logic-heavy blocks.** Rejected by the owner: a threshold
   invites drift, and a check needs a crisp rule.
+
+## Amendment: tools and tests are TypeScript, run by type stripping ([#798](https://github.com/HPAC-Safety/safety-report/issues/798))
+
+Applies on the date of the pull request that closes #798. It replaces
+"Node script" and `.mjs` in decisions 2 and 4 above; everything else stands.
+
+1. **Every script under `tools/` and every test under `tests/js/` is a `.ts`
+   file** that Node runs directly: no build step, no flag, no `tsx`. Node 24
+   strips the types (unflagged since 22.18); CI pins 24 with `setup-node`, and
+   the act runner image carries 24.19. `node tools/<group>/<name>.ts` is the
+   command a workflow step, a hook, or `ci-local.sh` runs.
+2. **Only erasable syntax.** Type stripping replaces annotations with blanks
+   and cannot run `enum`, `namespace`, or a constructor parameter property.
+   `tsconfig.json` sets `erasableSyntaxOnly` (so tsc refuses them),
+   `verbatimModuleSyntax` (a type is imported with `import type`, which stripping
+   needs), and `allowImportingTsExtensions` with `noEmit` (a sibling is imported
+   with its `.ts` extension, as Node resolves it).
+3. **Node does not check types, so something else must.** `npm run typecheck`
+   (`tsc -p tsconfig.json` over `tools` and `tests/js`) runs in CI's `lint` job,
+   one command per step; typescript-eslint's `strict-type-checked` preset runs
+   over the same files through the root `tsconfig.json` (ADR-0188 amendment).
+   Both need the Gherkin parser's types, so the `lint` job and pre-commit also
+   install `tools/gherkin` (`npm --prefix tools/gherkin ci`).
+4. **A job that runs a script has Node 24.** Five jobs (`ci.yml` `build` and
+   `agent-config`, `terraform.yml` `infra` and `plan`, `terraform-relock.yml`,
+   `deploy-environment.yml` `deploy`) relied on the runner's preinstalled Node,
+   which cannot strip types; each gains a `setup-node` step. The deploy job's
+   sparse checkout of `tools` still carries the root `package.json`
+   (`"type": "module"`), because cone mode keeps root files.
+5. **`eslint.config.mjs` stays JavaScript.** ESLint 9 loads a TypeScript config
+   only through `jiti` or an unstable Node flag; a config is the one file that
+   cannot be linted by a tool it has not loaded yet. It is the only `.mjs` in
+   the repository, and `tools/gherkin/` keeps its own `package.json`.
+6. **Coverage is unchanged.** `node --test --experimental-test-coverage` reads
+   the stripped files; stripping keeps line numbers, so the lcov names the same
+   `tools/**/*.ts` and `tests/js/**/*.ts` paths the ratchet merges.
+   `run-js-tests` finds `*.test.ts`.
+
+Consequences: a script's signature is its documentation, and a fake in a test
+must satisfy the same `Exec` and `Env` types as the real thing. A script
+cannot use `enum` or `namespace`; the check is `npm run typecheck`, not review.
+The move edited historical ADR and lesson text only where it named a moved path.

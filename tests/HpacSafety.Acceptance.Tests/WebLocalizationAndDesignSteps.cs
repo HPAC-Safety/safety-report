@@ -96,13 +96,13 @@ public sealed class WebLocalizationAndDesignSteps
 	[Then(@"it comes from a committed locale catalogue with key parity between en-CA and fr-CA")]
 	public void ThenLocaleKeyParity()
 	{
-		RunNodeTool("tools/i18n/check-locales.mjs");
+		RunNodeTool("tools/i18n/check-locales.ts");
 	}
 
 	[Then(@"no user-facing literal appears directly in code")]
 	public void ThenNoHardcodedStrings()
 	{
-		RunNodeTool("tools/web/check-hardcoded-strings.mjs");
+		RunNodeTool("tools/web/check-hardcoded-strings.ts");
 	}
 
 	private string _localesDir = string.Empty;
@@ -126,7 +126,7 @@ public sealed class WebLocalizationAndDesignSteps
 	[When(@"the local build runs, or a commit is made that stages a locales\/ file")]
 	public void WhenTheStubberRuns()
 	{
-		RunNodeTool("tools/i18n/stub-missing-translations.mjs", true, "--locales", _localesDir);
+		RunNodeTool("tools/i18n/stub-missing-translations.ts", true, "--locales", _localesDir);
 
 		// The commit half of that sentence. Running git here would prove
 		// little that the hook's own three verified cases do not already
@@ -141,8 +141,8 @@ public sealed class WebLocalizationAndDesignSteps
 			.Where(line => !line.TrimStart().StartsWith('#'))
 			.ToList();
 
-		var stubAt = hookLines.FindIndex(line => line.Contains("stub-missing-translations.mjs", StringComparison.Ordinal));
-		var checkAt = hookLines.FindIndex(line => line.Contains("check-locales.mjs", StringComparison.Ordinal));
+		var stubAt = hookLines.FindIndex(line => line.Contains("stub-missing-translations.ts", StringComparison.Ordinal));
+		var checkAt = hookLines.FindIndex(line => line.Contains("check-locales.ts", StringComparison.Ordinal));
 
 		stubAt.ShouldBeGreaterThan(-1, "the pre-commit hook no longer runs the stubber");
 		checkAt.ShouldBeGreaterThan(stubAt, "the hook checks parity before stubbing, so adding a key still blocks a commit");
@@ -161,7 +161,7 @@ public sealed class WebLocalizationAndDesignSteps
 	[Then(@"a key still carrying that # marker fails locale verification, so it can never reach main untranslated")]
 	public void ThenAStubbedKeyFailsVerification()
 	{
-		var exitCode = RunNodeTool("tools/i18n/translate-locale.mjs", false, "--check", "--locales", _localesDir);
+		var exitCode = RunNodeTool("tools/i18n/translate-locale.ts", false, "--check", "--locales", _localesDir);
 		exitCode.ShouldNotBe(0);
 	}
 
@@ -224,7 +224,7 @@ public sealed class WebLocalizationAndDesignSteps
 	public void WhenTheLocalesAreVerified()
 	{
 		_verifyExitCode = RunNodeTool(
-			"tools/i18n/translate-locale.mjs",
+			"tools/i18n/translate-locale.ts",
 			false,
 			out _verifyOutput,
 			"--check",
@@ -247,7 +247,7 @@ public sealed class WebLocalizationAndDesignSteps
 		// What the acceptance layer can honestly observe is what the check
 		// tells the author. That the plan then skips it, and that applyPlan
 		// re-stamps the provenance, are properties of those functions and are
-		// asserted directly in tests/js/translate-locale.test.mjs.
+		// asserted directly in tests/js/translate-locale.test.ts.
 		_verifyOutput.ShouldContain("never machine-translated again");
 	}
 
@@ -335,15 +335,15 @@ public sealed class WebLocalizationAndDesignSteps
 	public void WhenATranslationRequestIsBuilt()
 	{
 		// The adapter's own request builder, fed the term list the way
-		// translate-locale.mjs feeds it. Nothing is sent anywhere.
+		// translate-locale.ts feeds it. Nothing is sent anywhere.
 		var tools = Path.Combine(RepositoryRoot(), "tools", "i18n");
 		var script = Path.Combine(_correctionDir, "build-request.mjs");
 		File.WriteAllText(
 			script,
 			$$"""
 			import { readFileSync } from 'node:fs'
-			import { createTranslator } from '{{new Uri(Path.Combine(tools, "translator.mjs")).AbsoluteUri}}'
-			import { termInstructions } from '{{new Uri(Path.Combine(tools, "translate-locale.mjs")).AbsoluteUri}}'
+			import { createTranslator } from '{{new Uri(Path.Combine(tools, "translator.ts")).AbsoluteUri}}'
+			import { termInstructions } from '{{new Uri(Path.Combine(tools, "translate-locale.ts")).AbsoluteUri}}'
 
 			const instructions = termInstructions(JSON.parse(readFileSync(process.argv[2], 'utf8')))
 			const items = [{ key: 'a', text: 'Upload a photo' }]

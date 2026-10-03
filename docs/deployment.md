@@ -204,7 +204,7 @@ outputs `nat_autoscaling_group_arn`, `secret_entries`, `site_urls`, and
 read from Terraform state (`terraform show -json`) right after the targeted
 apply that creates them, because `deploy_variables` also names resources a
 first release has not created yet.
-`node tools/infra/check-terraform-outputs.mjs` (`ci.yml`'s `docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
+`node tools/infra/check-terraform-outputs.ts` (`ci.yml`'s `docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
 reads an output name or JSON key `infra/outputs.tf` doesn't declare.
 
 Migrations apply at startup: the API and the Worker each run pending migrations

@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-02
 decision-makers: Chase Florell
-keywords: strict-type-checked, typescript-eslint, projectService, eslint-comments, web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
+keywords: strict-type-checked, node:test, no-floating-promises, typescript-eslint, projectService, eslint-comments, web, React, component, view model, hook, Foo.view.tsx, Vitest, Testing Library, jsdom, coverage, 100%, lcov, ratchet, type check, tsc, guard, release, bundle, test code, ESLint, useModalDialog, ignore hint, ADR-0014, ADR-0017, ADR-0043, ADR-0045, ADR-0053, ADR-0073, ADR-0090, ADR-0165
 ---
 
 # ADR-0188 — A component's logic lives in `Foo.tsx` and its markup in `Foo.view.tsx`, and web logic is unit-tested
@@ -115,7 +115,7 @@ follow-up idea, not part of it).
 
 Eight area pull requests split components in parallel, so no list is edited to
 bring a file under the threshold. The scope is computed from the files on disk
-by `tools/web/web-coverage-scope.mjs`, which `vite.config.ts` reads:
+by `tools/web/web-coverage-scope.ts`, which `vite.config.ts` reads:
 
 - a `Foo.tsx` with a sibling `Foo.view.tsx` is in scope: the split *is* the
   opt-in;
@@ -145,14 +145,14 @@ gate, with `typecheck`, the split guard and the bundle check.
 The lcov names each file from the repository root (`src/web/src/lib/…`), like
 the .NET and `tools/` reports, so the merged report shows web source. Because
 the `coverage` job runs only on GitHub and under `tools/dev/ci-local.sh --full`,
-the `web` job also runs `tools/web/check-web-lcov.mjs`. That check proves the lcov
+the `web` job also runs `tools/web/check-web-lcov.ts`. That check proves the lcov
 exists, sits under a `-reports:` glob read from `ci.yml` itself, and names files
 that exist. It runs in the fast local gate, so a broken hand-off fails before
 GitHub ([#769](https://github.com/HPAC-Safety/safety-report/issues/769)).
 
 ### The guard
 
-`tools/web/check-component-split.mjs`, run by the `web` job and pre-commit, fails
+`tools/web/check-component-split.ts`, run by the `web` job and pre-commit, fails
 with the file and line when:
 
 - a `*.view.tsx` has no sibling `Foo.tsx`, calls a hook other than
@@ -175,7 +175,7 @@ CI ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It is
 
 - The test packages stay in `devDependencies`.
 - The import rule above stops test code at the source.
-- `tools/web/check-web-bundle.mjs` reads what was built: it fails if a file under
+- `tools/web/check-web-bundle.ts` reads what was built: it fails if a file under
   `src/web/dist` carries a marker only tests hold (`vitest`,
   `@testing-library`, `user-event`, `jsdom`, `renderHook`, `describe(`,
   `expect(`, `.test.`). The markers were checked against a real build and are
@@ -261,7 +261,7 @@ markup, same focus, one `showModal()`, Escape still keeps).
 ### Every TypeScript and JavaScript file is linted
 
 - **ESLint, flat config at the root** (`eslint.config.mjs`), over `src/web`
-  (tests included), `tools/*.mjs`, `tests/js` and `tests/e2e`. Dependencies are
+  (tests included), `tools`, `tests/js` and `tests/e2e`. Dependencies are
   in a root `package.json`, because no single package owns all four trees; the
   web app's and the browser suite's own `package.json` stay about their runtime
   and tests. ESLint 9 is used because `eslint-plugin-jsx-a11y` supports 9, not 10.
@@ -371,3 +371,35 @@ No behaviour or DOM changed. The fixes were, by kind:
 type checker now loads the web app. CI's lint job also installs two more
 packages. Locally, pre-commit lints only the staged files.
 
+## Amendment: tools and tests/js join the full preset ([#798](https://github.com/HPAC-Safety/safety-report/issues/798))
+
+Applies on the date of the pull request that closes #798. It replaces the
+**JavaScript** bullet of the strict-linting amendment; "Rules narrowed or
+turned off" stands except where this changes a row.
+
+- `tools` and `tests/js` are TypeScript now ([ADR-0189](ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)
+  amendment), so they get `strict-type-checked` with type information from the
+  root `tsconfig.json`, exactly as `src/web` does. The lighter JavaScript block
+  (strict preset plus four promise rules) is removed. The only JavaScript left,
+  `eslint.config.mjs`, keeps the strict preset without type information.
+- The 3,800 `any` findings that kept the full preset off are gone because the
+  code is typed, not because a rule moved: about 3,400 findings (`no-unsafe-*`
+  3,276, `restrict-plus-operands` 70, `no-unnecessary-type-conversion` 19,
+  `restrict-template-expressions` 16, `no-unnecessary-condition` and a few
+  others) and about 2,080 `tsc` errors were fixed by typing parameters, JSON
+  reads (`JSON.parse(text) as Shape`), and test doubles (`Exec`, `Env`), with
+  no behaviour change.
+- **`no-floating-promises` stays on in `tests/js`.** `node:test` registers a
+  test with a call whose promise the runner awaits, so `describe`, `it`, `test`,
+  `before`, `after`, `beforeEach` and `afterEach` from `node:test` are listed in
+  `allowForKnownSafeCalls`; any other floating promise in a test is an error.
+  This replaces the row that turned the rule off for `tests/js`, and avoids a
+  `void` before roughly 1,200 calls. `no-non-null-assertion`, `unbound-method`
+  and `require-await` stay off in `tests/js` for the reasons given above.
+- No new line-level disable was needed; the one in `tools/i18n/translator.ts`
+  (a stand-in `async` method with nothing to await) already carries its reason.
+- `npm run lint` takes about 16 s cold, as before this change, because the type
+  checker already loaded `src/web` and `tests/e2e`; `tools` and `tests/js` add
+  about 80 files.
+- The `**/coverage/**` ignore became `coverage/**` and `src/web/coverage/**`:
+  it had also hidden `tools/coverage` and `tests/js/coverage` from the linter.

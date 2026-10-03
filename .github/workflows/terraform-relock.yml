@@ -42,17 +42,22 @@ jobs:
           # on the remote URL, so CI would not run as the PAT (lesson 0018).
           persist-credentials: false
 
+      # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
       # Version comes out of infra/.terraform-version, never restated here —
       # see ADR-0015 and terraform.yml's infra job, which installs the same way.
       - name: Install the pinned Terraform
-        run: node tools/infra/install-terraform.mjs
+        run: node tools/infra/install-terraform.ts
 
       - name: Relock providers
         run: ./infra/relock-providers.sh
 
       - name: Check for a change
         id: diff
-        run: node tools/infra/read-lockfile-change.mjs
+        run: node tools/infra/read-lockfile-change.ts
 
       # Reuses the same fine-grained repository PAT i18n-translate.yml uses to
       # open its pull request — the built-in GITHUB_TOKEN cannot trigger CI on a
@@ -64,4 +69,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
           USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
-        run: node tools/infra/open-relock-pr.mjs
+        run: node tools/infra/open-relock-pr.ts

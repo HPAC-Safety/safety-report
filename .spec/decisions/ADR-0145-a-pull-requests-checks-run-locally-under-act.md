@@ -153,7 +153,7 @@ and is the pre-pull-request gate.**
   that changed a scenario failed `docs`, and one that added an English key
   failed `i18n`, although CI passed. Neither stand-in changes what GitHub
   runs.
-  - **The matrix**: the wrapper runs `node tools/spec/generate-traceability.mjs` in the clone
+  - **The matrix**: the wrapper runs `node tools/spec/generate-traceability.ts` in the clone
     and, when the matrix changed, commits it there and moves `HEAD`,
     `origin/<branch>`, and the event's `head.sha` to that commit: the commit
     `traceability.yml` would push. Like that workflow, it skips a branch that
@@ -161,7 +161,7 @@ and is the pre-pull-request gate.**
     generator leaves the clone alone, so the `docs` job reports why.
   - **The French**: it needs a translation provider, which nothing local may
     call. So `ci.yml`'s check runs
-    `translate-locale.mjs --check ${ACT:+--allow-pending-translation}`: under
+    `translate-locale.ts --check ${ACT:+--allow-pending-translation}`: under
     act, French still pending as a `#` stub, or English reworded since it was
     translated, is a notice. That is the pre-commit hook's rule on a branch.
     `ACT` is unset on GitHub, so the flag never reaches CI, where a stub still
@@ -169,7 +169,7 @@ and is the pre-pull-request gate.**
   - Rejected: patching the workflow in the clone, which would run a copy of
     CI rather than CI; a wrapper flag that skips `docs` and `i18n`, which
     would hide every other failure in those jobs; and adding
-    `--allow-pending-translation` to `translate-locale.mjs`'s own defaults
+    `--allow-pending-translation` to `translate-locale.ts`'s own defaults
     under `ACT`, which puts a CI-runner rule in a tool that also runs in the
     hook and on `main`.
 - **Coverage parity**: the `coverage` job runs as on GitHub, on Ubuntu 24.04
@@ -200,7 +200,7 @@ and is the pre-pull-request gate.**
       when a racing edit met the unique index rather than the in-memory
       check. A test now holds two edits at `SaveChanges` until both have
       loaded.
-    - `tools/spec/adr-numbers.mjs`'s unreadable-file path: its test skipped as
+    - `tools/spec/adr-numbers.ts`'s unreadable-file path: its test skipped as
       root, and act runs jobs as root. The test now uses a directory in place
       of a tracked file, which no user can read as a file.
 - **Memory**: a full run peaked at about 5 GiB of container memory

@@ -48,7 +48,7 @@ not be a rewrite of the translation job.
 **DeepL**, targeting `FR-CA`, behind an adapter that is the one file to change
 to swap provider.
 
-`tools/i18n/translator.mjs` declares the same port as
+`tools/i18n/translator.ts` declares the same port as
 `HpacSafety.Core.SharedKernel.ITranslator`:
 
 ```
@@ -61,7 +61,7 @@ The contract is deliberately identical.
 
 ```mermaid
 flowchart LR
-    cli["translate-locale.mjs<br/>plan · merge · stamp"] --> port["ITranslator port<br/>tools/i18n/translator.mjs"]
+    cli["translate-locale.ts<br/>plan · merge · stamp"] --> port["ITranslator port<br/>tools/i18n/translator.ts"]
     port --> dl["deepl · default<br/>FR-CA · prefer_more"]
     port --> cc["chat-completions<br/>endpoint · model · key<br/>all from config"]
     port --> stub["stub<br/>tests only"]
@@ -194,7 +194,7 @@ deliberately not in this change. Worth its own issue.
   vendor and one purpose, and revoking it stops translation and nothing else.
 - Swapping provider again is one file and a repository variable.
 - **Placeholder preservation is checked after every translation**, for every
-  provider, in `translate-locale.mjs` rather than in an adapter — a French
+  provider, in `translate-locale.ts` rather than in an adapter — a French
   string that lost `{count}` fails the run rather than shipping a label with a
   hole in it. Order is not compared; French word order differs.
 - DeepL maps translations to inputs **by position**, with no keys in the

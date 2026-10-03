@@ -5,7 +5,7 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Translation;
 
 /// <summary>
-///     The translation prompt and term list, the files <c>tools/i18n/translator.mjs</c>
+///     The translation prompt and term list, the files <c>tools/i18n/translator.ts</c>
 ///     reads too (ADR-0179). These tests read the repository's committed copies
 ///     and compare them with what the assembly embedded.
 /// </summary>
@@ -36,7 +36,7 @@ public class TranslationPromptTests
 		// When
 		var sentences = TranslationPrompt.TermInstructions(terms);
 
-		// Then — the same literal tests/js/i18n/translate-locale.test.mjs asserts
+		// Then — the same literal tests/js/i18n/translate-locale.test.ts asserts
 		sentences.ShouldBe([
 			"\"upload\" (English, in any form) is \"téléverser\" in French, conjugated or as a noun to fit. Never \"télécharg…\" in French.",
 		]);

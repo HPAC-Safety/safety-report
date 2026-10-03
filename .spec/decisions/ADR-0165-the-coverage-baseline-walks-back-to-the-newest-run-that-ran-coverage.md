@@ -35,7 +35,7 @@ carried a live artifact.
 
 ## Decision
 
-**Walk back.** `tools/coverage/find-coverage-baseline.mjs` is now the one place either
+**Walk back.** `tools/coverage/find-coverage-baseline.ts` is now the one place either
 caller finds the baseline:
 
 - List successful `push` runs of `CI` on `main`, newest first
@@ -77,7 +77,7 @@ had expired.
 - Two `gh` calls become up to `1 + limit`: one `run list`, plus one
   `artifacts` lookup per candidate walked past. In the ordinary case (the
   newest run ran coverage) this is unchanged from before.
-- `tools/coverage/find-coverage-baseline.mjs`'s selection logic
+- `tools/coverage/find-coverage-baseline.ts`'s selection logic
   (`isEligible`, `selectBaselineRun`) is unit-tested directly; a CLI-level
   test stubs `gh` the same way `tools/dev/ci-local.sh`'s own tests already stub
   `gh` and `act`.

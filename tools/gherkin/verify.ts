@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+// Verifies every .spec/features/**/*.feature file parses as valid Gherkin, using
+// the official @cucumber/gherkin parser (the same parser cucumber-js uses).
+//
+// This checks syntax only, not step definitions. Scenarios execute as xUnit
+// tests via Reqnroll (tests/HpacSafety.Acceptance.Tests, ADR-0049) once their
+// step definitions exist; until then each carries an @ignore tag. See
+// .spec/features/README.md.
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
+import { IdGenerator } from '@cucumber/messages'
+
+import { FEATURES } from '../spec/spec-paths.ts'
+
+const root = FEATURES
+
+/** What a Gherkin parse failure carries: a composite one lists its parts in `errors`. */
+interface ParseFailure {
+  message: string
+  location?: { line?: number }
+  errors?: ParseFailure[]
+}
+
+const findFeatureFiles = (dir: string): string[] =>
+  readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry)
+    if (statSync(path).isDirectory()) return findFeatureFiles(path)
+    return path.endsWith('.feature') ? [path] : []
+  })
+
+const makeParser = () =>
+  new Parser(new AstBuilder(IdGenerator.uuid()), new GherkinClassicTokenMatcher())
+
+const files = findFeatureFiles(root)
+if (files.length === 0) {
+  console.error(`::error::No .feature files found under ${root}/.`)
+  process.exit(1)
+}
+
+let failures = 0
+for (const file of files) {
+  const source = readFileSync(file, 'utf8')
+  try {
+    makeParser().parse(source)
+  } catch (error) {
+    failures += 1
+    const failure = error as ParseFailure
+    const errors = failure.errors ?? [failure]
+    for (const e of errors) {
+      const line = e.location?.line ? `:${e.location.line}` : ''
+      console.error(`::error file=${file}${line}::${e.message}`)
+    }
+  }
+}
+
+if (failures > 0) {
+  console.error(`${failures} of ${files.length} feature file(s) failed to parse.`)
+  process.exit(1)
+}
+
+console.log(`${files.length} feature file(s) under ${relative('.', root)}/ parsed cleanly.`)

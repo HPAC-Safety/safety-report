@@ -99,7 +99,7 @@ function documentNavigationType(): string {
 	}
 }
 
-// Signature split across lines on purpose: tools/web/check-hardcoded-strings.mjs
+// Signature split across lines on purpose: tools/web/check-hardcoded-strings.ts
 // is a line scanner — see adminQuestions.ts.
 function readStored<T>(
 	key: string,

@@ -10,9 +10,9 @@ description: Keep HPAC Safety application chrome, database questions, validation
 - Chrome lives in reviewed `en-CA` and `fr-CA` catalogues with matching keys.
   CI translation tooling applies only to those catalogues.
 - Add every new string to `locales/en-CA.json` and read it through `t(...)`;
-  never a literal in markup (`tools/web/check-hardcoded-strings.mjs` enforces it).
+  never a literal in markup (`tools/web/check-hardcoded-strings.ts` enforces it).
 - **Never add or generate `fr-CA.json` keys by hand.** Only
-  `i18n-translate.yml` runs `translate-locale.mjs --generate` (ADR-0021,
+  `i18n-translate.yml` runs `translate-locale.ts --generate` (ADR-0021,
   ADR-0057). Correcting an existing French value by hand is allowed: it is
   recorded as a human correction and never machine-translated again
   (ADR-0070). A developer's `.env` holds a `GEMINI_API_KEY` for the API and
@@ -20,11 +20,11 @@ description: Keep HPAC Safety application chrome, database questions, validation
   reads while DeepL is unregistered; no local tool uses either to write the
   catalogue.
 - `npm run dev` / `npm run build` in `src/web` first run
-  `tools/i18n/stub-missing-translations.mjs`: a key missing from either file gets
+  `tools/i18n/stub-missing-translations.ts`: a key missing from either file gets
   the other's text prefixed `#` (`#Contact`), visibly untranslated instead of
   silently English, until CI replaces it: on a same-repo pull request's own
   branch (ADR-0057), or after merge for a fork's (ADR-0054).
-- A committed `#`-prefixed value fails `translate-locale.mjs --check` and must
+- A committed `#`-prefixed value fails `translate-locale.ts --check` and must
   never reach `main`.
 
 ## Provenance

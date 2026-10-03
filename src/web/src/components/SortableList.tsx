@@ -71,7 +71,7 @@ export function useSortableList<T>({ items, getId, onReorder }: SortableListProp
 	}
 }
 
-// Signature split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line scanner.
+// Signature split across lines on purpose: tools/web/check-hardcoded-strings.ts is a line scanner.
 export function SortableList<T>(
 	props: SortableListProps<T>,
 ) {

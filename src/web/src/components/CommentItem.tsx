@@ -5,7 +5,7 @@ import { CommentItemView } from "./CommentItem.view"
 
 export type { PublicComment } from "../api/publicReports"
 
-// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line
+// Split across lines on purpose: tools/web/check-hardcoded-strings.ts is a line
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 export type CommentAttempt = () =>
 	Promise<boolean>

@@ -17,7 +17,7 @@ const OTHER: Record<Language, Language> = { en: "fr", fr: "en" }
 export interface ReviewActionsProps {
 	report: ReportDetail
 	busy: boolean
-	// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a
+	// Split across lines on purpose: tools/web/check-hardcoded-strings.ts is a
 	// line scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 	onSave: (aiSummaryEn: string, aiSummaryFr: string, sourceEn: SummarySource, sourceFr: SummarySource) =>
 		Promise<boolean>

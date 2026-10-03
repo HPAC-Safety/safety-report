@@ -39,7 +39,7 @@ function lookup<T>(map: Record<string, T>, id: string): T | undefined {
  * loading state, so the list stays mounted and the reviewer keeps their place.
  */
 
-// A call signature rather than an arrow type: tools/web/check-hardcoded-strings.mjs
+// A call signature rather than an arrow type: tools/web/check-hardcoded-strings.ts
 // is a line scanner and reads an arrow's `>` as the end of a tag.
 type ReviewAction = { (): Promise<void> }
 

@@ -5,7 +5,7 @@ namespace HpacSafety.Infrastructure.Translation;
 
 /// <summary>
 ///     The one current translation prompt and the term list, both read from
-///     <c>locales/</c>, where <c>tools/i18n/translator.mjs</c> reads the very same files
+///     <c>locales/</c>, where <c>tools/i18n/translator.ts</c> reads the very same files
 ///     (ADR-0179). They are embedded into this assembly at build time, so a
 ///     deployed API or Worker carries exactly the bytes CI translated with.
 /// </summary>

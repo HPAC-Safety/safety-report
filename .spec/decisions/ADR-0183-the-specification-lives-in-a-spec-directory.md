@@ -33,7 +33,7 @@ but the files sat in three roots:
 - `docs/lessons/` held 39 lessons, indexed by a table kept by hand.
 - Five pages carrying `CON-*` constraints sat in `docs/` beside sixteen
   how-to guides, distinguishable only by a list inside
-  `tools/spec/generate-traceability.mjs`.
+  `tools/spec/generate-traceability.ts`.
 - The generated matrix was `docs/traceability.md`.
 
 Nothing indexed the area pages: `features/README.md` linked each `.feature`
@@ -70,10 +70,10 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - **The name is `.spec`.** It is tooling-facing, like `.github`; GitHub renders
   it, and graphify reads dot-directories, so the specification still reaches
   the graph (ADR-0088).
-- **One home for the paths.** `tools/spec/spec-paths.mjs` exports them; every tool
+- **One home for the paths.** `tools/spec/spec-paths.ts` exports them; every tool
   imports it. A hook or workflow, which cannot import a module, is tied to it
-  by `tests/js/spec/spec-paths.test.mjs`.
-- **A generated index.** `tools/spec/generate-spec-index.mjs` writes `.spec/README.md`:
+  by `tests/js/spec/spec-paths.test.ts`.
+- **A generated index.** `tools/spec/generate-spec-index.ts` writes `.spec/README.md`:
   - every area with its claim prefix, scenario, `@ignore`, and `@ui` counts,
     and its supporting page;
   - every constraint page with its count;
@@ -89,14 +89,14 @@ hand, drifts. The rules that held were the ones a tool enforces.
   tools and commits them in one bot commit (ADR-0101). The post-merge and
   post-rewrite hooks regenerate both, and `tools/dev/ci-local.sh` does what the
   bot would.
-- **Every relative link is checked.** `tools/docs/check-links.mjs` resolves every
+- **Every relative link is checked.** `tools/docs/check-links.ts` resolves every
   relative link in tracked markdown, and a C# `<see href>`, against the
   tracked tree, and checks each `#anchor` against the target's headings.
   - It runs in the `docs` CI job.
   - Pre-commit checks the staged markdown, and the whole tree when a commit
     deletes or renames a file.
   - Code fences, code spans, comments, and external URLs are skipped.
-- **An ADR's status agrees with its status line.** `tools/spec/adr-numbers.mjs`
+- **An ADR's status agrees with its status line.** `tools/spec/adr-numbers.ts`
   already reads every ADR, so the same pass fails:
   - a `status:` outside `accepted`, `partially-superseded`, `superseded`;
   - an `accepted` record whose status line says "superseded by ADR-NNNN";
@@ -104,11 +104,11 @@ hand, drifts. The rules that held were the ones a tool enforces.
   - a successor that does not exist.
 
   A lesson's `status:` is held to `accepted` or `superseded` by
-  `check-frontmatter.mjs`.
-- **A file left behind is refused.** `check-frontmatter.mjs` fails any tracked
+  `check-frontmatter.ts`.
+- **A file left behind is refused.** `check-frontmatter.ts` fails any tracked
   file under `docs/decisions/`, `docs/lessons/`, or `features/`. A branch not
   yet rebased past the move therefore fails with the fix named.
-- **ADR numbers survive the move.** `adr-numbers.mjs --next` scans both
+- **ADR numbers survive the move.** `adr-numbers.ts --next` scans both
   `.spec/decisions` and `docs/decisions` on every remote branch, each on its
   own. It used to stop at the first ref without the directory, which after the
   move would have been every unrebased branch. The legacy path is removed once
@@ -126,7 +126,7 @@ hand, drifts. The rules that held were the ones a tool enforces.
 - A dangling link, a stale index, or an ADR contradicting its own status fails
   before commit, and again in CI, instead of rotting quietly.
 - A pull request open across the move rebases, then moves any new spec file
-  under `.spec/`; `check-frontmatter.mjs` says so.
+  under `.spec/`; `check-frontmatter.ts` says so.
 - A clone that held the old untracked `.gitattributes` removes it once, to
   check out the tracked one: `rm .gitattributes && git checkout -- .gitattributes`.
   `./init-dev.sh` re-run installs the hooks and the merge driver.
@@ -165,4 +165,4 @@ hand, drifts. The rules that held were the ones a tool enforces.
 
 ## Amendment (2026-09-30, ADR-0184)
 
-`tools/spec/spec-paths.mjs` also exports `BINDINGS` (`.spec/bindings.md`) and the two step-definition roots, `REQNROLL_STEPS` and `PLAYWRIGHT_STEPS`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))
+`tools/spec/spec-paths.ts` also exports `BINDINGS` (`.spec/bindings.md`) and the two step-definition roots, `REQNROLL_STEPS` and `PLAYWRIGHT_STEPS`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

@@ -21,7 +21,7 @@ agent's frontmatter to `name` and `description`.
 The six role agents under `agents/` are installed by `skillfile`, which copies
 each file verbatim to `.claude/agents/<name>.md`. ADR-0086 gave them "the
 upstream-standard `name` and `description` frontmatter", and ADR-0087 made
-that the whole allowed shape; `tools/docs/check-frontmatter.mjs` enforces it.
+that the whole allowed shape; `tools/docs/check-frontmatter.ts` enforces it.
 
 Claude Code now reads more than that from an agent's frontmatter: `model`,
 `effort`, `tools`, `disallowedTools`, `permissionMode`, `maxTurns`, `skills`,
@@ -60,7 +60,7 @@ restated beside a link.
   `## Produce`, `## Refuse` (`spec-reviewer` adds `## Look for` and
   `## Report`; `ai-author` keeps its style rules, which are their one home).
   Every rule survives; only wording shrinks.
-- `tools/docs/check-frontmatter.mjs` requires the four keys on an agent, accepts
+- `tools/docs/check-frontmatter.ts` requires the four keys on an agent, accepts
   the optional ones, checks `model` and `effort` against the values above, and
   refuses any other key. Skills keep `name` and `description`.
 

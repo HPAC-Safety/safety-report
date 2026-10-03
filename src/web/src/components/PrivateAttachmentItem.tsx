@@ -2,7 +2,7 @@ import { useState } from "react"
 import type { PrivateAttachment } from "../api/adminReports"
 import { PrivateAttachmentItemView } from "./PrivateAttachmentItem.view"
 
-// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line
+// Split across lines on purpose: tools/web/check-hardcoded-strings.ts is a line
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 type Attempt = () =>
 	Promise<void>

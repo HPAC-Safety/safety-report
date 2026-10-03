@@ -3,7 +3,7 @@ import { COMMENT_MAX_LENGTH } from "../api/publicReports"
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard"
 import { CommentComposerView } from "./CommentComposer.view"
 
-// Split across lines on purpose: tools/web/check-hardcoded-strings.mjs is a line
+// Split across lines on purpose: tools/web/check-hardcoded-strings.ts is a line
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 export type SaveComment = (text: string) =>
 	Promise<boolean>

@@ -67,7 +67,7 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_ACTOR: ${{ github.event.pull_request.user.login }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: node tools/github/check-linked-issue.mjs
+        run: node tools/github/check-linked-issue.ts
 
   # The body becomes the squash commit message on a public repository, so a
   # coding agent's session link in it would publish that session. The agents
@@ -93,13 +93,13 @@ jobs:
         if: github.event_name != 'merge_group'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-        run: node tools/github/check-agent-session-links.mjs
+        run: node tools/github/check-agent-session-links.ts
 
       - name: Each queued commit message carries no agent session link
         if: github.event_name == 'merge_group'
         env:
           BASE_SHA: ${{ github.event.merge_group.base_sha }}
-        run: node tools/github/check-merge-group-session-links.mjs
+        run: node tools/github/check-merge-group-session-links.ts
 
   # A pull request that changes a rendered web file links its screenshots, or
   # says why it has none (ADR-0142). The rule lives in the tool, which reads
@@ -128,4 +128,4 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node tools/github/check-pr-screenshots-diff.mjs
+        run: node tools/github/check-pr-screenshots-diff.ts

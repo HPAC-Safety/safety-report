@@ -112,7 +112,7 @@ public sealed class QuestionRenderingSteps
 		}
 
 		File.ReadAllText(Path.Combine(RepositoryRoot(), ".github", "workflows", "i18n-translate.yml"))
-			.ShouldContain("node tools/i18n/translate-locale.mjs --generate --locales locales");
+			.ShouldContain("node tools/i18n/translate-locale.ts --generate --locales locales");
 	}
 
 	private static string RepositoryRoot()

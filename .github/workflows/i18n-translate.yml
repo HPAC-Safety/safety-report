@@ -10,7 +10,7 @@ name: Translate locales
 # security boundary rather than tidiness:
 #
 #   * ci.yml runs on `pull_request`, which means it runs fork-authored code. It
-#     therefore only ever VERIFIES the locales — `translate-locale.mjs --check`
+#     therefore only ever VERIFIES the locales — `translate-locale.ts --check`
 #     reads files and constructs no translator, so a fork cannot make this
 #     repository spend an inference call, and cannot write a locale file.
 #   * This workflow's `pull_request_target` trigger runs with this
@@ -47,26 +47,26 @@ on:
       - locales/en-CA.json
       - locales/glossary.json
       - locales/terms.json
-      - tools/i18n/translate-locale.mjs
-      - tools/i18n/translator.mjs
-      - tools/i18n/open-translation-pr.mjs
-      - tools/i18n/report-translation-run.mjs
-      - tools/github/commit-to-pr-branch.mjs
-      - tools/github/read-node-major.mjs
-      - tools/lib/actions.mjs
+      - tools/i18n/translate-locale.ts
+      - tools/i18n/translator.ts
+      - tools/i18n/open-translation-pr.ts
+      - tools/i18n/report-translation-run.ts
+      - tools/github/commit-to-pr-branch.ts
+      - tools/github/read-node-major.ts
+      - tools/lib/actions.ts
       - .github/workflows/i18n-translate.yml
   pull_request_target:
     paths:
       - locales/en-CA.json
       - locales/glossary.json
       - locales/terms.json
-      - tools/i18n/translate-locale.mjs
-      - tools/i18n/translator.mjs
-      - tools/i18n/open-translation-pr.mjs
-      - tools/i18n/report-translation-run.mjs
-      - tools/github/commit-to-pr-branch.mjs
-      - tools/github/read-node-major.mjs
-      - tools/lib/actions.mjs
+      - tools/i18n/translate-locale.ts
+      - tools/i18n/translator.ts
+      - tools/i18n/open-translation-pr.ts
+      - tools/i18n/report-translation-run.ts
+      - tools/github/commit-to-pr-branch.ts
+      - tools/github/read-node-major.ts
+      - tools/lib/actions.ts
       - .github/workflows/i18n-translate.yml
   workflow_dispatch:
 
@@ -114,7 +114,7 @@ jobs:
       # 24 again keeps this workflow from silently disagreeing with CI.
       - name: Read the pinned Node major
         id: node
-        run: node tools/github/read-node-major.mjs .github/workflows/ci.yml
+        run: node tools/github/read-node-major.ts .github/workflows/ci.yml
 
       - uses: actions/setup-node@v7
         with:
@@ -147,7 +147,7 @@ jobs:
         # header the tool never prints. `shell: bash` runs with pipefail, so a
         # failed translation fails the step instead of hiding behind tee.
         shell: bash
-        run: node tools/i18n/translate-locale.mjs --generate --locales locales 2>&1 | tee "$RUNNER_TEMP/translate.log"
+        run: node tools/i18n/translate-locale.ts --generate --locales locales 2>&1 | tee "$RUNNER_TEMP/translate.log"
 
       # Same-repo pull request (ADR-0057): commit the result straight onto the
       # PR's own branch instead of opening a second one — the PR under review
@@ -172,16 +172,16 @@ jobs:
         # same push. Its commit changes nothing below, so it started no run
         # of this workflow; the tool replays this commit on top of it
         # (ADR-0113). --paths is this workflow's pull_request_target paths,
-        # verbatim; tests/js/github/push-to-pr-branch.test.mjs fails if they
+        # verbatim; tests/js/github/push-to-pr-branch.test.ts fails if they
         # disagree.
         run: |
-          node tools/github/commit-to-pr-branch.mjs \
+          node tools/github/commit-to-pr-branch.ts \
             --adr ADR-0021/ADR-0057 \
             --add 'locales/fr-CA.json,locales/fr-CA.meta.json' \
             --add-if-exists 'locales/.fr-CA.pending' \
             --subject 'Translate new/changed locale keys' \
             --body-env SUMMARY \
-            --paths 'locales/en-CA.json,locales/glossary.json,locales/terms.json,tools/i18n/translate-locale.mjs,tools/i18n/translator.mjs,tools/i18n/open-translation-pr.mjs,tools/i18n/report-translation-run.mjs,tools/github/commit-to-pr-branch.mjs,tools/github/read-node-major.mjs,tools/lib/actions.mjs,.github/workflows/i18n-translate.yml'
+            --paths 'locales/en-CA.json,locales/glossary.json,locales/terms.json,tools/i18n/translate-locale.ts,tools/i18n/translator.ts,tools/i18n/open-translation-pr.ts,tools/i18n/report-translation-run.ts,tools/github/commit-to-pr-branch.ts,tools/github/read-node-major.ts,tools/lib/actions.ts,.github/workflows/i18n-translate.yml'
 
       # A pull request opened with the built-in GITHUB_TOKEN does not trigger
       # workflows — GitHub's loop protection — so CI would never report on it and
@@ -202,7 +202,7 @@ jobs:
           GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
           USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
           SUMMARY: ${{ steps.translate.outputs.summary }}
-        run: node tools/i18n/open-translation-pr.mjs
+        run: node tools/i18n/open-translation-pr.ts
 
       # The same i18n check ci.yml runs, including the term-list rule
       # (ADR-0102), on the French this run just produced. It never fails the
@@ -213,7 +213,7 @@ jobs:
         id: verify
         if: steps.translate.outputs.translated != '' && steps.translate.outputs.translated != '0'
         continue-on-error: true
-        run: node tools/i18n/translate-locale.mjs --check --locales locales
+        run: node tools/i18n/translate-locale.ts --check --locales locales
 
       # `translated` — not `keys` — is what says the provider was actually
       # called: `keys` also counts glossary pins, hand-edits recorded as human,
@@ -229,7 +229,7 @@ jobs:
           TRANSLATED_KEYS: ${{ steps.translate.outputs.translated_keys }}
           CHECK_OUTCOME: ${{ steps.verify.outcome }}
           PROVIDER: ${{ vars.TRANSLATION_PROVIDER || vars.TRANSLATION_MODEL || 'gemini-3.7-flash' }}
-        run: node tools/i18n/report-translation-run.mjs success
+        run: node tools/i18n/report-translation-run.ts success
 
       # A failed run is exactly what some of those issues wait to hear about —
       # a provider rejecting a request shape answers with a status line the
@@ -246,4 +246,4 @@ jobs:
             translate=${{ steps.translate.outcome }}
             commit_to_pr=${{ steps.commit_to_pr.outcome }}
             open_pr=${{ steps.open_pr.outcome }}
-        run: node tools/i18n/report-translation-run.mjs failure
+        run: node tools/i18n/report-translation-run.ts failure

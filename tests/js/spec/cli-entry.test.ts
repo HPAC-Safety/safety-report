@@ -22,10 +22,10 @@ describe('spec scripts run as commands', () => {
 		assert.match(result.stderr, /BASE_SHA is not set/)
 	})
 
-	it('check-generated-file demands its three options', () => {
-		const result = spawn('check-generated-file.ts')
-		assert.equal(result.status, 2)
-		assert.match(result.stdout, /--generator, --file, and --message are required/)
+	it('graph-fragment merges nothing, and succeeds, when there is no graph', () => {
+		const result = spawn('graph-fragment.ts', ['--graph', path.join(import.meta.dirname, 'no-such-graph.json')])
+		assert.equal(result.status, 0)
+		assert.match(result.stdout, /nothing to merge/)
 	})
 
 	it('check-records checks the repository it runs in', () => {
@@ -52,7 +52,7 @@ describe('spec scripts run as commands', () => {
 })
 
 describe('check-feature-coverage-diff defaults', () => {
-	it('reads the committed matrix when none is given', () => {
+	it('reads the committed claims when none are given', () => {
 		const exec: Exec = () => ({ status: 0, stdout: '', stderr: '' })
 		assert.equal(typeof checkFeatureCoverageDiff({ env: { BASE_SHA: 'abc' }, exec }), 'number')
 	})
@@ -68,7 +68,7 @@ describe('check-feature-coverage-diff defaults', () => {
 				if (args[0] === 'log') return { status: 0, stdout: 'message', stderr: '' }
 				return { status: 0, stdout: args.includes(':(glob)src/**') ? 'src/a.ts' : '', stderr: '' }
 			}
-			const code = checkFeatureCoverageDiff({ env: { BASE_SHA: 'b', EVENT_NAME: 'merge_group' }, exec, log: () => {}, matrix: '' })
+			const code = checkFeatureCoverageDiff({ env: { BASE_SHA: 'b', EVENT_NAME: 'merge_group' }, exec, log: () => {}, claims: JSON.stringify({ claims: [] }) })
 			assert.equal(code, 1)
 			assert.ok(errors.some((line) => line.includes('pull request #unknown')))
 		} finally {

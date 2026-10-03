@@ -346,42 +346,27 @@ jobs:
       - name: The .NET major agrees everywhere it is declared
         run: node tools/build/check-dotnet-major.ts
 
-      # The matrix is generated from the claim tags and the CON ids, so a
-      # scenario added without an id, a duplicate, or a constraint naming a
-      # claim that does not exist fails here. Regenerating and diffing also
-      # catches a committed matrix that no longer matches the artifacts it
-      # summarizes - the same shape as "No drift from installing skills" and
-      # dotnet format --verify-no-changes. ADR-0084. On a pull request it is
-      # the backstop, not the fixer: traceability.yml regenerates the matrix
-      # onto a same-repo PR's branch, so this fails only for a fork or a changed
-      # generator (ADR-0101). On a merge group it is the gate: when two queued
-      # pull requests both change the specification, the second one's matrix
-      # is stale on the merged tree, so it fails here and leaves the queue to be
-      # rebased (ADR-0147).
-      # The specification index is generated from .spec/ the same way: every
-      # area, constraint page, decision, and lesson, read from its own file.
-      # traceability.yml commits it with the matrix. ADR-0183.
+      # The specification index is generated from .spec/: every area,
+      # constraint page, decision, and lesson, read from its own file.
+      # traceability.yml commits it with the claims. ADR-0183.
       - name: The specification index matches its files
         run: node tools/spec/generate-spec-index.ts --check
 
-      - name: The traceability matrix matches the specification
-        run: |
-          node tools/spec/check-generated-file.ts \
-            --generator tools/spec/generate-traceability.ts \
-            --file .spec/traceability.md \
-            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated matrix onto the branch and this re-runs (ADR-0101); otherwise run 'node tools/spec/generate-traceability.ts' and commit the result."
-
-      # Every built claim's steps are bound to a step definition in its engine,
-      # and the committed map of which files bind which claim is current. The
-      # specification is the authority: a step no definition matches fails
-      # here; unused definitions and stale @ignore claims are listed in the map.
-      # traceability.yml commits the map onto a same-repo PR. ADR-0184.
-      - name: Every built claim's steps are bound
-        run: |
-          node tools/spec/check-generated-file.ts \
-            --generator tools/spec/generate-bindings.ts \
-            --file .spec/bindings.md \
-            --message "Out of date. On a same-repo PR, traceability.yml commits the regenerated map onto the branch (ADR-0184); otherwise run 'node tools/spec/generate-bindings.ts' and commit the result."
+      # .spec/claims.json and the matrix are generated from the claim tags, the
+      # CON ids, the step definitions, and the decisions and lessons, so a
+      # scenario added without an id, a duplicate, a constraint naming a claim
+      # that does not exist, or a built claim with a step no definition binds
+      # fails here, and so does a committed file that no longer matches - the
+      # same shape as "No drift from installing skills" and dotnet format
+      # --verify-no-changes (ADR-0084, ADR-0184, ADR-0193). On a pull request
+      # it is the backstop, not the fixer: traceability.yml regenerates both
+      # onto a same-repo PR's branch, so this fails only for a fork or a changed
+      # generator (ADR-0101). On a merge group it is the gate: when two queued
+      # pull requests both change the specification, the second one's files
+      # are stale on the merged tree, so it fails here and leaves the queue to
+      # be rebased (ADR-0147).
+      - name: The claims and the matrix match the specification
+        run: node tools/spec/generate-traceability.ts --check
 
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this

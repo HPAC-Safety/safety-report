@@ -9,7 +9,7 @@
 // (ADR-0147). A merge group has no pull request body, but each pull request in
 // it is one squash commit whose message is that body (PR_BODY), so the check
 // runs once per queued commit: that commit's own diff, its own message, and the
-// merged tree's matrix. That is where a claim one pull request removes and
+// merged tree's claims. That is where a claim one pull request removes and
 // another's exemption cites is caught. An empty range would check nothing, so
 // it fails rather than passes.
 //
@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs'
 
 import { type Env, type Exec, exec, isMain, required } from '../lib/actions.ts'
 import { main as checkCoverage } from './check-feature-coverage.ts'
-import { TRACEABILITY } from './spec-paths.ts'
+import { CLAIMS } from './spec-paths.ts'
 
 // ':(glob)' magic is required for '**' to match — git's default pathspec
 // matching (fnmatch, no FNM_PATHNAME) treats a bare '**' as a single '*' and
@@ -45,7 +45,7 @@ export function pullRequestOf(subject: string): string | undefined {
 
 interface RangeContext {
 	exec: Exec
-	matrix: string
+	claims: string
 	cwd?: string | undefined
 }
 
@@ -53,13 +53,13 @@ interface RangeContext {
  * Checks one git diff range ($1 of the old `check()`): `git diff` failures
  * count as no files, as the `|| true` did.
  */
-export function checkRange(range: string, body: string, { exec, matrix, cwd }: RangeContext): number {
+export function checkRange(range: string, body: string, { exec, claims, cwd }: RangeContext): number {
 	const diff = (pathspecs: readonly string[]): string => exec('git', ['diff', '--name-only', range, '--', ...pathspecs], { cwd }).stdout
 	return checkCoverage({
 		changed: lines(diff(BEHAVIOR_PATHSPECS)).filter(isBehavior),
 		features: lines(diff(FEATURE_PATHSPECS)),
 		body,
-		matrix,
+		claims,
 	})
 }
 
@@ -67,15 +67,14 @@ interface MainOptions {
 	env?: Env
 	exec?: Exec
 	log?: (line: string) => void
-	matrix?: string
+	claims?: string
 	cwd?: string
 }
 
-export function main({ env = process.env, exec: run = exec, log = console.log, matrix, cwd }: MainOptions = {}): number {
+export function main({ env = process.env, exec: run = exec, log = console.log, claims, cwd }: MainOptions = {}): number {
 	const base = required(env, 'BASE_SHA')
 	const body = env.PR_BODY ?? ''
-	const matrixText = matrix ?? readFileSync(TRACEABILITY, 'utf8')
-	const context = { exec: run, matrix: matrixText, cwd }
+	const context = { exec: run, claims: claims ?? readFileSync(CLAIMS, 'utf8'), cwd }
 
 	if (env.EVENT_NAME !== 'merge_group') return checkRange(`${base}...HEAD`, body, context)
 

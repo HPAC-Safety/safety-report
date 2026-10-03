@@ -163,8 +163,9 @@ anywhere under `src/` or in an e2e spec fails unless it touches a
 `.spec/features/**/*.feature` file or cites, from a closed category vocabulary, the
 existing claims it leaves standing
 ([ADR-0090](decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)),
-and a committed [traceability matrix](traceability.md) that no longer matches
-the claims and constraints it summarizes fails the same way a stale generated
+and a committed [traceability matrix](traceability.md) or
+[`claims.json`](claims.json) that no longer matches the claims and constraints
+it summarizes fails the same way a stale generated
 file does
 ([ADR-0083](decisions/ADR-0083-specification-driven-development.md),
 [ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)). `System.DateTime` and `Xunit.Assert` stay
@@ -190,9 +191,10 @@ and the CI gates rather than by a scenario.*
 is bound to a step definition in its engine: Reqnroll for a claim without
 `@ui`, playwright-bdd for one with it. The specification is the authority, so a
 step no definition matches fails the required `docs` job, and the generated
-[step-bindings map](bindings.md) records which files bind each claim, the
-`@ignore` claims whose steps are already bound, and the step definitions no
-scenario uses
-([ADR-0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
+[`claims.json`](claims.json) records which files bind each claim's steps, the
+ambiguous steps, the `@ignore` claims whose steps are already bound, and the
+step definitions no scenario uses
+([ADR-0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md),
+[ADR-0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
 *Verified by: none — a rule about the specification and the tests together,
-enforced by `tools/spec/generate-bindings.ts` rather than by a scenario.*
+enforced by `tools/spec/generate-traceability.ts` rather than by a scenario.*

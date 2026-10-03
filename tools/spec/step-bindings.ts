@@ -1,13 +1,6 @@
-#!/usr/bin/env node
-// The step-bindings map, generated from the specification and the step
-// definitions that execute it (ADR-0184).
-//
-// The traceability matrix says which claims exist; nothing said which test
-// proves each one, so a claim was a dead end in the knowledge graph and the
-// code was never checked against the specification beyond "the test ran".
-// This resolves every scenario step to the step definition its runner would
-// bind, and writes .spec/bindings.md: per claim, the files that bind it, plus
-// the places where the specification and the code disagree.
+// Which step definitions bind each claim, read from the specification and the
+// step definitions that execute it (ADR-0184). tools/spec/generate-traceability.ts
+// writes what this finds into .spec/claims.json and the matrix.
 //
 // It mirrors the two runners rather than running them:
 //   - Reqnroll (C#, every claim not tagged @ui) matches by keyword, reads a
@@ -16,26 +9,20 @@
 //   - playwright-bdd (TypeScript, @ui claims) matches by text alone.
 //
 // The specification is the authority. A built claim with a step no binding
-// matches fails; a step definition no claim uses, a step two bindings match,
-// and an @ignore claim whose steps are all bound are listed, not failed.
+// matches fails the generator; a step definition no claim uses, a step two
+// bindings match, and an @ignore claim whose steps are all bound are recorded,
+// not failed.
 //
-// Dependency-free, like traceability.ts: traceability.yml runs the base
-// branch's copy with no npm install. Step files are read as text and their
-// patterns compiled as regular expressions; nothing in them is executed.
-//
-//   node tools/spec/generate-bindings.ts              write .spec/bindings.md; exit 1 on a gap
-//   node tools/spec/generate-bindings.ts --check      fail when the committed file differs
-//   node tools/spec/generate-bindings.ts --no-fail    write it, never fail (hooks and the bot)
-//
-// The exit code is the contract.
-import { appendFileSync, existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+// Dependency-free, like every other tool in this directory: traceability.yml
+// runs the base branch's copy with no npm install. Step files are read as text
+// and their patterns compiled as regular expressions; nothing in them is
+// executed.
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, posix } from 'node:path'
 
-import { BINDINGS, FEATURES, PLAYWRIGHT_STEPS, REQNROLL_STEPS, SPEC_ROOT } from './spec-paths.ts'
-import { type Claim, readClaims } from './generate-traceability.ts'
-import { isMain, errorMessage } from '../lib/actions.ts'
-
-const ROOT = process.cwd()
+import { FEATURES, PLAYWRIGHT_STEPS, REQNROLL_STEPS } from './spec-paths.ts'
+import { type Claim, readClaims } from './read-claims.ts'
+import { errorMessage } from '../lib/actions.ts'
 
 const STEP = /^\s*(Given|When|Then|And|But|\*)\s+(.*?)\s*$/
 const BLOCK = /^\s*(Feature|Background|Rule|Scenario|Scenario Outline|Scenario Template|Example|Examples|Scenarios):\s*(.*?)\s*$/
@@ -486,7 +473,11 @@ export function playwrightMatcher(pattern: string | RegExpPattern): RegExp {
 
 // ---------------------------------------------------------------- resolving --
 
-const display = (binding: Binding): string => (typeof binding.pattern === 'string' ? binding.pattern : `/${binding.pattern.source}/${binding.pattern.flags}`)
+/** Code-unit order, the same on every machine and locale. */
+const compare = (a: string, b: string): number => Number(a > b) - Number(a < b)
+
+/** A binding's pattern as written: a string, or a regex literal. */
+export const display = (binding: Binding): string => (typeof binding.pattern === 'string' ? binding.pattern : `/${binding.pattern.source}/${binding.pattern.flags}`)
 
 /** One feature file's scenarios, with its path and title. */
 export interface FeatureScenarios {
@@ -498,11 +489,19 @@ export interface FeatureScenarios {
 /** A binding with its pattern compiled. */
 type Compiled<B extends Binding> = B & { regex: RegExp }
 
+/** One step with the files of the definitions that bind it. */
+export interface BoundStep extends Step {
+	files: string[]
+	/** More than one definition matches it, which the runner fails. */
+	ambiguous: boolean
+}
+
 /** A claim with the files that bind its steps and the steps nothing binds. */
 export interface ResolvedClaim extends ReadScenario {
 	path: string
 	files: string[]
 	unbound: Step[]
+	bound: BoundStep[]
 }
 
 /** What `resolve` finds. */
@@ -557,8 +556,10 @@ export function resolve(features: readonly FeatureScenarios[], csBindings: reado
 		for (const claim of scenarios) {
 			const files = new Set<string>()
 			const unbound: Step[] = []
+			const bound: BoundStep[] = []
 			for (const step of claim.steps) {
 				const found = candidates(claim.engine, feature, step)
+				bound.push({ ...step, files: [...new Set(found.map((binding) => binding.file))].sort(), ambiguous: found.length > 1 })
 				if (found.length === 0) unbound.push(step)
 				if (found.length > 1) {
 					const label = `${step.keyword} ${step.text}`
@@ -574,105 +575,15 @@ export function resolve(features: readonly FeatureScenarios[], csBindings: reado
 					files.add(binding.file)
 				}
 			}
-			claims.push({ ...claim, path, files: [...files].sort(), unbound })
+			claims.push({ ...claim, path, files: [...files].sort(), unbound, bound })
 		}
 	}
 
 	const unused = [...cs, ...ts]
 		.filter((binding) => !used.has(binding))
-		.sort((a, b) => a.file.localeCompare(b.file) || display(a).localeCompare(display(b)))
+		.sort((a, b) => compare(a.file, b.file) || compare(display(a), display(b)))
 
 	return { claims, unused, ambiguous, problems }
-}
-
-// ---------------------------------------------------------------- rendering --
-
-const byId = (a: { id: string }, b: { id: string }): number => Number(a.id > b.id) - Number(a.id < b.id)
-const code = (text: string): string => (text.includes('`') ? `\`\` ${text} \`\`` : `\`${text}\``)
-const link = (file: string): string => `[${posix.basename(file)}](${posix.relative(SPEC_ROOT, file)})`
-
-/**
- * The map. Every block derives from one claim, one step, or one binding, and
- * nothing is counted across the tree, so two branches that each carry a
- * correct map merge into the map of the merged tree (ADR-0106).
- */
-export function render({ claims, unused, ambiguous }: Pick<Resolution, 'claims' | 'unused' | 'ambiguous'>): string {
-	const lines = [
-		'---',
-		'title: Step bindings',
-		'description: Generated map from every claim to the step-definition files that bind its steps, with the places the specification and the code disagree.',
-		'type: guide',
-		'---',
-		'',
-		'# Step bindings',
-		'',
-		'> **Generated file — do not edit by hand.**',
-		'> Regenerate with `node tools/spec/generate-bindings.ts`. CI fails on a difference, and on a',
-		'> built claim with a step no definition binds',
-		'> ([ADR-0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).',
-		'> One block per claim, step, or definition, and no totals, so branches merge it',
-		'> without conflicting',
-		'> ([ADR-0106](decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)).',
-		'',
-		'Each claim lists the step-definition files its runner binds: Reqnroll for a',
-		'claim without `@ui`, playwright-bdd for one with it. An `Unbound` step is one no',
-		'definition matches; a built claim may never have one.',
-	]
-
-	const areas = [...new Set(claims.map((claim) => claim.area))].sort()
-	for (const area of areas) {
-		lines.push('', `## Claims: ${area}`)
-		for (const claim of claims.filter((each) => each.area === area).sort(byId)) {
-			lines.push('', `### ${claim.id}`, '')
-			for (const file of claim.files) lines.push(`- ${link(file)}`)
-			for (const step of claim.unbound) lines.push(`- Unbound: ${code(`${step.keyword} ${step.text}`)}`)
-			if (claim.files.length === 0 && claim.unbound.length === 0) lines.push('- No steps.')
-		}
-	}
-
-	const stale = claims.filter((claim) => claim.status === 'Planned' && claim.unbound.length === 0 && claim.steps.length > 0).sort(byId)
-	lines.push(
-		'',
-		'## Stale @ignore',
-		'',
-		'A claim still tagged `@ignore` whose every step a definition already binds. Drop',
-		'the tag once the scenario passes, or say in the scenario why it stays.',
-	)
-	for (const claim of stale) lines.push('', `### ${claim.id}`, '', 'Every step is bound.')
-
-	lines.push(
-		'',
-		'## Ambiguous steps',
-		'',
-		'A step more than one definition matches. The runner fails it; name one.',
-	)
-	for (const [label, files] of [...ambiguous].sort(([a], [b]) => Number(a > b) - Number(a < b))) {
-		lines.push('', `### ${code(label)}`, '', [...files].sort().map(link).join(' · '))
-	}
-
-	lines.push(
-		'',
-		'## Unused step definitions',
-		'',
-		'A step definition no scenario step matches: test code the specification does',
-		'not ask for. Delete it, or write the scenario it was for.',
-	)
-	for (const binding of unused) {
-		lines.push('', `### ${code(display(binding))}`, '', `${link(binding.file)} — ${binding.engine}, ${binding.keyword}`)
-	}
-
-	lines.push('')
-	return lines.join('\n')
-}
-
-/** The whole-tree counts, reported rather than committed (ADR-0106). */
-export function totals({ claims, unused, ambiguous }: Pick<Resolution, 'claims' | 'unused' | 'ambiguous'>): string {
-	const unbound = claims.filter((claim) => claim.unbound.length > 0)
-	const stale = claims.filter((claim) => claim.status === 'Planned' && claim.unbound.length === 0 && claim.steps.length > 0)
-	return (
-		`${claims.length} claims: ${claims.length - unbound.length} fully bound, ${unbound.length} with an unbound step, ` +
-		`${stale.length} stale @ignore. ${ambiguous.size} ambiguous steps, ${unused.length} unused step definitions.`
-	)
 }
 
 // ------------------------------------------------------------------- files --
@@ -688,7 +599,8 @@ function walk(root: string, directory: string, extension: string): string[] {
 	})
 }
 
-export function build(root = ROOT): Resolution & { map: string } {
+/** Every claim's steps resolved to the step definitions that bind them. */
+export function collectBindings(root: string): Resolution {
 	const problems: string[] = []
 	const read = (path: string): string => readFileSync(join(root, path), 'utf8')
 
@@ -717,43 +629,5 @@ export function build(root = ROOT): Resolution & { map: string } {
 
 	const resolved = resolve(features, cs.bindings, ts)
 	problems.push(...resolved.problems)
-	return { ...resolved, problems, map: render(resolved) }
+	return { ...resolved, problems }
 }
-
-/**
- * Builds the map and writes or checks it, reporting the way the command line
- * does without exiting, so a test can exercise every outcome. Returns the exit
- * code.
- */
-export function main(root = ROOT, { check = false, fail = true }: { check?: boolean; fail?: boolean } = {}): number {
-	const result = build(root)
-	const target = join(root, BINDINGS)
-
-	for (const problem of result.problems) console.error(`::error::${problem}`)
-
-	const gaps = result.claims.filter((claim) => claim.status === 'Covered' && claim.unbound.length > 0)
-	for (const claim of gaps) {
-		for (const step of claim.unbound) {
-			console.error(`::error file=${claim.path},line=${step.line}::${claim.id} step "${step.keyword} ${step.text}" matches no ${claim.engine} step definition`)
-		}
-	}
-
-	if (check) {
-		const committed = existsSync(target) ? readFileSync(target, 'utf8') : ''
-		if (committed !== result.map) {
-			console.error(`::error file=${BINDINGS}::Out of date. Run 'node tools/spec/generate-bindings.ts' and commit the result; on a same-repo pull request traceability.yml commits it for you (ADR-0184).`)
-			return 1
-		}
-	} else {
-		writeFileSync(target, result.map)
-	}
-
-	console.log(`${BINDINGS} ${check ? 'checked' : 'written'}. ${totals(result)}`)
-	if (!check && process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `**Step bindings:** ${totals(result)}\n`)
-
-	if (!fail) return 0
-	return result.problems.length > 0 || gaps.length > 0 ? 1 : 0
-}
-
-const runAsCommand = isMain(import.meta.url)
-if (runAsCommand) process.exit(main(ROOT, { check: process.argv.includes('--check'), fail: !process.argv.includes('--no-fail') }))

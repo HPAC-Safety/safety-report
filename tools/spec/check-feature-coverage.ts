@@ -15,13 +15,13 @@
 //     No .feature scenario needed: refactor — extracted the ingest loop
 //     Claims preserved: REQ-SUB-013, REQ-SUB-042
 //
-// The ids must exist in the generated matrix, the category must be one of a
+// The ids must exist in the generated claims (.spec/claims.json), the category must be one of a
 // closed set, and the categories that can be checked against the diff are.
 //
 // The exit code is the contract.
 import { readFileSync } from 'node:fs'
 
-import { TRACEABILITY } from './spec-paths.ts'
+import { CLAIMS } from './spec-paths.ts'
 import { isMain } from '../lib/actions.ts'
 
 // Why a scenario might genuinely be unnecessary. Deliberately closed: a new
@@ -59,9 +59,10 @@ const DEPENDENCY_MANIFESTS = [
 	/(^|\/)Dockerfile$/,
 ]
 
-/** Every claim id the generated matrix declares. */
-export function claimsInMatrix(matrix: string): Set<string> {
-	return new Set(matrix.match(CLAIM) ?? [])
+/** Every claim id .spec/claims.json declares: its claims, not every ID it mentions. */
+export function declaredClaims(claimsJson: string): Set<string> {
+	const { claims } = JSON.parse(claimsJson) as { claims: { id: string }[] }
+	return new Set(claims.map((claim) => claim.id))
 }
 
 // A line that starts something new rather than continuing the line above it.
@@ -205,8 +206,8 @@ const lines = (value: string): string[] => value.split('\n').map((line) => line.
  * Reports the way the command line does, without exiting, so a test can
  * exercise every outcome in-process. Returns the exit code.
  */
-export function main({ changed, features, body, matrix }: { changed: readonly string[]; features: readonly string[]; body: string; matrix: string }): number {
-	const verdict = judge({ changed, features, body, knownClaims: claimsInMatrix(matrix) })
+export function main({ changed, features, body, claims }: { changed: readonly string[]; features: readonly string[]; body: string; claims: string }): number {
+	const verdict = judge({ changed, features, body, knownClaims: declaredClaims(claims) })
 
 	if (verdict.ok) {
 		console.log(`::notice::${verdict.note}`)
@@ -237,7 +238,7 @@ export function main({ changed, features, body, matrix }: { changed: readonly st
 	console.error(`Categories: ${Object.entries(CATEGORIES).map(([name, meaning]) => `${name} (${meaning})`).join('; ')}.`)
 	console.error('')
 	console.error('An exemption is a citation, not an assertion — the claims are checked')
-	console.error('against .spec/traceability.md (ADR-0090).')
+	console.error('against .spec/claims.json (ADR-0090).')
 	return 1
 }
 
@@ -248,7 +249,7 @@ if (runAsCommand) {
 			changed: lines(process.env.CHANGED_BEHAVIOR ?? ''),
 			features: lines(process.env.CHANGED_FEATURES ?? ''),
 			body: process.env.PR_BODY ?? '',
-			matrix: readFileSync(TRACEABILITY, 'utf8'),
+			claims: readFileSync(CLAIMS, 'utf8'),
 		}),
 	)
 }

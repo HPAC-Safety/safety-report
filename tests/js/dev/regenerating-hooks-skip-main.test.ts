@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -61,7 +61,8 @@ describe('the hooks that regenerate the specification', () => {
 			const result = runHook(root, name, [...args])
 
 			assert.equal(result.status, 0)
-			assert.equal(existsSync(join(root, 'node-called.txt')), false, 'no generator ran')
+			// Only the graph merge, which writes to the untracked graphify-out/ (ADR-0193).
+			assert.deepEqual(readFileSync(join(root, 'node-called.txt'), 'utf8').trim().split('\n'), ['tools/spec/graph-fragment.ts'], 'no generator ran')
 			assert.equal(git(root, 'diff', '--cached', '--name-only').out, '', 'nothing is staged')
 		})
 
@@ -72,7 +73,12 @@ describe('the hooks that regenerate the specification', () => {
 			const result = runHook(root, name, [...args])
 
 			assert.equal(result.status, 0)
-			assert.equal(existsSync(join(root, 'node-called.txt')), true, 'the generators ran')
+			assert.ok(existsSync(join(root, 'node-called.txt')))
+			assert.deepEqual(readFileSync(join(root, 'node-called.txt'), 'utf8').trim().split('\n'), [
+				'tools/spec/generate-traceability.ts --no-fail',
+				'tools/spec/generate-spec-index.ts',
+				'tools/spec/graph-fragment.ts',
+			])
 		})
 	}
 })

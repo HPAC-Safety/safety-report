@@ -47,10 +47,11 @@ names and step numbers.
   `.githooks/<name>`, never the installed file; a moved tool needs no re-install
   ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)
   amendment).
-- `post-merge` and `post-rewrite` regenerate and stage `.spec/traceability.md`,
-  `.spec/README.md` and `.spec/bindings.md`. They do nothing on `main`: the
-  primary checkout only fast-forwards to `origin/main`, which already carries
-  them, so a pull leaves `main` clean (#802).
+- `post-merge` and `post-rewrite` regenerate and stage `.spec/claims.json`,
+  `.spec/traceability.md`, and `.spec/README.md`, then merge the specification
+  into the local graphify graph. On `main` they only merge the graph, which is
+  untracked: the primary checkout only fast-forwards to `origin/main`, which
+  already carries the generated files, so a pull leaves `main` clean (#802).
 
 ### Commit, rebase, claim identifiers
 
@@ -78,9 +79,13 @@ Everything the specification chain reads lives in `.spec/`
 - the five constraint pages, `.spec/*.md`, listed in `tools/spec/spec-paths.ts`;
 - `.spec/decisions/`, `.spec/lessons/`, and `.spec/conventions/`;
 - three generated files, never edited by hand:
-  - `.spec/traceability.md` — `node tools/spec/generate-traceability.ts`;
-  - `.spec/bindings.md`, the step-definition files that bind each claim —
-    `node tools/spec/generate-bindings.ts` ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md));
+  - `.spec/claims.json`, the canonical data — every claim with its steps and
+    the step-definition files that bind them, every constraint, and what each
+    ADR and lesson cites — conforming to `.spec/claims.schema.json`, and
+    `.spec/traceability.md`, one row per claim — both
+    `node tools/spec/generate-traceability.ts`
+    ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md),
+    [ADR-0193](../../.spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md));
   - `.spec/README.md`, the index of every area, constraint page, decision, and
     lesson — `node tools/spec/generate-spec-index.ts`.
 
@@ -95,11 +100,11 @@ Rules:
   on a same-repo pull request (also when only a step file changed), and in
   `tools/dev/ci-local.sh`. The `docs` job fails any one stale. A stale
   `.spec/README.md` in pre-commit: run `node tools/spec/generate-spec-index.ts` and stage it.
-- `node tools/spec/generate-bindings.ts` fails a built claim (not `@ignore`) with a step no
+- `node tools/spec/generate-traceability.ts` fails a built claim (not `@ignore`) with a step no
   step definition in its engine matches. The specification wins: fix the step
   definition, or the scenario only when it said the wrong thing. Stale
-  `@ignore` claims, ambiguous steps, and unused step definitions are listed in
-  `.spec/bindings.md`, not failed.
+  `@ignore` claims, ambiguous steps, and unused step definitions are recorded
+  in `.spec/claims.json`, not failed.
 - The tool reads only the step-definition forms in use: `[Given(@"…")]` on one
   line in a `[Binding]` class scoped, if at all, by `[Scope(Feature = "…")]`;
   `Given("…")` or `Given(/…/)` from `createBdd()`; Cucumber parameters

@@ -42,7 +42,7 @@
 # terraform plan or apply, deploy-*, or terraform-relock: those write to the
 # repository or to AWS, and nothing here can name them. What two of them would
 # commit onto the branch is stood in for: the clone gets the regenerated
-# traceability matrix, and the i18n job accepts French still pending as a `#`
+# claims and traceability matrix, and the i18n job accepts French still pending as a `#`
 # stub under act (see "the bots' two commits" below).
 #
 # Coverage parity: the coverage job runs as in CI. It gates against the same
@@ -346,12 +346,12 @@ done
 # -------------------------------------------------- the bots' two commits --
 #
 # On a same-repository pull request, two bots commit onto the branch before
-# CI's verdict settles: traceability.yml the regenerated matrix, and
+# CI's verdict settles: traceability.yml the regenerated claims and matrix, and
 # i18n-translate.yml the French for new or reworded English. Neither runs here,
 # because both push. Without them a branch that changes a scenario fails
 # `docs`, and one that adds an English key fails `i18n`, although CI passes.
 #
-# The matrix is plain generated data, so the clone gets the commit
+# The claims and the matrix are plain generated data, so the clone gets the commit
 # traceability.yml would push: `node tools/spec/generate-traceability.ts`, committed on top
 # when it changed anything, with HEAD and origin/<branch> moved to it. Like
 # traceability.yml, it skips a branch that changes the generator itself, whose
@@ -363,23 +363,23 @@ done
 # ci.yml's i18n job passes --allow-pending-translation under act instead,
 # the pre-commit hook's branch rule. Neither changes what runs on GitHub.
 
-if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-traceability.ts tools/spec/generate-spec-index.ts tools/spec/spec-paths.ts tools/spec/generate-bindings.ts; then
-	if (cd "$WORK/repo" && node tools/spec/generate-traceability.ts >/dev/null 2>&1 && node tools/spec/generate-spec-index.ts >/dev/null 2>&1 && node tools/spec/generate-bindings.ts --no-fail >/dev/null 2>&1); then
-		if ! git -C "$WORK/repo" diff --quiet -- .spec/traceability.md .spec/README.md .spec/bindings.md; then
+if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-traceability.ts tools/spec/generate-spec-index.ts tools/spec/spec-paths.ts tools/spec/read-claims.ts tools/spec/read-records.ts tools/spec/step-bindings.ts tools/spec/json-schema.ts tools/spec/graph-fragment.ts tools/docs/check-frontmatter.ts; then
+	if (cd "$WORK/repo" && node tools/spec/generate-traceability.ts --no-fail >/dev/null 2>&1 && node tools/spec/generate-spec-index.ts >/dev/null 2>&1); then
+		if ! git -C "$WORK/repo" diff --quiet -- .spec/claims.json .spec/traceability.md .spec/README.md; then
 			git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \
-				commit -q --no-verify -m "Regenerate the traceability matrix and specification index, as traceability.yml would" \
-				-- .spec/traceability.md .spec/README.md .spec/bindings.md || die "could not commit the regenerated matrix in the clone"
+				commit -q --no-verify -m "Regenerate the claims, traceability matrix, and specification index, as traceability.yml would" \
+				-- .spec/claims.json .spec/traceability.md .spec/README.md || die "could not commit the regenerated matrix in the clone"
 			HEAD_SHA=$(git -C "$WORK/repo" rev-parse HEAD) || die "cannot read the clone's HEAD"
 			git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" \
 				|| die "git update-ref failed"
-			say "Traceability matrix and specification index: regenerated and committed in the clone, as traceability.yml would on GitHub."
+			say "Claims, traceability matrix, and specification index: regenerated and committed in the clone, as traceability.yml would on GitHub."
 		fi
 	else
-		git -C "$WORK/repo" checkout -q -- .spec/traceability.md .spec/README.md .spec/bindings.md 2>/dev/null || true
+		git -C "$WORK/repo" checkout -q -- .spec/claims.json .spec/traceability.md .spec/README.md 2>/dev/null || true
 		warn "node tools/spec/generate-traceability.ts or tools/spec/generate-spec-index.ts failed in the clone; the docs job will say why"
 	fi
 else
-	say "Traceability matrix and specification index: not regenerated, because this branch changes their generators (traceability.yml skips it too)."
+	say "Claims, traceability matrix, and specification index: not regenerated, because this branch changes their generators (traceability.yml skips it too)."
 fi
 
 # ------------------------------------------------------------ the baseline --

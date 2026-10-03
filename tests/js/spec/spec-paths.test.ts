@@ -4,23 +4,26 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { BINDINGS, CONSTRAINT_PAGES, PLAYWRIGHT_STEPS, REQNROLL_STEPS, SPEC_INDEX, SPEC_ROOT, TRACEABILITY } from '../../../tools/spec/spec-paths.ts'
+import { GENERATORS } from '../../../tools/spec/regenerate-spec-docs.ts'
+import { CLAIMS, CLAIMS_SCHEMA, CONSTRAINT_PAGES, PLAYWRIGHT_STEPS, REQNROLL_STEPS, SPEC_INDEX, SPEC_ROOT, TRACEABILITY } from '../../../tools/spec/spec-paths.ts'
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const read = (path: string): string => readFileSync(join(REPO, path), 'utf8')
+
+const GENERATED = [CLAIMS, TRACEABILITY, SPEC_INDEX]
 
 // A shell hook or a workflow cannot import tools/spec/spec-paths.ts, so each one
 // names the paths itself. These tie every copy to the module (ADR-0183).
 describe('the places that cannot import the specification paths', () => {
 	it('every constraint page and generated file sits under the specification root', () => {
-		for (const path of [...CONSTRAINT_PAGES, TRACEABILITY, SPEC_INDEX, BINDINGS]) assert.ok(path.startsWith(`${SPEC_ROOT}/`), path)
+		for (const path of [...CONSTRAINT_PAGES, ...GENERATED, CLAIMS_SCHEMA]) assert.ok(path.startsWith(`${SPEC_ROOT}/`), path)
 	})
 
-	it('traceability.yml is triggered by the whole specification and both generators', () => {
+	it('traceability.yml is triggered by the whole specification and every generator module', () => {
 		const workflow = read('.github/workflows/traceability.yml')
 
 		assert.match(workflow, new RegExp(`^ {6}- ${SPEC_ROOT.replace('.', '\\.')}/\\*\\*$`, 'm'))
-		for (const tool of ['tools/spec/generate-traceability.ts', 'tools/spec/generate-spec-index.ts', 'tools/spec/spec-paths.ts', 'tools/spec/generate-bindings.ts']) assert.ok(workflow.includes(`- ${tool}`), tool)
+		for (const tool of GENERATORS) assert.ok(workflow.includes(`- ${tool}`), tool)
 		for (const steps of [REQNROLL_STEPS, PLAYWRIGHT_STEPS]) assert.ok(workflow.includes(`- ${steps}/**`), steps)
 	})
 
@@ -28,25 +31,27 @@ describe('the places that cannot import the specification paths', () => {
 		it(`${path} regenerates every generated file`, () => {
 			const text = read(path)
 
-			for (const generated of [TRACEABILITY, SPEC_INDEX, BINDINGS]) assert.ok(text.includes(generated), `names ${generated}`)
+			for (const generated of GENERATED) assert.ok(text.includes(generated), `names ${generated}`)
 		})
 	}
 
-	it('ci.yml checks both generated files and every link', () => {
+	for (const path of ['.githooks/post-merge', '.githooks/post-rewrite', 'init-dev.sh']) {
+		it(`${path} merges the specification into the local graph`, () => {
+			assert.ok(read(path).includes('node tools/spec/graph-fragment.ts'))
+		})
+	}
+
+	it('ci.yml checks every generated file and every link', () => {
 		const ci = read('.github/workflows/ci.yml')
 
-		assert.ok(ci.includes(`--file ${TRACEABILITY}`))
-		assert.ok(ci.includes(`--file ${BINDINGS}`))
-		assert.ok(ci.includes('node tools/spec/check-generated-file.ts'))
+		assert.ok(ci.includes('node tools/spec/generate-traceability.ts --check'))
 		assert.ok(ci.includes('node tools/spec/generate-spec-index.ts --check'))
 		assert.ok(ci.includes('node tools/docs/check-links.ts'))
 	})
 
-	it('.gitattributes keeps the checked-out side of both generated files on a conflict', () => {
+	it('.gitattributes keeps the checked-out side of every generated file on a conflict', () => {
 		const attributes = read('.gitattributes')
 
-		assert.match(attributes, new RegExp(`^${TRACEABILITY.replace(/\./g, '\\.')} merge=ours$`, 'm'))
-		assert.match(attributes, new RegExp(`^${SPEC_INDEX.replace(/\./g, '\\.')} merge=ours$`, 'm'))
-		assert.match(attributes, new RegExp(`^${BINDINGS.replace(/\./g, '\\.')} merge=ours$`, 'm'))
+		for (const generated of GENERATED) assert.match(attributes, new RegExp(`^${generated.replace(/\./g, '\\.')} merge=ours$`, 'm'))
 	})
 })

@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { GENERATED_FILES, GENERATORS } from '../../../tools/spec/regenerate-spec-docs.ts'
+
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const SCRIPT = join(REPO, 'tools/dev/ci-local.sh')
 const text = readFileSync(SCRIPT, 'utf8')
@@ -180,9 +182,11 @@ describe('what the bots would commit', () => {
 	})
 
 	it('ci-local regenerates the matrix in the clone and commits it there', () => {
-		assert.match(code, /diff --quiet "\$BASE_SHA" HEAD -- tools\/spec\/generate-traceability\.ts tools\/spec\/generate-spec-index\.ts tools\/spec\/spec-paths\.ts tools\/spec\/generate-bindings\.ts/)
-		assert.match(code, /cd "\$WORK\/repo" && node tools\/spec\/generate-traceability\.ts >\/dev\/null 2>&1 && node tools\/spec\/generate-spec-index\.ts >\/dev\/null 2>&1 && node tools\/spec\/generate-bindings\.ts --no-fail/)
-		assert.match(code, /commit -q --no-verify -m "Regenerate the traceability matrix[^"]*"\s*\\\s*-- \.spec\/traceability\.md \.spec\/README\.md \.spec\/bindings\.md/)
+		// The same generators traceability.yml skips a pull request for changing.
+		const generators = GENERATORS.join(' ')
+		assert.ok(code.includes(`diff --quiet "$BASE_SHA" HEAD -- ${generators};`), generators)
+		assert.match(code, /cd "\$WORK\/repo" && node tools\/spec\/generate-traceability\.ts --no-fail >\/dev\/null 2>&1 && node tools\/spec\/generate-spec-index\.ts >\/dev\/null 2>&1\)/)
+		assert.ok(code.includes(`-- ${GENERATED_FILES.join(' ')} || die`), GENERATED_FILES.join(' '))
 		assert.match(code, /update-ref "refs\/remotes\/origin\/\$BRANCH" "\$HEAD_SHA"/)
 	})
 

@@ -231,7 +231,8 @@ fi
 # provenance), and dotnet format on staged C# files — the exact classes of
 # drift that otherwise only surface after a push, in CI's "i18n" and "build"
 # jobs. .githooks/post-merge and .githooks/post-rewrite regenerate
-# .spec/traceability.md and .spec/README.md after a merge or rebase finishes —
+# .spec/claims.json, .spec/traceability.md, and .spec/README.md after a merge
+# or rebase finishes, and merge the specification into the local graphify graph —
 # see those files and the merge-driver note below for why. post-rewrite also runs dotnet format
 # on the C# files a rebase rewrote, because a rebase commits without running
 # pre-commit.
@@ -255,7 +256,7 @@ fi
 #
 # A dev-machine convenience, not a CI gate — CI enforces the pre-commit
 # checks directly in the "i18n" and "build" jobs, and re-checks
-# .spec/traceability.md itself in the "docs" job — so a missing hook is
+# .spec/claims.json and .spec/traceability.md in the "docs" job — so a missing hook is
 # reported with note(), not missing(): it must never fail a fresh CI
 # checkout's `--check` step.
 HOOKS_DIR=$(git rev-parse --git-path hooks)
@@ -280,19 +281,19 @@ done
 
 # ------------------------------------------------ generated-file merge driver --
 #
-# .spec/traceability.md, .spec/README.md, and .spec/bindings.md are generated
-# from .spec/ and the step definitions
-# (ADR-0084, ADR-0183, ADR-0184). The matrix's format already lets git merge it: every
-# line derives from one scenario or constraint, with no whole-tree totals, and
-# each item sits in its own block (ADR-0106), so two branches with correct
-# matrices merge into the correct matrix — on GitHub too, which never runs a
-# merge driver. `merge=ours` is a local convenience for the case a format
-# cannot absorb (two branches claiming the same new ID): git keeps whichever
-# side is checked out instead of stopping the rebase, and the
-# post-merge/post-rewrite hooks above regenerate both files for real once the
-# tree is in its final state.
+# .spec/claims.json, .spec/traceability.md, and .spec/README.md are generated
+# from .spec/ and the step definitions (ADR-0084, ADR-0183, ADR-0193). Their
+# format already lets git merge most changes: every line derives from one
+# claim, constraint, or record, with no whole-tree totals (ADR-0106), so two
+# branches changing different claims merge into the correct files — on GitHub
+# too, which never runs a merge driver. `merge=ours` is a local convenience for
+# the cases a format cannot absorb (two branches claiming the same new ID, or
+# changing neighbouring rows of the matrix): git keeps whichever side is
+# checked out instead of stopping the rebase, and the post-merge/post-rewrite
+# hooks above regenerate the files for real once the tree is in its final
+# state.
 #
-# The tracked .gitattributes names the driver for those two files; git only
+# The tracked .gitattributes names the driver for those files; git only
 # honours it once this clone defines a driver called `ours`, which is
 # clone-local config, so it is registered here. Idempotent.
 if git config --get merge.ours.driver >/dev/null 2>&1; then
@@ -684,6 +685,13 @@ fi
 # and synthetic test media out of a freshly built graph; after changing it,
 # rebuild with --force, because an incremental update never prunes a newly
 # ignored path (upstream Graphify-Labs/graphify#2908).
+#
+# With no LLM backend, `graphify update` builds the code graph instead, and
+# either way the specification is then merged in by
+# `node tools/spec/graph-fragment.ts`: every claim, constraint, decision,
+# lesson, and feature area from .spec/claims.json, with its typed edges, so
+# they are queryable without an LLM pass. The git hooks re-merge it after every
+# merge and rebase (ADR-0193).
 
 heading "graphify (optional)"
 
@@ -746,6 +754,20 @@ if have graphify; then
 			note "graphify extract --backend claude-cli failed — run it directly to see why"
 		else
 			note "graphify extract failed — install the claude CLI, or set an LLM backend API key (see: graphify extract --help)"
+		fi
+		if [ ! -f "$REPO_ROOT/graphify-out/graph.json" ]; then
+			if graphify update "$REPO_ROOT" >/dev/null 2>&1; then
+				added "graphify code graph built without an LLM (graphify update)"
+			else
+				note "graphify update failed — run it directly to see why"
+			fi
+		fi
+		if [ -f "$REPO_ROOT/graphify-out/graph.json" ]; then
+			if have node && (cd "$REPO_ROOT" && node tools/spec/graph-fragment.ts >/dev/null); then
+				ok "specification merged into the graphify graph"
+			else
+				note "node tools/spec/graph-fragment.ts failed — run it directly to see why"
+			fi
 		fi
 
 		# An Obsidian vault is opt-in, built only under --obsidian. `graphify

@@ -21,7 +21,7 @@ import { join, posix } from 'node:path'
 
 import { parseFrontmatter } from '../docs/check-frontmatter.ts'
 import { CONSTRAINT_PAGES, CONVENTIONS, DECISIONS, FEATURES, LESSONS, SPEC_INDEX, SPEC_ROOT } from './spec-paths.ts'
-import { readClaims, readConstraints } from './generate-traceability.ts'
+import { readClaims, readConstraints } from './read-claims.ts'
 import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
@@ -177,8 +177,8 @@ export function render({ areas, pages, decisions, lessons, conventions }: Inputs
 		'',
 		'The authority rules, the product contract, and the simplicity guardrails are',
 		'in [`features/README.md`](features/README.md). Every claim and constraint, with',
-		'what verifies it, is in [`traceability.md`](traceability.md); the step definitions',
-		'that bind each claim, in [`bindings.md`](bindings.md).',
+		'what verifies it and the step definitions that bind it, is in',
+		'[`traceability.md`](traceability.md), and as data in [`claims.json`](claims.json).',
 		'',
 		'## Feature areas',
 		'',

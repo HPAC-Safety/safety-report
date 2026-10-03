@@ -10,10 +10,10 @@ import { changedGenerator, GENERATORS, main } from '../../../tools/spec/regenera
 function trees({ headOverrides = {}, skip = [] }: { headOverrides?: Partial<Record<string, string>>; skip?: string[] } = {}): { base: string; head: string; output: string } {
 	const root = mkdtempSync(path.join(tmpdir(), 'rsd-'))
 	for (const side of ['base', 'head']) {
-		mkdirSync(path.join(root, side, 'tools/spec'), { recursive: true })
 		for (const tool of GENERATORS) {
 			if (side === 'head' && skip.includes(tool)) continue
-			writeFileSync(path.join(root, side, 'tools/spec', tool), side === 'head' ? (headOverrides[tool] ?? `// ${tool}\n`) : `// ${tool}\n`)
+			mkdirSync(path.dirname(path.join(root, side, tool)), { recursive: true })
+			writeFileSync(path.join(root, side, tool), side === 'head' ? (headOverrides[tool] ?? `// ${tool}\n`) : `// ${tool}\n`)
 		}
 	}
 	return { base: path.join(root, 'base'), head: path.join(root, 'head'), output: path.join(root, 'out') }
@@ -26,19 +26,19 @@ describe('changed generator', () => {
 	})
 
 	it('names the first generator the pull request edited', () => {
-		const t = trees({ headOverrides: { 'generate-spec-index.ts': '// edited\n' } })
-		assert.equal(changedGenerator(t.base, t.head), 'generate-spec-index.ts')
+		const t = trees({ headOverrides: { 'tools/spec/generate-spec-index.ts': '// edited\n' } })
+		assert.equal(changedGenerator(t.base, t.head), 'tools/spec/generate-spec-index.ts')
 	})
 
 	it('treats a generator missing on the head as changed', () => {
-		const t = trees({ skip: ['spec-paths.ts'] })
-		assert.equal(changedGenerator(t.base, t.head), 'spec-paths.ts')
+		const t = trees({ skip: ['tools/docs/check-frontmatter.ts'] })
+		assert.equal(changedGenerator(t.base, t.head), 'tools/docs/check-frontmatter.ts')
 	})
 })
 
 describe('regenerate spec docs', () => {
 	it('skips with a notice when a generator changed', () => {
-		const t = trees({ headOverrides: { 'generate-bindings.ts': '// edited\n' } })
+		const t = trees({ headOverrides: { 'tools/spec/step-bindings.ts': '// edited\n' } })
 		const logged: string[] = []
 		const calls: unknown[][] = []
 		const exec: Exec = (...c) => {
@@ -48,7 +48,7 @@ describe('regenerate spec docs', () => {
 		const code = main({ argv: [t.base, t.head], env: { GITHUB_OUTPUT: t.output }, exec, log: (l) => logged.push(l) })
 		assert.equal(code, 0)
 		assert.equal(calls.length, 0)
-		assert.match(logged[0] ?? '', /^::notice::This pull request changes tools\/spec\/generate-bindings\.ts, so the base generators/)
+		assert.match(logged[0] ?? '', /^::notice::This pull request changes tools\/spec\/step-bindings\.ts, so the base generators/)
 		assert.equal(readFileSync(t.output, 'utf8'), 'changed=false\n')
 	})
 
@@ -69,10 +69,9 @@ describe('regenerate spec docs', () => {
 		assert.deepEqual(
 			calls.map((call) => [call.command, path.basename(call.args[0]), ...call.args.slice(1)]),
 			[
-				['node', 'generate-traceability.ts'],
+				['node', 'generate-traceability.ts', '--no-fail'],
 				['node', 'generate-spec-index.ts'],
-				['node', 'generate-bindings.ts', '--no-fail'],
-				['git', 'diff', '--quiet', '--', '.spec/traceability.md', '.spec/README.md', '.spec/bindings.md'],
+				['git', 'diff', '--quiet', '--', '.spec/claims.json', '.spec/traceability.md', '.spec/README.md'],
 			],
 		)
 		assert.ok(calls.every((call) => call.cwd === t.head))

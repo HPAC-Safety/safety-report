@@ -7,46 +7,26 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
-	type Binding,
 	type PlaywrightBinding,
 	type ReadScenario,
 	type ReqnrollBinding,
-	type ResolvedClaim,
 	type Step,
 	UnsupportedExpression,
-	build,
+	collectBindings,
 	cucumberToRegExp,
-	main,
+	display,
 	playwrightMatcher,
 	readPlaywrightBindings,
 	readReqnrollBindings,
 	readScenarios,
-	render,
 	reqnrollKind,
 	reqnrollMatcher,
 	resolve,
-	totals,
 	unescapeString,
-} from '../../../tools/spec/generate-bindings.ts'
-import type { Claim } from '../../../tools/spec/generate-traceability.ts'
-import { BINDINGS } from '../../../tools/spec/spec-paths.ts'
-import { mergeFile } from '../helpers/merge-file.ts'
+} from '../../../tools/spec/step-bindings.ts'
+import type { Claim } from '../../../tools/spec/read-claims.ts'
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
-
-/** Runs `main` with console output captured, restoring it afterwards even on failure. */
-function runMain(root: string, options?: { check?: boolean; fail?: boolean }): { code: number; output: { log: string[]; error: string[] } } {
-	const output: { log: string[]; error: string[] } = { log: [], error: [] }
-	const original = { log: console.log, error: console.error }
-	console.log = (...args: unknown[]) => output.log.push(args.join(' '))
-	console.error = (...args: unknown[]) => output.error.push(args.join(' '))
-	try {
-		return { code: main(root, options), output }
-	} finally {
-		console.log = original.log
-		console.error = original.error
-	}
-}
 
 /** A throwaway tree holding the given files. */
 function tree(files: Record<string, string>): string {
@@ -400,6 +380,7 @@ describe('resolve', () => {
 		scenario: id,
 		engine,
 		status,
+		tags: [],
 		rule: null,
 		line: 1,
 		steps,
@@ -466,117 +447,30 @@ describe('resolve', () => {
 	})
 })
 
-describe('render', () => {
-	const claim = (
-		id: string,
-		area: string,
-		{ files = [], unbound = [], status = 'Covered', steps = [step('Given', 'x')] }: { files?: string[]; unbound?: Step[]; status?: Claim['status']; steps?: Step[] } = {},
-	): ResolvedClaim => ({ id, area, scenario: id, engine: 'Reqnroll', status, rule: null, line: 1, path: FEATURE, files, unbound, steps })
-	const empty: { unused: Binding[]; ambiguous: Map<string, Set<string>> } = { unused: [], ambiguous: new Map() }
-
-	it('opens with frontmatter and lists each claim with its files, sorted', () => {
-		const map = render({
-			...empty,
-			claims: [
-				claim('REQ-MED-002', 'media', { files: ['tests/e2e/steps/b.steps.ts'] }),
-				claim('REQ-COM-001', 'comments', { files: ['tests/HpacSafety.Acceptance.Tests/A.cs'] }),
-				claim('REQ-MED-001', 'media', { status: 'Planned', unbound: [step('Given', 'a `tick`')] }),
-				claim('REQ-MED-003', 'media', { steps: [] }),
-			],
+describe('collectBindings', () => {
+	it('reads the feature files and both step trees, skipping build output', () => {
+		const root = tree({
+			[FEATURE]: 'Feature: Attachments\n\n@REQ-MED-001\nScenario: Upload\n  Given a file is attached\n',
+			'tests/HpacSafety.Acceptance.Tests/ASteps.cs': '[Binding]\npublic class ASteps\n{\n\t[Given(@"a file is attached")]\n\tpublic void A() { }\n}\n',
+			'tests/HpacSafety.Acceptance.Tests/obj/Ignored.cs': '[Given(@"never read")]\n',
+			'tests/e2e/steps/a.steps.ts': 'const { Given } = createBdd()\nGiven(/^unused$/, async () => {})\n',
 		})
 
-		assert.ok(map.startsWith('---\ntitle: Step bindings\n'))
-		assert.match(map, /## Claims: comments\n\n### REQ-COM-001\n\n- \[A\.cs\]\(\.\.\/tests\/HpacSafety\.Acceptance\.Tests\/A\.cs\)\n/)
-		assert.ok(map.indexOf('### REQ-MED-001') < map.indexOf('### REQ-MED-002'))
-		assert.match(map, /- Unbound: `` Given a `tick` ``/)
-		assert.match(map, /### REQ-MED-003\n\n- No steps\./)
+		const result = collectBindings(root)
+
+		assert.deepEqual(result.problems, [])
+		assert.deepEqual(result.claims[0].bound, [{ keyword: 'Given', text: 'a file is attached', line: 5, files: ['tests/HpacSafety.Acceptance.Tests/ASteps.cs'], ambiguous: false }])
+		assert.deepEqual(result.unused.map(display), ['/^unused$/'])
 	})
 
-	it('lists stale @ignore claims, ambiguous steps, and unused definitions, with no totals', () => {
-		const map = render({
-			claims: [claim('REQ-MED-001', 'media', { status: 'Planned', files: ['A.cs'] })],
-			ambiguous: new Map([['Given x', new Set(['B.cs', 'A.cs'])]]),
-			unused: [{ engine: 'playwright-bdd', keyword: 'Then', pattern: { source: '^y$', flags: '' }, file: 'tests/e2e/steps/c.steps.ts', line: 1 }],
-		})
+	it('reports a problem reading a step file', () => {
+		const root = tree({ [FEATURE]: 'Feature: A\n', 'tests/HpacSafety.Acceptance.Tests/B.cs': 'public class B\n{\n\t[Given(@"orphan")]\n}\n' })
 
-		assert.match(map, /## Stale @ignore\n\n[^#]*\n\n### REQ-MED-001\n\nEvery step is bound\./)
-		assert.match(map, /### `Given x`\n\n\[A\.cs\]\(\.\.\/A\.cs\) · \[B\.cs\]\(\.\.\/B\.cs\)/)
-		assert.match(map, /### `\/\^y\$\/`\n\n\[c\.steps\.ts\]\(\.\.\/tests\/e2e\/steps\/c\.steps\.ts\) — playwright-bdd, Then/)
-		assert.doesNotMatch(map, /\b\d+ claims\b/)
+		assert.match(collectBindings(root).problems.join('\n'), /outside a \[Binding\] class/)
 	})
 
-	it('merges two branches that each bind a different claim into the combined map', () => {
-		const base = [claim('REQ-MED-001', 'media', { files: ['A.cs'] }), claim('REQ-MED-005', 'media', { files: ['A.cs'] })]
-		const ours = [...base, claim('REQ-MED-002', 'media', { files: ['B.cs'] })]
-		const theirs = [...base, claim('REQ-MED-008', 'media', { files: ['C.cs'] })]
-		const both = [...base, ours[2], theirs[2]]
-
-		const { conflicts, merged } = mergeFile(render({ ...empty, claims: base }), render({ ...empty, claims: ours }), render({ ...empty, claims: theirs }))
-
-		assert.equal(conflicts, 0)
-		assert.equal(merged, render({ ...empty, claims: both }))
-	})
-
-	it('reports totals for stdout, never the file', () => {
-		const text = totals({ claims: [claim('REQ-MED-001', 'media', { status: 'Planned' }), claim('REQ-MED-002', 'media', { unbound: [step('Given', 'x')] })], unused: [], ambiguous: new Map() })
-
-		assert.equal(text, '2 claims: 1 fully bound, 1 with an unbound step, 1 stale @ignore. 0 ambiguous steps, 0 unused step definitions.')
-	})
-})
-
-describe('main', () => {
-	const files = (stepText = 'a file is attached'): Record<string, string> => ({
-		[FEATURE]: `Feature: Attachments\n\n@REQ-MED-001\nScenario: Upload\n  Given ${stepText}\n`,
-		'tests/HpacSafety.Acceptance.Tests/ASteps.cs': '[Binding]\npublic class ASteps\n{\n\t[Given(@"a file is attached")]\n\tpublic void A() { }\n}\n',
-		'tests/HpacSafety.Acceptance.Tests/obj/Ignored.cs': '[Given(@"never read")]\n',
-		'tests/e2e/steps/a.steps.ts': 'const { Given } = createBdd()\nGiven("unused", async () => {})\n',
-	})
-
-	it('writes the map, then passes --check, and adds totals to the job summary', () => {
-		const root = tree(files())
-		const summary = join(root, 'summary.md')
-		process.env.GITHUB_STEP_SUMMARY = summary
-		let written: ReturnType<typeof runMain>
-		try {
-			written = runMain(root)
-		} finally {
-			delete process.env.GITHUB_STEP_SUMMARY
-		}
-
-		assert.equal(written.code, 0)
-		assert.match(readFileSync(join(root, BINDINGS), 'utf8'), /### REQ-MED-001\n\n- \[ASteps\.cs\]/)
-		assert.match(readFileSync(summary, 'utf8'), /\*\*Step bindings:\*\* 1 claims: 1 fully bound/)
-		assert.equal(runMain(root, { check: true }).code, 0)
-	})
-
-	it('fails a built claim with an unbound step, naming the claim and the step', () => {
-		const root = tree(files('a file is dropped'))
-
-		const { code, output } = runMain(root)
-
-		assert.equal(code, 1)
-		assert.match(output.error.join('\n'), /::error file=\.spec\/features\/media\/media\.feature,line=5::REQ-MED-001 step "Given a file is dropped" matches no Reqnroll step definition/)
-		assert.match(readFileSync(join(root, BINDINGS), 'utf8'), /Unbound: `Given a file is dropped`/)
-	})
-
-	it('never fails with fail: false', () => {
-		assert.equal(runMain(tree(files('a file is dropped')), { fail: false }).code, 0)
-	})
-
-	it('fails --check on a stale or missing map', () => {
-		assert.equal(runMain(tree(files()), { check: true }).code, 1)
-	})
-
-	it('fails on a problem reading the tree, even when every step is bound', () => {
-		const root = tree({ ...files(), 'tests/HpacSafety.Acceptance.Tests/B.cs': 'public class B\n{\n\t[Given(@"orphan")]\n}\n' })
-
-		assert.equal(runMain(root).code, 1)
-	})
-
-	it('builds an empty map from a tree with no step directories', () => {
-		const root = tree({ [FEATURE]: 'Feature: A\n' })
-
-		assert.deepEqual(build(root).claims, [])
+	it('reads an empty tree with no step directories', () => {
+		assert.deepEqual(collectBindings(tree({ [FEATURE]: 'Feature: A\n' })).claims, [])
 	})
 })
 
@@ -588,7 +482,7 @@ interface CucumberExpressions {
 
 describe('the real tree', () => {
 	it('binds every built claim and reads every step definition without a problem', () => {
-		const result = build(REPO)
+		const result = collectBindings(REPO)
 
 		assert.deepEqual(result.problems, [])
 		assert.deepEqual(
@@ -605,7 +499,7 @@ describe('the real tree', () => {
 		const { CucumberExpression, ParameterTypeRegistry } = require('@cucumber/cucumber-expressions') as CucumberExpressions
 		const registry = new ParameterTypeRegistry()
 
-		const result = build(REPO)
+		const result = collectBindings(REPO)
 		const texts = [...new Set(result.claims.flatMap((claim) => claim.steps.map((step) => step.text)))]
 		const expressions = new Set<string>()
 		for (const file of readdirSync(join(REPO, 'tests/e2e/steps'))) {

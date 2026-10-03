@@ -1216,7 +1216,9 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportColumns = database.Model.FindEntityType(typeof(Report))!.GetProperties()
 			.Select(property => property.Name);
-		reportColumns.ShouldNotContain(name => name.Contains("Ip", StringComparison.OrdinalIgnoreCase));
+		// A whole word "Ip" in the PascalCase name — ClientIp, IpAddress — not the letters
+		// inside another word, such as ReceiptHash (ADR-0196).
+		reportColumns.ShouldNotContain(name => System.Text.RegularExpressions.Regex.IsMatch(name, "(?<![a-z])Ip(?![a-z])"));
 	}
 
 	// --- A request without CloudFront's origin-secret header is refused (ADR-0159) ---

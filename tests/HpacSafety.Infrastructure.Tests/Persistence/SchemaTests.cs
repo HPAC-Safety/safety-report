@@ -70,7 +70,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// the viewer's role.
 		views.ShouldBe([
 			"admin_pending_counts", "admin_report_queue", "admin_report_search_document", "answers_awaiting_translation",
-			"latest_approved_summary_revisions", "latest_summary_revisions",
+			"consented_report_media", "latest_approved_summary_revisions", "latest_summary_revisions",
+			"own_report_media", "own_reports",
 			"public_report_comments", "public_report_media", "public_reports",
 		]);
 		columns.ShouldBe([

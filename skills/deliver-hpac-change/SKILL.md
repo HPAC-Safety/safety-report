@@ -125,7 +125,14 @@ Rules:
 - Specification-driven development:
   [ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md).
 - `@ignore` and superseded scenarios: also
-  [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios".
+  [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios". A leading
+  scenario is `@ignore @issue-<N>`, and `feature-coverage` fails one whose
+  issue is closed, or a pull request that closes it while it is still
+  `@ignore`
+  ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
+- A built claim fails the `coverage` job unless its scenario passed in its
+  engine's run; the job summary lists every claim's result
+  ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
 - Each `.spec/features/<area>/README.md` records what **not** to build.
 - An area past about 800 lines is split, not grouped with `Rule:` blocks, and
   its scenarios keep their IDs: the procedure, and the next ID with
@@ -136,6 +143,14 @@ Rules:
 
 - Rules: `AGENTS.md` "The `feature-coverage` exemption"
   ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+- Relevance
+  ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)):
+  [`.spec/area-paths.json`](../../.spec/area-paths.json) maps every
+  behavior-bearing path to its feature areas; a step definition takes the
+  areas of the claims it binds. A changed scenario counts only in one of the
+  changed files' areas, and so does each cited claim. A new file under `src/`
+  joins the map in the same pull request; `node tools/spec/check-area-paths.ts`
+  fails the `docs` job otherwise.
 - The closed category list is in `.github/pull_request_template.md`
   ("Specification delta"); a test keeps the template's list equal to the
   tool's ([lesson 0022](../../.spec/lessons/0022-a-closed-list-kept-where-the-author-never-looks.md)).
@@ -247,6 +262,10 @@ Rules:
      `dotnet test <project> --filter <name>`) for the changed .NET code, and
      `CI=1 npm test` in `tests/e2e` for each touched e2e spec. Not the whole
      suite.
+   - The claim gate (ADR-0195) runs in `coverage`, so the fast default skips
+     it: `--job coverage` runs it with `test` and `e2e`, or judge your native
+     runs as [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "`@ignore`"
+     shows.
    - The gate runs the workflow files themselves under act (version in
      `.act-version`). By default only the fast checks: `linked-issue.yml`,
      `feature-coverage.yml`, and the `ci.yml` jobs `build`, `lint`, `web`, `i18n`,

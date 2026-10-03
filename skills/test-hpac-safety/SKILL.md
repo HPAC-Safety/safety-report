@@ -59,6 +59,26 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 ### `@ignore`
 
 - Step definitions for a `@ui` scenario live in `tests/e2e/steps`.
+- A scenario that leads its code carries `@ignore @issue-<N>`, naming the open
+  issue that will build it; the pull request that builds it removes both tags.
+  `feature-coverage` runs `node tools/spec/check-ignored-claims.ts`
+  ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
+- A built claim fails the `coverage` job unless every pickle of it passed in
+  its engine's run
+  ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
+  Both suites write Cucumber Messages under `artifacts/claims/`: Playwright on
+  every run, Reqnroll when `REQNROLL_FORMATTERS` asks. To judge your own runs:
+
+  ```sh
+  REQNROLL_FORMATTERS='{"formatters":{"message":{"outputFilePath":"'"$PWD"'/artifacts/claims/reqnroll.ndjson"}}}' \
+    dotnet test tests/HpacSafety.Acceptance.Tests --filter "Category!=ui"
+  (cd tests/e2e && CI=1 npm test)
+  node tools/spec/check-claim-results.ts \
+    --results Reqnroll=artifacts/claims/reqnroll.ndjson \
+    --results playwright-bdd=artifacts/claims/playwright-bdd.ndjson
+  ```
+
+  A filtered run judges only what it ran, so judge a whole suite.
 - A superseded scenario left behind `@ignore` is the contradiction
   [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)
   forbids.

@@ -50,7 +50,7 @@ export default defineConfig({
 	// The Cucumber Messages stream is how a built @ui claim is judged: every
 	// scenario's pickle carries its claim tag, and
 	// tools/spec/check-claim-results.ts fails a built claim that did not pass
-	// (ADR-0194). ci.yml's e2e job uploads it; it lands under the repository's
+	// (ADR-0195). ci.yml's e2e job uploads it; it lands under the repository's
 	// gitignored artifacts/ wherever the suite runs.
 	reporter: [["list"], cucumberReporter("message", { outputFile: "../../artifacts/claims/playwright-bdd.ndjson" })],
 	use: {

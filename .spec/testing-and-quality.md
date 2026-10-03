@@ -159,10 +159,11 @@ and the CI gates rather than by a scenario.*
 code ratchet, web asset/CSS checks, localization parity and hardcoded-string
 lint, end-to-end tests, agent/skill validation, Terraform validation, and linked
 issue enforcement. Two of them guard the specification itself: a behavior change
-anywhere under `src/` or in an e2e spec fails unless it touches a
-`.spec/features/**/*.feature` file or cites, from a closed category vocabulary, the
-existing claims it leaves standing
-([ADR-0090](decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)),
+anywhere under `src/` or in an e2e spec fails unless it changes a scenario in an
+area its code maps to, or cites, from a closed category vocabulary, existing
+claims of those areas that it leaves standing
+([ADR-0090](decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md),
+[CONV-001](conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)),
 and a committed [traceability matrix](traceability.md) or
 [`claims.json`](claims.json) that no longer matches the claims and constraints
 it summarizes fails the same way a stale generated
@@ -198,3 +199,26 @@ step definitions no scenario uses
 [ADR-0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
 *Verified by: none — a rule about the specification and the tests together,
 enforced by `tools/spec/generate-traceability.ts` rather than by a scenario.*
+
+**CON-TQ-011** A built claim counts only when its scenario passed in the run:
+every pickle (each Examples row of an outline) of a claim not tagged `@ignore`
+ran and passed in its engine — Reqnroll in `test`, playwright-bdd in `e2e` —
+and the required `coverage` job fails a built claim of an engine that ran with
+a failing, skipped, or unexecuted scenario. Each claim's per-run result is in
+that job's summary and its `claim-results` artifact, never in a committed file;
+[`claims.json`](claims.json) keeps only the static status, `Planned` or `Built`
+([ADR-0195](decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
+*Verified by: none — a rule about the tests and the specification together,
+enforced by `tools/spec/check-claim-results.ts` rather than by a scenario.*
+
+**CON-TQ-012** Every behavior-bearing path maps to at least one feature area in
+[`area-paths.json`](area-paths.json), checked by the required `docs` job; a
+scenario edit or an exemption counts toward `feature-coverage` only in an area
+the changed files map to, and a whitespace or comment edit counts as none. A
+scenario may merge `@ignore` ahead of its code only while it carries one
+`@issue-<N>` tag naming an open issue, which no pull request closes while the
+scenario is still `@ignore`
+([CONV-001](conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
+*Verified by: none — a delivery rule, enforced by `tools/spec/check-area-paths.ts`,
+`tools/spec/check-feature-coverage-diff.ts`, and `tools/spec/check-ignored-claims.ts`
+rather than by a scenario.*

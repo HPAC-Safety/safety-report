@@ -32,9 +32,15 @@ The Reqnroll suite skips a `@ui` scenario itself, so it reports as skipped
 wherever that suite runs rather than failing for want of a C# step definition
 it is never meant to have
 ([ADR-0073](../decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
-An unimplemented scenario carries an `@ignore` tag; implementing it means
-writing its step definitions — Reqnroll or `playwright-bdd`, whichever this
-scenario's tag calls for — and removing that tag in the same PR.
+An unimplemented scenario carries an `@ignore` tag and one `@issue-<N>` tag
+naming the open issue that will build it, so a scenario may merge ahead of its
+code
+([CONV-001](../conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md));
+implementing it means writing its step definitions — Reqnroll or
+`playwright-bdd`, whichever this scenario's tag calls for — and removing both
+tags in the same PR. From then on CI fails the claim unless its scenario passes
+in its engine's run
+([ADR-0195](../decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
 
 ## Authority and conflict rules
 

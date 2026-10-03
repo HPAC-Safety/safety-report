@@ -102,7 +102,7 @@ jobs:
               - 'tools/lib/actions.ts'
               - '.github/workflows/ci.yml'
               # A scenario changed with no code still has to pass its engine's
-              # run, and the claim gate in `coverage` judges it (ADR-0194).
+              # run, and the claim gate in `coverage` judges it (ADR-0195).
               - '.spec/features/**'
               - 'tools/spec/check-claim-results.ts'
             # The web bundle loads its catalogues from locales/ at the repository
@@ -218,7 +218,7 @@ jobs:
       # project name back out of the trx's own `storage` attribute.
       # REQNROLL_FORMATTERS turns on Reqnroll's Cucumber Messages formatter:
       # every scenario it runs, keyed by its claim tag, for the claim gate in
-      # `coverage` (ADR-0194). The path is absolute because each test host
+      # `coverage` (ADR-0195). The path is absolute because each test host
       # runs in its own output directory.
       - name: dotnet test
         env:
@@ -268,7 +268,7 @@ jobs:
 
       # The Reqnroll claim results, for the claim gate in `coverage`. Uploaded
       # even when a test failed, so the failing claims can be read from it.
-      # Never committed: a run's results are not the specification (ADR-0194).
+      # Never committed: a run's results are not the specification (ADR-0195).
       # Temporary under act, as above (nektos/act#6022).
       - uses: actions/upload-artifact@v7
         if: "!cancelled() && !env.ACT"
@@ -405,7 +405,7 @@ jobs:
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this
     # merges and gates the reports it handed over (#694). It also holds the
-    # claim gate: every built claim of an engine that ran passed (ADR-0194). Depends on e2e (not
+    # claim gate: every built claim of an engine that ran passed (ADR-0195). Depends on e2e (not
     # just changes) so it can download that job's Playwright test count
     # instead of reinstalling Playwright itself — see the "Count Playwright
     # tests" step on the e2e job and #263. e2e is itself conditional, so
@@ -541,7 +541,7 @@ jobs:
         run: node tools/coverage/report-coverage-detail.ts
 
       # A built claim counts only when its scenario passed in this run
-      # (ADR-0194). Reqnroll is judged whenever this job runs, because `test`
+      # (ADR-0195). Reqnroll is judged whenever this job runs, because `test`
       # did; playwright-bdd only when `e2e` ran, since its path filter skipped
       # it otherwise. A built claim of a judged engine that failed, was
       # skipped, or never ran fails here, and the job summary lists every
@@ -554,7 +554,7 @@ jobs:
           PLAYWRIGHT_BDD_RESULTS: ${{ needs.e2e.result == 'success' && './artifacts/claims/playwright-bdd.ndjson' || '' }}
         run: node tools/spec/check-claim-results.ts --out ./artifacts/claims/claim-results.json
 
-      # Each claim's result in this run, as data. Never committed (ADR-0194).
+      # Each claim's result in this run, as data. Never committed (ADR-0195).
       # Temporary: skips under act (nektos/act#6022).
       - uses: actions/upload-artifact@v7
         if: "!cancelled() && !env.ACT"
@@ -765,7 +765,7 @@ jobs:
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
       # The playwright-bdd claim results, for the claim gate in `coverage`
-      # (ADR-0194); written by the cucumberReporter in playwright.config.ts.
+      # (ADR-0195); written by the cucumberReporter in playwright.config.ts.
       # Temporary under act (nektos/act#6022).
       - uses: actions/upload-artifact@v7
         if: "!cancelled() && !env.ACT"

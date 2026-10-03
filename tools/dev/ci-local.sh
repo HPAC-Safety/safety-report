@@ -23,7 +23,7 @@
 # typecheck:e2e`), which is why a type error in tests/e2e fails here without
 # running Playwright.
 #
-# The claim gate (ADR-0194) runs in the coverage job, so `--job coverage`
+# The claim gate (ADR-0195) runs in the coverage job, so `--job coverage`
 # runs it, with test and e2e as its dependencies, and so does --full; natively,
 # `node tools/spec/check-claim-results.ts` judges the results files your own
 # runs wrote (see deliver-hpac-change).

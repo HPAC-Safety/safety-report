@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// A built claim counts only when its scenario passed in this run (ADR-0194).
+// A built claim counts only when its scenario passed in this run (ADR-0195).
 //
 // Both engines write Cucumber Messages, one envelope per line: Reqnroll's
 // `message` formatter (REQNROLL_FORMATTERS, set by ci.yml's `test` job) and

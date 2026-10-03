@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Hands the raw coverage reports from the `test` job, and the claim results
 // from `test` and `e2e`, to the `coverage` job under act (ci.yml, ADR-0145,
-// ADR-0194).
+// ADR-0195).
 //
 // act's artifact server rejects upload-artifact@v7 and download-artifact@v8
 // (nektos/act#6022), so under act the jobs exchange them through the per-run

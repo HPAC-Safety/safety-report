@@ -22,9 +22,14 @@ specification pages, and the boundary this change respects. If it built
 something no scenario describes, either the specification was incomplete —
 fix it here — or the change exceeded its scope.
 
+A changed scenario counts only when its text changed, in an area the changed
+code maps to in .spec/area-paths.json (CONV-001); a whitespace or comment edit,
+or one in another area, covers nothing. A scenario merged ahead of its code is
+tagged `@ignore @issue-<N>`, naming the open issue that builds it.
+
 A change that alters no behavior may skip the scenario only by citing the
-claims it leaves standing (ADR-0090). Write these two lines at the start of a
-line, outside this comment:
+claims it leaves standing (ADR-0090), each in an area the changed files map
+to. Write these two lines at the start of a line, outside this comment:
 
     No .feature scenario needed: <category> — <what changed, and why no behavior did>
     Claims preserved: REQ-XXX-000, REQ-YYY-000
@@ -69,7 +74,8 @@ this comment:
 
 - [ ] Product behavior matches `.spec/features`, or the affected specification pages are updated here
 - [ ] The scenario was written or amended before the implementation, and nothing here is untraced to one
-- [ ] If this claims `No .feature scenario needed:`, it names one of the categories listed under **Specification delta** and the claim IDs the change leaves standing (ADR-0090)
+- [ ] If this claims `No .feature scenario needed:`, it names one of the categories listed under **Specification delta** and the claim IDs the change leaves standing, in the areas the changed files map to (ADR-0090, CONV-001)
+- [ ] A new file under `src/` is mapped to its feature areas in `.spec/area-paths.json`, and every built claim this touches passes in its engine (ADR-0195)
 - [ ] Report/question/model/attachment/auth/publication changes have a focused boundary test
 - [ ] Runtime summarization still uses one prompt and one model call per attempt
 - [ ] Documents remain private and are not anonymized, parsed, sent to AI, inline-rendered, or published

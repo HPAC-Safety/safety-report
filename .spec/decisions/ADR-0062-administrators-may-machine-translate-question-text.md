@@ -220,4 +220,4 @@ deploy workflow; moving it is a self-contained later change.
 - [ADR-0022](ADR-0022-translation-provider-is-configuration.md) — the provider choice this reuses
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — updated by this ADR
 - [ADR-0033](ADR-0033-third-party-libraries-behind-owned-abstractions.md) — why `ITranslator` exists
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature)

@@ -8,7 +8,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The non-<c>@ui</c> translation scenarios in
-///     <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c>.
+///     <c>.spec/features/question-translation/question-translation.feature</c>.
 /// </summary>
 /// <remarks>
 ///     <para>

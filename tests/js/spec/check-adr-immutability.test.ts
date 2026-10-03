@@ -27,8 +27,8 @@ describe('immutableParts and linkedPath', () => {
 		const parts = immutableParts(ACCEPTED)
 
 		assert.ok(!parts.body.includes('Accepted'))
-		assert.equal(parts.status, 'Decided by the owner in [#1](https://example.test/1).')
-		assert.deepEqual(parts.targets, ['../a/b.md'])
+		assert.equal(parts.status, 'Decided by the owner in [#1]().')
+		assert.deepEqual(parts.targets, ['https://example.test/1', '../a/b.md'])
 	})
 
 	it('resolves a relative link from the decisions directory, and ignores a URL or anchor', () => {
@@ -77,6 +77,17 @@ describe('compare', () => {
 
 		assert.deepEqual(compare(base, now(moved), (path) => path !== '.spec/a/b.md'), [])
 		assert.match(compare(base, now(moved), () => true)[0], /a link's target changed from \.\.\/a\/b\.md, which still exists/)
+	})
+
+	it('lets a link in the status paragraph follow a file that is gone, and fails its text changing', () => {
+		const before = record('accepted', '**Status:** Accepted, narrowed by [the page](../a/b.md).')
+		const after = record('accepted', '**Status:** Accepted, narrowed by [the page](https://example.test/blob/abc/.spec/a/b.md).')
+		const reworded = record('accepted', '**Status:** Accepted, narrowed by [another page](https://example.test/blob/abc/.spec/a/b.md).')
+		const statusBase = new Map([['ADR-0001-a.md', before]])
+
+		assert.deepEqual(compare(statusBase, now(after), (path) => path !== '.spec/a/b.md'), [])
+		assert.match(compare(statusBase, now(after), () => true)[0], /a link's target changed from \.\.\/a\/b\.md, which still exists/)
+		assert.match(compare(statusBase, now(reworded), () => false)[0], /its body changed/)
 	})
 
 	it('fails a link whose text changed even when its file moved', () => {

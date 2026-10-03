@@ -27,7 +27,7 @@ could not tell a date from free text.
 
 ## Spec delta
 
-- `.spec/features/moderation-authentication-and-publication/README.md`, "Reading a
+- `.spec/features/review-and-publication/README.md`, "Reading a
   date, time, or yes/no answer": the view shows these answers in the
   reviewer's interface language, shows no translation beside them, and falls
   back to the stored string when it cannot read it. The detail view names

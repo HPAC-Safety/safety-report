@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import type { ClaimRecord, ClaimsData } from '../../../tools/spec/generate-traceability.ts'
-import { type GraphJson, claimNode, constraintNode, decisionNode, fileNodeId, fragment, lessonNode, main, merge, scenarioLines } from '../../../tools/spec/graph-fragment.ts'
+import { type GraphJson, areaNode, claimNode, constraintNode, decisionNode, fileNodeId, fragment, lessonNode, main, merge, scenarioLines } from '../../../tools/spec/graph-fragment.ts'
 import { CLAIMS } from '../../../tools/spec/spec-paths.ts'
 
 const claim: ClaimRecord = {
@@ -25,6 +25,7 @@ const claim: ClaimRecord = {
 }
 
 const DATA: ClaimsData = {
+	areas: [{ name: 'web-localization-and-design', prefix: 'REQ-WLD', prefixes: ['REQ-WLD'] }],
 	claims: [claim],
 	constraints: [{ id: 'CON-INF-027', page: '.spec/infrastructure-and-operations.md', verifiedBy: ['REQ-WLD-049'], note: 'REQ-WLD-049' }],
 	decisions: [
@@ -84,6 +85,10 @@ describe('fragment', () => {
 		assert.equal(node.source_location, 'L125')
 		assert.deepEqual(node.steps, ['Given a visitor has the page open'])
 		assert.match(String(node.rationale), /keeps its interface text\nGiven a visitor has the page open$/)
+	})
+
+	it('puts the area\'s claim prefixes on its node, its own first', () => {
+		assert.equal(byId.get(areaNode('web-localization-and-design'))?.claim_prefixes, 'REQ-WLD')
 	})
 
 	it('links each item by a typed edge', () => {

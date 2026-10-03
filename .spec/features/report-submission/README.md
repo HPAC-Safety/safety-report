@@ -3,6 +3,7 @@ title: Report submission
 description: Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios.
 type: spec
 area: report-submission
+prefix: REQ-SUB
 ---
 
 # Report submission
@@ -133,7 +134,7 @@ clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers;
 phone numbers use E.164 (`+16045551234`).
 A yes/no or checkbox answer is a JSON `true` or `false`, whatever the report
 language, and a string for one is refused
-([ADR-0130]../../.spec/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)). The form holds a language-free
+([ADR-0130](../../decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)). The form holds a language-free
 answer while the reporter works and sends the boolean when it submits, so
 switching language mid-form loses nothing. The report language is exactly
 `en-CA` or `fr-CA`.
@@ -177,7 +178,7 @@ here is a separate server concept:
    introduction: Next only, no Back, no answer collected.
 2. Every other top-level entry is one page — a plain question, or a `group`
    and its children together (see
-   [question-bank-and-form](../question-bank-and-form/README.md#the-group-page-contract)).
+   [question-authoring](../question-authoring/README.md#the-group-page-contract)).
 3. A question or group whose conditional parent's current answer does not
    satisfy the condition is skipped from paging entirely, and re-evaluated
    live as the reporter answers earlier pages.
@@ -488,7 +489,7 @@ never persisted on a report or logged. A rejected request gets `429` with a
 safe, content-free problem response.
 
 Administrative operations are authorized by role on the same token; see
-[moderation, authentication, and publication](../moderation-authentication-and-publication/moderation-authentication-and-publication.feature).
+[authentication and roles](../authentication-and-roles/authentication-and-roles.feature).
 
 ## Out of scope
 

@@ -11,7 +11,7 @@ keywords: question bank, data-driven, form
 # ADR-0016: The question set is data, not code
 
 **Status:** Superseded in shape by the
-[complete-revision specification](../features/question-bank-and-form/question-bank-and-form.feature). The
+[complete-revision specification](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature). The
 core decision that questions are database data remains.
 Narrowed again by
 [ADR-0185](ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md):
@@ -67,7 +67,7 @@ no special processing path for one category of ordinary question.
 
 ## Related
 
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature)
 - [`/.spec/features/report-submission/report-submission.feature`](../features/report-submission/report-submission.feature)
 - [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
 - [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md)

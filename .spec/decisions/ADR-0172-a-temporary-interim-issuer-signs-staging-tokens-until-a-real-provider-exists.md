@@ -182,4 +182,4 @@ Once ADR-0064's provider is chosen and configured in staging:
 - [ADR-0079](ADR-0079-a-development-login-may-verify-against-the-live-members-site.md) — the credential check and allowlist this reuses unchanged
 - [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md) — staging existing at all, and "no identity provider is a stated limitation"
 - [ADR-0171](ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md) — why the deploy role never reads this secret's value
-- [`.spec/features/moderation-authentication-and-publication`](../features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)
+- [`.spec/features/moderation-authentication-and-publication`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)

@@ -213,4 +213,4 @@ now applies identically whichever of the two types triggered it.
 - [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md) — ~~scope widened by this ADR~~, narrowed back by ADR-0072
 - [ADR-0077](ADR-0077-typeform-json-import-and-export.md) — widens this ADR's mechanism to `MultiSelect`
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature)

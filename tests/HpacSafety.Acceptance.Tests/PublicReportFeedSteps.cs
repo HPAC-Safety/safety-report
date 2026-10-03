@@ -31,7 +31,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     would have refused to produce the row. Every report is synthetic.
 /// </remarks>
 [Binding]
-[Scope(Feature = "Moderation, authentication, and publication")]
+[Scope(Feature = "Public feed")]
 [Scope(Feature = "Domain and lifecycle")]
 public sealed class PublicReportFeedSteps(SeededReport seeded)
 {

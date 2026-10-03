@@ -18,19 +18,29 @@ what verifies it and the step definitions that bind it, is in
 ## Feature areas
 
 Each area is one `.feature` file of scenarios and a supporting page with the
-detail Gherkin cannot hold, including what not to build.
+detail Gherkin cannot hold, including what not to build. A new claim takes
+the area's prefix; a scenario moved from another area keeps its ID, under
+the prefix shown after it
+([ADR-0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).
 
 | Area | Claims | Scenarios | Planned (`@ignore`) | Browser (`@ui`) | Supporting detail |
 |---|---|---|---|---|---|
+| [Admin report list and search](features/admin-report-search/admin-report-search.feature) | `REQ-ARS` (also `REQ-MOD`) | 32 | 0 | 13 | [README](features/admin-report-search/README.md) — Supporting detail for the admin report list: its rows, filters, search, paging, and quick actions. |
 | [AI anonymization](features/ai-anonymization/ai-anonymization.feature) | `REQ-AI` | 28 | 0 | 0 | [README](features/ai-anonymization/README.md) — Supporting detail for the one-call bilingual summarization and anonymization scenarios. |
-| [Comments](features/comments/comments.feature) | `REQ-COM` | 21 | 0 | 7 | [README](features/comments/README.md) — Supporting detail for the member comment, translation, and moderation scenarios. |
+| [Authentication and roles](features/authentication-and-roles/authentication-and-roles.feature) | `REQ-AUTH` (also `REQ-MOD`) | 45 | 0 | 18 | [README](features/authentication-and-roles/README.md) — Supporting detail for member authentication, the three roles, the Admin menu and its pending counts, and access control. |
+| [Choices and type-ahead values](features/choices-and-type-ahead/choices-and-type-ahead.feature) | `REQ-CTA` (also `REQ-MOD`, `REQ-QB`) | 48 | 0 | 26 | [README](features/choices-and-type-ahead/README.md) — Supporting detail for a question's choices: their identity, order and pinning, and the review of type-ahead values reporters add. |
+| [Comments](features/comments/comments.feature) | `REQ-COM` | 20 | 0 | 6 | [README](features/comments/README.md) — Supporting detail for the member comment, translation, and moderation scenarios. |
+| [Dependent choices](features/dependent-choices/dependent-choices.feature) | `REQ-DCH` (also `REQ-QB`) | 38 | 0 | 12 | [README](features/dependent-choices/README.md) — Supporting detail for choices offered under the answer to an earlier single-select or type-ahead question. |
 | [Domain and lifecycle](features/domain-and-lifecycle/domain-and-lifecycle.feature) | `REQ-DOM` | 28 | 0 | 0 | [README](features/domain-and-lifecycle/README.md) — Supporting detail for the report states, invariants, deletion, and retention scenarios. |
-| [Attachments](features/media/media.feature) | `REQ-MED` | 60 | 0 | 15 | [README](features/media/README.md) — Supporting detail for the image, video, document, quarantine, and derivative scenarios. |
-| [Moderation, authentication, and publication](features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature) | `REQ-MOD` | 200 | 0 | 98 | [README](features/moderation-authentication-and-publication/README.md) — Supporting detail for the member authentication, review, and public feed scenarios. |
-| [Question bank and form](features/question-bank-and-form/question-bank-and-form.feature) | `REQ-QB` | 227 | 0 | 92 | [README](features/question-bank-and-form/README.md) — Supporting detail for the immutable bilingual question and form assembly scenarios. |
+| [Attachments](features/media/media.feature) | `REQ-MED` (also `REQ-MOD`) | 78 | 0 | 25 | [README](features/media/README.md) — Supporting detail for the image, video, document, quarantine, and derivative scenarios, and for the staff-only private attachments on a report. |
+| [Public feed](features/public-feed/public-feed.feature) | `REQ-PUB` (also `REQ-MOD`) | 32 | 0 | 16 | [README](features/public-feed/README.md) — Supporting detail for the public feed, a published report's own page, and public search. |
+| [Question authoring](features/question-authoring/question-authoring.feature) | `REQ-QAU` (also `REQ-QB`) | 81 | 0 | 26 | [README](features/question-authoring/README.md) — Supporting detail for the immutable bilingual question revisions, question types, conditions, groups, and the question editor. |
+| [Question translation](features/question-translation/question-translation.feature) | `REQ-QTR` (also `REQ-QB`) | 20 | 0 | 18 | [README](features/question-translation/README.md) — Supporting detail for machine-translating a question's wording and its choices while authoring. |
+| [Report form](features/report-form/report-form.feature) | `REQ-RFM` (also `REQ-QB`) | 52 | 0 | 21 | [README](features/report-form/README.md) — Supporting detail for the report form: stored answer forms, the type-ahead and picker fields, the seeded attachment and Country questions, and the seeded groups. |
 | [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 120 | 0 | 79 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
+| [Review and publication](features/review-and-publication/review-and-publication.feature) | `REQ-REV` (also `REQ-MOD`) | 56 | 0 | 25 | [README](features/review-and-publication/README.md) — Supporting detail for reviewing a report, its summary revisions, publication, private notes, and how a reviewer reads an answer. |
 | [Typeform question import and export](features/typeform-question-import-export/typeform-question-import-export.feature) | `REQ-TF` | 23 | 0 | 1 | [README](features/typeform-question-import-export/README.md) — Supporting detail for importing and exporting the question bank as Typeform JSON. |
-| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` | 49 | 0 | 25 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
+| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` (also `REQ-COM`, `REQ-MOD`, `REQ-QB`) | 55 | 0 | 31 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
 
 ## Constraint pages
 
@@ -51,7 +61,8 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
-| [0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md) | The claims are generated as JSON, a graph fragment, and one slim matrix | accepted | 2026-10-03 |
+| [0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md) | A split area keeps every claim ID, and a new claim takes the new area's prefix | accepted | 2026-10-03 |
+| [0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md) | The claims are generated as JSON, a graph fragment, and one slim matrix | superseded | 2026-10-03 |
 | [0192](decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md) | An accepted ADR is immutable, follows one MADR template, and process rules are conventions | accepted | 2026-10-03 |
 | [0191](decisions/ADR-0191-each-rule-is-stated-once-and-no-status-page-is-written-by-hand.md) | Each rule is stated once, and no status page is written by hand | accepted | 2026-10-03 |
 | [0190](decisions/ADR-0190-the-interface-catalogues-ship-in-the-page-bundle-and-the-page-is-never-cached-stale.md) | The interface catalogues ship in the page bundle, and the page is never cached stale | accepted | 2026-10-03 |
@@ -294,4 +305,6 @@ What the specification should have said, newest first. When to write one:
 Process, tooling, and agent-workflow rules written since ADR-0192, newest
 first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
-None yet.
+| Convention | Title | Status | Date |
+|---|---|---|---|
+| [CONV-002](conventions/CONV-002-an-area-past-800-lines-is-split-and-its-scenarios-keep-their-ids.md) | An area past about 800 lines is split, and its scenarios keep their IDs | accepted | 2026-10-03 |

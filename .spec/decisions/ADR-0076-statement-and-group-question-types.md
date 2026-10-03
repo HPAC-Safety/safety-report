@@ -156,5 +156,5 @@ under the group, like any edit (ADR-0071). The same save writes them all.
 - [ADR-0060](ADR-0060-conditional-questions-depend-on-a-boolean-question.md) — the carve-out this ADR makes real
 - [ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md) — precedent for a separate, narrowly-scoped dependency-style column
 - [ADR-0077](ADR-0077-typeform-json-import-and-export.md) — where `Statement`/`Group` rows actually come from
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature)
 - Issues #221, #222 (removal), #235 (this work)

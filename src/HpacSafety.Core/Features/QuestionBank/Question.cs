@@ -29,7 +29,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         <see cref="IsActive" />) reads through to
 ///         <see cref="CurrentRevision" />, and every change to one of them is made by
 ///         creating a new revision. See
-///         <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c>.
+///         <c>.spec/features/question-authoring/question-authoring.feature</c>.
 ///     </para>
 ///     <para>
 ///         Choices are the exception, deliberately: they live here, on

@@ -11,7 +11,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The non-<c>@ui</c> authentication scenarios in
-///     <c>.spec/features/moderation-authentication-and-publication/</c>.
+///     <c>.spec/features/authentication-and-roles/</c>.
 /// </summary>
 /// <remarks>
 ///     These validate a token with

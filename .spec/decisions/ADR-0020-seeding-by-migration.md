@@ -11,7 +11,7 @@ keywords: seeding, migrations, EF Core
 # ADR-0020: The migration seeds the question bank, and guards the one local administrator
 
 **Status:** Superseded in question-schema and translation behavior by
-[`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature).
+[`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature).
 The **local-administrator half is retired entirely** by
 [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md): there is
 no `admin_users` table, no allowlist, and no seeded `admin@localhost`, so the

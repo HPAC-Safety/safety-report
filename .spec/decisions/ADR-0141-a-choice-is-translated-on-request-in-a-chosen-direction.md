@@ -123,4 +123,4 @@ step to every press and protect nothing that is not already on screen.
 - [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md): choices sit outside revisions
 - [ADR-0108](ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md): the accept-before-replace rule for summaries
 - [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md): reporter-added values are translated by the Worker, not here
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature)

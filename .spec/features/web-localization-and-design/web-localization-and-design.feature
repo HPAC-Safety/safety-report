@@ -468,3 +468,66 @@ Examples:
   | theme |
   | light |
   | dark  |
+
+@REQ-QB-238
+@ui
+Scenario: Leaving the question editor with an unsaved draft is confirmed before it is discarded
+  Given a signed-in Administrator is authoring a new question
+  When they write the English wording without saving
+  And they navigate to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates to that page and the draft is gone
+
+@REQ-QB-239
+@ui
+Scenario: Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning
+  Given a signed-in Administrator opens the manage-questions page
+  When they open the first question for editing
+  And they open the second question for editing
+  And they navigate to another admin page
+  Then no confirmation of any kind appears
+
+@REQ-MOD-185
+@ui
+Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer opens the summary editor
+  And types into the English text without saving
+  And navigates to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates to that page and the edit is gone
+
+@REQ-MOD-186
+@ui
+Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
+  Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
+  When they open the review-type-ahead-values page
+  And they begin correcting "Coopers"
+  And they edit its English wording to "Cooper's Hill"
+  And they navigate to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates to that page and the correction is gone
+
+@REQ-MOD-187
+@ui
+Scenario: Leaving with an unsaved private note is confirmed
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer starts writing a private note without saving it
+  And navigates to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-COM-021
+@ui
+Scenario: Leaving with an unposted comment is confirmed before it is discarded
+  Given a member is signed in and a published report has comments
+  When the member opens the report
+  And types a comment without posting it
+  And navigates away from the report
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates away and the unposted comment is gone

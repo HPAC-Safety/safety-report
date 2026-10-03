@@ -104,8 +104,11 @@ export function fragment(data: ClaimsData, lines: ReadonlyMap<string, number> = 
 
 	const areas = new Map<string, string>()
 	for (const claim of data.claims) areas.set(claim.area, claim.file)
+	// Each area's own prefix first, then any retired one its claims kept (ADR-0194).
+	const prefixes = new Map(data.areas.map((area) => [area.name, area.prefixes.join(', ')]))
 	for (const [area, file] of [...areas].sort(([a], [b]) => a.localeCompare(b))) {
-		node({ id: areaNode(area), label: area, file_type: 'document', source_file: file, source_location: 'L1', spec_kind: 'area' })
+		const claimPrefixes = prefixes.get(area)
+		node({ id: areaNode(area), label: area, file_type: 'document', source_file: file, source_location: 'L1', spec_kind: 'area', ...(claimPrefixes ? { claim_prefixes: claimPrefixes } : {}) })
 		edge(areaNode(area), 'documented_in', fileNodeId(`${FEATURES}/${area}/README.md`), file)
 	}
 

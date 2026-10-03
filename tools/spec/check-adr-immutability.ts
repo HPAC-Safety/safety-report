@@ -66,10 +66,12 @@ export function statusRemainder(paragraph: string): string {
 
 /** A record split into what may not change and the link targets it holds. */
 export function immutableParts(text: string): { body: string; status: string; targets: string[] } {
-	const status = statusRemainder(text.match(STATUS_PARAGRAPH)?.[0] ?? '')
+	// A link in the status paragraph may follow a moved or deleted file like
+	// any other, so its target is judged with the body's, not as status text.
+	const remainder = statusRemainder(text.match(STATUS_PARAGRAPH)?.[0] ?? '')
 	const rest = text.replace(/^status:.*$/m, 'status:').replace(STATUS_PARAGRAPH, '**Status:**')
-	const targets = [...rest.matchAll(LINK)].map((match) => match[1])
-	return { body: rest.replace(LINK, ']()'), status, targets }
+	const targets = [...remainder.matchAll(LINK), ...rest.matchAll(LINK)].map((match) => match[1])
+	return { body: rest.replace(LINK, ']()'), status: remainder.replace(LINK, ']()'), targets }
 }
 
 /** The frontmatter `status:` value, or ''. */

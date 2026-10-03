@@ -6,7 +6,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The revise-or-fork scenarios in
-///     <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c> —
+///     <c>.spec/features/question-authoring/question-authoring.feature</c> —
 ///     REQ-QB-001, REQ-QB-002, REQ-QB-003, and REQ-QB-006 (ADR-0071).
 /// </summary>
 /// <remarks>

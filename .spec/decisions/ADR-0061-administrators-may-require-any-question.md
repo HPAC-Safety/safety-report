@@ -95,4 +95,4 @@ explanation to every administrator who hit it.
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data, which is the argument this decision follows through on
 - [ADR-0047](ADR-0047-feature-files-must-not-contradict-adrs.md) — why the feature file changes in the same pull request
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature)

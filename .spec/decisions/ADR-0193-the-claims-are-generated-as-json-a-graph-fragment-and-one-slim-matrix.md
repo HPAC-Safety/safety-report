@@ -2,7 +2,7 @@
 title: The claims are generated as JSON, a graph fragment, and one slim matrix
 description: tools/spec/generate-traceability.ts writes .spec/claims.json, the canonical data for tools and CI, and one slim .spec/traceability.md for people, replacing the block-per-claim matrix and .spec/bindings.md; tools/spec/graph-fragment.ts merges the same data into the local graphify graph as semantic-tier nodes, so claims, ADRs, and lessons are queryable with no LLM pass.
 type: adr
-status: accepted
+status: superseded
 date: 2026-10-03
 decision-makers: Chase Florell
 keywords: traceability, claims, JSON, JSON Schema, generated file, step bindings, graphify, knowledge graph, merge, ADR-0084, ADR-0088, ADR-0101, ADR-0106, ADR-0183, ADR-0184
@@ -10,7 +10,7 @@ keywords: traceability, claims, JSON, JSON Schema, generated file, step bindings
 
 # ADR-0193 — The claims are generated as JSON, a graph fragment, and one slim matrix
 
-**Status:** Accepted. Decided by the owner on 2026-10-03 in
+**Status:** Superseded. Decided by the owner on 2026-10-03 in
 [#810](https://github.com/HPAC-Safety/safety-report/issues/810), part of
 [#809](https://github.com/HPAC-Safety/safety-report/issues/809). Supersedes
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md),
@@ -18,6 +18,8 @@ keywords: traceability, claims, JSON, JSON Schema, generated file, step bindings
 [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md),
 and
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Superseded by
+[ADR-0194](ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md).
 
 ## Context
 

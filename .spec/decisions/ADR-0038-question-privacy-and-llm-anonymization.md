@@ -13,7 +13,7 @@ keywords: privacy, LLM, anonymization, question bank
 **Status:** The provider-terms consequence below is settled by
 [ADR-0104](ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md):
 Gemini with a paid key, processing outside Canada accepted. Superseded in part by the
-[complete question-revision](../features/question-bank-and-form/question-bank-and-form.feature) and
+[complete question-revision](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature) and
 [one-call AI](../features/ai-anonymization/ai-anonymization.feature) specifications. The two-section
 privacy partition remains; separate audit/translation and identity-level
 privacy rules do not. The "deterministic scrub... removed" clause below is

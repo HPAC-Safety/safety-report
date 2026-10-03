@@ -14,7 +14,7 @@ import {
 const { Given, When, Then } = createBdd()
 
 /*
- * The reporter-form @ui scenarios in question-bank-and-form.feature. The first
+ * The reporter-form @ui scenarios in question-authoring.feature. The first
  * is the group-page
  * rendering contract also exercised, in more depth, by report-form.steps.ts.
  * Kept in its own file to match this repository's one-steps-file-per-feature

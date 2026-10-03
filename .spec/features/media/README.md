@@ -1,8 +1,9 @@
 ---
 title: Attachments
-description: Supporting detail for the image, video, document, quarantine, and derivative scenarios.
+description: Supporting detail for the image, video, document, quarantine, and derivative scenarios, and for the staff-only private attachments on a report.
 type: spec
 area: media
+prefix: REQ-MED
 ---
 
 # Attachments
@@ -269,8 +270,52 @@ byte for byte as the staff member uploaded it (REQ-MED-052).
   `PrivateAttachmentLink` signs a URL for the private compartment, and it
   signs nothing else (REQ-MED-049, REQ-MED-051).
 
-Who may do this, removal, and the private-note reference are in
-[`.spec/features/moderation-authentication-and-publication`](../moderation-authentication-and-publication/README.md).
+A private note may refer to a private attachment; the note itself is in
+[`.spec/features/review-and-publication`](../review-and-publication/README.md).
+
+### On the report page
+
+The report view has a **Private attachments** section, newest first. Each
+lists its file name, size, optional description, who added it (**You**, or
+the adder's opaque token subject), and when.
+
+Adding files uses the same dashed drop zone as the reporter form's attachment
+field (#658): dropped or chosen, several at once, each begins uploading the
+moment it is staged, with its own progress and its own Cancel or Remove
+control and description box. Removing a staged, already-uploaded row asks no
+API to erase it; its bytes simply expire by the 15-day quarantine lifecycle
+rule that already governs an unclaimed upload
+([ADR-0126](../../decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
+Cancelling a row still uploading aborts it and erases the mint, as before.
+**Add N attachments** stays disabled until every staged row has settled —
+finished or failed — where N counts only the finished ones; it then claims
+each in turn with its own description, and while it runs each staged row's
+Remove and description are locked, so what is added is exactly what was
+shown (#674). Leaving the report page while an upload is staged but not yet
+added warns, on both a browser close/reload and an in-app navigation; a list
+holding only refused files has nothing to lose and does not warn (#658, #674;
+a general leave-warning for every form is issue #659, not built here). Any
+reviewer may download any added attachment, or remove one after confirming
+(REQ-MOD-115, REQ-MOD-117, REQ-MOD-173..177, REQ-MOD-180..181). A note may
+refer to one (REQ-MOD-116).
+
+- Any report that is not deleted, in any status, including a report without
+  publication consent (REQ-MOD-108). Any file type, up to the configured cap;
+  the file travels and is stored as the upload, claim, and download above
+  describe.
+- The file name is required and is sanitized; the description is optional
+  plain text of at most 500 characters (REQ-MOD-110).
+- Removal soft-deletes the row, records who removed it, and writes one
+  `RemovedPrivateAttachment` audit entry; the bytes stay in storage. Deleting
+  the report does the same to its private attachments (REQ-MOD-109,
+  REQ-MOD-111).
+- The endpoints live under
+  `/api/admin/reports/{reportId}/private-attachments` and answer only a Safety
+  Officer or an Administrator (REQ-MOD-107). Nothing else reads the table: not
+  the report detail DTO or its attachment list, not a count, not a database
+  view, not the public feed or its media, not the Worker or the model
+  (REQ-MOD-112, REQ-MOD-113). An attachment count on a report list (#427)
+  counts the reporter's attachments only.
 
 ## Out of scope
 
@@ -323,7 +368,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   thumbnails, unpacking a zip,
   sniffing or an allowlist, a malware scan (ADR-0089), a multipart or
   resumable upload, editing or replacing a file (remove it and add it again),
-  restoring a removed one, a per-report count cap, and any sharing or
-  publication beyond the two reviewer roles.
+  restoring a removed one, a per-report count cap, any count of them outside
+  their own list, and any sharing or publication beyond the two reviewer
+  roles (ADR-0135).
 - A filesystem storage adapter. Development runs an S3-compatible server
   (RustFS, ADR-0110) behind the same `S3BlobStore` production uses.

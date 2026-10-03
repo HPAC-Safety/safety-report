@@ -12,7 +12,7 @@ keywords: date/time types, banned API, DateOnly
 
 **Status:** Accepted for date/time types. Typed ordinary-answer projections
 described below are superseded by
-[`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature).
+[`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00acae948e45bb32986c40812e4fd59ea7768/.spec/features/question-bank-and-form/question-bank-and-form.feature).
 
 **Unaffected by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md),
 which is worth saying plainly.** A date, time, or date-and-time answer is now

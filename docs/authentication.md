@@ -101,5 +101,5 @@ publication, deletion, and question changes are audited by acting subject and
 time, without copying report content into the audit entry.
 
 See
-[`.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature`](../.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)
+[`.spec/features/authentication-and-roles/authentication-and-roles.feature`](../.spec/features/authentication-and-roles/authentication-and-roles.feature)
 for the normative role and endpoint rules.

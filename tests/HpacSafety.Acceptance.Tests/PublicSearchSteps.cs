@@ -30,7 +30,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     argument the step reads. Every report and comment is synthetic.
 /// </remarks>
 [Binding]
-[Scope(Feature = "Moderation, authentication, and publication")]
+[Scope(Feature = "Public feed")]
 public sealed class PublicSearchSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.

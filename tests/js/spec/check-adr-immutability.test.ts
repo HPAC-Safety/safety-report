@@ -94,7 +94,14 @@ describe('compare', () => {
 	})
 
 	it('ignores a new record and a file that is not a record', () => {
-		assert.deepEqual(compare(new Map([['README.md', 'x']]), now('anything', 'ADR-0002-new.md')), [])
+		assert.deepEqual(compare(new Map([['README.md', 'x']]), new Map([['ADR-0002-new.md', 'anything'], ['README.md', 'y']])), [])
+	})
+
+	it('still judges a record that declares no status and has no status line', () => {
+		const bare = '---\ntitle: A\n---\n\n# ADR-0001 — A\n\nThe decision.\n'
+
+		assert.deepEqual(compare(new Map([['ADR-0001-a.md', bare]]), now(bare)), [])
+		assert.match(compare(new Map([['ADR-0001-a.md', bare]]), now(bare.replace('The decision.', 'Another decision.')))[0], /its body changed/)
 	})
 })
 

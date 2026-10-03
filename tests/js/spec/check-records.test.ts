@@ -146,6 +146,20 @@ describe('checkLesson', () => {
 		assert.match(check(lesson('incident', { Symptom: 'It broke.' }))[0], /an incident lesson needs "## Root cause"/)
 	})
 
+	it('reports a product lesson with no spec delta as missing both the section and its claim', () => {
+		const sections = full()
+		delete sections['Spec delta']
+
+		const problems = check(lesson('product', sections))
+
+		assert.ok(problems.some((problem) => /a product lesson needs "## Spec delta"/.test(problem)))
+		assert.ok(problems.some((problem) => /names the REQ- or CON- claim/.test(problem)))
+	})
+
+	it('fails a lesson that declares no kind', () => {
+		assert.match(check(lesson('product', full()).replace('kind: product\n', ''))[0], /"kind: " is not one of product, process, incident/)
+	})
+
 	it('needs all five sections for a product or process lesson', () => {
 		const sections = full()
 		delete sections.Skill
@@ -173,6 +187,18 @@ describe('checkConvention', () => {
 		assert.match(checkConvention('CONV-1-a-rule.md', convention())[0], /not named CONV-NNN-kebab-slug\.md/)
 		assert.match(checkConvention('CONV-002-a-rule.md', convention('001'))[0], /the file says CONV-002 and the heading says CONV-001/)
 		assert.match(checkConvention('CONV-001-a-rule.md', convention().replace('## Why\n\nBecause.\n', '## Notes\n\nx\n')).join('\n'), /"## Notes" — a convention has[\s\S]*no "## Why" section/)
+	})
+
+	it('fails a convention with no heading, or no frontmatter keys at all', () => {
+		assert.match(checkConvention('CONV-001-a-rule.md', convention().replace('# CONV-001 — A rule\n', ''))[0], /no "# CONV-001 — <rule>" heading/)
+		assert.deepEqual(
+			checkConvention('CONV-001-a-rule.md', '# CONV-001 — A rule\n\n## Rule\n\nx\n\n## Why\n\ny\n'),
+			[
+				'.spec/conventions/CONV-001-a-rule.md: "type: " — a convention is "type: convention"',
+				'.spec/conventions/CONV-001-a-rule.md: "status: " is not accepted or superseded',
+				'.spec/conventions/CONV-001-a-rule.md: "date: " is not YYYY-MM-DD',
+			],
+		)
 	})
 
 	it('fails a wrong type, status, or date', () => {
@@ -210,6 +236,25 @@ describe('checkRecords and main', () => {
 		})
 
 		assert.deepEqual(checkRecords(root), { problems: [], counts: { adrs: 1, lessons: 1, conventions: 1 } })
+	})
+
+	it('reads claims from feature files and constraint pages, skipping an area with no feature file yet', () => {
+		const product = (delta: string): string =>
+			`---\ntitle: A\ndescription: B.\ntype: lesson\ndate: 2026-10-03\nissue: 1\nstatus: accepted\nkind: product\n---\n\n# Lesson 0001 — A\n\n## Symptom\n\na\n\n## Root cause\n\nb\n\n## Spec delta\n\n${delta}\n\n## Scenario\n\nx\n\n## Skill\n\nNone.\n`
+		const files = {
+			'.spec/decisions/TEMPLATE.md': 't',
+			'.spec/features/empty/README.md': 'no feature file yet',
+			'.spec/system-overview.md': '---\ntitle: O\ndescription: D.\ntype: spec\narea: x\n---\n\n- **CON-SO-001** A rule. *Verified by: REQ-MED-001.*\n',
+		}
+
+		assert.deepEqual(checkRecords(tree({ ...files, '.spec/lessons/0001-a.md': product('CON-SO-001 now holds it.') })).problems, [])
+		assert.match(checkRecords(tree({ ...files, '.spec/lessons/0001-a.md': product('CON-SO-002 now holds it.') })).problems[0], /names CON-SO-002, none of which/)
+	})
+
+	it('reports a convention with a bad name once, and counts no number for it', () => {
+		const root = tree({ '.spec/conventions/conv-1.md': convention('001'), '.spec/conventions/CONV-001-a.md': convention('001') })
+
+		assert.deepEqual(checkRecords(root).problems, ['.spec/conventions/conv-1.md: not named CONV-NNN-kebab-slug.md'])
 	})
 
 	it('passes a tree with no conventions directory', () => {

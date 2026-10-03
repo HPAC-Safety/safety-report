@@ -28,6 +28,18 @@ describe('spec scripts run as commands', () => {
 		assert.match(result.stdout, /--generator, --file, and --message are required/)
 	})
 
+	it('check-records checks the repository it runs in', () => {
+		const result = spawn('check-records.ts')
+		assert.equal(result.status, 0)
+		assert.match(result.stdout, /keep their shape \(ADR-0192\)/)
+	})
+
+	it('check-adr-immutability compares nothing without BASE_SHA', () => {
+		const result = spawn('check-adr-immutability.ts')
+		assert.equal(result.status, 0)
+		assert.match(result.stdout, /No BASE_SHA/)
+	})
+
 	it('regenerate-spec-docs prints usage without both directories', () => {
 		const result = spawn('regenerate-spec-docs.ts')
 		assert.equal(result.status, 1)

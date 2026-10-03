@@ -107,7 +107,7 @@ function section(text: string, heading: string): string {
 export function checkAdr(name: string, text: string): string[] {
 	const path = `${DECISIONS}/${name}`
 	const problems: string[] = []
-	const number = Number(name.match(/^ADR-(\d{4})-/)?.[1] ?? 0)
+	const number = Number(name.slice(4, 8))
 	const sections = headings(text)
 	const status = frontmatter(text).status ?? ''
 	const statusLine = firstBlock(text)

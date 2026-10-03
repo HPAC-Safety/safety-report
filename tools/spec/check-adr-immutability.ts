@@ -89,9 +89,9 @@ export function linkedPath(target: string): string | null {
  */
 export function compare(base: ReadonlyMap<string, string>, now: ReadonlyMap<string, string>, exists: (path: string) => boolean = () => true): string[] {
 	const problems: string[] = []
-	const current = new Map([...now.keys()].flatMap((name) => {
+	const current = new Map([...now].flatMap(([name, text]) => {
 		const number = name.match(FILENAME)?.[1]
-		return number ? [[number, name] as [string, string]] : []
+		return number ? [[number, { name, text }] as const] : []
 	}))
 
 	for (const [name, before] of base) {
@@ -100,13 +100,13 @@ export function compare(base: ReadonlyMap<string, string>, now: ReadonlyMap<stri
 		const was = statusOf(before)
 		if (was === 'proposed') continue
 
-		const currentName = current.get(number)
-		if (currentName === undefined) {
+		const found = current.get(number)
+		if (found === undefined) {
 			problems.push(`${DECISIONS}/${name}: deleted — an ADR is never deleted; supersede or deprecate it with a new record (ADR-0192)`)
 			continue
 		}
 
-		const after = now.get(currentName) ?? ''
+		const { name: currentName, text: after } = found
 		const is = statusOf(after)
 		const allowed = TRANSITIONS[was]
 		if (is !== was && !(allowed ?? []).includes(is)) {
@@ -168,10 +168,10 @@ export function main({ argv = [], env = process.env, exec: run = exec, cwd, log 
 	}
 
 	const names = (listing: string): string[] =>
-		listing
-			.split('\n')
-			.map((path) => path.split('/').pop() ?? '')
-			.filter((name) => FILENAME.test(name))
+		listing.split('\n').flatMap((path) => {
+			const name = path.slice(path.lastIndexOf('/') + 1)
+			return FILENAME.test(name) ? [name] : []
+		})
 
 	const baseAll = names(git('ls-tree', '--name-only', `${base}:${DECISIONS}`).stdout)
 	if (!baseAll.some((name) => name.startsWith(`ADR-${RULE_ADR}-`))) {

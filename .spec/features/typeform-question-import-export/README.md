@@ -3,6 +3,7 @@ title: Typeform question import and export
 description: Supporting detail for importing and exporting the question bank as Typeform JSON.
 type: spec
 area: typeform-question-import-export
+prefix: REQ-TF
 ---
 
 # Typeform question import and export

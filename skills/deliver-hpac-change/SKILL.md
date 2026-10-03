@@ -127,12 +127,19 @@ Rules:
 - `@ignore` and superseded scenarios: also
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios".
 - Each `.spec/features/<area>/README.md` records what **not** to build.
-- A large area is grouped with Gherkin `Rule:` blocks inside its one `.feature`
-  file, not split into new directories; a new scenario goes inside the Rule it
-  belongs to. A Rule carries no tags — a claim's engine and status come from its
-  own scenario's tags, and `node tools/spec/generate-traceability.ts` fails a tagged Rule
-  ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)
-  amendment).
+- An area is one concern. One grown past about 800 lines is split into new
+  areas, not grouped with `Rule:` blocks:
+  - each new area gets its own `.feature`, a README with "Out of scope", and a
+    new `prefix:` in that README's frontmatter;
+  - every moved scenario keeps its ID; the split area's prefix joins
+    `RETIRED_PREFIXES` in `tools/spec/claim-prefixes.ts` at its last number;
+  - rescope every `[Scope(Feature = …)]` that named the old feature, and keep
+    each moved scenario's `Background` and `@xunit:collection` tag;
+  - an accepted ADR's link to a deleted area file points at a permalink to it
+    ([ADR-0194](../../.spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).
+- A `Rule:` block, where one is used, states a business rule and carries no
+  tags: a claim's engine and status come from its own scenario's tags, and
+  `node tools/spec/generate-traceability.ts` fails a tagged Rule.
 
 ### The `feature-coverage` exemption
 

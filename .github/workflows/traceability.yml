@@ -41,6 +41,7 @@ on:
       - tools/spec/generate-spec-index.ts
       - tools/spec/spec-paths.ts
       - tools/spec/read-claims.ts
+      - tools/spec/claim-prefixes.ts
       - tools/spec/read-records.ts
       - tools/spec/step-bindings.ts
       - tools/spec/json-schema.ts
@@ -124,4 +125,4 @@ jobs:
           --adr ADR-0101 \
           --add '.spec/claims.json,.spec/traceability.md,.spec/README.md' \
           --subject 'Regenerate the claims, traceability matrix, and specification index' \
-          --paths '.spec/**,tools/spec/generate-traceability.ts,tools/spec/generate-spec-index.ts,tools/spec/spec-paths.ts,tools/spec/read-claims.ts,tools/spec/read-records.ts,tools/spec/step-bindings.ts,tools/spec/json-schema.ts,tools/spec/graph-fragment.ts,tools/docs/check-frontmatter.ts,tools/spec/regenerate-spec-docs.ts,tools/github/commit-to-pr-branch.ts,tools/github/read-node-major.ts,tools/lib/actions.ts,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'
+          --paths '.spec/**,tools/spec/generate-traceability.ts,tools/spec/generate-spec-index.ts,tools/spec/spec-paths.ts,tools/spec/read-claims.ts,tools/spec/claim-prefixes.ts,tools/spec/read-records.ts,tools/spec/step-bindings.ts,tools/spec/json-schema.ts,tools/spec/graph-fragment.ts,tools/docs/check-frontmatter.ts,tools/spec/regenerate-spec-docs.ts,tools/github/commit-to-pr-branch.ts,tools/github/read-node-major.ts,tools/lib/actions.ts,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'

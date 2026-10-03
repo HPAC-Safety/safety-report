@@ -34,6 +34,7 @@ export const GENERATORS = [
 	'tools/spec/generate-spec-index.ts',
 	'tools/spec/spec-paths.ts',
 	'tools/spec/read-claims.ts',
+	'tools/spec/claim-prefixes.ts',
 	'tools/spec/read-records.ts',
 	'tools/spec/step-bindings.ts',
 	'tools/spec/json-schema.ts',

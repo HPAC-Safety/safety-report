@@ -1,4 +1,86 @@
 {
+	"areas": [
+		{
+			"name": "admin-report-search",
+			"prefix": "REQ-ARS",
+			"prefixes": ["REQ-ARS","REQ-MOD"]
+		},
+		{
+			"name": "ai-anonymization",
+			"prefix": "REQ-AI",
+			"prefixes": ["REQ-AI"]
+		},
+		{
+			"name": "authentication-and-roles",
+			"prefix": "REQ-AUTH",
+			"prefixes": ["REQ-AUTH","REQ-MOD"]
+		},
+		{
+			"name": "choices-and-type-ahead",
+			"prefix": "REQ-CTA",
+			"prefixes": ["REQ-CTA","REQ-MOD","REQ-QB"]
+		},
+		{
+			"name": "comments",
+			"prefix": "REQ-COM",
+			"prefixes": ["REQ-COM"]
+		},
+		{
+			"name": "dependent-choices",
+			"prefix": "REQ-DCH",
+			"prefixes": ["REQ-DCH","REQ-QB"]
+		},
+		{
+			"name": "domain-and-lifecycle",
+			"prefix": "REQ-DOM",
+			"prefixes": ["REQ-DOM"]
+		},
+		{
+			"name": "media",
+			"prefix": "REQ-MED",
+			"prefixes": ["REQ-MED","REQ-MOD"]
+		},
+		{
+			"name": "public-feed",
+			"prefix": "REQ-PUB",
+			"prefixes": ["REQ-PUB","REQ-MOD"]
+		},
+		{
+			"name": "question-authoring",
+			"prefix": "REQ-QAU",
+			"prefixes": ["REQ-QAU","REQ-QB"]
+		},
+		{
+			"name": "question-translation",
+			"prefix": "REQ-QTR",
+			"prefixes": ["REQ-QTR","REQ-QB"]
+		},
+		{
+			"name": "report-form",
+			"prefix": "REQ-RFM",
+			"prefixes": ["REQ-RFM","REQ-QB"]
+		},
+		{
+			"name": "report-submission",
+			"prefix": "REQ-SUB",
+			"prefixes": ["REQ-SUB"]
+		},
+		{
+			"name": "review-and-publication",
+			"prefix": "REQ-REV",
+			"prefixes": ["REQ-REV","REQ-MOD"]
+		},
+		{
+			"name": "typeform-question-import-export",
+			"prefix": "REQ-TF",
+			"prefixes": ["REQ-TF"]
+		},
+		{
+			"name": "web-localization-and-design",
+			"prefix": "REQ-WLD",
+			"prefixes": ["REQ-WLD","REQ-MOD","REQ-QB"]
+		}
+	],
 	"claims": [
 		{
 			"id": "REQ-AI-001",
@@ -1019,8 +1101,8 @@
 		},
 		{
 			"id": "REQ-COM-021",
-			"area": "web-localization-and-design",
-			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
 			"title": "Leaving with an unposted comment is confirmed before it is discarded",
 			"rule": null,
 			"tags": ["@ui"],
@@ -7562,7 +7644,7 @@
 			"stepFiles": ["tests/e2e/steps/summary-markdown.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":["ADR-0180"],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0180","ADR-0194"],"lessons":[]}
 		},
 		{
 			"id": "REQ-QB-001",
@@ -7587,7 +7669,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/QuestionForkSteps.cs"],
 			"staleIgnore": false,
 			"constraints": ["CON-SO-001","CON-TQ-004"],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0194"],"lessons":[]}
 		},
 		{
 			"id": "REQ-QB-002",
@@ -13115,7 +13197,7 @@
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":["ADR-0188"],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0188","ADR-0194"],"lessons":[]}
 		},
 		{
 			"id": "REQ-SUB-001",
@@ -20091,11 +20173,22 @@
 			"id": "ADR-0193",
 			"file": ".spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md",
 			"title": "The claims are generated as JSON, a graph fragment, and one slim matrix",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": ["REQ-WLD-049"],
 			"constraints": [],
-			"decisions": ["ADR-0084","ADR-0088","ADR-0101","ADR-0106","ADR-0113","ADR-0183","ADR-0184","ADR-0190"],
+			"decisions": ["ADR-0084","ADR-0088","ADR-0101","ADR-0106","ADR-0113","ADR-0183","ADR-0184","ADR-0190","ADR-0194"],
 			"supersedes": ["ADR-0084","ADR-0088","ADR-0106","ADR-0184"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0194",
+			"file": ".spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md",
+			"title": "A split area keeps every claim ID, and a new claim takes the new area's prefix",
+			"status": "accepted",
+			"claims": ["REQ-MOD-211","REQ-QB-001","REQ-QB-268"],
+			"constraints": [],
+			"decisions": ["ADR-0084","ADR-0184","ADR-0192","ADR-0193"],
+			"supersedes": ["ADR-0193"],
 			"amends": []
 		}
 	],

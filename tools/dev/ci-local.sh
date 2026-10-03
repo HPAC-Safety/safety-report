@@ -363,7 +363,7 @@ done
 # ci.yml's i18n job passes --allow-pending-translation under act instead,
 # the pre-commit hook's branch rule. Neither changes what runs on GitHub.
 
-if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-traceability.ts tools/spec/generate-spec-index.ts tools/spec/spec-paths.ts tools/spec/read-claims.ts tools/spec/read-records.ts tools/spec/step-bindings.ts tools/spec/json-schema.ts tools/spec/graph-fragment.ts tools/docs/check-frontmatter.ts; then
+if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/spec/generate-traceability.ts tools/spec/generate-spec-index.ts tools/spec/spec-paths.ts tools/spec/read-claims.ts tools/spec/claim-prefixes.ts tools/spec/read-records.ts tools/spec/step-bindings.ts tools/spec/json-schema.ts tools/spec/graph-fragment.ts tools/docs/check-frontmatter.ts; then
 	if (cd "$WORK/repo" && node tools/spec/generate-traceability.ts --no-fail >/dev/null 2>&1 && node tools/spec/generate-spec-index.ts >/dev/null 2>&1); then
 		if ! git -C "$WORK/repo" diff --quiet -- .spec/claims.json .spec/traceability.md .spec/README.md; then
 			git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \

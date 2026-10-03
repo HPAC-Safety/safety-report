@@ -3,6 +3,7 @@ title: Dependent choices
 description: Supporting detail for choices offered under the answer to an earlier single-select or type-ahead question.
 type: spec
 area: dependent-choices
+prefix: REQ-DCH
 ---
 
 # Dependent choices

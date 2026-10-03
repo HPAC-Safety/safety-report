@@ -179,3 +179,14 @@ Scenario: A reviewer hides a comment from the report page
   Then every comment offers to hide it
   When the safety officer hides a comment and confirms
   Then that comment is no longer listed
+
+@REQ-COM-021
+@ui
+Scenario: Leaving with an unposted comment is confirmed before it is discarded
+  Given a member is signed in and a published report has comments
+  When the member opens the report
+  And types a comment without posting it
+  And navigates away from the report
+  Then a bilingual dialog asks whether to leave, offering to stay
+  When they confirm leaving
+  Then the browser navigates away and the unposted comment is gone

@@ -3,6 +3,7 @@ title: Public feed
 description: Supporting detail for the public feed, a published report's own page, and public search.
 type: spec
 area: public-feed
+prefix: REQ-PUB
 ---
 
 # Public feed

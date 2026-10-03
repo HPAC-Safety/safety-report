@@ -3,6 +3,7 @@ title: Attachments
 description: Supporting detail for the image, video, document, quarantine, and derivative scenarios.
 type: spec
 area: media
+prefix: REQ-MED
 ---
 
 # Attachments

@@ -25,6 +25,7 @@
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, posix } from 'node:path'
 
+import { areaPrefixes, prefixOf, prefixProblems } from './claim-prefixes.ts'
 import { fragment } from './graph-fragment.ts'
 import { type Schema, validate } from './json-schema.ts'
 import { type Constraint, readConstraints } from './read-claims.ts'
@@ -73,8 +74,16 @@ export interface ConstraintRecord {
 	note: string
 }
 
+/** One feature area, with the prefix a new claim in it takes and every prefix its claims carry (ADR-0194). */
+export interface AreaRecord {
+	name: string
+	prefix: string
+	prefixes: string[]
+}
+
 /** The whole of .spec/claims.json. */
 export interface ClaimsData {
+	areas: AreaRecord[]
 	claims: ClaimRecord[]
 	constraints: ConstraintRecord[]
 	decisions: DecisionRecord[]
@@ -86,9 +95,19 @@ export interface ClaimsData {
 const byId = (a: { id: string }, b: { id: string }): number => Number(a.id > b.id) - Number(a.id < b.id)
 
 /** The model behind both files, from what the readers found. */
-export function model(resolution: Pick<Resolution, 'claims' | 'unused' | 'ambiguous'>, constraints: readonly Constraint[], decisions: readonly DecisionRecord[], lessons: readonly LessonRecord[]): ClaimsData {
+export function model(
+	resolution: Pick<Resolution, 'claims' | 'unused' | 'ambiguous'>,
+	constraints: readonly Constraint[],
+	decisions: readonly DecisionRecord[],
+	lessons: readonly LessonRecord[],
+	prefixes: ReadonlyMap<string, string | undefined> = new Map(),
+): ClaimsData {
 	const citing = (records: readonly { id: string; claims: string[] }[], claim: string): string[] => records.filter((record) => record.claims.includes(claim)).map((record) => record.id)
+	const carried = (area: string, own: string): string[] => [own, ...[...new Set(resolution.claims.filter((claim) => claim.area === area).map((claim) => prefixOf(claim.id)))].filter((prefix) => prefix !== own).sort()]
 	return {
+		areas: [...prefixes]
+			.filter((entry): entry is [string, string] => entry[1] !== undefined)
+			.map(([name, prefix]) => ({ name, prefix, prefixes: carried(name, prefix) })),
 		claims: resolution.claims
 			.map(
 				(claim): ClaimRecord => ({
@@ -245,7 +264,10 @@ export function build(root = ROOT): Build {
 		}
 	}
 
-	const data = model(resolution, constraints, readDecisions(root), readLessons(root))
+	const prefixes = areaPrefixes(root)
+	problems.push(...prefixProblems(resolution.claims, prefixes))
+
+	const data = model(resolution, constraints, readDecisions(root), readLessons(root), prefixes)
 
 	const schemaPath = join(root, CLAIMS_SCHEMA)
 	if (existsSync(schemaPath)) {

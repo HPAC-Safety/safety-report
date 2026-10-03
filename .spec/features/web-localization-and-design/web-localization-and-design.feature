@@ -520,14 +520,3 @@ Scenario: Leaving with an unsaved private note is confirmed
   And the safety officer starts writing a private note without saving it
   And navigates to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
-
-@REQ-COM-021
-@ui
-Scenario: Leaving with an unposted comment is confirmed before it is discarded
-  Given a member is signed in and a published report has comments
-  When the member opens the report
-  And types a comment without posting it
-  And navigates away from the report
-  Then a bilingual dialog asks whether to leave, offering to stay
-  When they confirm leaving
-  Then the browser navigates away and the unposted comment is gone

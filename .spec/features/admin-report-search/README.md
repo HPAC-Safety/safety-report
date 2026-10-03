@@ -3,6 +3,7 @@ title: Admin report list and search
 description: Supporting detail for the admin report list: its rows, filters, search, paging, and quick actions.
 type: spec
 area: admin-report-search
+prefix: REQ-ARS
 ---
 
 # Admin report list and search

@@ -3,6 +3,7 @@ title: Authentication and roles
 description: Supporting detail for member authentication, the three roles, the Admin menu and its pending counts, and access control.
 type: spec
 area: authentication-and-roles
+prefix: REQ-AUTH
 ---
 
 # Authentication and roles

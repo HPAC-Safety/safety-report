@@ -3,6 +3,7 @@ title: Question translation
 description: Supporting detail for machine-translating a question's wording and its choices while authoring.
 type: spec
 area: question-translation
+prefix: REQ-QTR
 ---
 
 # Question translation

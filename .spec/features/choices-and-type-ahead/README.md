@@ -3,6 +3,7 @@ title: Choices and type-ahead values
 description: Supporting detail for a question's choices: their identity, order and pinning, and the review of type-ahead values reporters add.
 type: spec
 area: choices-and-type-ahead
+prefix: REQ-CTA
 ---
 
 # Choices and type-ahead values

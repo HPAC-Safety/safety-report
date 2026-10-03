@@ -3,6 +3,7 @@ title: Report submission
 description: Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios.
 type: spec
 area: report-submission
+prefix: REQ-SUB
 ---
 
 # Report submission

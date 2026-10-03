@@ -3,6 +3,7 @@ title: Comments
 description: Supporting detail for the member comment, translation, and moderation scenarios.
 type: spec
 area: comments
+prefix: REQ-COM
 ---
 
 # Comments

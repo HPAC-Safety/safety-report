@@ -3,6 +3,7 @@ title: Review and publication
 description: Supporting detail for reviewing a report, its summary revisions, publication, private notes, and how a reviewer reads an answer.
 type: spec
 area: review-and-publication
+prefix: REQ-REV
 ---
 
 # Review and publication

@@ -3,6 +3,7 @@ title: Question authoring
 description: Supporting detail for the immutable bilingual question revisions, question types, conditions, groups, and the question editor.
 type: spec
 area: question-authoring
+prefix: REQ-QAU
 ---
 
 # Question authoring

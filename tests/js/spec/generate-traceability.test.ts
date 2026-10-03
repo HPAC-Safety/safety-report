@@ -47,13 +47,15 @@ const scenario = (id: string, name: string, tags: string[] = []): string => [`@$
  */
 function repository({
 	area = 'media',
+	prefix = 'REQ-MED',
 	feature = '',
 	pages = {},
 	files = {},
-}: { area?: string; feature?: string; pages?: Partial<Record<string, string>>; files?: Record<string, string> } = {}): string {
+}: { area?: string; prefix?: string; feature?: string; pages?: Partial<Record<string, string>>; files?: Record<string, string> } = {}): string {
 	const root = mkdtempSync(join(tmpdir(), 'traceability-'))
 	mkdirSync(join(root, '.spec/features', area), { recursive: true })
 	writeFileSync(join(root, '.spec/features', area, `${area}.feature`), `Feature: ${area}\n\n${feature}`)
+	writeFileSync(join(root, '.spec/features', area, 'README.md'), `---\ntitle: ${area}\ndescription: An area.\ntype: spec\narea: ${area}\nprefix: ${prefix}\n---\n`)
 	for (const page of CONSTRAINT_PAGES) writeFileSync(join(root, page), pages[page] ?? '# A page\n')
 	copyFileSync(join(REPO, CLAIMS_SCHEMA), join(root, CLAIMS_SCHEMA))
 	for (const [path, text] of Object.entries(files)) {
@@ -223,6 +225,7 @@ describe('build', () => {
 
 		assert.deepEqual(problems, [])
 		assert.deepEqual(gaps, [])
+		assert.deepEqual(data.areas, [{ name: 'media', prefix: 'REQ-MED', prefixes: ['REQ-MED'] }])
 		assert.deepEqual(data.claims[0], {
 			id: 'REQ-MED-001',
 			area: 'media',
@@ -248,6 +251,16 @@ describe('build', () => {
 			{ id: 'ADR-0002', supersedes: ['ADR-0001'], amends: [] },
 		])
 		assert.deepEqual(data.lessons[0], { id: '0001', file: '.spec/lessons/0001-a-lesson.md', title: 'A lesson', status: 'accepted', claims: ['REQ-MED-001'], constraints: [], decisions: ['ADR-0002'], skills: ['deliver-change'] })
+	})
+
+	it('lists an area\'s retired prefixes after its own, and fails a new claim under one', () => {
+		const kept = build(repository({ area: 'question-authoring', prefix: 'REQ-QAU', feature: scenario('REQ-QB-001', 'Kept') + scenario('REQ-QAU-001', 'New'), files: STEPS }))
+
+		assert.deepEqual(kept.problems, [])
+		assert.deepEqual(kept.data.areas, [{ name: 'question-authoring', prefix: 'REQ-QAU', prefixes: ['REQ-QAU', 'REQ-QB'] }])
+
+		const added = build(repository({ area: 'question-authoring', prefix: 'REQ-QAU', feature: scenario('REQ-QB-269', 'Added'), files: STEPS }))
+		assert.match(added.problems.join('\n'), /REQ-QB-269: REQ-QB retired at REQ-QB-268, so a new claim in \.spec\/features\/question-authoring takes REQ-QAU/)
 	})
 
 	it('records a fully bound @ignore claim as stale and a step definition nothing uses', () => {
@@ -281,7 +294,7 @@ const claim = (id: string, area: string, status: ClaimRecord['status'] = 'Covere
 	citedBy: { decisions: [], lessons: [] },
 })
 
-const data = (claims: ClaimRecord[], constraints: ConstraintRecord[] = []): ClaimsData => ({ claims, constraints, decisions: [], lessons: [], ambiguousSteps: [], unusedStepDefinitions: [] })
+const data = (claims: ClaimRecord[], constraints: ConstraintRecord[] = []): ClaimsData => ({ areas: [], claims, constraints, decisions: [], lessons: [], ambiguousSteps: [], unusedStepDefinitions: [] })
 
 describe('render', () => {
 	it('opens with frontmatter and says it is generated', () => {

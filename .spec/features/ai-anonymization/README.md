@@ -3,6 +3,7 @@ title: AI anonymization
 description: Supporting detail for the one-call bilingual summarization and anonymization scenarios.
 type: spec
 area: ai-anonymization
+prefix: REQ-AI
 ---
 
 # AI anonymization

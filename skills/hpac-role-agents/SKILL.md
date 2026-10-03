@@ -56,6 +56,10 @@ roles and why each trusts only the artifact before it:
 - Clarify with [`clarify-requirements`](../clarify-requirements/SKILL.md).
 - Claim IDs are `@REQ-<AREA>-<NNN>`, never reused or renumbered
   ([ADR-0084](../../.spec/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+- A new claim's ID: `node tools/spec/claim-prefixes.ts --next <area>`, under
+  the `prefix:` in the area's README. `REQ-QB` and `REQ-MOD` are retired: their
+  claims keep their IDs in whichever area holds them, and nothing new takes
+  them ([ADR-0194](../../.spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).
 - Run `node tools/spec/generate-traceability.ts` and
   `node tools/spec/generate-spec-index.ts` before finishing.
 - Decision records: [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md),

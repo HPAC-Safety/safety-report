@@ -7669,7 +7669,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/QuestionForkSteps.cs"],
 			"staleIgnore": false,
 			"constraints": ["CON-SO-001","CON-TQ-004"],
-			"citedBy": {"decisions":["ADR-0194"],"lessons":[]}
+			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
 			"id": "REQ-QB-002",
@@ -20185,7 +20185,7 @@
 			"file": ".spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md",
 			"title": "A split area keeps every claim ID, and a new claim takes the new area's prefix",
 			"status": "accepted",
-			"claims": ["REQ-MOD-211","REQ-QB-001","REQ-QB-268"],
+			"claims": ["REQ-MOD-211","REQ-QB-268"],
 			"constraints": [],
 			"decisions": ["ADR-0084","ADR-0184","ADR-0192","ADR-0193"],
 			"supersedes": ["ADR-0193"],

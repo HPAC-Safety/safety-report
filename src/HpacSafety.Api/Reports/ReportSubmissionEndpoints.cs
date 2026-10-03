@@ -87,6 +87,12 @@ public static partial class ReportSubmissionEndpoints
 		var revisionLookup = await LoadRevisionsAsync(database, cancellationToken).ConfigureAwait(false);
 
 		var report = new Report(locale, clock.GetUtcNow());
+
+		// The browser's receipt: only its hash is stored, and nothing about the
+		// member reaches it (ADR-0196).
+		var (receipt, receiptHash) = BrowserReceipt.New();
+		report.AttachReceipt(receiptHash);
+
 		var seenRevisionIds = new HashSet<TinyId>();
 		var claimedUploads = new HashSet<UploadId>();
 		var fileAnswers = new List<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)>();
@@ -171,7 +177,7 @@ public static partial class ReportSubmissionEndpoints
 
 		return Results.Accepted(
 			$"/api/v1/reports/{report.Id.Value}",
-			new SubmitReportResponse(report.Id.Value, "submitted"));
+			new SubmitReportResponse(report.Id.Value, "submitted", receipt));
 	}
 
 	/// <summary>

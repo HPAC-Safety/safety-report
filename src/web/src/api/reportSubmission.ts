@@ -39,6 +39,12 @@ export interface SubmitAnswer {
 export interface SubmitReportResult {
 	id: string
 	status: string
+	/**
+	 * A random token the browser keeps so it can later see its own unpublished report.
+	 * It proves "this browser filed it", never "this member filed it", and only ever
+	 * travels in a request body (issue no. 820, ADR-0196).
+	 */
+	receipt: string
 }
 
 /** One upload the API refused at submission, after sniffing it (ADR-0126). */

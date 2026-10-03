@@ -48,6 +48,14 @@ public class Report
 	/// <summary>When it was received.</summary>
 	public DateTimeOffset SubmittedAt { get; private init; }
 
+	/// <summary>
+	///     The SHA-256 of the random receipt the submitting browser was handed, as
+	///     base64url, or null on a report filed before receipts existed. It
+	///     identifies a browser, never a member, and is locked once written
+	///     (ADR-0196).
+	/// </summary>
+	public string? ReceiptHash { get; private set; }
+
 	/// <summary>When it was published, if it was.</summary>
 	public DateTimeOffset? PublishedAt { get; private set; }
 
@@ -297,6 +305,23 @@ public class Report
 				return answer;
 			}),
 		];
+	}
+
+	/// <summary>
+	///     Records the hash of the receipt handed to the submitting browser. Only a
+	///     hash, never the receipt, and never anything about the member (ADR-0196).
+	/// </summary>
+	/// <param name="hash">The receipt's hash, from <see cref="BrowserReceipt.New" />.</param>
+	public void AttachReceipt(string hash)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(hash);
+
+		if (ReceiptHash is not null)
+		{
+			throw new DomainRuleViolationException("This report already has a receipt.");
+		}
+
+		ReceiptHash = hash;
 	}
 
 	/// <summary>Adds an uploaded file.</summary>

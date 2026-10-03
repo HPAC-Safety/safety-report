@@ -37,6 +37,10 @@ public static class PublicReportEndpoints
 		group.MapGet("/{reportId}", Get);
 		group.MapGet("/{reportId}/media/{mediaId}", MediaLink);
 
+		// The holder's own, not yet published report (ADR-0196): POST, with the
+		// receipt in the body, never in an address.
+		OwnReportEndpoints.Map(group);
+
 		return group;
 	}
 
@@ -280,18 +284,46 @@ public static class PublicReportEndpoints
 			.SingleOrDefaultAsync(cancellationToken)
 			.ConfigureAwait(false);
 
-		if (file is null
-			|| !MediaType.TryParse(file.ContentType, out var original))
+		if (file is null)
+		{
+			return Results.NotFound();
+		}
+
+		return await MintMediaLink(
+			file.Kind, file.ContentType, file.StrippedBlobKey, file.DocumentBlobKey, mediaId, context, links, clock, cancellationToken)
+			.ConfigureAwait(false);
+	}
+
+	/// <summary>
+	///     The one way a file's link is minted, shared by the public media link and a
+	///     report holder's own (ADR-0196), so the two can never serve a file by
+	///     different rules: an image's or video's verified derivative inline, a
+	///     document's unchanged original as a forced download, each for at most
+	///     <see cref="BlobUrlLifetime.Maximum" />. The caller has already decided the
+	///     file may be served; this only mints.
+	/// </summary>
+	internal static async Task<IResult> MintMediaLink(
+		AttachmentKind kind,
+		string contentType,
+		string? strippedBlobKey,
+		string? documentBlobKey,
+		string mediaId,
+		HttpContext context,
+		PublicMediaLink links,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		if (!MediaType.TryParse(contentType, out var original))
 		{
 			return Results.NotFound();
 		}
 
 		Uri url;
 
-		if (file.Kind is AttachmentKind.Document)
+		if (kind is AttachmentKind.Document)
 		{
 			url = await links.CreateDocumentDownloadUrl(
-				TinyId.Parse(mediaId), BlobKey.Parse(file.DocumentBlobKey), original, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+				TinyId.Parse(mediaId), BlobKey.Parse(documentBlobKey!), original, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
 		}
 		else
 		{
@@ -300,7 +332,7 @@ public static class PublicReportEndpoints
 			var served = original.DerivativeForm ?? original;
 
 			url = await links.CreateUrl(
-				BlobKey.Parse(file.StrippedBlobKey), served.ContentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+				BlobKey.Parse(strippedBlobKey!), served.ContentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
 		}
 
 		context.Response.Headers.Append("X-Content-Type-Options", "nosniff");

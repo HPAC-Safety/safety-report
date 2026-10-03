@@ -59,4 +59,9 @@ public sealed record RefusedUpload(string UploadId, string Reason);
 /// <summary>The opaque receipt a successful submission returns. Nothing else.</summary>
 /// <param name="Id">The report's opaque identifier.</param>
 /// <param name="Status">Always <c>submitted</c>.</param>
-public sealed record SubmitReportResponse(string Id, string Status);
+/// <param name="Receipt">
+///     A random 256-bit token the browser keeps, base64url. The report stores only
+///     its SHA-256 hash; it proves "this browser filed it", never "this member
+///     filed it" (ADR-0196).
+/// </param>
+public sealed record SubmitReportResponse(string Id, string Status, string Receipt);

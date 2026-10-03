@@ -796,7 +796,7 @@ Scenario: A successful submission returns an opaque accepted receipt
   Given a submission passes validation and persists successfully
   When the API responds
   Then the response is 202 Accepted with an opaque report ID and the status "submitted"
-  And the response contains no raw answers or attachment URLs
+  And the response contains no raw answers or attachment URLs, and carries only the report ID, the status, and the browser receipt
 
 @REQ-SUB-016
 @ui
@@ -1156,3 +1156,32 @@ Scenario: Leaving the untouched report form never shows a confirmation
   Given a reporter has not answered anything on the report form
   When the reporter activates a header navigation link away from the form
   Then the browser navigates to that page with no dialog shown
+
+@REQ-SUB-133
+Scenario: A successful submission returns a random browser receipt
+  Given a submission passes validation and persists successfully
+  When the API responds
+  Then the body carries a receipt of at least 256 random bits, base64url
+  And two submissions by the same member return unrelated receipts
+
+@REQ-SUB-134
+Scenario: The report stores only the receipt's SHA-256 hash
+  Given a reporter submits a valid report while signed in
+  When the submission is committed
+  Then the stored report holds the SHA-256 hash of the receipt it returned and nowhere else the receipt itself
+  And no log line records the receipt
+
+@REQ-SUB-135
+Scenario: The receipt links a report to a browser, never to a member
+  Given a reporter submits a valid report while signed in
+  When the submission is committed
+  Then no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it
+  And the stored receipt hash is not derived from the subject
+
+@REQ-SUB-136
+@ui
+Scenario: The browser keeps the receipt after the 202 and never puts it in an address
+  Given a signed-in member submits a valid report
+  When the API answers 202 with a receipt
+  Then the browser keeps the report ID and the receipt in its own storage
+  And no request address, query string, or navigation carries the receipt

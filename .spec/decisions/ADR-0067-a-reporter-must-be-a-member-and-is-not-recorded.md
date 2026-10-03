@@ -2,7 +2,7 @@
 title: A reporter must be a member, and is not recorded
 description: Submitting a report requires a signed-in HPAC member.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: anonymity, reporter, authentication, membership, privacy, submission
@@ -10,7 +10,8 @@ keywords: anonymity, reporter, authentication, membership, privacy, submission
 
 # ADR-0067 — A reporter must be a member, and is not recorded
 
-**Status:** Accepted.
+**Status:** Superseded by
+[ADR-0196](ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md).
 
 ## Context
 

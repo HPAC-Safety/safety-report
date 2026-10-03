@@ -86,8 +86,10 @@ whether to offer it from `GET /api/auth/config`, never from a build flag.
 Submission requires a member and records nothing about them
 ([ADR-0067](../.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 No report, answer, file, outbox message, audit entry, or log line holds the
-submitter's subject, and no column, join table, or hash links a report to the
-member who filed it. Authentication answers one question — *is this an HPAC
+submitter's subject, and no column, join table, or hash of a member links a report
+to the member who filed it. The one column that links a report to anything is
+`receipt_hash`, the SHA-256 of a random receipt the filing browser keeps, which
+identifies a browser and no member ([ADR-0196](../.spec/decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md)). Authentication answers one question — *is this an HPAC
 member?* — and its answer is not kept. The form tells the reporter so.
 
 Turnstile is not used. The member token is the abuse control, alongside per-IP

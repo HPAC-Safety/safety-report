@@ -76,7 +76,11 @@ those rows ever had.
 
 **CON-DP-006** No report, answer, file, or outbox row records who submitted a report
 ([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
-*Verified by: REQ-SUB-020, REQ-SUB-021.*
+The one column that links a report to anything is `reports.receipt_hash`, the
+SHA-256 of a random browser receipt, which identifies a browser and no member and is
+locked after submission
+([ADR-0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md)).
+*Verified by: REQ-SUB-020, REQ-SUB-021, REQ-SUB-134, REQ-SUB-135.*
 
 ## Constraints and indexes
 

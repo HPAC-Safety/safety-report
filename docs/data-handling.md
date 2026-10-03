@@ -29,7 +29,10 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
 - **Filing a report requires a signed-in HPAC member, and nothing about that
   member is persisted.** No report, answer, file, consent projection, outbox
   message, audit entry, or log line records the submitter's subject, and no
-  column, join table, or hash links a report to whoever filed it. Sign-in
+  column, join table, or hash of a member links a report to whoever filed it. The
+  one exception is `receipt_hash`, the SHA-256 of a random receipt the filing
+  browser keeps, which identifies a browser and never a member
+  ([ADR-0196](../.spec/decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md)). Sign-in
   proves membership; its answer is discarded
   ([ADR-0067](../.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 - Store no user records at all. Identity and role come from claims on a

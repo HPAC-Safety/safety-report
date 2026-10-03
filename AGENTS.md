@@ -250,15 +250,18 @@ Read them before touching the area.
 7. **Identity is a validated JWT, and nothing is stored about members**: the
    API reads the subject and role claim (`User`, `SafetyOfficer`,
    `Administrator`), never handles a password, and keeps no user record; a
-   reporter must be a member and is not recorded. The only exceptions are
+   reporter must be a member and is not recorded, and a submission returns a
+   random receipt the browser keeps and the report stores only as a hash, so a
+   browser sees its own unpublished report and no member is identified. The only exceptions are
    Development's members-site login and, temporarily, staging's interim
    issuer behind `InterimIssuer:Enabled`, which production never sets.
    Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-SUB-019`–`021`,
-   `REQ-SUB-023`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
+   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-MOD-212`–`225`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
    `CON-INF-004`.
    ADRs: [0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
    [0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
    [0067](.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md),
+   [0196](.spec/decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md),
    [0079](.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md),
    [0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md).
 8. **Managed encryption, no deletion**: managed encryption at rest and TLS,

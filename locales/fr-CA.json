@@ -621,6 +621,15 @@
       "body": "Il n'existe aucun signalement de sécurité publié à cette adresse."
     },
     "reportTitle": "Signalement de sécurité",
+    "own": {
+      "listLabel": "#Your reports",
+      "notYetPublished": "#Not yet published",
+      "notForPublication": "#Not for publication",
+      "submittedAt": "#Submitted {at}",
+      "draftNote": "#Draft summary. It may change before the report is published.",
+      "summaryPending": "#Summary in preparation",
+      "notForPublicationNote": "#You chose not to publish this report, so it has no public summary."
+    },
     "comments": {
       "one": "1 commentaire",
       "other": "{count} commentaires"

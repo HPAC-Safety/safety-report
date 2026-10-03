@@ -103,6 +103,12 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Publishable reports, as the public side reads them (the <c>public_reports</c> view).</summary>
 	public DbSet<PublicReport> PublicReports => Set<PublicReport>();
 
+	/// <summary>The <c>own_reports</c> view: reports a browser's receipt opens (ADR-0196).</summary>
+	public DbSet<OwnReport> OwnReports => Set<OwnReport>();
+
+	/// <summary>The <c>own_report_media</c> view: the files of a report a browser's receipt opens.</summary>
+	public DbSet<OwnReportMedia> OwnReportMedia => Set<OwnReportMedia>();
+
 	/// <summary>Live reports as the admin list reads them (the <c>admin_report_queue</c> view).</summary>
 	public DbSet<AdminReportQueueItem> AdminReportQueue => Set<AdminReportQueueItem>();
 
@@ -259,6 +265,8 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportCommentConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportMediaConfiguration());
+		modelBuilder.ApplyConfiguration(new OwnReportConfiguration());
+		modelBuilder.ApplyConfiguration(new OwnReportMediaConfiguration());
 		modelBuilder.ApplyConfiguration(new AdminReportQueueItemConfiguration());
 		modelBuilder.ApplyConfiguration(new AnswerAwaitingTranslationConfiguration());
 		modelBuilder.ApplyConfiguration(new AdminPendingCountsConfiguration());

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { attachmentLink, attachmentOriginalLink, setAttachmentHidden, type ReportAttachment } from "../api/adminReports"
+import { fetchOwnMediaLink } from "../api/ownReports"
 import { fetchMediaLink, type PublicMedia } from "../api/publicReports"
 import { AttachmentStripView } from "./AttachmentStrip.view"
 import { isGone, itemsFromPublicMedia, itemsFromStaffAttachments, linkFor, type StripItem } from "./stripItems"
@@ -26,10 +27,15 @@ export interface AttachmentStripProps {
 	staffAttachments: ReportAttachment[] | null
 	/** Called after a successful hide or show, so the caller can refetch. */
 	onChanged: () => void
+	/**
+	 * The receipt of a report its holder opens before it is published (issue no. 820):
+	 * links are then asked for with it, in a body. Absent everywhere else.
+	 */
+	receipt?: string
 }
 
 /** The view model: the items, the shared link cache, the lightbox, and what activating, hiding and showing do. */
-export function useAttachmentStrip({ reportId, media, staffAttachments, onChanged }: AttachmentStripProps) {
+export function useAttachmentStrip({ reportId, media, staffAttachments, onChanged, receipt }: AttachmentStripProps) {
 	const { t } = useLocale()
 	// Loose check: a stub or an older response may omit the field rather than
 	// send an explicit null, and that must still read as "not staff".
@@ -55,11 +61,11 @@ export function useAttachmentStrip({ reportId, media, staffAttachments, onChange
 			if (cached && new Date(cached.expiresAt).getTime() - Date.now() > 5000) {
 				return cached.url
 			}
-			const link = await linkFor(reportId, item, staff)
+			const link = await linkFor(reportId, item, staff, receipt)
 			linkCache.current.set(item.id, link)
 			return link.url
 		},
-		[reportId, staff],
+		[reportId, staff, receipt],
 	)
 
 	const invalidateLink = useCallback((id: string) => {
@@ -139,7 +145,7 @@ export function useAttachmentStrip({ reportId, media, staffAttachments, onChange
 				return
 			}
 
-			const link = await fetchMediaLink(reportId, item.id)
+			const link = receipt ? await fetchOwnMediaLink(reportId, item.id, receipt) : await fetchMediaLink(reportId, item.id)
 			window.location.assign(link.url)
 		} catch (cause) {
 			if (isGone(cause)) remove(item.id)

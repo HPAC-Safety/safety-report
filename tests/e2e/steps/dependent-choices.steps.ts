@@ -82,7 +82,7 @@ async function stubQuestionBank(page: Page, questions: ReturnType<typeof adminQu
 		const index = questions.findIndex((candidate) => candidate.id === id)
 		const body = route.request().postDataJSON() as Saved
 		saved.push(body)
-		const current = questions[index]!
+		const current = questions[index]
 		questions[index] = {
 			...current,
 			choicesDependOnQuestionId: body.choicesDependOnQuestionId,
@@ -99,7 +99,7 @@ async function stubQuestionBank(page: Page, questions: ReturnType<typeof adminQu
 function lastSave(page: Page): Saved {
 	const all = saves.get(page) ?? []
 	expect(all.length).toBeGreaterThan(0)
-	return all[all.length - 1]!
+	return all[all.length - 1]
 }
 
 async function editQuestion(page: Page, label: string) {
@@ -240,7 +240,7 @@ Then("Save is refused while a choice is offered under nothing, naming that choic
 		await page.getByRole("button", { name: "Français" }).click()
 		const expected = french("questions.choice.unlinked")
 		await expect(refusal).not.toContainText("Tick at least one answer")
-		if (expected && !expected.startsWith("#")) await expect(refusal).toContainText(expected.split("{choices}")[0]!.trim())
+		if (expected && !expected.startsWith("#")) await expect(refusal).toContainText(expected.split("{choices}")[0].trim())
 		await expect(refusal).toContainText("Zeno 2")
 		await page.getByRole("button", { name: /^Passer à/ }).click()
 	} else {
@@ -415,9 +415,9 @@ Given(
 Given(
 	"{string} offers {string} and {string} linked to {string}, and {string} linked to {string}",
 	async ({ page }, _child: string, first: string, second: string, parent: string, third: string, otherParent: string) => {
-		const make = forms.get(page)![0]!.children[0]!
+		const make = forms.get(page)![0].children[0]
 		const idOf = (label: string) => make.options.find((option) => option.labelEn === label)!.id
-		const model = forms.get(page)![0]!.children[1]!
+		const model = forms.get(page)![0].children[1]
 		model.options = [
 			formChoice(`${idOf(parent)}-${first}`, first, idOf(parent)),
 			formChoice(`${idOf(parent)}-${second}`, second, idOf(parent)),
@@ -511,7 +511,7 @@ Given(
 	"the type-ahead {string} question's choices depend on the single-select {string} question, and its {string} under {string} was merged from {string}",
 	async ({ page }, _child: string, _parent: string, survivor: string, _parentChoice: string, alias: string) => {
 		const questions = wingForm("single_select", "autocomplete")
-		const model = questions[0].children[1] as StubQuestion
+		const model = questions[0].children[1]
 		model.options = model.options.map((option) =>
 			option.labelEn === survivor ? { ...option, aliases: [{ labelEn: alias, labelFr: null }] } : option,
 		)
@@ -528,7 +528,7 @@ Then("{string}'s list offers {string}, hinting {string}", async ({ page }, _chil
 	const ownLabel = await options.first().evaluate((element) => {
 		const clone = element.cloneNode(true) as HTMLElement
 		clone.querySelector('[data-testid="choice-hint"]')?.remove()
-		return (clone.textContent ?? "").trim()
+		return clone.textContent.trim()
 	})
 	expect(ownLabel).toBe(label)
 })
@@ -568,7 +568,7 @@ Then("{string} is sent as {string} and {string} as {string}, both as the words t
 })
 
 /** Saves a report in the browser answering the make and the model, before the page loads. */
-async function savedDraft(page: Page, make: string, model: string) {
+async function savedDraft(page: Page, make: string, model: { id: string; label: string }) {
 	await page.addInitScript(
 		({ make, model }) => {
 			localStorage.setItem(
@@ -632,9 +632,9 @@ Given(
 	"{string} offers {string} under {string} and {string}, {string} under {string}, and {string} under {string}",
 	async ({ page }, _child: string, shared: string, first: string, second: string, one: string, oneParent: string, other: string, otherParent: string) => {
 		const form = forms.get(page)!
-		const make = form[0]!.children[0]!
+		const make = form[0].children[0]
 		const idOf = (label: string) => make.options.find((option) => option.labelEn === label)!.id
-		form[0]!.children[1]!.options = [
+		form[0].children[1].options = [
 			formChoice("shared", shared, [idOf(first), idOf(second)]),
 			formChoice("one", one, idOf(oneParent)),
 			formChoice("other", other, idOf(otherParent)),
@@ -747,7 +747,7 @@ const reviewValues = new WeakMap<Page, { parent: { parentChoiceIds: string[] } }
 
 Given("{string} is also linked to {string}, a {string} value since removed", async ({ page }, _value: string, removed: string, _parent: string) => {
 	// The page lists only the parent's live values, so this link is never shown, counted, or sent.
-	reviewValues.get(page)![0]!.parent.parentChoiceIds.push(`${removed.toLowerCase()}-removed`)
+	reviewValues.get(page)![0].parent.parentChoiceIds.push(`${removed.toLowerCase()}-removed`)
 	await page.reload()
 })
 
@@ -774,8 +774,8 @@ When("they also tick {string}", async ({ page }, parentChoice: string) => {
 
 Then("the page sends {string} and {string}", async ({ page }, first: string, second: string) => {
 	await expect.poll(() => relinks.get(page)?.length ?? 0).toBe(1)
-	const sentIds = (relinks.get(page)![0]!.body as { parentChoiceIds: string[] }).parentChoiceIds
-	expect(relinks.get(page)![0]!.id).toBe("value-zeno")
+	const sentIds = (relinks.get(page)![0].body as { parentChoiceIds: string[] }).parentChoiceIds
+	expect(relinks.get(page)![0].id).toBe("value-zeno")
 	expect([...sentIds].sort()).toEqual([first.toLowerCase(), second.toLowerCase()].sort())
 })
 

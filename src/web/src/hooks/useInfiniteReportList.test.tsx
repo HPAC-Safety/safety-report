@@ -35,6 +35,7 @@ function setup(fetchPage: Fetch, storageKey = "k") {
 beforeEach(() => {
 	sessionStorage.clear()
 	observers = []
+	// eslint-disable-next-line @typescript-eslint/no-extraneous-class -- a constructor-only stand-in for the browser's IntersectionObserver
 	class FakeObserver {
 		constructor(callback: ObserverStub["callback"]) {
 			const stub: ObserverStub = { callback, observe: vi.fn(), disconnect: vi.fn() }

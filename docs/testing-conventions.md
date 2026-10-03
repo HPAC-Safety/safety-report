@@ -58,7 +58,7 @@ node --test $(find tests/js -name '*.test.mjs')
 npm --prefix src/web run test:coverage   # Vitest, 100% on split components and tested helpers
 npm --prefix src/web run typecheck
 node tools/web/check-component-split.mjs
-npm ci && npm run lint                    # ESLint: src/web, tools, tests/js, tests/e2e
+npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm run lint   # ESLint (strict, type-checked): src/web, tools, tests/js, tests/e2e
 npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 
@@ -74,7 +74,8 @@ under the gate; `api/` tests mock `fetch` and `XMLHttpRequest`. A `v8 ignore` or
 `istanbul ignore` hint is for a branch no input can reach, with its reason in the
 comment directly above, and the split guard fails one without it. Every
 TypeScript and JavaScript file is linted by ESLint at the repository root
-(`eslint.config.mjs`, CI's `lint` job, pre-commit); the rules are errors.
+(`eslint.config.mjs`, CI's `lint` job, pre-commit); the rules are errors, and
+for TypeScript they are typescript-eslint's strict-type-checked set.
 
 Integration suites require Docker. Coverage retains the repository floor and
 added-code ratchet, but privacy and behavior assertions matter more than a high

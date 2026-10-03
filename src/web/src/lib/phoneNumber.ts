@@ -36,7 +36,7 @@ function asCountry(code: string | undefined): CountryCode {
 
 /** A region's flag, from the two regional-indicator symbols its code spells. */
 export function flagOf(code: string): string {
-	return String.fromCodePoint(...[...code.toUpperCase()].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65))
+	return String.fromCodePoint(...Array.from(code.toUpperCase()).map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65))
 }
 
 export function callingCodeOf(country: string): string {

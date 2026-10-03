@@ -23,7 +23,8 @@ function flatten(value: unknown, prefix = ""): Catalogue {
 // absent, so every catalogue is loaded lazily and merged over English —
 // any key missing from a locale, including a locale with no file at all,
 // falls back to its English text rather than a raw key or a crash.
-const modules = import.meta.glob<{ default: unknown }>("../../../../locales/*.json")
+type Importer = () => Promise<{ default: unknown }>
+const modules: Partial<Record<string, Importer>> = import.meta.glob<{ default: unknown }>("../../../../locales/*.json")
 
 async function loadRaw(locale: Locale): Promise<Catalogue | null> {
 	const path = `../../../../locales/${locale}.json`

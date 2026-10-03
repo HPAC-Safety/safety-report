@@ -410,7 +410,7 @@ export function applyPlan({ french = {}, meta = {}, plan, translations = new Map
 
 	for (const key of plan.remove) {
 		byKey.delete(key)
-		delete nextMeta[key]
+		Reflect.deleteProperty(nextMeta, key)
 	}
 
 	// Key order follows English, so the generated file diffs cleanly.

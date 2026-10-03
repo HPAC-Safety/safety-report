@@ -23,10 +23,7 @@ export interface AttachmentLightboxProps {
 	/** Images and videos only, in attachment order — a document is never here. */
 	items: StripItem[]
 	openId: string
-	// A method signature, not an arrow property: tools/web/check-hardcoded-strings.mjs
-	// is a line scanner and reads `=> Promise<string>` as JSX text between a `>`
-	// and a `<` — see AuthContext.tsx.
-	getLink(item: StripItem): Promise<string>
+	getLink: (item: StripItem) => Promise<string>
 	invalidateLink: (id: string) => void
 	onClose: () => void
 	onGone: (id: string) => void
@@ -68,7 +65,7 @@ export function useAttachmentLightbox({ items, openId, onClose, onGone }: Attach
 		setIndex((current) => wrap(current + 1))
 	}
 
-	const item = items[index]
+	const item = items[index] as StripItem | undefined
 
 	// Closes the native dialog first — it must actually stop being modal before
 	// focus can move to anything outside it (an inert element refuses focus) —
@@ -92,11 +89,11 @@ export function useAttachmentLightbox({ items, openId, onClose, onGone }: Attach
 		previous,
 		next,
 		close,
-		onCancel(event: { preventDefault: () => void }) {
+		onCancel: (event: { preventDefault: () => void }) => {
 			event.preventDefault()
 			close()
 		},
-		onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
+		onKeyDown: (event: KeyboardEvent<HTMLDialogElement>) => {
 			if (event.key === "ArrowLeft") {
 				event.preventDefault()
 				previous()
@@ -105,7 +102,7 @@ export function useAttachmentLightbox({ items, openId, onClose, onGone }: Attach
 				next()
 			}
 		},
-		onItemGone() {
+		onItemGone: () => {
 			if (item) onGone(item.id)
 		},
 	}

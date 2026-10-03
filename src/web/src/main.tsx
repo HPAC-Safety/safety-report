@@ -13,6 +13,7 @@ import "./index.css"
 // an in-app route change away from a form with unsaved changes.
 const router = createBrowserRouter(routes)
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- index.html always holds #root
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
 		<ThemeProvider>

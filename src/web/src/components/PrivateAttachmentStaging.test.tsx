@@ -58,14 +58,14 @@ describe("PrivateAttachmentStaging", () => {
 		expect(document.querySelector("progress")?.getAttribute("aria-label")).toBe('privateAttachments.uploadingNamed {"name":"a.txt"}')
 		act(() => report(0.5))
 		expect(screen.getByText('privateAttachments.progress {"percent":"50"}')).toBeTruthy()
-		expect((screen.getByRole("button", { name: /addAll/ }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: /addAll/ }).disabled).toBe(true)
 		await act(async () => finish({ uploadId: "u1", contentType: "text/plain" }))
 		expect(screen.getByText('privateAttachments.descriptionLength {"count":"0","max":"500"}')).toBeTruthy()
-		expect((screen.getByRole("button", { name: "privateAttachments.addAll.one" }) as HTMLButtonElement).disabled).toBe(false)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "privateAttachments.addAll.one" }).disabled).toBe(false)
 	})
 
 	it("cancels an upload in progress and drops its row", async () => {
-		vi.mocked(stagePrivateUpload).mockImplementation((_report, _file, _progress, signal) => new Promise((_, reject) => signal?.addEventListener("abort", () => reject(new Error("aborted")))))
+		vi.mocked(stagePrivateUpload).mockImplementation((_report, _file, _progress, signal: AbortSignal | undefined) => new Promise((_, reject) => signal?.addEventListener("abort", () => reject(new Error("aborted")))))
 		mount()
 		choose(file("slow.txt"))
 		fireEvent.click(screen.getByRole("button", { name: 'privateAttachments.cancelNamed {"name":"slow.txt"}' }))
@@ -133,7 +133,7 @@ describe("PrivateAttachmentStaging", () => {
 		choose(file())
 		const box = await screen.findByLabelText("privateAttachments.descriptionLabel")
 		fireEvent.change(box, { target: { value: "x".repeat(501) } })
-		expect((screen.getByRole("button", { name: "privateAttachments.addAll.one" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "privateAttachments.addAll.one" }).disabled).toBe(true)
 		expect(screen.getByText('privateAttachments.descriptionLength {"count":"501","max":"500"}').className).toContain("text-brand-700")
 	})
 

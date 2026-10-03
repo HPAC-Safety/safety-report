@@ -878,9 +878,9 @@ function folded(text: string): string {
 function sharedSubstring(labels: string[]): string | null {
 	if (labels.length < 2) return null
 	const [first, ...rest] = labels.map(folded)
-	for (let length = first!.length; length >= 3; length--) {
-		for (let start = 0; start + length <= first!.length; start++) {
-			const candidate = first!.slice(start, start + length)
+	for (let length = first.length; length >= 3; length--) {
+		for (let start = 0; start + length <= first.length; start++) {
+			const candidate = first.slice(start, start + length)
 			if (rest.every((label) => label.includes(candidate))) return candidate
 		}
 	}
@@ -941,7 +941,7 @@ async function listedChoices(page: Page, expected?: string[]): Promise<string[]>
 	if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
 	return main
 		.locator('[id$="-options"] label, [id$="-options"] [data-separator]')
-		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
+		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : entry.textContent.trim())))
 }
 
 // The full expected order the last "its choices are listed" step asserted,
@@ -980,7 +980,7 @@ async function listEntries(page: Page, { placeholder = true } = {}): Promise<str
 	const entries = placeholder ? '[role="option"], [data-separator]' : '[role="option"]:not([data-placeholder]), [data-separator]'
 	return typeAheadList(page)
 		.locator(entries)
-		.evaluateAll((found) => found.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
+		.evaluateAll((found) => found.map((entry) => (entry.hasAttribute("data-separator") ? "|" : entry.textContent.trim())))
 }
 
 /** Whether the question's field is a single-select, a button, rather than a type-ahead's text input (ADR-0150). */
@@ -1244,7 +1244,7 @@ Then("the {string} row is highlighted as a type-ahead's active option is", async
 When("they move to the {string} checkbox with the keyboard and press Space", async ({ page }, label: string) => {
 	// Tab from the checkbox before it, so focus arrives by keyboard and shows.
 	const boxes = page.getByRole("main").getByRole("checkbox")
-	const labels = await boxes.evaluateAll((found) => found.map((entry) => entry.closest("label")?.textContent?.trim() ?? ""))
+	const labels = await boxes.evaluateAll((found) => found.map((entry) => entry.closest("label")?.textContent.trim() ?? ""))
 	await boxes.nth(labels.indexOf(label) - 1).focus()
 	await page.keyboard.press("Tab")
 	await expect(page.getByRole("checkbox", { name: label })).toBeFocused()
@@ -1347,7 +1347,7 @@ async function ownLabelAndHint(option: Locator): Promise<{ label: string; hint: 
 	const label = await option.evaluate((element) => {
 		const clone = element.cloneNode(true) as HTMLElement
 		clone.querySelector('[data-testid="choice-hint"]')?.remove()
-		return (clone.textContent ?? "").trim()
+		return clone.textContent.trim()
 	})
 	return { label, hint }
 }

@@ -2,16 +2,19 @@
 	"name": "hpac-safety-tooling",
 	"private": true,
 	"type": "module",
-	"description": "Repository-wide JavaScript and TypeScript tooling: ESLint over src/web, tools, tests/js and tests/e2e (ADR-0188). The web app's own dependencies stay in src/web/package.json and the browser suite's in tests/e2e/package.json.",
+	"description": "Repository-wide JavaScript and TypeScript tooling: ESLint (strict, type-checked) over src/web, tools, tests/js and tests/e2e (ADR-0188). The web app's own dependencies stay in src/web/package.json and the browser suite's in tests/e2e/package.json; the type-aware rules read both.",
 	"scripts": {
 		"lint": "eslint ."
 	},
 	"devDependencies": {
+		"@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
 		"@eslint/js": "^9.39.5",
+		"@types/node": "^24.19.1",
 		"eslint": "^9.39.5",
 		"eslint-plugin-jsx-a11y": "^6.10.2",
 		"eslint-plugin-react-hooks": "^7.1.1",
 		"globals": "^17.13.0",
+		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.71.0"
 	}
 }

@@ -189,7 +189,7 @@ export async function stubReports(page: Page) {
 			return route.fulfill({ json: DETAIL })
 		}
 
-		stub.sent.push({ method: request.method(), path, version: request.postDataJSON()?.version })
+		stub.sent.push({ method: request.method(), path, version: (request.postDataJSON() as { version?: string } | null)?.version })
 
 		if (request.method() === "DELETE") {
 			stub.rows = stub.rows.filter((row) => row.id !== id)
@@ -519,8 +519,8 @@ function withRevision(
 			...detail.summary!,
 			aiSummaryEn: text.en,
 			aiSummaryFr: text.fr,
-			sourceEn: sources.en as "generated",
-			sourceFr: sources.fr as "generated",
+			sourceEn: sources.en,
+			sourceFr: sources.fr,
 			approvedBySubject: created.approvedBySubject,
 			approvedAt: created.approvedAt,
 		},
@@ -575,7 +575,7 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 			})
 		}
 
-		const body = request.postDataJSON() ?? {}
+		const body = (request.postDataJSON() ?? {}) as { note?: string; aiSummaryEn: string; aiSummaryFr: string; sourceEn?: "generated" | "human" | "machine"; sourceFr?: "generated" | "human" | "machine" }
 		const next = { ...stub.detail, version: "1.2" }
 
 		if (path.endsWith("/unpublish")) {
@@ -1104,8 +1104,7 @@ async function disableAutoLoad(page: Page) {
 			unobserve() {}
 			disconnect() {}
 		}
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		;(window as any).IntersectionObserver = NoObserver
+		;(window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = NoObserver
 	})
 }
 

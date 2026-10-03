@@ -6,10 +6,7 @@ export interface AttachmentThumbnailProps {
 	item: StripItem
 	label: string
 	staff: boolean
-	// A method signature, not an arrow property: tools/web/check-hardcoded-strings.mjs
-	// is a line scanner and reads `=> Promise<string>` as JSX text between a `>`
-	// and a `<` — see AuthContext.tsx.
-	getLink(item: StripItem): Promise<string>
+	getLink: (item: StripItem) => Promise<string>
 	invalidateLink: (id: string) => void
 	onActivate: (trigger: HTMLElement) => void
 	onGone: () => void

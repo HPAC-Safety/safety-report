@@ -26,7 +26,7 @@ export interface SavedAnswerRow {
  */
 export function savedAnswerRows(
 	questions: PublicQuestionView[],
-	answers: Record<string, DraftAnswer>,
+	answers: Partial<Record<string, DraftAnswer>>,
 	attachments: Record<string, DraftAttachment[]>,
 	locale: Locale,
 	t: (key: string) => string,
@@ -54,13 +54,13 @@ export function savedAnswerRows(
  * (ADR-0185). An empty saved answer holds nothing to clear, so it is not counted.
  */
 export function clearedAnswerCount(
-	answers: Record<string, DraftAnswer>,
+	answers: Partial<Record<string, DraftAnswer>>,
 	attachments: Record<string, DraftAttachment[]>,
 	rows: SavedAnswerRow[],
 ): number {
 	const kept = new Set(rows.map((row) => `${row.kind}:${row.revisionId}`))
 	const held = (answer: DraftAnswer) => (answer.kind === "value" ? answer.value.length > 0 : answer.values.length > 0)
-	const answersCleared = Object.entries(answers).filter(([revisionId, answer]) => held(answer) && !kept.has(`answer:${revisionId}`))
+	const answersCleared = Object.entries(answers).filter(([revisionId, answer]) => answer !== undefined && held(answer) && !kept.has(`answer:${revisionId}`))
 	const filesCleared = Object.entries(attachments).filter(([revisionId, files]) => files.length > 0 && !kept.has(`attachments:${revisionId}`))
 	return answersCleared.length + filesCleared.length
 }

@@ -57,7 +57,7 @@ function formatDate(value: string, locale: Locale): string | null {
 function formatTime(value: string, locale: Locale): string | null {
 	const match = TIME.exec(value)
 	if (!match) return null
-	const [hours, minutes, seconds] = [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)]
+	const [hours, minutes, seconds] = [Number(match[1]), Number(match[2]), Number((match[3] as string | undefined) ?? 0)]
 	if (hours > 23 || minutes > 59 || seconds > 59) return null
 	return new Intl.DateTimeFormat(locale, { timeStyle: "short", timeZone: "UTC" }).format(new Date(Date.UTC(1970, 0, 1, hours, minutes)))
 }

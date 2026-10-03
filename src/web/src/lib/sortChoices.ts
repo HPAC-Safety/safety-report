@@ -15,7 +15,7 @@ export type ChoicePin = "none" | "first" | "last"
 const GROUP: Record<ChoicePin, number> = { first: 0, none: 1, last: 2 }
 
 function groupOf(pin: string | null | undefined): number {
-	return GROUP[(pin ?? "none") as ChoicePin] ?? GROUP.none
+	return (GROUP as Partial<Record<string, number>>)[pin ?? "none"] ?? GROUP.none
 }
 
 /**
@@ -37,7 +37,7 @@ export function choiceGroups<T extends { id: string; pin?: string | null }>(
 
 	const groups: T[][] = []
 	for (const choice of sorted) {
-		const last = groups[groups.length - 1]
+		const last = groups[groups.length - 1] as T[] | undefined
 		if (last && groupOf(last[0].pin) === groupOf(choice.pin)) last.push(choice)
 		else groups.push([choice])
 	}

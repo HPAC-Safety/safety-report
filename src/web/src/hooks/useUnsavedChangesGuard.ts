@@ -71,6 +71,7 @@ export function useUnsavedChangesGuard(dirty: boolean, options: UnsavedChangesOp
 			// Chrome and most browsers ignore this value and show their own
 			// generic prompt (no custom text is possible); the assignment is
 			// only here for older browsers that still read it.
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- the legacy assignment is the only prompt trigger older browsers read
 			event.returnValue = ""
 		}
 		window.addEventListener("beforeunload", handler)

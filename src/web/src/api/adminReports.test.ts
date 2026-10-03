@@ -34,10 +34,9 @@ import {
 	stagePrivateUpload,
 	unpublishReport,
 	type PrivateNote,
-	type ReportAttachment,
 } from "./adminReports"
 
-const fetchMock = vi.fn()
+const fetchMock = vi.fn<(path: string, init: RequestInit & { headers: Record<string, string> }) => Promise<unknown>>()
 
 function reply(status: number, body: unknown = {}, statusText = "Text"): Response {
 	return {
@@ -214,9 +213,9 @@ describe("report commands", () => {
 
 	it("links a document to download and media to view", async () => {
 		const base = { id: "a", state: "ready", visibility: "public", format: null } as const
-		await attachmentLink("1", { ...base, kind: "document" } as ReportAttachment)
+		await attachmentLink("1", { ...base, kind: "document" })
 		expect(lastCall().path).toBe("/api/admin/reports/1/attachments/a/download")
-		await attachmentLink("1", { ...base, kind: "image" } as ReportAttachment)
+		await attachmentLink("1", { ...base, kind: "image" })
 		expect(lastCall().path).toBe("/api/admin/reports/1/attachments/a/view")
 	})
 
@@ -283,7 +282,7 @@ describe("private attachments", () => {
 		it("sends a null for a blank description", async () => {
 			fetchMock.mockResolvedValueOnce(reply(200, { id: "a" }))
 			await addPrivateAttachment("1", "u", "f.pdf", "  ")
-			expect(JSON.parse(lastCall().init.body as string).description).toBeNull()
+			expect((JSON.parse(lastCall().init.body as string) as { description: unknown }).description).toBeNull()
 		})
 
 		it("erases the upload and reports a claim failure", async () => {
@@ -299,7 +298,7 @@ describe("private attachments", () => {
 
 		async function settle() {
 			await vi.waitFor(() => expect(FakeXhr.instances).toHaveLength(1))
-			return FakeXhr.instances[0] as FakeXhr
+			return FakeXhr.instances[0]
 		}
 
 		it("mints, PUTs with progress and returns the staged upload", async () => {

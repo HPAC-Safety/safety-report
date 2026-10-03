@@ -98,8 +98,8 @@ function catalogueText(locale: string, key: string, values: Record<string, strin
 	const entries = JSON.parse(readFileSync(new URL(`../../../locales/${locale}.json`, import.meta.url), "utf8")) as Record<string, unknown>
 	// en-CA.json is flat; fr-CA.json nests on the dots. Either shape resolves.
 	const text = typeof entries[key] === "string"
-		? (entries[key] as string)
-		: (key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], entries) as string)
+		? entries[key]
+		: (key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], entries) as string)
 	expect(typeof text, `catalogue key ${key} in ${locale}`).toBe("string")
 	return text.replace(/\{(\w+)\}/g, (_, name: string) => values[name] ?? "")
 }

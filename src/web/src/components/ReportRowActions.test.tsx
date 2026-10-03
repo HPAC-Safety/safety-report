@@ -40,6 +40,6 @@ describe("ReportRowActions", () => {
 
 	it("disables every button while busy and offers Unpublish on a published report", () => {
 		render(<ReportRowActions report={{ ...report, status: "published" }} label="Row" busy={true} onAction={vi.fn()} />, { wrapper })
-		expect((screen.getByRole("button", { name: "reports.action.unpublish" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "reports.action.unpublish" }).disabled).toBe(true)
 	})
 })

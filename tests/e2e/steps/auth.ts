@@ -74,10 +74,10 @@ export async function stubAuth(page: Page, options?: { thirdPartySignIn?: boolea
 	})
 
 	await page.route("**/api/auth/token", async (route) => {
-		const body = route.request().postDataJSON() as { username?: string; password?: string }
+		const body = route.request().postDataJSON() as { username?: string; password?: string } | null
 
 		const match = (Object.entries(CREDENTIALS) as [Role, { username: string; password: string }][]).find(
-			([, pair]) => pair.username === body?.username && pair.password === body?.password,
+			([, pair]) => pair.username === body?.username && pair.password === body.password,
 		)
 
 		if (!match) {

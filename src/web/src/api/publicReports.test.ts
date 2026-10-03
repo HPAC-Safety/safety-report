@@ -138,7 +138,7 @@ describe("public reports api", () => {
 
 		it("deletes a comment and tolerates 204", async () => {
 			fetchMock.mockResolvedValue(reply(204))
-			expect(await deleteComment("r", "c")).toBeUndefined()
+			await expect(deleteComment("r", "c")).resolves.toBeUndefined()
 			expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("DELETE")
 		})
 

@@ -18,6 +18,11 @@ import {
 import { ReviewTypeAheadValuesPageView } from "./ReviewTypeAheadValuesPage.view"
 import { canTranslateDraft, groupByQuestion, wordingIn, type Draft } from "./typeAheadReview"
 
+/** A keyed read, typed for what it is: the key may have no entry. */
+function lookup<T>(map: Record<string, T>, id: string): T | undefined {
+	return map[id]
+}
+
 /*
  * The type-ahead values waiting for a Safety Officer or Administrator
  * (ADR-0129). A reporter's new value is offered to the next reporter at once;
@@ -124,21 +129,21 @@ export function useReviewTypeAheadValuesPage() {
 	 * `QuestionEditor`'s `translateChoice` uses.
 	 */
 	async function translateValue(id: string) {
-		const draft = drafts[id]
+		const draft = drafts[id] as Draft | undefined
 		if (!draft) return
 		const asked = draft.direction
 		const source = asked === "toFrench" ? draft.labelEn : draft.labelFr
 		const { from, to } = translationLocales(asked)
 
 		setDrafts((current) =>
-			current[id] ? { ...current, [id]: { ...current[id], translating: true, translationError: null } } : current,
+			lookup(current, id) ? { ...current, [id]: { ...current[id], translating: true, translationError: null } } : current,
 		)
 
 		try {
 			const { texts } = await translate([source], from, to)
 			const drafted = texts[0] ?? ""
 			setDrafts((current) => {
-				const now = current[id]
+				const now = current[id] as Draft | undefined
 				if (!now) return current
 				const stillSource = (asked === "toFrench" ? now.labelEn : now.labelFr) === source
 				// Stale: the direction flipped or the source was edited while the
@@ -152,7 +157,7 @@ export function useReviewTypeAheadValuesPage() {
 			})
 		} catch (cause) {
 			setDrafts((current) =>
-				current[id]
+				lookup(current, id)
 					? {
 							...current,
 							[id]: {
@@ -174,8 +179,9 @@ export function useReviewTypeAheadValuesPage() {
 
 	/** Everything the markup needs for one value, so the view only lays it out. */
 	function cardOf(value: TypeAheadValueView) {
-		const draft: Draft | undefined = drafts[value.id]
+		const draft = drafts[value.id] as Draft | undefined
 		const aliases = value.aliases ?? []
+		const parent = value.parent
 		return {
 			value,
 			draft,
@@ -184,19 +190,22 @@ export function useReviewTypeAheadValuesPage() {
 			hasAliases: aliases.length > 0,
 			// Only live parent choices are shown and counted; a link to one since
 			// removed is kept by the server, and the page never sends it.
-			parentChosen: value.parent
-				? (relinkTo[value.id] ?? value.parent.parentChoiceIds.filter((id) => value.parent!.choices.some((choice) => choice.id === id)))
+			parentChosen: parent
+				? ((relinkTo[value.id] as string[] | undefined) ?? parent.parentChoiceIds.filter((id) => parent.choices.some((choice) => choice.id === id)))
 				: [],
-			mergeSelected: mergeInto[value.id] ?? "",
+			mergeSelected: (mergeInto[value.id] as string | undefined) ?? "",
 			mergeOptions: sortChoices(value.mergeTargets, locale, wording).map((target) => ({ id: target.id, text: wording(target) })),
 			translateDisabled: !draft || !canTranslate || !canTranslateDraft(draft) || draft.translating,
 			onChooseParent: (choiceIds: string[]) => setRelinkTo((current) => ({ ...current, [value.id]: choiceIds })),
 			onRelink: (choiceIds: string[]) => void act(() => setTypeAheadValueParents(value.id, choiceIds), value.id),
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- the field is drawn only for a value that has a draft
 			onLabelEn: (labelEn: string) => setDrafts((current) => ({ ...current, [value.id]: { ...draft!, labelEn } })),
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- the field is drawn only for a value that has a draft
 			onLabelFr: (labelFr: string) => setDrafts((current) => ({ ...current, [value.id]: { ...draft!, labelFr } })),
 			onDirection: (direction: Draft["direction"]) =>
-				setDrafts((current) => (current[value.id] ? { ...current, [value.id]: { ...current[value.id], direction } } : current)),
+				setDrafts((current) => (lookup(current, value.id) ? { ...current, [value.id]: { ...current[value.id], direction } } : current)),
 			onTranslate: () => void translateValue(value.id),
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Save is drawn only for a value that has a draft
 			onSaveCorrection: () => void act(() => correctTypeAheadValue(value.id, draft!.labelEn, draft!.labelFr), value.id),
 			onCancel: () =>
 				setDrafts((current) => {
@@ -207,7 +216,7 @@ export function useReviewTypeAheadValuesPage() {
 			onCorrect: () => startCorrecting(value),
 			onRemove: () => void act(() => removeTypeAheadValue(value.id), value.id),
 			onMergeInto: (intoId: string) => setMergeInto((current) => ({ ...current, [value.id]: intoId })),
-			onMerge: () => void act(() => mergeTypeAheadValue(value.id, mergeInto[value.id]!), value.id),
+			onMerge: () => void act(() => mergeTypeAheadValue(value.id, mergeInto[value.id]), value.id),
 		}
 	}
 

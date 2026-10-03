@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "react"
-import { useLocation, useNavigationType } from "react-router-dom"
+import { NavigationType, useLocation, useNavigationType } from "react-router-dom"
 import { ScrollToTopOnNavigationView } from "./ScrollToTopOnNavigation.view"
 
 /*
@@ -24,7 +24,7 @@ export function useScrollToTopOnNavigation(): Record<string, never> {
 
 	// Before paint, so the new page never flashes at the old position.
 	useLayoutEffect(() => {
-		if (navigationType === "POP" || hash) return
+		if (navigationType === NavigationType.Pop || hash) return
 		window.scrollTo({ top: 0, left: 0, behavior: "instant" })
 		// A new page resets; the navigation type and anchor are read for that change only.
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- see the comment above: only a pathname change resets

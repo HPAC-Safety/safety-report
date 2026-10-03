@@ -6,7 +6,7 @@ import type { MemberRole } from "../auth/session"
 import { AdminMenu, useAdminMenu } from "./AdminMenu"
 import type { AdminMenuViewProps } from "./AdminMenu.view"
 
-const view = vi.fn()
+const view = vi.fn<(props: AdminMenuViewProps) => void>()
 vi.mock("./AdminMenu.view", () => ({
 	AdminMenuView: (props: AdminMenuViewProps) => {
 		view(props)

@@ -25,7 +25,7 @@ export interface QuestionEditorProps {
 	/** A new draft, or a function of the current one for a change that lands after a request. */
 	onChange: (change: QuestionDraft | ((current: QuestionDraft) => QuestionDraft)) => void
 	onCancel: () => void
-	onSave: (draft: QuestionDraft) => void
+	onSave: (draft: QuestionDraft) => Promise<void> | void
 }
 
 /** One choice row, ready to render. */
@@ -84,8 +84,8 @@ export interface QuestionEditorViewModel {
 	addChoice: () => void
 	removeChoice: (index: number) => void
 	toggleParentChoice: (index: number, id: string) => void
-	translateWording: () => void
-	translateChoice: (index: number) => void
+	translateWording: () => Promise<void>
+	translateChoice: (index: number) => Promise<void>
 }
 
 export type QuestionEditorViewProps = QuestionEditorProps & QuestionEditorViewModel
@@ -169,7 +169,7 @@ export function QuestionEditorView({
 			className="flex flex-col gap-5 rounded border border-rule bg-surface-2 p-6"
 			onSubmit={(event) => {
 				event.preventDefault()
-				onSave(draft)
+				void onSave(draft)
 			}}
 		>
 			<h2 className="font-display text-xl font-bold">

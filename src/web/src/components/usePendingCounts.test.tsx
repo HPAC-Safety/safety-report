@@ -66,7 +66,7 @@ describe("usePendingCounts", () => {
 		vi.mocked(getPendingCounts).mockResolvedValue(counts)
 		const { result } = renderHook(() => ({ counts: usePendingCounts(true), navigate: useNavigate() }), { wrapper })
 		await waitFor(() => expect(getPendingCounts).toHaveBeenCalledTimes(1))
-		result.current.navigate("/elsewhere")
+		void result.current.navigate("/elsewhere")
 		await waitFor(() => expect(getPendingCounts).toHaveBeenCalledTimes(2))
 	})
 })

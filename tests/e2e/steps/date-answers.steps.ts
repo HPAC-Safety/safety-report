@@ -37,8 +37,8 @@ function catalogue(language: string): Record<string, unknown> {
 function label(language: string, key: string): string {
 	// en-CA.json is flat; fr-CA.json nests on the dots. Either shape resolves.
 	const entries = catalogue(language)
-	if (typeof entries[key] === "string") return entries[key] as string
-	return key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], entries) as string
+	if (typeof entries[key] === "string") return entries[key]
+	return key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], entries) as string
 }
 
 function dateForm(allowFutureDates: boolean, placeholder: string | null = null): StubQuestion[] {
@@ -211,7 +211,7 @@ When("the reporter clicks the date field and chooses the 1st of today's month ag
 		const status = document.querySelector(selector)!.parentElement!.querySelector('[role="status"]')!
 		const seen: string[] = []
 		;(window as unknown as { seenAnnouncements: string[] }).seenAnnouncements = seen
-		new MutationObserver(() => seen.push(status.textContent ?? "")).observe(status, { childList: true, characterData: true, subtree: true })
+		new MutationObserver(() => seen.push(status.textContent)).observe(status, { childList: true, characterData: true, subtree: true })
 	}, DATE_FIELD)
 	await page.locator(DATE_FIELD).click()
 	const first = today()

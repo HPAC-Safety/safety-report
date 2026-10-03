@@ -23,7 +23,7 @@ export function wordDiff(before: string, after: string): DiffPart[] {
 
 	const parts: DiffPart[] = []
 	const push = (kind: DiffPart["kind"], text: string) => {
-		const last = parts[parts.length - 1]
+		const last = parts[parts.length - 1] as DiffPart | undefined
 		if (last && last.kind === kind) last.text += text
 		else parts.push({ kind, text })
 	}

@@ -143,7 +143,7 @@ When("a visitor opens its page", async ({ page }) => {
 Then("the summary is rendered as {}", async ({ page }, result: string) => {
 	const check = chosen!.results[result]
 	expect(check, `no check for ${result}`).toBeDefined()
-	await check!(page.locator('[data-summary="en-CA"]'))
+	await check(page.locator('[data-summary="en-CA"]'))
 })
 
 // --- REQ-WLD-046: the same type as the other public pages ---

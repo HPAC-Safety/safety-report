@@ -102,7 +102,7 @@ export function usePrivateAttachmentStaging({ reportId, onAdded }: PrivateAttach
 				return
 			}
 			const reason = cause instanceof PrivateUploadError ? cause.reason : "network"
-			update(key, { status: "rejected", reason: reason as StagedRow["reason"], controller: undefined })
+			update(key, { status: "rejected", reason: reason, controller: undefined })
 		}
 	}
 
@@ -122,6 +122,7 @@ export function usePrivateAttachmentStaging({ reportId, onAdded }: PrivateAttach
 		let failed = false
 		for (const row of rowsRef.current.filter((candidate) => candidate.status === "uploaded" && candidate.uploadId)) {
 			try {
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- the loop is over rows that have an uploadId
 				await addPrivateAttachment(reportId, row.uploadId!, row.name, row.description)
 				setRows((current) => current.filter((candidate) => candidate.key !== row.key))
 			} catch {
@@ -144,7 +145,7 @@ export function usePrivateAttachmentStaging({ reportId, onAdded }: PrivateAttach
 		descriptionMaxLength: PRIVATE_ATTACHMENT_DESCRIPTION_MAX_LENGTH,
 		addDisabled: settling || finishedCount === 0 || tooLong || adding,
 		addAllLabel: finishedCount === 1 ? t("privateAttachments.addAll.one") : t("privateAttachments.addAll.other", { count: finishedCount }),
-		onFiles(files: File[]) {
+		onFiles: (files: File[]) => {
 			for (const file of files) void stage(file)
 		},
 		onRowAction: (row: StagedRow) => (row.status === "uploading" ? cancel(row) : remove(row)),

@@ -210,8 +210,7 @@ async function disableAutoLoad(page: Page) {
 			unobserve() {}
 			disconnect() {}
 		}
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		;(window as any).IntersectionObserver = NoObserver
+		;(window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = NoObserver
 	})
 }
 

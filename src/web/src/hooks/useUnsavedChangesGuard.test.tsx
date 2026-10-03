@@ -29,7 +29,7 @@ function mount(element: React.ReactNode, initial = "/form/one") {
 }
 
 function dispatchBeforeUnload() {
-	const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent
+	const event = new Event("beforeunload", { cancelable: true })
 	window.dispatchEvent(event)
 	return event
 }

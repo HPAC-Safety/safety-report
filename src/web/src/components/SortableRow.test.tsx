@@ -50,7 +50,7 @@ describe("SortableRow", () => {
 
 	it("disables move-up on the first row and move-down on the last", () => {
 		render(<SortableRow id="x" position={0} count={1} onMove={vi.fn()}>c</SortableRow>, { wrapper: inList })
-		expect((screen.getByRole("button", { name: "questions.moveUp" }) as HTMLButtonElement).disabled).toBe(true)
-		expect((screen.getByRole("button", { name: "questions.moveDown" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "questions.moveUp" }).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "questions.moveDown" }).disabled).toBe(true)
 	})
 })

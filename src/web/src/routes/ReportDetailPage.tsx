@@ -73,7 +73,7 @@ export function useReportDetailPage() {
 		setBusy(true)
 		try {
 			await deleteReport(reportId)
-			navigate("/admin/reports")
+			void navigate("/admin/reports")
 		} catch (cause) {
 			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
 		} finally {

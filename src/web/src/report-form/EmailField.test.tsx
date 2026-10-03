@@ -23,7 +23,7 @@ function Harness({ initial = "", onValue }: { initial?: string; onValue?: (value
 	)
 }
 
-const input = () => screen.getByRole("combobox") as HTMLInputElement
+const input = () => screen.getByRole<HTMLInputElement>("combobox")
 const list = () => document.getElementById("q-suggestions") as HTMLElement
 const isOpen = () => !list().hidden
 const press = (key: string) => fireEvent.keyDown(input(), { key })

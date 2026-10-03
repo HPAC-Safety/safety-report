@@ -121,7 +121,7 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 			}
 
 			stub.requests += 1
-			stub.declarations.push(JSON.parse(request.postData() ?? "{}"))
+			stub.declarations.push(JSON.parse(request.postData() ?? "{}") as { contentType: string; byteSize: number })
 
 			if (stub.refuseNext) {
 				const reason = stub.refuseNext
@@ -144,7 +144,7 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 	)
 
 	await page.route("**/api/v1/reports/", async (route) => {
-		const body = JSON.parse(route.request().postData() ?? "{}")
+		const body = JSON.parse(route.request().postData() ?? "{}") as (typeof stub.submissions)[number]
 		stub.submissions.push(body)
 
 		if (stub.refuseAtSubmitNext.length > 0) {
@@ -414,7 +414,7 @@ Given("the API refuses a submission because some of its uploads failed validatio
 	await reachAttachmentsPage(page)
 	await page.getByLabel("Photos or videos").setInputFiles([photo("kept.png"), sized("mislabelled.mp4", "video/mp4", 4096)])
 	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(2)
-	const mislabelled = stub.issued[stub.declarations.findIndex((declared) => declared.contentType === "video/mp4")]!
+	const mislabelled = stub.issued[stub.declarations.findIndex((declared) => declared.contentType === "video/mp4")]
 	stub.refuseAtSubmitNext = [{ uploadId: mislabelled, reason: "too_large" }]
 	await submitFromAttachments(page)
 	await expect(page.getByRole("alert").filter({ hasText: "Some attached files were not accepted" })).toBeVisible()
@@ -427,7 +427,7 @@ Then("each refused file's row shows a localized reason matching its refusal", as
 		refusedRow.getByText("This file is too large. A video may be up to 250 MB, and a photo or document up to 25 MB."),
 	).toBeVisible()
 	const stub = stubFor(page)
-	const refused = stub.issued[stub.declarations.findIndex((declared) => declared.contentType === "video/mp4")]!
+	const refused = stub.issued[stub.declarations.findIndex((declared) => declared.contentType === "video/mp4")]
 	await expect.poll(() => stub.deleted).toContain(refused)
 })
 
@@ -438,7 +438,7 @@ Given("the API refuses a submission because some of its uploads expired", async 
 	await reachAttachmentsPage(page)
 	await attach(page, "kept.png", "stale.png")
 	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(2)
-	const stale = stub.issued[1]!
+	const stale = stub.issued[1]
 	stub.expireNext = [stale]
 	await submitFromAttachments(page)
 	await expect(page.getByRole("alert").filter({ hasText: "Some attached files are no longer available" })).toBeVisible()

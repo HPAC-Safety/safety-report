@@ -10,6 +10,16 @@
 import { authorization, ApiError, type QuestionType } from "./adminQuestions"
 import { clearSession } from "../auth/session"
 
+/** The problem-details body of a refused request; any field may be missing. */
+interface Problem {
+	detail?: string
+	title?: string
+	type?: string
+	expiredUploadIds?: unknown
+	refusedUploads?: unknown
+	reason?: unknown
+}
+
 export interface ImportedOptionView {
 	code: string
 	labelEn: string
@@ -80,7 +90,7 @@ export async function importTypeform(english: File, french: File): Promise<Typef
 	}
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
 	}
 
@@ -91,7 +101,7 @@ export async function listPendingImportLogic(): Promise<PendingImportLogicView[]
 	const response = await fetch("/api/admin/typeform/pending-logic", { headers: authorization() })
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
 	}
 
@@ -112,7 +122,7 @@ export async function exportTypeform(): Promise<Blob> {
 	}
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
 	}
 
@@ -126,7 +136,7 @@ export async function deletePendingImportLogic(id: string): Promise<void> {
 	})
 
 	if (!response.ok) {
-		const problem = await response.json().catch(() => null)
+		const problem = (await response.json().catch(() => null)) as Problem | null
 		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
 	}
 }

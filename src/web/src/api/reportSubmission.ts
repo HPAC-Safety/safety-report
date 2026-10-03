@@ -10,6 +10,16 @@
 import { authorization } from "./adminQuestions"
 import type { UploadRejectionReason } from "./uploads"
 
+/** The problem-details body of a refused request; any field may be missing. */
+interface Problem {
+	detail?: string
+	title?: string
+	type?: string
+	expiredUploadIds?: unknown
+	refusedUploads?: unknown
+	reason?: unknown
+}
+
 /** One uploaded file a file-upload answer claims, with the reporter's name for it (ADR-0097). */
 export interface SubmitAttachment {
 	uploadId: string
@@ -76,7 +86,7 @@ export async function submitReport(locale: string, answers: SubmitAnswer[]): Pro
 		return (await response.json()) as SubmitReportResult
 	}
 
-	const problem = await response.json().catch(() => null)
+	const problem = (await response.json().catch(() => null)) as Problem | null
 	throw new SubmissionRejectedError(
 		problem?.detail ?? problem?.title ?? "That submission was not accepted.",
 		Array.isArray(problem?.expiredUploadIds) ? (problem.expiredUploadIds as string[]) : [],

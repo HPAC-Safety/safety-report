@@ -33,6 +33,7 @@ export function useCommentItem({ comment, locale, onEdit, onDelete, onHide }: Co
 		confirming,
 		written,
 		translated,
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- translated is true only when translatedText is not null
 		shownText: translated ? comment.translatedText! : comment.text,
 		shownLocale: translated ? locale : comment.locale,
 		postedAt: at.format(new Date(comment.createdAt)),

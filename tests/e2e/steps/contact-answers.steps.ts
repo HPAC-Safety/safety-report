@@ -156,7 +156,7 @@ When(/^the reporter chooses (.+) in its country picker$/, async ({ page }, count
 	const picker = page.locator(`${CONTACT}-country`)
 	// Each country is listed by flag, name, and calling code.
 	const option = picker.locator("option").filter({ hasText: new RegExp(` ${country} \\(\\+\\d+\\)$`) })
-	await picker.selectOption((await option.getAttribute("value"))!)
+	await picker.selectOption(await option.getAttribute("value"))
 })
 
 Then("the phone field reads {string}", async ({ page }, masked: string) => {

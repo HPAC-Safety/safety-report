@@ -16,7 +16,7 @@ export function useAttachmentHideConfirm({ onHide }: AttachmentHideConfirmProps)
 	return {
 		confirming,
 		onAsk: () => setConfirming(true),
-		onConfirm() {
+		onConfirm: () => {
 			setConfirming(false)
 			onHide()
 		},

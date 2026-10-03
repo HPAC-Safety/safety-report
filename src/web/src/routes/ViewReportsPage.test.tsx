@@ -6,7 +6,9 @@ import { LocaleContext } from "../i18n/LocaleProvider"
 import { useViewReportsPage, ViewReportsPage } from "./ViewReportsPage"
 
 const fetchPublicReports = vi.hoisted(() => vi.fn())
-const useInfiniteReportList = vi.hoisted(() => vi.fn())
+const useInfiniteReportList = vi.hoisted(() =>
+	vi.fn<(options: { storageKey: string; getId: (item: { id: string }) => string; fetchPage: (after: string | null) => Promise<unknown> }) => unknown>(),
+)
 vi.mock("../api/publicReports", () => ({
 	fetchPublicReports,
 	summaryIn: (report: { aiSummaryEn: string; aiSummaryFr: string }, locale: string) => (locale === "fr-CA" ? report.aiSummaryFr : report.aiSummaryEn),
@@ -58,7 +60,7 @@ describe("useViewReportsPage", () => {
 	it("turns each report into a row with its date and preview in the site's language", () => {
 		const { result } = renderHook(() => useViewReportsPage(), { wrapper: wrapper("en-CA") })
 
-		expect(result.current.rows).toEqual([{ id: "a", published: "March 4, 2026", preview: expect.any(String), commentCount: 2, attachmentCount: 1 }])
+		expect(result.current.rows).toEqual([{ id: "a", published: "March 4, 2026", preview: expect.any(String) as string, commentCount: 2, attachmentCount: 1 }])
 		expect(result.current.rows[0].preview).toContain("English body")
 	})
 
@@ -77,7 +79,7 @@ describe("useViewReportsPage", () => {
 	it("keys the list by the search term and fetches pages with it", () => {
 		renderHook(() => useViewReportsPage(), { wrapper: wrapper("en-CA", "/reports?q=wing") })
 		const options = useInfiniteReportList.mock.calls[0][0]
-		options.fetchPage("cursor")
+		void options.fetchPage("cursor")
 
 		expect(options.storageKey).toBe("public:wing")
 		expect(options.getId({ id: "z" })).toBe("z")
@@ -92,7 +94,7 @@ describe("useViewReportsPage", () => {
 		expect(result.current.searchBox).toBe("wing")
 		expect(here).toBe("")
 
-		act(() => vi.advanceTimersByTime(300))
+		void act(() => vi.advanceTimersByTime(300))
 
 		expect(here).toBe("?q=wing")
 		expect(result.current.q).toBe("wing")
@@ -102,7 +104,7 @@ describe("useViewReportsPage", () => {
 		const { result } = renderHook(() => useViewReportsPage(), { wrapper: wrapper("en-CA", "/reports?q=wing") })
 
 		act(() => result.current.onSearchBoxChange(""))
-		act(() => vi.advanceTimersByTime(300))
+		void act(() => vi.advanceTimersByTime(300))
 
 		expect(here).toBe("")
 	})
@@ -112,7 +114,7 @@ describe("useViewReportsPage", () => {
 
 		act(() => result.current.onSearchBoxChange("wing"))
 		unmount()
-		act(() => vi.advanceTimersByTime(300))
+		void act(() => vi.advanceTimersByTime(300))
 
 		expect(here).toBe("")
 	})

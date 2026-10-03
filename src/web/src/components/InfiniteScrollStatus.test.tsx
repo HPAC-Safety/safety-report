@@ -38,7 +38,7 @@ describe("InfiniteScrollStatus", () => {
 
 	it("says it is loading while a page is on its way, and disables the control", () => {
 		renderStatus({ loadingMore: true })
-		expect((screen.getByRole("button", { name: "list.loadingMore" }) as HTMLButtonElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "list.loadingMore" }).disabled).toBe(true)
 	})
 
 	it("shows an alert and Retry, without the sentinel, after a failure", () => {

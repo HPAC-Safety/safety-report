@@ -80,14 +80,14 @@ When(/^a reporter using (English|French) opens the Country question$/, async ({ 
 })
 
 Then(/^its open list reads (.+)$/, async ({ page }, quoted: string) => {
-	const expected = [...quoted.matchAll(/"([^"]*)"|a separator/g)].map((match) => match[1] ?? "|")
+	const expected = [...quoted.matchAll(/"([^"]*)"|a separator/g)].map((match) => (match[1] as string | undefined) ?? "|")
 	const combobox = page.getByRole("main").getByRole("combobox")
 	if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
 	const listed = await page
 		.getByRole("main")
 		.getByRole("listbox")
 		.locator('[role="option"]:not([data-placeholder]), [data-separator]')
-		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
+		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : entry.textContent.trim())))
 	expect(listed.slice(0, expected.length)).toEqual(expected)
 })
 

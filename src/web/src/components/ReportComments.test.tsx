@@ -8,7 +8,7 @@ const api = vi.hoisted(() => ({
 	deleteComment: vi.fn(),
 	hideComment: vi.fn(),
 }))
-const auth = vi.hoisted(() => ({ value: { isSignedIn: true, role: "user" as string | null } }))
+const auth = vi.hoisted((): { value: { isSignedIn: boolean; role: string | null } } => ({ value: { isSignedIn: true, role: "user" } }))
 const t = vi.hoisted(() => (key: string) => key)
 vi.mock("../i18n/useLocale", () => ({ useLocale: () => ({ locale: "fr-CA", t }) }))
 vi.mock("../auth/useAuth", () => ({ useAuth: () => auth.value }))
@@ -88,7 +88,7 @@ describe("useReportComments", () => {
 		})
 		expect(result.current.error).toBe("comments.error.save")
 
-		await act(async () => void (await result.current.post("hello")))
+		await act(async () => await result.current.post("hello"))
 		expect(result.current.error).toBeNull()
 	})
 })

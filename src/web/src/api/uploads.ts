@@ -9,6 +9,16 @@
 
 import { authorization } from "./adminQuestions"
 
+/** The problem-details body of a refused request; any field may be missing. */
+interface Problem {
+	detail?: string
+	title?: string
+	type?: string
+	expiredUploadIds?: unknown
+	refusedUploads?: unknown
+	reason?: unknown
+}
+
 export type AttachmentKind = "image" | "video" | "document"
 
 /** Why the API refused a file, as the stable code it returns. */
@@ -165,7 +175,7 @@ async function mintUpload(contentType: string, byteSize: number, signal: AbortSi
 		return (await response.json()) as MintedUpload
 	}
 
-	const problem = await response.json().catch(() => null)
+	const problem = (await response.json().catch(() => null)) as Problem | null
 	throw new UploadRejectedError((problem?.reason as UploadRejectionReason | undefined) ?? "unknown")
 }
 

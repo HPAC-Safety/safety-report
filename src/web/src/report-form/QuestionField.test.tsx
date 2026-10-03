@@ -85,7 +85,7 @@ describe("QuestionField", () => {
 
 		expect(screen.getByText("Label:", { exact: false }).tagName).toBe("LEGEND")
 		expect(screen.getByText("report.required.badge")).toBeTruthy()
-		const [yes, no] = screen.getAllByRole("radio") as HTMLInputElement[]
+		const [yes, no] = screen.getAllByRole<HTMLInputElement>("radio")
 		expect(yes.checked).toBe(false)
 		expect(no.checked).toBe(true)
 		expect(yes.name).toBe("question-rev1")
@@ -99,7 +99,7 @@ describe("QuestionField", () => {
 	it("draws a checkbox question like a yes/no one, and reads an unanswered one as neither", () => {
 		renderField("checkbox", { answer: { kind: "options", values: [] } })
 
-		expect((screen.getAllByRole("radio") as HTMLInputElement[]).map((radio) => radio.checked)).toEqual([false, false])
+		expect(screen.getAllByRole<HTMLInputElement>("radio").map((radio) => radio.checked)).toEqual([false, false])
 	})
 
 	it("describes the question by its note, help, and error, in that order", () => {
@@ -127,7 +127,7 @@ describe("QuestionField", () => {
 
 		expect(screen.getByTestId("question-note").textContent).toBe("Pick the parent first")
 		expect(screen.getByTestId("question-announcement").textContent).toBe("Choices changed")
-		expect((screen.getByRole("combobox") as HTMLInputElement).disabled).toBe(true)
+		expect(screen.getByRole<HTMLInputElement>("combobox").disabled).toBe(true)
 		expect(screen.getByText("City?").tagName).toBe("LABEL")
 	})
 
@@ -136,7 +136,7 @@ describe("QuestionField", () => {
 
 		expect(screen.queryByTestId("question-note")).toBeNull()
 		expect(screen.queryByTestId("question-announcement")).toBeNull()
-		expect((screen.getByRole("combobox") as HTMLInputElement).placeholder).toBe("Type a city")
+		expect(screen.getByRole<HTMLInputElement>("combobox").placeholder).toBe("Type a city")
 	})
 
 	it("answers a type-ahead with the typed text, or clears it when emptied", () => {
@@ -170,13 +170,13 @@ describe("QuestionField", () => {
 				t={t}
 			/>,
 		)
-		expect((screen.getByRole("combobox") as HTMLInputElement).value).toBe("Banane")
+		expect(screen.getByRole<HTMLInputElement>("combobox").value).toBe("Banane")
 	})
 
 	it("falls back to the typed text when the held choice is no longer offered", () => {
 		renderField("autocomplete", { answer: { kind: "value", value: "Gone", choice: "o-missing" } }, { options })
 
-		expect((screen.getByRole("combobox") as HTMLInputElement).value).toBe("Gone")
+		expect(screen.getByRole<HTMLInputElement>("combobox").value).toBe("Gone")
 	})
 
 	it("draws a single-select with a placeholder, and answers with the choice's ID or clears it", () => {
@@ -203,7 +203,7 @@ describe("QuestionField", () => {
 		expect(screen.getByText("report.required.badge")).toBeTruthy()
 		expect(document.getElementById("question-rev1-summary")?.textContent).toBe("Apple")
 		fireEvent.click(document.getElementById("question-rev1") as HTMLElement)
-		const [apple, banana] = screen.getAllByRole("checkbox") as HTMLInputElement[]
+		const [apple, banana] = screen.getAllByRole<HTMLInputElement>("checkbox")
 		expect(apple.checked).toBe(true)
 		fireEvent.click(banana)
 		expect(onChange).toHaveBeenLastCalledWith({ kind: "options", values: ["o-a", "gone", "o-b"] })

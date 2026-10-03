@@ -12,13 +12,8 @@ export interface AuthContextValue {
 	role: MemberRole | null
 	/**
 	 * Signs in with member credentials. Throws when they are not accepted.
-	 *
-	 * Declared as a method rather than an arrow property so the line carries no
-	 * `=>` before its generic: tools/web/check-hardcoded-strings.mjs is a line
-	 * scanner and reads `=> Promise<void>` as JSX text between a `>` and a `<`.
-	 * adminQuestions.ts wraps its `call` signature for the same reason.
 	 */
-	signInWithPassword(username: string, password: string): Promise<void>
+	signInWithPassword: (username: string, password: string) => Promise<void>
 	signOut: () => void
 }
 

@@ -141,13 +141,13 @@ describe("useReportDetailPage", () => {
 		expect(api.saveSummaryPair).toHaveBeenCalledWith("r1", "v1", "en", "fr", "human", "machine")
 		expect(result.current.report?.version).toBe("v2")
 
-		await act(async () => void (await result.current.unpublish("why")))
+		await act(async () => await result.current.unpublish("why"))
 		expect(api.unpublishReport).toHaveBeenCalledWith("r1", "v2", "why")
 
 		await act(async () => result.current.publish())
 		expect(api.publishReport).toHaveBeenCalledWith("r1", "v3")
 
-		await act(async () => void (await result.current.restore("rev1")))
+		await act(async () => await result.current.restore("rev1"))
 		expect(api.rollBackSummary).toHaveBeenCalledWith("r1", "v4", "rev1")
 		expect(result.current.report?.version).toBe("v5")
 		expect(result.current.busy).toBe(false)
@@ -195,9 +195,9 @@ describe("useReportDetailPage", () => {
 		const { result } = await loaded()
 		api.unpublishReport.mockRejectedValueOnce(failure(500, "other", "detail")).mockRejectedValueOnce(new Error("no"))
 
-		await act(async () => void (await result.current.unpublish("why")))
+		await act(async () => await result.current.unpublish("why"))
 		expect(result.current.error).toBe("detail")
-		await act(async () => void (await result.current.unpublish("why")))
+		await act(async () => await result.current.unpublish("why"))
 		expect(result.current.error).toBe("reports.error.unexpected")
 	})
 

@@ -106,7 +106,7 @@ edit any note, open a note's history, or remove a note after confirming.
 A date is stored as ISO 8601 `YYYY-MM-DD` and a time as `HH:mm`
 ([ADR-0072](../../decisions/ADR-0072-every-answer-is-stored-as-a-string.md)),
 and a yes/no as a boolean, `true` or `false`, sent as a JSON boolean
-([ADR-0130]../../.spec/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
+([ADR-0130](../../decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
 That form is for storage only. The report view shows such an answer in the
 interface language the reviewer chose, not the language the reporter
 answered in: `2026-09-13` reads "September 13, 2026" in English and

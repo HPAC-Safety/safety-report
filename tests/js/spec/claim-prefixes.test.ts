@@ -34,9 +34,10 @@ describe('RETIRED_PREFIXES', () => {
 })
 
 describe('prefixProblems', () => {
-	it('passes a claim under its area\'s prefix, and a moved claim under a retired one', () => {
+	it('passes a claim under its area\'s prefix, a moved claim under another area\'s, and one under a retired prefix', () => {
 		const claims = [
 			{ id: 'REQ-QAU-001', area: 'question-authoring' },
+			{ id: 'REQ-RFM-001', area: 'question-authoring' },
 			{ id: 'REQ-QB-001', area: 'question-authoring' },
 			{ id: 'REQ-QB-268', area: 'report-form' },
 		]
@@ -44,16 +45,16 @@ describe('prefixProblems', () => {
 		assert.deepEqual(prefixProblems(claims, prefixes({ 'question-authoring': 'REQ-QAU', 'report-form': 'REQ-RFM' }), RETIRED), [])
 	})
 
-	it('fails a new number under a retired prefix, and a claim under another live area\'s prefix', () => {
+	it('fails a new number under a retired prefix, and a prefix no area declares', () => {
 		const claims = [
 			{ id: 'REQ-QB-269', area: 'question-authoring' },
-			{ id: 'REQ-RFM-001', area: 'question-authoring' },
+			{ id: 'REQ-ZZZ-001', area: 'question-authoring' },
 		]
 
 		const problems = prefixProblems(claims, prefixes({ 'question-authoring': 'REQ-QAU', 'report-form': 'REQ-RFM' }), RETIRED)
 
 		assert.match(problems[0], /REQ-QB-269: REQ-QB retired at REQ-QB-268, so a new claim in \.spec\/features\/question-authoring takes REQ-QAU/)
-		assert.match(problems[1], /REQ-RFM-001: \.spec\/features\/question-authoring takes REQ-QAU for a new claim; REQ-RFM is neither its prefix nor a retired one/)
+		assert.match(problems[1], /REQ-ZZZ-001: no area declares REQ-ZZZ and it is not retired; a new claim in \.spec\/features\/question-authoring takes REQ-QAU/)
 		assert.equal(problems.length, 2)
 	})
 
@@ -70,21 +71,23 @@ describe('prefixProblems', () => {
 
 describe('nextClaim', () => {
 	it('takes the next number under the area\'s own prefix, wherever those claims live, and starts a new area at 001', () => {
-		const claims = [{ id: 'REQ-QAU-001' }, { id: 'REQ-QAU-007' }, { id: 'REQ-QB-268' }]
+		const ids = ['REQ-QAU-001', 'REQ-QAU-007', 'REQ-QB-268']
 		const declared = prefixes({ 'question-authoring': 'REQ-QAU', 'report-form': 'REQ-RFM' })
 
-		assert.equal(nextClaim('question-authoring', claims, declared), 'REQ-QAU-008')
-		assert.equal(nextClaim('report-form', claims, declared), 'REQ-RFM-001')
-		assert.throws(() => nextClaim('nowhere', claims, declared), /not an area with a declared prefix/)
+		assert.equal(nextClaim('question-authoring', ids, declared), 'REQ-QAU-008')
+		assert.equal(nextClaim('report-form', ids, declared), 'REQ-RFM-001')
+		assert.throws(() => nextClaim('nowhere', ids, declared), /not an area with a declared prefix/)
 	})
 })
 
 describe('areaPrefixes and main', () => {
-	it('reads each area\'s prefix from its README, and prints the next ID', () => {
+	it('reads each area\'s prefix from its README, and prints the next ID above any a decision still cites', () => {
 		const root = tree({
 			'question-authoring': { prefix: 'REQ-QAU', claims: ['REQ-QB-001', 'REQ-QAU-002'] },
 			unprefixed: { claims: [] },
 		})
+		mkdirSync(join(root, '.spec/decisions'), { recursive: true })
+		writeFileSync(join(root, '.spec/decisions/ADR-0001-a.md'), '---\ntitle: A\nstatus: accepted\n---\n\n# ADR-0001 — A\n\nREQ-QAU-002 and the deleted REQ-QAU-003.\n')
 		const out: string[] = []
 		const err: string[] = []
 
@@ -93,7 +96,7 @@ describe('areaPrefixes and main', () => {
 			['unprefixed', undefined],
 		])
 		assert.equal(main(['--next', 'question-authoring'], root, (line) => out.push(line), (line) => err.push(line)), 0)
-		assert.deepEqual(out, ['REQ-QAU-003'])
+		assert.deepEqual(out, ['REQ-QAU-004'])
 		assert.equal(main(['--next', 'unprefixed'], root, (line) => out.push(line), (line) => err.push(line)), 1)
 		assert.equal(main([], root, (line) => out.push(line), (line) => err.push(line)), 2)
 		assert.match(err.join('\n'), /features\/unprefixed is not an area with a declared "prefix:"[\s\S]*usage:/)

@@ -181,7 +181,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Storing a yes/no or checkbox answer as words, or giving it a second
   language. It is `true` or `false` in `value_boolean`; only the interface
   turns it into Yes / Oui or No / Non
-  ([ADR-0130]../../.spec/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
+  ([ADR-0130](../../decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
 - Rewriting any other answer. Converting the stored yes/no words to booleans
   (`REQ-QB-137`) was a one-time migration, not a precedent.
 - Fetching a type-ahead's choices from the server as the reporter types. The

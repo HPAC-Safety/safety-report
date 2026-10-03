@@ -6,7 +6,9 @@ only images/videos get a safe derivative. Image and video originals stay
 private. A published report shows its verified image and video derivatives
 when the reporter also consented to sharing media, and offers its validated
 documents, unchanged, as downloads when that consent named documents. A
-reviewer may hide any of them (ADR-0117, ADR-0119).
+reviewer may hide any of them (ADR-0117, ADR-0119). Staff may also add
+private attachments to a report: kept byte for byte, never anonymized, and
+never shown to anyone but a Safety Officer or an Administrator (ADR-0135).
 
 Background:
   Given the maximum attachment count is configurable and defaults to five across all attachment kinds

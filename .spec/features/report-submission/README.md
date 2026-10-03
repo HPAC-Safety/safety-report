@@ -134,7 +134,7 @@ clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers;
 phone numbers use E.164 (`+16045551234`).
 A yes/no or checkbox answer is a JSON `true` or `false`, whatever the report
 language, and a string for one is refused
-([ADR-0130]../../.spec/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)). The form holds a language-free
+([ADR-0130](../../decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)). The form holds a language-free
 answer while the reporter works and sends the boolean when it submits, so
 switching language mid-form loses nothing. The report language is exactly
 `en-CA` or `fr-CA`.

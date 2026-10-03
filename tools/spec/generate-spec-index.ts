@@ -68,8 +68,8 @@ export interface Area {
 	browser: number
 	/** The prefix a new claim in the area takes (ADR-0194). */
 	prefix: string
-	/** Retired prefixes the area's moved claims keep. */
-	retired: string[]
+	/** Other prefixes its claims keep: retired ones, or another area's, for a moved scenario. */
+	kept: string[]
 }
 
 /** One constraint page's row. */
@@ -120,7 +120,7 @@ function areas(root: string): Area[] {
 				planned: claims.filter((claim) => claim.status === 'Planned').length,
 				browser: claims.filter((claim) => claim.engine === 'playwright-bdd').length,
 				prefix: own,
-				retired: [...new Set(claims.map((claim) => prefixOf(claim.id)))].filter((prefix) => prefix !== own).sort(),
+				kept: [...new Set(claims.map((claim) => prefixOf(claim.id)))].filter((prefix) => prefix !== own).sort(),
 			}
 		})
 }
@@ -190,8 +190,8 @@ export function render({ areas, pages, decisions, lessons, conventions }: Inputs
 		'',
 		'Each area is one `.feature` file of scenarios and a supporting page with the',
 		'detail Gherkin cannot hold, including what not to build. A new claim takes',
-		"the area's prefix; a scenario moved from a split area keeps its ID under the",
-		'retired prefix shown after it',
+		"the area's prefix; a scenario moved from another area keeps its ID, under",
+		'the prefix shown after it',
 		'([ADR-0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).',
 		'',
 		'| Area | Claims | Scenarios | Planned (`@ignore`) | Browser (`@ui`) | Supporting detail |',
@@ -199,7 +199,7 @@ export function render({ areas, pages, decisions, lessons, conventions }: Inputs
 	]
 	for (const area of areas) {
 		const detail = area.readme ? `[README](${link(area.readme)}) — ${cell(area.description)}` : '—'
-		const prefixes = [`\`${area.prefix}\``, ...(area.retired.length > 0 ? [`(also ${area.retired.map((prefix) => `\`${prefix}\``).join(', ')})`] : [])].join(' ')
+		const prefixes = [`\`${area.prefix}\``, ...(area.kept.length > 0 ? [`(also ${area.kept.map((prefix) => `\`${prefix}\``).join(', ')})`] : [])].join(' ')
 		lines.push(`| [${cell(area.title)}](${link(area.feature)}) | ${prefixes} | ${area.scenarios} | ${area.planned} | ${area.browser} | ${detail} |`)
 	}
 

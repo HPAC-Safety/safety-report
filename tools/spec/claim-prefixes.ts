@@ -4,9 +4,10 @@
 // Each feature area declares, in its README's frontmatter, the one prefix
 // every new claim in it takes: `prefix: REQ-QAU`. An ID is never renumbered
 // (ADR-0084), so a scenario keeps its ID when it moves to another area: an
-// area may also hold claims under a retired prefix, the prefix of an area that
-// was split. A retired prefix issues nothing new; its last number is recorded
-// here, and a claim above it fails.
+// area may hold claims under another area's prefix, or under a retired
+// prefix, the prefix of an area that was split. A retired prefix issues
+// nothing new; its last number is recorded here, and a claim above it fails.
+// A prefix no area declares and none retired fails.
 //
 //   node tools/spec/claim-prefixes.ts --next <area>   print the next unused ID for <area>
 //
@@ -16,6 +17,7 @@ import { join } from 'node:path'
 
 import { parseFrontmatter } from '../docs/check-frontmatter.ts'
 import { readClaims } from './read-claims.ts'
+import { readDecisions, readLessons } from './read-records.ts'
 import { FEATURES } from './spec-paths.ts'
 import { isMain } from '../lib/actions.ts'
 
@@ -55,8 +57,9 @@ export function areaPrefixes(root: string): Map<string, string | undefined> {
 
 /**
  * Every way the claims and the areas' prefixes disagree: an area with no
- * prefix or a malformed, shared, or retired one, and a claim whose prefix is
- * neither its area's nor a retired one issued before it retired.
+ * prefix or a malformed, shared, or retired one, and a claim whose prefix no
+ * area declares and none retired, or whose number is above its retired
+ * prefix's last.
  */
 export function prefixProblems(
 	claims: readonly { id: string; area: string }[],
@@ -80,11 +83,11 @@ export function prefixProblems(
 
 	for (const claim of claims) {
 		const prefix = prefixOf(claim.id)
-		const own = prefixes.get(claim.area)
-		if (prefix === own || own === undefined) continue
+		if (owners.has(prefix)) continue
+		const own = prefixes.get(claim.area) ?? 'its own prefix'
 		const last = retired[prefix]
 		if (last === undefined) {
-			problems.push(`${claim.id}: ${FEATURES}/${claim.area} takes ${own} for a new claim; ${prefix} is neither its prefix nor a retired one (ADR-0194)`)
+			problems.push(`${claim.id}: no area declares ${prefix} and it is not retired; a new claim in ${FEATURES}/${claim.area} takes ${own} (ADR-0194)`)
 		} else if (numberOf(claim.id) > last) {
 			problems.push(`${claim.id}: ${prefix} retired at ${prefix}-${String(last).padStart(3, '0')}, so a new claim in ${FEATURES}/${claim.area} takes ${own} (ADR-0194)`)
 		}
@@ -92,11 +95,15 @@ export function prefixProblems(
 	return problems
 }
 
-/** The next unused claim ID under `area`'s own prefix, wherever its claims now live. */
-export function nextClaim(area: string, claims: readonly { id: string }[], prefixes: ReadonlyMap<string, string | undefined>): string {
+/**
+ * The next unused claim ID under `area`'s own prefix: one above the highest
+ * number any scenario carries, wherever it now lives, or any decision or
+ * lesson cites, so a deleted claim that is still cited is never reissued.
+ */
+export function nextClaim(area: string, ids: Iterable<string>, prefixes: ReadonlyMap<string, string | undefined>): string {
 	const prefix = prefixes.get(area)
 	if (prefix === undefined) throw new Error(`${FEATURES}/${area} is not an area with a declared prefix`)
-	const highest = Math.max(0, ...claims.filter((claim) => prefixOf(claim.id) === prefix).map((claim) => numberOf(claim.id)))
+	const highest = Math.max(0, ...[...ids].filter((id) => prefixOf(id) === prefix).map(numberOf))
 	return `${prefix}-${String(highest + 1).padStart(3, '0')}`
 }
 
@@ -121,7 +128,8 @@ export function main(argv: readonly string[], root = process.cwd(), log: (line: 
 		error(`${FEATURES}/${area} is not an area with a declared "prefix:" — one of: ${[...prefixes.keys()].join(', ')}`)
 		return 1
 	}
-	log(nextClaim(area, allClaims(root, prefixes.keys()), prefixes))
+	const cited = [...readDecisions(root), ...readLessons(root)].flatMap((record) => record.claims)
+	log(nextClaim(area, [...allClaims(root, prefixes.keys()).map((claim) => claim.id), ...cited], prefixes))
 	return 0
 }
 

@@ -1,6 +1,6 @@
 ---
 title: Attachments
-description: Supporting detail for the image, video, document, quarantine, and derivative scenarios.
+description: Supporting detail for the image, video, document, quarantine, and derivative scenarios, and for the staff-only private attachments on a report.
 type: spec
 area: media
 prefix: REQ-MED
@@ -270,15 +270,11 @@ byte for byte as the staff member uploaded it (REQ-MED-052).
   `PrivateAttachmentLink` signs a URL for the private compartment, and it
   signs nothing else (REQ-MED-049, REQ-MED-051).
 
-Who may do this, removal, and the private-note reference are in
-["Private attachments"](#private-attachments-507) below and in
+A private note may refer to a private attachment; the note itself is in
 [`.spec/features/review-and-publication`](../review-and-publication/README.md).
 
-## Private attachments (#507)
+### On the report page
 
-A safety officer or administrator may add files to a report that are for
-staff only
-([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 The report view has a **Private attachments** section, newest first. Each
 lists its file name, size, optional description, who added it (**You**, or
 the adder's opaque token subject), and when.
@@ -305,8 +301,8 @@ refer to one (REQ-MOD-116).
 
 - Any report that is not deleted, in any status, including a report without
   publication consent (REQ-MOD-108). Any file type, up to the configured cap;
-  how the file travels and is stored is
-  [`.spec/features/media`](../media/README.md)'s rule.
+  the file travels and is stored as the upload, claim, and download above
+  describe.
 - The file name is required and is sanitized; the description is optional
   plain text of at most 500 characters (REQ-MOD-110).
 - Removal soft-deletes the row, records who removed it, and writes one
@@ -372,12 +368,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   thumbnails, unpacking a zip,
   sniffing or an allowlist, a malware scan (ADR-0089), a multipart or
   resumable upload, editing or replacing a file (remove it and add it again),
-  restoring a removed one, a per-report count cap, and any sharing or
-  publication beyond the two reviewer roles.
+  restoring a removed one, a per-report count cap, any count of them outside
+  their own list, and any sharing or publication beyond the two reviewer
+  roles (ADR-0135).
 - A filesystem storage adapter. Development runs an S3-compatible server
   (RustFS, ADR-0110) behind the same `S3BlobStore` production uses.
-- For private attachments: anonymizing them (no metadata stripping,
-  derivative, redaction, or marking pass; ADR-0135), any count of them outside
-  their own list, a preview or inline view, and anything the media area rules
-  out for them
-  ([`.spec/features/media`](../media/README.md)).

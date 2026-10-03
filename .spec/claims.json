@@ -78,7 +78,7 @@
 		{
 			"name": "web-localization-and-design",
 			"prefix": "REQ-WLD",
-			"prefixes": ["REQ-WLD","REQ-MOD","REQ-QB"]
+			"prefixes": ["REQ-WLD","REQ-COM","REQ-MOD","REQ-QB"]
 		}
 	],
 	"claims": [
@@ -1101,8 +1101,8 @@
 		},
 		{
 			"id": "REQ-COM-021",
-			"area": "comments",
-			"file": ".spec/features/comments/comments.feature",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
 			"title": "Leaving with an unposted comment is confirmed before it is discarded",
 			"rule": null,
 			"tags": ["@ui"],

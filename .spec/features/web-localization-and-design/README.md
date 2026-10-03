@@ -169,7 +169,7 @@ Every editable form calls the hook with its own `dirty` condition:
 | Summary review editor | `/admin/reports/:reportId` | REQ-MOD-185 |
 | Private notes composer | `/admin/reports/:reportId` | REQ-MOD-187 |
 | Private-attachment staging area | `/admin/reports/:reportId` | `media.feature` REQ-MOD-177 |
-| Published-report comment composer | `/reports/:reportId` | `comments.feature` REQ-COM-021 |
+| Published-report comment composer | `/reports/:reportId` | REQ-COM-021 |
 
 A multi-step form's own step navigation (the report form's
 `/report/<question-key>` addresses, ADR-0099) never counts as leaving: the

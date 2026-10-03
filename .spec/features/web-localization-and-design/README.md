@@ -163,12 +163,12 @@ Every editable form calls the hook with its own `dirty` condition:
 | Form | Route | Scenarios |
 |---|---|---|
 | Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121, REQ-SUB-122, REQ-SUB-128..130 |
-| Question editor | `/admin/questions` | `question-bank-and-form.feature` REQ-QB-238, REQ-QB-239 |
-| Type-ahead value correction | `/admin/type-ahead-values` | `moderation-authentication-and-publication.feature` REQ-MOD-186 |
-| Summary review editor | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-185 |
-| Private notes composer | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-187 |
-| Private-attachment staging area | `/admin/reports/:reportId` | `moderation-authentication-and-publication.feature` REQ-MOD-177 |
-| Published-report comment composer | `/reports/:reportId` | `comments.feature` REQ-COM-021 |
+| Question editor | `/admin/questions` | REQ-QB-238, REQ-QB-239 |
+| Type-ahead value correction | `/admin/type-ahead-values` | REQ-MOD-186 |
+| Summary review editor | `/admin/reports/:reportId` | REQ-MOD-185 |
+| Private notes composer | `/admin/reports/:reportId` | REQ-MOD-187 |
+| Private-attachment staging area | `/admin/reports/:reportId` | `media.feature` REQ-MOD-177 |
+| Published-report comment composer | `/reports/:reportId` | REQ-COM-021 |
 
 A multi-step form's own step navigation (the report form's
 `/report/<question-key>` addresses, ADR-0099) never counts as leaving: the

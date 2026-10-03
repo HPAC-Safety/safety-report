@@ -177,7 +177,7 @@ here is a separate server concept:
    introduction: Next only, no Back, no answer collected.
 2. Every other top-level entry is one page — a plain question, or a `group`
    and its children together (see
-   [question-bank-and-form](../question-bank-and-form/README.md#the-group-page-contract)).
+   [question-authoring](../question-authoring/README.md#the-group-page-contract)).
 3. A question or group whose conditional parent's current answer does not
    satisfy the condition is skipped from paging entirely, and re-evaluated
    live as the reporter answers earlier pages.
@@ -488,7 +488,7 @@ never persisted on a report or logged. A rejected request gets `429` with a
 safe, content-free problem response.
 
 Administrative operations are authorized by role on the same token; see
-[moderation, authentication, and publication](../moderation-authentication-and-publication/moderation-authentication-and-publication.feature).
+[authentication and roles](../authentication-and-roles/authentication-and-roles.feature).
 
 ## Out of scope
 

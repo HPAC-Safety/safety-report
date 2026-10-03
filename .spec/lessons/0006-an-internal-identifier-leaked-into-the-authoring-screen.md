@@ -57,7 +57,7 @@ language the reporter had typed.
 - `REQ-SUB-006`: narrowed to the type-ahead, whose step now submits a real
   unlisted value. A multi-select with reporter additions remains `REQ-QB-042`,
   not built yet.
-- `.spec/features/question-bank-and-form/README.md` out of scope: an administrator
+- `.spec/features/question-authoring/README.md` out of scope: an administrator
   authoring, seeing, or recoding an option code.
 
 ## Scenario

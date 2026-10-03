@@ -7,7 +7,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The non-<c>@ui</c> scenarios in
-///     <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c> that
+///     <c>.spec/features/question-authoring/question-authoring.feature</c> that
 ///     describe authoring behaviour — required state, conditional questions,
 ///     and reordering.
 /// </summary>

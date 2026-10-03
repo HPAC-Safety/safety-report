@@ -20,7 +20,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     <para>
 ///         Order, privacy, active state, system state, and required state are all
 ///         revision fields — see
-///         <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c>. None
+///         <c>.spec/features/question-authoring/question-authoring.feature</c>. None
 ///         of them can be mutated on an existing revision; every change, including
 ///         these, is a new revision row created by <see cref="Question" />.
 ///     </para>

@@ -148,4 +148,4 @@ this system's volume makes free.
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
 - [ADR-0034](ADR-0034-tiny-ids.md) — why the volume argument above holds
 - [ADR-0040](ADR-0040-migrate-canonical-domain-and-persistence.md) — the schema baseline
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/question-bank-and-form.feature)

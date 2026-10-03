@@ -201,7 +201,7 @@ the revision history exists to preserve.
 Order, section, privacy, active state, system state, required state, and the
 complete ordered option set are revision fields too, not `Question` fields —
 see
-[`question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)'s
+[`question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/question-bank-and-form.feature)'s
 background scenario, which lists every one of them as something that produces
 a new revision when an administrator changes it. `Question` keeps only what
 never varies across a question's revision history: `Id`, `Key`, `IsSystem`,

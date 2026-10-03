@@ -141,4 +141,4 @@ against that row's retirement, and a row that can come back is not frozen.
 - [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — answers stop resolving through a revision
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — the same volume trade for option rows
 - [ADR-0034](ADR-0034-tiny-ids.md) — why the volume argument holds
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/question-bank-and-form.feature)

@@ -72,7 +72,7 @@ Publish approves it and makes it public in one action
 [ADR-0125](../.spec/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
 What the public sees is the
 [public DTO](../.spec/interfaces-and-data-flow.md#publicreporting-api) and
-[the public feed and report page](../.spec/features/moderation-authentication-and-publication/README.md#the-public-feed-and-report-page-329).
+[the public feed and report page](../.spec/features/public-feed/README.md#the-public-feed-and-report-page-329).
 
 Keep only useful boundaries. The target has no server drafts, upload-slot API,
 application field cipher, summary-translation stage, PII auditor, email sender,

@@ -113,4 +113,4 @@ erDiagram
   either: the admin search box that finds a report by, among other things, a
   note's words is a whole-report ranking, not a notes search of its own
   (ADR-0156). See
-  [`.spec/features/moderation-authentication-and-publication/README.md`](../features/moderation-authentication-and-publication/README.md).
+  [`.spec/features/moderation-authentication-and-publication/README.md`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/moderation-authentication-and-publication/README.md).

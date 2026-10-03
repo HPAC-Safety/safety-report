@@ -150,7 +150,7 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		builder.HasIndex(revision => new { revision.QuestionId, revision.RevisionNumber }).IsUnique();
 
 		// Ties by stable key break ties in sort order — see
-		// .spec/features/question-bank-and-form/question-bank-and-form.feature.
+		// .spec/features/question-authoring/question-authoring.feature.
 		builder.HasIndex(revision => new { revision.IsActive, revision.DisplayOrder });
 
 		builder.ToTable(t => t.HasCheckConstraint(

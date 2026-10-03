@@ -111,4 +111,4 @@ looking at.
 - [ADR-0141](ADR-0141-a-choice-is-translated-on-request-in-a-chosen-direction.md): extended by this record
 - [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md): its empty-box framing is superseded
 - [Lesson 0024](../lessons/0024-a-translate-that-only-filled-the-empty-side.md)
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/question-bank-and-form.feature)

@@ -15,7 +15,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     The reviewer attachment-link scenarios in
 ///     <c>.spec/features/media/media.feature</c> (REQ-MED-010, REQ-MED-011, REQ-MED-013)
 ///     and the attachment-view audit scenario in
-///     <c>.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature</c>
+///     <c>.spec/features/authentication-and-roles/authentication-and-roles.feature</c>
 ///     (REQ-MOD-046) — proven against the real booted host, the same split
 ///     <see cref="PublicQuestionEndpointSteps" /> uses. See #311 and ADR-0090.
 /// </summary>

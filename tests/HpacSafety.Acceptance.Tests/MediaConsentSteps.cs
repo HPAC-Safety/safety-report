@@ -25,7 +25,8 @@ namespace HpacSafety.Acceptance.Tests;
 ///     or no.
 /// </summary>
 [Binding]
-[Scope(Feature = "Question bank and form")]
+[Scope(Feature = "Question authoring")]
+[Scope(Feature = "Report form")]
 public sealed class MediaConsentSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.

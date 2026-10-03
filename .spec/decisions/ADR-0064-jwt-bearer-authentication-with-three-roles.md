@@ -124,4 +124,4 @@ cannot leak.
 - [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md) — where identity is stored, which is nowhere
 - [ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md) — the development issuer
 - [ADR-0067](ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md) — why a third role exists
-- [`.spec/features/moderation-authentication-and-publication`](../features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)
+- [`.spec/features/moderation-authentication-and-publication`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)

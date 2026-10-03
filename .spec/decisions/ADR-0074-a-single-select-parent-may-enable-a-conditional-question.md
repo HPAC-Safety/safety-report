@@ -128,4 +128,4 @@ follow-up ADR can widen scope without touching what this one decided.
 - [ADR-0060](ADR-0060-conditional-questions-depend-on-a-boolean-question.md) — superseded in part by this decision
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — invariant option codes
 - [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — why `"yes"` is invariant, and how a select answer is compared
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/question-bank-and-form.feature)

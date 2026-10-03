@@ -209,4 +209,4 @@ vocabularies, to record nothing the locale column does not already say.
 - [ADR-0060](ADR-0060-conditional-questions-depend-on-a-boolean-question.md) — the yes/no check is now a string comparison
 - [ADR-0035](ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md) — unchanged; ISO 8601 is storage only
 - [ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md) — the other half of this change
-- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/.spec/features/question-bank-and-form/question-bank-and-form.feature`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/question-bank-and-form.feature)

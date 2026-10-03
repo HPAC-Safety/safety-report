@@ -27,7 +27,9 @@ namespace HpacSafety.Acceptance.Tests;
 ///     REQ-MOD-090, ADR-0105, ADR-0125).
 /// </summary>
 [Binding]
-[Scope(Feature = "Moderation, authentication, and publication")]
+[Scope(Feature = "Review and publication")]
+[Scope(Feature = "Admin report list and search")]
+[Scope(Feature = "Public feed")]
 public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.

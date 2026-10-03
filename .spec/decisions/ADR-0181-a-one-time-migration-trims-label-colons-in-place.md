@@ -98,4 +98,4 @@ text.
 - [ADR-0180](ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)
   — the summary sections whose headings are labels.
 - Claims `REQ-QB-240` to `REQ-QB-246` and `REQ-TF-024`;
-  [`.spec/features/question-bank-and-form/README.md`](../features/question-bank-and-form/README.md).
+  [`.spec/features/question-bank-and-form/README.md`](https://github.com/HPAC-Safety/safety-report/blob/35f00aca/.spec/features/question-bank-and-form/README.md).

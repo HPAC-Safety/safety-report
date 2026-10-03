@@ -11,7 +11,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The temporary interim issuer scenarios (issue #648, ADR-0172) in
-///     <c>.spec/features/moderation-authentication-and-publication/</c>.
+///     <c>.spec/features/authentication-and-roles/</c>.
 /// </summary>
 /// <remarks>
 ///     Runs against the booted host, with the members-site transport stubbed

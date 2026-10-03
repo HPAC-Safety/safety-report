@@ -44,7 +44,7 @@ when any question holds it, retired ones included.
   key travels with it unseen.
 - `REQ-QB-086`: a refused save is shown with its reason, now provoked by two
   choices that read alike, since an administrator can no longer type a key.
-- `.spec/features/question-bank-and-form/README.md` out of scope: an administrator
+- `.spec/features/question-authoring/README.md` out of scope: an administrator
   authoring, seeing, or changing a question key.
 
 ## Scenario

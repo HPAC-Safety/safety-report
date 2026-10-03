@@ -9,7 +9,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The public current-question scenarios in
-///     <c>.spec/features/question-bank-and-form/question-bank-and-form.feature</c> that
+///     <c>.spec/features/question-authoring/question-authoring.feature</c> that
 ///     describe what the API's read side does over HTTP — ordering, revision
 ///     selection, grouping, and conditional dependencies as the reporter-facing
 ///     form actually receives them, plus that no bearer token is required. See

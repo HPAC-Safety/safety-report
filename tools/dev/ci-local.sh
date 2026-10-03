@@ -23,6 +23,11 @@
 # typecheck:e2e`), which is why a type error in tests/e2e fails here without
 # running Playwright.
 #
+# The claim gate (ADR-0194) runs in the coverage job, so `--job coverage`
+# runs it, with test and e2e as its dependencies, and so does --full; natively,
+# `node tools/spec/check-claim-results.ts` judges the results files your own
+# runs wrote (see deliver-hpac-change).
+#
 # It skips test, coverage, e2e, and terraform. Those are the slow ones, and
 # GitHub CI, the coverage ratchet included, is the full gate. So before opening
 # a pull request, run the tests for the code you changed natively: a filtered
@@ -102,7 +107,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,89p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,98p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -278,7 +283,8 @@ ORIGIN_URL=$(git remote get-url origin) || die "no origin remote"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/hpac-ci-local.XXXXXX") || die "mktemp failed"
 # Mounted into every job container at /ci-local-share. It stands in for the
-# artifact ci.yml's `test` job hands `coverage` (the raw coverage reports),
+# artifacts ci.yml's `test` and `e2e` jobs hand `coverage` (the raw coverage
+# reports and the claim results),
 # because act's artifact server rejects upload/download-artifact
 # (nektos/act#6022). Per run, so parallel runs never read each other's; it
 # goes with $WORK at teardown. Temporary, with ci.yml's act-only steps that

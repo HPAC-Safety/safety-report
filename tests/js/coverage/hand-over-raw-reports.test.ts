@@ -23,7 +23,7 @@ describe('hand-over-raw-reports', () => {
 		rmSync(dir, { recursive: true, force: true })
 	})
 
-	const run = (direction: string, share: string) => main({ argv: [direction], env: { CI_LOCAL_SHARE: share }, log: (m) => logs.push(m) })
+	const run = (direction: string, share: string, ...name: string[]) => main({ argv: [direction, ...name], env: { CI_LOCAL_SHARE: share }, log: (m) => logs.push(m) })
 
 	it('push refuses when the share is not mounted', () => {
 		assert.equal(run('push', join(dir, 'missing')), 1)
@@ -53,6 +53,26 @@ describe('hand-over-raw-reports', () => {
 		writeFileSync(join(share, 'coverage/js/lcov.info'), 'TN:')
 		assert.equal(run('pull', share), 0)
 		assert.equal(readFileSync('artifacts/coverage/js/lcov.info', 'utf8'), 'TN:')
+	})
+
+	it('hands over the claim results by name, merging two jobs\' files', () => {
+		const share = join(dir, 'share')
+		mkdirSync(share)
+		mkdirSync('artifacts/claims', { recursive: true })
+		writeFileSync('artifacts/claims/reqnroll.ndjson', 'r')
+		assert.equal(run('push', share, 'claims'), 0)
+		rmSync('artifacts/claims/reqnroll.ndjson')
+		writeFileSync('artifacts/claims/playwright-bdd.ndjson', 'p')
+		assert.equal(run('push', share, 'claims'), 0)
+		rmSync('artifacts', { recursive: true })
+		assert.equal(run('pull', share, 'claims'), 0)
+		assert.equal(readFileSync('artifacts/claims/reqnroll.ndjson', 'utf8'), 'r')
+		assert.equal(readFileSync('artifacts/claims/playwright-bdd.ndjson', 'utf8'), 'p')
+	})
+
+	it('rejects a name it does not hand over', () => {
+		assert.equal(run('push', dir, 'secrets'), 2)
+		assert.match(logs[0], /push\|pull \[coverage\|claims\]/)
 	})
 
 	it('rejects an unknown direction', () => {

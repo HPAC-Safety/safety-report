@@ -299,8 +299,22 @@ describe('the suites run once', () => {
 		assert.match(steps('coverage'), /if: env\.ACT\n\s+run: node tools\/coverage\/hand-over-raw-reports\.ts pull\n/)
 		const script = readFileSync(join(REPO, 'tools/coverage/hand-over-raw-reports.ts'), 'utf8')
 		assert.match(script, /'\/ci-local-share'/)
-		assert.match(script, /exec\('cp', \['-R', `\$\{LOCAL\}\/\.`, `\$\{shared\}\/`\]/)
-		assert.match(script, /exec\('cp', \['-R', `\$\{shared\}\/\.`, `\$\{LOCAL\}\/`\]/)
+		assert.match(script, /exec\('cp', \['-R', `\$\{local\}\/\.`, `\$\{shared\}\/`\]/)
+		assert.match(script, /exec\('cp', \['-R', `\$\{shared\}\/\.`, `\$\{local\}\/`\]/)
+	})
+
+	it('hands the claim results to coverage from test and e2e, as artifacts on GitHub and through the share under act', () => {
+		for (const [job, engine] of [
+			['test', 'reqnroll'],
+			['e2e', 'playwright-bdd'],
+		] as const) {
+			assert.match(steps(job), new RegExp(`upload-artifact@\\S+\\n\\s+if: "!cancelled\\(\\) && !env\\.ACT"\\n\\s+with:\\n\\s+name: claim-results-${engine}\\n\\s+path: \\./artifacts/claims/${engine}\\.ndjson\\n`))
+			assert.match(steps(job), /if: "!cancelled\(\) && env\.ACT"\n\s+run: node tools\/coverage\/hand-over-raw-reports\.ts push claims\n/)
+		}
+		assert.match(steps('coverage'), /name: claim-results-reqnroll\n\s+path: \.\/artifacts\/claims\n/)
+		assert.match(steps('coverage'), /if: needs\.e2e\.result == 'success' && !env\.ACT\n\s+uses: actions\/download-artifact@\S+\n\s+with:\n\s+name: claim-results-playwright-bdd\n/)
+		assert.match(steps('coverage'), /if: env\.ACT\n\s+run: node tools\/coverage\/hand-over-raw-reports\.ts pull claims\n/)
+		assert.match(steps('coverage'), /PLAYWRIGHT_BDD_RESULTS: \$\{\{ needs\.e2e\.result == 'success' && '\.\/artifacts\/claims\/playwright-bdd\.ndjson' \|\| '' \}\}\n\s+run: node tools\/spec\/check-claim-results\.ts/)
 	})
 
 	it('mounts a per-run directory, inside the run\'s work directory, at /ci-local-share', () => {

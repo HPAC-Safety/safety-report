@@ -101,6 +101,10 @@ jobs:
               - 'tools/coverage/**'
               - 'tools/lib/actions.ts'
               - '.github/workflows/ci.yml'
+              # A scenario changed with no code still has to pass its engine's
+              # run, and the claim gate in `coverage` judges it (ADR-0194).
+              - '.spec/features/**'
+              - 'tools/spec/check-claim-results.ts'
             # The web bundle loads its catalogues from locales/ at the repository
             # root, so a copy change is a web change (lesson 0020).
             web:
@@ -116,6 +120,7 @@ jobs:
               - 'locales/**'
               - 'tests/e2e/**'
               - '.github/workflows/ci.yml'
+              - '.spec/features/**'
 
   build:
     needs: changes
@@ -211,7 +216,13 @@ jobs:
       # and a shared filename would make each one overwrite the last. Without
       # one, each host gets a unique name and tools/coverage/report-test-counts.ts reads the
       # project name back out of the trx's own `storage` attribute.
+      # REQNROLL_FORMATTERS turns on Reqnroll's Cucumber Messages formatter:
+      # every scenario it runs, keyed by its claim tag, for the claim gate in
+      # `coverage` (ADR-0194). The path is absolute because each test host
+      # runs in its own output directory.
       - name: dotnet test
+        env:
+          REQNROLL_FORMATTERS: '{"formatters":{"message":{"outputFilePath":"${{ github.workspace }}/artifacts/claims/reqnroll.ndjson"}}}'
         run: |
           dotnet test HpacSafety.slnx \
             --configuration Release \
@@ -254,6 +265,22 @@ jobs:
       - name: Hand the raw reports to coverage under act
         if: env.ACT
         run: node tools/coverage/hand-over-raw-reports.ts push
+
+      # The Reqnroll claim results, for the claim gate in `coverage`. Uploaded
+      # even when a test failed, so the failing claims can be read from it.
+      # Never committed: a run's results are not the specification (ADR-0194).
+      # Temporary under act, as above (nektos/act#6022).
+      - uses: actions/upload-artifact@v7
+        if: "!cancelled() && !env.ACT"
+        with:
+          name: claim-results-reqnroll
+          path: ./artifacts/claims/reqnroll.ndjson
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Hand the Reqnroll claim results to coverage under act
+        if: "!cancelled() && env.ACT"
+        run: node tools/coverage/hand-over-raw-reports.ts push claims
 
   # Parses every .spec/features/**/*.feature file with the official @cucumber/gherkin
   # parser (the same parser cucumber-js uses), pinned in
@@ -370,7 +397,8 @@ jobs:
 
   coverage:
     # Runs no test: `test` ran the suites once, collecting coverage, and this
-    # merges and gates the reports it handed over (#694). Depends on e2e (not
+    # merges and gates the reports it handed over (#694). It also holds the
+    # claim gate: every built claim of an engine that ran passed (ADR-0194). Depends on e2e (not
     # just changes) so it can download that job's Playwright test count
     # instead of reinstalling Playwright itself — see the "Count Playwright
     # tests" step on the e2e job and #263. e2e is itself conditional, so
@@ -430,6 +458,26 @@ jobs:
         if: env.ACT
         run: node tools/coverage/hand-over-raw-reports.ts pull
 
+      # The claim results `test` and `e2e` wrote, for the claim gate below.
+      # Temporary under act, as above (nektos/act#6022).
+      - name: Download the Reqnroll claim results
+        if: "!env.ACT"
+        uses: actions/download-artifact@v8
+        with:
+          name: claim-results-reqnroll
+          path: ./artifacts/claims
+
+      - name: Download the playwright-bdd claim results
+        if: needs.e2e.result == 'success' && !env.ACT
+        uses: actions/download-artifact@v8
+        with:
+          name: claim-results-playwright-bdd
+          path: ./artifacts/claims
+
+      - name: The claim results under act
+        if: env.ACT
+        run: node tools/coverage/hand-over-raw-reports.ts pull claims
+
       # ReportGenerator merges every Cobertura and lcov file it finds into one
       # report, so the JS half needs no wiring here beyond producing lcov.
       # Only the attachment copies, one per test project in a GUID directory
@@ -484,6 +532,30 @@ jobs:
       - name: Detail in the job summary
         if: always()
         run: node tools/coverage/report-coverage-detail.ts
+
+      # A built claim counts only when its scenario passed in this run
+      # (ADR-0194). Reqnroll is judged whenever this job runs, because `test`
+      # did; playwright-bdd only when `e2e` ran, since its path filter skipped
+      # it otherwise. A built claim of a judged engine that failed, was
+      # skipped, or never ran fails here, and the job summary lists every
+      # claim's result. After the coverage gate, and whatever it decided, so
+      # one run reports both verdicts.
+      - name: Every built claim passed in its engine's run
+        if: "!cancelled()"
+        env:
+          REQNROLL_RESULTS: ./artifacts/claims/reqnroll.ndjson
+          PLAYWRIGHT_BDD_RESULTS: ${{ needs.e2e.result == 'success' && './artifacts/claims/playwright-bdd.ndjson' || '' }}
+        run: node tools/spec/check-claim-results.ts --out ./artifacts/claims/claim-results.json
+
+      # Each claim's result in this run, as data. Never committed (ADR-0194).
+      # Temporary: skips under act (nektos/act#6022).
+      - uses: actions/upload-artifact@v7
+        if: "!cancelled() && !env.ACT"
+        with:
+          name: claim-results
+          path: ./artifacts/claims/claim-results.json
+          retention-days: 7
+          if-no-files-found: warn
 
       # Only present when the e2e job actually ran (needs.e2e.result ==
       # 'success'); a dotnet-only PR has nothing to download here, and the
@@ -685,6 +757,21 @@ jobs:
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
       # act ships the fix. ADR-0145.
+      # The playwright-bdd claim results, for the claim gate in `coverage`
+      # (ADR-0194); written by the cucumberReporter in playwright.config.ts.
+      # Temporary under act (nektos/act#6022).
+      - uses: actions/upload-artifact@v7
+        if: "!cancelled() && !env.ACT"
+        with:
+          name: claim-results-playwright-bdd
+          path: ./artifacts/claims/playwright-bdd.ndjson
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Hand the playwright-bdd claim results to coverage under act
+        if: "!cancelled() && env.ACT"
+        run: node tools/coverage/hand-over-raw-reports.ts push claims
+
       - uses: actions/upload-artifact@v7
         if: always() && !env.ACT
         with:

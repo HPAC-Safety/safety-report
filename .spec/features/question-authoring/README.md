@@ -43,10 +43,10 @@ the question identities already shown.
 
 ## Question types
 
-The answer shapes are short text, long text, email, phone, date, time, number,
+The answer shapes are short text, paragraph, email, phone, date, time, number,
 single select, multi-select, type-ahead, yes/no, checkbox, and file upload. A
 statement and a group are display-only and produce no answer.
-Dropdowns versus radio buttons are presentation choices for the same
+A closed picker versus radio buttons is a presentation decision for the same
 single-select domain type.
 
 A statement is shown to Administrators as **Instructional text**. It is a

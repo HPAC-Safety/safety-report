@@ -66,11 +66,10 @@ public sealed class PendingCountSteps
 	}
 #pragma warning restore CA1822
 
-	[When(@"a {word} reads the pending counts")]
-	[When(@"an {word} reads the pending counts")]
+	[When(@"^an? (User|Safety Officer|Administrator) reads the pending counts$")]
 	public async Task WhenAMemberReadsTheCounts(string role)
 	{
-		_client = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role));
+		_client = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role.Replace(" ", string.Empty)));
 		_response = await _client.GetAsync(Counts);
 
 		if (_response.IsSuccessStatusCode)
@@ -91,7 +90,7 @@ public sealed class PendingCountSteps
 		_counts.GetProperty("answersAwaitingTranslation").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
-	[Then(@"the translation count equals the number of answers in the translation queue")]
+	[Then(@"the translation count equals the number of answers awaiting translation")]
 	public async Task ThenTheTranslationCountMatchesTheQueue()
 	{
 		_counts.GetProperty("answersAwaitingTranslation").GetInt32().ShouldBeGreaterThan(0);

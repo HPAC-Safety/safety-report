@@ -19,7 +19,7 @@ Scenario: Commenting requires a member
   And no comment is stored
 
 @REQ-COM-003
-Scenario: A report the public cannot see cannot be commented on
+Scenario: A report no visitor can see cannot be commented on
   Given a report is not public
   And a member is signed in
   When the member posts a comment on it

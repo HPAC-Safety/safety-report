@@ -87,7 +87,7 @@ public sealed class AuthenticationSteps
 
 	[When(@"it is presented to any authenticated endpoint")]
 	[When(@"it is presented to the API")]
-	[When(@"the API establishes the caller's identity")]
+	[When(@"the API establishes the member's identity")]
 	public void WhenItIsValidated()
 	{
 		var parameters = AuthenticationServiceCollectionExtensions.ValidationParametersFor(

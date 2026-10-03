@@ -80,8 +80,8 @@ real identity provider is chosen
 | Role | Capabilities |
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
-| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and delete reports; keep private notes on a report ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); add, download, and remove a report's private attachments ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
-| Administrator | Every SafetyOfficer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker option ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
+| Safety Officer | View the report list and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and delete reports; keep private notes on a report ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); add, download, and remove a report's private attachments ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
+| Administrator | Every Safety Officer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker option ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
 
 Submission is a membership capability rather than a privileged one, so any of
 the three roles may file a report — and the report records nothing about who
@@ -94,7 +94,7 @@ did ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-
 The Admin menu shows how much work is waiting, so a reviewer sees it without
 opening each page. **Manage reports** carries the number of reports the
 *Needs action* filter lists, and **Type-ahead values to review** carries the
-number in that queue. The closed **Admin** button carries the total of the
+number awaiting review on the type-ahead review page. The closed **Admin** button carries the total of the
 counts the member can see. A count of zero shows no badge. The badge is a
 filled brand-red pill ([design system](../../../docs/design-system.md)).
 
@@ -104,7 +104,7 @@ waiting for the Worker's automatic translation
 ([REQ-MOD-084..086](../admin-report-search/admin-report-search.feature)), an
 operational signal only — there is no page or nav option to act on it, since
 nothing but the Worker ever fills that second language (ADR-0174). The counts
-are read from the same database views as the list and the queue, so they
+are read from the same database views as the two lists, so they
 cannot disagree with them. The menu refetches on each navigation.
 
 ## Out of scope

@@ -241,7 +241,7 @@ for the full record.
 ## Private attachments (#507)
 
 A reviewer may add files to a report that are for
-staff only: a coroner's report, a police report, an investigation archive
+staff only: a coroner's report, a police report, an investigation file
 ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 They are not the reporter's attachments, and none of the rules above about
 formats, sniffing, derivatives, consent, or publication applies to them.

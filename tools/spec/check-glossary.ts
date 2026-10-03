@@ -10,7 +10,9 @@
 //                                         strings, and table rows: step text,
 //                                         names, and descriptions;
 //   .spec/features/<area>/README.md       the prose, without frontmatter,
-//                                         fenced code, or link targets.
+//                                         fenced code, or link targets, read
+//                                         by paragraph so a wrapped phrase
+//                                         still matches.
 //
 // Quoted "literals", `code spans`, and <placeholders> are skipped: they are
 // interface copy, data, or names, not vocabulary.
@@ -177,15 +179,43 @@ export function readmeLines(source: string): Array<[number, string]> {
 	return read
 }
 
-/** Every banned synonym in `lines`, for a file in `area`. */
-export function scan(file: string, area: string, lines: Array<[number, string]>, entries: readonly Entry[]): Violation[] {
-	const found: Violation[] = []
+/** A line that starts a Markdown block of its own: a table row, a list item, a heading, or a quote. */
+const BLOCK_START = /^\s*(?:\||[-*+]\s|\d+\.\s|#|>)/
+
+/**
+ * Prose lines joined into the paragraphs they wrap, so a phrase broken across
+ * a line still matches. Each paragraph keeps where every line starts, so a
+ * match reports the line it begins on. A table row or a heading is its own
+ * paragraph; a list item gathers its continuation lines.
+ */
+export function paragraphs(lines: Array<[number, string]>): Array<{ text: string; starts: Array<[number, number]> }> {
+	const joined: Array<{ text: string; starts: Array<[number, number]> }> = []
+	let previous = -1
 	for (const [line, text] of lines) {
+		const current = joined.at(-1)
+		const continues = current && line === previous + 1 && text.trim() !== '' && !BLOCK_START.test(text) && !current.text.trimStart().startsWith('|') && !current.text.trimStart().startsWith('#')
+		if (continues) {
+			current.starts.push([current.text.length + 1, line])
+			current.text += ` ${text}`
+		} else if (text.trim() !== '') {
+			joined.push({ text, starts: [[0, line]] })
+		}
+		previous = line
+	}
+	return joined
+}
+
+/** Every banned synonym in `lines`, for a file in `area`; README prose is read by paragraph. */
+export function scan(file: string, area: string, lines: Array<[number, string]>, entries: readonly Entry[], byParagraph = false): Violation[] {
+	const found: Violation[] = []
+	const blocks = byParagraph ? paragraphs(lines) : lines.map(([line, text]) => ({ text, starts: [[0, line]] as Array<[number, number]> }))
+	for (const { text, starts } of blocks) {
+		const lineAt = (index: number): number => starts.reduce((line, [offset, number]) => (offset <= index ? number : line), starts[0][1])
 		for (const entry of entries) {
 			if (entry.exempt.includes(area)) continue
 			for (const pattern of entry.banned) {
 				pattern.lastIndex = 0
-				for (const match of text.matchAll(pattern)) found.push({ file, line, found: match[0], term: entry.term })
+				for (const match of text.matchAll(pattern)) found.push({ file, line: lineAt(match.index), found: match[0].replace(/\s+/g, ' '), term: entry.term })
 			}
 		}
 	}
@@ -205,7 +235,7 @@ export function checkGlossary(root = ROOT): { violations: Violation[]; problems:
 		const feature = `${FEATURES}/${area}/${area}.feature`
 		const readme = `${FEATURES}/${area}/README.md`
 		if (existsSync(join(root, feature))) violations.push(...scan(feature, area, featureLines(readFileSync(join(root, feature), 'utf8')), entries))
-		if (existsSync(join(root, readme))) violations.push(...scan(readme, area, readmeLines(readFileSync(join(root, readme), 'utf8')), entries))
+		if (existsSync(join(root, readme))) violations.push(...scan(readme, area, readmeLines(readFileSync(join(root, readme), 'utf8')), entries, true))
 	}
 	return { violations, problems }
 }

@@ -58,12 +58,12 @@ Given("a Safety Officer is on the public report page", async ({ page }) => {
 	reportPageOrigin.set(page, { origin: new URL(page.url()).origin })
 })
 
-When("they follow the Admin menu to the review queue", async ({ page }) => {
+When("they follow the Admin menu to the report list", async ({ page }) => {
 	await page.locator("header").getByRole("button", { name: /^Admin/ }).click()
 	await page.getByRole("menu", { name: "Admin" }).getByRole("menuitem", { name: /^Manage reports/ }).click()
 })
 
-Then("the review queue loads on the same origin as the report page", async ({ page }) => {
+Then("the report list loads on the same origin as the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 	await expect(page.getByRole("heading", { level: 1, name: "Manage reports" })).toBeVisible()
 	expect(new URL(page.url()).origin).toBe(present(reportPageOrigin.get(page)).origin)

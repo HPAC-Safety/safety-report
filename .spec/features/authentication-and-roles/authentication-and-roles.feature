@@ -61,8 +61,8 @@ Scenario: An Administrator's Admin menu offers every option
 
 @REQ-MOD-092
 @ui
-Scenario: A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review
-  Given a visitor signs in as a SafetyOfficer
+Scenario: A Safety Officer's Admin menu offers reports and type-ahead review
+  Given a visitor signs in as a Safety Officer
   When the visitor activates the Admin menu
   Then it opens with manage-reports and review-type-ahead-values options
   And it offers no manage-questions option
@@ -112,9 +112,9 @@ Scenario: An Administrator's Admin menu shows how much work is waiting
 
 @REQ-MOD-093
 @ui
-Scenario: A SafetyOfficer's Admin menu counts reports and type-ahead values waiting
+Scenario: A Safety Officer's Admin menu counts reports and type-ahead values waiting
   Given the API counts 4 reports needing action and 3 type-ahead values awaiting review
-  And a visitor signs in as a SafetyOfficer
+  And a visitor signs in as a Safety Officer
   Then the Admin menu shows a count of 7
   When the visitor activates the Admin menu
   Then the manage-reports option shows a count of 4
@@ -164,7 +164,7 @@ Scenario: A token with no recognized role claim authenticates as User
 @REQ-MOD-018
 Scenario: The API never reads a name, an email, or any other claim
   Given a validly signed bearer token carrying a name, an email, and a picture claim
-  When the API establishes the caller's identity
+  When the API establishes the member's identity
   Then it reads only the token subject and the role claim
   And no other claim reaches domain code, a log, or the database
 
@@ -266,8 +266,8 @@ Examples:
   | edit a question's choices      | forbids |
 
 @REQ-MOD-026
-Scenario Outline: A SafetyOfficer reviews and publishes but does not author questions
-  Given a member has the SafetyOfficer role
+Scenario Outline: A Safety Officer reviews and publishes but does not author questions
+  Given a member has the Safety Officer role
   When that member attempts to <capability>
   Then the API <outcome> the attempt
 
@@ -285,7 +285,7 @@ Examples:
   | edit a question's choices      | forbids |
 
 @REQ-MOD-027
-Scenario Outline: An Administrator has every SafetyOfficer capability and authors questions
+Scenario Outline: An Administrator has every Safety Officer capability and authors questions
   Given a member has the Administrator role
   When that member attempts to <capability>
   Then the API <outcome> the attempt
@@ -310,10 +310,10 @@ Scenario Outline: Only an Administrator may author a question revision
   Then the API <outcome> the attempt
 
 Examples:
-  | role          | outcome |
-  | User          | rejects |
-  | SafetyOfficer | rejects |
-  | Administrator | accepts |
+  | role           | outcome |
+  | User           | rejects |
+  | Safety Officer | rejects |
+  | Administrator  | accepts |
 
 @REQ-MOD-029
 Scenario: Sensitive admin actions are audited without report content
@@ -326,7 +326,7 @@ Scenario: Sensitive admin actions are audited without report content
 @REQ-MOD-042
 @ui
 Scenario: An anonymous visitor who navigates to an admin route is sent to sign in
-  Given a visitor is signed out
+  Given an anonymous visitor
   When the visitor navigates directly to an admin route
   Then the browser is redirected to the member sign-in page
   And no admin page content is shown first
@@ -341,10 +341,10 @@ Scenario Outline: A member without the required role sees a real 403, not a 404 
   And no request for that route's data is made, the Admin menu's pending counts aside
 
 Examples:
-  | role          | route                      |
-  | User          | /admin/reports             |
-  | User          | /admin/questions           |
-  | SafetyOfficer | /admin/questions           |
+  | role           | route                      |
+  | User           | /admin/reports             |
+  | User           | /admin/questions           |
+  | Safety Officer | /admin/questions           |
 
 @REQ-MOD-184
 @ui
@@ -380,7 +380,7 @@ Scenario: A failed audit write blocks the action it would have recorded
   Given an Administrator or reviewer performs an action that must be audited
   When the audit row fails to write
   Then the action itself does not commit
-  And the caller sees the action as failed, not succeeded
+  And the member sees the action as failed, not succeeded
 
 @REQ-MOD-048
 @ui

@@ -513,7 +513,7 @@ Examples:
 
 @REQ-MED-048
 Scenario: Adding a private attachment stores its bytes unchanged in the report's private compartment
-  Given a Safety Officer's browser has sent a zip archive through a private upload minted for a report
+  Given a Safety Officer's browser has sent a zip file through a private upload minted for a report
   When the Safety Officer adds that upload to the report as "Coroner report.zip"
   Then its bytes sit, byte for byte and nowhere else on the report, at the report's private key named by the attachment's id
   And the upload no longer sits in quarantine
@@ -557,7 +557,7 @@ Examples:
   | who                  | outcome      |
   | an anonymous visitor | 401          |
   | a User               | 403          |
-  | a SafetyOfficer      | with success |
+  | a Safety Officer     | with success |
   | an Administrator     | with success |
 
 @REQ-MOD-108

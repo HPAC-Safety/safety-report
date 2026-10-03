@@ -749,7 +749,7 @@ Then("the corrected wording is shown on the question", async ({ page }) => {
 
 const needsTranslation = (page: Page) => page.getByRole("checkbox", { name: "Auto-translate answer" })
 
-When("they choose long text", async ({ page }) => {
+When("they choose paragraph", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("long_text")
 })
 

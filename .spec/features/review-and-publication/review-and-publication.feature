@@ -4,15 +4,15 @@ pair, keeps private notes on it, and publishes it. Only a fully approved,
 consented, non-deleted report ever reaches the public feed.
 
 @REQ-MOD-031
-Scenario: A report detail view exposes only what the reviewer needs
-  Given a reviewer opens a report's detail view
+Scenario: A report detail exposes only what the reviewer needs
+  Given a reviewer opens a report detail
   When the detail query runs
   Then it supplies the reporter language, exact bilingual question labels and each question's type, answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and each attachment's kind and whether it can be opened
   And it supplies no storage key and no link; an attachment is opened only through its own audited view or download request
 
 @REQ-MOD-051
-Scenario: Opening a report's detail view is audited
-  Given a reviewer opens a report's detail view
+Scenario: Opening a report detail is audited
+  Given a reviewer opens a report detail
   When the detail query runs
   Then an audit entry records the reviewer's token subject, ViewedRawReport, the report, and the time
   And the audit entry records no report content
@@ -73,7 +73,7 @@ Scenario: A draft on a Pending report needs approval
   And the public feed shows the edited text
 
 @REQ-MOD-199
-Scenario: The public never sees an unapproved revision
+Scenario: No visitor ever sees an unapproved revision
   Given a Published report whose reporter consented to publication
   And a newer revision that nobody has approved exists
   When a visitor reads that report from the public feed
@@ -120,7 +120,7 @@ Scenario: Publication requires every guard to pass, with no bypass
   Given a report is non-deleted, has explicit positive consent, has two nonblank summary texts, and a reviewer publishes it
   When the publication is recorded
   Then the pair is approved and the report is Published in the same action
-  And no Administrator, migration, background worker, or direct API caller can bypass any of these guards
+  And no Administrator, migration, background job, or direct API request can bypass any of these guards
 
 @REQ-MOD-054
 @ui
@@ -366,7 +366,7 @@ Scenario Outline: Only a reviewer may request a machine translation
 Examples:
   | role          | outcome       |
   | User          | forbidden     |
-  | SafetyOfficer | a translation |
+  | Safety Officer | a translation |
   | Administrator | a translation |
 
 @REQ-MOD-070
@@ -424,7 +424,7 @@ Scenario: Writing a pair by hand offers the translate buttons too
   Then the translate buttons offered are Translate to French
 
 @REQ-MOD-077
-Scenario: The report detail view gives a second language only for an answer that has one
+Scenario: The report detail gives a second language only for an answer that has one
   Given a submitted report answered a first name, an email, a date, a picker, and a narrative marked for translation
   And the Worker has translated the narrative
   When a reviewer opens the report detail
@@ -461,7 +461,7 @@ Examples:
   | who                  | outcome            |
   | an anonymous visitor | 401                |
   | a User               | 403                |
-  | a SafetyOfficer      | with success       |
+  | a Safety Officer     | with success       |
   | an Administrator     | with success       |
 
 @REQ-MOD-099

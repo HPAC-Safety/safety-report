@@ -1,14 +1,14 @@
 Feature: Web, localization, and design
-The public form and the admin review queue are routes within one
+The public form and the admin report list are routes within one
 React/TypeScript single-page application that renders bilingual content,
 preserves local report state, and meets WCAG 2.2 AA.
 
 @REQ-WLD-001
 @ui
-Scenario: The admin review queue is a route of the one site
+Scenario: The admin report list is a route of the one site
   Given a Safety Officer is on the public report page
-  When they follow the Admin menu to the review queue
-  Then the review queue loads on the same origin as the report page
+  When they follow the Admin menu to the report list
+  Then the report list loads on the same origin as the report page
   And the browser does not load a new document
 
 @REQ-WLD-002
@@ -502,7 +502,7 @@ Scenario: Leaving the summary editor with unsaved changes is confirmed before th
 
 @REQ-MOD-186
 @ui
-Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
+Scenario: Leaving the type-ahead review page with an uncorrected draft is confirmed
   Given a Safety Officer and two type-ahead questions with values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "Coopers"

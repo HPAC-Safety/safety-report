@@ -85,7 +85,7 @@ public sealed class PrivateNoteSteps
 
 	// ── When ────────────────────────────────────────────────────────────────
 
-	[When(@"^(an anonymous visitor|a User|a SafetyOfficer|an Administrator) adds, lists, edits, reads the history of, and removes private notes on it$")]
+	[When(@"^(an anonymous visitor|a User|a Safety Officer|an Administrator) adds, lists, edits, reads the history of, and removes private notes on it$")]
 	public async Task WhenSomeoneUsesEveryRoute(string who)
 	{
 		using var client = await ClientFor(who);
@@ -431,7 +431,7 @@ public sealed class PrivateNoteSteps
 		{
 			"an anonymous visitor" => (await BootedApi.Factory()).CreateClient(),
 			"a User" => await BootedApi.SignedInAs(MemberRole.User),
-			"a SafetyOfficer" => await Reviewer(_officer, "safety_officer"),
+			"a Safety Officer" => await Reviewer(_officer, "safety_officer"),
 			_ => await Reviewer(_administrator, "administrator"),
 		};
 	}

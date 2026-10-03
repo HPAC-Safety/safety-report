@@ -215,7 +215,7 @@ Scenario: The Next button becomes Submit on the final page
 
 @REQ-SUB-034
 @ui
-Scenario: A multi-select question is a picker dropdown, not a flat list
+Scenario: A multi-select question is one closed picker, not a flat list
   Given the current page shows a multi-select question
   Then its options are hidden behind one closed picker labelled by the question
   When the reporter opens the picker and checks two options
@@ -812,7 +812,7 @@ Scenario: A rate-limited submission is rejected
   Given a submission request arrives
   When the per-IP rate limit is exceeded
   Then the API rejects the request with 429 and a safe retry signal
-  And the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a caller cannot forge, and is never stored on the report
+  And the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a member cannot forge, and is never stored on the report
 
 @REQ-SUB-018
 Scenario: An unauthenticated submission is rejected
@@ -827,10 +827,10 @@ Scenario Outline: A member of any role may submit a report
   Then the API accepts it
 
 Examples:
-  | role          |
-  | User          |
-  | SafetyOfficer |
-  | Administrator |
+  | role           |
+  | User           |
+  | Safety Officer |
+  | Administrator  |
 
 @REQ-SUB-020
 Scenario: A stored report carries no reporter token subject, user id, or link

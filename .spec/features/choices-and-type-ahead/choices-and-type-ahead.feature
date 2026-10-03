@@ -325,10 +325,10 @@ Scenario Outline: A reviewer reviews type-ahead values
   Then the API <outcome> the attempt
 
 Examples:
-  | role          | outcome  |
-  | User          | forbids  |
-  | SafetyOfficer | allows   |
-  | Administrator | allows   |
+  | role           | outcome  |
+  | User           | forbids  |
+  | Safety Officer | allows   |
+  | Administrator  | allows   |
 
 @REQ-MOD-097
 @ui
@@ -352,7 +352,7 @@ Scenario: A Safety Officer reviews flagged type-ahead values on one page
 
 @REQ-MOD-160
 @ui
-Scenario: The review queue groups flagged values under their question, questions ordered alphabetically
+Scenario: The type-ahead review page groups flagged values under their question, questions ordered alphabetically
   Given a Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first
   When they open the review-type-ahead-values page
   Then the question headings read, top to bottom, "Where did this happen?" then "Where did you launch?"
@@ -389,7 +389,7 @@ Examples:
 
 @REQ-MOD-163
 @ui
-Scenario: A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count
+Scenario: A merged value leaves the type-ahead review page in place, and a merge target still awaiting review shows its updated answer count
   Given a Safety Officer and two flagged values of the same question, one also awaiting review in its own right
   When they open the review-type-ahead-values page
   And they merge "Coopers" into "Cooper's"

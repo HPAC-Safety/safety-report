@@ -130,7 +130,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		await Send("publish", new { version = _version });
 	}
 
-	[When(@"^a SafetyOfficer lists reports needing action and reads the pending counts$")]
+	[When(@"^a Safety Officer lists reports needing action and reads the pending counts$")]
 	public async Task WhenNeedsActionAndCountsAreRead()
 	{
 		// The booted database is shared with scenarios running in parallel, which
@@ -290,7 +290,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.PublishedReport)).Count.ShouldBe(1);
 	}
 
-	[Then(@"no Administrator, migration, background worker, or direct API caller can bypass any of these guards")]
+	[Then(@"no Administrator, migration, background job, or direct API request can bypass any of these guards")]
 	public async Task ThenNoCallerCanBypassTheGuards()
 	{
 		// An administrator publishing a report without consent is refused.
@@ -459,10 +459,10 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── REQ-MOD-069: who may translate ──────────────────────────────────────
 
-	[Given(@"^a member signed in as (User|SafetyOfficer|Administrator)$")]
+	[Given(@"^a member signed in as (User|Safety Officer|Administrator)$")]
 	public void GivenAMemberSignedInAs(string role)
 	{
-		_role = Enum.Parse<MemberRole>(role);
+		_role = Enum.Parse<MemberRole>(role.Replace(" ", string.Empty));
 	}
 
 	[When(@"that member requests a translation")]

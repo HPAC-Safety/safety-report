@@ -59,7 +59,7 @@ is untouched and versions only move forward. A Published report shows the
 restored text at once; any other report holds it as a draft (REQ-MOD-196,
 REQ-MOD-197, REQ-MOD-204). Restoring is audited as `RolledBackSummary`, and
 neither it nor an edit records any text in the audit log (REQ-MOD-061). A
-Safety Officer or an Administrator may edit and restore; a User may not
+reviewer may edit and restore; a User may not
 (REQ-MOD-201).
 
 **Not built:** regenerating a summary with the model, and showing revision
@@ -111,7 +111,7 @@ That form is for storage only. The report view shows such an answer in the
 interface language the reviewer chose, not the language the reporter
 answered in: `2026-09-13` reads "September 13, 2026" in English and
 "13 septembre 2026" in French, `14:30` reads "2:30 p.m." or "14 h 30", and
-`true` reads "Yes" or "Oui". The detail view names each question's type so
+`true` reads "Yes" or "Oui". The report detail names each question's type so
 the page can tell these answers from free text. Because the formatted value
 already reads in the reviewer's language, the view shows no second-language
 translation beside it. A stored value that is not a real date or time is

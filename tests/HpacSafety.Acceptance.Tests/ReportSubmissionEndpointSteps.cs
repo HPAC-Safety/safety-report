@@ -1206,7 +1206,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a caller cannot forge, and is never stored on the report")]
+	[Then(@"the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a member cannot forge, and is never stored on the report")]
 	public async Task ThenTheClientIpComesOnlyFromTrustedHeadersAndIsNeverStored()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();
@@ -1315,7 +1315,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	[Given(@"a reporter holds a valid member token with the (.*) role")]
 	public async Task GivenAReporterHoldsAValidMemberTokenWithTheRole(string role)
 	{
-		_reporter = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role));
+		_reporter = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role.Replace(" ", string.Empty)));
 		await EnsureConsentQuestion();
 	}
 

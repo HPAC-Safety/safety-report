@@ -83,7 +83,7 @@ later scenario-style rules.
 | **Fork** | The new question, with the same key, that editing an answered question creates. The old one is deleted. | — | — |
 | **Label** | A question's wording, stored without a closing colon. | — | — |
 | **Help text** | A question's optional guidance. | — | — |
-| **Question type** | **short text**, **paragraph**, **email**, **phone**, **date**, **time**, **number**, **single-select**, **multi-select**, **type-ahead**, **yes/no**, **checkbox**, **file upload**, **statement**, **group** (J12). | `long text`, `/\bdrop-?downs?\b/i` | — |
+| **Question type** | **short text**, **paragraph**, **email**, **phone**, **date**, **time**, **number**, **single-select**, **multi-select**, **type-ahead**, **yes/no**, **checkbox**, **file upload**, **statement**, **group** (J12). | `long text`, `/\bdrop-?downs?\b/i` | `typeform-question-import-export` |
 | **Picker** | A single-select or a multi-select question (ADR-0128). | — | — |
 | **Choice** | One selectable entry a single-select, multi-select, or type-ahead owns, outside its revisions. A picker's entry is a picker choice (J5). A menu's entries are items. | `/\b(?<!sign-in )(?<!Content-Type-)options?\b/i` | — |
 | **Type-ahead value** | A choice of a type-ahead question (J6, ADR-0129). | — | — |

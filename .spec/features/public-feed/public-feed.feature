@@ -18,7 +18,7 @@ Scenario: The feed's attachment count is the public count for a visitor and the 
   Then the report's attachment count is 2
 
 @REQ-MOD-155
-Scenario: An ordinary member's token widens nothing; only SafetyOfficer or Administrator does
+Scenario: An ordinary member's token widens nothing; only a reviewer's does
   Given a published report has one public attachment and one attachment only staff may see
   When a member with the User role lists the feed
   Then the report's attachment count is 1
@@ -222,7 +222,7 @@ Scenario: Search is scoped to the visitor's current site language only
   Then the report is listed among the results
 
 @REQ-MOD-143
-Scenario Outline: The public search never widens by caller role
+Scenario Outline: The public search never widens by the member's role
   Given a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains
   And another report is not publishable, and its summary contains a further private-only word
   When <who> searches for the public word
@@ -234,7 +234,7 @@ Examples:
   | who                  |
   | an anonymous visitor |
   | a User               |
-  | a SafetyOfficer      |
+  | a Safety Officer     |
   | an Administrator     |
 
 @REQ-MOD-144

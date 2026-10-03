@@ -50,7 +50,7 @@ Scenario: A list row carries the version a review command sends back
 Scenario: The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one
   Given reports exist in every workflow state
   When a reviewer lists reports
-  And a reviewer lists reports after a cursor naming a report no longer in the queue
+  And a reviewer lists reports after a cursor naming a report no longer in the report list
   Then that list starts with the same report the first page did
 
 @REQ-MOD-049
@@ -80,7 +80,7 @@ Examples:
 Scenario: A reviewer reads how many reports need action
   Given reports exist in every workflow state
   And one report has waited in Submitted and one in Summarizing for more than 24 hours
-  When a SafetyOfficer reads the pending counts
+  When a Safety Officer reads the pending counts
   Then the reports count equals the number of reports the Needs action filter lists
   And the counts carry no answers-awaiting-translation count
 
@@ -88,7 +88,7 @@ Scenario: A reviewer reads how many reports need action
 Scenario: Only an Administrator's pending counts include answers awaiting translation
   Given an answer is awaiting machine translation
   When an Administrator reads the pending counts
-  Then the translation count equals the number of answers in the translation queue
+  Then the translation count equals the number of answers awaiting translation
 
 @REQ-MOD-086
 Scenario: A User cannot read the pending counts
@@ -98,7 +98,7 @@ Scenario: A User cannot read the pending counts
 @REQ-MOD-090
 Scenario: A report without publication consent never needs action
   Given a report whose reporter did not consent to publication is Unpublished
-  When a SafetyOfficer lists reports needing action and reads the pending counts
+  When a Safety Officer lists reports needing action and reads the pending counts
   Then that report is not listed
   And the reports count does not include it
 

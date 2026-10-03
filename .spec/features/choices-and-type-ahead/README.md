@@ -99,8 +99,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   a stable order and the reader's browser collates it, because only the reader
   knows their language.
 - Copying a choice's wording onto an answer, in either language.
-- Sorting of the type-ahead review queue other than grouped by question and
+- Sorting of the type-ahead review page other than grouped by question and
   alphabetical within each group; the API's own order is otherwise unchanged.
   What each review action does on the server is unchanged too — only how the
-  page renders and refetches the queue changed
+  page renders and refetches its list changed
   ([#651](https://github.com/HPAC-Safety/safety-report/issues/651)).

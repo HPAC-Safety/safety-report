@@ -153,8 +153,8 @@ its second language depends on its question:
 | Yes/no, checkbox | None, ever: a boolean holds no words; the interface renders it in the reader's language |
 | Text not marked, email, phone, date, time, number, file | None, ever |
 
-Each answer records which of these applies (`translation_mode`), so the admin
-report view never shows a "translation" of an answer that has none. This
+Each answer records which of these applies (`translation_mode`), so the report
+detail never shows a "translation" of an answer that has none. This
 endpoint enqueues one answer-translation outbox message and never calls a
 translation provider itself; reading a choice's label is a lookup, not a
 translation.
@@ -187,7 +187,7 @@ here is a separate server concept:
    default selection.
 5. Next becomes Submit on the last page.
 
-A `multi_select` ("Pick several") question renders as a picker dropdown, the
+A `multi_select` ("Pick several") question renders as one closed picker, the
 same closed-control shape as a single-select: one trigger labelled by the
 question, naming what is chosen, that opens a list of checkable options and
 stays open while several are checked. Escape or leaving it closes it.
@@ -452,7 +452,7 @@ or sent to the summarization model.
 ## Idempotency
 
 The first target version does not add a durable idempotency subsystem. If
-production evidence shows duplicate reports are material, an idempotency key
+production data shows duplicate reports are material, an idempotency key
 can be added as a focused change.
 
 ## Authentication, and what is not recorded
@@ -489,7 +489,7 @@ identifying the reporter.
 The rate limit itself is a sliding-window `RateLimiter` policy, partitioned by
 client IP, using ASP.NET Core's built-in middleware rather than a third-party
 package. The client IP comes from `CloudFront-Viewer-Address`, which only
-CloudFront sets and a caller cannot override — there is no ALB, and CloudFront
+CloudFront sets and a member cannot override — there is no ALB, and CloudFront
 is the one public entry point for the API, reached on the path `/api/*`
 ([ADR-0159](../../decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
 superseding [ADR-0081](../../decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).

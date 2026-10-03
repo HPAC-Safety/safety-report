@@ -440,7 +440,7 @@ Scenario: An Administrator corrects a reporter-added value
 
 @REQ-QB-076
 @ui
-Scenario: An Administrator authors a question from the dashboard
+Scenario: An Administrator authors a question from the question list
   Given an Administrator opens the manage-questions page
   When they add a paragraph-text question in both official languages
   Then the new question appears in the list with its type and version
@@ -478,7 +478,7 @@ Scenario: Questions are reordered from the keyboard
 
 @REQ-QB-081
 @ui
-Scenario: Editing an unanswered question from the dashboard shows its new version
+Scenario: Editing an unanswered question from the question list shows its new version
   Given an Administrator opens the manage-questions page
   And the first question has never been answered
   When they edit its English wording and save
@@ -498,7 +498,7 @@ Scenario: Editing an answered question warns that it will be replaced
 @ui
 Scenario: The editor offers Auto-translate answer only for free text
   Given an Administrator is authoring a new question
-  When they choose long text
+  When they choose paragraph
   Then Auto-translate answer is offered and checked
   When they choose short text
   Then Auto-translate answer is offered and unchecked

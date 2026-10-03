@@ -20,7 +20,7 @@ the browser's own suggestion list (`<datalist>`) is not used, so it looks the
 same in every browser (`REQ-QB-159`,
 [ADR-0140](../../decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
 Unlike the single-select and the multi-select, it has **no caret**: it reads
-as a place to type, not a dropdown to pick from
+as a place to type, not a picker to choose from
 ([ADR-0152](../../decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
 
 - **Opening.** Clicking the field, pressing Alt and the down arrow, or typing

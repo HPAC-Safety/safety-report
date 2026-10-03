@@ -45,10 +45,10 @@ Given("a visitor signs in with valid member credentials", async ({ page }) => {
 	await signInAs(page, "administrator")
 })
 
-Given(/^a visitor signs in as an? (Administrator|SafetyOfficer|User)$/, async ({ page }, role: string) => {
+Given(/^a visitor signs in as an? (Administrator|Safety Officer|User)$/, async ({ page }, role: string) => {
 	const roles: Record<string, Role> = {
 		Administrator: "administrator",
-		SafetyOfficer: "safety_officer",
+		"Safety Officer": "safety_officer",
 		User: "user",
 	}
 	await signInAs(page, roles[role])

@@ -101,7 +101,7 @@ public sealed partial class PrivateAttachmentSteps
 		_attachmentId = await AddThroughTheApi(_officer, "safety_officer", fileName, null);
 	}
 
-	[Given(@"a Safety Officer's browser has sent a zip archive through a private upload minted for a report")]
+	[Given(@"a Safety Officer's browser has sent a zip file through a private upload minted for a report")]
 	public async Task GivenAZipWasSent()
 	{
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
@@ -182,12 +182,12 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[When(@"^(an anonymous visitor|a User|a SafetyOfficer|an Administrator) mints a private upload for, adds, lists, downloads, and removes private attachments on it$")]
+	[When(@"^(an anonymous visitor|a User|a Safety Officer|an Administrator) mints a private upload for, adds, lists, downloads, and removes private attachments on it$")]
 	public async Task WhenSomeoneUsesEveryRoute(string who)
 	{
 		var reviewer = who switch
 		{
-			"a SafetyOfficer" => (_officer, "safety_officer"),
+			"a Safety Officer" => (_officer, "safety_officer"),
 			"an Administrator" => ((string, string)?)(_administrator, "administrator"),
 			_ => null,
 		};
@@ -901,7 +901,7 @@ public sealed partial class PrivateAttachmentSteps
 		{
 			"an anonymous visitor" => (await BootedApi.Factory()).CreateClient(),
 			"a User" => await BootedApi.SignedInAs(MemberRole.User),
-			"a SafetyOfficer" => Reviewer(_officer, "safety_officer"),
+			"a Safety Officer" => Reviewer(_officer, "safety_officer"),
 			_ => Reviewer(_administrator, "administrator"),
 		};
 	}

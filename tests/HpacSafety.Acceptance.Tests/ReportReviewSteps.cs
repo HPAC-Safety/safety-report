@@ -57,7 +57,7 @@ public sealed class ReportReviewSteps
 		_seeded.ShouldContainKey("freshSummarizing");
 	}
 
-	[Given(@"a reviewer opens a report's detail view")]
+	[Given(@"a reviewer opens a report detail")]
 	public async Task GivenAReviewerOpensADetailView()
 	{
 		await Seed();
@@ -134,7 +134,7 @@ public sealed class ReportReviewSteps
 		await ListWith(filter);
 	}
 
-	[When(@"a reviewer lists reports after a cursor naming a report no longer in the queue")]
+	[When(@"a reviewer lists reports after a cursor naming a report no longer in the report list")]
 	public async Task WhenAReviewerListsAfterAnUnknownCursor()
 	{
 		// Scenarios running in parallel add newer reports to the shared booted

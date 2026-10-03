@@ -96,13 +96,14 @@ public sealed class AuthorizationSteps
 		_response = await _client.GetAsync(Questions);
 	}
 
-	// {word}, not (User|SafetyOfficer|Administrator): Reqnroll reads this as a
-	// Cucumber Expression, where parentheses mean "optional text" rather than
-	// alternation, so the regex form silently matches nothing.
-	[Given(@"a member has the {word} role")]
+	// Anchored with ^ and $, so Reqnroll reads it as a regular expression: as a
+	// Cucumber Expression, the parentheses would mean "optional text" rather
+	// than alternation, and it would silently match nothing. The role is named
+	// as the glossary names it ("Safety Officer").
+	[Given(@"^a member has the (User|Safety Officer|Administrator) role$")]
 	public async Task GivenMemberHasRole(string role)
 	{
-		_role = Enum.Parse<MemberRole>(role);
+		_role = Enum.Parse<MemberRole>(role.Replace(" ", string.Empty));
 		_client = await BootedApi.SignedInAs(_role);
 	}
 

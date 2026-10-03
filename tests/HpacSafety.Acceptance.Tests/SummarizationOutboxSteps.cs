@@ -460,7 +460,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		persisted.SummaryError.ShouldNotContain("Ada Lovelace");
 	}
 
-	[Then(@"the report appears in the review queue")]
+	[Then(@"the report appears in the report list")]
 	public async Task ThenReportAppearsInReviewQueue()
 	{
 		// The review queue (issue #25) reads by status; SummaryFailed is one of the

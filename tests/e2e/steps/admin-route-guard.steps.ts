@@ -15,7 +15,7 @@ const { Given, When, Then } = createBdd()
 // for that route's data" can be asserted without guessing at timing.
 const adminRequestsSeenAfterNavigation = new WeakMap<Page, string[]>()
 
-Given("a visitor is signed out", async ({ page }) => {
+Given("an anonymous visitor", async ({ page }) => {
 	await stubAuth(page)
 })
 

@@ -72,7 +72,7 @@ Examples:
   | French   | false  |
 
 @REQ-AI-008
-Scenario: Concurrent workers cannot claim the same summarization outbox item twice
+Scenario: Concurrent Worker instances cannot claim the same summarization outbox item twice
   Given a summarization outbox item is pending
   When two Worker instances attempt to claim it concurrently
   Then exactly one Worker claims the item
@@ -121,7 +121,7 @@ Scenario: Exhausted retries surface a manually authorable failure
   Given a report's summarization retry budget is exhausted
   When the Worker gives up on the attempt
   Then the report becomes Summary failed with a safe operational error
-  And the report appears in the review queue
+  And the report appears in the report list
   And a human can author both summary texts manually and continue review
 
 @REQ-AI-021

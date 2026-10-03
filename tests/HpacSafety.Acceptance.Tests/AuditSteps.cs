@@ -321,7 +321,7 @@ public sealed class AuditSteps
 		(await EntriesBy(_subject)).ShouldNotContain(entry => entry.Action == AuditAction.CreatedQuestion || entry.Action == AuditAction.PublishedReport);
 	}
 
-	[Then(@"the caller sees the action as failed, not succeeded")]
+	[Then(@"the member sees the action as failed, not succeeded")]
 	public void ThenTheCallerSeesFailure()
 	{
 		_blocked.Count.ShouldBe(2);

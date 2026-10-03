@@ -53,7 +53,7 @@ It counts characters against the 2000 limit.
 
 The API reads comments from the `public_report_comments` view and the count
 from `public_reports.comment_count`. Both count only comments that are neither
-deleted nor hidden, on reports the public can see. Unpublishing a report
+deleted nor hidden, on reports a visitor can see. Unpublishing a report
 removes it and its comments from every public read. Publishing it again
 brings them back as they were.
 
@@ -66,7 +66,7 @@ What not to build here
 - Replies, threads, reactions, or votes.
 - Notifying anyone of a comment.
 - Attachments, links rendered as links, or formatting in a comment.
-- A reviewer queue or search of comments, and un-hiding a comment.
+- A reviewer list or search of comments, and un-hiding a comment.
 - Pre-moderation, or holding a comment until a reviewer approves it.
 - A rate limit on posting beyond the member token and the length cap.
 - Editing or deleting another member's comment, even as an Administrator.

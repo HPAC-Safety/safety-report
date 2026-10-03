@@ -45,7 +45,7 @@ a revision. On a Published report a saved revision is approved by the person who
 saved it and is public at once, so the report never leaves the feed to be
 corrected and keeps its first publish date (REQ-DOM-005, REQ-MOD-195). On a
 Pending or Unpublished report a saved revision is a draft, and **Publish**
-approves the latest one (REQ-MOD-032, REQ-MOD-198). The public reads only the
+approves the latest one (REQ-MOD-032, REQ-MOD-198). A visitor reads only the
 latest approved revision (REQ-MOD-199).
 
 A report whose reporter did not consent is never sent to the model: the Worker
@@ -112,7 +112,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Row-level security, `REVOKE`, or a separate database role.
 - Undelete, restore, or any path back from a deletion.
 - Physical deletion of an application record, or a cascade that removes rows
-  rather than stamping them.
+  rather than marking them deleted.
 - An automated purge or retention job over raw reports. Retention ends at an
   explicit deletion.
 - Lifecycle states beyond the ones the scenarios name, or a workflow engine to

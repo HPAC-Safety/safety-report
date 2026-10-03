@@ -41,6 +41,15 @@ hostname, nothing speculative. An unrecognized host, including staging's
 languages. Switching the language toggle changes only the locale, never the
 host.
 
+Both interface catalogues, `locales/en-CA.json` and `locales/fr-CA.json`, are
+built into the page's own script bundle, not fetched afterwards
+(REQ-WLD-049, #805). A deploy replaces every hashed script file, so a
+catalogue fetched on demand could be gone by the time a tab left open asks for
+it, and the page would show raw keys until a reload. Bundled, the text is
+already in memory and both languages switch without a request. They cost
+about 21 KB gzipped together. A key missing from French still falls back to its
+English text, as does a build with no French file at all.
+
 Dates, numbers, and accessible labels use locale-aware formatting. Stored
 codes/values remain invariant. A free-text answer gets a second language only
 when an administrator marked its question for translation, and then off the
@@ -226,6 +235,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   apply to a change to the query string alone (the search box, a status
   filter), a link to an in-page anchor, or Back and Forward, where the
   browser or a report list restores the earlier position.
+- Loading a catalogue on demand, or reloading the page to recover one a
+  deploy removed. Both catalogues ship inside the page's bundle (REQ-WLD-049).
 - A third language, or a locale the association has not adopted.
 - Hand-editing `locales/fr-CA.json`. A French correction is a recorded
   provenance event

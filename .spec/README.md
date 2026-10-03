@@ -30,7 +30,7 @@ detail Gherkin cannot hold, including what not to build.
 | [Question bank and form](features/question-bank-and-form/question-bank-and-form.feature) | `REQ-QB` | 227 | 0 | 92 | [README](features/question-bank-and-form/README.md) — Supporting detail for the immutable bilingual question and form assembly scenarios. |
 | [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 120 | 0 | 79 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
 | [Typeform question import and export](features/typeform-question-import-export/typeform-question-import-export.feature) | `REQ-TF` | 23 | 0 | 1 | [README](features/typeform-question-import-export/README.md) — Supporting detail for importing and exporting the question bank as Typeform JSON. |
-| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` | 48 | 0 | 24 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
+| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` | 49 | 0 | 25 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
 
 ## Constraint pages
 
@@ -41,7 +41,7 @@ Each normative constraint carries a `CON-*` ID naming the claims that verify it.
 | [System overview](system-overview.md) | `CON-SO` | 9 | The canonical purpose, boundaries, components, and explicit out-of-scope list. |
 | [Data and persistence](data-and-persistence.md) | `CON-DP` | 16 | The canonical target records, naming, transactions, constraints, and query DTOs. |
 | [Interfaces and data flow](interfaces-and-data-flow.md) | `CON-IF` | 10 | The canonical HTTP surface, ports, and end-to-end flow of a report through the system. |
-| [Infrastructure and operations](infrastructure-and-operations.md) | `CON-INF` | 19 | The canonical minimal AWS topology, deployment, secrets, backups, and alerting. |
+| [Infrastructure and operations](infrastructure-and-operations.md) | `CON-INF` | 20 | The canonical minimal AWS topology, deployment, secrets, backups, and alerting. |
 | [Testing and quality](testing-and-quality.md) | `CON-TQ` | 10 | The canonical test strategy, required contract coverage, and quality gates. |
 
 ## Decisions

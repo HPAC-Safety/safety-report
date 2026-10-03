@@ -3054,6 +3054,10 @@ Every translation localizes place names rather than copying them — *Reqnroll, 
 
 A destructive admin action asks for confirmation — *playwright-bdd, Covered*
 
+### REQ-WLD-049
+
+A page left open across a deploy keeps its interface text in both languages — *playwright-bdd, Covered*
+
 ## Constraints
 
 A constraint states something the system must be true of; the claims beside
@@ -3240,6 +3244,10 @@ infrastructure-and-operations.md — verified by none — an infrastructure/logg
 ### CON-INF-026
 
 infrastructure-and-operations.md — verified by `REQ-DOM-016`, `REQ-DOM-017`
+
+### CON-INF-027
+
+infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that was already open when a deploy removed its files
 
 ### CON-SO-001
 

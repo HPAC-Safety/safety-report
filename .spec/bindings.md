@@ -3430,6 +3430,10 @@ definition matches; a built claim may never have one.
 
 - [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts)
 
+### REQ-WLD-049
+
+- [locale.steps.ts](../tests/e2e/steps/locale.steps.ts)
+
 ## Stale @ignore
 
 A claim still tagged `@ignore` whose every step a definition already binds. Drop

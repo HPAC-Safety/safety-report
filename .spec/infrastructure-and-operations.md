@@ -277,6 +277,18 @@ merge to `main` — a pull request only plans, against both accounts
 *Verified by: none — an infrastructure property no application scenario can
 observe; the `release` and `terraform` workflows are its check.*
 
+**CON-INF-027** A deploy uploads the website bundle so that a browser
+never keeps an old page. Files under `assets/` are content-hashed and are
+uploaded first, as `Cache-Control: public, max-age=31536000, immutable`.
+`index.html`, and any other file whose name carries no hash, is uploaded after
+them as `Cache-Control: no-cache`, so a returning visitor revalidates it and
+gets the release's page. Only then are the previous release's `assets/` files
+deleted. Before a page is uploaded, every file it names is already in place
+(#805).
+*Verified by: none — an infrastructure property no application scenario can
+observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that
+was already open when a deploy removed its files.*
+
 **CON-INF-013** The NAT instance (`fck-nat` on a `t4g.nano`, in a one-instance
 Auto Scaling group) is the only resource this system ever deletes and
 recreates, and every release does so. Every other resource — the RDS

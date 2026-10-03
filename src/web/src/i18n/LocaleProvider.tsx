@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { DEFAULT_LOCALE, STORAGE_KEY, type Locale } from "./locales"
-import { loadCatalogue, type Catalogue } from "./loadCatalogue"
+import { catalogueFor } from "./catalogueFor"
 import { LocaleContext, type LocaleContextValue } from "./localeContext"
 import { LocaleProviderView } from "./LocaleProvider.view"
 import { resolveInitialLocale } from "./resolveInitialLocale"
@@ -23,17 +23,8 @@ export function useLocaleProvider(): LocaleContextValue {
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- navigator.languages is absent in some older browsers
 		resolveInitialLocale(readStoredLocale(), navigator.languages ?? [navigator.language], window.location.hostname),
 	)
-	const [catalogue, setCatalogue] = useState<Catalogue>({})
-
-	useEffect(() => {
-		let cancelled = false
-		void loadCatalogue(locale).then((loaded) => {
-			if (!cancelled) setCatalogue(loaded)
-		})
-		return () => {
-			cancelled = true
-		}
-	}, [locale])
+	// Bundled, so the first render already has its text (REQ-WLD-049).
+	const catalogue = useMemo(() => catalogueFor(locale), [locale])
 
 	useEffect(() => {
 		document.documentElement.lang = locale

@@ -133,11 +133,32 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[When(@"^a SafetyOfficer lists reports needing action and reads the pending counts$")]
 	public async Task WhenNeedsActionAndCountsAreRead()
 	{
+		// The booted database is shared with scenarios running in parallel, which
+		// add and settle reports between any two reads. So the count, the list,
+		// and the count again are read until all three agree, as
+		// PendingCountSteps does; the last reads stand if they never do, and the
+		// Then step reports the disagreement.
+		const int attempts = 10;
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		_needsAction = [.. await ListAllIds(client, "/api/admin/reports?filter=needs-action")];
-		_needsActionCount = (await client.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/counts", UriKind.Relative)))
-			.GetProperty("reportsNeedingAction").GetInt32();
+
+		for (var attempt = 1; attempt <= attempts; attempt++)
+		{
+			var before = await ReportsNeedingAction(client);
+			_needsAction = [.. await ListAllIds(client, "/api/admin/reports?filter=needs-action")];
+			_needsActionCount = await ReportsNeedingAction(client);
+
+			if (before == _needsActionCount && _needsActionCount == _needsAction.Count)
+			{
+				return;
+			}
+
+			await Task.Delay(TimeSpan.FromMilliseconds(200));
+		}
 	}
+
+	private static async Task<int> ReportsNeedingAction(HttpClient client) =>
+		(await client.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/counts", UriKind.Relative)))
+		.GetProperty("reportsNeedingAction").GetInt32();
 
 	/// <summary>Follows every keyset page (REQ-MOD-129) and returns every row's id.</summary>
 	private static async Task<List<string>> ListAllIds(HttpClient client,

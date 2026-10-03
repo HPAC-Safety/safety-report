@@ -34,6 +34,7 @@ public sealed class ReportReviewSteps
 	private string _openedId = string.Empty;
 	private string _namedReportId = string.Empty;
 	private string _restartedFirstId = string.Empty;
+	private string _topFirstId = string.Empty;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -136,12 +137,36 @@ public sealed class ReportReviewSteps
 	[When(@"a reviewer lists reports after a cursor naming a report no longer in the queue")]
 	public async Task WhenAReviewerListsAfterAnUnknownCursor()
 	{
+		// Scenarios running in parallel add newer reports to the shared booted
+		// database at any moment, so the restarted page is compared with the top
+		// of the list read just before and just after it, retried until the
+		// three reads agree.
+		const int attempts = 10;
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var cursor = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(TinyId.New().Value));
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports?after={cursor}", UriKind.Relative));
+
+		for (var attempt = 1; attempt <= attempts; attempt++)
+		{
+			var before = await FirstListedId(client, string.Empty);
+			_restartedFirstId = await FirstListedId(client, $"?after={cursor}");
+			_topFirstId = await FirstListedId(client, string.Empty);
+
+			if (before == _restartedFirstId && _restartedFirstId == _topFirstId)
+			{
+				return;
+			}
+
+			await Task.Delay(TimeSpan.FromMilliseconds(200));
+		}
+	}
+
+	private static async Task<string> FirstListedId(HttpClient client,
+													string query)
+	{
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports{query}", UriKind.Relative));
 		response.EnsureSuccessStatusCode();
 		var page = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
-		_restartedFirstId = page.GetProperty("items").EnumerateArray().First().GetProperty("id").GetString()!;
+		return page.GetProperty("items").EnumerateArray().First().GetProperty("id").GetString()!;
 	}
 
 	[When(@"the detail query runs")]
@@ -217,7 +242,7 @@ public sealed class ReportReviewSteps
 	[Then(@"that list starts with the same report the first page did")]
 	public void ThenTheRestartedListStartsWithTheSameReport()
 	{
-		_restartedFirstId.ShouldBe(_listed[0].GetProperty("id").GetString());
+		_restartedFirstId.ShouldBe(_topFirstId);
 	}
 
 	[Then(@"each stuck report is marked stuck")]

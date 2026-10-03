@@ -166,7 +166,8 @@ both.
   The form leaves such a child out of the submission, and the API records
   nothing for it (`REQ-QB-201`, `REQ-QB-204`, `REQ-SUB-114`). A polite live
   region tells a screen reader when the parent's answer opens the child. A parent
-  answered with a new typed value is covered by `REQ-QB-199`. A saved report restores both
+  answered with a new typed value leaves the child a value to type
+  (`REQ-QB-199`). A saved report restores both
   answers, dropping a child answer no longer under the parent's
   (`REQ-QB-200`, `REQ-QB-223`).
 - **A parent the form does not ask** — deactivated, or deleted rather than

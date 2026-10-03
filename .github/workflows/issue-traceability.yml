@@ -1,3 +1,5 @@
+name: Issue traceability
+
 # docs/issue-traceability.md lists every open issue, generated from GitHub by
 # tools/spec/generate-issue-traceability.ts (ADR-0191, superseding ADR-0143).
 # Open issues change without any commit, so this never runs on a pull request

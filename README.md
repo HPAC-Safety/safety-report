@@ -245,7 +245,7 @@ it to reset.
 | [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and the React/Vite web app |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused coding-agent guidance: generic skills, and the project skills that extend them |
-| [`docs/`](docs/architecture.md) | Guides: architecture, setup, deployment, conventions, implementation status, and PR screenshots |
+| [`docs/`](docs/architecture.md) | Guides: architecture, setup, deployment, conventions, and PR screenshots |
 | [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding; [`infra/SETUP.md`](infra/SETUP.md) is the human setup checklist for staging and production |
 | [`locales/`](locales/en-CA.json) | Reviewed application UI catalogues |
 

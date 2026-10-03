@@ -1368,7 +1368,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- REQ-SUB-021: no audit entry or log line records who submitted ---
 
-	[Then(@"no audit entry attributes the submission to a subject")]
+	[Then(@"no audit entry attributes the submission to a token subject")]
 	public async Task ThenNoAuditEntryAttributesTheSubmission()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
@@ -1385,7 +1385,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		entries.ShouldBeEmpty();
 	}
 
-	[Then(@"no log line records the submitting subject at any level")]
+	[Then(@"no log line records the reporter's token subject at any level")]
 	public void ThenNoLogLineRecordsTheSubject()
 	{
 		// A capture that saw nothing would prove nothing.
@@ -1393,7 +1393,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_logs.Lines.ShouldAllBe(line => !line.Contains(_submitterSubject!, StringComparison.OrdinalIgnoreCase));
 	}
 
-	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject")]
+	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the reporter's token subject")]
 	[Then(@"no column, join table, or hash anywhere links the report to the member who filed it")]
 	public void ThenNoStoredStateRecordsTheSubmittersSubject()
 	{

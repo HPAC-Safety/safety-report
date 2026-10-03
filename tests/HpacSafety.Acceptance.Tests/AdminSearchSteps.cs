@@ -102,13 +102,13 @@ public sealed class AdminSearchSteps
 		await SearchAs(await BootedApi.SignedInAs(MemberRole.User));
 	}
 
-	[When(@"a safety officer searches for that word")]
+	[When(@"a Safety Officer searches for that word")]
 	public async Task WhenASafetyOfficerSearchesForThatWord()
 	{
 		await SearchAs(await BootedApi.SignedInAs(MemberRole.SafetyOfficer));
 	}
 
-	[When(@"an administrator searches for that word")]
+	[When(@"an Administrator searches for that word")]
 	public async Task WhenAnAdministratorSearchesForThatWord()
 	{
 		await SearchAs(await BootedApi.SignedInAs(MemberRole.Administrator));

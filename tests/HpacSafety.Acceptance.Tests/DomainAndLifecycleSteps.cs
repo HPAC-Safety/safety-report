@@ -66,7 +66,7 @@ public sealed class DomainAndLifecycleSteps
 		_outboxId = outboxMessage.Id;
 	}
 
-	[When(@"a safety officer soft-deletes it")]
+	[When(@"a Safety Officer soft-deletes it")]
 	public async Task WhenASafetyOfficerSoftDeletesIt()
 	{
 		var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
@@ -346,7 +346,7 @@ public sealed class DomainAndLifecycleSteps
 		await GivenAReportExists();
 	}
 
-	[When(@"no safety officer has deleted it")]
+	[When(@"no Safety Officer has deleted it")]
 	public void WhenNoSafetyOfficerHasDeletedIt()
 	{
 		// Nothing to do — the Given already left the report undeleted.

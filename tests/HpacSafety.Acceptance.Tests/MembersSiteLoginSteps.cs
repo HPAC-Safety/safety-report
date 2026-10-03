@@ -47,7 +47,7 @@ public sealed class MembersSiteLoginSteps
 		// Development-shaped host, where the route always exists.
 	}
 
-	[Given(@"{string} is on the development administrator list")]
+	[Given(@"{string} is on the development Administrator list")]
 	public void GivenEmailIsOnTheAdministratorList(string email)
 	{
 		_administratorEmail = email;
@@ -67,7 +67,7 @@ public sealed class MembersSiteLoginSteps
 		_loginEmail = email;
 	}
 
-	[When(@"that email logs in with credentials the members site accepts")]
+	[When(@"that email signs in with credentials the members site accepts")]
 	public async Task WhenThatEmailLogsInSuccessfully()
 	{
 		var email = _administratorEmail ?? _safetyOfficerEmail ?? _loginEmail
@@ -82,7 +82,7 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = email, password = "whatever-the-stub-accepts" });
 	}
 
-	[When(@"a login is attempted with credentials the members site does not accept")]
+	[When(@"a sign-in is attempted with credentials the members site does not accept")]
 	public async Task WhenLoginAttemptedWithBadCredentials()
 	{
 		var client = await BootedApi.MembersSiteStubbed(new StubTransport(LoginPage(), LoginPage()));
@@ -91,7 +91,7 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "nobody-special@example.test", password = "wrong-password" });
 	}
 
-	[When(@"the members site cannot be reached during a login attempt")]
+	[When(@"the members site cannot be reached during a sign-in attempt")]
 	public async Task WhenMembersSiteCannotBeReached()
 	{
 		var client = await BootedApi.MembersSiteStubbed(

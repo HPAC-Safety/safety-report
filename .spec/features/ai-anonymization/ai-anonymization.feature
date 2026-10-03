@@ -120,7 +120,7 @@ Scenario: Retries repeat the single-call operation without adding stages
 Scenario: Exhausted retries surface a manually authorable failure
   Given a report's summarization retry budget is exhausted
   When the Worker gives up on the attempt
-  Then the report becomes SummaryFailed with a safe operational error
+  Then the report becomes Summary failed with a safe operational error
   And the report appears in the review queue
   And a human can author both summary texts manually and continue review
 
@@ -236,7 +236,7 @@ Scenario: A summary with the wrong headings is a failed attempt under the retry 
   And the model answers every attempt with headings that do not match the expected sections
   When the outbox retries the attempt until its budget is exhausted
   Then each attempt fails and none saves a summary
-  And the report becomes SummaryFailed
+  And the report becomes Summary failed
   And a human can author both summary texts manually and continue review
 
 @REQ-AI-027

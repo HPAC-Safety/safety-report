@@ -62,14 +62,14 @@ public sealed class PrivateNoteSteps
 		};
 	}
 
-	[Given(@"a safety officer wrote a private note on a report")]
+	[Given(@"a Safety Officer wrote a private note on a report")]
 	public async Task GivenAnOfficerWroteANote()
 	{
 		await GivenAReportCarryingOneNote();
 		_written.Add((NoteText, _officer));
 	}
 
-	[Given(@"a safety officer wrote a private note on a report and edited it once")]
+	[Given(@"a Safety Officer wrote a private note on a report and edited it once")]
 	public async Task GivenAnOfficerWroteAndEditedANote()
 	{
 		await GivenAnOfficerWroteANote();
@@ -116,7 +116,7 @@ public sealed class PrivateNoteSteps
 		}
 	}
 
-	[When(@"a safety officer adds two private notes and an administrator adds a third")]
+	[When(@"a Safety Officer adds two private notes and an Administrator adds a third")]
 	public async Task WhenStaffAddThreeNotes()
 	{
 		_outboxBefore = await OutboxCount();
@@ -136,7 +136,7 @@ public sealed class PrivateNoteSteps
 		}
 	}
 
-	[When(@"an administrator edits that private note twice")]
+	[When(@"an Administrator edits that private note twice")]
 	public async Task WhenAnAdministratorEditsTwice()
 	{
 		foreach (var (text, basedOn) in new[] { ("Synthetic: investigator called back.", 1), ("Synthetic: investigator report received.", 2) })
@@ -147,7 +147,7 @@ public sealed class PrivateNoteSteps
 		}
 	}
 
-	[When(@"an administrator removes that private note")]
+	[When(@"an Administrator removes that private note")]
 	public async Task WhenAnAdministratorRemoves()
 	{
 		using var admin = await Reviewer(_administrator, "administrator");
@@ -155,7 +155,7 @@ public sealed class PrivateNoteSteps
 		removed.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[When(@"^a safety officer adds a private note whose text is (.+)$")]
+	[When(@"^a Safety Officer adds a private note whose text is (.+)$")]
 	public async Task WhenAnOfficerAddsText(string text)
 	{
 		_storedBefore = await StoredCount();
@@ -171,7 +171,7 @@ public sealed class PrivateNoteSteps
 		_response = await officer.PostAsJsonAsync(NotesUri(), new { text = body });
 	}
 
-	[When(@"a safety officer deletes that report")]
+	[When(@"a Safety Officer deletes that report")]
 	public async Task WhenAnOfficerDeletesTheReport()
 	{
 		using var officer = await Reviewer(_officer, "safety_officer");
@@ -236,7 +236,7 @@ public sealed class PrivateNoteSteps
 		(await OutboxCount()).ShouldBe(_outboxBefore);
 	}
 
-	[Then(@"the private note lists the latest text, written by the administrator, marked as edited")]
+	[Then(@"the private note lists the latest text, written by the Administrator, marked as edited")]
 	public async Task ThenTheLatestTextIsListed()
 	{
 		var note = (await Listed()).Single(candidate => candidate.GetProperty("id").GetString() == _noteId);
@@ -294,7 +294,7 @@ public sealed class PrivateNoteSteps
 		note.Revisions.ShouldAllBe(revision => revision.Deleted == note.Deleted);
 	}
 
-	[Then(@"one audit entry records the administrator's token subject, RemovedPrivateNote, the note, and the time, without its text")]
+	[Then(@"one audit entry records the Administrator's token subject, RemovedPrivateNote, the note, and the time, without its text")]
 	public async Task ThenTheRemovalIsAudited()
 	{
 		var note = await Stored();

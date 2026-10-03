@@ -8,14 +8,14 @@ merged, or removed by a Safety Officer or an Administrator.
 Background:
   Given the question bank stores each question as a stable, non-localized key
   And each revision has a monotonically increasing revision number for its key
-  And at most one live question exists for a stable key
+  And at most one live question exists for a question key
 
 @REQ-QB-036
 Scenario: Two reporters naming the same new site produce one choice
   Given a reporter has already added a site to a type-ahead question
   When another reporter submits the same site name
   Then the existing choice is reused rather than duplicated
-  And an administrator's wording is never replaced by a reporter's
+  And an Administrator's wording is never replaced by a reporter's
 
 @REQ-QB-097
 Scenario Outline: Only a type-ahead grows from reporters' answers
@@ -79,7 +79,7 @@ Scenario: A condition follows its parent question when the parent forks
 @REQ-QB-139
 @ui
 Scenario: An Administrator chooses to replace a picker option rather than fix it
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they reword the "Paraglider" option of a single-select question and mark it to be replaced
   Then the save sends that option to be replaced, under its old code with its new wording
   And a type-ahead question's values offer no replace choice
@@ -220,7 +220,7 @@ Scenario: Under a dependent type-ahead, a merged-away wording offers the survivo
 @REQ-QB-237
 @ui
 Scenario: The type-ahead review page lists a value's aliases, chains included
-  Given a signed-in Safety Officer reviews a flagged value that two earlier wordings, one itself merged from a third, were merged into
+  Given a Safety Officer reviews a flagged value that two earlier wordings, one itself merged from a third, were merged into
   When they open the review-type-ahead-values page
   Then the value shows its aliases "Coopers" and "Cooper's"
 
@@ -291,7 +291,7 @@ Scenario: Pinning a choice never revises or forks its question
 @REQ-QB-150
 @ui
 Scenario: An Administrator sets each option's position, and the editor lists options as the form does
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
   Then its options are listed "Hang glider", "Paraglider", "Other"
   And each option offers the positions "Alphabetical", "Pin to top", and "Pin to bottom"
@@ -302,20 +302,20 @@ Scenario: An Administrator sets each option's position, and the editor lists opt
 @REQ-QB-151
 @ui
 Scenario: The required-option control lists the parent's choices as the form does
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they make a question conditional on a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
   Then the required-option control lists "Hang glider", "Paraglider", "Other"
 
 @REQ-QB-152
 @ui
 Scenario: The type-ahead review page offers merge targets as the form lists them
-  Given a signed-in Safety Officer reviews a type-ahead value whose question offers "Woodside" pinned last, and "Mount 7" and "Cooper's" not pinned
+  Given a Safety Officer reviews a type-ahead value whose question offers "Woodside" pinned last, and "Mount 7" and "Cooper's" not pinned
   Then the value can be merged into "Cooper's", "Mount 7", or "Woodside", in that order
 
 @REQ-QB-153
 @ui
 Scenario: A multi-select answer on the report page is listed as the form lists its choices
-  Given a signed-in Safety Officer opens a report whose multi-select answer names "Turbulent", "Other" pinned last, and "Gusty"
+  Given a Safety Officer opens a report whose multi-select answer names "Turbulent", "Other" pinned last, and "Gusty"
   Then the answer is listed "Gusty", "Turbulent", "Other"
 
 @REQ-MOD-094
@@ -333,7 +333,7 @@ Examples:
 @REQ-MOD-097
 @ui
 Scenario: A Safety Officer approves, corrects, and removes type-ahead values on the review page
-  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  Given a Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
   Then each value is listed under its question's heading, with the language it was typed in and how many answers name it
   When they approve "Mount 7", correct "coopers" to "Cooper's", and remove "Test site"
@@ -343,7 +343,7 @@ Scenario: A Safety Officer approves, corrects, and removes type-ahead values on 
 @REQ-MOD-095
 @ui
 Scenario: A Safety Officer reviews flagged type-ahead values on one page
-  Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
+  Given a Safety Officer and two type-ahead questions with values flagged for review
   When they open the review-type-ahead-values page
   Then every flagged value is listed under its question's heading, with its language and how many answers name it
   When they merge "Coopers" into "Cooper's"
@@ -353,7 +353,7 @@ Scenario: A Safety Officer reviews flagged type-ahead values on one page
 @REQ-MOD-160
 @ui
 Scenario: The review queue groups flagged values under their question, questions ordered alphabetically
-  Given a signed-in Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first
+  Given a Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first
   When they open the review-type-ahead-values page
   Then the question headings read, top to bottom, "Where did this happen?" then "Where did you launch?"
 
@@ -372,7 +372,7 @@ Examples:
 @REQ-MOD-162
 @ui
 Scenario Outline: Approving, correcting, removing, merging, and relinking a value keeps the reviewer's scroll position, with no loading state
-  Given a signed-in Safety Officer and twenty flagged values under one type-ahead question
+  Given a Safety Officer and twenty flagged values under one type-ahead question
   When they open the review-type-ahead-values page
   And they scroll to "Site 15"
   And they <action> "Site 15"
@@ -390,7 +390,7 @@ Examples:
 @REQ-MOD-163
 @ui
 Scenario: A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count
-  Given a signed-in Safety Officer and two flagged values of the same question, one also awaiting review in its own right
+  Given a Safety Officer and two flagged values of the same question, one also awaiting review in its own right
   When they open the review-type-ahead-values page
   And they merge "Coopers" into "Cooper's"
   Then "Coopers" leaves the list, and the rows around it stay where they are
@@ -403,7 +403,7 @@ Scenario: A merged value leaves the queue in place, and a merge target still awa
 @REQ-MOD-166
 @ui
 Scenario: A value written in both languages offers Translate only once its wording differs from what correction opened with
-  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  Given a Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "coopers"
   And they write its French wording as "Coopers (fr)"
@@ -414,7 +414,7 @@ Scenario: A value written in both languages offers Translate only once its wordi
 @REQ-MOD-167
 @ui
 Scenario: A value's Translate is unavailable after it translates, until its source is edited again
-  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  Given a Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
   Then that value's Translate action is unavailable
@@ -424,7 +424,7 @@ Scenario: A value's Translate is unavailable after it translates, until its sour
 @REQ-MOD-168
 @ui
 Scenario: Pressing Translate drafts the other language, still editable, and saves nothing by itself
-  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  Given a Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
   Then that value's French field is filled with the translation and remains editable
@@ -433,7 +433,7 @@ Scenario: Pressing Translate drafts the other language, still editable, and save
 @REQ-MOD-169
 @ui
 Scenario: The direction switch changes which language Translate reads from
-  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  Given a Safety Officer and three type-ahead values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "Test site"
   Then that value's direction switch translates English to French
@@ -444,7 +444,7 @@ Scenario: The direction switch changes which language Translate reads from
 @REQ-MOD-170
 @ui
 Scenario: Translate is unavailable when the server has no translation provider
-  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server with no translation provider
+  Given a Safety Officer and three type-ahead values flagged for review, on a server with no translation provider
   When they open the review-type-ahead-values page
   And they begin correcting "coopers"
   Then that value's Translate action is unavailable and says why
@@ -452,7 +452,7 @@ Scenario: Translate is unavailable when the server has no translation provider
 @REQ-MOD-171
 @ui
 Scenario: A failed translation says so on the value's row and drafts nothing
-  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation fails
+  Given a Safety Officer and three type-ahead values flagged for review, on a server whose translation fails
   When they open the review-type-ahead-values page
   And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
   Then that value's row says the translation failed
@@ -462,7 +462,7 @@ Scenario: A failed translation says so on the value's row and drafts nothing
 @REQ-MOD-172
 @ui
 Scenario: A translation overtaken by a direction flip is dropped, and Translate stops showing as working
-  Given a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released
+  Given a Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released
   When they open the review-type-ahead-values page
   And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
   And they flip that value's direction switch while the translation is still out

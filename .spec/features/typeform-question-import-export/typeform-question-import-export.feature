@@ -120,7 +120,7 @@ Scenario: The imported draft's key comes from the Typeform ref
 @REQ-TF-017
 @ui
 Scenario: Re-importing the same form updates in place
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they import a Typeform draft whose key matches an existing question
   Then choosing to review it opens the existing question for editing instead of creating a new one
 
@@ -132,7 +132,7 @@ Scenario: Export produces a zip of two Typeform-shaped files
 
 @REQ-TF-019
 Scenario: Export preserves data Typeform has no field for
-  Given a live question has a stable key, a dependency, and a group membership
+  Given a live question has a question key, a dependency, and a group membership
   When it is exported
   Then the exported field carries that data in a namespaced extension object
   And a plain Typeform file otherwise validates without it

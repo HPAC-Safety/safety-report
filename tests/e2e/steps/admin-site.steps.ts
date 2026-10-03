@@ -42,7 +42,7 @@ interface Origin {
 
 const reportPageOrigin = new WeakMap<Page, Origin>()
 
-Given("a signed-in Safety Officer is on the public report page", async ({ page }) => {
+Given("a Safety Officer is on the public report page", async ({ page }) => {
 	await signInAs(page, "safety_officer")
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?$/, (route) => route.fulfill({ json: [] }))
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, (route) => route.fulfill({ json: PUBLIC_REPORT }))
@@ -223,7 +223,7 @@ const PDF = Buffer.from("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Roo
 const downloads = new WeakMap<Page, Download>()
 const adminRequests = new WeakMap<Page, string[]>()
 
-Given("an authorized reviewer opens a document attachment", async ({ page }) => {
+Given("a reviewer opens a document attachment", async ({ page }) => {
 	const report = {
 		...reportDetail(),
 		consent: true,

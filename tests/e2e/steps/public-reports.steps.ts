@@ -412,12 +412,12 @@ Then("the search box is empty and the full feed is shown again", async ({ page }
 
 const ADMIN_LINK_ROLES: Record<string, Role> = {
 	Administrator: "administrator",
-	SafetyOfficer: "safety_officer",
+	"Safety Officer": "safety_officer",
 	User: "user",
 }
 
 Given(
-	/^(?:a signed-in (Administrator|SafetyOfficer|User)|a signed-out visitor) visits a published report's page$/,
+	/^(?:an? (Administrator|Safety Officer|User)|an anonymous visitor) visits a published report's page$/,
 	async ({ page }, roleLabel?: string) => {
 		await stubFeed(page)
 

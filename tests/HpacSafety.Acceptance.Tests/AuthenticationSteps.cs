@@ -134,7 +134,7 @@ public sealed class AuthenticationSteps
 		MemberRoles.EffectiveRole(_principal!, Options.RoleClaimType).ShouldBe(MemberRole.User);
 	}
 
-	[Then(@"it reads only the subject and the role claim")]
+	[Then(@"it reads only the token subject and the role claim")]
 	public void ThenOnlySubjectAndRole()
 	{
 		var identity = MemberRoles.IdentityOf(_principal!, Options.RoleClaimType);

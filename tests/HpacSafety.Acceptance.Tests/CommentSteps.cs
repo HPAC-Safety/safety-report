@@ -191,7 +191,7 @@ public sealed class CommentSteps
 		};
 	}
 
-	[When(@"a safety officer hides the comment")]
+	[When(@"a Safety Officer hides the comment")]
 	public async Task WhenASafetyOfficerHides()
 	{
 		await Hide(_commentId);
@@ -286,7 +286,7 @@ public sealed class CommentSteps
 		_listed.EnumerateArray().Select(Id).ShouldContain(_otherCommentId);
 	}
 
-	[Then(@"no comment carries its author's subject or any other identity")]
+	[Then(@"no comment carries its author's token subject or any other identity")]
 	public void ThenNoIdentity()
 	{
 		string[] allowed = ["id", "text", "locale", "translatedText", "createdAt", "updatedAt", "edited", "isMine"];

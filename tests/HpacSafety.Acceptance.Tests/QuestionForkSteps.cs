@@ -28,7 +28,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-001: an unanswered question revises ---
 
-	[Given(@"an active question revision exists for a stable key")]
+	[Given(@"an active question revision exists for a question key")]
 	public void GivenAnActiveQuestionRevision()
 	{
 		outcome.Original = Question.Create(
@@ -123,7 +123,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 		outcome.Live.Deleted.ShouldBeNull();
 	}
 
-	[Then(@"the new question carries the same stable key")]
+	[Then(@"the new question carries the same question key")]
 	public void ThenTheNewQuestionKeepsTheKey()
 	{
 		outcome.Live!.Key.ShouldBe(outcome.Original!.Key);

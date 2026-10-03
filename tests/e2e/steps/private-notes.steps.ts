@@ -125,7 +125,7 @@ Then("the private notes section lists {string} with its writer and time", async 
 	await expect(note.locator("[data-private-note-edited]")).toHaveCount(0)
 })
 
-When("the safety officer adds the private note {string}", async ({ page }, text: string) => {
+When("the Safety Officer adds the private note {string}", async ({ page }, text: string) => {
 	await section(page).getByLabel("Add a private note").fill(text)
 	await section(page).getByRole("button", { name: "Add note" }).click()
 })
@@ -139,7 +139,7 @@ Then("{string} is listed first, marked as theirs", async ({ page }, text: string
 })
 
 When(
-	"the safety officer edits that private note to {string}",
+	"the Safety Officer edits that private note to {string}",
 	async ({ page }, text: string) => {
 		const note = section(page).getByRole("list", { name: "Private notes on this report" }).getByRole("listitem").first()
 		await note.getByRole("button", { name: "Edit" }).click()
@@ -166,7 +166,7 @@ Then("its history shows both revisions", async ({ page }) => {
 	await expect(history.nth(1)).toContainText("Investigator report received.")
 })
 
-When("the safety officer removes that private note and confirms", async ({ page }) => {
+When("the Safety Officer removes that private note and confirms", async ({ page }) => {
 	const note = section(page).getByRole("list", { name: "Private notes on this report" }).getByRole("listitem").first()
 	await note.getByRole("button", { name: "Remove" }).click()
 	await expect(note).toContainText("Remove this note? It cannot be restored.")

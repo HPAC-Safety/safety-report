@@ -10,11 +10,11 @@ actually worded.
 Background:
   Given the question bank stores each question as a stable, non-localized key
   And each revision has a monotonically increasing revision number for its key
-  And at most one live question exists for a stable key
+  And at most one live question exists for a question key
 
 @REQ-QB-001
 Scenario: Editing an unanswered question creates a new revision instead of mutating one
-  Given an active question revision exists for a stable key
+  Given an active question revision exists for a question key
   And no answer references that question
   When an Administrator changes its wording, help text, translations, type, order, privacy, active state, or required state
   Then a new complete revision is created with the next revision number
@@ -27,7 +27,7 @@ Scenario: Editing an answered question retires it and creates a new one
   When an Administrator changes its wording
   Then the original question is stamped as deleted
   And a new question is created with a new identifier
-  And the new question carries the same stable key
+  And the new question carries the same question key
   And the new question starts its own revision numbering
   And the answers already given still refer to the retired question and its original wording
 
@@ -47,7 +47,7 @@ Scenario: A retired question can never be brought back
 
 @REQ-QB-005
 Scenario: Only one question per key is live at a time
-  Given a stable key has a retired question and a live one
+  Given a question key has a retired question and a live one
   When anything resolves that key
   Then it resolves to the live question
   And a second live question for the same key is rejected
@@ -70,7 +70,7 @@ Scenario: Editing a question copies the latest revision into a new one
 
 @REQ-QB-009
 Scenario: Only the latest active, non-deleted revision is shown on the form
-  Given a stable key has multiple revisions
+  Given a question key has multiple revisions
   And only one of them is both active and not deleted
   When the API assembles the current form
   Then that revision is the one included for the key
@@ -81,7 +81,7 @@ Scenario: Form questions are ordered deterministically
   Given the current form includes several question revisions
   When the API orders them for display
   Then they are ordered by sort order
-  And ties are broken by stable key
+  And ties are broken by question key
 
 @REQ-QB-011
 Scenario: The current form is public
@@ -197,7 +197,7 @@ Scenario: Privacy is a property of the revision, not the answer
 @REQ-QB-027
 Scenario: Creating a revision preserves the question bank invariants
   Given an Administrator saves a new revision
-  Then the stable key is a non-empty, unique, non-localized identifier
+  Then the question key is a non-empty, unique, non-localized identifier
   And both English and French labels are present for an answer-producing question
   And a single-select or multi-select question has at least one live choice, a type-ahead may start with none, and every other type has none
   And only the publication-consent and media-consent questions may be marked system
@@ -244,7 +244,7 @@ Examples:
 @REQ-QB-141
 @ui
 Scenario: An Administrator writes instructional text as a title and a description
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they choose instructional text
   Then its wording is asked for as a title and a description in each language
   And each description takes several lines
@@ -426,29 +426,29 @@ Scenario: Publication consent can never be deleted or deactivated
 @REQ-QB-074
 @ui
 Scenario: An Administrator sees which choices reporters added
-  Given a signed-in Administrator opens the manage-questions page
-  Then a type-ahead question with reporter-added choices says how many are waiting to be reviewed
+  Given an Administrator opens the manage-questions page
+  Then a type-ahead question with reporter-added values says how many are waiting to be reviewed
   When they open that question
-  Then each reporter-added choice is marked as such
+  Then each reporter-added value is marked as such
 
 @REQ-QB-075
 @ui
-Scenario: An Administrator corrects a reporter-added choice
-  Given a signed-in Administrator opens a type-ahead question with a reporter-added choice
+Scenario: An Administrator corrects a reporter-added value
+  Given an Administrator opens a type-ahead question with a reporter-added value
   When they correct the wording of that choice and save it
   Then the corrected wording is shown on the question
 
 @REQ-QB-076
 @ui
 Scenario: An Administrator authors a question from the dashboard
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they add a paragraph-text question in both official languages
   Then the new question appears in the list with its type and version
 
 @REQ-QB-077
 @ui
 Scenario: The options editor appears only for a type that takes options
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they choose the type-ahead list type
   Then the page offers an option editor
   When they choose the single-line text type instead
@@ -457,13 +457,13 @@ Scenario: The options editor appears only for a type that takes options
 @REQ-QB-078
 @ui
 Scenario: Only yes/no and single-select questions are offered as a condition
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   Then the condition picker offers only the yes/no and single-select questions on the form
 
 @REQ-QB-079
 @ui
 Scenario: Naming a required option appears only for a single-select condition
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they choose a yes/no question as the condition
   Then no required-option control is offered
   When they choose a single-select question as the condition instead
@@ -472,14 +472,14 @@ Scenario: Naming a required option appears only for a single-select condition
 @REQ-QB-080
 @ui
 Scenario: Questions are reordered from the keyboard
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they move the second question up using its move-up control
   Then the two questions have swapped places in the list
 
 @REQ-QB-081
 @ui
 Scenario: Editing an unanswered question from the dashboard shows its new version
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   And the first question has never been answered
   When they edit its English wording and save
   Then the list shows the new wording and a higher version number
@@ -487,7 +487,7 @@ Scenario: Editing an unanswered question from the dashboard shows its new versio
 @REQ-QB-082
 @ui
 Scenario: Editing an answered question warns that it will be replaced
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   And the first question has been answered
   When they edit its English wording
   Then the page says that saving retires this question and creates a new one
@@ -497,7 +497,7 @@ Scenario: Editing an answered question warns that it will be replaced
 @REQ-QB-111
 @ui
 Scenario: The editor offers Auto-translate answer only for free text
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they choose long text
   Then Auto-translate answer is offered and checked
   When they choose short text
@@ -508,7 +508,7 @@ Scenario: The editor offers Auto-translate answer only for free text
 @REQ-QB-158
 @ui
 Scenario: The editor offers Allow future dates only for a date question, unchecked
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they choose date
   Then Allow future dates is offered and unchecked
   When they choose time
@@ -519,14 +519,14 @@ Scenario: The editor offers Allow future dates only for a date question, uncheck
 @REQ-QB-085
 @ui
 Scenario: Deleting a question removes it from the list
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they delete the second question
   Then it is gone from the list
 
 @REQ-QB-086
 @ui
 Scenario: A rejected save tells the Administrator why
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they save a question whose two choices read alike
   Then the page shows the reason the save was refused
   And the question is not added to the list
@@ -534,7 +534,7 @@ Scenario: A rejected save tells the Administrator why
 @REQ-QB-087
 @ui
 Scenario: The editor carries an existing question's settings into the form
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they open the first question for editing
   Then the form is filled with its current wording, type, and behaviour
   And no question key is shown
@@ -542,7 +542,7 @@ Scenario: The editor carries an existing question's settings into the form
 @REQ-QB-088
 @ui
 Scenario: Reviewing an imported Typeform draft prefills the editor
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they import a Typeform English and French export pair
   Then the imported drafts are listed
   When they choose to review the first imported draft
@@ -551,14 +551,14 @@ Scenario: Reviewing an imported Typeform draft prefills the editor
 @REQ-QB-089
 @ui
 Scenario: An Administrator downloads the question bank as Typeform JSON
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they choose to export the question bank
   Then a zip file download begins
 
 @REQ-QB-090
 @ui
 Scenario: An Administrator writes a question's choice by its wording alone
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they choose the type-ahead list type
   And they add a choice
   Then the choice asks only for its English and French wording
@@ -586,7 +586,7 @@ Scenario: A new question's key is derived from its English wording and never reu
 @REQ-QB-093
 @ui
 Scenario: Editing a question opens the editor in that question's place
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they open the second question for editing
   Then the editor takes the second question's place in the list
   And the editor's top edge lines up with that row's move-up control
@@ -597,11 +597,11 @@ Scenario: Editing a question opens the editor in that question's place
 @REQ-QB-098
 Scenario: Editing an answered question's wording carries every choice to the replacement
   Given a type-ahead question has been answered on at least one report
-  And it offers choices an Administrator wrote and a reporter-added choice
+  And it offers choices an Administrator wrote and a reporter-added value
   And an Administrator removed one of its choices
   When an Administrator changes its wording
   Then the replacement question offers every choice the retired one offered
-  And the reporter-added choice is still marked as reporter-added
+  And the reporter-added value is still marked as reporter-added
   And the removed choice is carried over and stays removed
 
 @REQ-QB-101
@@ -614,7 +614,7 @@ Scenario: A choice a live question depends on cannot be removed
 @REQ-QB-103
 @ui
 Scenario: The report form shows a one-language choice in the language it has
-  Given a type-ahead question has a reporter-added choice typed only in English
+  Given a type-ahead question has a reporter-added value typed only in English
   When a reporter using French opens that question
   Then the type-ahead offers the choice in its English wording
 
@@ -639,7 +639,7 @@ Examples:
 @REQ-QB-241
 @ui
 Scenario Outline: The admin report detail adds the colon after an answerable question's label, in the locale's style
-  Given a signed-in Safety Officer and a report with a short-text answer labelled "Date", a yes/no answer labelled "Injured?" and a long-text answer labelled "Description"
+  Given a Safety Officer and a report with a short-text answer labelled "Date", a yes/no answer labelled "Injured?" and a long-text answer labelled "Description"
   When they open that report in <locale>
   Then the answers are labelled <labels>
 
@@ -651,7 +651,7 @@ Examples:
 @REQ-QB-242
 @ui
 Scenario: The question bank list shows each language's label with its own colon style
-  Given a signed-in Administrator and a question labelled "Date" in English and "Date" in French
+  Given an Administrator and a question labelled "Date" in English and "Date" in French
   And a statement labelled "Tell us more" in both languages
   When they open the manage-questions page
   Then the question's English label reads "Date:" and its French label reads "Date :"
@@ -660,7 +660,7 @@ Scenario: The question bank list shows each language's label with its own colon 
 @REQ-QB-243
 @ui
 Scenario: The question editor refuses a label that ends in a colon
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they write "Date:" as the English wording and "Date" as the French wording
   Then a message says the form adds the colon itself
   And Save stays disabled
@@ -669,7 +669,7 @@ Scenario: The question editor refuses a label that ends in a colon
 
 @REQ-QB-244
 Scenario Outline: The API refuses a question whose label ends in a colon, in either language
-  Given a signed-in Administrator
+  Given an Administrator
   When they <action> a question whose <language> label is "<label>"
   Then the API refuses it with a problem that says, in English and French, that the form adds the colon itself
   And no question or revision is stored

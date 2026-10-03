@@ -125,7 +125,7 @@ public sealed class TypeformImportEndpointSteps
 		_originalKeys = [keyA, keyB];
 	}
 
-	[Given(@"a live question has a stable key, a dependency, and a group membership")]
+	[Given(@"a live question has a question key, a dependency, and a group membership")]
 	public async Task GivenALiveQuestionHasADependencyAndAGroupMembership()
 	{
 		_client = await BootedApi.SignedInAs(MemberRole.Administrator);

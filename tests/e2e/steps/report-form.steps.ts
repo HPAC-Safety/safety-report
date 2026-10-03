@@ -711,7 +711,7 @@ Then("no dialog asks whether to continue", async ({ page }) => {
 
 // ------------------------------ a one-language reporter-added choice (REQ-QB-103) --
 
-Given("a type-ahead question has a reporter-added choice typed only in English", async ({ page }) => {
+Given("a type-ahead question has a reporter-added value typed only in English", async ({ page }) => {
 	await openForm(page, typeAheadFormQuestions())
 })
 

@@ -64,7 +64,7 @@ identifying hint in a small community. The language travels only on a report's
 own page, from the `public_reports` view's `language` column; the feed and its
 search never carry it. Not built: labelling comments or attachments.
 
-A signed-in Administrator or Safety Officer sees a same-tab link, next to the
+An Administrator or Safety Officer sees a same-tab link, next to the
 published date, from a report's public page to that same report's admin
 detail page (`/admin/reports/<id>`, #657). The public payload is unchanged —
 the link needs only the report ID the page already has, and the signed-in

@@ -49,7 +49,7 @@ public sealed class QuestionBankSteps
 		// Contextual, as above.
 	}
 
-	[Given(@"at most one live question exists for a stable key")]
+	[Given(@"at most one live question exists for a question key")]
 	public void GivenOneLiveQuestionPerKey()
 	{
 		// Contextual. Enforced by the partial unique index (ADR-0071) and

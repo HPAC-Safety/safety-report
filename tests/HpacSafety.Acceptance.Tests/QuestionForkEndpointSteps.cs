@@ -79,7 +79,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-005: only one question per key is live ---
 
-	[Given(@"a stable key has a retired question and a live one")]
+	[Given(@"a question key has a retired question and a live one")]
 	public async Task GivenARetiredAndALiveQuestion()
 	{
 		_created = await CreateQuestion();

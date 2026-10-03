@@ -5,34 +5,34 @@ actions without report content.
 
 @REQ-MOD-001
 @ui
-Scenario: In development the login page offers no third-party sign-in option
-  Given a visitor activates the member-login action
-  Then the login page shows an email field, a password field, and a login action
+Scenario: In development the sign-in page offers no third-party sign-in option
+  Given a visitor activates the member sign-in action
+  Then the sign-in page shows an email field, a password field, and a sign-in action
   And the email field is an email input, so a phone offers its email keyboard
-  And the login page shows no third-party sign-in option
+  And the sign-in page shows no third-party sign-in option
 
 @REQ-MOD-002
 @ui
-Scenario: Where a third-party provider is configured, the login page offers it
+Scenario: Where a third-party provider is configured, the sign-in page offers it
   Given the API reports that a third-party provider is configured
-  When a visitor activates the member-login action
-  Then the login page also shows a third-party sign-in option
+  When a visitor activates the member sign-in action
+  Then the sign-in page also shows a third-party sign-in option
 
 @REQ-MOD-003
 @ui
 Scenario: Signing in with member credentials returns a session that survives a reload
   Given a visitor signs in with valid member credentials
-  Then the header shows a logout action instead of the member-login action
+  Then the header shows a sign-out action instead of the member sign-in action
   When the page reloads
-  Then the header still shows the logout action
+  Then the header still shows the sign-out action
 
 @REQ-MOD-004
 @ui
 Scenario: Bad credentials show one generic failure and no session
   Given a visitor submits credentials that are not valid
-  Then the login page shows one generic failure message
+  Then the sign-in page shows one generic failure message
   And the failure does not say whether the email or the password was wrong
-  And the header still shows the member-login action
+  And the header still shows the member sign-in action
 
 @REQ-MOD-005
 Scenario: Repeated sign-in attempts for one identity are rate limited
@@ -44,16 +44,16 @@ Scenario: Repeated sign-in attempts for one identity are rate limited
 @REQ-MOD-006
 @ui
 Scenario: A member's signed-in session persists across a reload and clears on logout
-  Given a visitor signs in from the member login page
-  Then the header shows a logout action instead of the member-login action
+  Given a visitor signs in from the member sign-in page
+  Then the header shows a sign-out action instead of the member sign-in action
   When the page reloads
-  Then the header still shows the logout action
-  When the visitor activates the logout action
-  Then the header shows the member-login action again
+  Then the header still shows the sign-out action
+  When the visitor activates the sign-out action
+  Then the header shows the member sign-in action again
 
 @REQ-MOD-007
 @ui
-Scenario: A signed-in Administrator's Admin menu offers every option
+Scenario: An Administrator's Admin menu offers every option
   Given a visitor signs in as an Administrator
   Then the header shows an Admin menu and no other header nav change
   When the visitor activates the Admin menu
@@ -69,22 +69,22 @@ Scenario: A signed-in SafetyOfficer's Admin menu offers reports and type-ahead r
 
 @REQ-MOD-009
 @ui
-Scenario: A signed-in User sees no Admin menu
+Scenario: A User sees no Admin menu
   Given a visitor signs in as a User
-  Then the header shows a logout action
+  Then the header shows a sign-out action
   And the header shows no Admin menu
 
 @REQ-MOD-010
 @ui
 Scenario: An open Admin menu keeps every option on a single line
-  Given a visitor signs in from the member login page
+  Given a visitor signs in from the member sign-in page
   When the visitor activates the Admin menu
   Then every option is on one line and none is truncated
 
 @REQ-MOD-011
 @ui
 Scenario Outline: Activating an Admin menu option navigates to its page
-  Given a visitor signs in from the member login page
+  Given a visitor signs in from the member sign-in page
   When the visitor activates the Admin menu
   And the visitor activates the <option> option
   Then the browser navigates to the <destination> page
@@ -165,7 +165,7 @@ Scenario: A token with no recognized role claim authenticates as User
 Scenario: The API never reads a name, an email, or any other claim
   Given a validly signed bearer token carrying a name, an email, and a picture claim
   When the API establishes the caller's identity
-  Then it reads only the subject and the role claim
+  Then it reads only the token subject and the role claim
   And no other claim reaches domain code, a log, or the database
 
 @REQ-MOD-019
@@ -175,29 +175,29 @@ Scenario: The development token endpoint does not exist outside development
   Then the route does not exist
 
 @REQ-MOD-020
-Scenario Outline: A development login verified against the members site resolves role from the email lists
+Scenario Outline: A development sign-in verified against the members site resolves role from the email lists
   Given the development token endpoint is available
   And "<email>" is <listed>
-  When that email logs in with credentials the members site accepts
+  When that email signs in with credentials the members site accepts
   Then the API returns a signed development token with the <role> role
 
 Examples:
   | email                       | listed                                 | role          |
-  | admin@example.test          | on the development administrator list  | Administrator |
+  | admin@example.test          | on the development Administrator list  | Administrator |
   | officer@example.test        | on the development safety-officer list | SafetyOfficer |
   | nobody-special@example.test | on neither development list            | User          |
 
 @REQ-MOD-021
 Scenario: Bad members-site credentials show the same generic failure as bad fixed-account credentials
   Given the development token endpoint is available
-  When a login is attempted with credentials the members site does not accept
+  When a sign-in is attempted with credentials the members site does not accept
   Then the API returns one generic invalid-credentials failure
   And nothing distinguishes it from an unknown fixed development account
 
 @REQ-MOD-022
-Scenario: A members-site outage during a development login is reported distinctly from bad credentials
+Scenario: A members-site outage during a development sign-in is reported distinctly from bad credentials
   Given the development token endpoint is available
-  When the members site cannot be reached during a login attempt
+  When the members site cannot be reached during a sign-in attempt
   Then the API reports the members site as unavailable
   And it does not report invalid credentials
 
@@ -209,7 +209,7 @@ Scenario: An unauthenticated request to an admin endpoint is refused before the 
 
 @REQ-MOD-024
 Scenario: Every operation is authorized by the API, not just the UI
-  Given an authenticated member without the required role calls an admin operation
+  Given a member without the required role calls an admin operation
   When the API processes the request
   Then the API rejects the operation regardless of what the UI would have shown
 
@@ -226,8 +226,8 @@ Scenario: With the temporary interim issuer enabled, a member signs in with thei
   Given the API is not running in development and the temporary interim issuer is enabled
   When a member signs in with credentials the members site accepts
   Then the API issues a token the API itself accepts
-  And an allowlisted administrator account's token carries the Administrator role
-  When a sign-in is attempted with the fixed development administrator account
+  And an allowlisted Administrator account's token carries the Administrator role
+  When a sign-in is attempted with the fixed development Administrator account
   Then the API refuses it
 
 @REQ-MOD-158
@@ -320,7 +320,7 @@ Scenario: Sensitive admin actions are audited without report content
   Given a sensitive read or material mutation occurs in the admin application
   When the action completes
   Then an audit entry records the acting token subject, action, target, and time
-  And the subject is stored as an opaque string that joins to no user record
+  And the token subject is stored as an opaque string that joins to no user record
   And it never records report content
 
 @REQ-MOD-042
@@ -328,12 +328,12 @@ Scenario: Sensitive admin actions are audited without report content
 Scenario: A signed-out visitor who navigates to an admin route is sent to sign in
   Given a visitor is signed out
   When the visitor navigates directly to an admin route
-  Then the browser is redirected to the member-login page
+  Then the browser is redirected to the member sign-in page
   And no admin page content is shown first
 
 @REQ-MOD-043
 @ui
-Scenario Outline: A signed-in member without the required role sees a real 403, not a 404 or the page content
+Scenario Outline: A member without the required role sees a real 403, not a 404 or the page content
   Given a visitor signs in as a <role>
   When the visitor navigates directly to <route>, which their role cannot use
   Then the page shows a forbidden (403) view in place of the route's content
@@ -377,7 +377,7 @@ Scenario: A reviewer's attachment view writes its own audit row, distinct from a
 
 @REQ-MOD-047
 Scenario: A failed audit write blocks the action it would have recorded
-  Given an administrator or reviewer performs an action that must be audited
+  Given an Administrator or reviewer performs an action that must be audited
   When the audit row fails to write
   Then the action itself does not commit
   And the caller sees the action as failed, not succeeded
@@ -385,7 +385,7 @@ Scenario: A failed audit write blocks the action it would have recorded
 @REQ-MOD-048
 @ui
 Scenario: Signing out sends nothing to the API
-  Given a signed-in member activates the logout action
+  Given a member activates the sign-out action
   When the client discards its token
   Then no request reaches the API for that logout
 

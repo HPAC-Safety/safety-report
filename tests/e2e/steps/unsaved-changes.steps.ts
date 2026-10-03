@@ -71,7 +71,7 @@ When("types into the English text without saving", async ({ page }) => {
 	await page.getByLabel("English summary").fill("A draft edit, never saved.")
 })
 
-When("the safety officer starts writing a private note without saving it", async ({ page }) => {
+When("the Safety Officer starts writing a private note without saving it", async ({ page }) => {
 	await page.getByLabel("Add a private note").fill("A draft private note, never saved.")
 })
 

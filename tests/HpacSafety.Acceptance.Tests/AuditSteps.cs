@@ -167,8 +167,8 @@ public sealed class AuditSteps
 		entries.ShouldAllBe(entry => entry.OccurredAt >= _started.AddSeconds(-1) && entry.OccurredAt <= _finished.AddSeconds(1));
 	}
 
-	[Then(@"the subject is stored as an opaque string that joins to no user record")]
-	[Then(@"the subject is an opaque string that joins to no user record")]
+	[Then(@"the token subject is stored as an opaque string that joins to no user record")]
+	[Then(@"the token subject is an opaque string that joins to no user record")]
 	public async Task ThenTheSubjectJoinsToNothing()
 	{
 		(await EntriesBy(_subject)).ShouldNotBeEmpty();
@@ -255,7 +255,7 @@ public sealed class AuditSteps
 
 	// --- REQ-MOD-047: a failed audit write blocks the action ---
 
-	[Given(@"an administrator or reviewer performs an action that must be audited")]
+	[Given(@"an Administrator or reviewer performs an action that must be audited")]
 	public async Task GivenAnActionThatMustBeAudited()
 	{
 		var host = await BootedApi.Factory();

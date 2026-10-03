@@ -833,18 +833,18 @@ Examples:
   | Administrator |
 
 @REQ-SUB-020
-Scenario: A stored report carries no submitter subject, user id, or link
+Scenario: A stored report carries no reporter token subject, user id, or link
   Given a reporter submits a valid report while signed in
   When the submission is committed
-  Then no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject
+  Then no stored report, answer, file, upload, consent projection, or outbox message records the reporter's token subject
   And no column, join table, or hash anywhere links the report to the member who filed it
 
 @REQ-SUB-021
 Scenario: No audit entry or log line records who submitted a report
   Given a reporter submits a valid report while signed in
   When the submission completes
-  Then no audit entry attributes the submission to a subject
-  And no log line records the submitting subject at any level
+  Then no audit entry attributes the submission to a token subject
+  And no log line records the reporter's token subject at any level
 
 @REQ-SUB-022
 @ui
@@ -857,7 +857,7 @@ Scenario: A signed-out visitor is asked to sign in before the report page is off
 @REQ-SUB-023
 @ui
 Scenario: The report page tells the reporter that signing in does not attach them to the report
-  Given a signed-in member opens the report page
+  Given a member opens the report page
   Then the report page content is shown
   And a notice states that signing in only confirms HPAC membership
   And the notice states that the report is not linked to their account
@@ -865,7 +865,7 @@ Scenario: The report page tells the reporter that signing in does not attach the
 @REQ-SUB-024
 @ui
 Scenario: The not-tracked notice is shown in the reporter's chosen language
-  Given a signed-in member opens the report page in French
+  Given a member opens the report page in French
   Then the notice is shown in French
 
 @REQ-SUB-072

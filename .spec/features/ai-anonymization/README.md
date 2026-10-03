@@ -205,7 +205,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   this change is done by hand on the development database, not built.
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
-- Per-sentence or per-field redaction output. The result is one bilingual pair.
+- Per-sentence or per-field redaction output. The result is one summary pair.
 - A deterministic check of the model's output for leaked names, markers, or
   the word "redacted". The reviewer owns the final privacy decision
   ([ADR-0004](../../decisions/ADR-0004-human-review-required.md)).

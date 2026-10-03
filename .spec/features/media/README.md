@@ -93,7 +93,7 @@ The same now holds for a still-processing or failed **image** (REQ-MED-013,
 REQ-MED-053, widening ADR-0094 — #427): either way the reviewer strip marks
 the tile Processing or Failed, and `GET
 /api/admin/reports/{reportId}/attachments/{attachmentId}/original` gives an
-authorized reviewer a short-lived, forced, audited download of the raw
+reviewer a short-lived, forced, audited download of the raw
 original under its own `AuditAction.DownloadedOriginalMedia`, never rendered
 inline and never opened in the lightbox. It refuses once a derivative exists
 (REQ-MED-054, use `/view` instead) and for a document (REQ-MED-055, use
@@ -125,7 +125,7 @@ resumes where it was, paused if it was paused and playing if it was playing —
 and removes the file if the answer is 404. So a hide or
 an unpublish reaches every open page within fifteen minutes.
 
-Moderation happens after publication. A safety officer or administrator hides
+Moderation happens after publication. A Safety Officer or Administrator hides
 a file from the public report page or the admin report page, and shows it
 again from the admin report page; both are audited. The file itself is never
 deleted by a hide.
@@ -240,7 +240,7 @@ for the full record.
 
 ## Private attachments (#507)
 
-A safety officer or administrator may add files to a report that are for
+A Safety Officer or Administrator may add files to a report that are for
 staff only: a coroner's report, a police report, an investigation archive
 ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 They are not the reporter's attachments, and none of the rules above about

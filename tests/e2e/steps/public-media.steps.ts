@@ -354,7 +354,7 @@ Then("the page removes the image", async ({ page }) => {
 
 // --- REQ-MED-035: a reviewer hides a file from the public page ---
 
-Given("a safety officer is signed in and a published report shows an image", async ({ page }) => {
+Given("a Safety Officer is signed in and a published report shows an image", async ({ page }) => {
 	await stubReport(page, [IMAGE], [{ id: IMAGE.id, kind: "image", format: null, state: "ready", visibility: "public" }])
 	await signInAs(page, "safety_officer")
 })
@@ -367,7 +367,7 @@ Then("the image offers to hide it", async ({ page }) => {
 	await expect(page.locator('[data-media="image"]').getByRole("button", { name: "Hide from the public" })).toBeVisible()
 })
 
-When("the safety officer hides the image and confirms", async ({ page }) => {
+When("the Safety Officer hides the image and confirms", async ({ page }) => {
 	const item = page.locator('[data-media="image"]')
 	await item.getByRole("button", { name: "Hide from the public" }).click()
 	await expect(item.getByText("Hide this from everyone?")).toBeVisible()
@@ -558,7 +558,7 @@ Given("a published report has a public {word} and a hidden {word}", async ({ pag
 	])
 })
 
-When("a safety officer opens the report in the admin area", async ({ page }) => {
+When("a Safety Officer opens the report in the admin area", async ({ page }) => {
 	await page.goto(`/admin/reports/${ADMIN_REPORT.id}`)
 	await expect(strip(page)).toBeVisible()
 })
@@ -626,7 +626,7 @@ Then("focus returns to the first image's thumbnail", async ({ page }) => {
 // --- REQ-MED-059: the admin report page uses the same strip and lightbox ---
 
 Given(
-	"a safety officer is signed in and an unpublished report has an image and a hidden document",
+	"a Safety Officer is signed in and an unpublished report has an image and a hidden document",
 	async ({ page }) => {
 		await stubAdminReport(page, "unpublished", [
 			{ id: "imagefile1", kind: "image", state: "ready", visibility: "when_published", format: null },
@@ -653,7 +653,7 @@ Then("the hidden document's thumbnail is marked {string} and offers to show it",
 
 // --- REQ-MED-060: a processing/failed staff tile downloads the raw original ---
 
-Given("a safety officer is signed in and a report has a still-processing image", async ({ page }) => {
+Given("a Safety Officer is signed in and a report has a still-processing image", async ({ page }) => {
 	await stubAdminReport(page, "pending", [{ id: "processing1", kind: "image", state: "processing", visibility: "private", format: null }])
 })
 

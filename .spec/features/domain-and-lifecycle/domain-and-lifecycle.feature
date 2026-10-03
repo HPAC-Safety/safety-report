@@ -13,9 +13,9 @@ Examples:
   | from          | event                                            | to            |
   | Submitted     | Worker claims the summary job and consent is yes | Summarizing   |
   | Submitted     | Worker claims the summary job and consent is no  | Unpublished   |
-  | Summarizing   | a valid bilingual pair is saved                  | Pending       |
-  | Summarizing   | bounded retries are exhausted                    | SummaryFailed |
-  | SummaryFailed | an officer writes both texts                     | Pending       |
+  | Summarizing   | a valid summary pair is saved                  | Pending       |
+  | Summarizing   | bounded retries are exhausted                    | Summary failed |
+  | Summary failed | an officer writes both texts                     | Pending       |
   | Pending       | either summary text is edited                    | Pending       |
   | Pending       | an officer publishes the pair                    | Published     |
   | Pending       | an officer unpublishes the report                | Unpublished   |
@@ -35,7 +35,7 @@ Examples:
   | from          | action               |
   | Submitted     | publish the pair     |
   | Summarizing   | unpublish the report |
-  | SummaryFailed | publish the pair     |
+  | Summary failed | publish the pair     |
   | Published     | publish the pair     |
   | Unpublished   | unpublish the report |
   | Pending       | write a manual pair  |
@@ -99,7 +99,7 @@ Scenario: A report without publication consent is never summarized
 @REQ-DOM-007
 Scenario: Soft deletion removes a report from every normal path
   Given a report exists in any lifecycle state
-  When a safety officer soft-deletes it
+  When a Safety Officer soft-deletes it
   Then one application transaction stamps the same deleted timestamp on the report and all owned and dependent rows: answers, summary, files, and report outbox items
   And an immutable audit entry is recorded
   And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
@@ -124,14 +124,14 @@ Scenario: Retiring a question is a soft delete with no way back
 @REQ-DOM-010
 Scenario: Raw reports are retained until explicit deletion
   Given a synthetic report has been submitted
-  When no safety officer has deleted it
+  When no Safety Officer has deleted it
   Then the report is retained indefinitely
   And there is no scheduled report purge and no physical-delete path in the application
 
 @REQ-DOM-011
 Scenario: Soft-deleting a report keeps its row and its stored files
   Given a synthetic report with an attachment has been submitted
-  When a safety officer soft-deletes the report
+  When a Safety Officer soft-deletes the report
   Then the report row remains, stamped with a deleted timestamp
   And its answers, files, and stored objects remain
   And no application path removes them afterwards
@@ -141,7 +141,7 @@ Scenario Outline: An audited action is recorded in the immutable audit log
   Given <action> occurs
   When the action completes
   Then an audit log entry records the acting token subject and action metadata
-  And the subject is an opaque string that joins to no user record
+  And the token subject is an opaque string that joins to no user record
   And it never contains raw answers, names, credentials, tokens, or client filenames
 
 Examples:

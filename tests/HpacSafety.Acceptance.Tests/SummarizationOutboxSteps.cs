@@ -451,7 +451,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		}
 	}
 
-	[Then(@"the report becomes SummaryFailed with a safe operational error")]
+	[Then(@"the report becomes Summary failed with a safe operational error")]
 	public async Task ThenReportBecomesSummaryFailed()
 	{
 		var persisted = await _db!.Reports.SingleAsync(r => r.Id == _report!.Id);

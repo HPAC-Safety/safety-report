@@ -96,7 +96,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		GivenAnAnsweredQuestion(type.Replace('-', '_'));
 	}
 
-	[Given(@"it offers choices an Administrator wrote and a reporter-added choice")]
+	[Given(@"it offers choices an Administrator wrote and a reporter-added value")]
 	public void GivenWrittenAndReporterChoices()
 	{
 		_question.Choices.Select(choice => choice.AddedByReporter).ShouldBe([false, false, true], ignoreOrder: true);
@@ -562,7 +562,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.Choices.Count(choice => choice.Code == "mount_7").ShouldBe(1);
 	}
 
-	[Then(@"an administrator's wording is never replaced by a reporter's")]
+	[Then(@"an Administrator's wording is never replaced by a reporter's")]
 	public void ThenTheWordingIsNotReplaced()
 	{
 		_added!.LabelEn.ShouldBe("Mount 7");
@@ -590,7 +590,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_live.Choices.Select(choice => choice.Code).ShouldBe(_question.Choices.Select(choice => choice.Code), ignoreOrder: true);
 	}
 
-	[Then(@"the reporter-added choice is still marked as reporter-added")]
+	[Then(@"the reporter-added value is still marked as reporter-added")]
 	public void ThenTheMarkIsKept()
 	{
 		_live.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();

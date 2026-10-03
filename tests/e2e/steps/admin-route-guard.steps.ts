@@ -23,7 +23,7 @@ When("the visitor navigates directly to an admin route", async ({ page }) => {
 	await page.goto("/admin/reports")
 })
 
-Then("the browser is redirected to the member-login page", async ({ page }) => {
+Then("the browser is redirected to the member sign-in page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/login$/)
 })
 

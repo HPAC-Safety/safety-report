@@ -133,7 +133,7 @@ Given("a member is signed in and a published report has comments", async ({ page
 	await signInAs(page, "user")
 })
 
-Given("a safety officer is signed in and a published report has comments", async ({ page }) => {
+Given("a Safety Officer is signed in and a published report has comments", async ({ page }) => {
 	await stubReport(page, OTHERS())
 	await signInAs(page, "safety_officer")
 })
@@ -164,7 +164,7 @@ When("the member opens the report", async ({ page }) => {
 	await page.goto(`/reports/${REPORT.id}`)
 })
 
-When("the safety officer opens the report", async ({ page }) => {
+When("the Safety Officer opens the report", async ({ page }) => {
 	await page.goto(`/reports/${REPORT.id}`)
 })
 
@@ -200,7 +200,7 @@ When("the member deletes that comment and confirms", async ({ page }) => {
 })
 
 
-When("the safety officer hides a comment and confirms", async ({ page }) => {
+When("the Safety Officer hides a comment and confirms", async ({ page }) => {
 	const first = items(page).first()
 	await first.getByRole("button", { name: "Hide" }).click()
 	await first.getByRole("button", { name: "Hide" }).click()

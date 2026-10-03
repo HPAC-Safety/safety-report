@@ -101,7 +101,7 @@ public sealed partial class PrivateAttachmentSteps
 		_attachmentId = await AddThroughTheApi(_officer, "safety_officer", fileName, null);
 	}
 
-	[Given(@"a safety officer's browser has sent a zip archive through a private upload minted for a report")]
+	[Given(@"a Safety Officer's browser has sent a zip archive through a private upload minted for a report")]
 	public async Task GivenAZipWasSent()
 	{
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
@@ -109,7 +109,7 @@ public sealed partial class PrivateAttachmentSteps
 		_uploadId = await Send(_officer, "safety_officer", _bytes, "application/zip");
 	}
 
-	[Given(@"a safety officer's browser has sent a file through a private upload minted for a report")]
+	[Given(@"a Safety Officer's browser has sent a file through a private upload minted for a report")]
 	public async Task GivenAFileWasSent()
 	{
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
@@ -138,7 +138,7 @@ public sealed partial class PrivateAttachmentSteps
 
 	// ── When ────────────────────────────────────────────────────────────────
 
-	[When(@"^a safety officer declares an? (.+) file of (.+) for that report's private attachments$")]
+	[When(@"^a Safety Officer declares an? (.+) file of (.+) for that report's private attachments$")]
 	public async Task WhenAnOfficerDeclaresATypedFile(string declared, string size)
 	{
 		var contentType = declared switch
@@ -152,14 +152,14 @@ public sealed partial class PrivateAttachmentSteps
 		_response = await officer.PostAsJsonAsync(UploadsUri(), new { contentType, byteSize = Size(size) });
 	}
 
-	[When(@"^a safety officer declares a file of (.+) for that report's private attachments$")]
+	[When(@"^a Safety Officer declares a file of (.+) for that report's private attachments$")]
 	public async Task WhenAnOfficerDeclaresAFile(string size)
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
 		_response = await officer.PostAsJsonAsync(UploadsUri(), new { contentType = "application/zip", byteSize = Size(size) });
 	}
 
-	[When(@"^the safety officer adds that upload to the report as ""(.+)""$")]
+	[When(@"^the Safety Officer adds that upload to the report as ""(.+)""$")]
 	public async Task WhenTheOfficerAddsThatUpload(string fileName)
 	{
 		_outboxBefore = await OutboxCount();
@@ -169,7 +169,7 @@ public sealed partial class PrivateAttachmentSteps
 		_attachmentId = (await added.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
 	}
 
-	[When(@"a safety officer asks for its download link twice")]
+	[When(@"a Safety Officer asks for its download link twice")]
 	public async Task WhenAnOfficerAsksForTheLinkTwice()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
@@ -225,7 +225,7 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[When(@"a safety officer adds a private attachment with a description and then an administrator adds one without")]
+	[When(@"a Safety Officer adds a private attachment with a description and then an Administrator adds one without")]
 	public async Task WhenStaffAddTwo()
 	{
 		_outboxBefore = await OutboxCount();
@@ -244,7 +244,7 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[When(@"an administrator removes that private attachment")]
+	[When(@"an Administrator removes that private attachment")]
 	public async Task WhenAnAdministratorRemoves()
 	{
 		using var admin = Reviewer(_administrator, "administrator");
@@ -252,7 +252,7 @@ public sealed partial class PrivateAttachmentSteps
 		removed.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[When(@"^a safety officer adds a private attachment whose (file name|description|upload) is (.+)$")]
+	[When(@"^a Safety Officer adds a private attachment whose (file name|description|upload) is (.+)$")]
 	public async Task WhenAnOfficerAddsAnInvalidAttachment(string field, string value)
 	{
 		var uploadId = field == "upload"
@@ -272,7 +272,7 @@ public sealed partial class PrivateAttachmentSteps
 		_response = await officer.PostAsJsonAsync(AttachmentsUri(), new { uploadId, fileName, description });
 	}
 
-	[When(@"a safety officer deletes the report carrying that private attachment")]
+	[When(@"a Safety Officer deletes the report carrying that private attachment")]
 	public async Task WhenAnOfficerDeletesTheReport()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
@@ -306,7 +306,7 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[When(@"a safety officer adds a private note referring to the first report's private attachment")]
+	[When(@"a Safety Officer adds a private note referring to the first report's private attachment")]
 	public async Task WhenAnOfficerAddsANoteReferringToIt()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
@@ -315,7 +315,7 @@ public sealed partial class PrivateAttachmentSteps
 		_noteId = (await added.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
 	}
 
-	[When(@"an administrator edits that private note to refer to no private attachment")]
+	[When(@"an Administrator edits that private note to refer to no private attachment")]
 	public async Task WhenAnAdministratorDropsTheReference()
 	{
 		using var admin = Reviewer(_administrator, "administrator");
@@ -461,7 +461,7 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[Then(@"two DownloadedPrivateAttachment audit entries record the safety officer's token subject and the attachment")]
+	[Then(@"two DownloadedPrivateAttachment audit entries record the Safety Officer's token subject and the attachment")]
 	public async Task ThenTwoDownloadsAreAudited()
 	{
 		var entries = await AuditEntries(AuditAction.DownloadedPrivateAttachment);
@@ -610,7 +610,7 @@ public sealed partial class PrivateAttachmentSteps
 		new[] { downloaded.StatusCode, removed.StatusCode }.ShouldAllBe(status => status == HttpStatusCode.NotFound);
 	}
 
-	[Then(@"its row is stamped deleted with the administrator's token subject, and its bytes are still stored")]
+	[Then(@"its row is stamped deleted with the Administrator's token subject, and its bytes are still stored")]
 	public async Task ThenStampedDeletedAndKept()
 	{
 		var stored = await Stored();
@@ -619,7 +619,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await StoredLength(stored.BlobKey)).ShouldBe(stored.ByteSize);
 	}
 
-	[Then(@"one audit entry records the administrator's token subject, RemovedPrivateAttachment, the attachment, and the time")]
+	[Then(@"one audit entry records the Administrator's token subject, RemovedPrivateAttachment, the attachment, and the time")]
 	public async Task ThenTheRemovalIsAudited()
 	{
 		var stored = await Stored();
@@ -802,7 +802,7 @@ public sealed partial class PrivateAttachmentSteps
 
 	private byte[] _downloaded = [];
 
-	[Given(@"a safety officer adds a JPEG photo carrying its camera's location metadata as a private attachment")]
+	[Given(@"a Safety Officer adds a JPEG photo carrying its camera's location metadata as a private attachment")]
 	public async Task GivenAPhotoWithLocationMetadata()
 	{
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
@@ -826,7 +826,7 @@ public sealed partial class PrivateAttachmentSteps
 		_attachmentId = (await added.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
 	}
 
-	[When(@"the safety officer downloads it")]
+	[When(@"the Safety Officer downloads it")]
 	public async Task WhenTheOfficerDownloadsIt()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");

@@ -17,13 +17,13 @@ its rejected alternatives are in
 | Action | Who | Where |
 |---|---|---|
 | Read a report's comments | Anyone | `GET /api/v1/public/reports/{id}/comments` |
-| Post a comment | Any signed-in member | `POST /api/v1/public/reports/{id}/comments` |
+| Post a comment | Any member | `POST /api/v1/public/reports/{id}/comments` |
 | Edit or delete a comment | Its author only | `PUT` / `DELETE /api/v1/public/reports/{id}/comments/{commentId}` |
-| Hide a comment | A safety officer or administrator | `POST /api/admin/comments/{commentId}/hide` |
+| Hide a comment | A Safety Officer or Administrator | `POST /api/admin/comments/{commentId}/hide` |
 
 Every write needs the report to be public at that moment. A report that is not
 public answers `404`, exactly as its detail does. The author is the token's
-subject, compared on the server. The API never returns a subject: a signed-in
+token subject, compared on the server. The API never returns a token subject: a signed-in
 reader gets `isMine` on each comment, and nothing else about who wrote it.
 
 ## What a comment looks like
@@ -41,7 +41,7 @@ toggle. As with a report's summary, there is no per-comment language control:
   the Worker supplies it.
 
 The sign-in invitation a signed-out visitor sees (`REQ-COM-016`) opens the
-member login with `returnTo` set to the report. The login page follows it only to a
+member sign-in with `returnTo` set to the report. The sign-in page follows it only to a
 path on this site, and brings the member back to the report they were
 reading.
 
@@ -69,5 +69,5 @@ What not to build here
 - A reviewer queue or search of comments, and un-hiding a comment.
 - Pre-moderation, or holding a comment until a reviewer approves it.
 - A rate limit on posting beyond the member token and the length cap.
-- Editing or deleting another member's comment, even as an administrator.
+- Editing or deleting another member's comment, even as an Administrator.
   A reviewer hides it instead.

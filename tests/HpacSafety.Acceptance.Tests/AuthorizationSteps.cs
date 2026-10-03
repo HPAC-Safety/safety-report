@@ -85,7 +85,7 @@ public sealed class AuthorizationSteps
 		_client = host.CreateClient();
 	}
 
-	[Given(@"an authenticated member without the required role calls an admin operation")]
+	[Given(@"a member without the required role calls an admin operation")]
 	public async Task GivenMemberWithoutRequiredRole()
 	{
 		// A User is signed in and proven to be a member. That is exactly the

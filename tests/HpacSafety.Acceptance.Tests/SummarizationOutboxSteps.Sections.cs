@@ -259,7 +259,7 @@ public sealed partial class SummarizationOutboxSteps
 		(await _db!.Summaries.AnyAsync(summary => summary.ReportId == _report!.Id)).ShouldBeFalse();
 	}
 
-	[Then(@"the report becomes SummaryFailed")]
+	[Then(@"the report becomes Summary failed")]
 	public async Task ThenTheReportBecomesSummaryFailed()
 	{
 		(await _db!.Reports.SingleAsync(report => report.Id == _report!.Id)).Status.ShouldBe(ReportStatus.SummaryFailed);

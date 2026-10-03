@@ -71,7 +71,7 @@ asks the reviewer to reload. Each action is audited (`REQ-MOD-061`).
 
 ## Private notes (#508)
 
-A safety officer or administrator may keep notes on a report: calls made,
+A Safety Officer or Administrator may keep notes on a report: calls made,
 follow-ups, what an investigator said
 ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)).
 The report view has a **Private notes** section, newest note first. Each note
@@ -131,7 +131,7 @@ pair is written by hand after summarization failed.
 Each saved language records how it was produced — `generated` by the Worker,
 `human` when a reviewer typed it, or `machine` when it is an accepted
 translation — and the report view shows it. Translation goes through the
-server's translation port; safety officers and administrators may use it.
+server's translation port; Safety Officers and Administrators may use it.
 
 ## Out of scope
 

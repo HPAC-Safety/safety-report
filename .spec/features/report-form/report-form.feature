@@ -7,7 +7,7 @@ Country pick list, and the seeded groups each shown as one page.
 Background:
   Given the question bank stores each question as a stable, non-localized key
   And each revision has a monotonically increasing revision number for its key
-  And at most one live question exists for a stable key
+  And at most one live question exists for a question key
 
 @REQ-QB-019
 Scenario Outline: Every answer is stored in its written form

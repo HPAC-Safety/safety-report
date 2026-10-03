@@ -1,10 +1,10 @@
 Feature: Comments
-Any signed-in member may comment on a published report. Everyone can read the
+Any member may comment on a published report. Everyone can read the
 comments in either official language. Authors can edit or delete their own,
 and reviewers can hide any of them.
 
 @REQ-COM-001
-Scenario: A signed-in member comments on a published report
+Scenario: A member comments on a published report
   Given a report is published
   And a member is signed in
   When the member posts a comment on it
@@ -61,7 +61,7 @@ Scenario: The API tells a reader which comments are theirs and never who wrote t
   Given two members have each commented on a published report
   When the first member reads the report's comments
   Then only the first member's comment is marked as theirs
-  And no comment carries its author's subject or any other identity
+  And no comment carries its author's token subject or any other identity
   And an anonymous reader sees no comment marked as theirs
 
 @REQ-COM-008
@@ -95,7 +95,7 @@ Examples:
 @REQ-COM-011
 Scenario: A reviewer hides a comment, and the hiding is audited
   Given a member commented on a published report
-  When a safety officer hides the comment
+  When a Safety Officer hides the comment
   Then the comment is no longer listed and the report's comment count drops by one
   And the audit log records who hid it, without its text
   And the comment is kept in the database
@@ -142,7 +142,7 @@ Scenario: A visitor who is not signed in is invited to sign in to comment
 
 @REQ-COM-017
 @ui
-Scenario: A signed-in member posts, edits, and deletes their own comment
+Scenario: A member posts, edits, and deletes their own comment
   Given a member is signed in and a published report has comments
   When the member opens the report
   Then a comment box is shown with a reminder not to name or identify people
@@ -174,8 +174,8 @@ Scenario: A comment still awaiting translation shows its original text
 @REQ-COM-020
 @ui
 Scenario: A reviewer hides a comment from the report page
-  Given a safety officer is signed in and a published report has comments
-  When the safety officer opens the report
+  Given a Safety Officer is signed in and a published report has comments
+  When the Safety Officer opens the report
   Then every comment offers to hide it
-  When the safety officer hides a comment and confirms
+  When the Safety Officer hides a comment and confirms
   Then that comment is no longer listed

@@ -79,7 +79,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		await SeedAndLoad(ReportStatus.Unpublished, false);
 	}
 
-	[Given(@"a report is SummaryFailed")]
+	[Given(@"a report is Summary failed")]
 	public async Task GivenAFailedReport()
 	{
 		await SeedAndLoad(ReportStatus.SummaryFailed, true);
@@ -497,7 +497,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── REQ-MOD-070: how each language was produced ─────────────────────────
 
-	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of a generated pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
+	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of a summary pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
 	public void GivenASituation(string situation)
 	{
 		_situation = situation;

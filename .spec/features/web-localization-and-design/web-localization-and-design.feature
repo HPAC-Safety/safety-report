@@ -6,18 +6,18 @@ preserves local report state, and meets WCAG 2.2 AA.
 @REQ-WLD-001
 @ui
 Scenario: The admin review queue is a route of the one site
-  Given a signed-in Safety Officer is on the public report page
+  Given a Safety Officer is on the public report page
   When they follow the Admin menu to the review queue
   Then the review queue loads on the same origin as the report page
   And the browser does not load a new document
 
 @REQ-WLD-002
 @ui
-Scenario: The homepage header exposes navigation to reporting, submission, and contact, and a distinct member-login action
+Scenario: The homepage header exposes navigation to reporting, submission, and contact, and a distinct member sign-in action
   Given a visitor loads the homepage
   Then the header shows links to view safety reports, submit a safety report, and contact
-  And the header shows a visually distinct member-login action
-  When a visitor activates any of those links or the member-login action
+  And the header shows a visually distinct member sign-in action
+  When a visitor activates any of those links or the member sign-in action
   Then the browser navigates to that destination's page
 
 @REQ-WLD-003
@@ -34,7 +34,7 @@ Scenario: On a mobile-width viewport, header navigation is reached through a ham
   Given a visitor loads the homepage on a mobile-width viewport
   Then the header nav is hidden and a menu toggle is shown instead
   When the visitor activates the menu toggle
-  Then a dialog containing the header's navigation links and member-login action opens
+  Then a dialog containing the header's navigation links and member sign-in action opens
   When the visitor activates the menu toggle again
   Then the dialog closes
 
@@ -472,7 +472,7 @@ Examples:
 @REQ-QB-238
 @ui
 Scenario: Leaving the question editor with an unsaved draft is confirmed before it is discarded
-  Given a signed-in Administrator is authoring a new question
+  Given an Administrator is authoring a new question
   When they write the English wording without saving
   And they navigate to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
@@ -482,7 +482,7 @@ Scenario: Leaving the question editor with an unsaved draft is confirmed before 
 @REQ-QB-239
 @ui
 Scenario: Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they open the first question for editing
   And they open the second question for editing
   And they navigate to another admin page
@@ -491,9 +491,9 @@ Scenario: Switching from one open question editor straight to another starts cle
 @REQ-MOD-185
 @ui
 Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
-  Given a safety officer is signed in and a pending report exists
-  When the safety officer opens that report
-  And the safety officer opens the summary editor
+  Given a Safety Officer is signed in and a pending report exists
+  When the Safety Officer opens that report
+  And the Safety Officer opens the summary editor
   And types into the English text without saving
   And navigates to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
@@ -503,7 +503,7 @@ Scenario: Leaving the summary editor with unsaved changes is confirmed before th
 @REQ-MOD-186
 @ui
 Scenario: Leaving the type-ahead value review queue with an uncorrected draft is confirmed
-  Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
+  Given a Safety Officer and two type-ahead questions with values flagged for review
   When they open the review-type-ahead-values page
   And they begin correcting "Coopers"
   And they edit its English wording to "Cooper's Hill"
@@ -515,9 +515,9 @@ Scenario: Leaving the type-ahead value review queue with an uncorrected draft is
 @REQ-MOD-187
 @ui
 Scenario: Leaving with an unsaved private note is confirmed
-  Given a safety officer is signed in and a pending report exists
-  When the safety officer opens that report
-  And the safety officer starts writing a private note without saving it
+  Given a Safety Officer is signed in and a pending report exists
+  When the Safety Officer opens that report
+  And the Safety Officer starts writing a private note without saving it
   And navigates to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
 

@@ -317,14 +317,14 @@ Given("the question bank stores each question as a stable, non-localized key", a
 
 Given("each revision has a monotonically increasing revision number for its key", async () => {})
 
-Given("at most one live question exists for a stable key", async () => {})
+Given("at most one live question exists for a question key", async () => {})
 
-Given("a signed-in Administrator opens the manage-questions page", async ({ page }) => {
+Given("an Administrator opens the manage-questions page", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await expect(page.getByRole("list", { name: "Questions on the form" })).toBeVisible()
 })
 
-Given("a signed-in Administrator is authoring a new question", async ({ page }) => {
+Given("an Administrator is authoring a new question", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await page.getByRole("button", { name: "Add a question" }).click()
 })
@@ -483,7 +483,7 @@ Then("the form is filled with its current wording, type, and behaviour", async (
 })
 
 Given(
-	"a signed-in Administrator is authoring a question on a server with no translation provider",
+	"an Administrator is authoring a question on a server with no translation provider",
 	async ({ page }) => {
 		await signInAndOpenQuestions(page, { translation: false })
 		await page.getByRole("button", { name: "Add a question" }).click()
@@ -700,7 +700,7 @@ function launchSiteRow(page: Page) {
 	return page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem").filter({ hasText: launchSite })
 }
 
-Then("a type-ahead question with reporter-added choices says how many are waiting to be reviewed", async ({ page }) => {
+Then("a type-ahead question with reporter-added values says how many are waiting to be reviewed", async ({ page }) => {
 	await expect(launchSiteRow(page)).toContainText("Reporter-added choices waiting to be reviewed: 1")
 })
 
@@ -708,7 +708,7 @@ When("they open that question", async ({ page }) => {
 	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
 })
 
-Then("each reporter-added choice is marked as such", async ({ page }) => {
+Then("each reporter-added value is marked as such", async ({ page }) => {
 	const choices = page.getByTestId("question-choice")
 
 	await expect(choices).toHaveCount(2)
@@ -717,7 +717,7 @@ Then("each reporter-added choice is marked as such", async ({ page }) => {
 	await expect(choices.nth(1)).toContainText("Waiting for the French wording")
 })
 
-Given("a signed-in Administrator opens a type-ahead question with a reporter-added choice", async ({ page }) => {
+Given("an Administrator opens a type-ahead question with a reporter-added value", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
 })
@@ -1038,7 +1038,7 @@ async function addChoice(page: Page, { en = "", fr = "" }: { en?: string; fr?: s
 	if (fr) await choices(page).nth(index).getByLabel("Choice (French)").fill(fr)
 }
 
-Given("a signed-in Administrator is authoring a new {word} question worded in both languages", async ({ page }, type: string) => {
+Given("an Administrator is authoring a new {word} question worded in both languages", async ({ page }, type: string) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await page.getByRole("button", { name: "Add a question" }).click()
@@ -1047,7 +1047,7 @@ Given("a signed-in Administrator is authoring a new {word} question worded in bo
 	await page.getByLabel("Question (French)").fill("Qui a fabriqué votre aile?")
 })
 
-Given("a signed-in Administrator is editing a single-select question whose choices are written in both languages", async ({ page }) => {
+Given("an Administrator is editing a single-select question whose choices are written in both languages", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await aircraftRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1162,7 +1162,7 @@ When("they add a choice written in English", async ({ page }) => {
 })
 
 Given(
-	"a signed-in Administrator is editing a type-ahead question with choices on a server with no translation provider",
+	"an Administrator is editing a type-ahead question with choices on a server with no translation provider",
 	async ({ page }) => {
 		await signInAndOpenQuestions(page, { translation: false })
 		await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1183,7 +1183,7 @@ Then("every choice's Translate action is unavailable and says why", async ({ pag
 
 // The stub's type-ahead offers "Cooper's" in both languages and "mount 7",
 // a reporter's value, in English only; the editor lists them in that order.
-Given("a signed-in Administrator is editing a type-ahead question with a choice written only in English", async ({ page }) => {
+Given("an Administrator is editing a type-ahead question with a choice written only in English", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1223,7 +1223,7 @@ When("they flip the wording's direction switch to French to English", async ({ p
 
 // The stub's first question, "Were you injured?", is worded in both languages
 // and has no help text in either.
-Given("a signed-in Administrator is editing a question whose wording is in both languages", async ({ page }) => {
+Given("an Administrator is editing a question whose wording is in both languages", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")

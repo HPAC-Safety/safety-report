@@ -21,7 +21,7 @@ Each revision contains:
 - question type;
 - form sort order and optional section/group key;
 - `is_private`, `is_active`, `is_system`, and `is_required` flags;
-- `allow_future_dates`, `false` unless an administrator allows future dates.
+- `allow_future_dates`, `false` unless an Administrator allows future dates.
   Only a date question may set it, and changing it is a revision like any
   other field
   ([ADR-0138](../../decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md));
@@ -49,7 +49,7 @@ statement and a group are display-only and produce no answer.
 Dropdowns versus radio buttons are presentation choices for the same
 single-select domain type.
 
-A statement is shown to administrators as **Instructional text**. It is a
+A statement is shown to Administrators as **Instructional text**. It is a
 title and a description, not a question and help text, so the editor labels
 its wording that way and gives each description several lines (`REQ-QB-141`).
 Both still live in the revision's label and help-text fields; only the editor's
@@ -121,10 +121,10 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   [ADR-0074](../../decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
 - Mutating a revision, reviving a retired question, or any edit that loses the
   wording an answer was given against.
-- An administrator authoring, seeing, or recoding an option code. A new
+- An Administrator authoring, seeing, or recoding an option code. A new
   choice's code is derived from its English wording, and a choice fixed in
   place keeps the code it has (`REQ-QB-092`).
-- An administrator authoring, seeing, or changing a question key. A new
+- An Administrator authoring, seeing, or changing a question key. A new
   question's key is derived from its English wording and never reuses a key any
   question holds, retired ones included (`REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.

@@ -21,7 +21,7 @@ Then("the header shows links to view safety reports, submit a safety report, and
 	}
 })
 
-Then("the header shows a visually distinct member-login action", async ({ page }) => {
+Then("the header shows a visually distinct member sign-in action", async ({ page }) => {
 	const login = page.locator("header").getByRole("link", { name: MEMBER_LOGIN.name })
 	await expect(login).toBeVisible()
 	// "Distinct" is the filled brand button treatment, not the plain nav-link
@@ -30,7 +30,7 @@ Then("the header shows a visually distinct member-login action", async ({ page }
 	await expect(login).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
 })
 
-When("a visitor activates any of those links or the member-login action", async ({ page }) => {
+When("a visitor activates any of those links or the member sign-in action", async ({ page }) => {
 	for (const destination of [...NAV_DESTINATIONS, MEMBER_LOGIN]) {
 		await page.goto("/")
 		await page.locator("header").getByRole("link", { name: destination.name }).click()
@@ -56,7 +56,7 @@ When("the visitor activates the menu toggle", async ({ page }) => {
 	await page.getByRole("button", { name: /^(Open|Close) menu$/ }).click()
 })
 
-Then("a dialog containing the header's navigation links and member-login action opens", async ({ page }) => {
+Then("a dialog containing the header's navigation links and member sign-in action opens", async ({ page }) => {
 	const nav = page.getByRole("dialog", { name: "Primary" })
 	await expect(nav).toBeVisible()
 	for (const { name } of NAV_DESTINATIONS) {

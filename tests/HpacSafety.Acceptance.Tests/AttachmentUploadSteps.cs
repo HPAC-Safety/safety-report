@@ -611,7 +611,7 @@ public sealed class AttachmentUploadSteps
 		_blobKey = (await ClaimedFile()).BlobKey;
 	}
 
-	[When(@"a safety officer soft-deletes the report")]
+	[When(@"a Safety Officer soft-deletes the report")]
 	public async Task WhenASafetyOfficerSoftDeletesTheReport()
 	{
 		var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);

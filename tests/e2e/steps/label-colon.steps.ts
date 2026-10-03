@@ -91,7 +91,7 @@ function answer(key: string, label: string, type: string): StubAnswer {
 }
 
 Given(
-	'a signed-in Safety Officer and a report with a short-text answer labelled "Date", a yes\\/no answer labelled "Injured?" and a long-text answer labelled "Description"',
+	'a Safety Officer and a report with a short-text answer labelled "Date", a yes\\/no answer labelled "Injured?" and a long-text answer labelled "Description"',
 	async ({ page }) => {
 		await stubReportDetail(
 			page,
@@ -151,7 +151,7 @@ function adminQuestion(id: string, type: string, labelEn: string, labelFr: strin
 }
 
 Given(
-	"a signed-in Administrator and a question labelled {string} in English and {string} in French",
+	"an Administrator and a question labelled {string} in English and {string} in French",
 	async ({ page }, english: string, french: string) => {
 		listed = [adminQuestion("datequest01", "short_text", english, french, 0)]
 		await signInAs(page, "administrator")

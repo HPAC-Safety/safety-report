@@ -162,7 +162,7 @@ translation.
 **The Worker writes a free-text answer's second language exactly once**
 (ADR-0174). There is no human path: no endpoint or admin page ever supplies
 or corrects `value_translated`. A second automatic supply is refused, and a
-row already written by an administrator before ADR-0174 (`translation_source
+row already written by an Administrator before ADR-0174 (`translation_source
 = human`) is left exactly as stored.
 
 Out of scope: detecting which language a reporter actually typed, and
@@ -300,7 +300,7 @@ does not have, or a conditional page not currently shown, becomes `/report`.
 
 ## Email and phone answers (#513)
 
-An email or phone question may be left blank unless an administrator made it
+An email or phone question may be left blank unless an Administrator made it
 required; a blank one is sent as `null` and stored as no answer. Once a value
 is entered it must be well formed, in the form and in the API
 ([ADR-0137](../../decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md)).
@@ -360,7 +360,7 @@ A date answer is stored as `yyyy-mm-dd` whichever way it was entered
 Nothing about storage or the wire format changes with the picker.
 
 **Future dates are a per-question setting.** A date question's revision
-carries `allow_future_dates`, `false` unless an administrator checks **Allow
+carries `allow_future_dates`, `false` unless an Administrator checks **Allow
 future dates** in the question editor. The checkbox appears only for a date
 question. Changing it is an ordinary question edit: a new revision while the
 question is unanswered, a replacement question once it has been answered
@@ -528,14 +528,14 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   question with a read-only table.
 - Opening a page straight from its address, a French or otherwise localized
   page slug, a page number in the address, or anything the reporter entered in
-  the address. The address holds only an administrator-authored question key.
+  the address. The address holds only an Administrator-authored question key.
 - Custom text on the browser's own unload prompt — no browser lets a page
   supply it. Anything beyond `beforeunload` and the in-app route blocker
   (`Leaving the form with unsaved changes`, above), such as a server-side
   draft that would make the warning unnecessary.
 - Keeping the saved page in `sessionStorage`. It would be gone when the tab
   closes, which is exactly when a reporter comes back to continue.
-- Recording who submitted a report — no subject, no user id, no audit line, no
+- Recording who submitted a report — no token subject, no user id, no audit line, no
   log line. The receipt hash identifies a browser, not a member, and never goes in a URL
   ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 - A "my reports" page, another device or browser seeing a report, editing or withdrawing a report, or a notification (see the public-feed area's README).

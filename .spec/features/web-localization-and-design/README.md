@@ -18,7 +18,7 @@ There is one website on one origin
 ([ADR-0048](../../decisions/ADR-0048-one-website-admin-as-a-route.md)):
 
 - the public routes contain the report form, public feed, and public detail;
-- the member-login route signs a member in;
+- the member sign-in route signs a member in;
 - `/admin` contains review and question editing, and appears only for a member
   whose token carries the SafetyOfficer or Administrator role.
 
@@ -53,7 +53,7 @@ English text, as does a build with no French file at all.
 
 Dates, numbers, and accessible labels use locale-aware formatting. Stored
 codes/values remain invariant. A free-text answer gets a second language only
-when an administrator marked its question for translation, and then off the
+when an Administrator marked its question for translation, and then off the
 submission path
 ([ADR-0112](../../decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
 the reporter's own words are never changed. Summary texts are returned together

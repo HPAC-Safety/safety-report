@@ -47,6 +47,10 @@ names and step numbers.
   `.githooks/<name>`, never the installed file; a moved tool needs no re-install
   ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)
   amendment).
+- `post-merge` and `post-rewrite` regenerate and stage `.spec/traceability.md`,
+  `.spec/README.md` and `.spec/bindings.md`. They do nothing on `main`: the
+  primary checkout only fast-forwards to `origin/main`, which already carries
+  them, so a pull leaves `main` clean (#802).
 
 ### Commit, rebase, claim identifiers
 

@@ -18,6 +18,12 @@
 
 set -u
 
+# The primary checkout's main only ever fast-forwards to origin/main, which
+# already carries the matrix, index, and bindings CI regenerated and checked
+# (ADR-0101). Nothing is regenerated or staged there: a hook must never leave a
+# change on main (#802).
+[ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = "main" ] && exit 0
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || exit 0
 

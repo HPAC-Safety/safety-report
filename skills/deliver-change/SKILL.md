@@ -109,6 +109,16 @@ stronger one:
   `git fetch origin main && git worktree add -b issue-<number>/<short-description> .claude/worktrees/issue-<number>/<short-description> origin/main`.
   Several agents share the repository; a worktree per issue means none
   switches a branch out from under another.
+- **Keep the primary checkout's `main` current, and change nothing in it.**
+  Fast-forward it to the remote: `git -C <primary checkout> pull --ff-only origin main`.
+  Do this whenever the remote has moved, and after a pull request merges.
+  That fast-forward is the only thing ever done there:
+  - no edits, commits, restores or resets;
+  - no merging or rebasing another branch into it;
+  - no generator runs.
+
+  If a pull would not fast-forward, or leaves the tree dirty, stop and tell the
+  person rather than repairing it.
 - **Check at the first edit, every time.** Before the first `Edit` or `Write`
   for an issue, run `git branch --show-current`. If it says `main`, stop and
   create the worktree. A resumed session, a sequencing detour, or a plain

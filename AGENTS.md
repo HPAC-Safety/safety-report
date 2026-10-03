@@ -473,6 +473,9 @@ Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
 [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md). The minimum:
 
 - Every change starts from an issue and reaches `main` through a pull request.
+- **Keep the primary checkout's `main` current with `git pull --ff-only origin
+  main`, and never change anything in it.** All work happens in a worktree off
+  fresh `origin/main`; see `deliver-change` "Worktree and branch".
 - **Every new issue gets a milestone, its labels, and its relationships (parent,
   sub-issues, blocked by, relates to) when it is created** — a hard rule; see
   `deliver-change` "File a new issue".

@@ -24,7 +24,7 @@ services:
   # the test containers use (ADR-0110). Console at http://localhost:9001/rustfs/console/
   # (hpac-dev / hpac-dev-secret).
   s3:
-    image: rustfs/rustfs:1.0.0
+    image: rustfs/rustfs:1.0.1
     environment:
       RUSTFS_ACCESS_KEY: hpac-dev
       RUSTFS_SECRET_KEY: hpac-dev-secret

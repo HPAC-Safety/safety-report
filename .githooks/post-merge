@@ -1,41 +1,53 @@
 #!/usr/bin/env sh
 #
-# .spec/traceability.md never conflicts during a merge or rebase — see
-# .gitattributes (`merge=ours`) and init-dev.sh for why — but "never
-# conflicts" only works because it also never gets git's own content merge,
-# so the file left behind is whichever side happened to be checked out, not
-# the tree that actually landed. This hook is the other half: once the merge
-# has genuinely finished and every file (including the .feature files the
-# matrix is derived from) is on disk in its final state, regenerate it for
-# real and stage the result, so the next commit carries the correct matrix
-# instead of a stale one CI's "docs" job would otherwise have to catch.
+# In a clone where ./init-dev.sh registered the `ours` driver, the generated
+# .spec/claims.json, .spec/traceability.md, and .spec/README.md never stop a
+# local merge or rebase — see .gitattributes (`merge=ours`) — but only because,
+# when both sides changed one, git keeps whichever side happened to be checked
+# out instead of merging them, which is not the tree that actually landed. This hook is the other half: once the
+# merge has genuinely finished and every file (including the .feature files
+# they are derived from) is on disk in its final state, regenerate them for
+# real and stage the result, so the next commit carries the correct files
+# instead of stale ones CI's "docs" job would otherwise have to catch. It then
+# merges the specification into the local graphify graph (ADR-0193).
 #
 # A dev-machine convenience, not a CI gate (same framing as pre-commit). On a
 # same-repo pull request .github/workflows/traceability.yml regenerates and
-# commits the matrix too, and CI re-checks the whole tree in the "docs" job
+# commits them too, and CI re-checks the whole tree in the "docs" job
 # (ADR-0101). This file is the tracked hook, run by the shim ./init-dev.sh
 # installs (tools/dev/git-hook-shim.sh) — edit this file, not the installed one.
 
 set -u
 
-# The primary checkout's main only ever fast-forwards to origin/main, which
-# already carries the matrix, index, and bindings CI regenerated and checked
-# (ADR-0101). Nothing is regenerated or staged there: a hook must never leave a
-# change on main (#802).
-[ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = "main" ] && exit 0
-
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || exit 0
 
+# The specification goes into the local graphify graph, when there is one
+# (ADR-0193). graphify-out/ is untracked, so this changes nothing git sees and
+# runs on main too, where a pull is the moment new claims arrive.
+merge_spec_graph() {
+	command -v node >/dev/null 2>&1 && node tools/spec/graph-fragment.ts >/dev/null 2>&1
+	return 0
+}
+
+# The primary checkout's main only ever fast-forwards to origin/main, which
+# already carries the claims, matrix, and index CI regenerated and checked
+# (ADR-0101). Nothing is regenerated or staged there: a hook must never leave a
+# change on main (#802).
+if [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = "main" ]; then
+	merge_spec_graph
+	exit 0
+fi
+
 command -v node >/dev/null 2>&1 || exit 0
 
-# The matrix, the specification index, and the step-bindings map are
-# generated from .spec/ and the step definitions (ADR-0084, ADR-0183, ADR-0184).
-node tools/spec/generate-traceability.ts >/dev/null 2>&1 || exit 0
+# The claims, the matrix, and the specification index are generated from
+# .spec/ and the step definitions (ADR-0084, ADR-0183, ADR-0193).
+node tools/spec/generate-traceability.ts --no-fail >/dev/null 2>&1 || exit 0
 node tools/spec/generate-spec-index.ts >/dev/null 2>&1 || exit 0
-node tools/spec/generate-bindings.ts --no-fail >/dev/null 2>&1 || exit 0
+merge_spec_graph
 
-for generated in .spec/traceability.md .spec/README.md .spec/bindings.md; do
+for generated in .spec/claims.json .spec/traceability.md .spec/README.md; do
 	if ! git diff --quiet -- "$generated"; then
 		git add -- "$generated"
 		echo "post-merge: $generated regenerated and staged — include it in your next commit."

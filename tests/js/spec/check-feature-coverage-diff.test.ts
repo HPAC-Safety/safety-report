@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import type { Exec } from '../../../tools/lib/actions.ts'
 import { isBehavior, main, pullRequestOf } from '../../../tools/spec/check-feature-coverage-diff.ts'
 
-const MATRIX = '| REQ-SUB-013 | x |\n'
+const CLAIMS = JSON.stringify({ claims: [{ id: 'REQ-SUB-013' }] })
 
 /** A fake exec answering git by its arguments, recording every call. */
 function fakeGit({
@@ -68,7 +68,7 @@ describe('check feature coverage diff', () => {
 	it('checks the pull request range with the body', () => {
 		const git = fakeGit({ diffs: { 'abc...HEAD|behavior': 'src/a.cs\nsrc/README.md', 'abc...HEAD|features': '.spec/features/x/x.feature' } })
 		const env = { EVENT_NAME: 'pull_request', BASE_SHA: 'abc', PR_BODY: 'Closes #1' }
-		const { result, output } = quiet((log) => main({ env, exec: git.exec, log, matrix: MATRIX }))
+		const { result, output } = quiet((log) => main({ env, exec: git.exec, log, claims: CLAIMS }))
 		assert.equal(result, 0)
 		assert.match(output.join('\n'), /Scenarios changed alongside: \.spec\/features\/x\/x\.feature/)
 		assert.deepEqual(git.calls[0]?.slice(0, 4), ['git', 'diff', '--name-only', 'abc...HEAD'])
@@ -77,14 +77,14 @@ describe('check feature coverage diff', () => {
 	it('fails a pull request that changes behavior without a scenario', () => {
 		const git = fakeGit({ diffs: { 'abc...HEAD|behavior': 'src/a.cs' } })
 		const env = { EVENT_NAME: 'pull_request', BASE_SHA: 'abc', PR_BODY: '' }
-		const { result } = quiet((log) => main({ env, exec: git.exec, log, matrix: MATRIX }))
+		const { result } = quiet((log) => main({ env, exec: git.exec, log, claims: CLAIMS }))
 		assert.equal(result, 1)
 	})
 
 	it('fails an empty merge group', () => {
 		const git = fakeGit()
 		const env = { EVENT_NAME: 'merge_group', BASE_SHA: 'abc' }
-		const { result, output } = quiet((log) => main({ env, exec: git.exec, log, matrix: MATRIX }))
+		const { result, output } = quiet((log) => main({ env, exec: git.exec, log, claims: CLAIMS }))
 		assert.equal(result, 1)
 		assert.match(output.join('\n'), /merge group holds no commit between abc and HEAD/)
 	})
@@ -97,7 +97,7 @@ describe('check feature coverage diff', () => {
 			diffs: { 'c1^..c1|behavior': '', 'c2^..c2|behavior': 'src/a.cs' },
 		})
 		const env = { EVENT_NAME: 'merge_group', BASE_SHA: 'abc' }
-		const { result, output } = quiet((log) => main({ env, exec: git.exec, log, matrix: MATRIX }))
+		const { result, output } = quiet((log) => main({ env, exec: git.exec, log, claims: CLAIMS }))
 		assert.equal(result, 1)
 		const text = output.join('\n')
 		assert.match(text, /::group::Fine \(#1\)/)
@@ -110,7 +110,7 @@ describe('check feature coverage diff', () => {
 	it('passes a merge group whose commits all pass', () => {
 		const git = fakeGit({ commits: 'c1', subjects: { c1: 'Fine (#1)' } })
 		const env = { EVENT_NAME: 'merge_group', BASE_SHA: 'abc' }
-		const { result } = quiet((log) => main({ env, exec: git.exec, log, matrix: MATRIX }))
+		const { result } = quiet((log) => main({ env, exec: git.exec, log, claims: CLAIMS }))
 		assert.equal(result, 0)
 	})
 })

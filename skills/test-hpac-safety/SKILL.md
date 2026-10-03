@@ -68,6 +68,11 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 - Write from the scenario
   ([ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md));
   never encode a missing fact in C# or TypeScript.
+- Which file binds each step of a claim, and which steps nothing binds yet, is
+  in that claim's entry in [`.spec/claims.json`](../../.spec/claims.json);
+  `node tools/spec/generate-traceability.ts` fails a built claim with an
+  unbound step
+  ([ADR-0193](../../.spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
 - A request-level claim binds through `BootedApi`
   ([lesson 0006](../../.spec/lessons/0006-an-internal-identifier-leaked-into-the-authoring-screen.md)).
 - Reqnroll steps are Cucumber Expressions:

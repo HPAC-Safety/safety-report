@@ -1,6 +1,6 @@
 ---
 title: Traceability
-description: Generated matrix of every claim, the scenario that states it, and every constraint that names one.
+description: Generated matrix of every claim — its scenario, area, engine, status, and the step-definition files that bind it — and every constraint with the claims that verify it.
 type: guide
 ---
 
@@ -8,3319 +8,842 @@ type: guide
 
 > **Generated file — do not edit by hand.**
 > Regenerate with `node tools/spec/generate-traceability.ts`. CI fails on a difference
-> ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
-> One block per claim and per constraint, in ID order, and no totals, so
-> branches merge it without conflicting
-> ([ADR-0106](decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)).
-
-Each claim reads: the scenario that states it — *engine, status*. A
-`Planned` claim is still `@ignore`.
-
-## Claims: ai-anonymization
-
-### REQ-AI-001
-
-Exactly one model call summarizes and anonymizes a report — *Reqnroll, Covered*
-
-### REQ-AI-002
-
-An exact private value in report content is deterministically marked before the model call — *Reqnroll, Covered*
-
-### REQ-AI-003
-
-A token from a multi-word private value is also marked — *Reqnroll, Covered*
-
-### REQ-AI-004
-
-A common short word is never marked as a false positive — *Reqnroll, Covered*
-
-### REQ-AI-005
-
-Overlapping candidate matches resolve longest match first — *Reqnroll, Covered*
-
-### REQ-AI-006
-
-Matching is case-insensitive and whitespace-normalized — *Reqnroll, Covered*
-
-### REQ-AI-007
-
-private_context is still supplied alongside the marking pass — *Reqnroll, Covered*
-
-### REQ-AI-008
-
-Concurrent workers cannot claim the same summarization outbox item twice — *Reqnroll, Covered*
-
-### REQ-AI-009
-
-Only eligible, labeled fields reach the model — *Reqnroll, Covered*
-
-### REQ-AI-011
-
-The Worker accepts only the exact two-field JSON response — *Reqnroll, Covered*
-
-### REQ-AI-016
-
-Documents never reach the model — *Reqnroll, Covered*
-
-### REQ-AI-017
-
-A valid response is persisted as revision 1 of one pair-level summary — *Reqnroll, Covered*
-
-### REQ-AI-019
-
-Retries repeat the single-call operation without adding stages — *Reqnroll, Covered*
-
-### REQ-AI-020
-
-Exhausted retries surface a manually authorable failure — *Reqnroll, Covered*
-
-### REQ-AI-021
-
-Sensitive summarization data is never logged — *Reqnroll, Covered*
-
-### REQ-AI-022
-
-The Worker requests the configured model at the configured reasoning level — *Reqnroll, Covered*
-
-### REQ-AI-023
-
-A Worker holding a key refuses to start with an unusable model configuration — *Reqnroll, Covered*
-
-### REQ-AI-024
-
-The current prompt carries every anonymization and accuracy rule — *Reqnroll, Covered*
-
-### REQ-AI-027
-
-Only a report with publication consent reaches the model — *Reqnroll, Covered*
-
-### REQ-AI-028
-
-A private yes/no answer is never a marking candidate — *Reqnroll, Covered*
-
-### REQ-AI-029
-
-A yes/no answer reaches the model as true or false, never as words — *Reqnroll, Covered*
-
-### REQ-AI-030
-
-The summary's model name picks the provider — *Reqnroll, Covered*
-
-### REQ-AI-031
-
-The model is told to write one section per public paragraph question, blank ones included — *Reqnroll, Covered*
-
-### REQ-AI-032
-
-Answers reach the model in form order — *Reqnroll, Covered*
-
-### REQ-AI-033
-
-A section's headings are the label the reporter answered, in both languages, without a colon — *Reqnroll, Covered*
-
-### REQ-AI-034
-
-The Worker accepts a summary only with exactly the expected headings — *Reqnroll, Covered*
-
-### REQ-AI-035
-
-A report with no public paragraph question has a summary with no headings — *Reqnroll, Covered*
-
-### REQ-AI-036
-
-A summary with the wrong headings is a failed attempt under the retry budget — *Reqnroll, Covered*
-
-## Claims: comments
-
-### REQ-COM-001
-
-A signed-in member comments on a published report — *Reqnroll, Covered*
-
-### REQ-COM-002
-
-Commenting requires a member — *Reqnroll, Covered*
-
-### REQ-COM-003
-
-A report the public cannot see cannot be commented on — *Reqnroll, Covered*
-
-### REQ-COM-004
-
-A comment must have text, and at most 2000 characters — *Reqnroll, Covered*
-
-### REQ-COM-005
-
-A comment is stored in the language it was written in, and the Worker supplies the other — *Reqnroll, Covered*
-
-### REQ-COM-006
-
-Posting a comment never waits for, or calls, a translation provider — *Reqnroll, Covered*
-
-### REQ-COM-007
-
-The API tells a reader which comments are theirs and never who wrote the others — *Reqnroll, Covered*
-
-### REQ-COM-008
-
-An author's edit adds a revision and keeps the one before it — *Reqnroll, Covered*
-
-### REQ-COM-009
-
-An author's deleted comment disappears but is not erased — *Reqnroll, Covered*
-
-### REQ-COM-010
-
-Nobody may change another member's comment — *Reqnroll, Covered*
-
-### REQ-COM-011
-
-A reviewer hides a comment, and the hiding is audited — *Reqnroll, Covered*
-
-### REQ-COM-012
-
-A member who is not a reviewer cannot hide a comment — *Reqnroll, Covered*
-
-### REQ-COM-013
-
-Unpublishing a report hides its comments, and publishing it again brings them back — *Reqnroll, Covered*
-
-### REQ-COM-014
-
-The public feed carries each report's comment count — *Reqnroll, Covered*
-
-### REQ-COM-015
-
-The feed shows how many comments each report has — *playwright-bdd, Covered*
-
-### REQ-COM-016
-
-A visitor who is not signed in is invited to sign in to comment — *playwright-bdd, Covered*
-
-### REQ-COM-017
-
-A signed-in member posts, edits, and deletes their own comment — *playwright-bdd, Covered*
-
-### REQ-COM-018
-
-A reader sees every comment in the site's language, a translated one marked by a subtle icon — *playwright-bdd, Covered*
-
-### REQ-COM-019
-
-A comment still awaiting translation shows its original text — *playwright-bdd, Covered*
-
-### REQ-COM-020
-
-A reviewer hides a comment from the report page — *playwright-bdd, Covered*
-
-### REQ-COM-021
-
-Leaving with an unposted comment is confirmed before it is discarded — *playwright-bdd, Covered*
-
-## Claims: domain-and-lifecycle
-
-### REQ-DOM-001
-
-A report follows the defined lifecycle transitions — *Reqnroll, Covered*
-
-### REQ-DOM-003
-
-A report is publishable only when every invariant holds — *Reqnroll, Covered*
-
-### REQ-DOM-004
-
-A report is not publishable when one invariant fails — *Reqnroll, Covered*
-
-### REQ-DOM-005
-
-Editing the summary of a Published report publishes the new revision at once — *Reqnroll, Covered*
-
-### REQ-DOM-006
-
-A report without publication consent is never summarized — *Reqnroll, Covered*
-
-### REQ-DOM-007
-
-Soft deletion removes a report from every normal path — *Reqnroll, Covered*
-
-### REQ-DOM-008
-
-A question revision can be deleted only when unreferenced — *Reqnroll, Covered*
-
-### REQ-DOM-009
-
-Retiring a question is a soft delete with no way back — *Reqnroll, Covered*
-
-### REQ-DOM-010
-
-Raw reports are retained until explicit deletion — *Reqnroll, Covered*
-
-### REQ-DOM-011
-
-Soft-deleting a report keeps its row and its stored files — *Reqnroll, Covered*
-
-### REQ-DOM-013
-
-An audited action is recorded in the immutable audit log — *Reqnroll, Covered*
-
-### REQ-DOM-014
-
-A review action outside its states is refused and changes nothing — *Reqnroll, Covered*
-
-### REQ-DOM-015
-
-A report without publication consent is unpublished for good — *Reqnroll, Covered*
-
-### REQ-DOM-016
-
-An operator requeues poisoned outbox work — *Reqnroll, Covered*
-
-### REQ-DOM-017
-
-A poison-requeue payload naming a time window only requeues messages poisoned within it — *Reqnroll, Covered*
-
-### REQ-DOM-018
-
-The database refuses a change to what a reporter answered — *Reqnroll, Covered*
-
-### REQ-DOM-019
-
-An answer's second language and its deletion stamp are written once — *Reqnroll, Covered*
-
-### REQ-DOM-020
-
-The database refuses a change to what an attachment arrived as — *Reqnroll, Covered*
-
-### REQ-DOM-021
-
-What the Worker and a reviewer record about an attachment stays writable — *Reqnroll, Covered*
-
-### REQ-DOM-022
-
-The database refuses a change to a report's language, submission time, or consent — *Reqnroll, Covered*
-
-### REQ-DOM-023
-
-A report's review state and its deletion stamp stay writable — *Reqnroll, Covered*
-
-### REQ-DOM-024
-
-The database refuses a change to a saved summary revision — *Reqnroll, Covered*
-
-### REQ-DOM-025
-
-A revision's approval may be set and cleared, and it may be stamped deleted — *Reqnroll, Covered*
-
-### REQ-DOM-026
-
-A revision's deletion stamp is written once — *Reqnroll, Covered*
-
-### REQ-DOM-027
-
-The database never deletes a report, an answer, a file, or a summary revision — *Reqnroll, Covered*
-
-### REQ-DOM-028
-
-A statement that leaves a locked column as it was is not a change — *Reqnroll, Covered*
-
-### REQ-DOM-029
-
-A migration that must change a locked column disables the trigger inside its own transaction — *Reqnroll, Covered*
-
-### REQ-DOM-030
-
-The database never truncates a report, an answer, a file, or a summary revision — *Reqnroll, Covered*
-
-## Claims: media
-
-### REQ-MED-001
-
-Only allowlisted content types are accepted — *Reqnroll, Covered*
-
-### REQ-MED-002
-
-Declared content type must agree with detected content type — *Reqnroll, Covered*
-
-### REQ-MED-003
-
-The client filename is kept only as a reviewer's download name — *Reqnroll, Covered*
-
-### REQ-MED-005
-
-Unclaimed uploads expire automatically — *Reqnroll, Covered*
-
-### REQ-MED-006
-
-Every image is re-encoded to strip metadata — *Reqnroll, Covered*
-
-### REQ-MED-007
-
-Every video is remuxed to strip metadata, never transcoded — *Reqnroll, Covered*
-
-### REQ-MED-008
-
-A document is validated but never transformed — *Reqnroll, Covered*
-
-### REQ-MED-009
-
-Each attachment fails and processes independently of the report — *Reqnroll, Covered*
-
-### REQ-MED-010
-
-A reviewer gets a short-lived inline URL only for successfully processed media — *Reqnroll, Covered*
-
-### REQ-MED-011
-
-A reviewer downloads a validated document as an unredacted original — *Reqnroll, Covered*
-
-### REQ-MED-012
-
-The admin site never inline-renders a private document — *playwright-bdd, Covered*
-
-### REQ-MED-013
-
-A failed image or video is never viewed inline, but its raw original downloads, audited — *Reqnroll, Covered*
-
-### REQ-MED-015
-
-A video that cannot be stripped is kept rather than refused — *Reqnroll, Covered*
-
-### REQ-MED-016
-
-Removing an upload erases every version of it — *Reqnroll, Covered*
-
-### REQ-MED-017
-
-A cancelled upload leaves nothing in storage — *Reqnroll, Covered*
-
-### REQ-MED-018
-
-A claimed upload is copied into the report's original compartment — *Reqnroll, Covered*
-
-### REQ-MED-019
-
-A reporter's filename is sanitized before it is stored — *Reqnroll, Covered*
-
-### REQ-MED-020
-
-A download's extension always matches the bytes served — *Reqnroll, Covered*
-
-### REQ-MED-021
-
-An attachment awaits the Worker before a reviewer may view it — *Reqnroll, Covered*
-
-### REQ-MED-022
-
-Processing an attachment twice changes nothing — *Reqnroll, Covered*
-
-### REQ-MED-023
-
-The Worker skips an attachment whose report was deleted — *Reqnroll, Covered*
-
-### REQ-MED-024
-
-Processing never holds a whole attachment in memory — *Reqnroll, Covered*
-
-### REQ-MED-025
-
-A published report lists its verified photos and video when media was consented to — *Reqnroll, Covered*
-
-### REQ-MED-026
-
-A file that is neither a verified derivative nor a validated document is never public — *Reqnroll, Covered*
-
-### REQ-MED-027
-
-Media is public only when the reporter consented to sharing it — *Reqnroll, Covered*
-
-### REQ-MED-028
-
-A visitor gets a short-lived inline link to a public file — *Reqnroll, Covered*
-
-### REQ-MED-029
-
-A file stops being public when its report or a reviewer withdraws it — *Reqnroll, Covered*
-
-### REQ-MED-030
-
-A reviewer hides a file and shows it again, and both are audited — *Reqnroll, Covered*
-
-### REQ-MED-031
-
-A member who is not a reviewer cannot hide or show a file — *Reqnroll, Covered*
-
-### REQ-MED-032
-
-The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label — *playwright-bdd, Covered*
-
-### REQ-MED-033
-
-An expired link is replaced and the video resumes where it was — *playwright-bdd, Covered*
-
-### REQ-MED-034
-
-Media that is no longer public is removed from the page — *playwright-bdd, Covered*
-
-### REQ-MED-035
-
-A reviewer hides a file from the public report page, still marked in the staff strip — *playwright-bdd, Covered*
-
-### REQ-MED-036
-
-The admin report page shows whether each file is public — *playwright-bdd, Covered*
-
-### REQ-MED-037
-
-A published report lists its validated documents when media consent names documents — *Reqnroll, Covered*
-
-### REQ-MED-038
-
-A document is public only when its media consent named documents — *Reqnroll, Covered*
-
-### REQ-MED-039
-
-A visitor gets a short-lived forced download of a public document — *Reqnroll, Covered*
-
-### REQ-MED-040
-
-A reviewer hides a document and shows it again, and both are audited — *Reqnroll, Covered*
-
-### REQ-MED-041
-
-The report page offers a public document as a download, never inline — *playwright-bdd, Covered*
-
-### REQ-MED-042
-
-The admin report page shows whether each document is public — *playwright-bdd, Covered*
-
-### REQ-MED-043
-
-A QuickTime video downloads as an MP4 — *Reqnroll, Covered*
-
-### REQ-MED-044
-
-A published QuickTime video is served as an MP4 — *Reqnroll, Covered*
-
-### REQ-MED-045
-
-A sent upload waits, unvalidated, in a private quarantine compartment — *Reqnroll, Covered*
-
-### REQ-MED-046
-
-Staff mint a private upload for a file of any type — *Reqnroll, Covered*
-
-### REQ-MED-047
-
-A private upload larger than the configured cap is refused before anything is minted — *Reqnroll, Covered*
-
-### REQ-MED-048
-
-Adding a private attachment stores its bytes unchanged in the report's private compartment — *Reqnroll, Covered*
-
-### REQ-MED-049
-
-A private attachment downloads unchanged under its sanitized name, and each download is audited — *Reqnroll, Covered*
-
-### REQ-MED-050
-
-An unclaimed private upload waits in quarantine and expires with every other upload — *Reqnroll, Covered*
-
-### REQ-MED-051
-
-Only the private attachment link signs a URL for the private compartment — *Reqnroll, Covered*
-
-### REQ-MED-052
-
-Nothing anonymizes a private attachment — *Reqnroll, Covered*
-
-### REQ-MED-053
-
-A still-processing image or video is never viewed inline, but its raw original downloads, audited — *Reqnroll, Covered*
-
-### REQ-MED-054
-
-The raw-original download refuses once a derivative exists — *Reqnroll, Covered*
-
-### REQ-MED-055
-
-The raw-original download refuses a document — *Reqnroll, Covered*
-
-### REQ-MED-056
-
-The lightbox wraps, is keyboard-operable, and traps and returns focus — *playwright-bdd, Covered*
-
-### REQ-MED-057
-
-A document's thumbnail is never opened in the lightbox — *playwright-bdd, Covered*
-
-### REQ-MED-058
-
-A 404 removes the item from both the strip and an open lightbox — *playwright-bdd, Covered*
-
-### REQ-MED-059
-
-The admin report page uses the same strip and lightbox, and works for an unpublished report — *playwright-bdd, Covered*
-
-### REQ-MED-060
-
-A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox — *playwright-bdd, Covered*
-
-### REQ-MED-061
-
-A 404 on the only remaining lightbox item closes it — *playwright-bdd, Covered*
-
-### REQ-MED-062
-
-A reporter's video in the lightbox carries no captions, and the lightbox does not suggest it might — *playwright-bdd, Covered*
-
-## Claims: moderation-authentication-and-publication
-
-### REQ-MOD-001
-
-In development the login page offers no third-party sign-in option — *playwright-bdd, Covered*
-
-### REQ-MOD-002
-
-Where a third-party provider is configured, the login page offers it — *playwright-bdd, Covered*
-
-### REQ-MOD-003
-
-Signing in with member credentials returns a session that survives a reload — *playwright-bdd, Covered*
-
-### REQ-MOD-004
-
-Bad credentials show one generic failure and no session — *playwright-bdd, Covered*
-
-### REQ-MOD-005
-
-Repeated sign-in attempts for one identity are rate limited — *Reqnroll, Covered*
-
-### REQ-MOD-006
-
-A member's signed-in session persists across a reload and clears on logout — *playwright-bdd, Covered*
-
-### REQ-MOD-007
-
-A signed-in Administrator's Admin menu offers every option — *playwright-bdd, Covered*
-
-### REQ-MOD-009
-
-A signed-in User sees no Admin menu — *playwright-bdd, Covered*
-
-### REQ-MOD-010
-
-An open Admin menu keeps every option on a single line — *playwright-bdd, Covered*
-
-### REQ-MOD-011
-
-Activating an Admin menu option navigates to its page — *playwright-bdd, Covered*
-
-### REQ-MOD-012
-
-The Admin menu is absent for a signed-out visitor — *playwright-bdd, Covered*
-
-### REQ-MOD-013
-
-A token signed by an unknown key is rejected — *Reqnroll, Covered*
-
-### REQ-MOD-014
-
-A token whose signature has been altered is rejected — *Reqnroll, Covered*
-
-### REQ-MOD-015
-
-An expired token is rejected — *Reqnroll, Covered*
-
-### REQ-MOD-016
-
-A token for the wrong audience is rejected — *Reqnroll, Covered*
-
-### REQ-MOD-017
-
-A token with no recognized role claim authenticates as User — *Reqnroll, Covered*
-
-### REQ-MOD-018
-
-The API never reads a name, an email, or any other claim — *Reqnroll, Covered*
-
-### REQ-MOD-019
-
-The development token endpoint does not exist outside development — *Reqnroll, Covered*
-
-### REQ-MOD-020
-
-A development login verified against the members site resolves role from the email lists — *Reqnroll, Covered*
-
-### REQ-MOD-021
-
-Bad members-site credentials show the same generic failure as bad fixed-account credentials — *Reqnroll, Covered*
-
-### REQ-MOD-022
-
-A members-site outage during a development login is reported distinctly from bad credentials — *Reqnroll, Covered*
-
-### REQ-MOD-023
-
-An unauthenticated request to an admin endpoint is refused before the handler — *Reqnroll, Covered*
-
-### REQ-MOD-024
-
-Every operation is authorized by the API, not just the UI — *Reqnroll, Covered*
-
-### REQ-MOD-025
-
-A User may only submit a report — *Reqnroll, Covered*
-
-### REQ-MOD-026
-
-A SafetyOfficer reviews and publishes but does not author questions — *Reqnroll, Covered*
-
-### REQ-MOD-027
-
-An Administrator has every SafetyOfficer capability and authors questions — *Reqnroll, Covered*
-
-### REQ-MOD-028
-
-Only an Administrator may author a question revision — *Reqnroll, Covered*
-
-### REQ-MOD-029
-
-Sensitive admin actions are audited without report content — *Reqnroll, Covered*
-
-### REQ-MOD-030
-
-The admin report list shows every live report with its state — *Reqnroll, Covered*
-
-### REQ-MOD-031
-
-A report detail view exposes only what the reviewer needs — *Reqnroll, Covered*
-
-### REQ-MOD-032
-
-Editing a summary of a report that is not live saves a draft — *Reqnroll, Covered*
-
-### REQ-MOD-033
-
-Publishing approves the current bilingual pair once — *Reqnroll, Covered*
-
-### REQ-MOD-035
-
-Publication requires every guard to pass, with no bypass — *Reqnroll, Covered*
-
-### REQ-MOD-036
-
-The public DTO exposes only the approved summary and its metadata — *Reqnroll, Covered*
-
-### REQ-MOD-037
-
-The public feed lists only publishable reports, newest submitted first — *Reqnroll, Covered*
-
-### REQ-MOD-038
-
-An unknown or non-public report id returns 404 — *Reqnroll, Covered*
-
-### REQ-MOD-042
-
-A signed-out visitor who navigates to an admin route is sent to sign in — *playwright-bdd, Covered*
-
-### REQ-MOD-043
-
-A signed-in member without the required role sees a real 403, not a 404 or the page content — *playwright-bdd, Covered*
-
-### REQ-MOD-044
-
-A successful sign-in writes an audit row — *Reqnroll, Covered*
-
-### REQ-MOD-045
-
-A failed sign-in attempt writes an audit row — *Reqnroll, Covered*
-
-### REQ-MOD-046
-
-A reviewer's attachment view writes its own audit row, distinct from a raw-report view — *Reqnroll, Covered*
-
-### REQ-MOD-047
-
-A failed audit write blocks the action it would have recorded — *Reqnroll, Covered*
-
-### REQ-MOD-048
-
-Signing out sends nothing to the API — *playwright-bdd, Covered*
-
-### REQ-MOD-049
-
-The Needs action filter shows pending, failed, and stuck reports — *Reqnroll, Covered*
-
-### REQ-MOD-050
-
-A status filter narrows the admin report list — *Reqnroll, Covered*
-
-### REQ-MOD-051
-
-Opening a report's detail view is audited — *Reqnroll, Covered*
-
-### REQ-MOD-052
-
-The Manage reports page lists reports with a status badge and a Private badge — *playwright-bdd, Covered*
-
-### REQ-MOD-053
-
-Choosing a filter on Manage reports narrows the list — *playwright-bdd, Covered*
-
-### REQ-MOD-054
-
-Opening a report shows its answers with private answers marked, and its summary pair — *playwright-bdd, Covered*
-
-### REQ-MOD-055
-
-Publishing a consented report's pair makes it public — *Reqnroll, Covered*
-
-### REQ-MOD-057
-
-Unpublishing takes a report off the public feed and keeps it for learning — *Reqnroll, Covered*
-
-### REQ-MOD-058
-
-Unpublishing may carry a note that only reviewers see — *Reqnroll, Covered*
-
-### REQ-MOD-059
-
-A reviewer writes the pair by hand when summarization failed — *Reqnroll, Covered*
-
-### REQ-MOD-060
-
-A review action based on a stale view is refused — *Reqnroll, Covered*
-
-### REQ-MOD-061
-
-Every review action writes one content-free audit entry in its own transaction — *Reqnroll, Covered*
-
-### REQ-MOD-062
-
-The report view offers only the actions its state allows — *playwright-bdd, Covered*
-
-### REQ-MOD-063
-
-Editing a pending report's summary pair saves a draft — *playwright-bdd, Covered*
-
-### REQ-MOD-064
-
-Publishing a consented report shows it Published — *playwright-bdd, Covered*
-
-### REQ-MOD-065
-
-Unpublishing with a note shows the note on the report — *playwright-bdd, Covered*
-
-### REQ-MOD-066
-
-A stale action tells the reviewer to reload — *playwright-bdd, Covered*
-
-### REQ-MOD-067
-
-Deleting a report asks for confirmation first — *playwright-bdd, Covered*
-
-### REQ-MOD-068
-
-Opening an attachment requests its own audited link — *playwright-bdd, Covered*
-
-### REQ-MOD-069
-
-Only a reviewer may request a machine translation — *Reqnroll, Covered*
-
-### REQ-MOD-070
-
-Each summary language records how it was produced — *Reqnroll, Covered*
-
-### REQ-MOD-071
-
-The editor offers a translate button for each language the reviewer changed — *playwright-bdd, Covered*
-
-### REQ-MOD-072
-
-Translating asks before overwriting and shows what would change — *playwright-bdd, Covered*
-
-### REQ-MOD-073
-
-Writing a pair by hand offers the translate buttons too — *playwright-bdd, Covered*
-
-### REQ-MOD-074
-
-The report view shows how each summary language was produced — *playwright-bdd, Covered*
-
-### REQ-MOD-075
-
-A date, time, or yes/no answer reads in the reviewer's language, not in its stored form — *playwright-bdd, Covered*
-
-### REQ-MOD-076
-
-A stored date that is not a real date is shown as stored — *playwright-bdd, Covered*
-
-### REQ-MOD-077
-
-The report detail view gives a second language only for an answer that has one — *Reqnroll, Covered*
-
-### REQ-MOD-078
-
-Opening a report shows a translation only under answers that have one — *playwright-bdd, Covered*
-
-### REQ-MOD-079
-
-Each report in the public feed opens at its own address — *playwright-bdd, Covered*
-
-### REQ-MOD-080
-
-A report's address opens it directly and survives a reload — *playwright-bdd, Covered*
-
-### REQ-MOD-081
-
-An address for a report that is not public shows not found — *playwright-bdd, Covered*
-
-### REQ-MOD-082
-
-The public feed loads more reports automatically, and going back restores them — *playwright-bdd, Covered*
-
-### REQ-MOD-083
-
-A reviewer can open a published report's public page — *playwright-bdd, Covered*
-
-### REQ-MOD-084
-
-A reviewer reads how many reports need action — *Reqnroll, Covered*
-
-### REQ-MOD-085
-
-Only an Administrator's pending counts include answers awaiting translation — *Reqnroll, Covered*
-
-### REQ-MOD-086
-
-A User cannot read the pending counts — *Reqnroll, Covered*
-
-### REQ-MOD-087
-
-An Administrator's Admin menu shows how much work is waiting — *playwright-bdd, Covered*
-
-### REQ-MOD-089
-
-With nothing waiting, the Admin menu shows no count — *playwright-bdd, Covered*
-
-### REQ-MOD-090
-
-A report without publication consent never needs action — *Reqnroll, Covered*
-
-### REQ-MOD-091
-
-Sign-out is not an audited event — *Reqnroll, Covered*
-
-### REQ-MOD-092
-
-A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review — *playwright-bdd, Covered*
-
-### REQ-MOD-093
-
-A SafetyOfficer's Admin menu counts reports and type-ahead values waiting — *playwright-bdd, Covered*
-
-### REQ-MOD-094
-
-A Safety Officer or an Administrator reviews type-ahead values — *Reqnroll, Covered*
-
-### REQ-MOD-095
-
-A Safety Officer reviews flagged type-ahead values on one page — *playwright-bdd, Covered*
-
-### REQ-MOD-096
-
-A report's consent reaches the admin view as true, false, or null — *Reqnroll, Covered*
-
-### REQ-MOD-097
-
-A Safety Officer approves, corrects, and removes type-ahead values on the review page — *playwright-bdd, Covered*
-
-### REQ-MOD-098
-
-Only a Safety Officer or an Administrator may keep private notes — *Reqnroll, Covered*
-
-### REQ-MOD-099
-
-Staff add any number of private notes to a report in any status — *Reqnroll, Covered*
-
-### REQ-MOD-100
-
-Editing a private note adds a revision and keeps every earlier one — *Reqnroll, Covered*
-
-### REQ-MOD-101
-
-Removing a private note soft-deletes it — *Reqnroll, Covered*
-
-### REQ-MOD-102
-
-A private note is plain text of 1 to 4000 characters — *Reqnroll, Covered*
-
-### REQ-MOD-103
-
-A deleted report's private notes go with it — *Reqnroll, Covered*
-
-### REQ-MOD-104
-
-No public or member read ever returns a private note, not even a count — *Reqnroll, Covered*
-
-### REQ-MOD-105
-
-A private note never reaches the model or a translation provider — *Reqnroll, Covered*
-
-### REQ-MOD-106
-
-A safety officer keeps private notes on the report page — *playwright-bdd, Covered*
-
-### REQ-MOD-107
-
-Only a Safety Officer or an Administrator may reach private attachments — *Reqnroll, Covered*
-
-### REQ-MOD-108
-
-Staff add private attachments to a report in any status — *Reqnroll, Covered*
-
-### REQ-MOD-109
-
-Removing a private attachment soft-deletes it and keeps its bytes — *Reqnroll, Covered*
-
-### REQ-MOD-110
-
-A private attachment needs a usable name, a short description, and a sent upload — *Reqnroll, Covered*
-
-### REQ-MOD-111
-
-A deleted report's private attachments go with it — *Reqnroll, Covered*
-
-### REQ-MOD-112
-
-No public or member read ever returns a private attachment, not even a count — *Reqnroll, Covered*
-
-### REQ-MOD-113
-
-A private attachment never reaches the model — *Reqnroll, Covered*
-
-### REQ-MOD-114
-
-A private note may refer to a private attachment on its own report only — *Reqnroll, Covered*
-
-### REQ-MOD-115
-
-A safety officer stages, describes, adds, downloads, and removes a private attachment on the report page — *playwright-bdd, Covered*
-
-### REQ-MOD-116
-
-A private note refers to a private attachment on the report page — *playwright-bdd, Covered*
-
-### REQ-MOD-117
-
-A safety officer cancels a private attachment while it uploads — *playwright-bdd, Covered*
-
-### REQ-MOD-118
-
-A phone answer reads formatted, and one stored before phone numbers were validated reads as stored — *playwright-bdd, Covered*
-
-### REQ-MOD-119
-
-A list row carries the version a review command sends back — *Reqnroll, Covered*
-
-### REQ-MOD-120
-
-Each row of Manage reports offers the quick actions its state allows — *playwright-bdd, Covered*
-
-### REQ-MOD-121
-
-Publishing and unpublishing from the list updates the row in place — *playwright-bdd, Covered*
-
-### REQ-MOD-122
-
-Deleting from the list asks for confirmation first — *playwright-bdd, Covered*
-
-### REQ-MOD-123
-
-A stale row action tells the reviewer to reload the list — *playwright-bdd, Covered*
-
-### REQ-MOD-124
-
-The admin report list shows the reporter's and pilot's names by stable role, blank when unanswered — *Reqnroll, Covered*
-
-### REQ-MOD-125
-
-Manage reports shows each row's reporter and pilot names, blank when unanswered — *playwright-bdd, Covered*
-
-### REQ-MOD-126
-
-The public feed's next page offers a keyboard-only fallback and announces itself — *playwright-bdd, Covered*
-
-### REQ-MOD-127
-
-The public feed offers a visible Retry action when its next page fails to load — *playwright-bdd, Covered*
-
-### REQ-MOD-128
-
-Manage reports loads more automatically and offers the same hidden fallback and visible retry — *playwright-bdd, Covered*
-
-### REQ-MOD-129
-
-The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
-
-### REQ-MOD-130
-
-Searching Manage reports finds a report matched by any part of it — *Reqnroll, Covered*
-
-### REQ-MOD-131
-
-A misspelled search still finds the report — *Reqnroll, Covered*
-
-### REQ-MOD-132
-
-A search matches across English and French stemming — *Reqnroll, Covered*
-
-### REQ-MOD-133
-
-The best match is listed first — *Reqnroll, Covered*
-
-### REQ-MOD-134
-
-Clearing the search box returns to newest submitted first — *playwright-bdd, Covered*
-
-### REQ-MOD-135
-
-A search stays within the chosen filter — *Reqnroll, Covered*
-
-### REQ-MOD-136
-
-The search text lives in the address bar and survives a reload — *playwright-bdd, Covered*
-
-### REQ-MOD-137
-
-A search matching nothing shows a message naming the query, not an error — *playwright-bdd, Covered*
-
-### REQ-MOD-138
-
-Only a reviewer may find a match inside private report content — *Reqnroll, Covered*
-
-### REQ-MOD-139
-
-The search query text is never logged — *Reqnroll, Covered*
-
-### REQ-MOD-140
-
-Search matches the approved published summary in the visitor's site language — *Reqnroll, Covered*
-
-### REQ-MOD-141
-
-Search matches a visible member comment as shown in the visitor's site language — *Reqnroll, Covered*
-
-### REQ-MOD-142
-
-Search is scoped to the visitor's current site language only — *Reqnroll, Covered*
-
-### REQ-MOD-143
-
-The public search never widens by caller role — *Reqnroll, Covered*
-
-### REQ-MOD-144
-
-A non-publishable report's summary text never matches — *Reqnroll, Covered*
-
-### REQ-MOD-145
-
-A hidden or a deleted comment never matches — *Reqnroll, Covered*
-
-### REQ-MOD-146
-
-A typo or a missing accent still finds the best match — *Reqnroll, Covered*
-
-### REQ-MOD-147
-
-Best match ranks first while a query is active — *Reqnroll, Covered*
-
-### REQ-MOD-148
-
-An empty search box lists newest submitted first, unchanged — *Reqnroll, Covered*
-
-### REQ-MOD-149
-
-The search box sits at the top of the public feed, and its query is bookmarkable — *playwright-bdd, Covered*
-
-### REQ-MOD-150
-
-The feed's attachment count is the public count for a visitor and the full count for staff — *Reqnroll, Covered*
-
-### REQ-MOD-151
-
-The admin report list carries every non-deleted attachment's count — *Reqnroll, Covered*
-
-### REQ-MOD-152
-
-A signed-in safety officer sees every attachment on the public report page, each marked public or not — *Reqnroll, Covered*
-
-### REQ-MOD-153
-
-The public feed shows each report's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
-
-### REQ-MOD-154
-
-Manage reports shows each row's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
-
-### REQ-MOD-155
-
-An ordinary member's token widens nothing; only SafetyOfficer or Administrator does — *Reqnroll, Covered*
-
-### REQ-MOD-156
-
-An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token — *Reqnroll, Covered*
-
-### REQ-MOD-157
-
-With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist — *Reqnroll, Covered*
-
-### REQ-MOD-158
-
-With the temporary interim issuer disabled, none of its endpoints exist — *Reqnroll, Covered*
-
-### REQ-MOD-159
-
-The temporary interim issuer's JWKS publishes only a public key — *Reqnroll, Covered*
-
-### REQ-MOD-160
-
-The review queue groups flagged values under their question, questions ordered alphabetically — *playwright-bdd, Covered*
-
-### REQ-MOD-161
-
-Values within a question's group are sorted alphabetically in the viewer's language, ignoring case and accents — *playwright-bdd, Covered*
-
-### REQ-MOD-162
-
-Approving, correcting, removing, merging, and relinking a value keeps the reviewer's scroll position, with no loading state — *playwright-bdd, Covered*
-
-### REQ-MOD-163
-
-A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count — *playwright-bdd, Covered*
-
-### REQ-MOD-164
-
-A published report page offers a same-tab link to its admin detail page for a reviewer — *playwright-bdd, Covered*
-
-### REQ-MOD-165
-
-A published report page offers no admin link to a non-reviewer — *playwright-bdd, Covered*
-
-### REQ-MOD-166
-
-A value written in both languages offers Translate only once its wording differs from what correction opened with — *playwright-bdd, Covered*
-
-### REQ-MOD-167
-
-A value's Translate is unavailable after it translates, until its source is edited again — *playwright-bdd, Covered*
-
-### REQ-MOD-168
-
-Pressing Translate drafts the other language, still editable, and saves nothing by itself — *playwright-bdd, Covered*
-
-### REQ-MOD-169
-
-The direction switch changes which language Translate reads from — *playwright-bdd, Covered*
-
-### REQ-MOD-170
-
-Translate is unavailable when the server has no translation provider — *playwright-bdd, Covered*
-
-### REQ-MOD-171
-
-A failed translation says so on the value's row and drafts nothing — *playwright-bdd, Covered*
-
-### REQ-MOD-172
-
-A translation overtaken by a direction flip is dropped, and Translate stops showing as working — *playwright-bdd, Covered*
-
-### REQ-MOD-173
-
-Several private attachments staged at once each upload independently — *playwright-bdd, Covered*
-
-### REQ-MOD-174
-
-Removing a staged private attachment before it is added leaves the others staged — *playwright-bdd, Covered*
-
-### REQ-MOD-175
-
-A too-large private attachment is refused on its own row while the others proceed — *playwright-bdd, Covered*
-
-### REQ-MOD-176
-
-"Add N attachments" is disabled until every staged private attachment has settled — *playwright-bdd, Covered*
-
-### REQ-MOD-177
-
-Leaving the report page with staged, un-added private attachments warns — *playwright-bdd, Covered*
-
-### REQ-MOD-178
-
-Opening the public feed afresh starts at its top and loads its first page again — *playwright-bdd, Covered*
-
-### REQ-MOD-179
-
-Opening Manage reports afresh loads its first page again, not the list kept from earlier — *playwright-bdd, Covered*
-
-### REQ-MOD-180
-
-A staged private attachment cannot be removed or re-described while it is being added — *playwright-bdd, Covered*
-
-### REQ-MOD-181
-
-Leaving the report page with only refused private attachments staged does not warn — *playwright-bdd, Covered*
-
-### REQ-MOD-184
-
-There is no admin page left to edit an answer's translation by hand — *playwright-bdd, Covered*
-
-### REQ-MOD-185
-
-Leaving the summary editor with unsaved changes is confirmed before they are discarded — *playwright-bdd, Covered*
-
-### REQ-MOD-186
-
-Leaving the type-ahead value review queue with an uncorrected draft is confirmed — *playwright-bdd, Covered*
-
-### REQ-MOD-187
-
-Leaving with an unsaved private note is confirmed — *playwright-bdd, Covered*
-
-### REQ-MOD-190
-
-A published report page says its summary was translated from the other language the report was written in — *playwright-bdd, Covered*
-
-### REQ-MOD-191
-
-A published report page shows no translation label when the site's language is the one the report was written in — *playwright-bdd, Covered*
-
-### REQ-MOD-192
-
-The translation label follows the header's language toggle without a reload — *playwright-bdd, Covered*
-
-### REQ-MOD-193
-
-A published report's own page carries the language it was written in, and the feed does not — *Reqnroll, Covered*
-
-### REQ-MOD-194
-
-An edit saves a new revision that records its author — *Reqnroll, Covered*
-
-### REQ-MOD-195
-
-An edit to a live report stays published with the new text and the same publish date — *Reqnroll, Covered*
-
-### REQ-MOD-196
-
-A rollback saves a new revision equal to the old one — *Reqnroll, Covered*
-
-### REQ-MOD-197
-
-A rollback on a live report is published at once — *Reqnroll, Covered*
-
-### REQ-MOD-198
-
-A draft on a Pending report needs approval — *Reqnroll, Covered*
-
-### REQ-MOD-199
-
-The public never sees an unapproved revision — *Reqnroll, Covered*
-
-### REQ-MOD-200
-
-The history lists every revision with its author, time, and source — *Reqnroll, Covered*
-
-### REQ-MOD-201
-
-Only a reviewer edits or restores, and only to an earlier revision that exists — *Reqnroll, Covered*
-
-### REQ-MOD-202
-
-The report view lists the summary's revisions — *playwright-bdd, Covered*
-
-### REQ-MOD-203
-
-Any revision can be viewed without changing the current summary — *playwright-bdd, Covered*
-
-### REQ-MOD-204
-
-Restoring a version asks for confirmation first — *playwright-bdd, Covered*
-
-### REQ-MOD-205
-
-A save that changes neither language is refused — *Reqnroll, Covered*
-
-### REQ-MOD-206
-
-Editing a published report's summary keeps it Published — *playwright-bdd, Covered*
-
-### REQ-MOD-207
-
-Save is offered only once a language has changed — *playwright-bdd, Covered*
-
-### REQ-MOD-208
-
-The admin review page renders a summary and its revision history as Markdown — *playwright-bdd, Covered*
-
-### REQ-MOD-209
-
-The admin report detail renders a long-text answer and its translation as Markdown — *playwright-bdd, Covered*
-
-### REQ-MOD-210
-
-The public feed previews the first section's text, without its heading — *playwright-bdd, Covered*
-
-### REQ-MOD-211
-
-Markdown support is not advertised to a reviewer editing a summary — *playwright-bdd, Covered*
-
-## Claims: question-bank-and-form
-
-### REQ-QB-001
-
-Editing an unanswered question creates a new revision instead of mutating one — *Reqnroll, Covered*
-
-### REQ-QB-002
-
-Editing an answered question retires it and creates a new one — *Reqnroll, Covered*
-
-### REQ-QB-003
-
-An answer on a deleted report still forces a fork — *Reqnroll, Covered*
-
-### REQ-QB-004
-
-A retired question can never be brought back — *Reqnroll, Covered*
-
-### REQ-QB-005
-
-Only one question per key is live at a time — *Reqnroll, Covered*
-
-### REQ-QB-006
-
-Publication consent revises in place even when answered — *Reqnroll, Covered*
-
-### REQ-QB-008
-
-Editing a question copies the latest revision into a new one — *Reqnroll, Covered*
-
-### REQ-QB-009
-
-Only the latest active, non-deleted revision is shown on the form — *Reqnroll, Covered*
-
-### REQ-QB-010
-
-Form questions are ordered deterministically — *Reqnroll, Covered*
-
-### REQ-QB-011
-
-The current form is public — *Reqnroll, Covered*
-
-### REQ-QB-012
-
-A group question's response nests its children rather than repeating them — *Reqnroll, Covered*
-
-### REQ-QB-013
-
-The current form's response includes a question's conditional dependency — *Reqnroll, Covered*
-
-### REQ-QB-014
-
-consent_publish can never be optional — *Reqnroll, Covered*
-
-### REQ-QB-015
-
-An Administrator chooses whether an ordinary question must be answered — *Reqnroll, Covered*
-
-### REQ-QB-016
-
-consent_publish must resolve to an explicit yes or no — *Reqnroll, Covered*
-
-### REQ-QB-019
-
-Every answer is stored in its written form — *Reqnroll, Covered*
-
-### REQ-QB-025
-
-Only consent is projected onto the report aggregate — *Reqnroll, Covered*
-
-### REQ-QB-026
-
-Privacy is a property of the revision, not the answer — *Reqnroll, Covered*
-
-### REQ-QB-027
-
-Creating a revision preserves the question bank invariants — *Reqnroll, Covered*
-
-### REQ-QB-030
-
-A revision can be soft-deleted only when no answer references it — *Reqnroll, Covered*
-
-### REQ-QB-031
-
-A referenced revision can never be deleted — *Reqnroll, Covered*
-
-### REQ-QB-036
-
-Two reporters naming the same new site produce one choice — *Reqnroll, Covered*
-
-### REQ-QB-044
-
-A statement or a group collects no answer — *Reqnroll, Covered*
-
-### REQ-QB-045
-
-An answer naming a statement or a group is refused — *Reqnroll, Covered*
-
-### REQ-QB-046
-
-A question may be grouped under a group question — *Reqnroll, Covered*
-
-### REQ-QB-047
-
-A form renders a question together with its group heading and siblings — *playwright-bdd, Covered*
-
-### REQ-QB-048
-
-Only a group question may be a grouping parent — *Reqnroll, Covered*
-
-### REQ-QB-049
-
-A group cannot itself be grouped under another group — *Reqnroll, Covered*
-
-### REQ-QB-050
-
-A question cannot be grouped under itself — *Reqnroll, Covered*
-
-### REQ-QB-051
-
-Grouping is unaffected by conditional dependency and vice versa — *Reqnroll, Covered*
-
-### REQ-QB-052
-
-A grouped question is ungrouped when its group stops being one — *Reqnroll, Covered*
-
-### REQ-QB-053
-
-A question can be made conditional only on a yes/no or single-select question — *Reqnroll, Covered*
-
-### REQ-QB-054
-
-A single-select parent's dependency records the required option — *Reqnroll, Covered*
-
-### REQ-QB-055
-
-A single-select dependency must name one of the parent's live choices — *Reqnroll, Covered*
-
-### REQ-QB-056
-
-A yes/no dependency does not name an option — *Reqnroll, Covered*
-
-### REQ-QB-057
-
-A question cannot be conditional on itself or form a cycle — *Reqnroll, Covered*
-
-### REQ-QB-058
-
-Publication consent can never be made conditional — *Reqnroll, Covered*
-
-### REQ-QB-059
-
-Rearranging the form writes a new revision for every question that moved — *Reqnroll, Covered*
-
-### REQ-QB-060
-
-A question type either takes options or does not — *Reqnroll, Covered*
-
-### REQ-QB-061
-
-A question key is normalized and cannot be reused — *Reqnroll, Covered*
-
-### REQ-QB-062
-
-Retiring a question keeps it and its history — *Reqnroll, Covered*
-
-### REQ-QB-063
-
-Publication consent can never be deleted or deactivated — *Reqnroll, Covered*
-
-### REQ-QB-066
-
-A translation draft comes from the API and is saved only by a person — *Reqnroll, Covered*
-
-### REQ-QB-067
-
-A server with no translation credential still authors questions — *Reqnroll, Covered*
-
-### REQ-QB-069
-
-An Administrator drafts the French from the English — *playwright-bdd, Covered*
-
-### REQ-QB-070
-
-An Administrator drafts the English from the French — *playwright-bdd, Covered*
-
-### REQ-QB-071
-
-A question cannot be saved in one language — *playwright-bdd, Covered*
-
-### REQ-QB-072
-
-Translation is not offered when the server has no provider — *playwright-bdd, Covered*
-
-### REQ-QB-074
-
-An Administrator sees which choices reporters added — *playwright-bdd, Covered*
-
-### REQ-QB-075
-
-An Administrator corrects a reporter-added choice — *playwright-bdd, Covered*
-
-### REQ-QB-076
-
-An Administrator authors a question from the dashboard — *playwright-bdd, Covered*
-
-### REQ-QB-077
-
-The options editor appears only for a type that takes options — *playwright-bdd, Covered*
-
-### REQ-QB-078
-
-Only yes/no and single-select questions are offered as a condition — *playwright-bdd, Covered*
-
-### REQ-QB-079
-
-Naming a required option appears only for a single-select condition — *playwright-bdd, Covered*
-
-### REQ-QB-080
-
-Questions are reordered from the keyboard — *playwright-bdd, Covered*
-
-### REQ-QB-081
-
-Editing an unanswered question from the dashboard shows its new version — *playwright-bdd, Covered*
-
-### REQ-QB-082
-
-Editing an answered question warns that it will be replaced — *playwright-bdd, Covered*
-
-### REQ-QB-085
-
-Deleting a question removes it from the list — *playwright-bdd, Covered*
-
-### REQ-QB-086
-
-A rejected save tells the Administrator why — *playwright-bdd, Covered*
-
-### REQ-QB-087
-
-The editor carries an existing question's settings into the form — *playwright-bdd, Covered*
-
-### REQ-QB-088
-
-Reviewing an imported Typeform draft prefills the editor — *playwright-bdd, Covered*
-
-### REQ-QB-089
-
-An Administrator downloads the question bank as Typeform JSON — *playwright-bdd, Covered*
-
-### REQ-QB-090
-
-An Administrator writes a question's choice by its wording alone — *playwright-bdd, Covered*
-
-### REQ-QB-092
-
-A choice an Administrator writes is recorded under a code derived from its English wording — *Reqnroll, Covered*
-
-### REQ-QB-093
-
-Editing a question opens the editor in that question's place — *playwright-bdd, Covered*
-
-### REQ-QB-096
-
-A new question's key is derived from its English wording and never reused — *Reqnroll, Covered*
-
-### REQ-QB-097
-
-Only a type-ahead grows from reporters' answers — *Reqnroll, Covered*
-
-### REQ-QB-098
-
-Editing an answered question's wording carries every choice to the replacement — *Reqnroll, Covered*
-
-### REQ-QB-101
-
-A choice a live question depends on cannot be removed — *Reqnroll, Covered*
-
-### REQ-QB-103
-
-The report form shows a one-language choice in the language it has — *playwright-bdd, Covered*
-
-### REQ-QB-104
-
-A new installation asks for several attachments — *Reqnroll, Covered*
-
-### REQ-QB-105
-
-The seeded single-file wording on an unanswered attachment question is revised — *Reqnroll, Covered*
-
-### REQ-QB-106
-
-The seeded single-file wording on an answered attachment question forks it — *Reqnroll, Covered*
-
-### REQ-QB-107
-
-An attachment question an Administrator already reworded is left alone — *Reqnroll, Covered*
-
-### REQ-QB-108
-
-Only free text can be marked as needing translation — *Reqnroll, Covered*
-
-### REQ-QB-109
-
-Marking a non-text question as needing translation is rejected — *Reqnroll, Covered*
-
-### REQ-QB-110
-
-Whether a question needs translation is a revision field — *Reqnroll, Covered*
-
-### REQ-QB-111
-
-The editor offers Auto-translate answer only for free text — *playwright-bdd, Covered*
-
-### REQ-QB-112
-
-Media consent is a system question that can never be removed or made conditional — *Reqnroll, Covered*
-
-### REQ-QB-113
-
-The form asks for media consent only when there is a file to share — *playwright-bdd, Covered*
-
-### REQ-QB-114
-
-A media consent answer is recorded on the report — *Reqnroll, Covered*
-
-### REQ-QB-115
-
-A media consent answer must be an explicit yes or no — *Reqnroll, Covered*
-
-### REQ-QB-116
-
-A media consent answer covers documents when it answers the wording the form showed — *Reqnroll, Covered*
-
-### REQ-QB-117
-
-Media consent names documents and says they are published as uploaded — *Reqnroll, Covered*
-
-### REQ-QB-118
-
-An answer not in its written form is rejected — *Reqnroll, Covered*
-
-### REQ-QB-119
-
-A yes or no answer has no second language — *Reqnroll, Covered*
-
-### REQ-QB-120
-
-Only true enables a conditional question, in either language — *Reqnroll, Covered*
-
-### REQ-QB-121
-
-Only true is consent, in either language — *Reqnroll, Covered*
-
-### REQ-QB-122
-
-An answer names the choice it was given under — *Reqnroll, Covered*
-
-### REQ-QB-123
-
-Fixing a picker option in place corrects every answer that named it — *Reqnroll, Covered*
-
-### REQ-QB-124
-
-Replacing a picker option keeps the old option under every earlier answer — *Reqnroll, Covered*
-
-### REQ-QB-125
-
-A condition follows its choice's replacement — *Reqnroll, Covered*
-
-### REQ-QB-126
-
-A removed choice is no longer offered but still names every answer given under it — *Reqnroll, Covered*
-
-### REQ-QB-127
-
-A fork's choices are new rows, and old answers keep naming the retired question's — *Reqnroll, Covered*
-
-### REQ-QB-128
-
-A reporter's new type-ahead value is flagged for review and offered at once — *Reqnroll, Covered*
-
-### REQ-QB-129
-
-A type-ahead value is corrected in place for every answer that names it — *Reqnroll, Covered*
-
-### REQ-QB-130
-
-A reporter typing a removed type-ahead value names it without reviving it — *Reqnroll, Covered*
-
-### REQ-QB-131
-
-Merging one type-ahead value into another leaves every answer untouched — *Reqnroll, Covered*
-
-### REQ-QB-132
-
-Merges resolve in a chain and never form a cycle — *Reqnroll, Covered*
-
-### REQ-QB-133
-
-Only a type-ahead value can be merged or edited by a Safety Officer — *Reqnroll, Covered*
-
-### REQ-QB-134
-
-The Worker supplies a reporter-added value's other language — *Reqnroll, Covered*
-
-### REQ-QB-135
-
-Reviewing a type-ahead value clears its flag — *Reqnroll, Covered*
-
-### REQ-QB-136
-
-Existing answers are linked to their choices without being rewritten — *Reqnroll, Covered*
-
-### REQ-QB-137
-
-A yes or no stored as a word is converted to a boolean once — *Reqnroll, Covered*
-
-### REQ-QB-138
-
-A yes or no stored as anything but the four words stops the conversion — *Reqnroll, Covered*
-
-### REQ-QB-139
-
-An Administrator chooses to replace a picker option rather than fix it — *playwright-bdd, Covered*
-
-### REQ-QB-140
-
-A condition follows its parent question when the parent forks — *Reqnroll, Covered*
-
-### REQ-QB-141
-
-An Administrator writes instructional text as a title and a description — *playwright-bdd, Covered*
-
-### REQ-QB-142
-
-Instructional text keeps the line breaks its description was written with — *Reqnroll, Covered*
-
-### REQ-QB-143
-
-A reporter reads instructional text with its description's paragraphs — *playwright-bdd, Covered*
-
-### REQ-QB-144
-
-The API sends each choice's pin, pinned-first choices first and pinned-last choices last — *Reqnroll, Covered*
-
-### REQ-QB-145
-
-A question's choices are listed alphabetically in the reader's language — *playwright-bdd, Covered*
-
-### REQ-QB-146
-
-Pinned choices come first or last, each group alphabetical — *playwright-bdd, Covered*
-
-### REQ-QB-147
-
-A value a reporter adds to a type-ahead is not pinned — *Reqnroll, Covered*
-
-### REQ-QB-148
-
-A value a reporter adds to a type-ahead takes its alphabetical place — *playwright-bdd, Covered*
-
-### REQ-QB-149
-
-Pinning a choice never revises or forks its question — *Reqnroll, Covered*
-
-### REQ-QB-150
-
-An Administrator sets each option's position, and the editor lists options as the form does — *playwright-bdd, Covered*
-
-### REQ-QB-151
-
-The required-option control lists the parent's choices as the form does — *playwright-bdd, Covered*
-
-### REQ-QB-152
-
-The type-ahead review page offers merge targets as the form lists them — *playwright-bdd, Covered*
-
-### REQ-QB-153
-
-A multi-select answer on the report page is listed as the form lists its choices — *playwright-bdd, Covered*
-
-### REQ-QB-154
-
-A date question allows future dates only when an Administrator says so — *Reqnroll, Covered*
-
-### REQ-QB-155
-
-Only a date question can allow future dates — *Reqnroll, Covered*
-
-### REQ-QB-156
-
-Whether a date question allows future dates is a revision field — *Reqnroll, Covered*
-
-### REQ-QB-157
-
-The migration leaves the occurrence date refusing future dates, with no new revision — *Reqnroll, Covered*
-
-### REQ-QB-158
-
-The editor offers Allow future dates only for a date question, unchecked — *playwright-bdd, Covered*
-
-### REQ-QB-159
-
-A type-ahead question is a field the form draws, with no caret, and opens with a hint before 3 characters — *playwright-bdd, Covered*
-
-### REQ-QB-160
-
-Typing into a type-ahead filters its list, ignoring case and accents — *playwright-bdd, Covered*
-
-### REQ-QB-161
-
-A reporter picks a type-ahead choice from the keyboard — *playwright-bdd, Covered*
-
-### REQ-QB-162
-
-A reporter types a type-ahead value its list does not offer — *playwright-bdd, Covered*
-
-### REQ-QB-163
-
-A type-ahead's or single-select's list fits a phone screen and scrolls when long — *playwright-bdd, Covered*
-
-### REQ-QB-164
-
-A choice written in both languages offers Translate only once it is edited — *playwright-bdd, Covered*
-
-### REQ-QB-165
-
-A choice's English is translated into its French as a draft — *playwright-bdd, Covered*
-
-### REQ-QB-166
-
-Flipping the direction translates a choice's French into its English — *playwright-bdd, Covered*
-
-### REQ-QB-167
-
-Translating one choice changes no other choice — *playwright-bdd, Covered*
-
-### REQ-QB-168
-
-A choice's Translate is unavailable after it translates, until its source is edited again — *playwright-bdd, Covered*
-
-### REQ-QB-169
-
-No choice's Translate is offered when the server has no provider — *playwright-bdd, Covered*
-
-### REQ-QB-170
-
-A choice written in one language can be translated without being edited — *playwright-bdd, Covered*
-
-### REQ-QB-171
-
-A type-ahead choice picked from the list is sent as that choice, not matched by its wording — *playwright-bdd, Covered*
-
-### REQ-QB-172
-
-Editing a bilingual question's wording offers Translate — *playwright-bdd, Covered*
-
-### REQ-QB-173
-
-Translate replaces the French wording with drafts — *playwright-bdd, Covered*
-
-### REQ-QB-174
-
-The wording's Translate is unavailable after it translates, until a source field is edited again — *playwright-bdd, Covered*
-
-### REQ-QB-175
-
-Translating the wording changes no choice — *playwright-bdd, Covered*
-
-### REQ-QB-176
-
-Translate leaves an unedited field written in both languages as it is — *playwright-bdd, Covered*
-
-### REQ-QB-177
-
-A translation that arrives after the direction was flipped changes nothing — *playwright-bdd, Covered*
-
-### REQ-QB-178
-
-French typed while a translation is on its way is kept — *playwright-bdd, Covered*
-
-### REQ-QB-179
-
-A picker or type-ahead's choices may depend on another picker or type-ahead — *Reqnroll, Covered*
-
-### REQ-QB-180
-
-A dependency is one level deep — *Reqnroll, Covered*
-
-### REQ-QB-181
-
-The parent comes before the child on the form — *Reqnroll, Covered*
-
-### REQ-QB-184
-
-A dependency and its links sit outside revisions — *Reqnroll, Covered*
-
-### REQ-QB-185
-
-Removing a question's parent keeps the links and stops filtering — *Reqnroll, Covered*
-
-### REQ-QB-187
-
-A replaced picker parent choice passes its child links to the replacement — *Reqnroll, Covered*
-
-### REQ-QB-188
-
-A merged type-ahead parent value passes its child links to the value it was merged into — *Reqnroll, Covered*
-
-### REQ-QB-189
-
-A dependency follows its parent when the parent forks — *Reqnroll, Covered*
-
-### REQ-QB-190
-
-A forked dependent question copies every choice with its links — *Reqnroll, Covered*
-
-### REQ-QB-191
-
-The report form's questions name each dependency and each link — *Reqnroll, Covered*
-
-### REQ-QB-192
-
-A reporter's new value in a dependent type-ahead is linked to the parent's answer — *Reqnroll, Covered*
-
-### REQ-QB-195
-
-An Administrator picks the question a question's choices depend on, and clears it — *playwright-bdd, Covered*
-
-### REQ-QB-197
-
-A dependent question offers only the choices linked to the parent's answer — *playwright-bdd, Covered*
-
-### REQ-QB-198
-
-Changing the parent's answer clears a child answer it no longer offers — *playwright-bdd, Covered*
-
-### REQ-QB-199
-
-A parent answered with a new value leaves the child nothing to pick, but a value to type — *playwright-bdd, Covered*
-
-### REQ-QB-200
-
-A saved report restores the parent and child answers together — *playwright-bdd, Covered*
-
-### REQ-QB-201
-
-A dependent child that cannot be answered yet does not hold the reporter back — *playwright-bdd, Covered*
-
-### REQ-QB-203
-
-A parent the form does not ask filters nothing — *Reqnroll, Covered*
-
-### REQ-QB-204
-
-A picker child with nothing under the parent's answer says so and does not hold the reporter back — *playwright-bdd, Covered*
-
-### REQ-QB-205
-
-The manage-questions page shows why a question cannot move above its parent — *playwright-bdd, Covered*
-
-### REQ-QB-206
-
-The parent comes before the child wherever grouping places them — *Reqnroll, Covered*
-
-### REQ-QB-208
-
-A single-select question is a picker the form draws, not the browser's select — *playwright-bdd, Covered*
-
-### REQ-QB-209
-
-A reporter picks a single-select choice from the keyboard and the pointer — *playwright-bdd, Covered*
-
-### REQ-QB-210
-
-A single-select answer can be cleared back to unanswered — *playwright-bdd, Covered*
-
-### REQ-QB-211
-
-A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row — *playwright-bdd, Covered*
-
-### REQ-QB-212
-
-Every choice of a dependent question is offered under at least one parent choice — *Reqnroll, Covered*
-
-### REQ-QB-213
-
-One choice is offered under several parent choices, and its wording is unique on the question — *Reqnroll, Covered*
-
-### REQ-QB-214
-
-A parent choice is removed only while every child choice under it keeps another parent — *Reqnroll, Covered*
-
-### REQ-QB-215
-
-Merging a parent value into one the child choice already names leaves one link — *Reqnroll, Covered*
-
-### REQ-QB-216
-
-A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer — *Reqnroll, Covered*
-
-### REQ-QB-217
-
-A reporter's typed value matching a value under another parent answer links it and flags it — *Reqnroll, Covered*
-
-### REQ-QB-218
-
-A reporter's typed value matching a merged value names the value it was merged into — *Reqnroll, Covered*
-
-### REQ-QB-219
-
-A reporter's typed value matching a removed value brings it back flagged, not revived — *Reqnroll, Covered*
-
-### REQ-QB-220
-
-A reviewer adds and removes a dependent type-ahead value's parents, never down to none — *Reqnroll, Covered*
-
-### REQ-QB-221
-
-Merging dependent type-ahead values offers the survivor under every parent either was under — *Reqnroll, Covered*
-
-### REQ-QB-222
-
-Each choice of a dependent question picks the parent choices it is offered under — *playwright-bdd, Covered*
-
-### REQ-QB-223
-
-The form offers one choice under each of its parent answers and keeps it across them — *playwright-bdd, Covered*
-
-### REQ-QB-224
-
-The type-ahead review page shows every parent of a dependent value and edits them — *playwright-bdd, Covered*
-
-### REQ-QB-225
-
-The migration folds each link into the join table and merges identical duplicates — *Reqnroll, Covered*
-
-### REQ-QB-226
-
-The migration merges no pair whose wording matches in one language only — *Reqnroll, Covered*
-
-### REQ-QB-227
-
-Words typed into a dependent type-ahead are kept and sent as typed, even when they read as a choice under another answer — *playwright-bdd, Covered*
-
-### REQ-QB-228
-
-The migration merges a dependent type-ahead's identical duplicates into the oldest — *Reqnroll, Covered*
-
-### REQ-QB-229
-
-Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint — *playwright-bdd, Covered*
-
-### REQ-QB-230
-
-Below 3 characters, a type-ahead's arrow keys and Enter pick nothing — *playwright-bdd, Covered*
-
-### REQ-QB-231
-
-A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do — *playwright-bdd, Covered*
-
-### REQ-QB-232
-
-Reopening a type-ahead filters by what it already holds, however it is reopened — *playwright-bdd, Covered*
-
-### REQ-QB-233
-
-Typing a merged-away wording offers the survivor, hinting the alias that matched — *playwright-bdd, Covered*
-
-### REQ-QB-234
-
-A merged-away wording matches typing in the other language too — *playwright-bdd, Covered*
-
-### REQ-QB-235
-
-A chained merge offers the final survivor, hinting the first wording — *playwright-bdd, Covered*
-
-### REQ-QB-236
-
-Under a dependent type-ahead, a merged-away wording offers the survivor only under its own parent choices — *playwright-bdd, Covered*
-
-### REQ-QB-237
-
-The type-ahead review page lists a value's aliases, chains included — *playwright-bdd, Covered*
-
-### REQ-QB-238
-
-Leaving the question editor with an unsaved draft is confirmed before it is discarded — *playwright-bdd, Covered*
-
-### REQ-QB-239
-
-Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning — *playwright-bdd, Covered*
-
-### REQ-QB-240
-
-The form adds the colon after an answerable question's label, in the locale's style — *playwright-bdd, Covered*
-
-### REQ-QB-241
-
-The admin report detail adds the colon after an answerable question's label, in the locale's style — *playwright-bdd, Covered*
-
-### REQ-QB-242
-
-The question bank list shows each language's label with its own colon style — *playwright-bdd, Covered*
-
-### REQ-QB-243
-
-The question editor refuses a label that ends in a colon — *playwright-bdd, Covered*
-
-### REQ-QB-244
-
-The API refuses a question whose label ends in a colon, in either language — *Reqnroll, Covered*
-
-### REQ-QB-245
-
-A migration removes a trailing colon from every stored question label, in place — *Reqnroll, Covered*
-
-### REQ-QB-246
-
-The seeded question bank has no label ending in a colon — *Reqnroll, Covered*
-
-### REQ-QB-247
-
-A media consent answer naming an earlier wording is refused, so no document is published on it — *Reqnroll, Covered*
-
-### REQ-QB-248
-
-Editing a group gives each of its questions a new revision that stays grouped under it — *Reqnroll, Covered*
-
-### REQ-QB-249
-
-The API sends Country as an optional single-select of every country, with Canada and the United States pinned first — *Reqnroll, Covered*
-
-### REQ-QB-250
-
-The seeded yes/no Country question is revised into the pick list when no answer references it — *Reqnroll, Covered*
-
-### REQ-QB-251
-
-The seeded yes/no Country question is forked into the pick list when a report has answered it — *Reqnroll, Covered*
-
-### REQ-QB-252
-
-An answered Province is forked with its choices when it begins to follow Country — *Reqnroll, Covered*
-
-### REQ-QB-253
-
-The Country pick list migration run a second time changes nothing — *Reqnroll, Covered*
-
-### REQ-QB-254
-
-A Country question an Administrator already changed is left alone — *Reqnroll, Covered*
-
-### REQ-QB-255
-
-A question that waited for the old yes/no Country answer now waits for Canada — *Reqnroll, Covered*
-
-### REQ-QB-256
-
-The Country list reads Canada, United States, a separator, then every other country alphabetically — *playwright-bdd, Covered*
-
-### REQ-QB-257
-
-Country is optional — *playwright-bdd, Covered*
-
-### REQ-QB-258
-
-Province is shown only when Country is Canada — *playwright-bdd, Covered*
-
-### REQ-QB-259
-
-A freshly migrated database sends each seeded group with its questions — *Reqnroll, Covered*
-
-### REQ-QB-260
-
-A seeded question that lost its group gets a new revision grouped under it when no answer references it — *Reqnroll, Covered*
-
-### REQ-QB-261
-
-A seeded question that lost its group is forked under it when a report has answered it — *Reqnroll, Covered*
-
-### REQ-QB-262
-
-The seeded-group repair run a second time changes nothing — *Reqnroll, Covered*
-
-### REQ-QB-263
-
-A seeded question an Administrator has grouped is left alone — *Reqnroll, Covered*
-
-### REQ-QB-264
-
-A seeded question whose group is no longer live is left alone — *Reqnroll, Covered*
-
-### REQ-QB-265
-
-The browser suite's seeded form is what a freshly migrated database sends — *Reqnroll, Covered*
-
-### REQ-QB-266
-
-Each seeded group is one page with its heading and exactly its questions — *playwright-bdd, Covered*
-
-### REQ-QB-267
-
-A reporter picks a type-ahead choice with the pointer, and no option ever takes focus — *playwright-bdd, Covered*
-
-### REQ-QB-268
-
-A reporter picks a single-select choice with the pointer, and no option ever takes focus — *playwright-bdd, Covered*
-
-## Claims: report-submission
-
-### REQ-SUB-001
-
-The browser holds report state locally until submission — *playwright-bdd, Covered*
-
-### REQ-SUB-002
-
-A successful submission clears local browser state — *playwright-bdd, Covered*
-
-### REQ-SUB-003
-
-Expired local state is not restored — *playwright-bdd, Covered*
-
-### REQ-SUB-005
-
-A skipped answer is represented by an empty value, not omission — *Reqnroll, Covered*
-
-### REQ-SUB-008
-
-The API rejects a malformed submission DTO — *Reqnroll, Covered*
-
-### REQ-SUB-010
-
-A submission naming a revision that is not current, or naming revisions inconsistently, is refused — *Reqnroll, Covered*
-
-### REQ-SUB-011
-
-Reporter-visible errors never echo submitted content — *Reqnroll, Covered*
-
-### REQ-SUB-013
-
-A valid submission is persisted atomically — *Reqnroll, Covered*
-
-### REQ-SUB-014
-
-A failed transaction leaves no visible report and no leaked blobs — *Reqnroll, Covered*
-
-### REQ-SUB-015
-
-A successful submission returns an opaque accepted receipt — *Reqnroll, Covered*
-
-### REQ-SUB-016
-
-The UI prevents duplicate submission while a request is in flight — *playwright-bdd, Covered*
-
-### REQ-SUB-017
-
-A rate-limited submission is rejected — *Reqnroll, Covered*
-
-### REQ-SUB-018
-
-An unauthenticated submission is rejected — *Reqnroll, Covered*
-
-### REQ-SUB-019
-
-A member of any role may submit a report — *Reqnroll, Covered*
-
-### REQ-SUB-020
-
-A stored report carries no submitter subject, user id, or link — *Reqnroll, Covered*
-
-### REQ-SUB-021
-
-No audit entry or log line records who submitted a report — *Reqnroll, Covered*
-
-### REQ-SUB-022
-
-A signed-out visitor is asked to sign in before the report page is offered — *playwright-bdd, Covered*
-
-### REQ-SUB-023
-
-The report page tells the reporter that signing in does not attach them to the report — *playwright-bdd, Covered*
-
-### REQ-SUB-024
-
-The not-tracked notice is shown in the reporter's chosen language — *playwright-bdd, Covered*
-
-### REQ-SUB-025
-
-Every answer's value and locale are immutable once submitted — *Reqnroll, Covered*
-
-### REQ-SUB-026
-
-The Worker mechanically translates every answer that needs it — *Reqnroll, Covered*
-
-### REQ-SUB-028
-
-The leading statement question renders as an introduction — *playwright-bdd, Covered*
-
-### REQ-SUB-029
-
-A reporter pages through questions one at a time — *playwright-bdd, Covered*
-
-### REQ-SUB-030
-
-A group question and its children page together — *playwright-bdd, Covered*
-
-### REQ-SUB-031
-
-A required question blocks Next until answered — *playwright-bdd, Covered*
-
-### REQ-SUB-032
-
-A conditional question is absent from paging until its parent condition is met — *playwright-bdd, Covered*
-
-### REQ-SUB-033
-
-The Next button becomes Submit on the final page — *playwright-bdd, Covered*
-
-### REQ-SUB-034
-
-A multi-select question is a picker dropdown, not a flat list — *playwright-bdd, Covered*
-
-### REQ-SUB-035
-
-A returning reporter is asked whether to continue their saved report — *playwright-bdd, Covered*
-
-### REQ-SUB-036
-
-Continuing a saved report restores it where the reporter left off — *playwright-bdd, Covered*
-
-### REQ-SUB-037
-
-Declining a saved report starts a fresh form — *playwright-bdd, Covered*
-
-### REQ-SUB-038
-
-A reporter with no saved report is not asked — *playwright-bdd, Covered*
-
-### REQ-SUB-041
-
-A submission naming an expired or unknown upload is refused by name — *Reqnroll, Covered*
-
-### REQ-SUB-042
-
-A claimed upload leaves quarantine once the report commits — *Reqnroll, Covered*
-
-### REQ-SUB-043
-
-An unauthenticated upload is rejected — *Reqnroll, Covered*
-
-### REQ-SUB-044
-
-A rate-limited upload is rejected — *Reqnroll, Covered*
-
-### REQ-SUB-045
-
-Attaching a file uploads it at once with an activity indicator — *playwright-bdd, Covered*
-
-### REQ-SUB-046
-
-Next and Submit wait for every upload to finish — *playwright-bdd, Covered*
-
-### REQ-SUB-047
-
-A reporter may cancel an upload in progress — *playwright-bdd, Covered*
-
-### REQ-SUB-048
-
-A reporter may remove an uploaded file — *playwright-bdd, Covered*
-
-### REQ-SUB-049
-
-The form refuses a file past the attachment limit — *playwright-bdd, Covered*
-
-### REQ-SUB-050
-
-A refused upload is explained on that file's row — *playwright-bdd, Covered*
-
-### REQ-SUB-051
-
-An expired upload is marked for re-attachment and nothing else is lost — *playwright-bdd, Covered*
-
-### REQ-SUB-053
-
-Each page of the form has its own address — *playwright-bdd, Covered*
-
-### REQ-SUB-054
-
-The browser's Back and Forward buttons move between pages under the form's rules — *playwright-bdd, Covered*
-
-### REQ-SUB-055
-
-Continuing a saved report puts its page in the address — *playwright-bdd, Covered*
-
-### REQ-SUB-056
-
-A page address never answers the continue question for the reporter — *playwright-bdd, Covered*
-
-### REQ-SUB-057
-
-A page address without a saved report opens the introduction — *playwright-bdd, Covered*
-
-### REQ-SUB-058
-
-The attachment field is a drop zone with a large choose-files control — *playwright-bdd, Covered*
-
-### REQ-SUB-059
-
-The drop zone's control opens the file chooser from a pointer or the keyboard — *playwright-bdd, Covered*
-
-### REQ-SUB-060
-
-Files dropped on the drop zone upload exactly as chosen files do — *playwright-bdd, Covered*
-
-### REQ-SUB-061
-
-Dropped files past the attachment limit are refused — *playwright-bdd, Covered*
-
-### REQ-SUB-062
-
-A file dropped outside the drop zone does nothing — *playwright-bdd, Covered*
-
-### REQ-SUB-063
-
-Continuing a saved report restores its uploaded files — *playwright-bdd, Covered*
-
-### REQ-SUB-064
-
-Starting over erases the saved report's uploads — *playwright-bdd, Covered*
-
-### REQ-SUB-065
-
-A reporter may discard the report in progress — *playwright-bdd, Covered*
-
-### REQ-SUB-066
-
-Discarding a report asks for confirmation first — *playwright-bdd, Covered*
-
-### REQ-SUB-067
-
-An expired saved report's uploads are erased — *playwright-bdd, Covered*
-
-### REQ-SUB-068
-
-The continue dialog shows a saved date or time in the reporter's language — *playwright-bdd, Covered*
-
-### REQ-SUB-071
-
-Only free text marked for translation is machine-translated — *Reqnroll, Covered*
-
-### REQ-SUB-072
-
-Minting an upload returns a pre-signed PUT for one quarantine key and nothing else — *Reqnroll, Covered*
-
-### REQ-SUB-073
-
-A declared file the API will not accept gets no upload URL — *Reqnroll, Covered*
-
-### REQ-SUB-074
-
-Storage accepts only the upload the URL was signed for — *Reqnroll, Covered*
-
-### REQ-SUB-075
-
-A submission validates every upload it claims — *Reqnroll, Covered*
-
-### REQ-SUB-076
-
-A file refused at submission is marked on its row and nothing else is lost — *playwright-bdd, Covered*
-
-### REQ-SUB-077
-
-A yes or no is sent as a JSON boolean whatever language the report is submitted in — *playwright-bdd, Covered*
-
-### REQ-SUB-078
-
-One answer entry per shown answer-producing revision — *Reqnroll, Covered*
-
-### REQ-SUB-079
-
-A submitted choice must be one the question offers — *Reqnroll, Covered*
-
-### REQ-SUB-080
-
-The submission path never calls a translation provider — *Reqnroll, Covered*
-
-### REQ-SUB-081
-
-A choice answer reads both languages from its choice — *Reqnroll, Covered*
-
-### REQ-SUB-082
-
-A type-ahead answer names a value, and the Worker translates only a new one — *Reqnroll, Covered*
-
-### REQ-SUB-083
-
-The form names each chosen choice by its identifier — *playwright-bdd, Covered*
-
-### REQ-SUB-084
-
-A file larger than its kind allows is refused on its row before it is sent — *playwright-bdd, Covered*
-
-### REQ-SUB-085
-
-An email or phone question opens the matching keyboard — *playwright-bdd, Covered*
-
-### REQ-SUB-086
-
-An optional email or phone question may be left blank — *playwright-bdd, Covered*
-
-### REQ-SUB-087
-
-A malformed email address holds the reporter on its page — *playwright-bdd, Covered*
-
-### REQ-SUB-088
-
-A phone number that is not valid for its country holds the reporter on its page — *playwright-bdd, Covered*
-
-### REQ-SUB-089
-
-The phone country picker starts on Canada — *playwright-bdd, Covered*
-
-### REQ-SUB-090
-
-A phone number takes its chosen country's mask as it is typed — *playwright-bdd, Covered*
-
-### REQ-SUB-091
-
-A phone answer is sent in E.164 — *playwright-bdd, Covered*
-
-### REQ-SUB-092
-
-Before "@" is typed, every suggested domain is offered for what has been typed — *playwright-bdd, Covered*
-
-### REQ-SUB-093
-
-After "@", the suggestions narrow to the domains beginning with what follows it — *playwright-bdd, Covered*
-
-### REQ-SUB-094
-
-Choosing a suggestion fills the field — *playwright-bdd, Covered*
-
-### REQ-SUB-095
-
-An address at a domain outside the suggestions is accepted — *playwright-bdd, Covered*
-
-### REQ-SUB-096
-
-A well-formed email or phone answer is stored as written — *Reqnroll, Covered*
-
-### REQ-SUB-097
-
-A malformed email or phone answer is refused by its question key — *Reqnroll, Covered*
-
-### REQ-SUB-098
-
-On a desktop, clicking or focusing a date field opens a one-month calendar under it — *playwright-bdd, Covered*
-
-### REQ-SUB-099
-
-Choosing a day fills the field as yyyy-mm-dd and closes the calendar — *playwright-bdd, Covered*
-
-### REQ-SUB-100
-
-The calendar disables the days after today unless the question allows future dates — *playwright-bdd, Covered*
-
-### REQ-SUB-101
-
-A typed date that is malformed, or in the future where not allowed, holds the reporter on its page — *playwright-bdd, Covered*
-
-### REQ-SUB-102
-
-A date typed as yyyy-mm-dd is sent as typed — *playwright-bdd, Covered*
-
-### REQ-SUB-103
-
-The calendar is in the reader's language — *playwright-bdd, Covered*
-
-### REQ-SUB-104
-
-The calendar works from the keyboard — *playwright-bdd, Covered*
-
-### REQ-SUB-105
-
-The reporter jumps to a month and year a few years back — *playwright-bdd, Covered*
-
-### REQ-SUB-106
-
-On a touch device, a date question uses the device's own date picker — *playwright-bdd, Covered*
-
-### REQ-SUB-107
-
-On a touch device, a future date the device's picker lets through still holds the reporter on its page — *playwright-bdd, Covered*
-
-### REQ-SUB-108
-
-A future date is refused by its question key unless the question allows future dates — *Reqnroll, Covered*
-
-### REQ-SUB-109
-
-A date that is today somewhere is accepted, and a question that allows future dates accepts any date — *Reqnroll, Covered*
-
-### REQ-SUB-110
-
-The form's question list says whether each date question allows future dates — *Reqnroll, Covered*
-
-### REQ-SUB-111
-
-Tabbing past a date field skips its calendar — *playwright-bdd, Covered*
-
-### REQ-SUB-112
-
-A date question with a placeholder of its own still names the yyyy-mm-dd format — *playwright-bdd, Covered*
-
-### REQ-SUB-113
-
-A choice of a dependent question must be offered under the parent's answer — *Reqnroll, Covered*
-
-### REQ-SUB-114
-
-A required dependent question that cannot be answered yet does not block a submission — *Reqnroll, Covered*
-
-### REQ-SUB-115
-
-A choice offered under several parent answers is accepted under each, and refused under any other — *Reqnroll, Covered*
-
-### REQ-SUB-116
-
-A request that reached the API without CloudFront's origin-secret header is refused — *Reqnroll, Covered*
-
-### REQ-SUB-117
-
-The rate limiter partitions by the CloudFront viewer address, not the shared connection — *Reqnroll, Covered*
-
-### REQ-SUB-118
-
-A successful submission nudges the Worker — *Reqnroll, Covered*
-
-### REQ-SUB-119
-
-A second automatic translation is refused — *Reqnroll, Covered*
-
-### REQ-SUB-120
-
-There is no API endpoint left to supply or correct an answer's translation by hand — *Reqnroll, Covered*
-
-### REQ-SUB-121
-
-Leaving the untouched report form never shows a confirmation — *playwright-bdd, Covered*
-
-### REQ-SUB-122
-
-Leaving the report form for another page while it holds unsubmitted answers says the report is saved, and is confirmed first — *playwright-bdd, Covered*
-
-### REQ-SUB-124
-
-Continuing a saved report leaves out an answer whose question revision is no longer current — *playwright-bdd, Covered*
-
-### REQ-SUB-125
-
-The reporter is told once that saved answers were cleared — *playwright-bdd, Covered*
-
-### REQ-SUB-126
-
-No notice appears when every saved answer is still current — *playwright-bdd, Covered*
-
-### REQ-SUB-127
-
-A saved report with no answer still current is replaced by a fresh form and the notice — *playwright-bdd, Covered*
-
-### REQ-SUB-128
-
-Closing or reloading the tab while the report form holds only saved answers shows no prompt — *playwright-bdd, Covered*
-
-### REQ-SUB-129
-
-Leaving the report form for another page while a file is still uploading says that file will not be kept — *playwright-bdd, Covered*
-
-### REQ-SUB-130
-
-Closing or reloading the tab while a file is still uploading triggers the browser's own prompt — *playwright-bdd, Covered*
-
-### REQ-SUB-131
-
-A desktop date field is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus — *playwright-bdd, Covered*
-
-### REQ-SUB-132
-
-A multi-select picker is a combobox that pops up a dialog of checkboxes — *playwright-bdd, Covered*
-
-## Claims: typeform-question-import-export
-
-### REQ-TF-001
-
-Import requires both languages — *Reqnroll, Covered*
-
-### REQ-TF-002
-
-A field's ref appears in the English file but not the French one — *Reqnroll, Covered*
-
-### REQ-TF-003
-
-A choice's ref appears in the English file but not the French one — *Reqnroll, Covered*
-
-### REQ-TF-004
-
-A Typeform field type maps to a question type — *Reqnroll, Covered*
-
-### REQ-TF-005
-
-A single-select multiple-choice field imports as single-select — *Reqnroll, Covered*
-
-### REQ-TF-006
-
-A multi-select multiple-choice field imports as multi-select — *Reqnroll, Covered*
-
-### REQ-TF-008
-
-A group field flattens into a heading and its children — *Reqnroll, Covered*
-
-### REQ-TF-009
-
-A contact-info field flattens the same way a group does — *Reqnroll, Covered*
-
-### REQ-TF-010
-
-The generated answer-recap screen is not imported — *Reqnroll, Covered*
-
-### REQ-TF-011
-
-A field type with no equivalent is rejected, not silently dropped — *Reqnroll, Covered*
-
-### REQ-TF-012
-
-A field with only linear flow is not flagged as branching logic — *Reqnroll, Covered*
-
-### REQ-TF-013
-
-Any real branching condition is flagged, not silently dropped or auto-mapped — *Reqnroll, Covered*
-
-### REQ-TF-014
-
-An Administrator resolves a pending logic note — *Reqnroll, Covered*
-
-### REQ-TF-015
-
-Import never saves a question by itself — *Reqnroll, Covered*
-
-### REQ-TF-016
-
-The imported draft's key comes from the Typeform ref — *Reqnroll, Covered*
-
-### REQ-TF-017
-
-Re-importing the same form updates in place — *playwright-bdd, Covered*
-
-### REQ-TF-018
-
-Export produces a zip of two Typeform-shaped files — *Reqnroll, Covered*
-
-### REQ-TF-019
-
-Export preserves data Typeform has no field for — *Reqnroll, Covered*
-
-### REQ-TF-020
-
-Exporting and reimporting reproduces the same drafts — *Reqnroll, Covered*
-
-### REQ-TF-021
-
-Only an Administrator may import or export — *Reqnroll, Covered*
-
-### REQ-TF-022
-
-A date question's Allow future dates setting survives an export and reimport — *Reqnroll, Covered*
-
-### REQ-TF-023
-
-A choice dependency survives an export and reimport — *Reqnroll, Covered*
-
-### REQ-TF-024
-
-Importing a question strips a trailing colon from its title — *Reqnroll, Covered*
-
-## Claims: web-localization-and-design
-
-### REQ-WLD-001
-
-The admin review queue is a route of the one site — *playwright-bdd, Covered*
-
-### REQ-WLD-002
-
-The homepage header exposes navigation to reporting, submission, and contact, and a distinct member-login action — *playwright-bdd, Covered*
-
-### REQ-WLD-003
-
-The contact page shows HPAC's organization details, mailing address, email, and social links — *playwright-bdd, Covered*
-
-### REQ-WLD-004
-
-On a mobile-width viewport, header navigation is reached through a hamburger toggle — *playwright-bdd, Covered*
-
-### REQ-WLD-005
-
-The initial locale is selected in priority order — *playwright-bdd, Covered*
-
-### REQ-WLD-006
-
-Switching the language toggle updates the document language and persists the choice — *playwright-bdd, Covered*
-
-### REQ-WLD-007
-
-Switching the language toggle rerenders without losing answers — *playwright-bdd, Covered*
-
-### REQ-WLD-008
-
-A visitor can toggle and persist a light/dark theme choice — *playwright-bdd, Covered*
-
-### REQ-WLD-009
-
-The footer sits at the bottom of the viewport on a short page but below the fold on a long one — *playwright-bdd, Covered*
-
-### REQ-WLD-010
-
-Application chrome strings come from committed locale catalogues — *Reqnroll, Covered*
-
-### REQ-WLD-011
-
-A translation missing locally is stubbed with a visible marker, and CI must replace it before merge — *Reqnroll, Covered*
-
-### REQ-WLD-012
-
-A French value edited by hand is recorded rather than overwritten — *Reqnroll, Covered*
-
-### REQ-WLD-013
-
-Editing both languages at once is one correction, not a conflict — *Reqnroll, Covered*
-
-### REQ-WLD-014
-
-Question content comes from the bilingual database revision — *Reqnroll, Covered*
-
-### REQ-WLD-015
-
-Required questions, and only those, are marked required on the form — *playwright-bdd, Covered*
-
-### REQ-WLD-016
-
-The form explains local storage and warns about attachments — *playwright-bdd, Covered*
-
-### REQ-WLD-017
-
-The client shows inline validation before submission — *playwright-bdd, Covered*
-
-### REQ-WLD-018
-
-Client validation never replaces server validation — *Reqnroll, Covered*
-
-### REQ-WLD-019
-
-The interface language alone decides which summary text is shown — *playwright-bdd, Covered*
-
-### REQ-WLD-020
-
-A report's private context, its content, and its summary are visibly distinct — *playwright-bdd, Covered*
-
-### REQ-WLD-021
-
-Assets are self-hosted, never loaded from third-party CDNs — *Reqnroll, Covered*
-
-### REQ-WLD-022
-
-Dark mode passes contrast and focus checks in both languages — *playwright-bdd, Covered*
-
-### REQ-WLD-023
-
-The form meets baseline accessibility requirements — *playwright-bdd, Covered*
-
-### REQ-WLD-024
-
-A JavaScript failure never exposes or erases report data — *playwright-bdd, Covered*
-
-### REQ-WLD-025
-
-A network failure preserves local state and explains retry — *playwright-bdd, Covered*
-
-### REQ-WLD-026
-
-French that renders a listed term the forbidden way fails verification — *Reqnroll, Covered*
-
-### REQ-WLD-027
-
-The CI translator is told the required rendering of every listed term — *Reqnroll, Covered*
-
-### REQ-WLD-028
-
-The kept, dormant DeepL adapter translates French into the English the configuration names — *Reqnroll, Covered*
-
-### REQ-WLD-029
-
-The kept, dormant DeepL adapter with no usable English target refuses to start — *Reqnroll, Covered*
-
-### REQ-WLD-030
-
-A production hostname sets a first-time visitor's default language, but a saved choice still wins — *playwright-bdd, Covered*
-
-### REQ-WLD-031
-
-Switching the language toggle never changes the host — *playwright-bdd, Covered*
-
-### REQ-WLD-032
-
-Following a link to another page starts that page at its top, on every page — *playwright-bdd, Covered*
-
-### REQ-WLD-033
-
-French is machine-translated into Canadian English — *Reqnroll, Covered*
-
-### REQ-WLD-034
-
-English is machine-translated into Canadian French — *Reqnroll, Covered*
-
-### REQ-WLD-035
-
-Every runtime translation is told the required rendering of every listed term — *Reqnroll, Covered*
-
-### REQ-WLD-036
-
-With no Gemini key translation is unavailable, in every environment — *Reqnroll, Covered*
-
-### REQ-WLD-037
-
-A translation request carries the strings and nothing else, and they come back in order — *Reqnroll, Covered*
-
-### REQ-WLD-038
-
-A reply that is not one clean translation per string is refused — *Reqnroll, Covered*
-
-### REQ-WLD-039
-
-Placeholders and markup survive the round trip, or the reply is refused — *Reqnroll, Covered*
-
-### REQ-WLD-040
-
-Translation has its own model and reasoning setting — *Reqnroll, Covered*
-
-### REQ-WLD-041
-
-Translation uses the same Gemini key as summaries — *Reqnroll, Covered*
-
-### REQ-WLD-042
-
-Translation's model name picks its provider, apart from the summary's — *Reqnroll, Covered*
-
-### REQ-WLD-043
-
-A translation model no provider handler claims stops startup when a key is held — *Reqnroll, Covered*
-
-### REQ-WLD-044
-
-With no key, a translation model no provider handler claims leaves translation unavailable — *Reqnroll, Covered*
-
-### REQ-WLD-045
-
-A summary's Markdown renders as a safe subset — *playwright-bdd, Covered*
-
-### REQ-WLD-046
-
-A public summary is set in the same type as the other public pages, in the <theme> theme — *playwright-bdd, Covered*
-
-### REQ-WLD-047
-
-Every translation localizes place names rather than copying them — *Reqnroll, Covered*
-
-### REQ-WLD-048
-
-A destructive admin action asks for confirmation — *playwright-bdd, Covered*
-
-### REQ-WLD-049
-
-A page left open across a deploy keeps its interface text in both languages — *playwright-bdd, Covered*
+> ([ADR-0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
+> The same data with every step, binding, and citation is [`claims.json`](claims.json).
+
+A `Planned` claim is still `@ignore`. Reqnroll runs a claim without `@ui`;
+playwright-bdd runs one with it.
+
+## Claims
+
+| Claim | Scenario | Area | Engine | Status | Step definitions |
+|---|---|---|---|---|---|
+| REQ-AI-001 | Exactly one model call summarizes and anonymizes a report | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-002 | An exact private value in report content is deterministically marked before the model call | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-003 | A token from a multi-word private value is also marked | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-004 | A common short word is never marked as a false positive | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-005 | Overlapping candidate matches resolve longest match first | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-006 | Matching is case-insensitive and whitespace-normalized | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-007 | private_context is still supplied alongside the marking pass | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-008 | Concurrent workers cannot claim the same summarization outbox item twice | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-009 | Only eligible, labeled fields reach the model | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-011 | The Worker accepts only the exact two-field JSON response | ai-anonymization | Reqnroll | Covered | [SummarizationProviderSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs) |
+| REQ-AI-016 | Documents never reach the model | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-017 | A valid response is persisted as revision 1 of one pair-level summary | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-019 | Retries repeat the single-call operation without adding stages | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-020 | Exhausted retries surface a manually authorable failure | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-021 | Sensitive summarization data is never logged | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-022 | The Worker requests the configured model at the configured reasoning level | ai-anonymization | Reqnroll | Covered | [SummarizationProviderSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs) |
+| REQ-AI-023 | A Worker holding a key refuses to start with an unusable model configuration | ai-anonymization | Reqnroll | Covered | [SummarizationProviderSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs) |
+| REQ-AI-024 | The current prompt carries every anonymization and accuracy rule | ai-anonymization | Reqnroll | Covered | [SummarizationProviderSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs) |
+| REQ-AI-027 | Only a report with publication consent reaches the model | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-028 | A private yes/no answer is never a marking candidate | ai-anonymization | Reqnroll | Covered | [AiAnonymizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs) |
+| REQ-AI-029 | A yes/no answer reaches the model as true or false, never as words | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-030 | The summary's model name picks the provider | ai-anonymization | Reqnroll | Covered | [SummarizationProviderSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs) |
+| REQ-AI-031 | The model is told to write one section per public paragraph question, blank ones included | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.Sections.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs), [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-032 | Answers reach the model in form order | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.Sections.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs), [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-033 | A section's headings are the label the reporter answered, in both languages, without a colon | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.Sections.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs), [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-AI-034 | The Worker accepts a summary only with exactly the expected headings | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.Sections.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs) |
+| REQ-AI-035 | A report with no public paragraph question has a summary with no headings | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.Sections.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs) |
+| REQ-AI-036 | A summary with the wrong headings is a failed attempt under the retry budget | ai-anonymization | Reqnroll | Covered | [SummarizationOutboxSteps.Sections.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs), [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-COM-001 | A signed-in member comments on a published report | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-002 | Commenting requires a member | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-003 | A report the public cannot see cannot be commented on | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-004 | A comment must have text, and at most 2000 characters | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-005 | A comment is stored in the language it was written in, and the Worker supplies the other | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-006 | Posting a comment never waits for, or calls, a translation provider | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-007 | The API tells a reader which comments are theirs and never who wrote the others | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-008 | An author's edit adds a revision and keeps the one before it | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-009 | An author's deleted comment disappears but is not erased | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-010 | Nobody may change another member's comment | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-011 | A reviewer hides a comment, and the hiding is audited | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-012 | A member who is not a reviewer cannot hide a comment | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-013 | Unpublishing a report hides its comments, and publishing it again brings them back | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-014 | The public feed carries each report's comment count | comments | Reqnroll | Covered | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
+| REQ-COM-015 | The feed shows how many comments each report has | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts) |
+| REQ-COM-016 | A visitor who is not signed in is invited to sign in to comment | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts) |
+| REQ-COM-017 | A signed-in member posts, edits, and deletes their own comment | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts) |
+| REQ-COM-018 | A reader sees every comment in the site's language, a translated one marked by a subtle icon | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts), [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-COM-019 | A comment still awaiting translation shows its original text | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts) |
+| REQ-COM-020 | A reviewer hides a comment from the report page | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts) |
+| REQ-COM-021 | Leaving with an unposted comment is confirmed before it is discarded | comments | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-DOM-001 | A report follows the defined lifecycle transitions | domain-and-lifecycle | Reqnroll | Covered | [ReviewLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewLifecycleSteps.cs) |
+| REQ-DOM-003 | A report is publishable only when every invariant holds | domain-and-lifecycle | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-DOM-004 | A report is not publishable when one invariant fails | domain-and-lifecycle | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-DOM-005 | Editing the summary of a Published report publishes the new revision at once | domain-and-lifecycle | Reqnroll | Covered | [ReviewLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewLifecycleSteps.cs) |
+| REQ-DOM-006 | A report without publication consent is never summarized | domain-and-lifecycle | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-DOM-007 | Soft deletion removes a report from every normal path | domain-and-lifecycle | Reqnroll | Covered | [DomainAndLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs) |
+| REQ-DOM-008 | A question revision can be deleted only when unreferenced | domain-and-lifecycle | Reqnroll | Covered | [DomainAndLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs) |
+| REQ-DOM-009 | Retiring a question is a soft delete with no way back | domain-and-lifecycle | Reqnroll | Covered | [DomainAndLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs) |
+| REQ-DOM-010 | Raw reports are retained until explicit deletion | domain-and-lifecycle | Reqnroll | Covered | [DomainAndLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs) |
+| REQ-DOM-011 | Soft-deleting a report keeps its row and its stored files | domain-and-lifecycle | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs) |
+| REQ-DOM-013 | An audited action is recorded in the immutable audit log | domain-and-lifecycle | Reqnroll | Covered | [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs) |
+| REQ-DOM-014 | A review action outside its states is refused and changes nothing | domain-and-lifecycle | Reqnroll | Covered | [ReviewLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewLifecycleSteps.cs) |
+| REQ-DOM-015 | A report without publication consent is unpublished for good | domain-and-lifecycle | Reqnroll | Covered | [ReviewLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewLifecycleSteps.cs) |
+| REQ-DOM-016 | An operator requeues poisoned outbox work | domain-and-lifecycle | Reqnroll | Covered | [DomainAndLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs) |
+| REQ-DOM-017 | A poison-requeue payload naming a time window only requeues messages poisoned within it | domain-and-lifecycle | Reqnroll | Covered | [DomainAndLifecycleSteps.cs](../tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs) |
+| REQ-DOM-018 | The database refuses a change to what a reporter answered | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-019 | An answer's second language and its deletion stamp are written once | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-020 | The database refuses a change to what an attachment arrived as | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-021 | What the Worker and a reviewer record about an attachment stays writable | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-022 | The database refuses a change to a report's language, submission time, or consent | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-023 | A report's review state and its deletion stamp stay writable | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-024 | The database refuses a change to a saved summary revision | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-025 | A revision's approval may be set and cleared, and it may be stamped deleted | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-026 | A revision's deletion stamp is written once | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-027 | The database never deletes a report, an answer, a file, or a summary revision | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-028 | A statement that leaves a locked column as it was is not a change | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-029 | A migration that must change a locked column disables the trigger inside its own transaction | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-DOM-030 | The database never truncates a report, an answer, a file, or a summary revision | domain-and-lifecycle | Reqnroll | Covered | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs) |
+| REQ-MED-001 | Only allowlisted content types are accepted | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-002 | Declared content type must agree with detected content type | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-003 | The client filename is kept only as a reviewer's download name | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-005 | Unclaimed uploads expire automatically | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-006 | Every image is re-encoded to strip metadata | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [WorkerAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs) |
+| REQ-MED-007 | Every video is remuxed to strip metadata, never transcoded | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-008 | A document is validated but never transformed | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [WorkerAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs) |
+| REQ-MED-009 | Each attachment fails and processes independently of the report | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [WorkerAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs) |
+| REQ-MED-010 | A reviewer gets a short-lived inline URL only for successfully processed media | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-011 | A reviewer downloads a validated document as an unredacted original | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-012 | The admin site never inline-renders a private document | media | playwright-bdd | Covered | [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts), [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-013 | A failed image or video is never viewed inline, but its raw original downloads, audited | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-015 | A video that cannot be stripped is kept rather than refused | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-016 | Removing an upload erases every version of it | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-017 | A cancelled upload leaves nothing in storage | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-018 | A claimed upload is copied into the report's original compartment | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-019 | A reporter's filename is sanitized before it is stored | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-020 | A download's extension always matches the bytes served | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-021 | An attachment awaits the Worker before a reviewer may view it | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-022 | Processing an attachment twice changes nothing | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [WorkerAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs) |
+| REQ-MED-023 | The Worker skips an attachment whose report was deleted | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [WorkerAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs) |
+| REQ-MED-024 | Processing never holds a whole attachment in memory | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [WorkerAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs) |
+| REQ-MED-025 | A published report lists its verified photos and video when media was consented to | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-026 | A file that is neither a verified derivative nor a validated document is never public | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-027 | Media is public only when the reporter consented to sharing it | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-028 | A visitor gets a short-lived inline link to a public file | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-029 | A file stops being public when its report or a reviewer withdraws it | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-030 | A reviewer hides a file and shows it again, and both are audited | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-031 | A member who is not a reviewer cannot hide or show a file | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-032 | The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-033 | An expired link is replaced and the video resumes where it was | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-034 | Media that is no longer public is removed from the page | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-035 | A reviewer hides a file from the public report page, still marked in the staff strip | media | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts), [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-036 | The admin report page shows whether each file is public | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-037 | A published report lists its validated documents when media consent names documents | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-038 | A document is public only when its media consent named documents | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-039 | A visitor gets a short-lived forced download of a public document | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-040 | A reviewer hides a document and shows it again, and both are audited | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-041 | The report page offers a public document as a download, never inline | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-042 | The admin report page shows whether each document is public | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-043 | A QuickTime video downloads as an MP4 | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-044 | A published QuickTime video is served as an MP4 | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PublicMediaSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs) |
+| REQ-MED-045 | A sent upload waits, unvalidated, in a private quarantine compartment | media | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-046 | Staff mint a private upload for a file of any type | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-047 | A private upload larger than the configured cap is refused before anything is minted | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-048 | Adding a private attachment stores its bytes unchanged in the report's private compartment | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-049 | A private attachment downloads unchanged under its sanitized name, and each download is audited | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-050 | An unclaimed private upload waits in quarantine and expires with every other upload | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-051 | Only the private attachment link signs a URL for the private compartment | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-052 | Nothing anonymizes a private attachment | media | Reqnroll | Covered | [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs), [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MED-053 | A still-processing image or video is never viewed inline, but its raw original downloads, audited | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-054 | The raw-original download refuses once a derivative exists | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-055 | The raw-original download refuses a document | media | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs), [MediaValidationSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs) |
+| REQ-MED-056 | The lightbox wraps, is keyboard-operable, and traps and returns focus | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-057 | A document's thumbnail is never opened in the lightbox | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-058 | A 404 removes the item from both the strip and an open lightbox | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-059 | The admin report page uses the same strip and lightbox, and works for an unpublished report | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-060 | A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-061 | A 404 on the only remaining lightbox item closes it | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MED-062 | A reporter's video in the lightbox carries no captions, and the lightbox does not suggest it might | media | playwright-bdd | Covered | [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-MOD-001 | In development the login page offers no third-party sign-in option | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-002 | Where a third-party provider is configured, the login page offers it | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-003 | Signing in with member credentials returns a session that survives a reload | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-004 | Bad credentials show one generic failure and no session | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-005 | Repeated sign-in attempts for one identity are rate limited | moderation-authentication-and-publication | Reqnroll | Covered | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
+| REQ-MOD-006 | A member's signed-in session persists across a reload and clears on logout | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-007 | A signed-in Administrator's Admin menu offers every option | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-009 | A signed-in User sees no Admin menu | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-010 | An open Admin menu keeps every option on a single line | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-011 | Activating an Admin menu option navigates to its page | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-012 | The Admin menu is absent for a signed-out visitor | moderation-authentication-and-publication | playwright-bdd | Covered | [homepage.steps.ts](../tests/e2e/steps/homepage.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-013 | A token signed by an unknown key is rejected | moderation-authentication-and-publication | Reqnroll | Covered | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
+| REQ-MOD-014 | A token whose signature has been altered is rejected | moderation-authentication-and-publication | Reqnroll | Covered | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
+| REQ-MOD-015 | An expired token is rejected | moderation-authentication-and-publication | Reqnroll | Covered | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
+| REQ-MOD-016 | A token for the wrong audience is rejected | moderation-authentication-and-publication | Reqnroll | Covered | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
+| REQ-MOD-017 | A token with no recognized role claim authenticates as User | moderation-authentication-and-publication | Reqnroll | Covered | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
+| REQ-MOD-018 | The API never reads a name, an email, or any other claim | moderation-authentication-and-publication | Reqnroll | Covered | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
+| REQ-MOD-019 | The development token endpoint does not exist outside development | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-020 | A development login verified against the members site resolves role from the email lists | moderation-authentication-and-publication | Reqnroll | Covered | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
+| REQ-MOD-021 | Bad members-site credentials show the same generic failure as bad fixed-account credentials | moderation-authentication-and-publication | Reqnroll | Covered | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
+| REQ-MOD-022 | A members-site outage during a development login is reported distinctly from bad credentials | moderation-authentication-and-publication | Reqnroll | Covered | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
+| REQ-MOD-023 | An unauthenticated request to an admin endpoint is refused before the handler | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-024 | Every operation is authorized by the API, not just the UI | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-025 | A User may only submit a report | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-026 | A SafetyOfficer reviews and publishes but does not author questions | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-027 | An Administrator has every SafetyOfficer capability and authors questions | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-028 | Only an Administrator may author a question revision | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-029 | Sensitive admin actions are audited without report content | moderation-authentication-and-publication | Reqnroll | Covered | [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs) |
+| REQ-MOD-030 | The admin report list shows every live report with its state | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-031 | A report detail view exposes only what the reviewer needs | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-032 | Editing a summary of a report that is not live saves a draft | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-033 | Publishing approves the current bilingual pair once | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-035 | Publication requires every guard to pass, with no bypass | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-036 | The public DTO exposes only the approved summary and its metadata | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-037 | The public feed lists only publishable reports, newest submitted first | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-MOD-038 | An unknown or non-public report id returns 404 | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-MOD-042 | A signed-out visitor who navigates to an admin route is sent to sign in | moderation-authentication-and-publication | playwright-bdd | Covered | [admin-route-guard.steps.ts](../tests/e2e/steps/admin-route-guard.steps.ts) |
+| REQ-MOD-043 | A signed-in member without the required role sees a real 403, not a 404 or the page content | moderation-authentication-and-publication | playwright-bdd | Covered | [admin-route-guard.steps.ts](../tests/e2e/steps/admin-route-guard.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-044 | A successful sign-in writes an audit row | moderation-authentication-and-publication | Reqnroll | Covered | [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs) |
+| REQ-MOD-045 | A failed sign-in attempt writes an audit row | moderation-authentication-and-publication | Reqnroll | Covered | [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs) |
+| REQ-MOD-046 | A reviewer's attachment view writes its own audit row, distinct from a raw-report view | moderation-authentication-and-publication | Reqnroll | Covered | [AttachmentAccessSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs) |
+| REQ-MOD-047 | A failed audit write blocks the action it would have recorded | moderation-authentication-and-publication | Reqnroll | Covered | [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs) |
+| REQ-MOD-048 | Signing out sends nothing to the API | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-049 | The Needs action filter shows pending, failed, and stuck reports | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-050 | A status filter narrows the admin report list | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-051 | Opening a report's detail view is audited | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-052 | The Manage reports page lists reports with a status badge and a Private badge | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-053 | Choosing a filter on Manage reports narrows the list | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-054 | Opening a report shows its answers with private answers marked, and its summary pair | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-055 | Publishing a consented report's pair makes it public | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-057 | Unpublishing takes a report off the public feed and keeps it for learning | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-058 | Unpublishing may carry a note that only reviewers see | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-059 | A reviewer writes the pair by hand when summarization failed | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-060 | A review action based on a stale view is refused | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-061 | Every review action writes one content-free audit entry in its own transaction | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-062 | The report view offers only the actions its state allows | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-063 | Editing a pending report's summary pair saves a draft | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-064 | Publishing a consented report shows it Published | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-065 | Unpublishing with a note shows the note on the report | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-066 | A stale action tells the reviewer to reload | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-067 | Deleting a report asks for confirmation first | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-068 | Opening an attachment requests its own audited link | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-069 | Only a reviewer may request a machine translation | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-070 | Each summary language records how it was produced | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-071 | The editor offers a translate button for each language the reviewer changed | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-072 | Translating asks before overwriting and shows what would change | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-073 | Writing a pair by hand offers the translate buttons too | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-074 | The report view shows how each summary language was produced | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-075 | A date, time, or yes/no answer reads in the reviewer's language, not in its stored form | moderation-authentication-and-publication | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts), [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-076 | A stored date that is not a real date is shown as stored | moderation-authentication-and-publication | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts), [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-077 | The report detail view gives a second language only for an answer that has one | moderation-authentication-and-publication | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs) |
+| REQ-MOD-078 | Opening a report shows a translation only under answers that have one | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-079 | Each report in the public feed opens at its own address | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-080 | A report's address opens it directly and survives a reload | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts), [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-081 | An address for a report that is not public shows not found | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-082 | The public feed loads more reports automatically, and going back restores them | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-083 | A reviewer can open a published report's public page | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-084 | A reviewer reads how many reports need action | moderation-authentication-and-publication | Reqnroll | Covered | [PendingCountSteps.cs](../tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs), [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-085 | Only an Administrator's pending counts include answers awaiting translation | moderation-authentication-and-publication | Reqnroll | Covered | [PendingCountSteps.cs](../tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs) |
+| REQ-MOD-086 | A User cannot read the pending counts | moderation-authentication-and-publication | Reqnroll | Covered | [PendingCountSteps.cs](../tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs) |
+| REQ-MOD-087 | An Administrator's Admin menu shows how much work is waiting | moderation-authentication-and-publication | playwright-bdd | Covered | [admin-pending-counts.steps.ts](../tests/e2e/steps/admin-pending-counts.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-089 | With nothing waiting, the Admin menu shows no count | moderation-authentication-and-publication | playwright-bdd | Covered | [admin-pending-counts.steps.ts](../tests/e2e/steps/admin-pending-counts.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-090 | A report without publication consent never needs action | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-091 | Sign-out is not an audited event | moderation-authentication-and-publication | Reqnroll | Covered | [AuditSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuditSteps.cs) |
+| REQ-MOD-092 | A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review | moderation-authentication-and-publication | playwright-bdd | Covered | [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-093 | A SafetyOfficer's Admin menu counts reports and type-ahead values waiting | moderation-authentication-and-publication | playwright-bdd | Covered | [admin-pending-counts.steps.ts](../tests/e2e/steps/admin-pending-counts.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-094 | A Safety Officer or an Administrator reviews type-ahead values | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-095 | A Safety Officer reviews flagged type-ahead values on one page | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-096 | A report's consent reaches the admin view as true, false, or null | moderation-authentication-and-publication | Reqnroll | Covered | [ConsentViewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ConsentViewSteps.cs) |
+| REQ-MOD-097 | A Safety Officer approves, corrects, and removes type-ahead values on the review page | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-098 | Only a Safety Officer or an Administrator may keep private notes | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-099 | Staff add any number of private notes to a report in any status | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-100 | Editing a private note adds a revision and keeps every earlier one | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-101 | Removing a private note soft-deletes it | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-102 | A private note is plain text of 1 to 4000 characters | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-103 | A deleted report's private notes go with it | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-104 | No public or member read ever returns a private note, not even a count | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateNoteSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateNoteSteps.cs) |
+| REQ-MOD-105 | A private note never reaches the model or a translation provider | moderation-authentication-and-publication | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-MOD-106 | A safety officer keeps private notes on the report page | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-notes.steps.ts](../tests/e2e/steps/private-notes.steps.ts) |
+| REQ-MOD-107 | Only a Safety Officer or an Administrator may reach private attachments | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-108 | Staff add private attachments to a report in any status | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-109 | Removing a private attachment soft-deletes it and keeps its bytes | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-110 | A private attachment needs a usable name, a short description, and a sent upload | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-111 | A deleted report's private attachments go with it | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-112 | No public or member read ever returns a private attachment, not even a count | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-113 | A private attachment never reaches the model | moderation-authentication-and-publication | Reqnroll | Covered | [SummarizationOutboxSteps.cs](../tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs) |
+| REQ-MOD-114 | A private note may refer to a private attachment on its own report only | moderation-authentication-and-publication | Reqnroll | Covered | [PrivateAttachmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs) |
+| REQ-MOD-115 | A safety officer stages, describes, adds, downloads, and removes a private attachment on the report page | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-116 | A private note refers to a private attachment on the report page | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-117 | A safety officer cancels a private attachment while it uploads | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-118 | A phone answer reads formatted, and one stored before phone numbers were validated reads as stored | moderation-authentication-and-publication | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts), [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-119 | A list row carries the version a review command sends back | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-120 | Each row of Manage reports offers the quick actions its state allows | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-121 | Publishing and unpublishing from the list updates the row in place | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-122 | Deleting from the list asks for confirmation first | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-123 | A stale row action tells the reviewer to reload the list | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-124 | The admin report list shows the reporter's and pilot's names by stable role, blank when unanswered | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-125 | Manage reports shows each row's reporter and pilot names, blank when unanswered | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-126 | The public feed's next page offers a keyboard-only fallback and announces itself | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-127 | The public feed offers a visible Retry action when its next page fails to load | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-128 | Manage reports loads more automatically and offers the same hidden fallback and visible retry | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-129 | The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-130 | Searching Manage reports finds a report matched by any part of it | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-131 | A misspelled search still finds the report | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-132 | A search matches across English and French stemming | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-133 | The best match is listed first | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-134 | Clearing the search box returns to newest submitted first | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-135 | A search stays within the chosen filter | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-136 | The search text lives in the address bar and survives a reload | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-137 | A search matching nothing shows a message naming the query, not an error | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-138 | Only a reviewer may find a match inside private report content | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-139 | The search query text is never logged | moderation-authentication-and-publication | Reqnroll | Covered | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs) |
+| REQ-MOD-140 | Search matches the approved published summary in the visitor's site language | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-141 | Search matches a visible member comment as shown in the visitor's site language | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-142 | Search is scoped to the visitor's current site language only | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-143 | The public search never widens by caller role | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-144 | A non-publishable report's summary text never matches | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-145 | A hidden or a deleted comment never matches | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-146 | A typo or a missing accent still finds the best match | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-147 | Best match ranks first while a query is active | moderation-authentication-and-publication | Reqnroll | Covered | [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-148 | An empty search box lists newest submitted first, unchanged | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs), [PublicSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs) |
+| REQ-MOD-149 | The search box sits at the top of the public feed, and its query is bookmarkable | moderation-authentication-and-publication | playwright-bdd | Covered | [comments.steps.ts](../tests/e2e/steps/comments.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts), [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-150 | The feed's attachment count is the public count for a visitor and the full count for staff | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-MOD-151 | The admin report list carries every non-deleted attachment's count | moderation-authentication-and-publication | Reqnroll | Covered | [ReportReviewSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs) |
+| REQ-MOD-152 | A signed-in safety officer sees every attachment on the public report page, each marked public or not | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-MOD-153 | The public feed shows each report's attachment icon and count, omitted at zero | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-154 | Manage reports shows each row's attachment icon and count, omitted at zero | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-155 | An ordinary member's token widens nothing; only SafetyOfficer or Administrator does | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-MOD-156 | An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token | moderation-authentication-and-publication | Reqnroll | Covered | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
+| REQ-MOD-157 | With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist | moderation-authentication-and-publication | Reqnroll | Covered | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs) |
+| REQ-MOD-158 | With the temporary interim issuer disabled, none of its endpoints exist | moderation-authentication-and-publication | Reqnroll | Covered | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs) |
+| REQ-MOD-159 | The temporary interim issuer's JWKS publishes only a public key | moderation-authentication-and-publication | Reqnroll | Covered | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs) |
+| REQ-MOD-160 | The review queue groups flagged values under their question, questions ordered alphabetically | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-161 | Values within a question's group are sorted alphabetically in the viewer's language, ignoring case and accents | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-162 | Approving, correcting, removing, merging, and relinking a value keeps the reviewer's scroll position, with no loading state | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-163 | A merged value leaves the queue in place, and a merge target still awaiting review shows its updated answer count | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-164 | A published report page offers a same-tab link to its admin detail page for a reviewer | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-165 | A published report page offers no admin link to a non-reviewer | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-166 | A value written in both languages offers Translate only once its wording differs from what correction opened with | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-167 | A value's Translate is unavailable after it translates, until its source is edited again | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-168 | Pressing Translate drafts the other language, still editable, and saves nothing by itself | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-169 | The direction switch changes which language Translate reads from | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-170 | Translate is unavailable when the server has no translation provider | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-171 | A failed translation says so on the value's row and drafts nothing | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-172 | A translation overtaken by a direction flip is dropped, and Translate stops showing as working | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-MOD-173 | Several private attachments staged at once each upload independently | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-174 | Removing a staged private attachment before it is added leaves the others staged | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-175 | A too-large private attachment is refused on its own row while the others proceed | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-176 | "Add N attachments" is disabled until every staged private attachment has settled | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-177 | Leaving the report page with staged, un-added private attachments warns | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-MOD-178 | Opening the public feed afresh starts at its top and loads its first page again | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-179 | Opening Manage reports afresh loads its first page again, not the list kept from earlier | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-180 | A staged private attachment cannot be removed or re-described while it is being added | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-181 | Leaving the report page with only refused private attachments staged does not warn | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [private-attachments.steps.ts](../tests/e2e/steps/private-attachments.steps.ts) |
+| REQ-MOD-184 | There is no admin page left to edit an answer's translation by hand | moderation-authentication-and-publication | playwright-bdd | Covered | [admin-route-guard.steps.ts](../tests/e2e/steps/admin-route-guard.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-MOD-185 | Leaving the summary editor with unsaved changes is confirmed before they are discarded | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-MOD-186 | Leaving the type-ahead value review queue with an uncorrected draft is confirmed | moderation-authentication-and-publication | playwright-bdd | Covered | [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-MOD-187 | Leaving with an unsaved private note is confirmed | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-MOD-190 | A published report page says its summary was translated from the other language the report was written in | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-191 | A published report page shows no translation label when the site's language is the one the report was written in | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-192 | The translation label follows the header's language toggle without a reload | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-MOD-193 | A published report's own page carries the language it was written in, and the feed does not | moderation-authentication-and-publication | Reqnroll | Covered | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
+| REQ-MOD-194 | An edit saves a new revision that records its author | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-195 | An edit to a live report stays published with the new text and the same publish date | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-196 | A rollback saves a new revision equal to the old one | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-197 | A rollback on a live report is published at once | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-198 | A draft on a Pending report needs approval | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-199 | The public never sees an unapproved revision | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-200 | The history lists every revision with its author, time, and source | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-201 | Only a reviewer edits or restores, and only to an earlier revision that exists | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-202 | The report view lists the summary's revisions | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-203 | Any revision can be viewed without changing the current summary | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-204 | Restoring a version asks for confirmation first | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-205 | A save that changes neither language is refused | moderation-authentication-and-publication | Reqnroll | Covered | [ReviewActionSteps.SummaryRevisions.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs), [ReviewActionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs) |
+| REQ-MOD-206 | Editing a published report's summary keeps it Published | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-207 | Save is offered only once a language has changed | moderation-authentication-and-publication | playwright-bdd | Covered | [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-MOD-208 | The admin review page renders a summary and its revision history as Markdown | moderation-authentication-and-publication | playwright-bdd | Covered | [summary-markdown.steps.ts](../tests/e2e/steps/summary-markdown.steps.ts) |
+| REQ-MOD-209 | The admin report detail renders a long-text answer and its translation as Markdown | moderation-authentication-and-publication | playwright-bdd | Covered | [summary-markdown.steps.ts](../tests/e2e/steps/summary-markdown.steps.ts) |
+| REQ-MOD-210 | The public feed previews the first section's text, without its heading | moderation-authentication-and-publication | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts), [summary-markdown.steps.ts](../tests/e2e/steps/summary-markdown.steps.ts) |
+| REQ-MOD-211 | Markdown support is not advertised to a reviewer editing a summary | moderation-authentication-and-publication | playwright-bdd | Covered | [summary-markdown.steps.ts](../tests/e2e/steps/summary-markdown.steps.ts) |
+| REQ-QB-001 | Editing an unanswered question creates a new revision instead of mutating one | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkSteps.cs) |
+| REQ-QB-002 | Editing an answered question retires it and creates a new one | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-003 | An answer on a deleted report still forces a fork | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkEndpointSteps.cs), [QuestionForkSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkSteps.cs) |
+| REQ-QB-004 | A retired question can never be brought back | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-005 | Only one question per key is live at a time | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkEndpointSteps.cs) |
+| REQ-QB-006 | Publication consent revises in place even when answered | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-008 | Editing a question copies the latest revision into a new one | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkEndpointSteps.cs) |
+| REQ-QB-009 | Only the latest active, non-deleted revision is shown on the form | question-bank-and-form | Reqnroll | Covered | [PublicQuestionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicQuestionEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-010 | Form questions are ordered deterministically | question-bank-and-form | Reqnroll | Covered | [PublicQuestionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicQuestionEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-011 | The current form is public | question-bank-and-form | Reqnroll | Covered | [PublicQuestionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicQuestionEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-012 | A group question's response nests its children rather than repeating them | question-bank-and-form | Reqnroll | Covered | [PublicQuestionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicQuestionEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-013 | The current form's response includes a question's conditional dependency | question-bank-and-form | Reqnroll | Covered | [PublicQuestionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicQuestionEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-014 | consent_publish can never be optional | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-015 | An Administrator chooses whether an ordinary question must be answered | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-016 | consent_publish must resolve to an explicit yes or no | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-019 | Every answer is stored in its written form | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-QB-025 | Only consent is projected onto the report aggregate | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-QB-026 | Privacy is a property of the revision, not the answer | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-QB-027 | Creating a revision preserves the question bank invariants | question-bank-and-form | Reqnroll | Covered | [QuestionBankInvariantSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankInvariantSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-030 | A revision can be soft-deleted only when no answer references it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-031 | A referenced revision can never be deleted | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-036 | Two reporters naming the same new site produce one choice | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-044 | A statement or a group collects no answer | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-045 | An answer naming a statement or a group is refused | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-QB-046 | A question may be grouped under a group question | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-047 | A form renders a question together with its group heading and siblings | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [question-bank-and-form.steps.ts](../tests/e2e/steps/question-bank-and-form.steps.ts) |
+| REQ-QB-048 | Only a group question may be a grouping parent | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-049 | A group cannot itself be grouped under another group | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-050 | A question cannot be grouped under itself | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-051 | Grouping is unaffected by conditional dependency and vice versa | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-052 | A grouped question is ungrouped when its group stops being one | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionUngroupingSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionUngroupingSteps.cs) |
+| REQ-QB-053 | A question can be made conditional only on a yes/no or single-select question | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-054 | A single-select parent's dependency records the required option | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-055 | A single-select dependency must name one of the parent's live choices | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-056 | A yes/no dependency does not name an option | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-057 | A question cannot be conditional on itself or form a cycle | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-058 | Publication consent can never be made conditional | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-059 | Rearranging the form writes a new revision for every question that moved | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-060 | A question type either takes options or does not | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-061 | A question key is normalized and cannot be reused | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-062 | Retiring a question keeps it and its history | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-063 | Publication consent can never be deleted or deactivated | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-066 | A translation draft comes from the API and is saved only by a person | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs) |
+| REQ-QB-067 | A server with no translation credential still authors questions | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs) |
+| REQ-QB-069 | An Administrator drafts the French from the English | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-070 | An Administrator drafts the English from the French | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-071 | A question cannot be saved in one language | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-072 | Translation is not offered when the server has no provider | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-074 | An Administrator sees which choices reporters added | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-075 | An Administrator corrects a reporter-added choice | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-076 | An Administrator authors a question from the dashboard | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-077 | The options editor appears only for a type that takes options | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-078 | Only yes/no and single-select questions are offered as a condition | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-079 | Naming a required option appears only for a single-select condition | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-080 | Questions are reordered from the keyboard | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-081 | Editing an unanswered question from the dashboard shows its new version | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-082 | Editing an answered question warns that it will be replaced | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-085 | Deleting a question removes it from the list | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-086 | A rejected save tells the Administrator why | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-087 | The editor carries an existing question's settings into the form | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-088 | Reviewing an imported Typeform draft prefills the editor | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [typeform-import.steps.ts](../tests/e2e/steps/typeform-import.steps.ts) |
+| REQ-QB-089 | An Administrator downloads the question bank as Typeform JSON | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [typeform-import.steps.ts](../tests/e2e/steps/typeform-import.steps.ts) |
+| REQ-QB-090 | An Administrator writes a question's choice by its wording alone | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-092 | A choice an Administrator writes is recorded under a code derived from its English wording | question-bank-and-form | Reqnroll | Covered | [ChoiceCodeEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoiceCodeEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-093 | Editing a question opens the editor in that question's place | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-096 | A new question's key is derived from its English wording and never reused | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionKeyEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionKeyEndpointSteps.cs) |
+| REQ-QB-097 | Only a type-ahead grows from reporters' answers | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-098 | Editing an answered question's wording carries every choice to the replacement | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-101 | A choice a live question depends on cannot be removed | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-103 | The report form shows a one-language choice in the language it has | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-104 | A new installation asks for several attachments | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededWordingSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededWordingSteps.cs) |
+| REQ-QB-105 | The seeded single-file wording on an unanswered attachment question is revised | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededWordingSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededWordingSteps.cs) |
+| REQ-QB-106 | The seeded single-file wording on an answered attachment question forks it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededWordingSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededWordingSteps.cs) |
+| REQ-QB-107 | An attachment question an Administrator already reworded is left alone | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededWordingSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededWordingSteps.cs) |
+| REQ-QB-108 | Only free text can be marked as needing translation | question-bank-and-form | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-109 | Marking a non-text question as needing translation is rejected | question-bank-and-form | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-110 | Whether a question needs translation is a revision field | question-bank-and-form | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-111 | The editor offers Auto-translate answer only for free text | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-112 | Media consent is a system question that can never be removed or made conditional | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-113 | The form asks for media consent only when there is a file to share | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [public-media.steps.ts](../tests/e2e/steps/public-media.steps.ts) |
+| REQ-QB-114 | A media consent answer is recorded on the report | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-115 | A media consent answer must be an explicit yes or no | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-116 | A media consent answer covers documents when it answers the wording the form showed | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-117 | Media consent names documents and says they are published as uploaded | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-118 | An answer not in its written form is rejected | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-QB-119 | A yes or no answer has no second language | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-QB-120 | Only true enables a conditional question, in either language | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [YesNoLanguageSteps.cs](../tests/HpacSafety.Acceptance.Tests/YesNoLanguageSteps.cs) |
+| REQ-QB-121 | Only true is consent, in either language | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [YesNoLanguageSteps.cs](../tests/HpacSafety.Acceptance.Tests/YesNoLanguageSteps.cs) |
+| REQ-QB-122 | An answer names the choice it was given under | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-QB-123 | Fixing a picker option in place corrects every answer that named it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-124 | Replacing a picker option keeps the old option under every earlier answer | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-125 | A condition follows its choice's replacement | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-126 | A removed choice is no longer offered but still names every answer given under it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-127 | A fork's choices are new rows, and old answers keep naming the retired question's | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-128 | A reporter's new type-ahead value is flagged for review and offered at once | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-129 | A type-ahead value is corrected in place for every answer that names it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-130 | A reporter typing a removed type-ahead value names it without reviving it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-131 | Merging one type-ahead value into another leaves every answer untouched | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-132 | Merges resolve in a chain and never form a cycle | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-133 | Only a type-ahead value can be merged or edited by a Safety Officer | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-134 | The Worker supplies a reporter-added value's other language | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterValueTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterValueTranslationSteps.cs) |
+| REQ-QB-135 | Reviewing a type-ahead value clears its flag | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [ReporterAddedChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs) |
+| REQ-QB-136 | Existing answers are linked to their choices without being rewritten | question-bank-and-form | Reqnroll | Covered | [ChoiceReferenceMigrationSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoiceReferenceMigrationSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-137 | A yes or no stored as a word is converted to a boolean once | question-bank-and-form | Reqnroll | Covered | [BooleanAnswerMigrationSteps.cs](../tests/HpacSafety.Acceptance.Tests/BooleanAnswerMigrationSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-138 | A yes or no stored as anything but the four words stops the conversion | question-bank-and-form | Reqnroll | Covered | [BooleanAnswerMigrationSteps.cs](../tests/HpacSafety.Acceptance.Tests/BooleanAnswerMigrationSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-139 | An Administrator chooses to replace a picker option rather than fix it | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-140 | A condition follows its parent question when the parent forks | question-bank-and-form | Reqnroll | Covered | [ForkedParentConditionSteps.cs](../tests/HpacSafety.Acceptance.Tests/ForkedParentConditionSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-141 | An Administrator writes instructional text as a title and a description | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-142 | Instructional text keeps the line breaks its description was written with | question-bank-and-form | Reqnroll | Covered | [PublicQuestionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicQuestionEndpointSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-143 | A reporter reads instructional text with its description's paragraphs | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [question-bank-and-form.steps.ts](../tests/e2e/steps/question-bank-and-form.steps.ts) |
+| REQ-QB-144 | The API sends each choice's pin, pinned-first choices first and pinned-last choices last | question-bank-and-form | Reqnroll | Covered | [ChoicePinSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoicePinSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-145 | A question's choices are listed alphabetically in the reader's language | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-146 | Pinned choices come first or last, each group alphabetical | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-147 | A value a reporter adds to a type-ahead is not pinned | question-bank-and-form | Reqnroll | Covered | [ChoicePinSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoicePinSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-148 | A value a reporter adds to a type-ahead takes its alphabetical place | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-149 | Pinning a choice never revises or forks its question | question-bank-and-form | Reqnroll | Covered | [ChoicePinSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoicePinSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-150 | An Administrator sets each option's position, and the editor lists options as the form does | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-151 | The required-option control lists the parent's choices as the form does | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-152 | The type-ahead review page offers merge targets as the form lists them | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-QB-153 | A multi-select answer on the report page is listed as the form lists its choices | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [manage-reports.steps.ts](../tests/e2e/steps/manage-reports.steps.ts) |
+| REQ-QB-154 | A date question allows future dates only when an Administrator says so | question-bank-and-form | Reqnroll | Covered | [FutureDateSteps.cs](../tests/HpacSafety.Acceptance.Tests/FutureDateSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-155 | Only a date question can allow future dates | question-bank-and-form | Reqnroll | Covered | [FutureDateSteps.cs](../tests/HpacSafety.Acceptance.Tests/FutureDateSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-156 | Whether a date question allows future dates is a revision field | question-bank-and-form | Reqnroll | Covered | [FutureDateSteps.cs](../tests/HpacSafety.Acceptance.Tests/FutureDateSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-157 | The migration leaves the occurrence date refusing future dates, with no new revision | question-bank-and-form | Reqnroll | Covered | [FutureDateSteps.cs](../tests/HpacSafety.Acceptance.Tests/FutureDateSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-158 | The editor offers Allow future dates only for a date question, unchecked | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-159 | A type-ahead question is a field the form draws, with no caret, and opens with a hint before 3 characters | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-160 | Typing into a type-ahead filters its list, ignoring case and accents | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-161 | A reporter picks a type-ahead choice from the keyboard | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-162 | A reporter types a type-ahead value its list does not offer | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-163 | A type-ahead's or single-select's list fits a phone screen and scrolls when long | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-164 | A choice written in both languages offers Translate only once it is edited | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-165 | A choice's English is translated into its French as a draft | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-166 | Flipping the direction translates a choice's French into its English | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-167 | Translating one choice changes no other choice | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-168 | A choice's Translate is unavailable after it translates, until its source is edited again | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-169 | No choice's Translate is offered when the server has no provider | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-170 | A choice written in one language can be translated without being edited | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-171 | A type-ahead choice picked from the list is sent as that choice, not matched by its wording | question-bank-and-form | playwright-bdd | Covered | [choice-answers.steps.ts](../tests/e2e/steps/choice-answers.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-172 | Editing a bilingual question's wording offers Translate | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-173 | Translate replaces the French wording with drafts | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-174 | The wording's Translate is unavailable after it translates, until a source field is edited again | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-175 | Translating the wording changes no choice | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-176 | Translate leaves an unedited field written in both languages as it is | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-177 | A translation that arrives after the direction was flipped changes nothing | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-178 | French typed while a translation is on its way is kept | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-179 | A picker or type-ahead's choices may depend on another picker or type-ahead | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-180 | A dependency is one level deep | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-181 | The parent comes before the child on the form | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-184 | A dependency and its links sit outside revisions | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-185 | Removing a question's parent keeps the links and stops filtering | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-187 | A replaced picker parent choice passes its child links to the replacement | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-188 | A merged type-ahead parent value passes its child links to the value it was merged into | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-189 | A dependency follows its parent when the parent forks | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-190 | A forked dependent question copies every choice with its links | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-191 | The report form's questions name each dependency and each link | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-192 | A reporter's new value in a dependent type-ahead is linked to the parent's answer | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-195 | An Administrator picks the question a question's choices depend on, and clears it | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-197 | A dependent question offers only the choices linked to the parent's answer | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-198 | Changing the parent's answer clears a child answer it no longer offers | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-199 | A parent answered with a new value leaves the child nothing to pick, but a value to type | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-200 | A saved report restores the parent and child answers together | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-201 | A dependent child that cannot be answered yet does not hold the reporter back | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-203 | A parent the form does not ask filters nothing | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-204 | A picker child with nothing under the parent's answer says so and does not hold the reporter back | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-205 | The manage-questions page shows why a question cannot move above its parent | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-206 | The parent comes before the child wherever grouping places them | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-208 | A single-select question is a picker the form draws, not the browser's select | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-209 | A reporter picks a single-select choice from the keyboard and the pointer | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-210 | A single-select answer can be cleared back to unanswered | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-211 | A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-212 | Every choice of a dependent question is offered under at least one parent choice | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-213 | One choice is offered under several parent choices, and its wording is unique on the question | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-214 | A parent choice is removed only while every child choice under it keeps another parent | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-215 | Merging a parent value into one the child choice already names leaves one link | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-216 | A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-217 | A reporter's typed value matching a value under another parent answer links it and flags it | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-218 | A reporter's typed value matching a merged value names the value it was merged into | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-219 | A reporter's typed value matching a removed value brings it back flagged, not revived | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-220 | A reviewer adds and removes a dependent type-ahead value's parents, never down to none | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-221 | Merging dependent type-ahead values offers the survivor under every parent either was under | question-bank-and-form | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-222 | Each choice of a dependent question picks the parent choices it is offered under | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-223 | The form offers one choice under each of its parent answers and keeps it across them | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-224 | The type-ahead review page shows every parent of a dependent value and edits them | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-225 | The migration folds each link into the join table and merges identical duplicates | question-bank-and-form | Reqnroll | Covered | [ChoiceParentMigrationSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-226 | The migration merges no pair whose wording matches in one language only | question-bank-and-form | Reqnroll | Covered | [ChoiceParentMigrationSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-227 | Words typed into a dependent type-ahead are kept and sent as typed, even when they read as a choice under another answer | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-228 | The migration merges a dependent type-ahead's identical duplicates into the oldest | question-bank-and-form | Reqnroll | Covered | [ChoiceParentMigrationSteps.cs](../tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-229 | Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-230 | Below 3 characters, a type-ahead's arrow keys and Enter pick nothing | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-231 | A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-232 | Reopening a type-ahead filters by what it already holds, however it is reopened | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-233 | Typing a merged-away wording offers the survivor, hinting the alias that matched | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-234 | A merged-away wording matches typing in the other language too | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-235 | A chained merge offers the final survivor, hinting the first wording | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-236 | Under a dependent type-ahead, a merged-away wording offers the survivor only under its own parent choices | question-bank-and-form | playwright-bdd | Covered | [dependent-choices.steps.ts](../tests/e2e/steps/dependent-choices.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-237 | The type-ahead review page lists a value's aliases, chains included | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [review-type-ahead-values.steps.ts](../tests/e2e/steps/review-type-ahead-values.steps.ts) |
+| REQ-QB-238 | Leaving the question editor with an unsaved draft is confirmed before it is discarded | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-QB-239 | Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-QB-240 | The form adds the colon after an answerable question's label, in the locale's style | question-bank-and-form | playwright-bdd | Covered | [label-colon.steps.ts](../tests/e2e/steps/label-colon.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-241 | The admin report detail adds the colon after an answerable question's label, in the locale's style | question-bank-and-form | playwright-bdd | Covered | [label-colon.steps.ts](../tests/e2e/steps/label-colon.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-242 | The question bank list shows each language's label with its own colon style | question-bank-and-form | playwright-bdd | Covered | [label-colon.steps.ts](../tests/e2e/steps/label-colon.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-243 | The question editor refuses a label that ends in a colon | question-bank-and-form | playwright-bdd | Covered | [label-colon.steps.ts](../tests/e2e/steps/label-colon.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-244 | The API refuses a question whose label ends in a colon, in either language | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs) |
+| REQ-QB-245 | A migration removes a trailing colon from every stored question label, in place | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs) |
+| REQ-QB-246 | The seeded question bank has no label ending in a colon | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs) |
+| REQ-QB-247 | A media consent answer naming an earlier wording is refused, so no document is published on it | question-bank-and-form | Reqnroll | Covered | [MediaConsentSteps.cs](../tests/HpacSafety.Acceptance.Tests/MediaConsentSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
+| REQ-QB-248 | Editing a group gives each of its questions a new revision that stays grouped under it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionUngroupingSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionUngroupingSteps.cs) |
+| REQ-QB-249 | The API sends Country as an optional single-select of every country, with Canada and the United States pinned first | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-250 | The seeded yes/no Country question is revised into the pick list when no answer references it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-251 | The seeded yes/no Country question is forked into the pick list when a report has answered it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-252 | An answered Province is forked with its choices when it begins to follow Country | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-253 | The Country pick list migration run a second time changes nothing | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-254 | A Country question an Administrator already changed is left alone | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-255 | A question that waited for the old yes/no Country answer now waits for Canada | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs) |
+| REQ-QB-256 | The Country list reads Canada, United States, a separator, then every other country alphabetically | question-bank-and-form | playwright-bdd | Covered | [country.steps.ts](../tests/e2e/steps/country.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-257 | Country is optional | question-bank-and-form | playwright-bdd | Covered | [country.steps.ts](../tests/e2e/steps/country.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-258 | Province is shown only when Country is Canada | question-bank-and-form | playwright-bdd | Covered | [country.steps.ts](../tests/e2e/steps/country.steps.ts), [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts) |
+| REQ-QB-259 | A freshly migrated database sends each seeded group with its questions | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-260 | A seeded question that lost its group gets a new revision grouped under it when no answer references it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-261 | A seeded question that lost its group is forked under it when a report has answered it | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-262 | The seeded-group repair run a second time changes nothing | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededCountrySteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededCountrySteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-263 | A seeded question an Administrator has grouped is left alone | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-264 | A seeded question whose group is no longer live is left alone | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-265 | The browser suite's seeded form is what a freshly migrated database sends | question-bank-and-form | Reqnroll | Covered | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [SeededGroupSteps.cs](../tests/HpacSafety.Acceptance.Tests/SeededGroupSteps.cs) |
+| REQ-QB-266 | Each seeded group is one page with its heading and exactly its questions | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [seeded-groups.steps.ts](../tests/e2e/steps/seeded-groups.steps.ts) |
+| REQ-QB-267 | A reporter picks a type-ahead choice with the pointer, and no option ever takes focus | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-QB-268 | A reporter picks a single-select choice with the pointer, and no option ever takes focus | question-bank-and-form | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-SUB-001 | The browser holds report state locally until submission | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-002 | A successful submission clears local browser state | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-003 | Expired local state is not restored | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-005 | A skipped answer is represented by an empty value, not omission | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-008 | The API rejects a malformed submission DTO | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-010 | A submission naming a revision that is not current, or naming revisions inconsistently, is refused | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-011 | Reporter-visible errors never echo submitted content | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-013 | A valid submission is persisted atomically | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-014 | A failed transaction leaves no visible report and no leaked blobs | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-015 | A successful submission returns an opaque accepted receipt | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-016 | The UI prevents duplicate submission while a request is in flight | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-017 | A rate-limited submission is rejected | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-018 | An unauthenticated submission is rejected | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-019 | A member of any role may submit a report | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-020 | A stored report carries no submitter subject, user id, or link | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-021 | No audit entry or log line records who submitted a report | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-022 | A signed-out visitor is asked to sign in before the report page is offered | report-submission | playwright-bdd | Covered | [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-023 | The report page tells the reporter that signing in does not attach them to the report | report-submission | playwright-bdd | Covered | [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-024 | The not-tracked notice is shown in the reporter's chosen language | report-submission | playwright-bdd | Covered | [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-025 | Every answer's value and locale are immutable once submitted | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-026 | The Worker mechanically translates every answer that needs it | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-028 | The leading statement question renders as an introduction | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-029 | A reporter pages through questions one at a time | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-030 | A group question and its children page together | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-031 | A required question blocks Next until answered | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-032 | A conditional question is absent from paging until its parent condition is met | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-033 | The Next button becomes Submit on the final page | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-034 | A multi-select question is a picker dropdown, not a flat list | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-035 | A returning reporter is asked whether to continue their saved report | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-036 | Continuing a saved report restores it where the reporter left off | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-037 | Declining a saved report starts a fresh form | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-038 | A reporter with no saved report is not asked | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-041 | A submission naming an expired or unknown upload is refused by name | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-042 | A claimed upload leaves quarantine once the report commits | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-043 | An unauthenticated upload is rejected | report-submission | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-044 | A rate-limited upload is rejected | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-045 | Attaching a file uploads it at once with an activity indicator | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-046 | Next and Submit wait for every upload to finish | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-047 | A reporter may cancel an upload in progress | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-048 | A reporter may remove an uploaded file | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-049 | The form refuses a file past the attachment limit | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-050 | A refused upload is explained on that file's row | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-051 | An expired upload is marked for re-attachment and nothing else is lost | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-053 | Each page of the form has its own address | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-054 | The browser's Back and Forward buttons move between pages under the form's rules | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-055 | Continuing a saved report puts its page in the address | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-056 | A page address never answers the continue question for the reporter | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-057 | A page address without a saved report opens the introduction | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-058 | The attachment field is a drop zone with a large choose-files control | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-059 | The drop zone's control opens the file chooser from a pointer or the keyboard | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-060 | Files dropped on the drop zone upload exactly as chosen files do | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-061 | Dropped files past the attachment limit are refused | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-062 | A file dropped outside the drop zone does nothing | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-063 | Continuing a saved report restores its uploaded files | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-064 | Starting over erases the saved report's uploads | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-065 | A reporter may discard the report in progress | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-066 | Discarding a report asks for confirmation first | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-067 | An expired saved report's uploads are erased | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-068 | The continue dialog shows a saved date or time in the reporter's language | report-submission | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-071 | Only free text marked for translation is machine-translated | report-submission | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-072 | Minting an upload returns a pre-signed PUT for one quarantine key and nothing else | report-submission | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-073 | A declared file the API will not accept gets no upload URL | report-submission | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-074 | Storage accepts only the upload the URL was signed for | report-submission | Reqnroll | Covered | [AttachmentUploadSteps.cs](../tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-075 | A submission validates every upload it claims | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-076 | A file refused at submission is marked on its row and nothing else is lost | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-077 | A yes or no is sent as a JSON boolean whatever language the report is submitted in | report-submission | playwright-bdd | Covered | [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts), [yes-no-language.steps.ts](../tests/e2e/steps/yes-no-language.steps.ts) |
+| REQ-SUB-078 | One answer entry per shown answer-producing revision | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-079 | A submitted choice must be one the question offers | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-080 | The submission path never calls a translation provider | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-081 | A choice answer reads both languages from its choice | report-submission | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-082 | A type-ahead answer names a value, and the Worker translates only a new one | report-submission | Reqnroll | Covered | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-083 | The form names each chosen choice by its identifier | report-submission | playwright-bdd | Covered | [choice-answers.steps.ts](../tests/e2e/steps/choice-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-084 | A file larger than its kind allows is refused on its row before it is sent | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-085 | An email or phone question opens the matching keyboard | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-086 | An optional email or phone question may be left blank | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-087 | A malformed email address holds the reporter on its page | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-088 | A phone number that is not valid for its country holds the reporter on its page | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-089 | The phone country picker starts on Canada | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-090 | A phone number takes its chosen country's mask as it is typed | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-091 | A phone answer is sent in E.164 | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-092 | Before "@" is typed, every suggested domain is offered for what has been typed | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-093 | After "@", the suggestions narrow to the domains beginning with what follows it | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-094 | Choosing a suggestion fills the field | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-095 | An address at a domain outside the suggestions is accepted | report-submission | playwright-bdd | Covered | [contact-answers.steps.ts](../tests/e2e/steps/contact-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-096 | A well-formed email or phone answer is stored as written | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-SUB-097 | A malformed email or phone answer is refused by its question key | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-SUB-098 | On a desktop, clicking or focusing a date field opens a one-month calendar under it | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-099 | Choosing a day fills the field as yyyy-mm-dd and closes the calendar | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-100 | The calendar disables the days after today unless the question allows future dates | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-101 | A typed date that is malformed, or in the future where not allowed, holds the reporter on its page | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-102 | A date typed as yyyy-mm-dd is sent as typed | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-103 | The calendar is in the reader's language | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-104 | The calendar works from the keyboard | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-105 | The reporter jumps to a month and year a few years back | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-106 | On a touch device, a date question uses the device's own date picker | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-107 | On a touch device, a future date the device's picker lets through still holds the reporter on its page | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-108 | A future date is refused by its question key unless the question allows future dates | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-SUB-109 | A date that is today somewhere is accepted, and a question that allows future dates accepts any date | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs), [StoredAnswerSteps.cs](../tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs) |
+| REQ-SUB-110 | The form's question list says whether each date question allows future dates | report-submission | Reqnroll | Covered | [FutureDateSteps.cs](../tests/HpacSafety.Acceptance.Tests/FutureDateSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-111 | Tabbing past a date field skips its calendar | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-112 | A date question with a placeholder of its own still names the yyyy-mm-dd format | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-113 | A choice of a dependent question must be offered under the parent's answer | report-submission | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-114 | A required dependent question that cannot be answered yet does not block a submission | report-submission | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-115 | A choice offered under several parent answers is accepted under each, and refused under any other | report-submission | Reqnroll | Covered | [DependentChoiceSteps.cs](../tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs), [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-116 | A request that reached the API without CloudFront's origin-secret header is refused | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-117 | The rate limiter partitions by the CloudFront viewer address, not the shared connection | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-118 | A successful submission nudges the Worker | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-119 | A second automatic translation is refused | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-120 | There is no API endpoint left to supply or correct an answer's translation by hand | report-submission | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-SUB-121 | Leaving the untouched report form never shows a confirmation | report-submission | playwright-bdd | Covered | [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-SUB-122 | Leaving the report form for another page while it holds unsubmitted answers says the report is saved, and is confirmed first | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-SUB-124 | Continuing a saved report leaves out an answer whose question revision is no longer current | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-125 | The reporter is told once that saved answers were cleared | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-126 | No notice appears when every saved answer is still current | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-127 | A saved report with no answer still current is replaced by a fresh form and the notice | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-128 | Closing or reloading the tab while the report form holds only saved answers shows no prompt | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-SUB-129 | Leaving the report form for another page while a file is still uploading says that file will not be kept | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-SUB-130 | Closing or reloading the tab while a file is still uploading triggers the browser's own prompt | report-submission | playwright-bdd | Covered | [attachments.steps.ts](../tests/e2e/steps/attachments.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts), [unsaved-changes.steps.ts](../tests/e2e/steps/unsaved-changes.steps.ts) |
+| REQ-SUB-131 | A desktop date field is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus | report-submission | playwright-bdd | Covered | [date-answers.steps.ts](../tests/e2e/steps/date-answers.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-SUB-132 | A multi-select picker is a combobox that pops up a dialog of checkboxes | report-submission | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts), [submit-report.steps.ts](../tests/e2e/steps/submit-report.steps.ts) |
+| REQ-TF-001 | Import requires both languages | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-002 | A field's ref appears in the English file but not the French one | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-003 | A choice's ref appears in the English file but not the French one | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-004 | A Typeform field type maps to a question type | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-005 | A single-select multiple-choice field imports as single-select | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-006 | A multi-select multiple-choice field imports as multi-select | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-008 | A group field flattens into a heading and its children | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-009 | A contact-info field flattens the same way a group does | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-010 | The generated answer-recap screen is not imported | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-011 | A field type with no equivalent is rejected, not silently dropped | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-012 | A field with only linear flow is not flagged as branching logic | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-013 | Any real branching condition is flagged, not silently dropped or auto-mapped | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-014 | An Administrator resolves a pending logic note | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-015 | Import never saves a question by itself | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-016 | The imported draft's key comes from the Typeform ref | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-017 | Re-importing the same form updates in place | typeform-question-import-export | playwright-bdd | Covered | [manage-questions.steps.ts](../tests/e2e/steps/manage-questions.steps.ts), [typeform-import.steps.ts](../tests/e2e/steps/typeform-import.steps.ts) |
+| REQ-TF-018 | Export produces a zip of two Typeform-shaped files | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-019 | Export preserves data Typeform has no field for | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-020 | Exporting and reimporting reproduces the same drafts | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-021 | Only an Administrator may import or export | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-022 | A date question's Allow future dates setting survives an export and reimport | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-023 | A choice dependency survives an export and reimport | typeform-question-import-export | Reqnroll | Covered | [TypeformImportEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs), [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-TF-024 | Importing a question strips a trailing colon from its title | typeform-question-import-export | Reqnroll | Covered | [TypeformImportSteps.cs](../tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs) |
+| REQ-WLD-001 | The admin review queue is a route of the one site | web-localization-and-design | playwright-bdd | Covered | [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts) |
+| REQ-WLD-002 | The homepage header exposes navigation to reporting, submission, and contact, and a distinct member-login action | web-localization-and-design | playwright-bdd | Covered | [homepage.steps.ts](../tests/e2e/steps/homepage.steps.ts) |
+| REQ-WLD-003 | The contact page shows HPAC's organization details, mailing address, email, and social links | web-localization-and-design | playwright-bdd | Covered | [contact.steps.ts](../tests/e2e/steps/contact.steps.ts) |
+| REQ-WLD-004 | On a mobile-width viewport, header navigation is reached through a hamburger toggle | web-localization-and-design | playwright-bdd | Covered | [homepage.steps.ts](../tests/e2e/steps/homepage.steps.ts) |
+| REQ-WLD-005 | The initial locale is selected in priority order | web-localization-and-design | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts) |
+| REQ-WLD-006 | Switching the language toggle updates the document language and persists the choice | web-localization-and-design | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts) |
+| REQ-WLD-007 | Switching the language toggle rerenders without losing answers | web-localization-and-design | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts), [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-008 | A visitor can toggle and persist a light/dark theme choice | web-localization-and-design | playwright-bdd | Covered | [theme.steps.ts](../tests/e2e/steps/theme.steps.ts) |
+| REQ-WLD-009 | The footer sits at the bottom of the viewport on a short page but below the fold on a long one | web-localization-and-design | playwright-bdd | Covered | [footer.steps.ts](../tests/e2e/steps/footer.steps.ts) |
+| REQ-WLD-010 | Application chrome strings come from committed locale catalogues | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-011 | A translation missing locally is stubbed with a visible marker, and CI must replace it before merge | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-012 | A French value edited by hand is recorded rather than overwritten | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-013 | Editing both languages at once is one correction, not a conflict | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-014 | Question content comes from the bilingual database revision | web-localization-and-design | Reqnroll | Covered | [QuestionRenderingSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionRenderingSteps.cs) |
+| REQ-WLD-015 | Required questions, and only those, are marked required on the form | web-localization-and-design | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-016 | The form explains local storage and warns about attachments | web-localization-and-design | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-017 | The client shows inline validation before submission | web-localization-and-design | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-018 | Client validation never replaces server validation | web-localization-and-design | Reqnroll | Covered | [ReportSubmissionEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs) |
+| REQ-WLD-019 | The interface language alone decides which summary text is shown | web-localization-and-design | playwright-bdd | Covered | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-WLD-020 | A report's private context, its content, and its summary are visibly distinct | web-localization-and-design | playwright-bdd | Covered | [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts) |
+| REQ-WLD-021 | Assets are self-hosted, never loaded from third-party CDNs | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-022 | Dark mode passes contrast and focus checks in both languages | web-localization-and-design | playwright-bdd | Covered | [dark-mode.steps.ts](../tests/e2e/steps/dark-mode.steps.ts) |
+| REQ-WLD-023 | The form meets baseline accessibility requirements | web-localization-and-design | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-024 | A JavaScript failure never exposes or erases report data | web-localization-and-design | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-025 | A network failure preserves local state and explains retry | web-localization-and-design | playwright-bdd | Covered | [report-form.steps.ts](../tests/e2e/steps/report-form.steps.ts) |
+| REQ-WLD-026 | French that renders a listed term the forbidden way fails verification | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-027 | The CI translator is told the required rendering of every listed term | web-localization-and-design | Reqnroll | Covered | [WebLocalizationAndDesignSteps.cs](../tests/HpacSafety.Acceptance.Tests/WebLocalizationAndDesignSteps.cs) |
+| REQ-WLD-028 | The kept, dormant DeepL adapter translates French into the English the configuration names | web-localization-and-design | Reqnroll | Covered | [EnglishTargetSteps.cs](../tests/HpacSafety.Acceptance.Tests/EnglishTargetSteps.cs) |
+| REQ-WLD-029 | The kept, dormant DeepL adapter with no usable English target refuses to start | web-localization-and-design | Reqnroll | Covered | [EnglishTargetSteps.cs](../tests/HpacSafety.Acceptance.Tests/EnglishTargetSteps.cs) |
+| REQ-WLD-030 | A production hostname sets a first-time visitor's default language, but a saved choice still wins | web-localization-and-design | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts) |
+| REQ-WLD-031 | Switching the language toggle never changes the host | web-localization-and-design | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts) |
+| REQ-WLD-032 | Following a link to another page starts that page at its top, on every page | web-localization-and-design | playwright-bdd | Covered | [navigation-scroll.steps.ts](../tests/e2e/steps/navigation-scroll.steps.ts) |
+| REQ-WLD-033 | French is machine-translated into Canadian English | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-034 | English is machine-translated into Canadian French | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-035 | Every runtime translation is told the required rendering of every listed term | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-036 | With no Gemini key translation is unavailable, in every environment | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-037 | A translation request carries the strings and nothing else, and they come back in order | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-038 | A reply that is not one clean translation per string is refused | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-039 | Placeholders and markup survive the round trip, or the reply is refused | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-040 | Translation has its own model and reasoning setting | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-041 | Translation uses the same Gemini key as summaries | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-042 | Translation's model name picks its provider, apart from the summary's | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-043 | A translation model no provider handler claims stops startup when a key is held | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-044 | With no key, a translation model no provider handler claims leaves translation unavailable | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-045 | A summary's Markdown renders as a safe subset | web-localization-and-design | playwright-bdd | Covered | [summary-markdown.steps.ts](../tests/e2e/steps/summary-markdown.steps.ts) |
+| REQ-WLD-046 | A public summary is set in the same type as the other public pages, in the <theme> theme | web-localization-and-design | playwright-bdd | Covered | [summary-markdown.steps.ts](../tests/e2e/steps/summary-markdown.steps.ts) |
+| REQ-WLD-047 | Every translation localizes place names rather than copying them | web-localization-and-design | Reqnroll | Covered | [OpenAiTranslationSteps.cs](../tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs) |
+| REQ-WLD-048 | A destructive admin action asks for confirmation | web-localization-and-design | playwright-bdd | Covered | [admin-site.steps.ts](../tests/e2e/steps/admin-site.steps.ts) |
+| REQ-WLD-049 | A page left open across a deploy keeps its interface text in both languages | web-localization-and-design | playwright-bdd | Covered | [locale.steps.ts](../tests/e2e/steps/locale.steps.ts) |
 
 ## Constraints
 
-A constraint states something the system must be true of; the claims beside
-it are the scenarios that prove it. `none` is an honest answer — an
-infrastructure or test-suite property is not observable from a scenario —
-and it carries its reason.
-
-### CON-DP-001
-
-data-and-persistence.md — verified by `REQ-MOD-036`, `REQ-AI-009`
-
-### CON-DP-002
-
-data-and-persistence.md — verified by `REQ-DOM-007`, `REQ-DOM-011`
-
-### CON-DP-003
-
-data-and-persistence.md — verified by none — managed encryption is an infrastructure property, not something a scenario can observe through the application
-
-### CON-DP-004
-
-data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-SUB-010`, `REQ-QB-122`, `REQ-QB-124`, `REQ-QB-131`
-
-### CON-DP-005
-
-data-and-persistence.md — verified by `REQ-MOD-018`
-
-### CON-DP-006
-
-data-and-persistence.md — verified by `REQ-SUB-020`, `REQ-SUB-021`
-
-### CON-DP-007
-
-data-and-persistence.md — verified by `REQ-QB-005`, `REQ-QB-030`, `REQ-QB-031`
-
-### CON-DP-008
-
-data-and-persistence.md — verified by `REQ-SUB-013`, `REQ-SUB-014`
-
-### CON-DP-009
-
-data-and-persistence.md — verified by `REQ-AI-008`
-
-### CON-DP-010
-
-data-and-persistence.md — verified by `REQ-DOM-013`, `REQ-MOD-029`
-
-### CON-DP-011
-
-data-and-persistence.md — verified by `REQ-MOD-031`, `REQ-MOD-036`
-
-### CON-DP-012
-
-data-and-persistence.md — verified by none — a startup property no running scenario observes; `MigrationRunner` and its tests are its check
-
-### CON-DP-013
-
-data-and-persistence.md — verified by `REQ-DOM-018`, `REQ-DOM-019`, `REQ-DOM-020`, `REQ-DOM-021`, `REQ-DOM-022`, `REQ-DOM-023`, `REQ-DOM-028`, `REQ-DOM-007`
-
-### CON-DP-014
-
-data-and-persistence.md — verified by `REQ-DOM-024`, `REQ-DOM-025`, `REQ-DOM-026`
-
-### CON-DP-015
-
-data-and-persistence.md — verified by `REQ-DOM-027`, `REQ-DOM-030`
-
-### CON-DP-016
-
-data-and-persistence.md — verified by `REQ-DOM-029`
-
-### CON-IF-001
-
-interfaces-and-data-flow.md — verified by `REQ-QB-011`, `REQ-SUB-018`, `REQ-MOD-037`, `REQ-MOD-038`
-
-### CON-IF-002
-
-interfaces-and-data-flow.md — verified by `REQ-SUB-001`
-
-### CON-IF-003
-
-interfaces-and-data-flow.md — verified by `REQ-MOD-019`
-
-### CON-IF-004
-
-interfaces-and-data-flow.md — verified by `REQ-MOD-023`, `REQ-MOD-024`, `REQ-MOD-028`, `REQ-MOD-029`, `REQ-COM-011`, `REQ-COM-012`
-
-### CON-IF-005
-
-interfaces-and-data-flow.md — verified by `REQ-MOD-015`, `REQ-MOD-017`
-
-### CON-IF-006
-
-interfaces-and-data-flow.md — verified by `REQ-MOD-060`
-
-### CON-IF-007
-
-interfaces-and-data-flow.md — verified by none — an internal structural rule with no observable behavior; it is enforced in review and by the conventions skill
-
-### CON-IF-008
-
-interfaces-and-data-flow.md — verified by `REQ-AI-008`, `REQ-MED-009`, `REQ-DOM-007`
-
-### CON-IF-009
-
-interfaces-and-data-flow.md — verified by `REQ-AI-001`, `REQ-AI-009`, `REQ-AI-016`, `REQ-AI-019`, `REQ-MED-010`
-
-### CON-IF-010
-
-interfaces-and-data-flow.md — verified by `REQ-AI-021`, `REQ-SUB-021`, `REQ-MED-003`
-
-### CON-INF-001
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check
-
-### CON-INF-002
-
-infrastructure-and-operations.md — verified by none — a scenario can assert what the system does, not enumerate what it never grew
-
-### CON-INF-003
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check
-
-### CON-INF-004
-
-infrastructure-and-operations.md — verified by `REQ-SUB-018`, `REQ-MOD-003`
-
-### CON-INF-005
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check
-
-### CON-INF-006
-
-infrastructure-and-operations.md — verified by `REQ-MOD-019`
-
-### CON-INF-007
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check
-
-### CON-INF-008
-
-infrastructure-and-operations.md — verified by `REQ-AI-021`, `REQ-MED-003`
-
-### CON-INF-009
-
-infrastructure-and-operations.md — verified by none — the alert set and the absence of outbound email are operational properties no application scenario observes
-
-### CON-INF-010
-
-infrastructure-and-operations.md — verified by `REQ-DOM-010`, `REQ-DOM-011`, `REQ-MED-005`
-
-### CON-INF-011
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check
-
-### CON-INF-012
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; the `release` and `terraform` workflows are its check
-
-### CON-INF-013
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; Terraform plan review and the `infra` job are its check
-
-### CON-INF-014
-
-infrastructure-and-operations.md — verified by none — these are review-time properties no application scenario can observe
-
-### CON-INF-015
-
-infrastructure-and-operations.md — verified by `REQ-SUB-118`
-
-### CON-INF-016
-
-infrastructure-and-operations.md — verified by none — a Lambda invocation's own time budget is not something `.spec/features` scenarios observe; proven directly by `OutboxDrainPassTests` (`tests/HpacSafety.Worker.Tests`)
-
-### CON-INF-017
-
-infrastructure-and-operations.md — verified by `REQ-SUB-116`
-
-### CON-INF-025
-
-infrastructure-and-operations.md — verified by none — an infrastructure/logging property no application scenario observes directly; `infra/observability.tf` and its tests are the check
-
-### CON-INF-026
-
-infrastructure-and-operations.md — verified by `REQ-DOM-016`, `REQ-DOM-017`
-
-### CON-INF-027
-
-infrastructure-and-operations.md — verified by none — an infrastructure property no application scenario can observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that was already open when a deploy removed its files
-
-### CON-SO-001
-
-system-overview.md — verified by `REQ-QB-001`, `REQ-QB-002`, `REQ-QB-009`
-
-### CON-SO-002
-
-system-overview.md — verified by `REQ-QB-014`, `REQ-QB-016`, `REQ-QB-112`, `REQ-QB-113`
-
-### CON-SO-003
-
-system-overview.md — verified by `REQ-MOD-036`, `REQ-MED-025`, `REQ-MED-026`, `REQ-MED-037`, `REQ-MED-039`
-
-### CON-SO-004
-
-system-overview.md — verified by `REQ-AI-001`, `REQ-AI-011`
-
-### CON-SO-005
-
-system-overview.md — verified by `REQ-AI-007`, `REQ-AI-024`
-
-### CON-SO-006
-
-system-overview.md — verified by `REQ-AI-017`, `REQ-MOD-033`
-
-### CON-SO-007
-
-system-overview.md — verified by `REQ-DOM-003`, `REQ-MOD-035`
-
-### CON-SO-008
-
-system-overview.md — verified by `REQ-DOM-007`
-
-### CON-SO-009
-
-system-overview.md — verified by none — a scenario can assert what the system does, not enumerate what it never grew
-
-### CON-TQ-001
-
-testing-and-quality.md — verified by none — a rule about what the suites are for, not about what the system does
-
-### CON-TQ-002
-
-testing-and-quality.md — verified by none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario
-
-### CON-TQ-003
-
-testing-and-quality.md — verified by none — a delivery rule, enforced by the `feature-coverage` job and review
-
-### CON-TQ-004
-
-testing-and-quality.md — verified by `REQ-QB-001`, `REQ-QB-009`, `REQ-QB-016`, `REQ-SUB-078`, `REQ-SUB-005`, `REQ-SUB-010`, `REQ-SUB-013`, `REQ-SUB-017`, `REQ-SUB-018`, `REQ-SUB-124`, `REQ-SUB-125`
-
-### CON-TQ-005
-
-testing-and-quality.md — verified by `REQ-AI-001`, `REQ-AI-009`, `REQ-AI-011`, `REQ-AI-020`, `REQ-AI-021`, `REQ-AI-024`
-
-### CON-TQ-006
-
-testing-and-quality.md — verified by `REQ-MED-001`, `REQ-MED-002`, `REQ-MED-003`, `REQ-MED-006`, `REQ-MED-007`, `REQ-MED-008`, `REQ-MED-010`, `REQ-MED-011`, `REQ-MED-025`, `REQ-MED-026`, `REQ-MED-037`, `REQ-MED-039`
-
-### CON-TQ-007
-
-testing-and-quality.md — verified by `REQ-MOD-024`, `REQ-MOD-029`, `REQ-MOD-032`, `REQ-MOD-033`, `REQ-MOD-035`, `REQ-MOD-036`, `REQ-DOM-007`
-
-### CON-TQ-008
-
-testing-and-quality.md — verified by none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario
-
-### CON-TQ-009
-
-testing-and-quality.md — verified by none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario
-
-### CON-TQ-010
-
-testing-and-quality.md — verified by none — a rule about the specification and the tests together, enforced by `tools/spec/generate-bindings.ts` rather than by a scenario
+A constraint states something that must be true of the system; the claims
+beside it are the scenarios that prove it. `none` carries its reason.
+
+| Constraint | Page | Verified by |
+|---|---|---|
+| CON-DP-001 | [data-and-persistence.md](data-and-persistence.md) | REQ-MOD-036, REQ-AI-009 |
+| CON-DP-002 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-007, REQ-DOM-011 |
+| CON-DP-003 | [data-and-persistence.md](data-and-persistence.md) | none — managed encryption is an infrastructure property, not something a scenario can observe through the application |
+| CON-DP-004 | [data-and-persistence.md](data-and-persistence.md) | REQ-QB-019, REQ-QB-026, REQ-SUB-010, REQ-QB-122, REQ-QB-124, REQ-QB-131 |
+| CON-DP-005 | [data-and-persistence.md](data-and-persistence.md) | REQ-MOD-018 |
+| CON-DP-006 | [data-and-persistence.md](data-and-persistence.md) | REQ-SUB-020, REQ-SUB-021 |
+| CON-DP-007 | [data-and-persistence.md](data-and-persistence.md) | REQ-QB-005, REQ-QB-030, REQ-QB-031 |
+| CON-DP-008 | [data-and-persistence.md](data-and-persistence.md) | REQ-SUB-013, REQ-SUB-014 |
+| CON-DP-009 | [data-and-persistence.md](data-and-persistence.md) | REQ-AI-008 |
+| CON-DP-010 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-013, REQ-MOD-029 |
+| CON-DP-011 | [data-and-persistence.md](data-and-persistence.md) | REQ-MOD-031, REQ-MOD-036 |
+| CON-DP-012 | [data-and-persistence.md](data-and-persistence.md) | none — a startup property no running scenario observes; `MigrationRunner` and its tests are its check |
+| CON-DP-013 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-018, REQ-DOM-019, REQ-DOM-020, REQ-DOM-021, REQ-DOM-022, REQ-DOM-023, REQ-DOM-028, REQ-DOM-007 |
+| CON-DP-014 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-024, REQ-DOM-025, REQ-DOM-026 |
+| CON-DP-015 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-027, REQ-DOM-030 |
+| CON-DP-016 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-029 |
+| CON-IF-001 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-QB-011, REQ-SUB-018, REQ-MOD-037, REQ-MOD-038 |
+| CON-IF-002 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-SUB-001 |
+| CON-IF-003 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-019 |
+| CON-IF-004 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-023, REQ-MOD-024, REQ-MOD-028, REQ-MOD-029, REQ-COM-011, REQ-COM-012 |
+| CON-IF-005 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-015, REQ-MOD-017 |
+| CON-IF-006 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-060 |
+| CON-IF-007 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | none — an internal structural rule with no observable behavior; it is enforced in review and by the conventions skill |
+| CON-IF-008 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-AI-008, REQ-MED-009, REQ-DOM-007 |
+| CON-IF-009 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-AI-001, REQ-AI-009, REQ-AI-016, REQ-AI-019, REQ-MED-010 |
+| CON-IF-010 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-AI-021, REQ-SUB-021, REQ-MED-003 |
+| CON-INF-001 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
+| CON-INF-002 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — a scenario can assert what the system does, not enumerate what it never grew |
+| CON-INF-003 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
+| CON-INF-004 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-SUB-018, REQ-MOD-003 |
+| CON-INF-005 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
+| CON-INF-006 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-MOD-019 |
+| CON-INF-007 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
+| CON-INF-008 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-AI-021, REQ-MED-003 |
+| CON-INF-009 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — the alert set and the absence of outbound email are operational properties no application scenario observes |
+| CON-INF-010 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-DOM-010, REQ-DOM-011, REQ-MED-005 |
+| CON-INF-011 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
+| CON-INF-012 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; the `release` and `terraform` workflows are its check |
+| CON-INF-013 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform plan review and the `infra` job are its check |
+| CON-INF-014 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — these are review-time properties no application scenario can observe |
+| CON-INF-015 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-SUB-118 |
+| CON-INF-016 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — a Lambda invocation's own time budget is not something `.spec/features` scenarios observe; proven directly by `OutboxDrainPassTests` (`tests/HpacSafety.Worker.Tests`) |
+| CON-INF-017 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-SUB-116 |
+| CON-INF-025 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure/logging property no application scenario observes directly; `infra/observability.tf` and its tests are the check |
+| CON-INF-026 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-DOM-016, REQ-DOM-017 |
+| CON-INF-027 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that was already open when a deploy removed its files |
+| CON-SO-001 | [system-overview.md](system-overview.md) | REQ-QB-001, REQ-QB-002, REQ-QB-009 |
+| CON-SO-002 | [system-overview.md](system-overview.md) | REQ-QB-014, REQ-QB-016, REQ-QB-112, REQ-QB-113 |
+| CON-SO-003 | [system-overview.md](system-overview.md) | REQ-MOD-036, REQ-MED-025, REQ-MED-026, REQ-MED-037, REQ-MED-039 |
+| CON-SO-004 | [system-overview.md](system-overview.md) | REQ-AI-001, REQ-AI-011 |
+| CON-SO-005 | [system-overview.md](system-overview.md) | REQ-AI-007, REQ-AI-024 |
+| CON-SO-006 | [system-overview.md](system-overview.md) | REQ-AI-017, REQ-MOD-033 |
+| CON-SO-007 | [system-overview.md](system-overview.md) | REQ-DOM-003, REQ-MOD-035 |
+| CON-SO-008 | [system-overview.md](system-overview.md) | REQ-DOM-007 |
+| CON-SO-009 | [system-overview.md](system-overview.md) | none — a scenario can assert what the system does, not enumerate what it never grew |
+| CON-TQ-001 | [testing-and-quality.md](testing-and-quality.md) | none — a rule about what the suites are for, not about what the system does |
+| CON-TQ-002 | [testing-and-quality.md](testing-and-quality.md) | none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario |
+| CON-TQ-003 | [testing-and-quality.md](testing-and-quality.md) | none — a delivery rule, enforced by the `feature-coverage` job and review |
+| CON-TQ-004 | [testing-and-quality.md](testing-and-quality.md) | REQ-QB-001, REQ-QB-009, REQ-QB-016, REQ-SUB-078, REQ-SUB-005, REQ-SUB-010, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018, REQ-SUB-124, REQ-SUB-125 |
+| CON-TQ-005 | [testing-and-quality.md](testing-and-quality.md) | REQ-AI-001, REQ-AI-009, REQ-AI-011, REQ-AI-020, REQ-AI-021, REQ-AI-024 |
+| CON-TQ-006 | [testing-and-quality.md](testing-and-quality.md) | REQ-MED-001, REQ-MED-002, REQ-MED-003, REQ-MED-006, REQ-MED-007, REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-025, REQ-MED-026, REQ-MED-037, REQ-MED-039 |
+| CON-TQ-007 | [testing-and-quality.md](testing-and-quality.md) | REQ-MOD-024, REQ-MOD-029, REQ-MOD-032, REQ-MOD-033, REQ-MOD-035, REQ-MOD-036, REQ-DOM-007 |
+| CON-TQ-008 | [testing-and-quality.md](testing-and-quality.md) | none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario |
+| CON-TQ-009 | [testing-and-quality.md](testing-and-quality.md) | none — a rule about the tests themselves, enforced by the suites and the CI gates rather than by a scenario |
+| CON-TQ-010 | [testing-and-quality.md](testing-and-quality.md) | none — a rule about the specification and the tests together, enforced by `tools/spec/generate-traceability.ts` rather than by a scenario |

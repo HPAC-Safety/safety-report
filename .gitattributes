@@ -1,9 +1,9 @@
 # Generated files: on a conflict keep the checked-out side; the post-merge and
 # post-rewrite hooks regenerate them. ./init-dev.sh registers the `ours`
-# driver, which is clone-local config (ADR-0106, ADR-0183).
+# driver, which is clone-local config (ADR-0106, ADR-0183, ADR-0193).
 .spec/traceability.md merge=ours
 .spec/README.md merge=ours
-.spec/bindings.md merge=ours
+.spec/claims.json merge=ours
 
 # graphify's union merge driver for its graph; `graphify install` registers it
 # and leaves this line alone when it is already here.

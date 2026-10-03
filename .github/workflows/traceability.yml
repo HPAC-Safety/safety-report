@@ -1,8 +1,8 @@
 name: Traceability matrix
 
-# Regenerates .spec/traceability.md onto a same-repo pull request's own branch,
-# so nobody ever opens a pull request just to regenerate a generated file
-# (ADR-0101). It NEVER pushes to main, and it writes nothing for a fork.
+# Regenerates .spec/claims.json, .spec/traceability.md, and .spec/README.md
+# onto a same-repo pull request's own branch, so nobody ever opens a pull
+# request just to regenerate a generated file (ADR-0101, ADR-0193). It NEVER pushes to main, and it writes nothing for a fork.
 #
 # Why pull_request_target, and why that is safe here (ADR-0057 is the
 # precedent, ADR-0101 the argument for this job):
@@ -11,9 +11,10 @@ name: Traceability matrix
 #     on that branch, which needs a write token: `pull_request` never has one.
 #   * No code the pull request wrote runs with that token. The generator is
 #     taken from the BASE branch (the default checkout for this trigger) and
-#     pointed at the head commit's files as plain data: it reads the feature
-#     files and five constraint pages, and writes two markdown files. The head is
-#     checked out without persisted credentials, and nothing is installed.
+#     pointed at the head commit's files as plain data: it reads the
+#     specification and the step-definition files as text, and writes three
+#     generated files. The head is checked out without persisted credentials,
+#     and nothing is installed.
 #   * A pull request that changes the generator itself is skipped: the base
 #     generator would render the old format. Its author regenerates locally
 #     (the post-merge/post-rewrite hooks do it after every merge or rebase),
@@ -39,7 +40,12 @@ on:
       - tools/spec/generate-traceability.ts
       - tools/spec/generate-spec-index.ts
       - tools/spec/spec-paths.ts
-      - tools/spec/generate-bindings.ts
+      - tools/spec/read-claims.ts
+      - tools/spec/read-records.ts
+      - tools/spec/step-bindings.ts
+      - tools/spec/json-schema.ts
+      - tools/spec/graph-fragment.ts
+      - tools/docs/check-frontmatter.ts
       - tools/spec/regenerate-spec-docs.ts
       - tools/github/commit-to-pr-branch.ts
       - tools/github/read-node-major.ts
@@ -60,8 +66,8 @@ jobs:
   regenerate:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    # The step-bindings map compiles patterns read from the pull request's own
-    # files; a pathological one stops here instead of holding a runner.
+    # Resolving the step bindings compiles patterns read from the pull request's
+    # own files; a pathological one stops here instead of holding a runner.
     timeout-minutes: 5
     steps:
       # The base branch: the trusted generator, and the pinned Node major.
@@ -87,9 +93,10 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.major }}
 
-      # The matrix and the specification index (ADR-0183) are both generated
-      # from .spec/, so one run regenerates both and one commit carries them.
-      - name: Regenerate the matrix and the index with the base branch's generators
+      # The claims, the matrix, and the specification index (ADR-0183,
+      # ADR-0193) are all generated from .spec/, so one run regenerates them
+      # and one commit carries them.
+      - name: Regenerate the claims, the matrix, and the index with the base branch's generators
         id: regenerate
         run: node base/tools/spec/regenerate-spec-docs.ts base head
 
@@ -100,7 +107,7 @@ jobs:
       # (ADR-0021, ADR-0057), is what makes the required checks re-run. The
       # re-run of this job on that push finds nothing to change, so it can't
       # loop.
-      - name: Commit the matrix and the index onto the pull request's own branch
+      - name: Commit the claims, the matrix, and the index onto the pull request's own branch
         if: steps.regenerate.outputs.changed == 'true'
         working-directory: head
         env:
@@ -115,6 +122,6 @@ jobs:
         run: |
           node ../base/tools/github/commit-to-pr-branch.ts \
           --adr ADR-0101 \
-          --add '.spec/traceability.md,.spec/README.md,.spec/bindings.md' \
-          --subject 'Regenerate the traceability matrix, step bindings, and specification index' \
-          --paths '.spec/**,tools/spec/generate-traceability.ts,tools/spec/generate-spec-index.ts,tools/spec/spec-paths.ts,tools/spec/generate-bindings.ts,tools/spec/regenerate-spec-docs.ts,tools/github/commit-to-pr-branch.ts,tools/github/read-node-major.ts,tools/lib/actions.ts,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'
+          --add '.spec/claims.json,.spec/traceability.md,.spec/README.md' \
+          --subject 'Regenerate the claims, traceability matrix, and specification index' \
+          --paths '.spec/**,tools/spec/generate-traceability.ts,tools/spec/generate-spec-index.ts,tools/spec/spec-paths.ts,tools/spec/read-claims.ts,tools/spec/read-records.ts,tools/spec/step-bindings.ts,tools/spec/json-schema.ts,tools/spec/graph-fragment.ts,tools/docs/check-frontmatter.ts,tools/spec/regenerate-spec-docs.ts,tools/github/commit-to-pr-branch.ts,tools/github/read-node-major.ts,tools/lib/actions.ts,tests/HpacSafety.Acceptance.Tests/**,tests/e2e/steps/**,.github/workflows/traceability.yml'

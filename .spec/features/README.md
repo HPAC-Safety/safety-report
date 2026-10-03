@@ -70,11 +70,12 @@ scenario's tag calls for — and removing that tag in the same PR.
    verifies it
    ([ADR-0084](../decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
    An ID is never reused or renumbered, and
-   [the traceability matrix](../traceability.md) is generated from these
-   files rather than maintained by hand. So is
-   [the step-bindings map](../bindings.md), which names the step-definition
-   files that bind each claim; a built claim with an unbound step fails CI
-   ([ADR-0184](../decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
+   [the claims](../claims.json) and [the traceability matrix](../traceability.md)
+   are generated from these files rather than maintained by hand. Both name
+   the step-definition files that bind each claim; a built claim with an
+   unbound step fails CI
+   ([ADR-0184](../decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md),
+   [ADR-0193](../decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
 8. Behavior is specified before it is implemented, and a wrong behavior is
    corrected here rather than argued in a conversation
    ([ADR-0083](../decisions/ADR-0083-specification-driven-development.md)).

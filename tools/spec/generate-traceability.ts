@@ -1,170 +1,158 @@
 #!/usr/bin/env node
-// The traceability matrix, generated from the artifacts (ADR-0084).
+// The specification's machine data and its human matrix, generated from the
+// artifacts (ADR-0084, ADR-0184, ADR-0193).
 //
 // Every scenario carries one stable claim ID as a Gherkin tag, and every
-// normative constraint in a canonical specification page carries a CON id naming the
-// claims that verify it. This reads both and writes .spec/traceability.md, so
-// the matrix is derived rather than maintained — the 1998 version of this
-// document was a spreadsheet nobody updated.
+// normative constraint in a canonical specification page carries a CON id
+// naming the claims that verify it. This reads both, resolves every step to
+// the step definition its runner would bind (tools/spec/step-bindings.ts), reads
+// which decisions and lessons cite each claim (tools/spec/read-records.ts), and
+// writes two files:
 //
-// Dependency-free, like every other tool in this directory. The grammar it
-// consumes is two line shapes, and tools/gherkin/verify.ts has already
-// proved with the official parser that the files are valid Gherkin, so this
-// never has to be the thing that discovers a syntax error.
+//   .spec/claims.json      the canonical data, for tools and CI, conforming to
+//                          .spec/claims.schema.json;
+//   .spec/traceability.md  one table row per claim and per constraint, for people.
+//
+// The same model feeds the graphify fragment (tools/spec/graph-fragment.ts),
+// which `--fragment <path>` writes too.
+//
+//   node tools/spec/generate-traceability.ts             write both; exit 1 on a problem or gap
+//   node tools/spec/generate-traceability.ts --check     fail when a committed file differs
+//   node tools/spec/generate-traceability.ts --no-fail   write both, never fail (hooks and the bot)
 //
 // The exit code is the contract: a duplicate, malformed, missing, or dangling
-// id fails rather than producing a matrix with a hole in it.
-import { appendFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+// id fails, and so does a built claim with a step no definition binds.
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, posix } from 'node:path'
 
-import { CONSTRAINT_PAGES, FEATURES, SPEC_ROOT, TRACEABILITY } from './spec-paths.ts'
+import { fragment } from './graph-fragment.ts'
+import { type Schema, validate } from './json-schema.ts'
+import { type Constraint, readConstraints } from './read-claims.ts'
+import { type DecisionRecord, type LessonRecord, readDecisions, readLessons } from './read-records.ts'
+import { CLAIMS, CLAIMS_SCHEMA, CONSTRAINT_PAGES, SPEC_ROOT, TRACEABILITY } from './spec-paths.ts'
+import { type Resolution, collectBindings, display } from './step-bindings.ts'
 import { isMain } from '../lib/actions.ts'
 
+// Kept for the tools that read claims through this module.
+export { CLAIM_TAG, type Claim, type Constraint, readClaims, readConstraints } from './read-claims.ts'
 export { CONSTRAINT_PAGES }
 
 const ROOT = process.cwd()
-const OUTPUT = TRACEABILITY
 
-export const CLAIM_TAG = /^\s*@(REQ-[A-Z]+-\d{3})\s*$/
-const SCENARIO = /^\s*(Scenario|Scenario Outline):\s*(.+?)\s*$/
-// A Rule groups scenarios inside a feature (ADR-0184). Gherkin would let a tag
-// on it reach every scenario beneath; this reader takes a claim's engine and
-// status from the scenario's own tags only, so a Rule carries none.
-const RULE = /^\s*Rule:/
-const CONSTRAINT = /\*\*(CON-[A-Z]+-\d{3})\*\*/g
-const VERIFIED_BY = /\*Verified by:\s*([^*]+)\*/
-
-/** One scenario's stable claim. */
-export interface Claim {
-	id: string
-	area: string
-	scenario: string
-	engine: 'playwright-bdd' | 'Reqnroll'
-	status: 'Planned' | 'Covered'
+/** One step as its runner executes it, with the files whose definitions bind it. */
+export interface ClaimStep {
+	keyword: string
+	text: string
+	files: string[]
+	ambiguous: boolean
 }
 
-/** One normative constraint and the claims that verify it. */
-export interface Constraint {
+/** One claim, as .spec/claims.json records it. */
+export interface ClaimRecord {
+	id: string
+	area: string
+	file: string
+	title: string
+	rule: string | null
+	tags: string[]
+	engine: 'playwright-bdd' | 'Reqnroll'
+	status: 'Planned' | 'Covered'
+	steps: ClaimStep[]
+	stepFiles: string[]
+	/** `@ignore`, yet every step is already bound. */
+	staleIgnore: boolean
+	constraints: string[]
+	citedBy: { decisions: string[]; lessons: string[] }
+}
+
+/** One constraint, as .spec/claims.json records it. */
+export interface ConstraintRecord {
 	id: string
 	page: string
 	verifiedBy: string[]
 	note: string
 }
 
-/** Every claim a feature file declares, in file order. */
-export function readClaims(path: string, source: string): { claims: Claim[]; problems: string[] } {
-	const lines = source.split('\n')
-	const claims: Claim[] = []
-	const problems: string[] = []
-	let pending: string[] = []
-	let tags: string[] = []
+/** The whole of .spec/claims.json. */
+export interface ClaimsData {
+	claims: ClaimRecord[]
+	constraints: ConstraintRecord[]
+	decisions: DecisionRecord[]
+	lessons: LessonRecord[]
+	ambiguousSteps: { step: string; files: string[] }[]
+	unusedStepDefinitions: { engine: string; keyword: string; pattern: string; file: string }[]
+}
 
-	for (const [index, line] of lines.entries()) {
-		const tag = line.match(CLAIM_TAG)
-		if (tag) {
-			pending.push(tag[1])
-			continue
-		}
+const byId = (a: { id: string }, b: { id: string }): number => Number(a.id > b.id) - Number(a.id < b.id)
 
-		const scenario = line.match(SCENARIO)
-		if (!scenario) {
-			// Any other tag line belongs to the scenario below it, like the
-			// claim; anything else ends the tag block, so a neighbouring
-			// scenario's @ui or @ignore never reaches this one.
-			if (line.trim().startsWith('@')) {
-				tags.push(line.trim())
-				continue
-			}
-			if (line.trim() === '') continue
-			if (RULE.test(line) && (pending.length > 0 || tags.length > 0)) {
-				problems.push(`${path}:${index + 1}: tags on a Rule are not supported — a claim's engine and status come from its own scenario's tags`)
-			}
-			pending = []
-			tags = []
-			continue
-		}
-
-		if (pending.length === 0) {
-			tags = []
-			problems.push(`${path}:${index + 1}: "${scenario[2]}" carries no claim ID — every scenario names one claim (ADR-0084)`)
-			continue
-		}
-		if (pending.length > 1) {
-			problems.push(`${path}:${index + 1}: "${scenario[2]}" carries ${pending.length} claim IDs (${pending.join(', ')}) — a scenario is exactly one claim`)
-		}
-
-		claims.push({
-			id: pending[0],
-			area: posix.relative(FEATURES, path).split('/')[0],
-			scenario: scenario[2],
-			engine: tags.includes('@ui') ? 'playwright-bdd' : 'Reqnroll',
-			status: tags.includes('@ignore') ? 'Planned' : 'Covered',
-		})
-		pending = []
-		tags = []
+/** The model behind both files, from what the readers found. */
+export function model(resolution: Pick<Resolution, 'claims' | 'unused' | 'ambiguous'>, constraints: readonly Constraint[], decisions: readonly DecisionRecord[], lessons: readonly LessonRecord[]): ClaimsData {
+	const citing = (records: readonly { id: string; claims: string[] }[], claim: string): string[] => records.filter((record) => record.claims.includes(claim)).map((record) => record.id)
+	return {
+		claims: resolution.claims
+			.map(
+				(claim): ClaimRecord => ({
+					id: claim.id,
+					area: claim.area,
+					file: claim.path,
+					title: claim.scenario,
+					rule: claim.rule,
+					tags: claim.tags,
+					engine: claim.engine,
+					status: claim.status,
+					steps: claim.bound.map(({ keyword, text, files, ambiguous }) => ({ keyword, text, files, ambiguous })),
+					stepFiles: claim.files,
+					staleIgnore: claim.status === 'Planned' && claim.unbound.length === 0 && claim.steps.length > 0,
+					constraints: constraints.filter((constraint) => constraint.verifiedBy.includes(claim.id)).map((constraint) => constraint.id).sort(),
+					citedBy: { decisions: citing(decisions, claim.id), lessons: citing(lessons, claim.id) },
+				}),
+			)
+			.sort(byId),
+		constraints: constraints.map(({ id, page, verifiedBy, note }) => ({ id, page, verifiedBy, note })).sort(byId),
+		decisions: [...decisions],
+		lessons: [...lessons],
+		ambiguousSteps: [...resolution.ambiguous].map(([step, files]) => ({ step, files: [...files].sort() })).sort((a, b) => Number(a.step > b.step) - Number(a.step < b.step)),
+		unusedStepDefinitions: resolution.unused.map((binding) => ({ engine: binding.engine, keyword: binding.keyword, pattern: display(binding), file: binding.file })),
 	}
-
-	return { claims, problems }
 }
-
-/** Every constraint a docs page declares, with the claims it names. */
-export function readConstraints(path: string, source: string): { constraints: Constraint[]; problems: string[] } {
-	const constraints: Constraint[] = []
-	const problems: string[] = []
-	const markers = [...source.matchAll(CONSTRAINT)]
-
-	for (const [index, marker] of markers.entries()) {
-		const until = index + 1 < markers.length ? markers[index + 1].index : source.length
-		const body = source.slice(marker.index, until)
-		const verified = body.match(VERIFIED_BY)
-
-		if (!verified) {
-			problems.push(`${path}: ${marker[1]} names nothing that verifies it — add "*Verified by: …*", or "none — <reason>" when no scenario can`)
-			continue
-		}
-
-		const text = verified[1].trim()
-		constraints.push({
-			id: marker[1],
-			page: path,
-			verifiedBy: text.startsWith('none') ? [] : [...text.matchAll(/REQ-[A-Z]+-\d{3}/g)].map((match) => match[0]),
-			note: text.replace(/\s+/g, ' ').replace(/\.$/, ''),
-		})
-	}
-
-	return { constraints, problems }
-}
-
-function featureFiles(root: string): string[] {
-	const walk = (dir: string): string[] =>
-		readdirSync(dir).flatMap((entry) => {
-			const path = join(dir, entry)
-			return statSync(path).isDirectory() ? walk(path) : path.endsWith('.feature') ? [path] : []
-		})
-	return walk(join(root, FEATURES))
-		.map((path) => path.slice(root.length + 1))
-		.sort()
-}
-
-// A scenario name is free text on a line of its own; one that opens with "#"
-// would render as a heading.
-const escape = (text: string): string => text.replace(/^#/, '\\#')
-
-const byId = (a: { id: string }, b: { id: string }): number => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 
 /**
- * The matrix is built so that git can merge it (ADR-0106). Every line depends
- * on exactly one scenario or one constraint — nothing is counted across the
- * whole tree — and every item's data line sits between unchanged heading and
- * blank lines, so two branches that each carry a correct matrix merge into the
- * matrix of the merged tree. Totals go to stdout instead; see `totals`.
+ * The JSON, laid out so git merges it (ADR-0106): every claim, constraint,
+ * record, and step on lines of its own, everything inside them on one line,
+ * keys in a fixed order, and no totals. A change to one claim touches only its
+ * own lines.
  */
-export function render(claims: readonly Claim[], constraints: readonly Constraint[]): string {
-	const areas = [...new Set(claims.map((claim) => claim.area))].sort()
+export function serialize(data: ClaimsData): string {
+	const indent = (depth: number): string => '\t'.repeat(depth)
+	const write = (value: unknown, depth: number): string => {
+		if (Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === 'object' && item !== null && !Array.isArray(item)) && depth <= 3) {
+			return `[\n${value.map((item) => indent(depth + 1) + write(item, depth + 1)).join(',\n')}\n${indent(depth)}]`
+		}
+		if (typeof value === 'object' && value !== null && !Array.isArray(value) && depth <= 2) {
+			const entries = Object.entries(value).map(([key, child]) => `${indent(depth + 1)}${JSON.stringify(key)}: ${write(child, depth + 1)}`)
+			return `{\n${entries.join(',\n')}\n${indent(depth)}}`
+		}
+		return JSON.stringify(value)
+	}
+	return `${write(data, 0)}\n`
+}
+
+/** A value made safe for one table cell. */
+const cell = (text: string): string => text.replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()
+
+/** A link from the matrix, which lives in the specification root. */
+const link = (file: string): string => `[${posix.basename(file)}](${posix.relative(SPEC_ROOT, file)})`
+
+/**
+ * The matrix: one table row per claim and per constraint, sorted by ID, and no
+ * totals (ADR-0106). Every row derives from one item, so a change to one claim
+ * changes one line.
+ */
+export function render(data: Pick<ClaimsData, 'claims' | 'constraints'>): string {
 	const lines = [
 		'---',
 		'title: Traceability',
-		'description: Generated matrix of every claim, the scenario that states it, and every constraint that names one.',
+		'description: Generated matrix of every claim — its scenario, area, engine, status, and the step-definition files that bind it — and every constraint with the claims that verify it.',
 		'type: guide',
 		'---',
 		'',
@@ -172,35 +160,35 @@ export function render(claims: readonly Claim[], constraints: readonly Constrain
 		'',
 		'> **Generated file — do not edit by hand.**',
 		'> Regenerate with `node tools/spec/generate-traceability.ts`. CI fails on a difference',
-		'> ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).',
-		'> One block per claim and per constraint, in ID order, and no totals, so',
-		'> branches merge it without conflicting',
-		'> ([ADR-0106](decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)).',
+		'> ([ADR-0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).',
+		'> The same data with every step, binding, and citation is [`claims.json`](claims.json).',
 		'',
-		'Each claim reads: the scenario that states it — *engine, status*. A',
-		'`Planned` claim is still `@ignore`.',
+		'A `Planned` claim is still `@ignore`. Reqnroll runs a claim without `@ui`;',
+		'playwright-bdd runs one with it.',
+		'',
+		'## Claims',
+		'',
+		'| Claim | Scenario | Area | Engine | Status | Step definitions |',
+		'|---|---|---|---|---|---|',
 	]
-
-	for (const area of areas) {
-		lines.push('', `## Claims: ${area}`)
-		for (const claim of claims.filter((each) => each.area === area).sort(byId)) {
-			lines.push('', `### ${claim.id}`, '', `${escape(claim.scenario)} — *${claim.engine}, ${claim.status}*`)
-		}
+	for (const claim of [...data.claims].sort(byId)) {
+		const files = claim.stepFiles.length > 0 ? claim.stepFiles.map(link).join(', ') : '—'
+		lines.push(`| ${claim.id} | ${cell(claim.title)} | ${claim.area} | ${claim.engine} | ${claim.status} | ${files} |`)
 	}
 
 	lines.push(
 		'',
 		'## Constraints',
 		'',
-		'A constraint states something the system must be true of; the claims beside',
-		'it are the scenarios that prove it. `none` is an honest answer — an',
-		'infrastructure or test-suite property is not observable from a scenario —',
-		'and it carries its reason.',
+		'A constraint states something that must be true of the system; the claims',
+		'beside it are the scenarios that prove it. `none` carries its reason.',
+		'',
+		'| Constraint | Page | Verified by |',
+		'|---|---|---|',
 	)
-	for (const constraint of [...constraints].sort(byId)) {
-		const verifiedBy =
-			constraint.verifiedBy.length > 0 ? constraint.verifiedBy.map((id) => `\`${id}\``).join(', ') : escape(constraint.note)
-		lines.push('', `### ${constraint.id}`, '', `${constraint.page.replace(`${SPEC_ROOT}/`, '')} — verified by ${verifiedBy}`)
+	for (const constraint of [...data.constraints].sort(byId)) {
+		const verifiedBy = constraint.verifiedBy.length > 0 ? constraint.verifiedBy.join(', ') : cell(constraint.note)
+		lines.push(`| ${constraint.id} | ${link(constraint.page)} | ${verifiedBy} |`)
 	}
 
 	lines.push('')
@@ -208,26 +196,34 @@ export function render(claims: readonly Claim[], constraints: readonly Constrain
 }
 
 /** The whole-tree counts, reported rather than committed (ADR-0106). */
-export function totals(claims: readonly Claim[], constraints: readonly Constraint[]): string {
-	const planned = claims.filter((claim) => claim.status === 'Planned').length
+export function totals(data: ClaimsData): string {
+	const planned = data.claims.filter((claim) => claim.status === 'Planned').length
+	const unbound = data.claims.filter((claim) => claim.steps.some((step) => step.files.length === 0)).length
 	return (
-		`${claims.length} claims across ${new Set(claims.map((claim) => claim.area)).size} areas: ` +
-		`${claims.length - planned} covered by a step definition today, ${planned} still \`@ignore\`. ` +
-		`${constraints.length} constraints.`
+		`${data.claims.length} claims across ${new Set(data.claims.map((claim) => claim.area)).size} areas: ` +
+		`${data.claims.length - planned} built, ${planned} still \`@ignore\`, ${unbound} with an unbound step, ` +
+		`${data.claims.filter((claim) => claim.staleIgnore).length} stale @ignore. ${data.constraints.length} constraints. ` +
+		`${data.ambiguousSteps.length} ambiguous steps, ${data.unusedStepDefinitions.length} unused step definitions.`
 	)
 }
 
-export function build(root = ROOT): { claims: Claim[]; constraints: Constraint[]; problems: string[]; matrix: string } {
-	const problems: string[] = []
-	const claims: Claim[] = []
+/** Everything the generator found: the model, both files, and what is wrong. */
+export interface Build {
+	data: ClaimsData
+	json: string
+	matrix: string
+	problems: string[]
+	/** Where each claim's scenario starts, for the graph fragment only. */
+	lines: Map<string, number>
+	/** Every step of a built claim that no definition binds. */
+	gaps: { id: string; file: string; line: number; engine: string; step: string }[]
+}
+
+export function build(root = ROOT): Build {
+	const resolution = collectBindings(root)
+	const problems = [...resolution.problems]
+
 	const constraints: Constraint[] = []
-
-	for (const path of featureFiles(root)) {
-		const result = readClaims(path, readFileSync(join(root, path), 'utf8'))
-		claims.push(...result.claims)
-		problems.push(...result.problems)
-	}
-
 	for (const path of CONSTRAINT_PAGES) {
 		const result = readConstraints(path, readFileSync(join(root, path), 'utf8'))
 		constraints.push(...result.constraints)
@@ -235,7 +231,7 @@ export function build(root = ROOT): { claims: Claim[]; constraints: Constraint[]
 	}
 
 	const seen = new Map<string, string>()
-	for (const claim of claims) {
+	for (const claim of resolution.claims) {
 		if (seen.has(claim.id)) problems.push(`${claim.id} is used twice: "${seen.get(claim.id)}" and "${claim.scenario}" — a claim ID is never reused`)
 		seen.set(claim.id, claim.scenario)
 	}
@@ -244,33 +240,108 @@ export function build(root = ROOT): { claims: Claim[]; constraints: Constraint[]
 	for (const constraint of constraints) {
 		if (constraintIds.has(constraint.id)) problems.push(`${constraint.id} is declared twice`)
 		constraintIds.add(constraint.id)
-
 		for (const id of constraint.verifiedBy) {
 			if (!seen.has(id)) problems.push(`${constraint.page}: ${constraint.id} names ${id}, which no scenario declares`)
 		}
 	}
 
-	return { claims, constraints, problems, matrix: render(claims, constraints) }
+	const data = model(resolution, constraints, readDecisions(root), readLessons(root))
+
+	const schemaPath = join(root, CLAIMS_SCHEMA)
+	if (existsSync(schemaPath)) {
+		for (const problem of validate(data, JSON.parse(readFileSync(schemaPath, 'utf8')) as Schema)) problems.push(`${CLAIMS} breaks ${CLAIMS_SCHEMA}: ${problem}`)
+	} else {
+		problems.push(`${CLAIMS_SCHEMA} is missing`)
+	}
+
+	const gaps = resolution.claims
+		.filter((claim) => claim.status === 'Covered')
+		.flatMap((claim) => claim.unbound.map((step) => ({ id: claim.id, file: claim.path, line: step.line, engine: claim.engine, step: `${step.keyword} ${step.text}` })))
+	return { data, json: serialize(data), matrix: render(data), problems, gaps, lines: new Map(resolution.claims.map((claim) => [claim.id, claim.line])) }
 }
 
 /**
- * Builds the matrix and writes it, reporting the way the command line does
- * without exiting, so a test can exercise both outcomes. Returns the exit code.
+ * Where a committed file and the generated one part: the first line that
+ * differs, and the claims whose lines differ, so a stale file says what moved.
  */
-export function main(root = ROOT, { write = true }: { write?: boolean } = {}): number {
-	const { claims, constraints, problems, matrix } = build(root)
+export function difference(committed: string, generated: string, limit = 10): string[] {
+	const ours = committed.split('\n')
+	const theirs = generated.split('\n')
+	const at = ours.findIndex((line, index) => index >= theirs.length || line !== theirs[index])
+	const first = at === -1 ? ours.length : at
+	const shown = (lines: string[]): string => (first < lines.length ? lines[first] : '(end of file)')
 
-	if (problems.length > 0) {
-		for (const problem of problems) console.error(`::error::${problem}`)
-		return 1
+	// Each claim's lines, keyed by the ID that opens its object in the JSON or
+	// its row in the matrix.
+	const blocks = (lines: string[]): Map<string, string> => {
+		const found = new Map<string, string>()
+		let id = ''
+		for (const line of lines) {
+			const row = /^\| (REQ-[A-Z]+-\d{3}) \|/.exec(line)
+			if (row) found.set(row[1], line)
+			const opens = /^\t\t\t"id": "(REQ-[A-Z]+-\d{3})"/.exec(line)
+			if (opens) id = opens[1]
+			if (id) found.set(id, `${found.get(id) ?? ''}${line}\n`)
+			if (/^\t\t\},?$/.test(line)) id = ''
+		}
+		return found
 	}
+	const [before, after] = [blocks(ours), blocks(theirs)]
+	const changed = [...new Set([...before.keys(), ...after.keys()])].filter((id) => before.get(id) !== after.get(id)).sort()
 
-	if (write) writeFileSync(join(root, OUTPUT), matrix)
-	console.log(`${claims.length} claim(s) and ${constraints.length} constraint(s) written to ${OUTPUT}.`)
-	console.log(totals(claims, constraints))
-	if (write && process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `**Traceability:** ${totals(claims, constraints)}\n`)
-	return 0
+	return [
+		`  first difference at line ${first + 1}:`,
+		`  - ${shown(ours)}`,
+		`  + ${shown(theirs)}`,
+		...(changed.length > 0 ? [`  claims that differ: ${changed.slice(0, limit).join(', ')}${changed.length > limit ? `, and ${changed.length - limit} more` : ''}`] : []),
+	]
 }
 
-const runAsCommand = isMain(import.meta.url)
-if (runAsCommand) process.exit(main())
+/**
+ * Builds both files and writes or checks them, reporting the way the command
+ * line does without exiting, so a test can exercise every outcome. Returns the
+ * exit code.
+ */
+export function main(root = ROOT, { check = false, fail = true, fragmentPath }: { check?: boolean; fail?: boolean; fragmentPath?: string } = {}): number {
+	const result = build(root)
+
+	for (const problem of result.problems) console.error(`::error::${problem}`)
+	for (const gap of result.gaps) console.error(`::error file=${gap.file},line=${gap.line}::${gap.id} step "${gap.step}" matches no ${gap.engine} step definition`)
+
+	let stale = false
+	for (const [file, text] of [
+		[CLAIMS, result.json],
+		[TRACEABILITY, result.matrix],
+	] as const) {
+		const target = join(root, file)
+		if (!check) {
+			writeFileSync(target, text)
+			continue
+		}
+		const committed = existsSync(target) ? readFileSync(target, 'utf8') : ''
+		if (committed !== text) {
+			console.error(`::error file=${file}::Out of date. Run 'node tools/spec/generate-traceability.ts' and commit the result; on a same-repo pull request traceability.yml commits it for you (ADR-0101).`)
+			for (const line of difference(committed, text)) console.error(line)
+			stale = true
+		}
+	}
+	if (fragmentPath) writeFileSync(fragmentPath, `${JSON.stringify(fragment(result.data, result.lines), null, '\t')}\n`)
+
+	console.log(`${CLAIMS} and ${TRACEABILITY} ${check ? 'checked' : 'written'}. ${totals(result.data)}`)
+	if (!check && process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `**Traceability:** ${totals(result.data)}\n`)
+
+	if (stale) return 1
+	if (!fail) return 0
+	return result.problems.length > 0 || result.gaps.length > 0 ? 1 : 0
+}
+
+if (isMain(import.meta.url)) {
+	const at = process.argv.indexOf('--fragment')
+	process.exit(
+		main(ROOT, {
+			check: process.argv.includes('--check'),
+			fail: !process.argv.includes('--no-fail'),
+			fragmentPath: at === -1 ? undefined : process.argv[at + 1],
+		}),
+	)
+}

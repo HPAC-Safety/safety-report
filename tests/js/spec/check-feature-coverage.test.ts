@@ -2,21 +2,18 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-import { CATEGORIES, claimsInMatrix, judge, main, parseExemption, rejectExemption } from '../../../tools/spec/check-feature-coverage.ts'
+import { CATEGORIES, declaredClaims, judge, main, parseExemption, rejectExemption } from '../../../tools/spec/check-feature-coverage.ts'
 import { present } from '../helpers/present.ts'
-import { render } from '../../../tools/spec/generate-traceability.ts'
 
-// Rendered by the real generator, so this fixture follows the matrix format.
-const MATRIX = render(
-	[
-		{ id: 'REQ-SUB-012', area: 'report-submission', scenario: 'Attachments stream', engine: 'Reqnroll', status: 'Covered' },
-		{ id: 'REQ-SUB-013', area: 'report-submission', scenario: 'Persisted atomically', engine: 'Reqnroll', status: 'Covered' },
-		{ id: 'REQ-WLD-008', area: 'web-localization-and-design', scenario: 'Theme toggle', engine: 'playwright-bdd', status: 'Covered' },
-	],
-	[],
-)
+// The shape .spec/claims.json has, with a constraint and a decision that
+// mention a claim no scenario declares any more.
+const CLAIMS = JSON.stringify({
+	claims: [{ id: 'REQ-SUB-012' }, { id: 'REQ-SUB-013' }, { id: 'REQ-WLD-008' }],
+	constraints: [{ id: 'CON-SO-001', verifiedBy: ['REQ-SUB-013'] }],
+	decisions: [{ id: 'ADR-0001', claims: ['REQ-SUB-099'] }],
+})
 
-const KNOWN = claimsInMatrix(MATRIX)
+const KNOWN = declaredClaims(CLAIMS)
 
 const exempt = (category: string, reason: string, claims: string): string =>
 	`## Why\n\nCloses #1\n\nNo .feature scenario needed: ${category} — ${reason}\nClaims preserved: ${claims}\n`
@@ -28,15 +25,15 @@ function runMain(input: { changed: string[]; features: string[]; body: string })
 	console.log = (...args: unknown[]) => output.log.push(args.join(' '))
 	console.error = (...args: unknown[]) => output.error.push(args.join(' '))
 	try {
-		return { code: main({ matrix: MATRIX, ...input }), output }
+		return { code: main({ claims: CLAIMS, ...input }), output }
 	} finally {
 		console.log = original.log
 		console.error = original.error
 	}
 }
 
-describe('claimsInMatrix', () => {
-	it('reads every claim id the matrix declares', () => {
+describe('declaredClaims', () => {
+	it('reads every claim .spec/claims.json declares, not every ID it mentions', () => {
 		assert.deepEqual([...KNOWN].sort(), ['REQ-SUB-012', 'REQ-SUB-013', 'REQ-WLD-008'])
 	})
 })

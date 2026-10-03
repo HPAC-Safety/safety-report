@@ -17,7 +17,9 @@
 #    `dotnet format --verify-no-changes`. Every .cs or .csproj file the
 #    rewritten commits touched is formatted now, and staged if that changed it.
 #    stdin carries one "<old-sha> <new-sha>" line per rewritten commit.
-# 2. .spec/traceability.md is regenerated and staged if it changed.
+# 2. .spec/claims.json, .spec/traceability.md, and .spec/README.md are
+#    regenerated and staged if they changed, and the specification is merged
+#    into the local graphify graph.
 #
 # A dev-machine convenience, not a CI gate — see .githooks/post-merge. This
 # file is the tracked hook, run by the shim ./init-dev.sh installs
@@ -27,14 +29,25 @@ set -u
 
 [ "${1-}" = "rebase" ] || exit 0
 
-# The primary checkout's main only ever fast-forwards to origin/main, which
-# already carries the matrix, index, and bindings CI regenerated and checked
-# (ADR-0101). Nothing is regenerated or staged there: a hook must never leave a
-# change on main (#802).
-[ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = "main" ] && exit 0
-
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || exit 0
+
+# The specification goes into the local graphify graph, when there is one
+# (ADR-0193). graphify-out/ is untracked, so this changes nothing git sees and
+# runs on main too, where a pull is the moment new claims arrive.
+merge_spec_graph() {
+	command -v node >/dev/null 2>&1 && node tools/spec/graph-fragment.ts >/dev/null 2>&1
+	return 0
+}
+
+# The primary checkout's main only ever fast-forwards to origin/main, which
+# already carries the claims, matrix, and index CI regenerated and checked
+# (ADR-0101). Nothing is regenerated or staged there: a hook must never leave a
+# change on main (#802).
+if [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = "main" ]; then
+	merge_spec_graph
+	exit 0
+fi
 
 REWRITTEN_CS=$(
 	while read -r _old new _rest; do
@@ -60,13 +73,13 @@ fi
 
 command -v node >/dev/null 2>&1 || exit 0
 
-# The matrix, the specification index, and the step-bindings map are
-# generated from .spec/ and the step definitions (ADR-0084, ADR-0183, ADR-0184).
-node tools/spec/generate-traceability.ts >/dev/null 2>&1 || exit 0
+# The claims, the matrix, and the specification index are generated from
+# .spec/ and the step definitions (ADR-0084, ADR-0183, ADR-0193).
+node tools/spec/generate-traceability.ts --no-fail >/dev/null 2>&1 || exit 0
 node tools/spec/generate-spec-index.ts >/dev/null 2>&1 || exit 0
-node tools/spec/generate-bindings.ts --no-fail >/dev/null 2>&1 || exit 0
+merge_spec_graph
 
-for generated in .spec/traceability.md .spec/README.md .spec/bindings.md; do
+for generated in .spec/claims.json .spec/traceability.md .spec/README.md; do
 	if ! git diff --quiet -- "$generated"; then
 		git add -- "$generated"
 		echo "post-rewrite: $generated regenerated and staged — include it in your next commit."

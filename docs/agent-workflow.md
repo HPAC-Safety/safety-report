@@ -43,16 +43,23 @@ lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
 
 ## The specification in the graph
 
-graphify ingests markdown and cannot ingest a `.feature` file — its document
-extensions are a hardcoded set with no configuration hook — and this repository
-does not fork it to change that
-([ADR-0088](../.spec/decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)).
+graphify cannot ingest a `.feature` file — its document extensions are a
+hardcoded set with no configuration hook — skips data-shaped JSON, and gives
+Markdown only its headings without an LLM pass. This repository does not fork
+it ([ADR-0088](../.spec/decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)).
 
-[`.spec/traceability.md`](../.spec/traceability.md) is the bridge. It is markdown, so it
-enters the graph, and it carries every claim ID with its area, scenario name,
-executing engine, and covered-or-planned status, plus every constraint and what
-verifies it. Ask the graph about a claim; open the `.feature` file when you need
-the `Given`/`When`/`Then` text behind it.
+Instead `node tools/spec/graph-fragment.ts` merges the specification into the
+local `graphify-out/graph.json`: one node per claim, constraint, ADR, lesson,
+and feature area, read from [`.spec/claims.json`](../.spec/claims.json), with the
+claim's step text on its node and typed edges — `specified_in`, `bound_by`,
+`verified_by`, `cites`, `supersedes`, `amends`, `updates`, `documented_in`. The
+post-merge and post-rewrite hooks and `init-dev.sh` run it, and the nodes
+survive `graphify update`
+([ADR-0193](../.spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
+Ask by ID — `graphify query "REQ-WLD-049"`, `graphify query "ADR-0190"` — and
+open the `.feature` file for the scenario in context. `graphify explain` lists a
+node's typed edges; where a code comment also cites the ID, name the node:
+`graphify explain spec_decision_adr_0190`.
 
 ## Generated files
 
@@ -62,9 +69,9 @@ the `Given`/`When`/`Then` text behind it.
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/dev/extract-typeform.py` |
 | `docs/issue-traceability.md` | `node tools/spec/generate-issue-traceability.ts`, from GitHub; the drift issue `issue-traceability.yml` keeps asks for it (ADR-0191) |
-| `.spec/traceability.md` | `node tools/spec/generate-traceability.ts`; on a same-repo PR, `traceability.yml` commits it (ADR-0101) |
-| `.spec/README.md` | `node tools/spec/generate-spec-index.ts`; committed with the matrix by `traceability.yml` (ADR-0183) |
-| `.spec/bindings.md` | `node tools/spec/generate-bindings.ts`; committed with the matrix by `traceability.yml`, and fails `docs` when a built claim's step is unbound (ADR-0184) |
+| `.spec/claims.json`, `.spec/traceability.md` | `node tools/spec/generate-traceability.ts`; on a same-repo PR, `traceability.yml` commits them (ADR-0101), and `docs` fails when a built claim's step is unbound (ADR-0184, ADR-0193) |
+| `.spec/README.md` | `node tools/spec/generate-spec-index.ts`; committed with the claims by `traceability.yml` (ADR-0183) |
+| The specification in `graphify-out/graph.json` (untracked) | `node tools/spec/graph-fragment.ts`; run by the post-merge and post-rewrite hooks and `init-dev.sh` (ADR-0193) |
 | `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/i18n/translate-locale.ts` |
 | `src/web/dist/` | `npm --prefix src/web run build` |
 

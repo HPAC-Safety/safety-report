@@ -264,7 +264,8 @@ markup, same focus, one `showModal()`, Escape still keeps).
   (tests included), `tools`, `tests/js` and `tests/e2e`. Dependencies are
   in a root `package.json`, because no single package owns all four trees; the
   web app's and the browser suite's own `package.json` stay about their runtime
-  and tests. ESLint 9 is used because `eslint-plugin-jsx-a11y` supports 9, not 10.
+  and tests. ESLint 9 was used at first because `eslint-plugin-jsx-a11y` declared 9, not 10;
+  the amendment for [#807](https://github.com/HPAC-Safety/safety-report/issues/807) moved it to 10.
 - **Rules, all errors:** `@eslint/js` recommended and `typescript-eslint`
   recommended (not the type-checked presets) everywhere; in `src/web` also
   `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps` and `jsx-a11y`
@@ -467,3 +468,23 @@ now naming a recorded position: a reporter's footage carries no captions
 Converting `tools/` and `tests/js` to TypeScript under the full type-checked
 preset is tracked by [#798](https://github.com/HPAC-Safety/safety-report/issues/798);
 the preset for plain JavaScript above stands until it lands.
+
+## Amendment (2026-10-03): ESLint 10 ([#807](https://github.com/HPAC-Safety/safety-report/issues/807))
+
+Decided by the owner on 2026-10-03. Reverses the hold of
+[#789](https://github.com/HPAC-Safety/safety-report/issues/789).
+
+- **ESLint and `@eslint/js` are on 10.** `eslint-plugin-jsx-a11y` 6.10.2, the
+  latest, still declares ESLint up to 9 and has not been released since
+  2024-10, so the hold might never end.
+- **The root `package.json` overrides that one peer range**
+  (`"eslint-plugin-jsx-a11y": { "eslint": "$eslint" }`). Nothing else is
+  forced, and every other plugin's own range accepts 10.
+- **Proven, not assumed:** on 10, `npm run lint` and `npm run typecheck` pass,
+  and a probe file raised all four jsx-a11y rules it broke
+  (`click-events-have-key-events`, `no-static-element-interactions`,
+  `alt-text`, `anchor-is-valid`). A later ESLint 10 release that breaks the
+  plugin fails the required `lint` check loudly; the rules are never skipped
+  silently.
+- **The override is removed** when a jsx-a11y release accepts ESLint 10. The
+  ESLint group's description in `renovate.json` says so.

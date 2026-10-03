@@ -33,6 +33,9 @@ Turn a need into specification. Never implement it or write its tests.
    over-deliver.
 5. Supporting detail that does not fit Gherkin (table, validation order,
    diagram) in the supporting page.
+6. A decision record when the need makes an architecture decision: a new ADR
+   from the project's template, with its considered options. A record it
+   changes takes only a new status.
 
 Regenerate the generated specification files before finishing, so a
 duplicate, malformed, or missing ID fails there, not in review.
@@ -44,4 +47,8 @@ duplicate, malformed, or missing ID fails there, not in review.
   question naming both and their consequences.
 - Parking a superseded scenario behind `@ignore`; delete it.
 - Arguing a technology choice in a feature file; that is an ADR.
+- Editing an accepted ADR's body, appending an amendment, or deleting one;
+  supersede it with a new ADR.
+- Filing a process rule or interface detail as an ADR; the first is a
+  convention, the second a scenario.
 - Real user content; every example is synthetic.

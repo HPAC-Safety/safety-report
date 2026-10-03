@@ -34,7 +34,8 @@ local  agent  agents/test-writer.md
 # --- Skills ---
 # github  skill  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
 
-# General documentation and ADR practice; local delivery rules are stricter.
+# General documentation and ADR practice; local delivery rules are stricter, and
+# its ADR template and lifecycle give way to ADR-0191 (deliver-hpac-change "ADRs").
 github  skill  addyosmani/agent-skills  skills/documentation-and-adrs
 
 # Focused language and test workflow guidance. Repository-local skills override

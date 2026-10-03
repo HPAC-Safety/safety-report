@@ -23,7 +23,7 @@ amendment).
 | Group | Holds |
 |---|---|
 | `lib/` | Shared helpers: `actions.ts` (exec, outputs, summary, annotations) |
-| `spec/` | The specification's generators and gates: traceability, index, bindings, feature coverage, ADR numbers |
+| `spec/` | The specification's generators and gates: traceability, index, bindings, feature coverage and its area map, claim results, `@ignore` ownership, ADR numbers |
 | `docs/` | Markdown gates: frontmatter, links, generic instructions, source inventory |
 | `web/` | Web front-end gates: component split, hardcoded strings, bundle, coverage scope, screenshots |
 | `i18n/` | Translation and locale parity |

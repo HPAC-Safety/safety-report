@@ -10,9 +10,7 @@ keywords: search, full-text search, pg_trgm, unaccent, word_similarity, admin_re
 
 # ADR-0156 — Postgres full-text and trigram search powers the admin search box
 
-## Status
-
-Accepted. Amends
+**Status:** Accepted. Amends
 [ADR-0133](ADR-0133-staff-keep-private-notes-on-a-report.md) item 5 and
 [ADR-0135](ADR-0135-staff-add-private-attachments-to-a-report.md) item 1:
 each said no database view reads its table; `admin_report_search_document`
@@ -157,7 +155,7 @@ EXTENSION` with `IF NOT EXISTS` so either can land first.
   parameter closed over by the caller, so wiring the search box costs no
   hook change once combined with paging.
 
-## Rejected alternatives
+## Considered options
 
 - **A dedicated search service (Elasticsearch, Meilisearch, Algolia).**
   Rejected outright by the product decision: private data (names, contact

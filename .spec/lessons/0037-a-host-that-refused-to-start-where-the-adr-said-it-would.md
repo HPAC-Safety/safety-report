@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 647
 status: accepted
+kind: product
 ---
 
 # Lesson 0037 — A host that refused to start where the ADR said it would

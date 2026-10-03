@@ -10,9 +10,7 @@ keywords: attachments, uploads, quarantine, S3, MinIO, lifecycle, submission, pr
 
 # ADR-0096 — An attachment uploads on attach and is claimed at submission
 
-## Status
-
-Accepted; amended by
+**Status:** Accepted; amended by
 [ADR-0100](ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md),
 which restores uploads with the saved report and keeps unclaimed uploads for
 fifteen days, and by
@@ -149,7 +147,7 @@ needed for a contributor with no bucket, and MinIO is that bucket.
   moves it to the Worker (#361); streaming it without an in-memory buffer is
   #362.
 
-## Alternatives rejected
+## Considered options
 
 - **Keep attachments in the final request.** It keeps the old rule whole, but it
   is the experience the owner is replacing.

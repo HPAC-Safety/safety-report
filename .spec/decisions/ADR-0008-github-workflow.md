@@ -30,7 +30,9 @@ required, and repository **admin as a bypass actor**.
 
 **No `CODEOWNERS` file.**
 
-## Why no CODEOWNERS
+## Considered options
+
+### Why no CODEOWNERS
 
 GitHub counts an approving review toward the required count only from a reviewer
 with **write or admin** permission. The repository access page is therefore
@@ -44,7 +46,7 @@ An outside contributor may leave an approving review; it does not count, and the
 PR stays blocked until an administrator approves. No extra configuration is
 needed to achieve "owner or administrator approval".
 
-## Renovate auto-approval, and why `require_last_push_approval` is off
+### Renovate auto-approval, and why `require_last_push_approval` is off
 
 Renovate is configured to approve and automerge its own patch and minor updates
 (`autoApprove` + `automerge` in `renovate.json`). For that to work at all,

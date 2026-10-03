@@ -68,7 +68,7 @@ any commit:
   without `--sync`, it reports the drift and exits 1.
 - A pull request that closes an issue removes that issue's row.
 
-## Alternatives considered
+## Considered options
 
 - **Both in the required `docs` job, as #444 first asked.** Rejected for the
   issue page for the reasons above.

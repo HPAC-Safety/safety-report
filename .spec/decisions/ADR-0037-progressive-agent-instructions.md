@@ -76,7 +76,7 @@ architecture decision records, localization, and pull-request/CI workflow.
 
 The latter three concerns therefore remain local and explicitly HPAC-scoped.
 
-## Alternatives
+## Considered options
 
 - **Keep expanding `AGENTS.md`.** This preserves one file but loads hundreds of
   irrelevant lines for every task and makes focused guidance hard to trigger.

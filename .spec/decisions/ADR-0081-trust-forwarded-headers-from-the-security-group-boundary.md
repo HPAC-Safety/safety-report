@@ -75,7 +75,7 @@ direct peer is.
   partition key. It is never persisted on a report or written to a log line
   (product invariant #8, and #15's own acceptance criteria).
 
-## Alternatives rejected
+## Considered options
 
 **Populate `KnownProxies` with the ALB's current IPs.** Rejected: ALB
 addresses are not static or published as a stable list; this would need an

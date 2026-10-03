@@ -10,6 +10,8 @@ keywords: required questions, product invariant, question bank, consent, submiss
 
 # ADR-0061 — An administrator may make any question mandatory; consent is merely the one that cannot be optional
 
+**Status:** Accepted.
+
 ## Context
 
 Product invariant #1 has said, since the question bank was designed:
@@ -74,7 +76,7 @@ name.
   nothing, so consent stays required and every ordinary question stays optional
   until somebody changes one on purpose.
 
-## Alternatives rejected
+## Considered options
 
 **Keep the invariant.** Fewest moving parts, and the strongest version of the
 "never discourage a report" argument. Rejected by the owner: it is a product

@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-23
 issue: 395
 status: accepted
+kind: process
 ---
 
 # Lesson 0013 — A generated file with a whole-tree total conflicts with every branch
@@ -51,7 +52,3 @@ now says that a committed generated file must merge the way its sources do:
 
 - No line may derive from the whole tree.
 - Independent items must be separated by unchanged lines.
-
-Since #492 the general rule lives in the generic
-[`coding-conventions`](../../skills/coding-conventions/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

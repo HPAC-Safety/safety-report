@@ -91,7 +91,7 @@ model-input classification, not an encryption tier.
 - Adding or changing a prompt creates a new version so published output remains
   traceable.
 
-## Alternatives rejected
+## Considered options
 
 **Drop private answers before the model call.** This prevents direct disclosure
 but removes the best signal for recognizing the same identifier in narrative.

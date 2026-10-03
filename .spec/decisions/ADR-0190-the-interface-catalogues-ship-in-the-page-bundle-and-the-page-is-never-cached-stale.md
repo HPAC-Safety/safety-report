@@ -44,7 +44,7 @@ failed import and cached an empty catalogue. `index.html` carried no
   `index.html`. Its other hashed files, such as fonts not yet fetched, can
   still go missing. That costs a fallback font, never content.
 
-## Alternatives rejected
+## Considered options
 
 - **Reload the page on a chunk-load error** (Vite's `vite:preloadError`). It
   works, but it reloads in front of a reporter who may be partway through a

@@ -10,9 +10,7 @@ keywords: attachments, uploads, quarantine, pre-signed PUT, S3, Lambda, size lim
 
 # ADR-0126 — An attachment uploads straight to quarantine by pre-signed PUT
 
-## Status
-
-Accepted; partially superseded by
+**Status:** Accepted; partially superseded by
 [ADR-0134](ADR-0134-a-claim-reads-a-zip-packages-directory-as-well-as-its-leading-bytes.md),
 which reads a DOCX or ODT's zip directory as well as its leading bytes at claim.
 This ADR:
@@ -157,7 +155,7 @@ five) is unchanged. Multipart and resumable uploads are still not built: a
 - #443 sizes the Worker's Lambda for a 250 MB video; #465's Terraform adds the
   bucket's CORS rule.
 
-## Alternatives rejected
+## Considered options
 
 - **Keep uploading through the API.** It keeps validation before storage, but
   Lambda's request limit makes it impossible for any phone video.

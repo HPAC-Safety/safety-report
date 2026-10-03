@@ -56,3 +56,7 @@ its own tooling (or none) and its own migration cost, and forcing tabs onto a
 on every run. Bringing another file family under `indent_style = tab` is a
 follow-up, done through whatever formatter already owns that family, not a
 retroactive amendment to this record.
+
+## Considered options
+
+None were recorded when this decision was accepted.

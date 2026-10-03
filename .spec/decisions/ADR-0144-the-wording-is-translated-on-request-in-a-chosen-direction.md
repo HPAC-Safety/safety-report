@@ -10,9 +10,7 @@ keywords: translation, question bank, authoring, wording, direction switch, draf
 
 # ADR-0144 — The question wording is translated on request, in a direction the administrator chooses
 
-## Status
-
-Accepted. This ADR **extends**
+**Status:** Accepted. This ADR **extends**
 [ADR-0141](ADR-0141-a-choice-is-translated-on-request-in-a-chosen-direction.md)
 from choices to the question wording. It also **supersedes** what remained of
 [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md)'s
@@ -96,7 +94,7 @@ looking at.
   Translate. REQ-QB-176 proves the per-field rule, REQ-QB-177 the dropped
   result after a flip, and REQ-QB-178 a target typed while the request was out.
 
-## Alternatives rejected
+## Considered options
 
 - **Keep inferring the direction from the empty side.** This is what caused
   #522: it cannot retranslate wording that is written in both languages.

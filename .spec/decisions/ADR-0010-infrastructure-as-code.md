@@ -41,7 +41,9 @@ deploy role, and the state backend. (It also creates a second, read-only role fo
 cannot serve both.) An administrator runs it once, against their
 own SSO session.
 
-## Why Terraform
+## Considered options
+
+### Why Terraform
 
 `terraform plan` posted on a pull request is a readable diff of exactly what will
 change in AWS, before it changes. On a system holding personal information about
@@ -57,7 +59,7 @@ CloudFormation was rejected for verbosity and weak drift handling.
 Console-and-a-runbook was rejected because nothing is idempotent or reviewable,
 and the documentation starts drifting from reality on day one.
 
-## Why bootstrap locally rather than from a workflow
+### Why bootstrap locally rather than from a workflow
 
 The alternative was putting a temporary admin access key in GitHub secrets,
 running a bootstrap workflow, then revoking it. That would automate the last 10

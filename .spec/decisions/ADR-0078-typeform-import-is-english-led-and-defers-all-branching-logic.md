@@ -97,7 +97,7 @@ it now.
   multi-select-parented, none of which ADR-0077's "simple" case actually
   covered anyway once checked against real data.
 
-## Alternatives rejected
+## Considered options
 
 **Positional fallback matching**: when a `ref` has no match, pair it with
 whatever field sits in the same position in the other file. Rejected —

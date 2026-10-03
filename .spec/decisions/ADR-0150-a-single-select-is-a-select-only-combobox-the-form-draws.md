@@ -10,9 +10,7 @@ keywords: single-select, multi-select, combobox, select-only, native select, WAI
 
 # ADR-0150 — A single-select is a select-only combobox the form draws
 
-## Status
-
-Accepted. This ADR **amends**
+**Status:** Accepted. This ADR **amends**
 [ADR-0136](ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)
 on one point: a single-select's separator between pin groups is a row the
 form's list draws, no longer a disabled `──` option in a `<select>`. It
@@ -60,7 +58,7 @@ form draws, using the type-ahead's list.**
   choice's identifier.
 - **Scope.** The report form only. The admin pages keep their native selects.
 
-## Rejected alternatives
+## Considered options
 
 - **Keep the native `<select>`.** Its open list stays the operating system's,
   unlike the other two choice questions.

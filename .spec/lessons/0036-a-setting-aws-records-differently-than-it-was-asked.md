@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 645
 status: accepted
+kind: incident
 ---
 
 # Lesson 0036 — A setting AWS records differently than it was asked

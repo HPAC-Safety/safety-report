@@ -10,9 +10,7 @@ keywords: answers, yes/no, checkbox, consent, oui, non, locale, translation, con
 
 # ADR-0127 — A yes or no answer is stored in the reporter's language
 
-## Status
-
-Superseded by
+**Status:** Superseded by
 [ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md): a
 yes/no or checkbox answer is stored as `true` or `false`, has no fixed
 counterpart, and is turned into words only by the interface. Existing word
@@ -72,7 +70,7 @@ unreadable consent is still not consent.
 reporter's answer stored as `yes` before this decision keeps `yes` and has no
 second language. Every reader accepts it permanently.
 
-## Rejected alternatives
+## Considered options
 
 **Keep the invariant tokens (ADR-0072).** It is simpler for readers, but it
 leaves the one answer type that is not in the reporter's own words.

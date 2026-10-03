@@ -10,9 +10,7 @@ keywords: attachments, uploads, quarantine, lifecycle, draft, local storage, pri
 
 # ADR-0100 — An attachment is kept as long as the saved report
 
-## Status
-
-Accepted. This ADR:
+**Status:** Accepted. This ADR:
 
 - **amends** [ADR-0096](ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md):
   it reverses that record's rejected alternative "Restore uploads after a
@@ -90,7 +88,7 @@ uploads.**
   edited yesterday. A reporter who takes longer starts again, with their
   answers and files alike.
 
-## Alternatives rejected
+## Considered options
 
 - **Keep uploads unrestored (ADR-0096).** It keeps the server window at a day,
   but it asks the reporter to find and attach every file again after any

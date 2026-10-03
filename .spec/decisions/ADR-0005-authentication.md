@@ -54,7 +54,7 @@ for one call, are never persisted or cached, never logged at any level, scrubbed
 from exception paths, sent over TLS to a hardcoded host, rate-limited with
 lockout, and switchable off by one config flag.
 
-## Alternatives
+## Considered options
 
 - **Local accounts.** No third-party dependency, but this project then owns
   password storage, reset, and breach risk for volunteers.

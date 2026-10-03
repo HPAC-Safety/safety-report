@@ -93,7 +93,7 @@ longer asks.
 - `Report.Answer` keeps its explicit-revision overloads for the Worker, import,
   and tests; the refusal is the endpoint's, where the lookup is.
 
-## Alternatives considered
+## Considered options
 
 - **Keep accepting a superseded revision, and tell the reporter nothing.**
   Rejected by the owner: the answer is judged by wording the form no longer

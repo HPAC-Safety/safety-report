@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-28
 issue: 612
 status: accepted
+kind: incident
 ---
 
 # Lesson 0027 — A trust policy named a subject form GitHub no longer sends

@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-30
 issue: 704
 status: accepted
+kind: product
 ---
 
 # Lesson 0039 — A place name the translator was told to copy

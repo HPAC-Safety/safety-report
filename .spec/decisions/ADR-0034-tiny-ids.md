@@ -128,7 +128,7 @@ is a trade, and this paragraph exists so that nobody has to rediscover it.
 - Sixty-six bits is not a secret. It is unguessable, which is not the same
   thing, and nothing may be authorised by possession of an identifier.
 
-## Alternatives rejected
+## Considered options
 
 **Sequential integers (`bigint identity`).** The best insert locality, the
 smallest key, and the easiest to read. Rejected on two counts, both of which

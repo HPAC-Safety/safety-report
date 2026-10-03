@@ -52,7 +52,7 @@ content exists to paint (the `<body>` is empty until React mounts), so
 externalizing the theme-init script loses nothing for the flash-avoidance
 requirement it exists for.
 
-## Alternatives
+## Considered options
 
 - **Keep the theme-init script inline, everything else external.** Rejected:
   a special case for exactly the one script most worth type-checking (it

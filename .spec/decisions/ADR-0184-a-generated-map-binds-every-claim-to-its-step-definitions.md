@@ -109,7 +109,7 @@ in the map, left for a follow-up issue.
 - A new step-definition idiom must be taught to the tool before it is used; the
   tool says so instead of guessing.
 
-## Alternatives
+## Considered options
 
 - **Add the bound files to `traceability.md`.** Rejected: every step-file edit
   would churn the matrix, and it would change the block shape ADR-0106 fixes.
@@ -133,7 +133,7 @@ in the map, left for a follow-up issue.
 - [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)
 - [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md)
 
-## Amendment (2026-09-30, #711)
+## Amendment (2026-09-30) — #711
 
 **A large area is grouped with Gherkin `Rule:` blocks, not split.** The two
 largest areas held about 200 scenarios each in one flat file:

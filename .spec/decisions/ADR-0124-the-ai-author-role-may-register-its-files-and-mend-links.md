@@ -41,7 +41,7 @@ It still never edits code, specification, ADRs, lessons, runtime prompts, or
 generated `.claude/` copies. It still may change how a rule is written, never
 what the rule requires.
 
-## Rejected alternatives
+## Considered options
 
 - **Narrowing the agent to ADR-0121's list.** A move would then leave broken
   links for another role to find, and a new skill could not be registered by

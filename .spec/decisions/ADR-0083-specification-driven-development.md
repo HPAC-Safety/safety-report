@@ -2,7 +2,7 @@
 title: Specification-driven development is how this repository works
 description: The repository already behaves this way without saying so.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: specification-driven development, SDD, Gherkin, agents, artifact chain, traceability, out of scope
@@ -13,6 +13,9 @@ keywords: specification-driven development, SDD, Gherkin, agents, artifact chain
 **Status:** Accepted. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md). Amended by
 [ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md).
+Partially superseded by
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): of what the 2026-09-29 amendment below says an ADR records, a new
+process rule is now a convention and interface detail a scenario.
 
 **Amended 2026-09-29 (#687):** an ADR records a real decision, meaning a new
 rule, a reversed rule, a privacy or data boundary, or an architecture choice.
@@ -99,7 +102,7 @@ roles that consume the chain are decided in
 - Nothing about the product changes. This decision is about how the target is
   written and enforced, not about what the system does.
 
-## Alternatives
+## Considered options
 
 - **Leave it implicit.** Rejected: the rules already exist in four places —
   `AGENTS.md`, `.spec/features/README.md`, `skills/deliver-hpac-change`, and
@@ -128,6 +131,6 @@ roles that consume the chain are decided in
 
 The chain's files moved into `.spec/`: scenarios to `.spec/features/<area>/<area>.feature`, supporting detail to `.spec/features/<area>/README.md` and the constraint pages in `.spec/`. A page lives in `.spec/` when the chain reads it; `docs/` keeps guides. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 The chain is now checked from the specification down: `tools/spec/generate-bindings.ts` resolves every scenario step to the step definition that binds it, fails a built claim with an unbound step, and writes the map to `.spec/bindings.md`. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

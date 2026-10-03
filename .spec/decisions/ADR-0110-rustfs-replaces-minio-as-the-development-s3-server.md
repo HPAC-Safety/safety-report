@@ -69,7 +69,7 @@ arm64 images to Docker Hub.
 - **Production does not change.** `S3BlobStore` and its configuration are
   untouched. Only development and test configuration moved.
 
-## Alternatives considered
+## Considered options
 
 - **Build the pinned MinIO release from its archived source and publish it to
   our own registry.** Rejected. It keeps behavior identical, but it freezes us

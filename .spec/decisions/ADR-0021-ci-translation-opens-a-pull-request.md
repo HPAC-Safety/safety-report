@@ -115,7 +115,7 @@ They are never put in a request. They are stamped `provider: "glossary"`,
 job decided it. An edit to the *English* of a pinned key does not change the
 French; only HPAC may say when that wording changes.
 
-## Alternatives
+## Considered options
 
 - **Push the French straight to `main`.** Simplest, and wrong. Machine French
   would reach a bilingual public with nobody having read it, and the "human

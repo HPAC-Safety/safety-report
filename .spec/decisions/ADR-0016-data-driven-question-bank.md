@@ -55,6 +55,10 @@ automatic question translation, and creation-time privacy identity are retired.
 Their implementation remains visible in repository history and is migration
 input only.
 
+## Considered options
+
+None were recorded when this decision was accepted.
+
 ## Consequences
 
 The public form and Worker query through revision DTOs rather than hardcoded

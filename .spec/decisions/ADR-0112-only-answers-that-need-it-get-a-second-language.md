@@ -10,8 +10,6 @@ keywords: translation, answers, DeepL, ITranslator, worker, choices, question ba
 
 # ADR-0112 — Only answers that need it get a second language; a picker's comes from its choice
 
-**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
-
 **Status:** Accepted; partially superseded by
 [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md),
 under which a yes/no or checkbox answer takes its fixed counterpart at
@@ -32,6 +30,8 @@ answer type this ever skips". **Amended by
 the `machine` mode's second writer — an administrator correcting or supplying
 `value_translated` by hand — is removed. Only the Worker writes it, and only
 once.
+
+**Provider:** DeepL, where named below, is replaced by Gemini, and kept dormant ([ADR-0179](ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md)).
 
 ## Context
 
@@ -79,7 +79,7 @@ returns none for it, even where an older row still holds one from before this
 decision. The Worker never sends it, and the answers-awaiting-translation
 queue and the administrator's correction both skip it.
 
-## Rejected alternatives
+## Considered options
 
 - **Decide by question type alone, with no checkbox.** Simpler, but short text
   covers both "first name" and "what went wrong, in a sentence". The owner

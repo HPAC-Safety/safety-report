@@ -62,7 +62,7 @@ user.**
 - **No new service.** ffmpeg runs inside the existing Worker ECS service, and
   the API image is unchanged.
 
-## Rejected alternatives
+## Considered options
 
 - **A NuGet package.** None ships a trustworthy Linux `ffmpeg` and `ffprobe`.
   - FFMpegCore, Xabe.FFmpeg, and xFFmpeg.NET are wrappers that expect ffmpeg

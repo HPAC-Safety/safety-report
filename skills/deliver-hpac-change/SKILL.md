@@ -76,7 +76,7 @@ Everything the specification chain reads lives in `.spec/`
 
 - `.spec/features/<area>/` — the area's `.feature` file and its `README.md`;
 - the five constraint pages, `.spec/*.md`, listed in `tools/spec/spec-paths.ts`;
-- `.spec/decisions/` and `.spec/lessons/`;
+- `.spec/decisions/`, `.spec/lessons/`, and `.spec/conventions/`;
 - three generated files, never edited by hand:
   - `.spec/traceability.md` — `node tools/spec/generate-traceability.ts`;
   - `.spec/bindings.md`, the step-definition files that bind each claim —
@@ -87,7 +87,7 @@ Everything the specification chain reads lives in `.spec/`
 Rules:
 
 - A page goes in `.spec/` when the chain reads it — scenarios, `CON-*` IDs, a
-  decision, a lesson. A page that explains how goes in `docs/`.
+  decision, a lesson, a convention. A page that explains how goes in `docs/`.
 - A new path the tools read is added to `tools/spec/spec-paths.ts`, not written
   into a tool; `tests/js/spec/spec-paths.test.ts` ties the hooks and workflows to
   it.
@@ -160,38 +160,59 @@ Rules:
 ### Lessons
 
 - Lessons live under [`.spec/lessons/`](../../.spec/lessons/README.md)
-  ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+  ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md),
+  [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+- Frontmatter `kind:` is `product`, `process`, or `incident`;
+  `node tools/spec/check-records.ts` checks what each kind owes, in pre-commit
+  and `docs`. The rules: the table in
+  [`.spec/lessons/README.md`](../../.spec/lessons/README.md#the-shape).
 - A process lesson updates the generic skill when its rule transfers to any
   project, and this project's companion skill when the rule names this
   repository's tools or paths. The lesson's `## Skill` section names the skill
-  it changed.
+  it changed — once; no footer naming the generic skill too.
 - A product lesson's remedy is a claim and a scenario in `.spec/features`.
 - No index to update: `.spec/README.md` lists the lesson from its frontmatter
-  `title`, `description` (shown as "What it cost us"), `issue`, `date`, and
-  `status` (`accepted` or `superseded`), and its remedy from the claim IDs
-  under `## Scenario` and the backticked skill names under `## Skill`.
+  `title`, `description` (shown as "What it cost us"), `issue`, `date`,
+  `status` (`accepted` or `superseded`), and `kind`, and its remedy from the
+  claim IDs under `## Scenario` and the backticked skill names under
+  `## Skill`.
 
 ### ADRs
 
-- `node tools/spec/adr-numbers.ts` fails a duplicate number or a filename and
-  heading that disagree, in the pre-commit hook and CI
-  ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
-- It also fails a `status:` that disagrees with the record's own `**Status:**`
-  line ([ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md)):
-  - `status:` is `accepted`, `partially-superseded`, or `superseded`;
-  - a status line saying "superseded by [ADR-NNNN]" needs `partially-superseded`
-    or `superseded`, and ADR-NNNN must exist;
-  - a superseded record's status line links what replaced or narrowed it.
-- Superseding part of an older ADR: change its `status:` and its status line in
-  the same pull request.
+- The rules: [ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md). Lifecycle, template, checks, and the
+  missing numbers: [`.spec/decisions/README.md`](../../.spec/decisions/README.md).
+- Template: copy [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md).
+  From ADR-0192 on, a record has exactly its sections, in its order.
+- Conventions: a new process, tooling, or agent-workflow rule is
+  `.spec/conventions/CONV-NNN-kebab-slug.md`
+  ([`.spec/conventions/README.md`](../../.spec/conventions/README.md)). Take
+  the next unused number; it is never reused. The process ADRs before ADR-0192
+  stay in `.spec/decisions/`.
+- The upstream `documentation-and-adrs` skill's ADR template and lifecycle do
+  not apply here; this section and ADR-0192 do.
+- Three checks run in pre-commit and the `docs` job; what each fails is in
+  [`.spec/decisions/README.md`](../../.spec/decisions/README.md#checks):
+  - `node tools/spec/adr-numbers.ts` — numbering and status agreement
+    ([ADR-0091](../../.spec/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md),
+    [ADR-0183](../../.spec/decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md));
+  - `node tools/spec/check-records.ts` — the template and status line;
+  - `node tools/spec/check-adr-immutability.ts` — a pull request changes an
+    ADR on its base only in its status. CI passes `BASE_SHA`; pre-commit runs
+    it with `--staged`.
+- Superseding an older ADR: change its `status:` and its status line in the
+  same pull request, and nothing else in it.
 - The root README is [`README.md`](../../README.md).
 
 ### Markdown
 
 - Every tracked markdown file opens with frontmatter: `title`, `description`,
   and `type` — one of `adr`, `spec`, `guide`, `readme`, `lesson`,
-  `instructions`, `template` — plus the keys that type adds
-  ([ADR-0087](../../.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+  `convention`, `instructions`, `template` — plus the keys that type adds
+  ([ADR-0087](../../.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)):
+  - `adr`: `status`, `date`, `decision-makers`, `keywords`;
+  - `lesson`: `date`, `issue`, `status`, `kind` ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md));
+  - `convention`: `status` (`accepted` or `superseded`) and `date`;
+  - `spec`: `area`.
 - A `skills/*/SKILL.md` carries exactly `name` and `description` instead; its
   type comes from its path.
 - An `agents/*.md` carries `name`, `description`, `model`, and `effort`, and

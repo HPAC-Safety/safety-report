@@ -93,7 +93,7 @@ requires separate origins and separate deployment permissions for public and
 admin; this ADR only changes what each origin *is* (a container instead of a
 bucket), not how many there are.
 
-## Alternatives
+## Considered options
 
 - **Keep S3 + CloudFront for the built assets.** Fully compatible with
   ADR-0043 on its own. Rejected because the owner explicitly asked for Docker

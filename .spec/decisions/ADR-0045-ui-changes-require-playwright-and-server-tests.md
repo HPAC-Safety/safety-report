@@ -55,7 +55,7 @@ is how the existing "nothing enforces it" gap happened. Requiring both by
 default, with the narrow presentation-only carve-out, is a rule a reviewer can
 check mechanically.
 
-## Alternatives
+## Considered options
 
 - **Playwright only for UI PRs.** Rejected: matches "does the screen render,"
   not "is the behavior correct," and this system's core invariants (validation

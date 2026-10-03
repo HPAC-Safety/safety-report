@@ -10,9 +10,7 @@ keywords: bootstrap.sh, hpac-safety-deploy, hpac-safety-plan, GetSecretValue, cl
 
 # ADR-0171 — Terraform reads back only the origin secret, and log groups are guarded by name
 
-## Status
-
-Accepted. Amends the deploy and plan roles' explicit denies in
+**Status:** Accepted. Amends the deploy and plan roles' explicit denies in
 [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md) and
 [ADR-0169](ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md).
 Issue [#637](https://github.com/HPAC-Safety/safety-report/issues/637).
@@ -57,7 +55,7 @@ read.
   guarded the way ECR, Lambda, and S3 already are.
 - The owner re-runs `infra/bootstrap.sh` for each account to apply both.
 
-## Alternatives considered
+## Considered options
 
 - **A write-only secret attribute (`secret_string_wo`)**: the provider still
   looks the version up after creating it, and it would split the origin

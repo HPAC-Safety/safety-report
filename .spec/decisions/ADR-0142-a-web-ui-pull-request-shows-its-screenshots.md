@@ -76,7 +76,7 @@ the body, or says why it needs none.**
 - `screenshots` joins the required status checks in
   `docs/github-ruleset.json`.
 
-## Alternatives considered
+## Considered options
 
 - **Skill wording only.** Already in place, and skipped twice in a week.
 - **Template section without a check.** A section left empty looks the same as

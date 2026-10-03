@@ -84,7 +84,7 @@ reach either summary text.
   private-value match with a marker naming its source question, leaving the
   rest of the sentence intact for the model to work with.
 
-## Alternatives rejected
+## Considered options
 
 **Token matching restricted to free-text/type-ahead question types.** Adds a
 type-based exclusion list to maintain and reason about for a marginal

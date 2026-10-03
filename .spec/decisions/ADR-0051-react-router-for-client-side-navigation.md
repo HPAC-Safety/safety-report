@@ -43,7 +43,7 @@ standard for React SPA routing. Nothing about this app's shape (one bundle,
 client-only state, no server-rendered loaders) calls for more than its
 declarative mode.
 
-## Alternatives
+## Considered options
 
 - **TanStack Router.** Smaller ecosystem, a less agent-familiar API, and its
   type-safe route generation buys nothing here — this app has no complex

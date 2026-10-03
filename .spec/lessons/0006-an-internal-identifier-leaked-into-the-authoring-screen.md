@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-22
 issue: 335
 status: accepted
+kind: product
 ---
 
 # Lesson 0006 — A choice code nobody could supply, and a reporter choice nobody recorded

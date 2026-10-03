@@ -139,7 +139,7 @@ it cannot restore earlier revisions.
   version** behind a confirmation. The editor no longer warns that saving clears
   approval on a live report.
 
-## Alternatives rejected
+## Considered options
 
 **Keep one row and add an edit-history table beside it.** Two writers to the
 current text, and a public reader that has to pick between them. Making the

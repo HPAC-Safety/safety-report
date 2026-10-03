@@ -20,7 +20,7 @@ import { appendFileSync, existsSync, readFileSync, readdirSync, statSync, writeF
 import { join, posix } from 'node:path'
 
 import { parseFrontmatter } from '../docs/check-frontmatter.ts'
-import { CONSTRAINT_PAGES, DECISIONS, FEATURES, LESSONS, SPEC_INDEX, SPEC_ROOT } from './spec-paths.ts'
+import { CONSTRAINT_PAGES, CONVENTIONS, DECISIONS, FEATURES, LESSONS, SPEC_INDEX, SPEC_ROOT } from './spec-paths.ts'
 import { readClaims, readConstraints } from './generate-traceability.ts'
 import { isMain } from '../lib/actions.ts'
 
@@ -91,6 +91,7 @@ export interface Inputs {
 	pages: ConstraintPage[]
 	decisions: Numbered[]
 	lessons: Numbered[]
+	conventions: Numbered[]
 }
 
 function areas(root: string): Area[] {
@@ -134,6 +135,7 @@ function constraintPages(root: string): ConstraintPage[] {
 }
 
 function numbered(root: string, directory: string, pattern: RegExp): Numbered[] {
+	if (!existsSync(join(root, directory))) return []
 	return readdirSync(join(root, directory))
 		.flatMap((name) => {
 			const number = pattern.exec(name)?.[1]
@@ -154,11 +156,12 @@ export function collect(root = ROOT): Inputs {
 		pages: constraintPages(root),
 		decisions: numbered(root, DECISIONS, /^ADR-(\d{4})-.+\.md$/),
 		lessons: numbered(root, LESSONS, /^(\d{4})-.+\.md$/),
+		conventions: numbered(root, CONVENTIONS, /^CONV-(\d{3})-.+\.md$/),
 	}
 }
 
 /** The index, as markdown. */
-export function render({ areas, pages, decisions, lessons }: Inputs): string {
+export function render({ areas, pages, decisions, lessons, conventions }: Inputs): string {
 	const lines = [
 		'---',
 		'title: Specification index',
@@ -224,12 +227,28 @@ export function render({ areas, pages, decisions, lessons }: Inputs): string {
 		'What the specification should have said, newest first. When to write one:',
 		'[`lessons/README.md`](lessons/README.md).',
 		'',
-		'| Lesson | Title | What it cost us | Remedy | Issue | Date | Status |',
-		'|---|---|---|---|---|---|---|',
+		'| Lesson | Title | What it cost us | Remedy | Issue | Date | Status | Kind |',
+		'|---|---|---|---|---|---|---|---|',
 	)
 	for (const { path, number, text, meta } of lessons) {
 		const issue = /^\d+$/.test(meta.issue ?? '') ? `#${meta.issue}` : cell(meta.issue)
-		lines.push(`| [${number}](${link(path)}) | ${cell(meta.title)} | ${cell(meta.description)} | ${remedy(text)} | ${issue} | ${cell(meta.date)} | ${cell(meta.status)} |`)
+		lines.push(`| [${number}](${link(path)}) | ${cell(meta.title)} | ${cell(meta.description)} | ${remedy(text)} | ${issue} | ${cell(meta.date)} | ${cell(meta.status)} | ${cell(meta.kind)} |`)
+	}
+
+	lines.push(
+		'',
+		'## Conventions',
+		'',
+		'Process, tooling, and agent-workflow rules written since ADR-0192, newest',
+		'first. What a convention is: [`conventions/README.md`](conventions/README.md).',
+		'',
+	)
+	if (conventions.length === 0) lines.push('None yet.')
+	else {
+		lines.push('| Convention | Title | Status | Date |', '|---|---|---|---|')
+		for (const { path, number, meta } of conventions) {
+			lines.push(`| [CONV-${number}](${link(path)}) | ${cell(meta.title)} | ${cell(meta.status)} | ${cell(meta.date)} |`)
+		}
 	}
 
 	lines.push('')
@@ -237,10 +256,10 @@ export function render({ areas, pages, decisions, lessons }: Inputs): string {
 }
 
 /** The whole-tree counts, reported rather than committed (ADR-0106). */
-export function totals({ areas, pages, decisions, lessons }: Inputs): string {
+export function totals({ areas, pages, decisions, lessons, conventions }: Inputs): string {
 	const scenarios = areas.reduce((sum, area) => sum + area.scenarios, 0)
 	const constraints = pages.reduce((sum, page) => sum + page.count, 0)
-	return `${areas.length} areas (${scenarios} scenarios), ${pages.length} constraint pages (${constraints} constraints), ${decisions.length} decisions, ${lessons.length} lessons.`
+	return `${areas.length} areas (${scenarios} scenarios), ${pages.length} constraint pages (${constraints} constraints), ${decisions.length} decisions, ${lessons.length} lessons, ${conventions.length} conventions.`
 }
 
 /**

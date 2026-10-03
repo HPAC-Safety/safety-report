@@ -109,6 +109,33 @@ describe('render, at the edges', () => {
 		assert.ok(render(collect(root)).includes(`| [${page}](${page.replace('.spec/', '')}) | \`\` | 0 |  |`))
 	})
 
+	it('lists each lesson\'s kind', () => {
+		const root = specification()
+		writeFileSync(join(root, '.spec/lessons/0003-an-incident.md'), lesson('An incident', '## Symptom\n\nIt broke.\n').replace('status: accepted', 'status: accepted\nkind: incident'))
+
+		assert.match(render(collect(root)), /\[0003\]\(lessons\/0003-an-incident\.md\) \| An incident \| .* \| accepted \| incident \|$/m)
+	})
+
+	it('says there are no conventions yet when the directory is missing or holds only its README', () => {
+		const root = specification()
+
+		assert.match(render(collect(root)), /## Conventions\n[\s\S]*None yet\./)
+	})
+
+	it('lists conventions newest first', () => {
+		const root = specification()
+		mkdirSync(join(root, '.spec/conventions'), { recursive: true })
+		const convention = (number: string, title: string): string => `---\ntitle: ${title}\ndescription: D.\ntype: convention\nstatus: accepted\ndate: 2026-10-0${number.slice(2)}\n---\n\n# CONV-${number} — ${title}\n`
+		writeFileSync(join(root, '.spec/conventions/README.md'), '---\ntitle: Conventions\ndescription: D.\ntype: guide\n---\n')
+		writeFileSync(join(root, '.spec/conventions/CONV-001-first.md'), convention('001', 'First'))
+		writeFileSync(join(root, '.spec/conventions/CONV-002-second.md'), convention('002', 'Second'))
+
+		const index = render(collect(root))
+
+		assert.ok(index.indexOf('| [CONV-002](conventions/CONV-002-second.md) | Second | accepted | 2026-10-02 |') > -1)
+		assert.ok(index.indexOf('CONV-002') < index.indexOf('CONV-001'))
+	})
+
 	it('shows an issue that is not a number as written', () => {
 		const root = specification()
 		writeFileSync(join(root, '.spec/lessons/0003-no-issue.md'), lesson('No issue', '## Scenario\n\nNone.\n').replace('issue: 704', 'issue: none'))

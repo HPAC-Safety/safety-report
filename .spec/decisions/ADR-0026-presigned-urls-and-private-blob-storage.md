@@ -266,7 +266,7 @@ proven only on the transient type holds until the first page is written.
 appears whose pattern reads like blob delivery. The rule is about what the API
 is *not*, and that is only cheap to enforce at the moment someone adds one.
 
-## Alternatives rejected
+## Considered options
 
 **Upload through the API.** Simple, and it puts video-sized bodies through the
 request pipeline, needs the limits raised, and doubles the number of places

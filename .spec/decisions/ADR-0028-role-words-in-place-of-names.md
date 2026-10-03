@@ -126,7 +126,7 @@ looking.
   translation job can never rewrite them. That file does not exist yet and its
   format is owned by another issue, so it is not created here.
 
-## Alternatives rejected
+## Considered options
 
 **`[redacted]`.** Considered and rejected by the repository owner. It reads as a
 censored document rather than a report, and it degrades the stage 2 summary: the

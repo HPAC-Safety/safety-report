@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-22
 issue: 352
 status: accepted
+kind: product
 ---
 
 # Lesson 0009 — A choice list nobody could see

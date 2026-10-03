@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-26
 issue: 540
 status: accepted
+kind: process
 ---
 
 # Lesson 0025 — A local gate that re-implemented CI disagreed with it

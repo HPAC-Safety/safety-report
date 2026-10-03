@@ -122,7 +122,7 @@ prefer one (surprising) or double the validated issuers (a bigger attack
 surface for no reason). Refusing to start is the same posture
 `DevelopmentSigningKey`'s absence already takes in Development.
 
-## Alternatives
+## Considered options
 
 - **A hosted OIDC-as-code product for staging.** Rejected: more
   infrastructure than a temporary stopgap justifies, and it still needs

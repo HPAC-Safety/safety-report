@@ -56,7 +56,7 @@ Soft deletion, which is not a status, is the one thing an officer can do to it.
 only actor is the reporter, whom the system never records (ADR-0067). The
 Worker's other status changes are not audited either.
 
-## Rejected alternatives
+## Considered options
 
 - **A Private status set by the API at submission.** Removes a Worker hop, but
   adds a fourth reviewed status alongside Unpublished that means the same

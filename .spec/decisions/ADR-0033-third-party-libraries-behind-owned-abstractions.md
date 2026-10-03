@@ -166,7 +166,7 @@ port's ingest path (issue #16, in flight) and is the newest instance: EXIF
 stripping is expressed as an operation this repository owns, and `MagickImage`
 appears in exactly one adapter.
 
-## Alternatives rejected
+## Considered options
 
 **Depend on vendor types directly, everywhere.** Fewest files, and the shortest
 path from an SDK sample to working code. It also spreads the vendor's type

@@ -179,8 +179,8 @@ stronger one:
 ### Specification directory
 
 - Everything the specification chain reads — scenarios, constraint pages,
-  decisions, lessons, generated matrices — lives under one root, apart from
-  guides. The project skill names it.
+  decisions, lessons, conventions, generated matrices — lives under one root,
+  apart from guides. The project skill names it.
 - An index of specification files is generated from their frontmatter and
   drift-checked in CI, never kept by hand; a hand-kept table falls behind.
 - Every relative link in tracked markdown is checked before commit and in CI.
@@ -228,27 +228,54 @@ stronger one:
 - A bug fix that reveals a specification gap writes a lesson in the same pull
   request: symptom, root cause, spec delta, and the claim that now proves it.
   A fix that reveals nothing writes none.
+- **Every lesson declares its kind** — product, process, or incident — and owes
+  what that kind owes. A tool checks it.
+- **Product lesson**: its remedy is a claim and a scenario; the spec delta
+  names the claim. No skill change: restating product behavior in a skill
+  creates a second place to drift from the specification.
 - **Process lesson** (tooling, CI, hooks, conventions, delivery, how agents
-  work): also update the skill that would have prevented it, in the same pull
-  request, and name it in the lesson's `## Skill` section. The skill holds the
-  general rule; the lesson keeps the incident. Agents read skills, not the
-  lessons index.
-- **Product lesson**: no skill change. Its remedy is a claim and a scenario;
-  restating product behavior in a skill creates a second place to drift from
-  the specification.
+  work): also update the skill or convention that would have prevented it, in
+  the same pull request, and name it in the lesson's `## Skill` section. The
+  skill holds the general rule; the lesson keeps the incident. Agents read
+  skills, not the lessons index.
+- **Incident** (an operational postmortem: something failed in running the
+  system): symptom and root cause are what it owes. It may also name a skill
+  it changed; never invent a rule just to give it one.
+- A lesson keeps the project's sections and no others; extra detail is a
+  subsection of one of them.
 
 ### ADRs
 
-- One ADR per real decision, in the same pull request — mandatory. A real
-  decision is a new rule, a reversed rule, a privacy or data boundary, or an
-  architecture choice (technology, rejected alternative, durable trade-off).
-  UI polish, a bug fix, and a routine detail with no rejected alternative need
-  none.
-- A decision that changes an existing ADR amends it with a dated paragraph
-  rather than adding a new one.
+- One ADR per real architecture decision, in the same pull request —
+  mandatory. A real decision is a new rule about the system, a reversed one, a
+  privacy or data boundary, or an architecture choice (technology, rejected
+  alternative, durable trade-off). UI polish, a bug fix, and a routine detail
+  with no rejected alternative need none.
+- **Not an ADR**: a new process, tooling, or agent-workflow rule is a
+  convention, in the project's conventions directory, edited in place as it
+  changes; interface detail (wording, layout, a field's behavior) is a
+  scenario.
+- **Write it from the project's template**: one status line under the title,
+  then context, decision drivers (optional), considered options, decision,
+  consequences. Considered options is required; a decision with no
+  alternative worth naming says so there.
+- **An accepted ADR is immutable.** Only its status changes, and a link's
+  target when the file it points to moves or is deleted (point it at a
+  permalink).
+  - A change to the decision is a new ADR. The old one's status becomes
+    `superseded`, its status line linking the new one.
+  - A new ADR that changes part of an older one still supersedes the whole
+    record, and lists what of it still holds — by link or claim ID — never
+    restating it, so each rule keeps one source.
+  - Never append an amendment, rewrite the body, or delete a record. A typo in
+    an accepted ADR stays.
+- **Statuses**: `proposed` (may change freely), `accepted`, `rejected`,
+  `deprecated`, `superseded`. An accepted record moves only to `superseded` or
+  `deprecated`, whose status line links the record that replaced or retired
+  it; the other three are terminal. There is no partial supersession.
 - An ADR's declared status agrees with its own status line, and a successor it
-  names exists. A tool checks both; superseding part of an ADR updates its
-  status in the same pull request.
+  names exists. Tools check both, and a CI check fails a pull request whose
+  diff to an accepted ADR touches anything but its status.
 - Number it after rebasing (see "Commit, rebase, claim identifiers"). Keep the
   filename and the `# ADR-NNNN` heading in step.
 - Keep rationale and requirements apart: never restate a scenario's acceptance

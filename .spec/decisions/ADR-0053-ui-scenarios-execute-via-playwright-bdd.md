@@ -80,7 +80,7 @@ already used `@ui` to distinguish these scenarios; this ADR changes what
 "needs a Playwright companion" means (from "also" to "instead of Reqnroll")
 without inventing a new tag or a new file layout.
 
-## Alternatives
+## Considered options
 
 - **Drive a browser from Reqnroll via Microsoft.Playwright for .NET**, so
   `@ui` scenarios genuinely execute through Reqnroll as ADR-0050 originally

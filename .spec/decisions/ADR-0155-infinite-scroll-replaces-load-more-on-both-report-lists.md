@@ -10,9 +10,7 @@ keywords: infinite scroll, keyset pagination, admin report list, admin_report_qu
 
 # ADR-0155 — Infinite scroll replaces Load more on both report lists
 
-## Status
-
-Accepted.
+**Status:** Accepted.
 
 Amended by
 [ADR-0173](ADR-0173-a-fresh-navigation-starts-at-the-top-and-only-a-return-restores.md):
@@ -114,7 +112,7 @@ the admin list and replaces both lists' paging control with infinite scroll.
 - No schema or migration change: `admin_report_queue` already carried
   `submitted_at` and `id`; only the endpoint and the query changed.
 
-## Rejected alternatives
+## Considered options
 
 - **Numbered pages (`?page=3`).** Rejected: it does not match the "load more
   as you scroll" requirement, and reintroduces the same page-in-the-address

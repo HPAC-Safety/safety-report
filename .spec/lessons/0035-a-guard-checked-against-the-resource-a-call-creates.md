@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-29
 issue: 643
 status: accepted
+kind: incident
 ---
 
 # Lesson 0035 — A guard checked against the resource a call creates

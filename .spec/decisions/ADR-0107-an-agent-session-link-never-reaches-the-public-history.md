@@ -47,7 +47,7 @@ it holds only Claude's (`claude.ai/code/session_…`). Supporting another agent
 is one more entry and one more test, with the link shape that agent actually
 emits. Nobody guesses a shape in advance.
 
-## Alternatives considered
+## Considered options
 
 - **Instructions only**, in `AGENTS.md` and the user's own agent settings.
   This is already in place, and the links still get written, because an

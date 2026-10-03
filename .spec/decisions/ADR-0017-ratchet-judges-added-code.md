@@ -87,7 +87,7 @@ reasoning is invisible gets argued with rather than trusted.
 - `tools/coverage/check-coverage.ts` now exports its two decisions as pure functions, so
   `tests/js` can exercise the mode selection and the arithmetic directly.
 
-## Alternatives rejected
+## Considered options
 
 **Lower the floors.** Would have let #6 through and permanently weakened the
 gate for every change after it. The floors were not the problem.

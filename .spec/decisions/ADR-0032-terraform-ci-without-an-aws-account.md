@@ -10,12 +10,6 @@ keywords: Terraform, CI, OIDC, credential-free
 
 # ADR-0032 — Two roles, and a check that works without an AWS account
 
-**Subject form amended by
-[ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
-subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is
-`repo:HPAC-Safety@307760008/safety-report@1341995834:<context>`, GitHub's
-immutable form, which is the only form this repository's tokens carry.
-
 **Status:** Accepted for the two-roles shape and credential-free validation.
 Any SES or combined-site examples below are superseded by the
 [infrastructure specification](../infrastructure-and-operations.md). The
@@ -25,6 +19,12 @@ production) now runs its own `hpac-safety-deploy`, trusted by
 `repo:HPAC-Safety/safety-report:environment:<that account's environment>` —
 see [`infrastructure-and-operations.md`](../infrastructure-and-operations.md)
 CON-INF-007 and `docs/deployment.md`.
+
+**Subject form amended by
+[ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
+subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is
+`repo:HPAC-Safety@307760008/safety-report@1341995834:<context>`, GitHub's
+immutable form, which is the only form this repository's tokens carry.
 
 ## Context
 
@@ -137,6 +137,10 @@ every plan dirty forever.
 pull request permanently, and a `paths: ['infra/**']` filter would do exactly
 that to every pull request that does not touch `infra/`. This is the trap
 ADR-0011 exists to describe. The job runs in well under a minute.
+
+## Considered options
+
+Recorded inline above: each rejected option sits beside the part of the decision it bears on.
 
 ## Consequences
 

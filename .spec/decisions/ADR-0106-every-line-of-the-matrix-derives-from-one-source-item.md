@@ -80,7 +80,7 @@ cleanly into exactly `render()` of the combined input.
 The one conflict left is two branches claiming the same new ID. That
 collision is real, and it should stop the merge.
 
-## Alternatives considered
+## Considered options
 
 - **Stop committing the matrix.** Make it a gitignored build output, published
   to the job summary. This removes conflicts entirely. It was rejected
@@ -107,6 +107,6 @@ collision is real, and it should stop the merge.
 
 `.gitattributes` is now tracked, naming `merge=ours` for `.spec/traceability.md` and `.spec/README.md`; `init-dev.sh` registers the driver per clone. GitHub still runs no merge driver, so the format property this record states is what makes a merge on GitHub correct. The generated index keeps the same property: one row per file, no whole-tree total. ([ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md))
 
-## Amendment (2026-09-30, ADR-0184)
+## Amendment (2026-09-30) — ADR-0184
 
 The same property holds for `.spec/bindings.md`: every block derives from one claim, step, or step definition, with no line numbers and no totals, so branches merge it cleanly. ([ADR-0184](ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md))

@@ -10,9 +10,7 @@ keywords: choices, dependent choices, parent choice, join table, question_choice
 
 # ADR-0151 — One dependent choice may be offered under several parent choices
 
-## Status
-
-Accepted. This ADR **supersedes**
+**Status:** Accepted. This ADR **supersedes**
 [ADR-0146](ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md).
 It keeps everything ADR-0146 decided except five rules, which it replaces:
 
@@ -223,7 +221,7 @@ erDiagram
     }
 ```
 
-## Rejected alternatives
+## Considered options
 
 - **Keep one parent per choice (ADR-0146).** Every shared model or catch-all
   is maintained once per parent and splits its answers. This is the cost #558

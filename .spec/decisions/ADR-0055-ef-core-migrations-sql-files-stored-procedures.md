@@ -10,6 +10,8 @@ keywords: EF Core, migrations, stored procedures, views, raw SQL, idempotent mig
 
 # ADR-0055 — EF Core is the only path to schema change; SQL lives in files; the app applies its own migrations
 
+**Status:** Accepted.
+
 ## Context
 
 `HpacSafetyDbContext` (`src/HpacSafety.Infrastructure/Persistence/HpacSafetyDbContext.cs`)
@@ -133,7 +135,7 @@ migration is allowed to do.
 - New raw SQL is reviewed as `.sql` files; existing inline SQL in past
   migrations is left as-is.
 
-## Alternatives rejected
+## Considered options
 
 **Keep the dedicated deploy-time `migrate` job, and add ordering between the
 two deploy workflows (Worker deploy waits on API deploy).** Rejected because

@@ -72,7 +72,7 @@ restated beside a link.
 - A key Claude Code later adds is refused until this list grows; that is a
   deliberate, small amendment rather than an open door.
 
-## Alternatives
+## Considered options
 
 - **Leave the choice to the orchestrator's prompt.** Rejected: invisible to
   `skillfile` and to review, and re-decided on every spawn.

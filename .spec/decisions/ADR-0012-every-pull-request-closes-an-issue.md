@@ -46,7 +46,7 @@ the commit message, so enforcing it once covers both paths.
 pull requests legitimately have no issue behind them, and failing a required
 check on them would deadlock the automerge configured in ADR-0011.
 
-## Alternatives considered
+## Considered options
 
 **A merge-time action that closes the issue by API.** Would work without the
 keyword, but it needs a token with `issues: write` on a `pull_request` trigger,

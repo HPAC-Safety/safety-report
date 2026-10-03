@@ -57,7 +57,7 @@ and Worker read `DEEPL_API_KEY` and `GEMINI_API_KEY` from the environment.
 to Compose, so the keys reach every worktree's containers, and names any key
 that is missing.
 
-## Rejected alternatives
+## Considered options
 
 - **Keep the stand-in, but have it write a marked fake** (for example
   `[fr-CA] …`). The marker would still be stored as an answer's translation,

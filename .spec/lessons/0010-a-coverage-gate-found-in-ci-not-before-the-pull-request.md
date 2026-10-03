@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-22
 issue: 352
 status: superseded
+kind: process
 ---
 
 # Lesson 0010 — A coverage gate found in CI, not before the pull request
@@ -57,7 +58,3 @@ publish" step 1 required a local coverage script to pass before a pull
 request touching `src/`, `tests/`, or `tools/` was opened. The script measured
 `origin/main` and the branch on the same machine with CI's own commands, and
 ran `tools/coverage/check-coverage.ts` on the pair. Lesson 0025 replaced it.
-
-Since #492 the general rule lives in the generic
-[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
-keeps this repository's commands, paths, and references.

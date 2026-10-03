@@ -10,9 +10,7 @@ keywords: question bank, choices, sorting, collation, pinning, locale, question_
 
 # ADR-0136 — Choices are listed alphabetically in the reader's language
 
-## Status
-
-Accepted. This ADR **amends**
+**Status:** Accepted. This ADR **amends**
 [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):
 a question's list of choices has no order of its own, so "reordering" a choice
 is replaced by pinning it. Everything else in ADR-0095 stands, including that
@@ -83,7 +81,7 @@ after the choices pinned first and before the choices pinned last.**
 - **Typeform export** writes choices in English alphabetical order within the
   pin groups. The import does not depend on the file's choice order.
 
-## Rejected alternatives
+## Considered options
 
 - **Keep the authored order, or let each question choose between authored
   and alphabetical order.** The owner rejected both: the order choices were

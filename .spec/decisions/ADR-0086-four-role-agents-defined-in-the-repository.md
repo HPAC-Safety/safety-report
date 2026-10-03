@@ -77,7 +77,7 @@ role is a way of holding a change to one job at a time.
   delivery contract requires one.
 - Adding a fifth role later is a manifest entry and a file, not a redesign.
 
-## Alternatives
+## Considered options
 
 - **Add a reviewer agent only.** Rejected: the reviewer is the most obviously
   valuable role, but it is also the one that works least well alone. Reviewing

@@ -10,9 +10,7 @@ keywords: attachments, filenames, privacy, downloads, content-disposition, blob 
 
 # ADR-0097 — A reviewer downloads an attachment under its sanitized original name
 
-## Status
-
-Accepted. This ADR:
+**Status:** Accepted. This ADR:
 
 - **amends** REQ-MED-003, which said the client filename is never persisted or
   returned to an admin;
@@ -76,7 +74,7 @@ it.**
 - The submission's file-upload answer carries `attachments`, each an upload id
   and a filename, in place of a bare list of ids.
 
-## Alternatives rejected
+## Considered options
 
 - **Keep minted names.** It keeps the old rule whole, but at the cost of the
   reviewer experience the owner wants.

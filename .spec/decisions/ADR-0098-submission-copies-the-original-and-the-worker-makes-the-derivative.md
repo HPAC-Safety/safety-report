@@ -10,9 +10,7 @@ keywords: attachments, worker, outbox, derivatives, S3 copy, quarantine, submiss
 
 # ADR-0098 — Submission copies the original and the Worker makes the derivative
 
-## Status
-
-Accepted. This ADR **amends**
+**Status:** Accepted. This ADR **amends**
 [ADR-0096](ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md):
 the submission no longer judges and strips a claimed upload inside the request.
 It completes what `CON-IF-008` and REQ-MED-009 already required: one
@@ -73,7 +71,7 @@ sniffs it again, and writes the stripped derivative.**
 - The Worker still buffers each file in memory while it strips it; #362 streams
   it instead.
 
-## Alternatives rejected
+## Considered options
 
 - **Leave the upload in quarantine for the Worker to promote.** This keeps the
   submission simpler, but a Worker delay past the lifecycle window loses the

@@ -48,7 +48,7 @@ Two of them are not purely inert. `i18n` fails — rather than skipping — if
 cannot outlive the reason for it. `coverage` already collects and uploads
 Cobertura; #5 adds the comparison, not the plumbing.
 
-## Alternatives considered
+## Considered options
 
 **Add only `build`, `test`, and `agent-config`; let each later issue add its own
 context.** Honest — every green check would mean something. Rejected because it

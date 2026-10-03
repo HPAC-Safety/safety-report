@@ -48,7 +48,7 @@ The container was an accident of a file name, and nothing verified it (#424).
 - **A stream MP4 cannot hold** makes the remux fail, and the video is kept with
   no derivative, as for any remux that fails. It is never transcoded to fit.
 
-## Rejected alternatives
+## Considered options
 
 - **Keep the arriving container and label a QuickTime derivative `video/mp4`.**
   That is less work, but it misstates the bytes, and a reviewer's `.mov`

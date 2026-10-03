@@ -61,7 +61,7 @@ questions. It changes no schema and no rule.
   scenario until the fixture is regenerated and committed, which puts the
   change in front of the browser suite.
 
-## Alternatives considered
+## Considered options
 
 - **Make `InitialSchema` write nothing**, as when it shipped. Rejected by the
   owner: it edits a shipped migration, and the repair already covers fresh

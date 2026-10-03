@@ -89,7 +89,7 @@ erDiagram
     }
 ```
 
-## Rejected alternatives
+## Considered options
 
 - **Reusing `report_comments` with a private flag.** Comments are public by
   design, translated by the Worker, and read through public views. One flag

@@ -10,9 +10,7 @@ keywords: type-ahead, autocomplete, combobox, datalist, WAI-ARIA, report form, s
 
 # ADR-0140 — A type-ahead is a combobox the form draws
 
-## Status
-
-Accepted. This ADR **amends**
+**Status:** Accepted. This ADR **amends**
 [ADR-0136](ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)
 on one point: a type-ahead now draws the separators between pin groups.
 Everything else in ADR-0136 stands.
@@ -64,7 +62,7 @@ may add a missing value, which is then reviewed
 - **Hand-built**, like the multi-select picker, in one component under
   `src/web/src/report-form/`.
 
-## Rejected alternatives
+## Considered options
 
 - **Keep the datalist and restyle it.** A datalist's popup cannot be styled;
   the browser owns it.

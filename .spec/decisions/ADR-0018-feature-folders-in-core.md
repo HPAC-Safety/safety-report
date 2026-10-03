@@ -87,7 +87,7 @@ belongs to reporting, not to a folder of interfaces.
   `QuestionBank` because an answer is an answer *to a question*. That direction
   is one-way, and worth keeping that way.
 
-## Alternatives rejected
+## Considered options
 
 **Leave it as it was.** Two conventions, no rule, and a folder called `Enums/`
 that grows forever.

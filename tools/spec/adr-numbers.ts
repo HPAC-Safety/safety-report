@@ -81,12 +81,19 @@ export function checkNumbering(adrs: readonly Adr[], read: ReadAdr): string[] {
 	return problems
 }
 
-export const STATUSES: readonly string[] = ['accepted', 'partially-superseded', 'superseded']
+// The lifecycle (ADR-0192). `partially-superseded` is retired: the records that
+// already carry it keep it, and check-records.ts and check-adr-immutability.ts
+// refuse it anywhere new.
+export const STATUSES: readonly string[] = ['proposed', 'accepted', 'rejected', 'deprecated', 'superseded', 'partially-superseded']
+
+/** The statuses whose status line must link what replaced or narrowed the record. */
+const SUPERSEDED: readonly string[] = ['superseded', 'partially-superseded']
 
 /**
- * An ADR's own status paragraph: the `**Status:**` paragraph, or the first
- * paragraph of a `## Status` section. Only this is read, because the rest of a
- * record discusses other records' supersession freely.
+ * An ADR's own status paragraph: the `**Status:**` paragraph (ADR-0192), or
+ * the first paragraph of the `## Status` section older branches may still
+ * carry. Only this is read, because the rest of a record discusses other
+ * records' supersession freely.
  */
 export function statusLine(text: string): string {
 	const bold = text.match(/^\*\*Status:\*\*[\s\S]*?(?=\n\s*\n|(?![\s\S]))/m)
@@ -117,11 +124,14 @@ export function checkStatus(adrs: readonly Adr[], read: ReadAdr): string[] {
 		}
 
 		const successors = [...line.matchAll(/superseded\s+by\s+\**\[?`?ADR-(\d{4})/gi)].map((match) => match[1])
-		if (status === 'accepted' && successors.length > 0) {
-			problems.push(`${DECISIONS}/${name}: its status line says it is superseded by ADR-${successors[0]}, but it declares "status: accepted" — make it partially-superseded or superseded`)
+		if (!SUPERSEDED.includes(status) && successors.length > 0) {
+			problems.push(`${DECISIONS}/${name}: its status line says it is superseded by ADR-${successors[0]}, but it declares "status: ${status}" — make it superseded`)
 		}
-		if (status !== 'accepted' && !/\]\(/.test(line)) {
+		if (SUPERSEDED.includes(status) && !/\]\(/.test(line)) {
 			problems.push(`${DECISIONS}/${name}: "status: ${status}" needs a **Status:** line linking what replaced or narrowed it`)
+		}
+		if (status === 'deprecated' && !/\]\([^)]*(ADR-\d{4}|CONV-\d{3})[^)]*\)/.test(line)) {
+			problems.push(`${DECISIONS}/${name}: "status: deprecated" needs a **Status:** line linking the ADR or convention that retired it (ADR-0192)`)
 		}
 		for (const successor of successors) {
 			if (!numbers.has(successor)) problems.push(`${DECISIONS}/${name}: its status line names ADR-${successor}, which does not exist`)

@@ -73,7 +73,7 @@ This record adds three views:
   than editing a lambda, and it is deliberate: a rule the list, the detail,
   and a badge all depend on should change in one reviewed place.
 
-## Rejected alternatives
+## Considered options
 
 - **One shared C# expression per rule.** Rejected because the "stuck" rule
   compares against the current time, which EF translates unevenly, and the

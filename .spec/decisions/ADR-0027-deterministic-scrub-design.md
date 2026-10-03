@@ -252,7 +252,7 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
   filed as [#61](https://github.com/HPAC-Safety/safety-report/issues/61) rather
   than done here.
 
-## Alternatives rejected
+## Considered options
 
 **Scrub a text blob.** Simplest signature, and it cannot implement half the
 rules, because "drop the contact fields outright" needs to know which text was a

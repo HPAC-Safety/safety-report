@@ -69,7 +69,7 @@ it drives every outcome against real repositories.
 does the generator. `i18n-translate.yml` runs the copy in its own checkout,
 as it already does the translator.
 
-## Alternatives considered
+## Considered options
 
 - **One `concurrency` group for both bots per pull request.** The runs would
   take turns, but the second still checks out the event's pinned head SHA,

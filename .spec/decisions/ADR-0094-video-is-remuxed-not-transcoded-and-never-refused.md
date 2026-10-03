@@ -10,9 +10,7 @@ keywords: video, ffmpeg, remux, metadata, attachments, privacy, media
 
 # ADR-0094 — Video is remuxed, never transcoded, and an unstrippable video is kept rather than refused
 
-## Status
-
-Accepted. Amends [ADR-0025](ADR-0025-magick-net-for-exif-stripping.md), which
+**Status:** Accepted. Amends [ADR-0025](ADR-0025-magick-net-for-exif-stripping.md), which
 chose Magick.NET for images and deliberately left video unhandled. Amended by
 [ADR-0118](ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md): only the
 Worker's image needs ffmpeg, and it installs Ubuntu's. Amended by
@@ -121,7 +119,7 @@ authorized reviewers regardless, and no attachment is ever published.
 - A reviewer may now see an unstripped original for the minority of files that
   fail. That is deliberate and recorded, not a gap.
 
-## Alternatives
+## Considered options
 
 - **Transcode to a known-clean baseline.** Rejected: it decodes hostile input
   frame by frame, costs CPU per upload, degrades the footage a reviewer is

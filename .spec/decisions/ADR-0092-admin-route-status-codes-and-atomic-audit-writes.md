@@ -10,9 +10,7 @@ keywords: audit, authorization, admin routes, 401, 403, atomicity, security
 
 # ADR-0092 — Admin routes answer with real 401/403, and an audit write is atomic with its action
 
-## Status
-
-Accepted.
+**Status:** Accepted.
 
 ## Context
 
@@ -90,7 +88,7 @@ scope: filing a report records no member identity at all
 so an audit row can never link a report to whoever submitted it — there is no
 subject available to record even if this ADR wanted one.
 
-## Rejected alternatives
+## Considered options
 
 **Mask every unauthorized admin page as 404.** The owner's original
 request. Rejected on reflection: the admin route tree is already public

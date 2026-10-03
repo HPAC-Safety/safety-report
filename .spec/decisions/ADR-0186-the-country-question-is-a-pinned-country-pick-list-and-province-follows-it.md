@@ -85,7 +85,7 @@ occurrence happen in Canada?". It never named the country, and **Province**
 - The form's type-ahead is not used: a list of 249 in a select-only combobox is
   scrolled and keyboard-searched, and a country cannot be added by a reporter.
 
-## Alternatives considered
+## Considered options
 
 - **A type-ahead.** Rejected: a reporter-added country would be a free value, and
   the point is a fixed, bilingual, comparable list.

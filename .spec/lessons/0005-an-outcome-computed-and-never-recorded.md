@@ -5,6 +5,7 @@ type: lesson
 date: 2026-09-22
 issue: 311
 status: accepted
+kind: product
 ---
 
 # Lesson 0005 — An outcome computed and never recorded

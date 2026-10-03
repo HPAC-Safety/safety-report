@@ -10,14 +10,14 @@ keywords: conditional questions, dependency, question bank, single-select, valid
 
 # ADR-0074 — A conditional question's parent may be yes/no or single-select, naming a required option
 
-**Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):** "the parent's live option set" below now means the
-parent question's own live choices. A choice a live child depends on cannot be
-removed.
-
 **Status:** Accepted, partially supersedes
 [ADR-0060](ADR-0060-conditional-questions-depend-on-a-boolean-question.md)'s
 restriction to a `yes_no` parent. Everything else ADR-0060 decided — where the
 dependency lives, how it is enforced, what a cycle means — still holds.
+
+**Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):** "the parent's live option set" below now means the
+parent question's own live choices. A choice a live child depends on cannot be
+removed.
 
 Amended by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): the required option is named by
 choice ID, not by `depends_on_option_code`, and a condition follows its
@@ -110,7 +110,7 @@ ADR-0060 gave for the `yes_no` case applies unchanged.
 - Existing `yes_no` dependencies are unaffected: the new column is `null` for
   every one of them, and reads through the same code path as before.
 
-## Alternatives rejected
+## Considered options
 
 **A separate `question_conditions` table with operators**, and **any type as
 a parent with an expected value.** Both already rejected by ADR-0060 for the

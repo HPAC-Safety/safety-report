@@ -100,7 +100,7 @@ script error never silently publishes or erases data — are unaffected and
 remain in force; they are about a script *failing after load*, not about
 whether a script is required to load the page.
 
-## Alternatives
+## Considered options
 
 - **Keep the standalone-CLI/no-framework build, add TypeScript only via
   `tsc --noEmit` type-checking of plain scripts.** Fits ADR-0006 without

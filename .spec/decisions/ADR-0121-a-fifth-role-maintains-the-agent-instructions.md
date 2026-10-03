@@ -57,7 +57,7 @@ gate.
 - A future rewrite of an instruction file has a written standard to be
   reviewed against.
 
-## Alternatives
+## Considered options
 
 - **A skill instead of an agent.** Rejected for the reason ADR-0086 gives. A
   skill is loaded by topic and constrains nothing. "Change the wording, never

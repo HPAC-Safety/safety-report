@@ -10,9 +10,7 @@ keywords: release, create-release.yml, release notes, generate-notes, workflow_d
 
 # ADR-0168 — A release is created by one Action, with notes generated from the merged pull requests
 
-## Status
-
-**Amended (#621, owner, 2026-09-28):** one workflow, not two. See
+**Status:** **Amended (#621, owner, 2026-09-28):** one workflow, not two. See
 "Amendment" at the end; it replaces `create-release.yml` and the dispatch
 hand-off described below.
 
@@ -56,7 +54,7 @@ Two GitHub constraints shape it:
 - One run at a time (`concurrency: create-release`), so two runs never pick
   the same tag.
 
-## Alternatives considered
+## Considered options
 
 - **Semver tags (`vMAJOR.MINOR.run`)**, as codetoneo4j uses. Rejected (owner):
   ADR-0158's date tags, the environments' `20*` rule, and `promote.yml`'s
@@ -79,7 +77,7 @@ Two GitHub constraints shape it:
   issue"). An unlabelled one lands under Other changes.
 - The first release's notes list every pull request merged so far.
 
-## Amendment — one Release workflow (#621)
+## Amendment (2026-09-28) — one Release workflow (#621)
 
 The owner opened **Release** (`release.yml`) and was asked for a tag, beside a
 second **Create release** workflow. The owner wants one workflow, **Release**,

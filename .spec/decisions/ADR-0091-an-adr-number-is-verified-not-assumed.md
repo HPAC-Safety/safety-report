@@ -10,9 +10,7 @@ keywords: ADR, numbering, collisions, rebase, concurrency, tooling
 
 # ADR-0091 — An ADR number is verified, not assumed
 
-## Status
-
-Accepted. Paths amended by
+**Status:** Accepted. Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
 
 ## Context
@@ -96,7 +94,7 @@ The delivery contract says so.
   instruction files are skipped, because they resolve to `AGENTS.md` and would
   otherwise be rewritten three times.
 
-## Alternatives
+## Considered options
 
 - **Leave it to review.** Rejected: it escaped review three times in one
   afternoon, and a reviewer reading one pull request cannot see the number

@@ -10,9 +10,7 @@ keywords: type-ahead, autocomplete, combobox, threshold, hint, caret, WAI-ARIA, 
 
 # ADR-0152 — A type-ahead's list opens with a hint below 3 characters
 
-## Status
-
-Accepted. This ADR **amends**
+**Status:** Accepted. This ADR **amends**
 [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md) on two
 points: a type-ahead no longer draws a caret, and its list no longer opens
 with every choice. Everything else in ADR-0140 stands, including that the
@@ -66,7 +64,7 @@ trimmed of spaces, and draws no caret.**
   list does not offer, is still the field's value and is submitted exactly as
   before (ADR-0129). Only what the open list shows changes.
 
-## Rejected alternatives
+## Considered options
 
 - **No popup at all below the threshold**, closing the list rather than
   showing a hint. A reporter pressing Alt and the down arrow, or clicking the

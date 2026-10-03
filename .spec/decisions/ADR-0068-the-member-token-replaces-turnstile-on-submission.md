@@ -46,7 +46,7 @@ already rejected Google Fonts on exactly that reasoning
 challenge on the submission path is a larger version of the same objection, and
 it is no longer buying anything that the token does not.
 
-## Alternatives
+## Considered options
 
 - **Keep both gates.** Defensible — a compromised or shared member credential
   could script submissions, and Turnstile would blunt that. Rejected because

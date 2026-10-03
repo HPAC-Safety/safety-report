@@ -84,7 +84,7 @@ itself under review before it can reach `main` — the reviewer sees it in
 the same place they see everything else in the change, rather than in a
 second pull request. Nothing here lets any French reach `main` unreviewed.
 
-## Alternatives
+## Considered options
 
 - **Run the translator inside `ci.yml`'s existing `pull_request` job.**
   Rejected: `pull_request` runs for every PR, including forks, and there is

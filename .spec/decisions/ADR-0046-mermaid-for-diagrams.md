@@ -53,7 +53,7 @@ agents (the same reasoning ADR-0006 gave for Tailwind and ADR-0043 gives for
 React); Mermaid's syntax is plain text an agent can write and revise directly,
 where a binary diagram requires a human or a separate tool in the loop.
 
-## Alternatives
+## Considered options
 
 - **Whatever the author has on hand (screenshots, exported images).**
   Rejected: not diffable, not renderable everywhere, and it is the status quo

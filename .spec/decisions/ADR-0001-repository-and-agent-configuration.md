@@ -33,7 +33,7 @@ Skills and agents are managed declaratively with
 `skills/` and `agents/`, `Skillfile.lock` pins upstream revisions, and
 `skillfile install` generates `.claude/`, which is gitignored.
 
-## Alternatives
+## Considered options
 
 - **Generated copies checked by CI.** Works on Windows without configuration,
   but puts duplicated content in the repository and invites edits to the wrong

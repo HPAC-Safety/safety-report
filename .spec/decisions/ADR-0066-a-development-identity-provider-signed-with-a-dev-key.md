@@ -79,7 +79,7 @@ Refusing to map the endpoint outside Development, rather than guarding it with
 a flag, is deliberate. A flag can be set wrong. A route that was never mapped
 cannot be reached.
 
-## Alternatives
+## Considered options
 
 - **A bypass filter that trusts a header in development.** Rejected. It is the
   stub we are removing, and it exercises none of the real path.

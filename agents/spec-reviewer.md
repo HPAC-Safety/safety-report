@@ -31,6 +31,10 @@ Ask one question: **does this satisfy the claims it cites, and nothing else?**
 8. An exemption that does not hold: check the diff leaves the claims it cites
    standing. One covering a behavior change is a finding; the remedy is the
    scenario.
+9. A record off its rules: an accepted ADR's body edited or an ADR deleted; a
+   new ADR off the template or without considered options; a process rule or
+   interface detail filed as an ADR; a lesson that does not owe what its kind
+   owes.
 
 ## Report
 

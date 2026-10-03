@@ -69,7 +69,7 @@ Reqnroll declines to attempt them changes.
   point here for the mechanism, per
   [ADR-0047](ADR-0047-feature-files-must-not-contradict-adrs.md).
 
-## Alternatives
+## Considered options
 
 - **A `.runsettings` at the repository root carrying the filter.** Rejected:
   Rider and Visual Studio auto-detect it, but `dotnet test` does not — the bare

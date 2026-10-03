@@ -90,7 +90,7 @@ Reporting a members-site outage distinctly from bad credentials matters
 because a developer debugging "why won't this login work" needs to know
 whether their credentials were actually judged.
 
-## Alternatives
+## Considered options
 
 - **Decode the members site's session cookies for a role signal.** Rejected.
   They are sealed with a secret we do not have, and even if they weren't,

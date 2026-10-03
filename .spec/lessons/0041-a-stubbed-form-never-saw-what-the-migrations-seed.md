@@ -5,6 +5,7 @@ type: lesson
 date: 2026-10-02
 issue: 754
 status: accepted
+kind: product
 ---
 
 # Lesson 0041 — A stubbed form never saw what the migrations seed

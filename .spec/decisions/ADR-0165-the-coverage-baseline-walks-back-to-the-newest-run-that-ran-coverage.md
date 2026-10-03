@@ -70,6 +70,10 @@ constraint - the artifacts eight runs back were all still live. The problem
 was that the lookup stopped at the first (wrong) run, not that the right run
 had expired.
 
+## Considered options
+
+Recorded inline above: each rejected option sits beside the part of the decision it bears on.
+
 ## Consequences
 
 - A pull request opened after a run of docs-, infra-, or workflow-only

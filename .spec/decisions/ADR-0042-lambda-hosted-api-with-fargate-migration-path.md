@@ -63,7 +63,9 @@ would run on Fargate, ECS, or a developer's machine.
 | API | Lambda, container image, behind the ALB via a Lambda target group |
 | Worker | ECS Fargate service, no load balancer (unchanged, ADR-0009) |
 
-## Why these choices
+## Considered options
+
+### Why these choices
 
 **Authentication stays stateless.** A bearer token validated per request
 ([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)) carries no

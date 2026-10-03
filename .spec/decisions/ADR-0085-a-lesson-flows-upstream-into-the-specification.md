@@ -2,7 +2,7 @@
 title: A lesson flows upstream into the specification
 description: A bug fix that reveals a specification gap records a lesson under .spec/lessons/ stating symptom, root cause, spec delta, and the claim that now proves it.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
@@ -12,6 +12,9 @@ keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
 
 **Status:** Accepted Paths amended by
 [ADR-0183](ADR-0183-the-specification-lives-in-a-spec-directory.md).
+Partially superseded by
+[ADR-0192](ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md): a lesson declares a kind — product, process, or incident — that decides
+what it owes upstream, and an incident owes nothing.
 
 ## Context
 
@@ -70,7 +73,7 @@ cites the claim ID.
 - A lesson that turns out to be wrong is corrected in place or marked
   superseded in its frontmatter status, like an ADR.
 
-## Alternatives
+## Considered options
 
 - **Fold lessons into ADRs as a lesson-flavoured record.** Rejected: an ADR is
   a decision with rejected alternatives. Most lessons record no decision at
@@ -93,7 +96,7 @@ cites the claim ID.
 - [ADR-0083](ADR-0083-specification-driven-development.md)
 - [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
 
-## Amendment, 2026-09-22 — a process lesson also updates a skill
+## Amendment (2026-09-22) — a process lesson also updates a skill
 
 This record sent a bug's cause upstream and stopped at `.spec/lessons/`. That
 closes the loop for a lesson about the **product**: the specification gains a

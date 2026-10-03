@@ -44,7 +44,7 @@ machine-translated.
 Raw reports are never translated. Summaries are generated in the report's own
 language and then translated, so both versions exist for every report.
 
-## Alternatives
+## Considered options
 
 - **Runtime translation.** Per-visit latency and cost, a third-party request
   from a reporter's browser, and French that cannot be reviewed in a diff.

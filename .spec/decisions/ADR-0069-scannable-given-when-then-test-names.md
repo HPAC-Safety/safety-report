@@ -65,7 +65,7 @@ signal competes with the length. `ThenWidenedStringWithLookupIndex` says
 everything `Then_it_is_a_widened_string_with_a_lookup_index` says, in a form
 that survives truncation.
 
-## Alternatives
+## Considered options
 
 - **Keep the long snake_case form.** Rejected: it is the status quo whose cost
   prompted this, and no reader has ever been helped by the articles.

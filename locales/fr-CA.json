@@ -622,13 +622,13 @@
     },
     "reportTitle": "Signalement de sécurité",
     "own": {
-      "listLabel": "#Your reports",
-      "notYetPublished": "#Not yet published",
-      "notForPublication": "#Not for publication",
-      "submittedAt": "#Submitted {at}",
-      "draftNote": "#Draft summary. It may change before the report is published.",
-      "summaryPending": "#Summary in preparation",
-      "notForPublicationNote": "#You chose not to publish this report, so it has no public summary."
+      "listLabel": "Vos signalements",
+      "notYetPublished": "Pas encore publié",
+      "notForPublication": "Ne pas publier",
+      "submittedAt": "Soumis le {at}",
+      "draftNote": "Ébauche de résumé. Il pourrait changer avant la publication du signalement.",
+      "summaryPending": "Résumé en préparation",
+      "notForPublicationNote": "Vous avez choisi de ne pas publier ce signalement, il n'a donc aucun résumé public."
     },
     "comments": {
       "one": "1 commentaire",

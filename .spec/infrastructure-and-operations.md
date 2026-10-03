@@ -284,7 +284,7 @@ uploaded first, as `Cache-Control: public, max-age=31536000, immutable`.
 them as `Cache-Control: no-cache`, so a returning visitor revalidates it and
 gets the release's page. Only then are the previous release's `assets/` files
 deleted. Before a page is uploaded, every file it names is already in place
-(#805).
+([ADR-0190](decisions/ADR-0190-the-interface-catalogues-ship-in-the-page-bundle-and-the-page-is-never-cached-stale.md)).
 *Verified by: none — an infrastructure property no application scenario can
 observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that
 was already open when a deploy removed its files.*

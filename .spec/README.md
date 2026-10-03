@@ -51,6 +51,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0190](decisions/ADR-0190-the-interface-catalogues-ship-in-the-page-bundle-and-the-page-is-never-cached-stale.md) | The interface catalogues ship in the page bundle, and the page is never cached stale | accepted | 2026-10-03 |
 | [0189](decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md) | A workflow step runs one command, and tools/ is grouped by domain | accepted | 2026-10-02 |
 | [0188](decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md) | A component's logic lives in Foo.tsx and its markup in Foo.view.tsx, and web logic is unit-tested | accepted | 2026-10-02 |
 | [0187](decisions/ADR-0187-a-migration-restores-the-seeded-groups-a-fresh-database-lost.md) | A migration restores the seeded groups a fresh database lost | accepted | 2026-10-02 |
@@ -241,6 +242,7 @@ What the specification should have said, newest first. When to write one:
 
 | Lesson | Title | What it cost us | Remedy | Issue | Date | Status |
 |---|---|---|---|---|---|---|
+| [0043](lessons/0043-a-deploy-deleted-the-catalogue-an-open-page-still-needed.md) | A deploy deleted the catalogue an open page still needed | Lazily loaded locale catalogues were content-hashed chunks; a deploy deleted them under an open tab, CloudFront answered with index.html, and a swallowed error left the page showing raw keys until a full reload. | REQ-WLD-049 | #805 | 2026-10-03 | accepted |
 | [0042](lessons/0042-a-check-nobody-required-let-a-broken-bump-merge.md) | A check nobody required let a broken bump merge | Renovate's ESLint 10 bump merged with lint failing, because lint ran on every pull request but was not a required check, and npm ci then failed on main and every branch rebased onto it. | `deliver-hpac-change` | #788 | 2026-10-02 | accepted |
 | [0041](lessons/0041-a-stubbed-form-never-saw-what-the-migrations-seed.md) | A stubbed form never saw what the migrations seed | A database created from scratch lost every seeded group, and staging asked each grouped question on its own page. The browser suite stubbed the questions by hand and no scenario said what a freshly migrated database sends, so nothing failed. | REQ-QB-259, REQ-QB-266 | #754 | 2026-10-02 | accepted |
 | [0040](lessons/0040-a-group-that-stopped-being-one-hid-its-questions.md) | A group that stopped being one hid its questions | Deleting a group, or retyping it to another type, left each child naming a heading that no longer existed, and the public form dropped those questions. No scenario said what happens to a child when its group stops being one. | REQ-QB-052 | #720 | 2026-09-30 | accepted |

@@ -43,7 +43,8 @@ host.
 
 Both interface catalogues, `locales/en-CA.json` and `locales/fr-CA.json`, are
 built into the page's own script bundle, not fetched afterwards
-(REQ-WLD-049, #805). A deploy replaces every hashed script file, so a
+(REQ-WLD-049,
+[ADR-0190](../../decisions/ADR-0190-the-interface-catalogues-ship-in-the-page-bundle-and-the-page-is-never-cached-stale.md)). A deploy replaces every hashed script file, so a
 catalogue fetched on demand could be gone by the time a tab left open asks for
 it, and the page would show raw keys until a reload. Bundled, the text is
 already in memory and both languages switch without a request. They cost

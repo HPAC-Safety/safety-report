@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HpacSafetyDbContext))]
-    [Migration("20261003204235_ShowAReportersOwnReport")]
+    [Migration("20261003230909_ShowAReportersOwnReport")]
     partial class ShowAReportersOwnReport
     {
         /// <inheritdoc />
@@ -869,6 +869,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("Deleted")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted");
+
+                    b.Property<DateTimeOffset?>("FirstPublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_published_at");
 
                     b.Property<string>("Language")
                         .IsRequired()

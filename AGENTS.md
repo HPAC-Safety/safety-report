@@ -256,7 +256,7 @@ Read them before touching the area.
    Development's members-site login and, temporarily, staging's interim
    issuer behind `InterimIssuer:Enabled`, which production never sets.
    Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-SUB-019`–`021`,
-   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-MOD-212`–`225`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
+   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-PUB-001`–`015`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
    `CON-INF-004`.
    ADRs: [0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
    [0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),

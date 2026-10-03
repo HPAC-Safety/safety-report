@@ -16,7 +16,7 @@ namespace HpacSafety.Api.Tests;
 /// <summary>
 ///     The edges of the receipt endpoints (#820, ADR-0196), against a real PostgreSQL
 ///     container. What a holder sees, and what nobody else does, is proven by the
-///     REQ-MOD-212 to REQ-MOD-220 acceptance scenarios; these cover malformed
+///     REQ-PUB-001 to REQ-PUB-009 acceptance scenarios; these cover malformed
 ///     input, where a receipt may travel, and what the database refuses.
 /// </summary>
 [Trait("Category", "Integration")]
@@ -141,7 +141,46 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		refused.MessageText.ShouldContain("receipt_hash");
 	}
 
-	private async Task<(string Id, string Receipt)> SeedOwnReport(string? hash = null)
+	[Fact]
+	public async Task GivenAReportThatWasPublishedAndUnpublished_WhenLookingUp_ThenItIsSettledAndFirstPublishedAtStays()
+	{
+		// Given
+		var (id, receipt) = await SeedOwnReport(publishThenUnpublish: true);
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts = new[] { new { reportId = id, receipt } } });
+
+		// Then
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		body.GetProperty("items").GetArrayLength().ShouldBe(0);
+		body.GetProperty("settled").EnumerateArray().Select(item => item.GetString()).ShouldBe([id]);
+
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var report = await database.Reports.AsNoTracking().SingleAsync(candidate => candidate.Id == TinyId.Parse(id));
+		report.PublishedAt.ShouldBeNull();
+		report.FirstPublishedAt.ShouldNotBeNull();
+	}
+
+	[Fact]
+	public async Task GivenAFirstPublishedAt_WhenItIsChangedOrCleared_ThenTheDatabaseRefuses()
+	{
+		// Given
+		var (id, _) = await SeedOwnReport(publishThenUnpublish: true);
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		// When
+		var clear = async () => await database.Database.ExecuteSqlAsync($"UPDATE reports SET first_published_at = NULL WHERE id = {id}");
+		var change = async () => await database.Database.ExecuteSqlAsync($"UPDATE reports SET first_published_at = now() WHERE id = {id}");
+
+		// Then
+		(await clear.ShouldThrowAsync<PostgresException>()).MessageText.ShouldContain("first_published_at");
+		(await change.ShouldThrowAsync<PostgresException>()).MessageText.ShouldContain("first_published_at");
+	}
+
+	private async Task<(string Id, string Receipt)> SeedOwnReport(string? hash = null, bool publishThenUnpublish = false)
 	{
 		var (receipt, receiptHash) = BrowserReceipt.New();
 
@@ -162,6 +201,16 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consent, true, now);
 		report.AttachReceipt(hash ?? receiptHash);
+
+		if (publishThenUnpublish)
+		{
+			report.BeginSummarizing();
+			report.AttachSummary(Summary.Generate(report.Id, "The pilot landed.", "Le pilote s'est posé.", "synthetic-model", "synthetic.v1", now));
+			report.AwaitReview();
+			report.Publish("synthetic-approver", now);
+			report.Unpublish();
+		}
+
 		database.Reports.Add(report);
 		await database.SaveChangesAsync();
 

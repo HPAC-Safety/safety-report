@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-10-03
 decision-makers: Chase Florell
-keywords: receipt, browser receipt, anonymity, reporter, privacy, hash, public feed, own report, REQ-MOD-212, REQ-SUB-133, ADR-0067, ADR-0117, ADR-0119, #820
+keywords: receipt, browser receipt, anonymity, reporter, privacy, hash, public feed, own report, REQ-PUB-001, REQ-SUB-133, ADR-0067, ADR-0117, ADR-0119, #820
 ---
 
 # ADR-0196 — A browser receipt shows a reporter their own unpublished report
@@ -57,6 +57,12 @@ enumerate.
 - **Put the receipt in the report's address.** Rejected: an address lands in
   history, logs, referrer headers, and shared links. The receipt travels only in
   a request body.
+- **Show a report again once a reviewer unpublishes it.** Rejected by the owner:
+  a report that was ever published never returns to its holder.
+- **Read the durable fact from `published_at` or the audit log.** Rejected:
+  `published_at` is cleared on unpublish, and the audit log is not written by
+  every path that publishes, nor by seeded rows. A single column the domain sets
+  is reliable and cheap to read from a view.
 - **Do nothing.** Rejected: the reporter's only confirmation is a transient
   message.
 
@@ -87,7 +93,15 @@ enumerate.
   yet published or not for publication, and the latest summary revision, approved
   or not, labelled a draft. Attachments follow the public rules exactly, through
   the same view. A report a reviewer deleted disappears; a published one is
-  public to everyone and the browser drops its receipt.
+  public to everyone and the browser drops its receipt. A report that was ever
+  published, even one a reviewer has since unpublished, never returns to its
+  holder's own reports.
+- **`reports.first_published_at`** is that durable fact: set once, on the first
+  publication, never cleared, and locked by the ADR-0178 trigger (null to a value,
+  then fixed). The migration backfills it for existing reports from the earliest
+  of `published_at`, a `published_report` audit entry, and an approved summary
+  revision, and for a Published report with none of them from its submission
+  time. `own_reports` excludes every report where it is set.
 - **Limitation, accepted:** the report is visible only in the browser that
   filed it. Clearing site data loses the receipt, and another device or browser
   never sees the report.
@@ -95,7 +109,7 @@ enumerate.
   signed-in member of any role may submit; the stored report records nothing
   about the member (REQ-SUB-020, REQ-SUB-021); the form tells the reporter so
   (REQ-SUB-023, REQ-SUB-024). "My reports" as an account page, amending, and
-  withdrawing remain impossible by construction (see the report-submission and moderation area READMEs).
+  withdrawing remain impossible by construction (see the report-submission and public-feed area READMEs).
 
 ## Consequences
 
@@ -107,6 +121,8 @@ enumerate.
 - A database reader can no more attribute a report to a member than before, and
   cannot open a report by receipt either.
 - Reports filed before this decision are never shown to their reporter.
+- While a search is active the holder's own reports are hidden, and a failed
+  receipt lookup shows none and says nothing; the owner accepted both.
 - Adding an account-linked "my reports" page stays out of scope and would need
   its own decision that supersedes this one.
 

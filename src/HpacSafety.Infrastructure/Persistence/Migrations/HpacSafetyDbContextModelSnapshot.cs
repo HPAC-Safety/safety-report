@@ -867,6 +867,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted");
 
+                    b.Property<DateTimeOffset?>("FirstPublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_published_at");
+
                     b.Property<string>("Language")
                         .IsRequired()
                         .HasMaxLength(8)

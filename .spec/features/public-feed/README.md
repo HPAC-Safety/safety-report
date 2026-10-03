@@ -91,12 +91,98 @@ choice is [#573](https://github.com/HPAC-Safety/safety-report/issues/573)'s
 own ADR (ADR-0156 at the time of writing). No search index backs it; ADR-0156
 decided one is not justified at HPAC's report volume.
 
+## A reporter's own report before it is published (#820)
+
+A reporter's browser sees its own report on **View safety reports** and at
+`/reports/<id>` before a reviewer publishes it. Every other visitor, signed in or
+not, sees nothing until it is published
+([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-PUB-001` to `REQ-PUB-014`). The link is a browser receipt, never
+member identity; the stored report holds only the hash of a random token
+(`REQ-SUB-133` to `REQ-SUB-136`).
+
+### What is visible, and to whom
+
+- **Rule.** A report is the holder's own when it is not deleted, its
+  `receipt_hash` is the SHA-256 of the receipt sent, and it is not currently
+  public (it is not a row of `public_reports`). The `own_reports` view holds that
+  rule and `own_report_media` the attachments; both are the only reads, so no
+  endpoint decides visibility.
+- **Entry.** The same entry and page the public will see, plus a pill: **Not yet
+  published** (*Pas encore publié*), or **Not for publication** (*Pas destiné à la
+  publication*) when the reporter did not consent to publication. Never
+  "Unpublished", which names a lifecycle state (#445). The submitted date is shown
+  only to the holder; the public feed still never exposes submission time
+  ([ADR-0153](../../decisions/ADR-0153-the-public-feed-sorts-by-submission-time.md)).
+- **Summary.** The latest live summary revision, generated or reviewer-edited,
+  approved or not, labelled a draft that may change. Before the Worker has made
+  one, the entry shows the pill and "Summary in preparation". A report without
+  publication consent never has a summary and stays listed until a moderator
+  deletes it.
+- **Not the raw answers.** The holder reads the summary, not their answers.
+- **Attachments.** The public rules, through the same media view the public reads:
+  verified image and video derivatives only, only with media consent, a reviewer-hidden
+  item stays hidden, documents only as forced downloads under media-consent wording
+  that names documents, pre-signed URLs of at most 15 minutes.
+- **A report that was ever published never returns.** A reviewer who
+  unpublishes it takes it off the public feed, and it does not come back to its
+  holder's own reports either; the lookup settles the receipt, so the browser
+  drops it (`REQ-PUB-015`). `reports.first_published_at`, set once on the first
+  publication and locked, is the durable fact the `own_reports` view reads.
+
+### Wire shape
+
+All three requests are `POST` with the receipt in the JSON body, never in an
+address or query string, and answer without authentication (the receipt is the
+credential). Receipts are looked up by report ID and compared by hash.
+
+- `POST /api/v1/public/reports/own` with `{ "receipts": [{ "reportId", "receipt" }] }`,
+  at most 50 entries, answers `{ "items": [...], "settled": ["reportId"] }`.
+  `items` are the holder's own reports, newest submitted first; `settled` lists
+  every named report that is not (or no longer) the holder's own — published,
+  deleted, unknown, or a receipt that does not match — indistinguishably, so the
+  browser drops those receipts (`REQ-PUB-005` to `REQ-PUB-007`).
+- `POST /api/v1/public/reports/own/{reportId}` with `{ "receipt" }` answers the
+  page, or `404` for anything that is not the holder's own.
+- `POST /api/v1/public/reports/own/{reportId}/media/{mediaId}` with
+  `{ "receipt" }` answers a pre-signed link, as the public media link does.
+
+### In the browser
+
+- The browser keeps `{ reportId, receipt }` in `localStorage` after a `202`.
+  It drops an entry once the lookup settles it.
+- On the first page of the plain feed (no search text), the own reports are
+  listed above the public feed, newest submitted first, each with its pill. They
+  never appear on a later cursor page, and a search shows only matches in the
+  public feed. A browser that holds no receipt makes no lookup.
+- `/reports/<id>` asks for the holder's own page first when the browser holds a
+  receipt for that ID, and otherwise, or when that answers `404`, reads the
+  public page.
+- A holder's page offers no comments: comments belong to a published report.
+
+### Not built here
+
+- Seeing the report in another browser or on another device, or after site data
+  is cleared. The receipt lives in one browser's storage.
+- A "my reports" page, an account history, or anything linking reports to a
+  member.
+- Editing or withdrawing one's own report.
+- Notifying the reporter that their report was published.
+- Showing a report filed before receipts existed. Such a report has no receipt
+  hash, so its reporter never sees it before publication.
+- Showing own reports while a search is active. A search matches the public
+  feed only, so the holder's own reports are hidden until the search box is
+  cleared.
+- Reporting a failed lookup. When the receipt lookup fails, the feed shows no
+  own reports and says nothing; the public feed is unaffected and every receipt
+  is kept.
+
 ## Out of scope
 
 What not to build here. The global list in
 [system overview](../../system-overview.md) still holds; this narrows it
 to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-development.md)).
 
+- A reporter's own reports on another device or browser, a "my reports" page or account history, editing or withdrawing a report, and any notification that it was published (see "A reporter's own report before it is published").
 - Filtering or sorting of the public feed other than newest submitted first
   or, while the search box holds text, best match first (#574), and a
   page-count or jump-to-page control.

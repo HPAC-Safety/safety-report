@@ -15,7 +15,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     A reporter's browser sees its own report before it is published, through the
 ///     booted API and the <c>own_reports</c> / <c>own_report_media</c> views
-///     (REQ-MOD-212 to REQ-MOD-220, ADR-0196). The receipt is a credential, so every
+///     (REQ-PUB-001 to REQ-PUB-009, ADR-0196). The receipt is a credential, so every
 ///     request carries it in a body. Every report here is synthetic, and every
 ///     report is seeded straight through the domain's own transitions.
 /// </summary>
@@ -25,7 +25,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     by an unchanged count.
 /// </remarks>
 [Binding]
-[Scope(Feature = "Moderation, authentication, and publication")]
+[Scope(Feature = "Public feed")]
 public sealed class OwnReportSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
@@ -90,6 +90,13 @@ public sealed class OwnReportSteps
 	public async Task GivenAPublishedReport()
 	{
 		await Seed(ReportStatus.Published, consent: true);
+	}
+
+	[Given(@"John holds the receipt for a report that was published and a reviewer has since unpublished it")]
+	public async Task GivenAReportThatWasPublishedAndUnpublished()
+	{
+		await Seed(ReportStatus.Published, consent: true);
+		await Change(report => report.Unpublish());
 	}
 
 	[Given(@"John holds the receipt for a report with a verified image, a hidden image, an unverified image, and a validated document")]

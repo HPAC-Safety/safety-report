@@ -1,10 +1,37 @@
 -- A reporter's browser sees its own report before it is published (issue #820,
 -- ADR-0196). The migration has just added reports.receipt_hash, the SHA-256 of a
--- random receipt the submitting browser keeps; this file holds the rest.
+-- random receipt the submitting browser keeps, and reports.first_published_at, the
+-- durable fact that a report was ever published; this file holds the rest.
 --
+-- 0. Backfill first_published_at: the earliest evidence a report was ever
+--    published — its published_at, a published_report audit entry, or an approved
+--    summary revision (unpublishing clears only the latest revision's approval, and
+--    published_at, so any of the three may survive). A report still Published with
+--    none of them takes its submission time. The trigger below does not exist for
+--    this column yet, so the write is allowed; reports_immutable does not guard it.
+UPDATE reports AS report
+SET first_published_at = evidence.first_at
+FROM (SELECT report.id,
+             COALESCE(
+                 LEAST(report.published_at,
+                       (SELECT min(entry.occurred_at)
+                        FROM audit_log AS entry
+                        WHERE entry.action = 'published_report'
+                          AND entry.target_id = report.id),
+                       (SELECT min(revision.approved_at)
+                        FROM summary_revisions AS revision
+                                 JOIN summaries AS summary ON summary.id = revision.summary_id
+                        WHERE summary.report_id = report.id
+                          AND revision.approved_at IS NOT NULL)),
+                 CASE WHEN report.status = 'published' THEN report.submitted_at END) AS first_at
+      FROM reports AS report) AS evidence
+WHERE evidence.id = report.id
+  AND evidence.first_at IS NOT NULL;
+
 -- 1. receipt_hash is locked with the reporter's other columns (ADR-0178): written
---    when the report is inserted and never changed. Both the function and the
---    trigger's column list name it.
+--    when the report is inserted and never changed. first_published_at is set once:
+--    null to a value, then fixed. Both the function and the trigger's column list
+--    name them.
 CREATE OR REPLACE FUNCTION enforce_reports_immutability() RETURNS trigger
     LANGUAGE plpgsql
 AS
@@ -25,6 +52,12 @@ BEGIN
             END IF;
         END LOOP;
 
+    IF to_jsonb(OLD) -> 'first_published_at' <> 'null'::jsonb
+        AND to_jsonb(NEW) -> 'first_published_at' IS DISTINCT FROM to_jsonb(OLD) -> 'first_published_at' THEN
+        RAISE EXCEPTION 'reports.first_published_at is set once and cannot be changed again'
+            USING ERRCODE = '23000';
+    END IF;
+
     RETURN NEW;
 END
 $$;
@@ -32,7 +65,7 @@ $$;
 DROP TRIGGER reports_immutable ON reports;
 
 CREATE TRIGGER reports_immutable
-    BEFORE UPDATE OF id, language, submitted_at, consent_publish, consent_media, consent_documents, receipt_hash
+    BEFORE UPDATE OF id, language, submitted_at, consent_publish, consent_media, consent_documents, receipt_hash, first_published_at
         OR DELETE
     ON reports
     FOR EACH ROW
@@ -92,7 +125,8 @@ FROM consented_report_media AS media
 
 -- 3. own_reports: what the browser holding a report's receipt may see of it. A
 --    report is the holder's own when it is not deleted, was filed with a receipt,
---    and is not currently public (not a row of public_reports). The caller
+--    has never been published (first_published_at is null, ADR-0196), and is not
+--    currently public (not a row of public_reports). The caller
 --    compares receipt_hash; this view never returns a report to anyone without
 --    that match. The summary is the latest live revision, approved or not, and
 --    only when the reporter consented to publication — a report without consent
@@ -116,6 +150,7 @@ FROM reports AS report
                        AND report.consent_publish IS TRUE
 WHERE report.deleted IS NULL
   AND report.receipt_hash IS NOT NULL
+  AND report.first_published_at IS NULL
   AND NOT EXISTS (SELECT 1
                   FROM public_reports AS published
                   WHERE published.id = report.id);

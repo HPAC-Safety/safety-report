@@ -131,7 +131,7 @@ export function useViewReportsPage() {
  * A browser that filed a report and still holds its receipt sees that report at
  * the top of the first page, newest submitted first, marked not yet published
  * (or not for publication), before the public feed; every other visitor sees
- * nothing of it until it is published (issue no. 820, REQ-MOD-221).
+ * nothing of it until it is published (issue no. 820, REQ-PUB-010).
  */
 export function ViewReportsPage() {
 	return <ViewReportsPageView {...useViewReportsPage()} />

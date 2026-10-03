@@ -9,12 +9,12 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for a reporter's own report before it is published
- * (REQ-MOD-221 to REQ-MOD-225, REQ-SUB-136, issue no. 820, ADR-0196).
+ * (REQ-PUB-010 to REQ-PUB-014, REQ-SUB-136, issue no. 820, ADR-0196).
  *
  * The API is stubbed at the network boundary: what these assert is what the
  * browser keeps, sends, and shows. Which reports are a receipt holder's own, and
  * that nobody else sees them, is proven against a real database by the Reqnroll
- * scenarios REQ-MOD-212 to REQ-MOD-220 (ADR-0045).
+ * scenarios REQ-PUB-001 to REQ-PUB-009 (ADR-0045).
  *
  * Every report and receipt below is synthetic.
  */
@@ -81,7 +81,7 @@ function watchLookups(page: Page) {
 	})
 }
 
-// --- REQ-MOD-221: at the top of the first page, newest first ---
+// --- REQ-PUB-010: at the top of the first page, newest first ---
 
 Given("a browser holds receipts for two of its own reports that are not published", async ({ page }) => {
 	await holdReceipts(page, [OWN_NEWER.id, OWN_OLDER.id])
@@ -123,7 +123,7 @@ Then("the own reports are still listed once, above the first page, and not among
 	await expect(page.locator(`[data-report-id="${OWN_OLDER.id}"]`)).toHaveCount(0)
 })
 
-// --- REQ-MOD-222: the pill, the draft label, the placeholder ---
+// --- REQ-PUB-011: the pill, the draft label, the placeholder ---
 
 Given(
 	"a browser holds receipts for one report with a summary, one still without a summary, and one without publication consent",
@@ -164,7 +164,7 @@ Then("no pill reads {string}", async ({ page }, word: string) => {
 	await expect(page.getByRole("list", { name: "Your reports" }).getByText(word, { exact: true })).toHaveCount(0)
 })
 
-// --- REQ-MOD-223: a receipt is dropped once its report is published or gone ---
+// --- REQ-PUB-012: a receipt is dropped once its report is published or gone ---
 
 Given("a browser holds receipts for a report that has been published and one a moderator deleted", async ({ page }) => {
 	await stubFeed(page)
@@ -181,7 +181,7 @@ Then("the browser no longer holds either receipt", async ({ page }) => {
 	await expect.poll(async () => page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY)).toBeNull()
 })
 
-// --- REQ-MOD-224: no receipt, no lookup ---
+// --- REQ-PUB-013: no receipt, no lookup ---
 
 Given("a browser holds no receipt", async ({ page }) => {
 	await stubFeed(page)
@@ -197,7 +197,7 @@ Then("the browser sends no receipt lookup", ({ page }) => {
 	expect(lookups.get(page)).toEqual([])
 })
 
-// --- REQ-MOD-225: the holder's own page ---
+// --- REQ-PUB-014: the holder's own page ---
 
 Given("a browser holds the receipt for a report that is not published", async ({ page }) => {
 	await stubFeed(page)

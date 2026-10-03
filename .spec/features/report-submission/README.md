@@ -474,7 +474,7 @@ report stores only its SHA-256 hash, in a unique, nullable `receipt_hash`, and
 neither the receipt nor the member's subject is stored or logged
 ([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-SUB-133` to `REQ-SUB-135`). The browser keeps
 `{ reportId, receipt }` in `localStorage` (`REQ-SUB-136`), which is how it later
-sees its own unpublished report (see the moderation area's README). It proves
+sees its own unpublished report (see the public-feed area's README). It proves
 "this browser filed it", never "this member filed it".
 
 A reporter still cannot retrieve, amend, or withdraw a submission from an
@@ -538,7 +538,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Recording who submitted a report — no subject, no user id, no audit line, no
   log line. The receipt hash identifies a browser, not a member, and never goes in a URL
   ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
-- A "my reports" page, another device or browser seeing a report, editing or withdrawing a report, or a notification (see the moderation area's README).
+- A "my reports" page, another device or browser seeing a report, editing or withdrawing a report, or a notification (see the public-feed area's README).
 - Calling a translation provider on the submission path.
 - Echoing submitted content back in a validation error.
 - A per-reporter throttle. Rate limiting is by trusted IP.

@@ -60,6 +60,14 @@ public class Report
 	public DateTimeOffset? PublishedAt { get; private set; }
 
 	/// <summary>
+	///     When it was first published: set once, by the first <see cref="Publish" />, and
+	///     never cleared — unlike <see cref="PublishedAt" />, which unpublishing clears.
+	///     A report that was ever published never returns to its holder's own reports
+	///     (ADR-0196), so this is the durable fact the <c>own_reports</c> view reads.
+	/// </summary>
+	public DateTimeOffset? FirstPublishedAt { get; private set; }
+
+	/// <summary>
 	///     Whether the reporter agreed to publication of a de-identified version.
 	///     <b>Null means unanswered</b>, which is a different thing from "no": the
 	///     consent question is required and has no default, so a reporter must
@@ -451,6 +459,7 @@ public class Report
 		UnpublishNote = null;
 		Status = ReportStatus.Published;
 		PublishedAt = at;
+		FirstPublishedAt ??= at;
 	}
 
 	/// <summary>

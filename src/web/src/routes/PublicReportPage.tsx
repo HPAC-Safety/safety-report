@@ -68,7 +68,7 @@ export function usePublicReportPage() {
  * language toggle and is absent when the two match (REQ-MOD-190..192, ADR-0176).
  * The browser that filed a report and still holds its receipt sees the report here
  * before it is published, with a pill and its latest summary as a draft (issue
- * no. 820, REQ-MOD-225).
+ * no. 820, REQ-PUB-014).
  */
 export function PublicReportPage() {
 	return <PublicReportPageView {...usePublicReportPage()} />

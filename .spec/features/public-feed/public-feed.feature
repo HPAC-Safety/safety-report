@@ -303,3 +303,126 @@ Scenario: The public feed previews the first section's text, without its heading
   When a visitor opens the public feed
   Then the report's preview shows the body of the first section as plain text
   And it shows no heading and no Markdown characters
+
+Rule: A reporter's browser sees its own report before it is published
+
+@REQ-PUB-001
+Scenario: Another visitor never sees a report that is not published
+  Given John has submitted a report that is not published
+  And Cheryl, signed in or not, holds no receipt for it
+  When Cheryl lists the public feed and asks for that report's page
+  Then the feed does not list it and the page answers 404
+  And asking with a receipt that is not John's shows nothing either
+
+@REQ-PUB-002
+Scenario: Before a summary exists the holder's entry shows its submitted date and no summary
+  Given John holds the receipt for a report whose summary the Worker has not produced yet
+  When John's browser looks up its receipts
+  Then the report is listed with its submitted date and no summary
+  And the entry carries only the report ID, its submitted date, whether it is for publication, its summary, and its attachment count, never an answer, a question, or any member data
+
+@REQ-PUB-003
+Scenario: The holder reads the latest summary revision, approved or not
+  Given John holds the receipt for a Pending report whose latest summary revision a reviewer edited and has not approved
+  When John's browser looks up its receipts
+  Then the entry carries that latest revision's English and French text
+  And the entry is marked not yet published
+
+@REQ-PUB-004
+Scenario: A report without publication consent is listed for its holder and never has a summary
+  Given John holds the receipt for a report whose reporter did not consent to publication
+  When John's browser looks up its receipts
+  Then the report is listed as not for publication, with no summary
+  And it stays listed until a moderator deletes it
+
+@REQ-PUB-005
+Scenario: A report a moderator deleted disappears for its holder
+  Given John holds the receipt for a report a moderator has deleted
+  When John's browser looks up its receipts
+  Then the report is not listed
+  And the lookup tells the browser to drop that receipt
+
+@REQ-PUB-006
+Scenario: A published report is no longer listed as the holder's own
+  Given John holds the receipt for a report that has since been published
+  When John's browser looks up its receipts
+  Then the report is not listed among his own
+  And the lookup tells the browser to drop that receipt
+  And the public feed lists the report for everyone
+
+@REQ-PUB-015
+Scenario: A report that was ever published never returns to its holder's own reports
+  Given John holds the receipt for a report that was published and a reviewer has since unpublished it
+  When John's browser looks up its receipts
+  Then the report is not listed among his own
+  And the lookup tells the browser to drop that receipt
+
+@REQ-PUB-007
+Scenario: A receipt that does not match its report shows nothing, like an unknown report
+  Given a report that is not published
+  When a lookup names it with a receipt that is not its own, a malformed receipt, or an unknown report
+  Then each answer is the same: nothing is listed and the receipt is settled
+  And no response says whether the report exists
+
+@REQ-PUB-008
+Scenario: The holder's attachments follow exactly the public rules
+  Given John holds the receipt for a report with a verified image, a hidden image, an unverified image, and a validated document
+  When the reporter consented to media and to documents
+  Then the entry and page count and list only the verified image and the validated document
+  And the image is offered only as its verified derivative and the document only as a forced download
+  When the reporter did not consent to media
+  Then no attachment is counted or listed
+
+@REQ-PUB-009
+Scenario: The holder opens their own report's page and its file links
+  Given John holds the receipt for a report that is not published and has a public image
+  When John asks for that report's page and for the image's link with his receipt
+  Then the page carries its summary, submitted date, language, and image
+  And the link is a pre-signed URL that lives at most 15 minutes
+  And the same requests without his receipt answer 404
+
+@REQ-PUB-010
+@ui
+Scenario: The holder's own reports sit at the top of the first page of the feed, newest first
+  Given the public feed has more published reports than fit on one page
+  And a browser holds receipts for two of its own reports that are not published
+  When the visitor opens View safety reports
+  Then the two own reports are listed first, newest submitted first, each with its pill
+  And the public feed follows them
+  When the visitor loads the later pages of the feed
+  Then the own reports are still listed once, above the first page, and not among the later pages
+
+@REQ-PUB-011
+@ui
+Scenario: Each own report says it is not yet published and shows its summary as a draft
+  Given a browser holds receipts for one report with a summary, one still without a summary, and one without publication consent
+  When the visitor opens View safety reports
+  Then the first shows its submitted date, the pill "Not yet published", and its summary labelled as a draft that may change
+  And the second shows its submitted date, the pill, and "Summary in preparation"
+  And the third shows the pill "Not for publication" and no summary
+  And no pill reads "Unpublished"
+
+@REQ-PUB-012
+@ui
+Scenario: The browser drops a receipt once its report is published or gone
+  Given a browser holds receipts for a report that has been published and one a moderator deleted
+  When the visitor opens View safety reports
+  Then neither is listed as the visitor's own
+  And the browser no longer holds either receipt
+
+@REQ-PUB-013
+@ui
+Scenario: A visitor without a receipt sees only the public feed and asks the server nothing
+  Given a browser holds no receipt
+  When the visitor opens View safety reports
+  Then the feed lists only published reports
+  And the browser sends no receipt lookup
+
+@REQ-PUB-014
+@ui
+Scenario: The holder opens their own report's page
+  Given a browser holds the receipt for a report that is not published
+  When the visitor opens that report's address
+  Then the page shows the report with its pill, its submitted date, and its summary labelled as a draft
+  And the page offers no comments
+  And the receipt is sent in the request body and not in any address

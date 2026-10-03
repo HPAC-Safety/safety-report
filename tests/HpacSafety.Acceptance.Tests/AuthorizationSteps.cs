@@ -125,7 +125,7 @@ public sealed class AuthorizationSteps
 		_response.ShouldNotBeNull();
 	}
 
-	[When(@"^that member attempts to (submit an occurrence report|list the review queue|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|soft-delete a report|create a question revision|edit a question's choices)$")]
+	[When(@"^that member attempts to (submit an occurrence report|list the review queue|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|delete a report|create a question revision|edit a question's choices)$")]
 	public async Task WhenMemberAttemptsCapability(string capability)
 	{
 		// One representative endpoint call per capability, each on its own fresh

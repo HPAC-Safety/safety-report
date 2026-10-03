@@ -17,10 +17,10 @@ Examples:
 
 @REQ-MOD-030
 Scenario: The admin report list shows every live report with its state
-  Given reports exist in every workflow state, one without publication consent, and one soft-deleted
+  Given reports exist in every workflow state, one without publication consent, and one deleted
   When a reviewer lists reports
   Then every live report appears, newest first, with its workflow status and whether publication consent was refused
-  And the soft-deleted report does not appear
+  And the deleted report does not appear
   And no answer text or summary text appears in the list, except the reporter's and pilot's names
 
 @REQ-MOD-124
@@ -42,7 +42,7 @@ Examples:
 Scenario: A list row carries the version a review command sends back
   Given reports exist in every workflow state
   When a reviewer lists reports
-  Then each row carries the same version the report's detail view gives
+  Then each row carries the same version the report detail gives
   And publishing an unpublished report with its row's version succeeds without opening the report
   And no ViewedRawReport entry is written for that report
 
@@ -65,7 +65,7 @@ Scenario: The Needs action filter shows pending, failed, and stuck reports
 
 @REQ-MOD-050
 Scenario Outline: A status filter narrows the admin report list
-  Given reports exist in every workflow state, one without publication consent, and one soft-deleted
+  Given reports exist in every workflow state, one without publication consent, and one deleted
   When a reviewer lists reports with the <filter> filter
   Then the list holds only <reports>
 

@@ -581,7 +581,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await OutboxCount()).ShouldBe(_outboxBefore);
 	}
 
-	[Then(@"the report's detail view lists neither among its attachments")]
+	[Then(@"the report detail lists neither among its attachments")]
 	public async Task ThenTheDetailViewListsNeither()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
@@ -610,7 +610,7 @@ public sealed partial class PrivateAttachmentSteps
 		new[] { downloaded.StatusCode, removed.StatusCode }.ShouldAllBe(status => status == HttpStatusCode.NotFound);
 	}
 
-	[Then(@"its row is stamped deleted with the Administrator's token subject, and its bytes are still stored")]
+	[Then(@"its row is marked deleted with the Administrator's token subject, and its bytes are still stored")]
 	public async Task ThenStampedDeletedAndKept()
 	{
 		var stored = await Stored();
@@ -642,7 +642,7 @@ public sealed partial class PrivateAttachmentSteps
 		(listed.S3Objects ?? []).ShouldBeEmpty();
 	}
 
-	[Then(@"the private attachment is stamped deleted at the report's deletion time, and its bytes are still stored")]
+	[Then(@"the private attachment is marked deleted at the report's deletion time, and its bytes are still stored")]
 	public async Task ThenTheAttachmentWentWithTheReport()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
@@ -802,7 +802,7 @@ public sealed partial class PrivateAttachmentSteps
 
 	private byte[] _downloaded = [];
 
-	[Given(@"a Safety Officer adds a JPEG photo carrying its camera's location metadata as a private attachment")]
+	[Given(@"a Safety Officer adds a JPEG image carrying its camera's location metadata as a private attachment")]
 	public async Task GivenAPhotoWithLocationMetadata()
 	{
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);

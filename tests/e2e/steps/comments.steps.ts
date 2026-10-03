@@ -156,7 +156,7 @@ When("a visitor opens View safety reports", async ({ page }) => {
 	await page.goto("/reports")
 })
 
-When("a visitor who is not signed in opens it", async ({ page }) => {
+When("an anonymous visitor opens it", async ({ page }) => {
 	await page.goto(`/reports/${REPORT.id}`)
 })
 

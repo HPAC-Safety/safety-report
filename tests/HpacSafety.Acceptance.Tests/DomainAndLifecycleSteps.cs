@@ -66,7 +66,7 @@ public sealed class DomainAndLifecycleSteps
 		_outboxId = outboxMessage.Id;
 	}
 
-	[When(@"a Safety Officer soft-deletes it")]
+	[When(@"a Safety Officer deletes it")]
 	public async Task WhenASafetyOfficerSoftDeletesIt()
 	{
 		var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
@@ -74,7 +74,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"one application transaction stamps the same deleted timestamp on the report and all owned and dependent rows: answers, summary, files, and report outbox items")]
+	[Then(@"one application transaction marks the report and all owned and dependent rows deleted at the same time: answers, summary, files, and report outbox items")]
 	public async Task ThenOneTransactionStampsEveryOwnedRow()
 	{
 		var host = await BootedApi.Factory();
@@ -178,7 +178,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the question is stamped with a deleted timestamp rather than removed")]
+	[Then(@"the question keeps its row, marked deleted")]
 	public async Task ThenTheQuestionIsStampedDeleted()
 	{
 		var host = await BootedApi.Factory();
@@ -252,7 +252,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the revision is stamped with a deleted timestamp")]
+	[Then(@"the revision is marked deleted")]
 	public async Task ThenTheRevisionIsStamped()
 	{
 		var host = await BootedApi.Factory();

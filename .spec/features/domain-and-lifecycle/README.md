@@ -55,7 +55,7 @@ thing an officer can do is delete it (REQ-DOM-006, REQ-DOM-015). An action from
 a state the diagram does not allow is refused and changes nothing
 (REQ-DOM-014).
 
-Soft deletion may occur from any state and is a terminal application state
+Deletion may occur from any state and is a terminal application state
 even though retained rows still contain their prior status.
 
 ## Aggregate boundaries
@@ -68,7 +68,7 @@ token, never in the database
 Audit-log entries are append-only records. Storage objects are referenced by opaque keys but are not database
 entities.
 
-## Soft deletion mechanics
+## Deletion mechanics
 
 Every persisted entity/table except `audit_log` has a nullable PostgreSQL
 `deleted timestamptz` column mapped from the C# property `Deleted`.
@@ -86,7 +86,7 @@ through column-scoped `BEFORE UPDATE OR DELETE` triggers on `reports`,
 CON-DP-013 to CON-DP-016 in
 [data and persistence](../../data-and-persistence.md)). REQ-DOM-018 to
 REQ-DOM-025 read the locked and writable columns; REQ-DOM-026 the once-only
-deletion stamp; REQ-DOM-027 the refused `DELETE`; REQ-DOM-030 the refused
+deletion time; REQ-DOM-027 the refused `DELETE`; REQ-DOM-030 the refused
 `TRUNCATE`; REQ-DOM-028 that an unchanged value is not a change; REQ-DOM-029 the
 one way past a trigger, which is a migration's own transaction. A refusal is `SQLSTATE 23000` and names the table
 and column, never a value.
@@ -110,7 +110,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   A migration that must change a locked column (`REQ-DOM-029`) also argues
   it in its own ADR (ADR-0178).
 - Row-level security, `REVOKE`, or a separate database role.
-- Undelete, restore, or any path back from a soft deletion.
+- Undelete, restore, or any path back from a deletion.
 - Physical deletion of an application record, or a cascade that removes rows
   rather than stamping them.
 - An automated purge or retention job over raw reports. Retention ends at an

@@ -122,7 +122,7 @@ public sealed class ReviewLifecycleSteps
 		_report.UnpublishNote.ShouldBeNull();
 	}
 
-	[Then(@"^soft deletion is still the one thing an officer can do to it \(REQ-DOM-007\)$")]
+	[Then(@"^deletion is still the one thing an officer can do to it \(REQ-DOM-007\)$")]
 	public void ThenSoftDeletionStillWorks()
 	{
 		_report.SoftDelete(Now);

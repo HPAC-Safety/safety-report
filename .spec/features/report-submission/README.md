@@ -421,7 +421,7 @@ The API performs, in order:
 1. request-size, JSON-shape, trusted-client-IP, rate-limit, and bearer-token
    checks;
 2. DTO syntax, locale, duplicate, and count checks;
-3. revision lookup including soft-deleted rows;
+3. revision lookup including deleted rows;
 4. rejection of unknown, deleted, and non-current revisions (any revision but
    the highest-numbered one of a live question) and validation against that
    revision's type and the question's live choices, including the written

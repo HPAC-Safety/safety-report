@@ -50,10 +50,10 @@ wording ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-pi
   that replaced the parent and its copy of the choice
   ([ADR-0132](../../decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
 - **Type-ahead values** are corrected in place for every answer that names
-  them, removed by soft delete, and merged: merging B into A retires B, and
+  them, removed by delete, and merged: merging B into A retires B, and
   answers naming B read A without being rewritten. A value a reporter adds is
   flagged for review, offered at once in the language it was typed, and given
-  its other language by the Worker. A Safety Officer or an Administrator
+  its other language by the Worker. A reviewer
   reviews it ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
   A merged value's wording is not only resolved at submission: the survivor
   carries it as an **alias**, so the form offers the survivor while a
@@ -78,7 +78,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Shared choice lists, or reusing one question's choices on another in any
   form ([ADR-0095](../../decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 - A reporter editing, curating, or removing a choice. A reporter may add a
-  missing value to a type-ahead; a Safety Officer or an Administrator reviews
+  missing value to a type-ahead; a reviewer reviews
   it ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - A reporter adding a choice to a single-select or multi-select question.
 - A record of exactly which choices a reporter was shown. The answer names the

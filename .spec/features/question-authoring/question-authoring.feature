@@ -25,7 +25,7 @@ Scenario: Editing an unanswered question creates a new revision instead of mutat
 Scenario: Editing an answered question retires it and creates a new one
   Given a question has been answered on at least one report
   When an Administrator changes its wording
-  Then the original question is stamped as deleted
+  Then the original question is marked deleted
   And a new question is created with a new identifier
   And the new question carries the same question key
   And the new question starts its own revision numbering
@@ -35,12 +35,12 @@ Scenario: Editing an answered question retires it and creates a new one
 Scenario: An answer on a deleted report still forces a fork
   Given the only answer to a question is on a report that has been deleted
   When an Administrator changes that question's wording
-  Then the original question is stamped as deleted
+  Then the original question is marked deleted
   And a new question is created with a new identifier
 
 @REQ-QB-004
 Scenario: A retired question can never be brought back
-  Given a question has been stamped as deleted
+  Given a question has been marked deleted
   When anything attempts to restore, revive, or revise it
   Then the attempt is rejected
   And an Administrator who wants it back authors it again as a new question
@@ -58,7 +58,7 @@ Scenario: Publication consent revises in place even when answered
   When an Administrator changes its wording
   Then a new revision is created for it
   And the question keeps its identifier
-  And it is never stamped as deleted
+  And it is never marked deleted
 
 @REQ-QB-008
 Scenario: Editing a question copies the latest revision into a new one
@@ -204,7 +204,7 @@ Scenario: Creating a revision preserves the question bank invariants
   And both consent questions stay active, yes/no, and private, and no edit can make either one otherwise
 
 @REQ-QB-030
-Scenario: A revision can be soft-deleted only when no answer references it
+Scenario: A revision can be deleted only when no answer references it
   Given a question revision has never been referenced by any answer, including answers on deleted reports
   When an Administrator deletes it
   Then the deletion succeeds
@@ -412,7 +412,7 @@ Scenario: A question key is normalized and cannot be reused
 Scenario: Retiring a question keeps it and its history
   Given an active question nobody has answered
   When an Administrator deletes it
-  Then the question is stamped as deleted rather than removed
+  Then the question is marked deleted rather than erased
   And it refuses any further revision
 
 @REQ-QB-063

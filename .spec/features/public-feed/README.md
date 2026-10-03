@@ -64,13 +64,13 @@ identifying hint in a small community. The language travels only on a report's
 own page, from the `public_reports` view's `language` column; the feed and its
 search never carry it. Not built: labelling comments or attachments.
 
-An Administrator or Safety Officer sees a same-tab link, next to the
+A reviewer sees a same-tab link, next to the
 published date, from a report's public page to that same report's admin
 detail page (`/admin/reports/<id>`, #657). The public payload is unchanged —
 the link needs only the report ID the page already has, and the signed-in
 member's role decided from the token (invariant 7); the admin route's own
 guard and the admin endpoints, not the button's presence, keep the detail
-page private. A `User`, or a visitor who is not signed in, sees nothing extra.
+page private. A `User`, or an anonymous visitor, sees nothing extra.
 
 A search box at the top of `/reports` fuzzy-searches the approved published
 summary and visible member comments, in the visitor's current site

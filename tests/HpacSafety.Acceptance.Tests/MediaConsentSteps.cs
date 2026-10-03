@@ -77,7 +77,7 @@ public sealed class MediaConsentSteps
 		_seeded = await MediaConsentQuestion();
 	}
 
-	[Then(@"its wording in both languages asks about photos, videos, and documents")]
+	[Then(@"its wording in both languages asks about images, videos, and documents")]
 	public void ThenItsWordingNamesEveryKindOfFile()
 	{
 		var revision = _seeded!.CurrentRevision;

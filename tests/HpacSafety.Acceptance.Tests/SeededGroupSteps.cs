@@ -185,7 +185,7 @@ public sealed partial class SeededWordingSteps
 		}
 	}
 
-	[Then(@"the original ""First name"" question is stamped as deleted and keeps its answer")]
+	[Then(@"the original ""First name"" question is marked deleted and keeps its answer")]
 	public async Task ThenTheOriginalFirstNameIsRetired()
 	{
 		var original = _groupChildrenBefore[ReporterFirstNameKey].Id;

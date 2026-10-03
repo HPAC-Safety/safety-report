@@ -77,7 +77,7 @@ Scenario: An author's deleted comment disappears but is not erased
   Given a member commented on a published report
   When the member deletes the comment
   Then the comment is no longer listed and the report's comment count drops by one
-  And the comment and its revisions are soft-deleted, not removed from the database
+  And the comment and its revisions are deleted, not removed from the database
 
 @REQ-COM-010
 Scenario Outline: Nobody may change another member's comment
@@ -132,9 +132,9 @@ Scenario: The feed shows how many comments each report has
 
 @REQ-COM-016
 @ui
-Scenario: A visitor who is not signed in is invited to sign in to comment
+Scenario: An anonymous visitor is invited to sign in to comment
   Given a published report has comments
-  When a visitor who is not signed in opens it
+  When an anonymous visitor opens it
   Then the comments are shown, each labelled "Member"
   And instead of a comment box the page offers to sign in to comment
   When the visitor signs in from there

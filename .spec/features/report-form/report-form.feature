@@ -362,7 +362,7 @@ Scenario: A new installation asks for several attachments
   Given a new, empty database
   When the migrations run
   Then the seeded attachment question is labelled "Photos or videos" and "Photos ou vidéos"
-  And its help text asks for photos, videos, or documents in both languages
+  And its help text asks for images, videos, or documents in both languages
 
 @REQ-QB-105
 Scenario: The seeded single-file wording on an unanswered attachment question is revised
@@ -377,7 +377,7 @@ Scenario: The seeded single-file wording on an answered attachment question fork
   Given a database whose attachment question still carries its original single-file wording
   And a report has answered the attachment question
   When the attachment rewording migration runs
-  Then the original attachment question is stamped as deleted and keeps its single-file wording
+  Then the original attachment question is marked deleted and keeps its single-file wording
   And a new live question with the same key carries the several-files wording
 
 @REQ-QB-107
@@ -447,7 +447,7 @@ Scenario: A media consent answer naming an earlier wording is refused, so no doc
 @REQ-QB-117
 Scenario: Media consent names documents and says they are published as uploaded
   Given the consent_media question as seeded
-  Then its wording in both languages asks about photos, videos, and documents
+  Then its wording in both languages asks about images, videos, and documents
   And it says that documents are published exactly as they were uploaded and may contain personal details
 
 @REQ-QB-249
@@ -474,7 +474,7 @@ Scenario: The seeded yes/no Country question is forked into the pick list when a
   Given a database whose Country question is still the seeded yes/no question
   And a report has answered the Country question yes
   When the Country pick list migration runs
-  Then the original Country question is stamped as deleted and keeps its yes/no wording and its answer
+  Then the original Country question is marked deleted and keeps its yes/no wording and its answer
   And a new live question with the same key is a single-select offering 249 countries
   And no answer is created, changed, or deleted
 
@@ -483,7 +483,7 @@ Scenario: An answered Province is forked with its choices when it begins to foll
   Given a database whose Country question is still the seeded yes/no question
   And a report has answered the Province question "Ontario"
   When the Country pick list migration runs
-  Then the original Province question is stamped as deleted and keeps its answer
+  Then the original Province question is marked deleted and keeps its answer
   And a new live Province question with the same key offers the same 13 provinces and depends on the Canada choice
   And the Province answer still names the choice it named
 
@@ -562,7 +562,7 @@ Scenario: A seeded question that lost its group is forked under it when a report
   Given a database created from scratch before the seeded-group repair
   And a report has answered the reporter's "First name"
   When the seeded-group repair migration runs
-  Then the original "First name" question is stamped as deleted and keeps its answer
+  Then the original "First name" question is marked deleted and keeps its answer
   And a new live question with the same key is grouped under "From"
   And the one answer still names the original "First name" question, unchanged
 

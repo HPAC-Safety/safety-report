@@ -1,6 +1,6 @@
 Feature: Domain and lifecycle
 A report moves through a fixed set of states from submission to
-publication, and soft deletion can remove it from that lifecycle at any
+publication, and deletion can remove it from that lifecycle at any
 point.
 
 @REQ-DOM-001
@@ -47,7 +47,7 @@ Scenario Outline: A report without publication consent is unpublished for good
   When an officer tries to <action>
   Then the action is refused
   And the report stays Unpublished with nothing changed
-  And soft deletion is still the one thing an officer can do to it (REQ-DOM-007)
+  And deletion is still the one thing an officer can do to it (REQ-DOM-007)
 
 Examples:
   | action               |
@@ -97,10 +97,10 @@ Scenario: A report without publication consent is never summarized
   And the report can never satisfy the public query
 
 @REQ-DOM-007
-Scenario: Soft deletion removes a report from every normal path
+Scenario: Deletion removes a report from every normal path
   Given a report exists in any lifecycle state
-  When a Safety Officer soft-deletes it
-  Then one application transaction stamps the same deleted timestamp on the report and all owned and dependent rows: answers, summary, files, and report outbox items
+  When a Safety Officer deletes it
+  Then one application transaction marks the report and all owned and dependent rows deleted at the same time: answers, summary, files, and report outbox items
   And an immutable audit entry is recorded
   And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
   And public and normal admin queries hide the report immediately
@@ -110,14 +110,14 @@ Scenario: Soft deletion removes a report from every normal path
 Scenario: A question revision can be deleted only when unreferenced
   Given a question revision is referenced by no answer, including answers on deleted reports
   When an Administrator deletes that revision
-  Then the revision is stamped with a deleted timestamp
+  Then the revision is marked deleted
   And once any answer references a revision, that revision is never deletable again
 
 @REQ-DOM-009
-Scenario: Retiring a question is a soft delete with no way back
+Scenario: Deleting a question has no way back
   Given a question is retired, either by an Administrator or by being replaced through an edit
   When the deletion is committed
-  Then the question is stamped with a deleted timestamp rather than removed
+  Then the question keeps its row, marked deleted
   And its revisions, choices, and every answer given to it are untouched
   And there is no restore transition
 
@@ -129,10 +129,10 @@ Scenario: Raw reports are retained until explicit deletion
   And there is no scheduled report purge and no physical-delete path in the application
 
 @REQ-DOM-011
-Scenario: Soft-deleting a report keeps its row and its stored files
+Scenario: Deleting a report keeps its row and its stored files
   Given a synthetic report with an attachment has been submitted
-  When a Safety Officer soft-deletes the report
-  Then the report row remains, stamped with a deleted timestamp
+  When a Safety Officer deletes the report
+  Then the report row remains, marked deleted
   And its answers, files, and stored objects remain
   And no application path removes them afterwards
 
@@ -195,7 +195,7 @@ Examples:
   | report_answers.answered_at          | answered_at = answered_at + interval '1 day' |
 
 @REQ-DOM-019
-Scenario Outline: An answer's second language and its deletion stamp are written once
+Scenario Outline: An answer's second language and its deletion time are written once
   Given a submitted report with answers, a file, and a summary
   And a statement has set <first> on a report_answers row
   When a statement sets <second> on that row
@@ -263,7 +263,7 @@ Examples:
   | reports.consent_documents | consent_documents = true                       |
 
 @REQ-DOM-023
-Scenario Outline: A report's review state and its deletion stamp stay writable
+Scenario Outline: A report's review state and its deletion time stay writable
   Given a submitted report with answers, a file, and a summary
   When a statement sets <assignment> on a reports row
   Then the write succeeds
@@ -300,7 +300,7 @@ Examples:
   | summary_revisions.restored_from_id | restored_from_id = 'xxxxxxxxxx1'           |
 
 @REQ-DOM-025
-Scenario Outline: A revision's approval may be set and cleared, and it may be stamped deleted
+Scenario Outline: A revision's approval may be set and cleared, and it may be marked deleted
   Given a submitted report with answers, a file, and a summary
   When a statement sets <assignment> on a summary_revisions row
   Then the write succeeds
@@ -313,7 +313,7 @@ Examples:
   | deleted = now()                                               |
 
 @REQ-DOM-026
-Scenario: A revision's deletion stamp is written once
+Scenario: A revision's deletion time is written once
   Given a submitted report with answers, a file, and a summary
   And a statement has set deleted = now() on a summary_revisions row
   When a statement sets deleted = NULL on that row

@@ -44,7 +44,7 @@ All compartments are private. Storage blocks public access, uses TLS in
 transit and provider-managed encryption at rest, and grants least-privilege
 access to the API/Worker roles. There are no application-encrypted blobs.
 Referenced report objects follow report retention and are not physically
-purged by the application after soft deletion.
+purged by the application after deletion.
 
 ## Processing records
 
@@ -125,7 +125,7 @@ resumes where it was, paused if it was paused and playing if it was playing —
 and removes the file if the answer is 404. So a hide or
 an unpublish reaches every open page within fifteen minutes.
 
-Moderation happens after publication. A Safety Officer or Administrator hides
+Moderation happens after publication. A reviewer hides
 a file from the public report page or the admin report page, and shows it
 again from the admin report page; both are audited. The file itself is never
 deleted by a hide.
@@ -151,7 +151,7 @@ reaches the public.
 
 `consent_documents` is `consent_media`'s answer, recorded only when the
 reporter answered the wording the form showed at submission. Media consent was
-reworded to name documents. A yes given before that shows the report's photos
+reworded to name documents. A yes given before that shows the report's images
 and video and keeps its documents private. A yes to a superseded wording that a
 stale draft still held is refused at submission, like any answer to a superseded
 revision
@@ -240,7 +240,7 @@ for the full record.
 
 ## Private attachments (#507)
 
-A Safety Officer or Administrator may add files to a report that are for
+A reviewer may add files to a report that are for
 staff only: a coroner's report, a police report, an investigation archive
 ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 They are not the reporter's attachments, and none of the rules above about
@@ -305,7 +305,7 @@ refer to one (REQ-MOD-116).
   describe.
 - The file name is required and is sanitized; the description is optional
   plain text of at most 500 characters (REQ-MOD-110).
-- Removal soft-deletes the row, records who removed it, and writes one
+- Removal deletes the row, records who removed it, and writes one
   `RemovedPrivateAttachment` audit entry; the bytes stay in storage. Deleting
   the report does the same to its private attachments (REQ-MOD-109,
   REQ-MOD-111).

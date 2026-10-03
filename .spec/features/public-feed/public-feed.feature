@@ -35,11 +35,11 @@ Scenario: A Safety Officer sees every attachment on the public report page, each
 
 @REQ-MOD-164
 @ui
-Scenario Outline: A published report page offers a same-tab link to its admin detail page for a reviewer
+Scenario Outline: A published report page offers a same-tab link to its report detail for a reviewer
   Given <visitor> visits a published report's page
-  Then the page offers a link to that report's admin detail page
+  Then the page offers a link to that report's report detail
   When the visitor activates that link
-  Then the browser opens the report's admin detail page, in the same tab
+  Then the browser opens its report detail, in the same tab
 
 Examples:
   | visitor            |
@@ -50,7 +50,7 @@ Examples:
 @ui
 Scenario Outline: A published report page offers no admin link to a non-reviewer
   Given <visitor> visits a published report's page
-  Then the page offers no link to the admin detail page
+  Then the page offers no link to the report detail
 
 Examples:
   | visitor               |

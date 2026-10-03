@@ -644,7 +644,7 @@ public sealed class DependentChoiceSteps
 		ParentsOf(await View(_childName!), choice).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
 	}
 
-	[Then(@"its link to {string} is stamped removed, not erased")]
+	[Then(@"its link to {string} is marked removed, not erased")]
 	public async Task ThenTheOldLinkIsStamped(string parentChoice)
 	{
 		var link = await LinkRow(_lastChoice!, _ids[$"{parentChoice} (choice)"]);
@@ -982,7 +982,7 @@ public sealed class DependentChoiceSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"its {string} link is stamped removed, not erased")]
+	[Then(@"its {string} link is marked removed, not erased")]
 	public async Task ThenTheUntickedLinkIsStamped(string parentChoice)
 	{
 		var link = await LinkRow(_lastChoice!, ChoiceId(await View("Make"), parentChoice));

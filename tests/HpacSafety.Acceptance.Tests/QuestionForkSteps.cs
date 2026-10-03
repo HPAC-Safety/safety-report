@@ -109,7 +109,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-002 and REQ-QB-003: an answered question forks ---
 
-	[Then(@"the original question is stamped as deleted")]
+	[Then(@"the original question is marked deleted")]
 	public void ThenTheOriginalIsStampedDeleted()
 	{
 		outcome.Original!.Deleted.ShouldNotBeNull();
@@ -159,7 +159,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 		live.CurrentRevision.LabelEn.ShouldNotBe(outcome.OriginalLabelEn);
 	}
 
-	[Then(@"it is never stamped as deleted")]
+	[Then(@"it is never marked deleted")]
 	public void ThenItIsNeverDeleted()
 	{
 		outcome.Original!.Deleted.ShouldBeNull();

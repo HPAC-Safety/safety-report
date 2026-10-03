@@ -71,7 +71,7 @@ asks the reviewer to reload. Each action is audited (`REQ-MOD-061`).
 
 ## Private notes (#508)
 
-A Safety Officer or Administrator may keep notes on a report: calls made,
+A reviewer may keep notes on a report: calls made,
 follow-ups, what an investigator said
 ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)).
 The report view has a **Private notes** section, newest note first. Each note
@@ -86,11 +86,11 @@ edit any note, open a note's history, or remove a note after confirming.
   each with its own text, writer, and time. An edit based on a revision that
   is no longer the latest is refused with `409`, so two reviewers cannot
   silently overwrite each other (REQ-MOD-100).
-- Removal soft-deletes the note and its revisions and writes one
+- Removal deletes the note and its revisions and writes one
   content-free `RemovedPrivateNote` audit entry. Deleting the report does the
   same to its notes (REQ-MOD-101, REQ-MOD-103).
 - The endpoints live under `/api/admin/reports/{reportId}/private-notes` and
-  answer only a Safety Officer or an Administrator (REQ-MOD-098). Nothing else
+  answer only a reviewer (REQ-MOD-098). Nothing else
   reads the notes: not the report detail DTO, not a database view, not the
   public feed or comments, not the Worker or the model, and never a
   translation provider (REQ-MOD-104, REQ-MOD-105).

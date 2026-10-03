@@ -285,7 +285,7 @@ public sealed class PrivateNoteSteps
 		history.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Then(@"the private note and both its revisions are stamped deleted at one time, and nothing is erased")]
+	[Then(@"the private note and both its revisions are marked deleted at one time, and nothing is erased")]
 	public async Task ThenStampedDeleted()
 	{
 		var note = await Stored();
@@ -318,7 +318,7 @@ public sealed class PrivateNoteSteps
 		(await StoredCount()).ShouldBe(_storedBefore);
 	}
 
-	[Then(@"the private note and its revision are stamped deleted at the report's deletion time")]
+	[Then(@"the private note and its revision are marked deleted at the report's deletion time")]
 	public async Task ThenTheNoteWentWithTheReport()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();

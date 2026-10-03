@@ -435,7 +435,7 @@ function adminLink(page: Page) {
 	return page.locator("[data-admin-link]")
 }
 
-Then("the page offers a link to that report's admin detail page", async ({ page }) => {
+Then("the page offers a link to that report's report detail", async ({ page }) => {
 	await expect(adminLink(page)).toBeVisible()
 	await expect(adminLink(page)).toHaveAttribute("href", `/admin/reports/${FIRST.id}`)
 })
@@ -444,12 +444,12 @@ When("the visitor activates that link", async ({ page }) => {
 	await adminLink(page).click()
 })
 
-Then("the browser opens the report's admin detail page, in the same tab", async ({ page, context }) => {
+Then("the browser opens its report detail, in the same tab", async ({ page, context }) => {
 	await expect(page).toHaveURL(new RegExp(`/admin/reports/${FIRST.id}$`))
 	expect(context.pages()).toHaveLength(1)
 })
 
-Then("the page offers no link to the admin detail page", async ({ page }) => {
+Then("the page offers no link to the report detail", async ({ page }) => {
 	await expect(adminLink(page)).toHaveCount(0)
 })
 

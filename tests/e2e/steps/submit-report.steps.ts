@@ -24,7 +24,7 @@ Given("the report request is JSON that names each attachment by the upload ID th
 
 Given("the bearer token is transport\\/security metadata, not persisted report content", async () => {})
 
-Given("a signed-out visitor opens the report page", async ({ page }) => {
+Given("an anonymous visitor opens the report page", async ({ page }) => {
 	await stubAuth(page)
 	await page.goto("/report")
 })

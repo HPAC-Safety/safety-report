@@ -43,7 +43,7 @@ Scenario: Repeated sign-in attempts for one identity are rate limited
 
 @REQ-MOD-006
 @ui
-Scenario: A member's signed-in session persists across a reload and clears on logout
+Scenario: A member's signed-in session persists across a reload and clears on sign-out
   Given a visitor signs in from the member sign-in page
   Then the header shows a sign-out action instead of the member sign-in action
   When the page reloads
@@ -96,7 +96,7 @@ Examples:
 
 @REQ-MOD-012
 @ui
-Scenario: The Admin menu is absent for a signed-out visitor
+Scenario: The Admin menu is absent for an anonymous visitor
   Given a visitor loads the homepage
   Then the header shows no Admin menu
 
@@ -261,7 +261,7 @@ Examples:
   | edit a report's summary        | forbids |
   | publish a report               | forbids |
   | unpublish a report             | forbids |
-  | soft-delete a report           | forbids |
+  | delete a report           | forbids |
   | create a question revision     | forbids |
   | edit a question's choices      | forbids |
 
@@ -280,7 +280,7 @@ Examples:
   | edit a report's summary        | allows  |
   | publish a report               | allows  |
   | unpublish a report             | allows  |
-  | soft-delete a report           | allows  |
+  | delete a report           | allows  |
   | create a question revision     | forbids |
   | edit a question's choices      | forbids |
 
@@ -299,7 +299,7 @@ Examples:
   | edit a report's summary        | allows  |
   | publish a report               | allows  |
   | unpublish a report             | allows  |
-  | soft-delete a report           | allows  |
+  | delete a report           | allows  |
   | create a question revision     | allows  |
   | edit a question's choices      | allows  |
 
@@ -325,7 +325,7 @@ Scenario: Sensitive admin actions are audited without report content
 
 @REQ-MOD-042
 @ui
-Scenario: A signed-out visitor who navigates to an admin route is sent to sign in
+Scenario: An anonymous visitor who navigates to an admin route is sent to sign in
   Given a visitor is signed out
   When the visitor navigates directly to an admin route
   Then the browser is redirected to the member sign-in page
@@ -387,7 +387,7 @@ Scenario: A failed audit write blocks the action it would have recorded
 Scenario: Signing out sends nothing to the API
   Given a member activates the sign-out action
   When the client discards its token
-  Then no request reaches the API for that logout
+  Then no request reaches the API for that sign-out
 
 @REQ-MOD-091
 Scenario: Sign-out is not an audited event

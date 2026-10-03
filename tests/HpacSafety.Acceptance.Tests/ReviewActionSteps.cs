@@ -351,7 +351,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.UnpublishedReport)).Count.ShouldBe(1);
 	}
 
-	[Then(@"the detail view shows the note to reviewers")]
+	[Then(@"the report detail shows the note to reviewers")]
 	public async Task ThenTheDetailShowsTheNote()
 	{
 		_result.GetProperty("unpublishNote").GetString().ShouldBe(Note);

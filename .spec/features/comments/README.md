@@ -19,7 +19,7 @@ its rejected alternatives are in
 | Read a report's comments | Anyone | `GET /api/v1/public/reports/{id}/comments` |
 | Post a comment | Any member | `POST /api/v1/public/reports/{id}/comments` |
 | Edit or delete a comment | Its author only | `PUT` / `DELETE /api/v1/public/reports/{id}/comments/{commentId}` |
-| Hide a comment | A Safety Officer or Administrator | `POST /api/admin/comments/{commentId}/hide` |
+| Hide a comment | A reviewer | `POST /api/admin/comments/{commentId}/hide` |
 
 Every write needs the report to be public at that moment. A report that is not
 public answers `404`, exactly as its detail does. The author is the token's
@@ -40,7 +40,7 @@ toggle. As with a report's summary, there is no per-comment language control:
 - **Not translated yet:** the original, marked as awaiting translation, until
   the Worker supplies it.
 
-The sign-in invitation a signed-out visitor sees (`REQ-COM-016`) opens the
+The sign-in invitation an anonymous visitor sees (`REQ-COM-016`) opens the
 member sign-in with `returnTo` set to the report. The sign-in page follows it only to a
 path on this site, and brings the member back to the report they were
 reading.

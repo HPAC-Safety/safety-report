@@ -256,7 +256,7 @@ public sealed partial class SeededWordingSteps
 
 	// ---------------------------------------------------- the forked path (QB-251) --
 
-	[Then(@"^the original Country question is stamped as deleted and keeps its yes/no wording and its answer$")]
+	[Then(@"^the original Country question is marked deleted and keeps its yes/no wording and its answer$")]
 	public async Task ThenTheOriginalCountryIsRetired()
 	{
 		(await Count("SELECT count(*) FROM questions WHERE id = @id AND deleted IS NOT NULL", ("id", _originalCountryId!))).ShouldBe(1);
@@ -289,7 +289,7 @@ public sealed partial class SeededWordingSteps
 
 	// -------------------------------------------- the answered Province (QB-252) --
 
-	[Then(@"the original Province question is stamped as deleted and keeps its answer")]
+	[Then(@"the original Province question is marked deleted and keeps its answer")]
 	public async Task ThenTheOriginalProvinceIsRetired()
 	{
 		(await Count("SELECT count(*) FROM questions WHERE id = @id AND deleted IS NOT NULL", ("id", _originalProvinceId!))).ShouldBe(1);

@@ -115,7 +115,7 @@ type-ahead's alone. Each keeps its own input type
 
 The seeded attachment question departs from Typeform on purpose. Typeform took
 one file and asked for the rest by email. This form takes several, so the
-question reads "Photos or videos" and asks for photos, videos, or documents
+question reads "Photos or videos" and asks for images, videos, or documents
 (`REQ-QB-104`).
 
 A database seeded before that change is corrected by a migration that follows

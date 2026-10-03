@@ -256,7 +256,7 @@ public sealed class AnswerTranslationModeSteps
 		await RunTheWorker();
 	}
 
-	[When(@"a reviewer opens the report's detail view")]
+	[When(@"a reviewer opens the report detail")]
 	public async Task WhenAReviewerOpensTheDetailView()
 	{
 		await OpenTheDetailView();

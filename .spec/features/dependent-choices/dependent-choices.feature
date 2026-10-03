@@ -259,7 +259,7 @@ Scenario: Merging a parent value into one the child choice already names leaves 
   And "Other" is offered under "Nivuik" and "Niviuk"
   When a Safety Officer merges the parent value "Nivuik" into "Niviuk"
   Then "Other" is offered under "Niviuk" once
-  And its link to "Nivuik" is stamped removed, not erased
+  And its link to "Nivuik" is marked removed, not erased
 
 @REQ-QB-216
 Scenario: A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer
@@ -296,7 +296,7 @@ Scenario: A reviewer adds and removes a dependent type-ahead value's parents, ne
   When a Safety Officer offers "Zeno 2" under "Ozone" and "Niviuk"
   Then "Zeno 2" is offered under both, and every answer naming it still names it
   When they offer it under "Niviuk" only
-  Then its "Ozone" link is stamped removed, not erased
+  Then its "Ozone" link is marked removed, not erased
   And offering it under no parent choice is refused
   And offering it under a choice of any question other than "Make" is refused
   And changing the parents of a "Model" value that was merged into another is refused

@@ -8,7 +8,7 @@ when the reporter also consented to sharing media, and offers its validated
 documents, unchanged, as downloads when that consent named documents. A
 reviewer may hide any of them (ADR-0117, ADR-0119). Staff may also add
 private attachments to a report: kept byte for byte, never anonymized, and
-never shown to anyone but a Safety Officer or an Administrator (ADR-0135).
+never shown to anyone but a reviewer (ADR-0135).
 
 Background:
   Given the maximum attachment count is configurable and defaults to five across all attachment kinds
@@ -234,7 +234,7 @@ Scenario: Processing never holds a whole attachment in memory
   And no buffer the size of the file is ever allocated
 
 @REQ-MED-025
-Scenario: A published report lists its verified photos and video when media was consented to
+Scenario: A published report lists its verified images and video when media was consented to
   Given a published report whose reporter consented to publication and to sharing media
   And the report has a processed image and a video with a verified derivative
   When the public API returns the report
@@ -430,7 +430,7 @@ Scenario Outline: A document is public only when its media consent named documen
 
 Examples:
   | consent                                              | listed          |
-  | yes, to wording that named only photos and video     | only the image  |
+  | yes, to wording that named only images and video     | only the image  |
   | no                                                   | no media        |
   | not at all                                           | no media        |
 
@@ -542,13 +542,13 @@ Scenario: Only the private attachment link signs a URL for the private compartme
 
 @REQ-MED-052
 Scenario: Nothing anonymizes a private attachment
-  Given a Safety Officer adds a JPEG photo carrying its camera's location metadata as a private attachment
+  Given a Safety Officer adds a JPEG image carrying its camera's location metadata as a private attachment
   When the Safety Officer downloads it
   Then the stored bytes and the downloaded bytes are identical to those uploaded, location metadata included
   And no derivative of it exists and no outbox message asks for one
 
 @REQ-MOD-107
-Scenario Outline: Only a Safety Officer or an Administrator may reach private attachments
+Scenario Outline: Only a reviewer may reach private attachments
   Given a report carrying one private attachment
   When <who> mints a private upload for, adds, lists, downloads, and removes private attachments on it
   Then the API answers <outcome> to every one of those private-attachment requests
@@ -567,7 +567,7 @@ Scenario Outline: Staff add private attachments to a report in any status
   Then both private attachments are listed, newest first
   And each lists its file name, size, description, adder's token subject, and when it was added
   And adding them queued no work for the Worker
-  And the report's detail view lists neither among its attachments
+  And the report detail lists neither among its attachments
 
 Examples:
   | status         |
@@ -578,11 +578,11 @@ Examples:
   | no-consent     |
 
 @REQ-MOD-109
-Scenario: Removing a private attachment soft-deletes it and keeps its bytes
+Scenario: Removing a private attachment deletes it and keeps its bytes
   Given a report carrying one private attachment
   When an Administrator removes that private attachment
   Then the private attachment is no longer listed, and downloading or removing it answers 404
-  And its row is stamped deleted with the Administrator's token subject, and its bytes are still stored
+  And its row is marked deleted with the Administrator's token subject, and its bytes are still stored
   And one audit entry records the Administrator's token subject, RemovedPrivateAttachment, the attachment, and the time
 
 @REQ-MOD-110
@@ -602,7 +602,7 @@ Examples:
 Scenario: A deleted report's private attachments go with it
   Given a report carrying one private attachment
   When a Safety Officer deletes the report carrying that private attachment
-  Then the private attachment is stamped deleted at the report's deletion time, and its bytes are still stored
+  Then the private attachment is marked deleted at the report's deletion time, and its bytes are still stored
   And minting, adding, listing, or downloading private attachments on that report answers 404
 
 @REQ-MOD-112

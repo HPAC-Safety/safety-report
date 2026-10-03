@@ -1,5 +1,5 @@
 Feature: Review and publication
-A Safety Officer or an Administrator reviews a report and its summary
+A reviewer reviews a report and its summary
 pair, keeps private notes on it, and publishes it. Only a fully approved,
 consented, non-deleted report ever reaches the public feed.
 
@@ -205,7 +205,7 @@ Examples:
 Scenario: Unpublishing may carry a note that only reviewers see
   Given a reviewer unpublishes a report with a note
   When the unpublishing is recorded
-  Then the detail view shows the note to reviewers
+  Then the report detail shows the note to reviewers
   And the note never reaches the public API, the audit log, or the application logs
   And unpublishing without a note also succeeds
 
@@ -427,7 +427,7 @@ Scenario: Writing a pair by hand offers the translate buttons too
 Scenario: The report detail view gives a second language only for an answer that has one
   Given a submitted report answered a first name, an email, a date, a picker, and a narrative marked for translation
   And the Worker has translated the narrative
-  When a reviewer opens the report's detail view
+  When a reviewer opens the report detail
   Then the picker and the narrative each carry their second language
   And the first name, the email, and the date carry none, even if one was stored before this rule
 
@@ -452,7 +452,7 @@ Scenario: The report view shows how each summary language was produced
 # summarized, translated, or published.
 
 @REQ-MOD-098
-Scenario Outline: Only a Safety Officer or an Administrator may keep private notes
+Scenario Outline: Only a reviewer may keep private notes
   Given a report carrying one private note
   When <who> adds, lists, edits, reads the history of, and removes private notes on it
   Then the API answers <outcome> to every one of those requests
@@ -489,11 +489,11 @@ Scenario: Editing a private note adds a revision and keeps every earlier one
   And an edit based on an earlier revision is refused with 409 and saves nothing
 
 @REQ-MOD-101
-Scenario: Removing a private note soft-deletes it
+Scenario: Removing a private note deletes it
   Given a Safety Officer wrote a private note on a report and edited it once
   When an Administrator removes that private note
   Then the private note is no longer listed, and editing it or reading its history answers 404
-  And the private note and both its revisions are stamped deleted at one time, and nothing is erased
+  And the private note and both its revisions are marked deleted at one time, and nothing is erased
   And one audit entry records the Administrator's token subject, RemovedPrivateNote, the note, and the time, without its text
 
 @REQ-MOD-102
@@ -512,7 +512,7 @@ Examples:
 Scenario: A deleted report's private notes go with it
   Given a report carrying one private note
   When a Safety Officer deletes that report
-  Then the private note and its revision are stamped deleted at the report's deletion time
+  Then the private note and its revision are marked deleted at the report's deletion time
   And adding, listing, or editing private notes on that report answers 404
 
 @REQ-MOD-104

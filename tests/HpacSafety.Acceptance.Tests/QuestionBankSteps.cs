@@ -628,7 +628,7 @@ public sealed class QuestionBankSteps
 		_question.Deleted.ShouldBeNull();
 	}
 
-	[Then(@"the question is stamped as deleted rather than removed")]
+	[Then(@"the question is marked deleted rather than erased")]
 	public void ThenItIsStampedDeleted()
 	{
 		_question!.Deleted.ShouldBe(Noon.AddHours(1));
@@ -672,7 +672,7 @@ public sealed class QuestionBankSteps
 
 	// ------------------------------------------------------ no way back --
 
-	[Given(@"a question has been stamped as deleted")]
+	[Given(@"a question has been marked deleted")]
 	public void GivenARetiredQuestion()
 	{
 		_question = Ordinary("occurrence_notes", QuestionType.LongText);

@@ -3,7 +3,7 @@ Feature: Choices and type-ahead values
 A single-select, multi-select, or type-ahead question owns its choices
 outside its revisions. An answer names its choice; a picker option is fixed
 or replaced; a type-ahead value a reporter adds is reviewed, corrected,
-merged, or removed by a Safety Officer or an Administrator.
+merged, or removed by a reviewer.
 
 Background:
   Given the question bank stores each question as a stable, non-localized key
@@ -319,7 +319,7 @@ Scenario: A multi-select answer on the report page is listed as the form lists i
   Then the answer is listed "Gusty", "Turbulent", "Other"
 
 @REQ-MOD-094
-Scenario Outline: A Safety Officer or an Administrator reviews type-ahead values
+Scenario Outline: A reviewer reviews type-ahead values
   Given a member has the <role> role
   When that member approves, corrects, merges, relinks, or removes a reporter-added type-ahead value
   Then the API <outcome> the attempt

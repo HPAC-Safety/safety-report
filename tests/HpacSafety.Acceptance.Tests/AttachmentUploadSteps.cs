@@ -611,7 +611,7 @@ public sealed class AttachmentUploadSteps
 		_blobKey = (await ClaimedFile()).BlobKey;
 	}
 
-	[When(@"a Safety Officer soft-deletes the report")]
+	[When(@"a Safety Officer deletes the report")]
 	public async Task WhenASafetyOfficerSoftDeletesTheReport()
 	{
 		var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
@@ -619,7 +619,7 @@ public sealed class AttachmentUploadSteps
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the report row remains, stamped with a deleted timestamp")]
+	[Then(@"the report row remains, marked deleted")]
 	public async Task ThenTheReportRowRemains()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();

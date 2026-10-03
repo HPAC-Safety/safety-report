@@ -341,7 +341,7 @@ public sealed class CommentSteps
 		(await CommentCount()).ShouldBe(_countBefore);
 	}
 
-	[Then(@"the comment and its revisions are soft-deleted, not removed from the database")]
+	[Then(@"the comment and its revisions are deleted, not removed from the database")]
 	public async Task ThenSoftDeleted()
 	{
 		var comment = await Stored();

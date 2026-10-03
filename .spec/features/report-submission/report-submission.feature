@@ -848,8 +848,8 @@ Scenario: No audit entry or log line records who submitted a report
 
 @REQ-SUB-022
 @ui
-Scenario: A signed-out visitor is asked to sign in before the report page is offered
-  Given a signed-out visitor opens the report page
+Scenario: An anonymous visitor is asked to sign in before the report page is offered
+  Given an anonymous visitor opens the report page
   Then the report page content is not shown
   And the page explains that filing a report requires an HPAC member sign-in
   And it offers a sign-in action

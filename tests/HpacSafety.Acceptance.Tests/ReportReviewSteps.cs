@@ -38,7 +38,7 @@ public sealed class ReportReviewSteps
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
-	[Given(@"reports exist in every workflow state, one without publication consent, and one soft-deleted")]
+	[Given(@"reports exist in every workflow state, one without publication consent, and one deleted")]
 	[Given(@"reports exist in every workflow state")]
 	public async Task GivenReportsInEveryState()
 	{
@@ -198,7 +198,7 @@ public sealed class ReportReviewSteps
 		Row("unpublished").GetProperty("status").GetString().ShouldBe("unpublished");
 	}
 
-	[Then(@"the soft-deleted report does not appear")]
+	[Then(@"the deleted report does not appear")]
 	public void ThenTheDeletedReportDoesNotAppear()
 	{
 		Mine().ShouldNotContain(_seeded["deleted"]);
@@ -273,7 +273,7 @@ public sealed class ReportReviewSteps
 		Mine().ShouldBe([.. expected.Select(name => _seeded[name])]);
 	}
 
-	[Then(@"each row carries the same version the report's detail view gives")]
+	[Then(@"each row carries the same version the report detail gives")]
 	public async Task ThenEachRowCarriesTheDetailVersion()
 	{
 		foreach (var name in new[] { "pending", "private", "published" })

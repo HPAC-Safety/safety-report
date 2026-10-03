@@ -112,7 +112,7 @@ When("the client discards its token", async ({ page }) => {
 	expect(await page.evaluate(() => sessionStorage.getItem("hpac.session"))).toBeNull()
 })
 
-Then("no request reaches the API for that logout", async ({ page }) => {
+Then("no request reaches the API for that sign-out", async ({ page }) => {
 	await page.waitForLoadState("networkidle")
 	expect(apiRequestsSinceLogout.get(page)).toEqual([])
 })

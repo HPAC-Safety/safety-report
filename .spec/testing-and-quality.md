@@ -123,7 +123,8 @@ REQ-MOD-035, REQ-MOD-036, REQ-DOM-007.*
   or issued for another audience is refused, and `alg: none` is refused;
 - a token carrying no recognized role authenticates as `User`, and no claim
   beyond the subject and the role is ever read;
-- the development token endpoint does not exist outside Development;
+- the development token endpoint does not exist outside Development, unless
+  the temporary staging interim issuer is enabled (ADR-0172);
 - the three-role matrix is tested at every admin endpoint;
 - a submitted report contains no reference to the member who filed it;
 - an edit to a report that is not live is an unapproved draft and is never

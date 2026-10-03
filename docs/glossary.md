@@ -8,7 +8,7 @@ type: guide
 
 | Term | Meaning |
 |---|---|
-| Answer | Immutable, for one exact answer-producing question revision: a single-select, multi-select, or type-ahead answer names its choice and reads both labels from it (ADR-0128); every other answer is one string, in the reporter's own words and language (ADR-0072). A multi-select stores one row per chosen choice. An answer with neither records a skip. |
+| Answer | Immutable, for one exact answer-producing question revision: a single-select, multi-select, or type-ahead answer names its choice and reads both labels from it (ADR-0128); a yes/no or checkbox answer is a boolean (ADR-0130); every other answer is one string, in the reporter's own words and language (ADR-0072). A multi-select stores one row per chosen choice. An answer with neither records a skip. |
 | Attachment | An optional image, video, or document submitted with a report. Stored privately. With media consent, a published report shows its verified image and video derivatives and offers its validated documents as forced downloads (ADR-0117, ADR-0119). |
 | Complete revision | One immutable question record containing every value needed to render, validate, order, classify, and localize that revision, except its choices, which belong to the question (ADR-0095). |
 | Group | A question type that collects no answer and acts as a section heading; other questions may be grouped under it so the form renders them together. |
@@ -26,7 +26,7 @@ type: guide
 | Outbox | Database rows committed atomically with state changes so asynchronous work cannot be lost between saving a report and notifying the Worker. |
 | Private context | Labeled private answers sent to the one summary call only to recognize identifying material repeated in eligible content. They may not contribute facts. |
 | Public DTO | The strict allowlist returned by public endpoints: report ID, both summary texts, publication timestamp, and visible comment count; a report's own page adds the language the reporter wrote it in and each public file's opaque id, kind, and a document's format (ADR-0114, ADR-0117, ADR-0119, ADR-0176). |
-| Quarantine | Private object-storage prefix where the API stores an upload it has already validated, the moment it is attached, until a submission claims it or it expires after 15 days (ADR-0096, ADR-0100). |
+| Quarantine | Private object-storage prefix where the browser puts an upload the moment it is attached, by a pre-signed PUT the API mints; a submission validates and claims it, or it expires after 15 days (ADR-0096, ADR-0100, ADR-0126). |
 | Question key | Stable non-localized logical identifier joining the immutable revisions of the same question. |
 | Question revision | Exact immutable form record referenced by an answer, including bilingual copy and all behavior/display flags. Choices are not part of a revision; they belong to the question (ADR-0095). |
 | Report content | Labeled non-private answered fields eligible to supply safety facts to the model. |
@@ -35,6 +35,6 @@ type: guide
 | User | The lowest role. Proves HPAC membership and may submit a report; has no review, authoring, or publication capability. |
 | Safety officer | Authorized reviewer who can see private reports, edit/approve the summary pair, publish when consent permits, and soft-delete reports. |
 | Token subject | The `sub` claim of a validated token, stored as an opaque string on an audit entry or a summary approval. Joins to nothing; there is no user table. |
-| Summary pair | One row and one review unit containing English and French anonymized summaries with shared model/prompt provenance and approval. |
+| Summary pair | One review unit: a summary revision holding the English and French anonymized summaries with shared model/prompt provenance and approval; a summary is an append-only list of them (ADR-0177). |
 | TinyId | Opaque compact application identifier used externally instead of sequential database IDs. |
-| Worker | Long-running .NET service that consumes outbox work, processes attachments, and performs the one-call bilingual summarization operation. |
+| Worker | .NET Lambda function, started by the API's nudge or a scheduled sweep, that consumes outbox work (ADR-0123), processes attachments, and performs the one-call bilingual summarization operation. |

@@ -237,10 +237,10 @@ features should be pruned when implementation aligns.
 ## Environments, release, and durability
 
 **CON-INF-011** Two AWS accounts. Staging is the owner's personal AWS
-account, which also runs unrelated workloads, and holds synthetic data only —
-the Development-only members-site login
+account, which also runs unrelated workloads, and holds synthetic data only — the members-site login
 ([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
-never runs there. Production is a separate, HPAC-owned account holding real
+runs there only through the temporary interim issuer
+([ADR-0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)), and never in production. Production is a separate, HPAC-owned account holding real
 reports. The two accounts are not linked: production is not created from
 staging through AWS Organizations, and neither account can assume a role in
 the other. Both are built from the one `infra/` root module, differing only
@@ -259,7 +259,8 @@ The identity provider is an external dependency this ADR does not choose
 (ADR-0064): until `AUTH_AUTHORITY` is set for an environment, that
 environment still starts and serves its public pages and public API
 (REQ-MOD-156), but sign-in, filing a report (member-only, ADR-0067), review,
-and administration cannot work there.
+and administration cannot work there — except in staging, where the
+temporary interim issuer makes them work (ADR-0172).
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 
@@ -382,8 +383,10 @@ switch or hardcoded endpoint. Sessions are bearer tokens, Turnstile is gone
 ([ADR-0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)),
 and outside Development this system never contacts a member login endpoint
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
-The one exception is Development's members-site sign-in
-([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+The exceptions are Development's members-site sign-in
+([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
+and staging's temporary interim issuer, which reuses it
+([ADR-0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
 Forwarded headers are trusted without a proxy list; the API instead checks a
 CloudFront-injected secret origin header and reads the client IP from
 `CloudFront-Viewer-Address`, which only CloudFront sets

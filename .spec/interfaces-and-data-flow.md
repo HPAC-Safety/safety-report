@@ -45,7 +45,7 @@ reserved ID, or database state, and an upload creates only a quarantine object
 | Capability | Authorization |
 |---|---|
 | Read the authentication configuration, including whether a third-party provider is offered | Anonymous; present in every environment. |
-| Exchange development credentials for a signed token | Anonymous, **Development only** — the route does not exist elsewhere. Generic failure. |
+| Exchange development credentials for a signed token | Anonymous, **Development only** — and, while the temporary interim issuer is enabled, staging ([ADR-0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)); the route does not exist elsewhere. Generic failure. |
 | Inspect the current identity's subject and role | Any authenticated member. |
 
 ### Admin API

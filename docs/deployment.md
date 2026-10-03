@@ -31,8 +31,8 @@ release will do once #466 lands, not something already running. See "Where
 today's Terraform differs" below for exactly what is still scaffolding.
 
 - **Staging** will be the owner's personal AWS account, which also runs
-  unrelated workloads. It is meant to hold synthetic data only and never run
-  the Development-only members-site login. It serves only its default
+  unrelated workloads. It is meant to hold synthetic data only, and runs the members-site login only
+  through the temporary interim issuer ([ADR-0172](../.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)). It serves only its default
   `*.cloudfront.net` address.
 - **Production** will be a separate account that HPAC creates and owns. It is
   **not** created from the staging account through AWS Organizations — the

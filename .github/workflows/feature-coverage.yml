@@ -37,6 +37,8 @@ on:
 
 permissions:
   contents: read
+  # Reading whether the issue an @ignore claim names is open (CONV-001).
+  issues: read
 
 # Queued, never cancelled in progress: a cancelled older run can finish after
 # the newer one and leave "cancelled" as the required context's latest result
@@ -63,3 +65,17 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node tools/spec/check-feature-coverage-diff.ts
+
+      # A scenario may lead its code, tagged @ignore, only while an open issue
+      # owns building it: every @ignore claim names one with @issue-<N>, it is
+      # open, and this change does not close it (CONV-001). The token is
+      # read-only; under act there is none, and a public repository answers
+      # anonymously.
+      - name: Every @ignore scenario is owned by an open issue
+        if: "!cancelled()"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/spec/check-ignored-claims.ts

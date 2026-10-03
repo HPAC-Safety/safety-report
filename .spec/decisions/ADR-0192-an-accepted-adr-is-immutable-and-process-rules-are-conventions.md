@@ -118,8 +118,9 @@ The implementation choices made under that decision:
 - A `superseded` or `deprecated` record's status line links the record that
   replaced or retired it: an ADR, or a convention.
 - `partially-superseded` is retired. The records that already carry it keep it;
-  no record may newly take it. The last four to take it are ADR-0083,
-  ADR-0085, ADR-0087, and ADR-0183, which this record narrows.
+  no record may newly take it. The last to take it are ADR-0084 and ADR-0143,
+  narrowed by ADR-0191, and ADR-0083, ADR-0085, ADR-0087, and ADR-0183, which
+  this record narrows.
 
 ### One template
 

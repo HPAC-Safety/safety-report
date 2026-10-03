@@ -73,7 +73,7 @@ Two hand-written pages restated what generated ones show:
 - The per-issue disposition prose is gone. Where it pointed at a constraint,
   the constraint itself says so.
 
-## Alternatives rejected
+## Considered options
 
 - **Have the workflow open the regeneration pull request itself.** Every
   issue filed or closed would open a bot pull request, each needing review

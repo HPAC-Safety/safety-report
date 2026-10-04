@@ -19,7 +19,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     Members' comments on a published report through the booted API and the
-///     real Worker processor (REQ-COM-001..014, ADR-0114).
+///     real Worker processor (REQ-COM-001..014, REQ-COM-022, ADR-0114).
 /// </summary>
 /// <remarks>
 ///     Each member is a token for a fresh subject, so scenarios never see each
@@ -84,6 +84,13 @@ public sealed class CommentSteps
 		await GivenAReportIsPublished();
 		_countBefore = await CommentCount();
 		_commentId = await PostAs(_author, CommentText, "en-CA");
+	}
+
+	[Given(@"a member commented on a published report that a reviewer has since unpublished")]
+	public async Task GivenAMemberCommentedOnAnUnpublishedReport()
+	{
+		await GivenAMemberCommented();
+		await Review("unpublish");
 	}
 
 	[Given(@"a member posted a comment in French")]

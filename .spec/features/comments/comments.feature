@@ -109,11 +109,15 @@ Scenario: A member who is not a reviewer cannot hide a comment
   And the comment is still listed
 
 @REQ-COM-013
-Scenario: Unpublishing a report hides its comments, and publishing it again brings them back
+Scenario: Unpublishing a report hides its comments
   Given a member commented on a published report
   When a reviewer unpublishes the report
   Then a visitor sees no comments for it and the report is not in the feed
   And the comment is kept in the database
+
+@REQ-COM-022
+Scenario: Publishing a report again brings its comments back
+  Given a member commented on a published report that a reviewer has since unpublished
   When a reviewer publishes the report again
   Then the comment is listed again
 
@@ -137,19 +141,39 @@ Scenario: An anonymous visitor is invited to sign in to comment
   When an anonymous visitor opens it
   Then the comments are shown, each labelled "Member"
   And the page offers to sign in to comment, with no comment box
-  When the visitor signs in from there
+
+@REQ-COM-023
+@ui
+Scenario: An anonymous visitor who signs in to comment returns to the report
+  Given an anonymous visitor is reading a published report that has comments
+  When the visitor signs in through the report's invitation to comment
   Then the visitor is returned to the report
 
 @REQ-COM-017
 @ui
-Scenario: A member posts, edits, and deletes their own comment
+Scenario: A member posts a comment, labelled as their own
+  Given the member is reading a published report that has comments
+  When the member posts a comment
+  Then the comment is listed, labelled "You"
+
+@REQ-COM-024
+@ui
+Scenario: A member reading a published report is offered a comment box with a reminder not to identify anyone
   Given the visitor is a member and a published report has comments
   When the member opens the report
   Then a comment box is shown with a reminder not to name or identify people
-  When the member posts a comment
-  Then the comment is listed, labelled "You"
+
+@REQ-COM-025
+@ui
+Scenario: A member edits their own comment
+  Given the member is reading a published report that carries a comment of their own
   When the member edits that comment
   Then the comment shows the new text, marked as edited
+
+@REQ-COM-026
+@ui
+Scenario: A member deletes their own comment
+  Given the member is reading a published report that carries a comment of their own
   When the member deletes that comment and confirms
   Then the comment is no longer listed
   And no other member's comment offers to edit or delete it
@@ -161,6 +185,11 @@ Scenario: A reader sees every comment in the site's language, a translated one m
   When a visitor reads the report in French
   Then the comment shows its French text, with a small icon that says it was translated automatically
   And the comment offers no control to show the original
+
+@REQ-COM-027
+@ui
+Scenario: Switching the site's language shows a translated comment as it was written, with no translation icon
+  Given a visitor is reading, in French, a published report with a comment written in English and machine-translated into French
   When the visitor switches the site's language
   Then the comment shows its English text, with no translation icon
 
@@ -174,8 +203,13 @@ Scenario: A comment still awaiting translation shows its original text
 @REQ-COM-020
 @ui
 Scenario: A reviewer hides a comment from the report page
+  Given a Safety Officer is reading a published report that has comments
+  When the Safety Officer hides a comment and confirms
+  Then that comment is no longer listed
+
+@REQ-COM-028
+@ui
+Scenario: A reviewer is offered to hide every comment on the report page
   Given a Safety Officer is on the admin site and a published report has comments
   When the Safety Officer opens the report
   Then every comment offers to hide it
-  When the Safety Officer hides a comment and confirms
-  Then that comment is no longer listed

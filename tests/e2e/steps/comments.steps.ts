@@ -8,13 +8,13 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for comments on a published report (REQ-COM-015..020,
- * ADR-0114).
+ * REQ-COM-023..028, ADR-0114).
  *
  * The public API is stubbed at the network boundary with a small in-memory
  * store per page, so posting, editing, deleting, and hiding change what the
  * next read returns. Who may do each, the revisions, the audit rows, and the
  * translation job are proven against a real database by the Reqnroll
- * scenarios REQ-COM-001..014 (ADR-0045).
+ * scenarios REQ-COM-001..014 and REQ-COM-022 (ADR-0045).
  *
  * Every report and comment below is synthetic.
  */
@@ -150,6 +150,52 @@ Given("a published report has a comment written in English that has no French te
 	await stubReport(page, [comment("untransl001", "Synthetic: keep extra height on approach.")])
 })
 
+const MINE = () => comment("mineaaaaaa1", "Synthetic: I made the same mistake last season.", { isMine: true })
+
+async function openReport(page: Page) {
+	await page.goto(`/reports/${REPORT.id}`)
+	await expect(items(page).first()).toBeVisible()
+}
+
+Given("an anonymous visitor is reading a published report that has comments", async ({ page }) => {
+	await stubReport(page, OTHERS())
+	await openReport(page)
+})
+
+Given("the member is reading a published report that has comments", async ({ page }) => {
+	await stubReport(page, OTHERS())
+	await signInAs(page, "user")
+	await openReport(page)
+	await expect(page.getByLabel("Add a comment")).toBeVisible()
+})
+
+Given("the member is reading a published report that carries a comment of their own", async ({ page }) => {
+	await stubReport(page, [...OTHERS(), MINE()])
+	await signInAs(page, "user")
+	await openReport(page)
+	await expect(page.locator('[data-comment-author="you"]')).toHaveCount(1)
+})
+
+Given(
+	"a visitor is reading, in French, a published report with a comment written in English and machine-translated into French",
+	async ({ page, context }) => {
+		await stubReport(page, [
+			comment("translated1", "Synthetic: keep extra height on approach.", {
+				translatedText: "Synthétique : gardez de la hauteur en approche.",
+			}),
+		])
+		await context.addInitScript(() => localStorage.setItem("hpac.locale", "fr-CA"))
+		await openReport(page)
+		await expect(items(page).first().locator("[data-comment-translated]")).toBeVisible()
+	},
+)
+
+Given("a Safety Officer is reading a published report that has comments", async ({ page }) => {
+	await stubReport(page, OTHERS())
+	await signInAs(page, "safety_officer")
+	await openReport(page)
+})
+
 // ── When ────────────────────────────────────────────────────────────────
 
 When("a visitor opens View safety reports", async ({ page }) => {
@@ -173,7 +219,7 @@ When("a visitor reads the report in French", async ({ page, context }) => {
 	await page.goto(`/reports/${REPORT.id}`)
 })
 
-When("the visitor signs in from there", async ({ page }) => {
+When("the visitor signs in through the report's invitation to comment", async ({ page }) => {
 	await stubAuth(page)
 	await page.getByRole("link", { name: "Sign in to comment" }).click()
 	await page.getByLabel("Email").fill(CREDENTIALS.user.username)

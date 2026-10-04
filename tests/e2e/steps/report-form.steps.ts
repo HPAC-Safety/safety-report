@@ -1383,7 +1383,7 @@ async function activeChoice(page: Page): Promise<string | null> {
 	return (await page.locator(`[id="${id}"]`).textContent())?.trim() ?? null
 }
 
-Given(/^the question's active choice is (none|"(.*)")$/, async ({ page }, _named: string, label: string | undefined) => {
+Given(/^the question's active choice is (?:none|"(.*)")$/, async ({ page }, label: string | undefined) => {
 	if (label === undefined) {
 		expect(await activeChoice(page)).toBeNull()
 		return

@@ -43,6 +43,7 @@ public sealed class ChoiceParentMigrationSteps
 	public async Task GivenTodaysCertificationDuplicatesAnsweredAndConditional(string question,
 																			  Table holds)
 	{
+		ArgumentNullException.ThrowIfNull(holds);
 		var rows = holds.Rows.Select(row => (row["what"], row["choice"], row["under"])).ToList();
 		rows.ShouldBe([
 			("duplicated choice", "EN-A to EN-D", "Paraglider, Hang Glider"),

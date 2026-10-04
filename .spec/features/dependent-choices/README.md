@@ -41,7 +41,7 @@ both.
 - **The editor.** With a parent set, every choice row, a new one included, has
   an "Offered under" multi-select of the parent's live choices, listed as the
   form lists them. A save with any choice offered under nothing is refused,
-  naming the choices (`REQ-QB-212`, `REQ-QB-222`, `REQ-DCH-013`). Only an earlier
+  naming the choices (`REQ-QB-212`, `REQ-QB-222`, `REQ-DCH-021`, `REQ-DCH-013`). Only an earlier
   single-select or type-ahead that depends on nothing is offered as the parent
   (`REQ-QB-195`, `REQ-DCH-003`). Clearing the parent keeps every link; they
   stop filtering (`REQ-QB-185`, `REQ-DCH-004`).
@@ -68,7 +68,7 @@ both.
   answered with a new typed value leaves the child a value to type
   (`REQ-QB-199`, `REQ-DCH-007`). A saved report restores both
   answers, dropping a child answer no longer under the parent's
-  (`REQ-QB-200`, `REQ-DCH-015`).
+  (`REQ-QB-200`, `REQ-DCH-020`, `REQ-DCH-015`).
 - **A parent the form does not ask** — deactivated, or deleted rather than
   forked — filters nothing, as a condition whose parent is missing hides
   nothing, and the API does not check the link (`REQ-QB-203`).

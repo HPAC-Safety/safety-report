@@ -208,7 +208,13 @@ Scenario: A saved report restores the parent and child answers together
   Given a reporter answered "Make" with "Niviuk" and "Model" with "Mentor 7", and the browser saved the report
   When they come back and continue the saved report
   Then "Make" holds "Niviuk", and "Model" holds "Mentor 7" and offers only the "Niviuk" models
-  And a saved "Model" answer no longer linked to the saved "Make" answer is restored empty
+
+@REQ-DCH-020
+@ui
+Scenario: A saved child answer no longer linked to its saved parent answer is restored empty
+  Given a reporter answered "Make" with "Ozone" and "Model" with "Mentor 7", a choice not offered under "Ozone", and the browser saved the report
+  When they come back and continue the saved report
+  Then "Make" holds "Ozone", and "Model" is restored empty
 
 @REQ-QB-201
 @ui
@@ -231,7 +237,14 @@ Scenario: A picker child with nothing under the parent's answer says so and does
   Given a required single-select "Model" question's choices depend on the single-select "Make" question, and nothing is offered under "Gin"
   When a reporter answers "Make" with "Gin"
   Then "Model" is disabled, and says no choice is listed for that answer
-  And the reporter can go on to the next page
+
+@REQ-DCH-019
+@ui
+Scenario: A picker child with nothing under the parent's answer lets the reporter go on
+  Given a required single-select "Model" question's choices depend on the single-select "Make" question, and nothing is offered under "Gin"
+  And a reporter answers "Make" with "Gin"
+  When the reporter goes on to the next page
+  Then the next page is shown
 
 @REQ-QB-205
 @ui
@@ -387,7 +400,19 @@ Scenario Outline: Each choice of a dependent question picks the parent choices i
   Given an Administrator using <language> opens the manage-questions page
   When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
   Then every choice row, a new one included, has an "Offered under" multi-select listing "Niviuk", "Ozone", "Other"
-  And Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
+
+Examples:
+  | language |
+  | English  |
+  | French   |
+
+@REQ-DCH-021
+@ui
+Scenario Outline: Save is refused while a dependent question's choice is offered under nothing
+  Given an Administrator using <language> opens the manage-questions page
+  And they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
+  When they tick a parent choice for every choice but the new one
+  Then Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
 
 Examples:
   | language |
@@ -459,7 +484,14 @@ Scenario: The type-ahead review page offers a dependent value under another pare
   And "Zeno 2" is also linked to "Gin", a "Make" value since removed
   When they also tick "Niviuk"
   Then the page sends "Ozone" and "Niviuk"
-  And the page does not let them untick the last parent choice, and says why
+
+@REQ-DCH-018
+@ui
+Scenario: The type-ahead review page keeps a dependent value's last parent choice ticked, and says why
+  Given a Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
+  And "Zeno 2" is also linked to "Gin", a "Make" value since removed
+  When they open the value's parent choices
+  Then the page does not let them untick the last parent choice, and says why
 
 @REQ-QB-225
 Scenario: The migration keeps each link as one of the choice's parents and merges identical duplicates

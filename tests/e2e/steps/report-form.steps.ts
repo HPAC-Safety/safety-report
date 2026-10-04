@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Locator, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
+import { keyPresses } from "./keys"
 import {
 	choiceFormQuestions,
 	dateTimeFormQuestions,
@@ -509,15 +510,22 @@ Then("groups use fieldset\\/legend", async ({ page }) => {
 	await expect(page.locator("fieldset legend", { hasText: "Aircraft" })).toBeVisible()
 })
 
-Then("errors are linked to their questions and summarized", async ({ page }) => {
+Given("a reporter uses assistive technology to complete a form whose narrative question is required", async ({ page }) => {
 	const questions = defaultFormQuestions()
-	const narrative = present(questions.find((q) => q.key === "narrative"))
-	narrative.isRequired = true
-	await stubCurrentQuestions(page, questions)
-	await forgetDraftInBrowser(page)
-	await page.reload()
+	present(questions.find((q) => q.key === "narrative")).isRequired = true
+	await openForm(page, questions)
+})
+
+Given("they have reached the narrative question", async ({ page }) => {
 	await goNext(page)
+	await expect(page.getByLabel("What happened?")).toBeVisible()
+})
+
+When("they go on without answering it", async ({ page }) => {
 	await goNext(page)
+})
+
+Then("errors are linked to their questions and summarized", async ({ page }) => {
 	await expect(page.getByRole("alert").first()).toBeVisible()
 	const describedBy = await page.getByLabel("What happened?").getAttribute("aria-describedby")
 	expect(describedBy).toContain("error")
@@ -529,8 +537,7 @@ Then("focus is visible and status updates use appropriate live regions", async (
 
 Then("motion respects reduced-motion and touch targets\\/contrast are sufficient", async () => {}) // Global CSS rule (index.css) forces near-zero transition duration under prefers-reduced-motion; covered by the repository-wide rule, not per-scenario here.
 
-Then("media previews are never required to complete a report", async ({ page }) => {
-	await resetToIntro(page)
+Given("they have answered every page up to the attachments, attaching nothing", async ({ page }) => {
 	await goNext(page)
 	await fillNarrative(page, "Text only, no media.")
 	await goNext(page)
@@ -539,7 +546,11 @@ Then("media previews are never required to complete a report", async ({ page }) 
 	await pickChoice(page, "Type of aircraft", "Hang glider")
 	await page.getByLabel("Model").fill("Synthetic 1")
 	await goNext(page)
-	await goNext(page) // Attachments left empty — this must succeed.
+	await expect(page.getByRole("button", { name: "Next" })).toBeVisible()
+})
+
+// Going on from the attachments page with none attached reaches the consent question.
+Then("media previews are never required to complete a report", async ({ page }) => {
 	await expect(page.getByText("May we publish a summary of this report?")).toBeVisible()
 })
 
@@ -651,9 +662,8 @@ Then("the picker stays open with both choices checked", async ({ page }) => {
 	await expect(page.getByRole("checkbox", { name: "Thermic" })).not.toBeChecked()
 })
 
-// A key named in an Examples cell (CONV-004): the step says which key, never how.
-When(/^the reporter uses the (\w+) key$/, async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the reporter uses (the .+ keys?(?: twice)?)$/, async ({ page }, keys: string) => {
+	for (const key of keyPresses(keys)) await page.keyboard.press(key)
 })
 
 Then("the picker closes, returns focus to itself, and names both choices", async ({ page }) => {
@@ -1344,20 +1354,6 @@ Then("{string} is checked, and the list stays open", async ({ page }, label: str
 	await expect(page.getByRole("checkbox", { name: label })).toBeChecked()
 	await expect(page.getByRole("main").locator('[id$="-options"]')).toBeVisible()
 })
-
-/*
- * Keys are named only in a scenario's Examples cells (#815): "the Enter key",
- * "the down arrow key twice", "the Alt and down arrow keys", "the m key".
- */
-const KEY_NAMES: Record<string, string> = { "down arrow": "ArrowDown", "up arrow": "ArrowUp", "Alt and down arrow": "Alt+ArrowDown" }
-
-/** The key presses an Examples cell names, in order. */
-function keyPresses(cell: string): string[] {
-	const named = /^the (.+?) keys?( twice)?$/.exec(cell)
-	if (!named) throw new Error(`Unknown keys: ${cell}`)
-	const key = KEY_NAMES[named[1]] ?? named[1]
-	return named[2] ? [key, key] : [key]
-}
 
 When(/^they use (.+) in the question$/, async ({ page }, keys: string) => {
 	for (const key of keyPresses(keys)) await page.keyboard.press(key)

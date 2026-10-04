@@ -1,9 +1,10 @@
 import { createBdd } from "playwright-bdd"
-import { expect, type Dialog, type Page } from "@playwright/test"
+import { expect, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import { readDraftFromBrowser, stubCurrentQuestions } from "./report-form-fixture"
 import { present } from "./present"
+import { tryToReload, unloadPromptsShown } from "./unload"
 
 const { Given, When, Then } = createBdd()
 
@@ -44,38 +45,27 @@ When("they navigate to another admin page", async ({ page }) => {
 	await page.getByRole("menuitem", { name: "Manage reports" }).click()
 })
 
-When("navigates to another admin page", async ({ page }) => {
-	await page.getByRole("button", { name: "Admin" }).click()
-	await page.getByRole("menuitem", { name: "Manage reports" }).click()
-})
-
-When("navigates away from the report", async ({ page }) => {
+When("they navigate away from the report", async ({ page }) => {
 	await page.getByRole("banner").getByRole("link", { name: "View safety reports" }).click()
 })
 
-When("the reporter tries to close or reload the tab", async ({ page }) => {
-	const dialogPromise = page.waitForEvent("dialog")
-	void page.reload().catch(() => {}) // The reload never completes: the dialog cancels it.
-	const dialog: Dialog = await dialogPromise
-	expect(dialog.type()).toBe("beforeunload")
-	await dialog.dismiss()
+When("the reporter tries to close or reload the tab", ({ page }) => {
+	tryToReload(page)
 })
 
-Then("the browser's own unload prompt appears, with no custom text", async () => {}) // Asserted by the When step above: waitForEvent only resolves if it fired.
+Then("the browser's own unload prompt appears, with no custom text", async ({ page }) => {
+	await expect.poll(() => unloadPromptsShown(page)).toEqual(["beforeunload"])
+})
 
 When("they write the English wording without saving", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("A draft question, never saved")
-})
-
-When("types into the English text without saving", async ({ page }) => {
-	await page.getByLabel("English summary").fill("A draft edit, never saved.")
 })
 
 When("the Safety Officer starts writing a private note without saving it", async ({ page }) => {
 	await page.getByLabel("Add a private note").fill("A draft private note, never saved.")
 })
 
-When("types a comment without posting it", async ({ page }) => {
+When("they write a comment without posting it", async ({ page }) => {
 	await page.getByLabel("Add a comment").fill("A draft comment, never posted.")
 })
 

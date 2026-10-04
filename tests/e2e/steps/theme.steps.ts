@@ -21,7 +21,7 @@ When("the visitor toggles the theme control", async ({ page }) => {
 	await page.getByRole("button", { name: "Theme" }).click()
 })
 
-Then("the data-theme attribute updates immediately", async ({ page }) => {
+Then("the page's theme changes immediately", async ({ page }) => {
 	await expect(page.locator("html")).toHaveAttribute("data-theme", /light|dark/)
 })
 

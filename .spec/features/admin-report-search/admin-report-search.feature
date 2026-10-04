@@ -49,8 +49,8 @@ Scenario: A list row carries the version a review command sends back
 @REQ-MOD-129
 Scenario: The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one
   Given reports exist in every workflow state
-  When a reviewer lists reports
-  And a reviewer lists reports after a cursor naming a report no longer in the report list
+  And a reviewer has listed reports
+  When a reviewer lists reports after a cursor naming a report no longer in the report list
   Then that list starts with the same report the first page did
 
 @REQ-MOD-049
@@ -137,8 +137,8 @@ Scenario: Manage reports shows each row's attachment icon and count, omitted at 
 @ui
 Scenario: Choosing a filter on Manage reports narrows the list
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer chooses the "Published" filter
+  And the Safety Officer opens Manage reports
+  When the Safety Officer chooses the "Published" filter
   Then only published reports are listed
   And the chosen filter stays in the address bar
 
@@ -160,26 +160,46 @@ Examples:
 
 @REQ-MOD-121
 @ui
-Scenario: Publishing and unpublishing from the list updates the row in place
+Scenario: Publishing from the list updates the row in place
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer publishes the pending row
+  And the Safety Officer opens Manage reports
+  When the Safety Officer publishes the pending row
   Then the pending row shows the "Published" badge and offers Unpublish
+  And the row action sent the version its row was listed with
+
+@REQ-ARS-001
+@ui
+Scenario: Unpublishing from the list updates the row in place
+  Given a Safety Officer is on the admin site and reports exist in several states
+  And the Safety Officer opens Manage reports
   When the Safety Officer unpublishes the published row
   Then the published row shows the "Unpublished" badge and offers Publish
-  And each row action sent the version its row was listed with
+  And the row action sent the version its row was listed with
 
 @REQ-MOD-122
 @ui
 Scenario: Deleting from the list asks for confirmation first
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer chooses Delete on the pending row
+  And the Safety Officer opens Manage reports
+  When the Safety Officer chooses Delete on the pending row
   Then a confirmation asks whether to delete it
+
+@REQ-ARS-002
+@ui
+Scenario: Keeping the report at the confirmation deletes nothing
+  Given a Safety Officer is on the admin site and reports exist in several states
+  And the Safety Officer opens Manage reports
+  And the Safety Officer chooses Delete on the pending row
   When the Safety Officer keeps the report
   Then the pending row is still listed and nothing was deleted
-  When the Safety Officer chooses Delete on the pending row
-  And the Safety Officer confirms
+
+@REQ-ARS-003
+@ui
+Scenario: Confirming the deletion removes the row from the list
+  Given a Safety Officer is on the admin site and reports exist in several states
+  And the Safety Officer opens Manage reports
+  And the Safety Officer chooses Delete on the pending row
+  When the Safety Officer confirms
   Then the pending row is no longer listed and it was deleted
 
 @REQ-MOD-123
@@ -187,8 +207,8 @@ Scenario: Deleting from the list asks for confirmation first
 Scenario: A stale row action tells the reviewer to reload the list
   Given a Safety Officer is on the admin site and reports exist in several states
   And another reviewer has changed the pending report since the list was loaded
-  When the Safety Officer opens Manage reports
-  And the Safety Officer publishes the pending row
+  And the Safety Officer opens Manage reports
+  When the Safety Officer publishes the pending row
   Then a message says the report changed and offers to reload the list
   And the pending row still shows the "Pending" badge
 
@@ -255,18 +275,25 @@ Scenario: The search query text is never logged
 @ui
 Scenario: Clearing the search box returns to newest submitted first
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer searches for "Alex"
-  And the Safety Officer clears the search box
+  And the Safety Officer opens Manage reports
+  And the Safety Officer has searched for "Alex"
+  When the Safety Officer clears the search box
   Then every report is listed newest first as before the search
 
 @REQ-MOD-136
 @ui
-Scenario: The search text lives in the address bar and survives a reload
+Scenario: The search text lives in the address bar
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer searches for "Alex"
+  And the Safety Officer opens Manage reports
+  When the Safety Officer searches for "Alex"
   Then the address bar carries "q=Alex"
+
+@REQ-ARS-004
+@ui
+Scenario: The search text survives a reload
+  Given a Safety Officer is on the admin site and reports exist in several states
+  And the Safety Officer opens Manage reports
+  And the Safety Officer has searched for "Alex"
   When the Safety Officer reloads the page
   Then the search box still reads "Alex"
 
@@ -274,8 +301,8 @@ Scenario: The search text lives in the address bar and survives a reload
 @ui
 Scenario: A search matching nothing shows a message naming the query, not an error
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer searches for a word that matches nothing
+  And the Safety Officer opens Manage reports
+  When the Safety Officer searches for a word that matches nothing
   Then a message says no reports match that search
   And no error is shown
 
@@ -288,13 +315,33 @@ Scenario: Opening Manage reports afresh loads its first page again, not the list
 
 @REQ-MOD-128
 @ui
-Scenario: Manage reports loads more automatically and offers the same hidden fallback and visible retry
+Scenario: Manage reports' "Load more" fallback is not visible until it is needed
   Given a Safety Officer is on the admin site and more reports exist than fit on one page
   Then the "Load more" action is not visible
-  When a keyboard visitor tabs to the "Load more" action
+
+@REQ-ARS-005
+@ui
+Scenario Outline: Manage reports' "Load more" fallback becomes visible once reached
+  Given a Safety Officer is on the admin site and more reports exist than fit on one page
+  When the Safety Officer reaches the "Load more" action with <key>
   Then it becomes visible
-  When that visitor activates it
+
+Examples:
+  | key         |
+  | the Tab key |
+
+@REQ-ARS-006
+@ui
+Scenario: Activating Manage reports' "Load more" fallback loads the older reports in place
+  Given a Safety Officer is on the admin site and more reports exist than fit on one page
+  When the Safety Officer activates the "Load more" action
   Then the older reports load without leaving Manage reports
-  Given the next report page fails to load
+
+@REQ-ARS-007
+@ui
+Scenario: Manage reports offers a visible Retry action when its next page fails to load
+  Given a Safety Officer is on the admin site and more reports exist than fit on one page
+  And the Safety Officer has loaded the older reports
+  And the next report page fails to load
   When the Safety Officer activates the "Load more" action
   Then the list offers a visible "Retry" action and does not fail silently

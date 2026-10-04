@@ -30,7 +30,7 @@ Then("the header shows a visually distinct member sign-in action", async ({ page
 	await expect(login).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
 })
 
-When("a visitor activates any of those links or the member sign-in action", async ({ page }) => {
+When("a visitor activates any of the header's links or its member sign-in action", async ({ page }) => {
 	for (const destination of [...NAV_DESTINATIONS, MEMBER_LOGIN]) {
 		await page.goto("/")
 		await page.locator("header").getByRole("link", { name: destination.name }).click()
@@ -42,7 +42,8 @@ Then("the browser navigates to that destination's page", async ({ page }) => {
 	await expect(page.locator("main h1")).toBeVisible()
 })
 
-Given("a visitor loads the homepage on a mobile-width viewport", async ({ page }) => {
+// A phone-width screen: 375 pixels wide (see the area README).
+Given("a visitor loads the homepage on a phone-width screen", async ({ page }) => {
 	await page.setViewportSize({ width: 375, height: 812 })
 	await page.goto("/")
 })
@@ -66,6 +67,7 @@ Then("a dialog containing the header's navigation links and member sign-in actio
 })
 
 When("the visitor activates the menu toggle again", async ({ page }) => {
+	await expect(page.getByRole("dialog", { name: "Primary" })).toBeVisible()
 	await page.getByRole("button", { name: /^(Open|Close) menu$/ }).click()
 })
 

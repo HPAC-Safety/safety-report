@@ -17,7 +17,12 @@ Scenario: The homepage header exposes navigation to reporting, submission, and c
   Given a visitor loads the homepage
   Then the header shows links to view safety reports, submit a safety report, and contact
   And the header shows a visually distinct member sign-in action
-  When a visitor activates any of those links or the member sign-in action
+
+@REQ-WLD-050
+@ui
+Scenario: Each homepage header link and the member sign-in action leads to its page
+  Given a visitor loads the homepage
+  When a visitor activates any of the header's links or its member sign-in action
   Then the browser navigates to that destination's page
 
 @REQ-WLD-003
@@ -30,11 +35,22 @@ Scenario: The contact page shows HPAC's organization details, mailing address, e
 
 @REQ-WLD-004
 @ui
-Scenario: On a mobile-width viewport, header navigation is reached through a hamburger toggle
-  Given a visitor loads the homepage on a mobile-width viewport
+Scenario: On a phone-width screen, header navigation is reached through a hamburger toggle
+  Given a visitor loads the homepage on a phone-width screen
   Then the header nav is hidden and a menu toggle is shown instead
+
+@REQ-WLD-051
+@ui
+Scenario: On a phone-width screen, the menu toggle opens the header's navigation
+  Given a visitor loads the homepage on a phone-width screen
   When the visitor activates the menu toggle
   Then a dialog containing the header's navigation links and member sign-in action opens
+
+@REQ-WLD-052
+@ui
+Scenario: On a phone-width screen, the menu toggle closes the open navigation again
+  Given a visitor loads the homepage on a phone-width screen
+  And the visitor activates the menu toggle
   When the visitor activates the menu toggle again
   Then the dialog closes
 
@@ -91,21 +107,30 @@ Scenario: Switching the language toggle rerenders without losing answers
 
 @REQ-WLD-008
 @ui
-Scenario: A visitor can toggle and persist a light/dark theme choice
+Scenario: With no theme chosen, the page follows the operating system
   Given a visitor has no stored theme preference
   Then the page follows the operating system's light/dark preference
+
+@REQ-WLD-053
+@ui
+Scenario: A visitor can toggle and persist a light/dark theme choice
+  Given a visitor has no stored theme preference
   When the visitor toggles the theme control
-  Then the data-theme attribute updates immediately
+  Then the page's theme changes immediately
   And the header logo matches the active theme
   And the theme choice persists to local storage across a reload
 
 @REQ-WLD-009
 @ui
-Scenario: The footer sits at the bottom of the viewport on a short page but below the fold on a long one
-  Given a visitor loads a page whose content is shorter than the viewport
-  Then the footer sits flush with the bottom of the viewport
-  Given a visitor loads a page whose content is taller than the viewport
-  Then the footer sits below the content, not pinned to the viewport
+Scenario: The footer sits at the bottom of the window on a short page
+  Given a visitor loads a page whose content is shorter than the window
+  Then the footer sits flush with the bottom of the window
+
+@REQ-WLD-054
+@ui
+Scenario: The footer sits below the fold on a long page
+  Given a visitor loads a page whose content is taller than the window
+  Then the footer sits below the content, not pinned to the window
 
 @REQ-WLD-032
 @ui
@@ -353,6 +378,12 @@ Scenario: The interface language alone decides which summary text is shown
   Given a published report has both an English and a French summary text
   When a visitor views it in a given locale
   Then only that locale's text is shown, with no language control on the report itself
+
+@REQ-WLD-055
+@ui
+Scenario: Switching the site's language switches the summary text shown
+  Given a published report has both an English and a French summary text
+  And a visitor views it in a given locale
   When the visitor switches the site's language
   Then the report shows the other language's text
 
@@ -375,7 +406,19 @@ Scenario Outline: A destructive admin action asks for confirmation
   Given a reviewer is on a published report in the admin site
   When they choose to <action>
   Then the admin site asks them to confirm before sending anything
-  And cancelling sends no request
+
+Examples:
+  | action               |
+  | delete the report    |
+  | unpublish the report |
+
+@REQ-WLD-060
+@ui
+Scenario Outline: Cancelling a destructive admin action sends nothing
+  Given a reviewer is on a published report in the admin site
+  And they choose to <action>
+  When they cancel it
+  Then nothing is sent and the report still offers Unpublish
 
 Examples:
   | action               |
@@ -414,10 +457,24 @@ Scenario: The form meets baseline accessibility requirements
   Given a reporter uses assistive technology to complete the form
   Then every control has a programmatic label and usable keyboard order
   And groups use fieldset/legend
-  And errors are linked to their questions and summarized
   And focus is visible and status updates use appropriate live regions
   And motion respects reduced-motion and touch targets/contrast are sufficient
-  And media previews are never required to complete a report
+
+@REQ-WLD-061
+@ui
+Scenario: Going on past an unanswered required question links its error to it and summarizes it
+  Given a reporter uses assistive technology to complete a form whose narrative question is required
+  And they have reached the narrative question
+  When they go on without answering it
+  Then errors are linked to their questions and summarized
+
+@REQ-WLD-062
+@ui
+Scenario: A report goes on past its attachments with no file attached
+  Given a reporter uses assistive technology to complete the form
+  And they have answered every page up to the attachments, attaching nothing
+  When the reporter goes on to the next page
+  Then media previews are never required to complete a report
 
 @REQ-WLD-024
 @ui
@@ -471,11 +528,18 @@ Examples:
 
 @REQ-QB-238
 @ui
-Scenario: Leaving the question editor with an unsaved draft is confirmed before it is discarded
+Scenario: Leaving the question editor with an unsaved draft is confirmed
   Given an Administrator is authoring a new question
-  When they write the English wording without saving
-  And they navigate to another admin page
+  And they write the English wording without saving
+  When they navigate to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-WLD-056
+@ui
+Scenario: Confirming leaving the question editor discards the unsaved draft
+  Given an Administrator is authoring a new question
+  And they write the English wording without saving
+  And they navigate to another admin page
   When they confirm leaving
   Then the browser navigates to that page and the draft is gone
 
@@ -483,20 +547,29 @@ Scenario: Leaving the question editor with an unsaved draft is confirmed before 
 @ui
 Scenario: Switching from one open question editor straight to another starts clean, with no false unsaved-changes warning
   Given an Administrator opens the manage-questions page
-  When they open the first question for editing
+  And they open the first question for editing
   And they open the second question for editing
-  And they navigate to another admin page
+  When they navigate to another admin page
   Then no confirmation of any kind appears
 
 @REQ-MOD-185
 @ui
-Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
+Scenario: Leaving the summary editor with unsaved changes is confirmed
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
+  And the Safety Officer opens that report
   And the Safety Officer opens the summary editor
-  And types into the English text without saving
-  And navigates to another admin page
+  And the Safety Officer changes the English text
+  When they navigate to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-WLD-057
+@ui
+Scenario: Confirming leaving the summary editor discards the unsaved changes
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer opens that report
+  And the Safety Officer opens the summary editor
+  And the Safety Officer changes the English text
+  And they navigate to another admin page
   When they confirm leaving
   Then the browser navigates to that page and the edit is gone
 
@@ -504,11 +577,20 @@ Scenario: Leaving the summary editor with unsaved changes is confirmed before th
 @ui
 Scenario: Leaving the type-ahead review page with an uncorrected draft is confirmed
   Given a Safety Officer and two type-ahead questions with values flagged for review
-  When they open the review-type-ahead-values page
+  And they open the review-type-ahead-values page
+  And they begin correcting "Coopers"
+  And they edit its English wording to "Cooper's Hill"
+  When they navigate to another admin page
+  Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-WLD-058
+@ui
+Scenario: Confirming leaving the type-ahead review page discards the uncorrected draft
+  Given a Safety Officer and two type-ahead questions with values flagged for review
+  And they open the review-type-ahead-values page
   And they begin correcting "Coopers"
   And they edit its English wording to "Cooper's Hill"
   And they navigate to another admin page
-  Then a bilingual dialog asks whether to leave, offering to stay
   When they confirm leaving
   Then the browser navigates to that page and the correction is gone
 
@@ -516,18 +598,26 @@ Scenario: Leaving the type-ahead review page with an uncorrected draft is confir
 @ui
 Scenario: Leaving with an unsaved private note is confirmed
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
+  And the Safety Officer opens that report
   And the Safety Officer starts writing a private note without saving it
-  And navigates to another admin page
+  When they navigate to another admin page
   Then a bilingual dialog asks whether to leave, offering to stay
 
 @REQ-COM-021
 @ui
-Scenario: Leaving with an unposted comment is confirmed before it is discarded
+Scenario: Leaving with an unposted comment is confirmed
   Given the visitor is a member and a published report has comments
-  When the member opens the report
-  And types a comment without posting it
-  And navigates away from the report
+  And the member opens the report
+  And they write a comment without posting it
+  When they navigate away from the report
   Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-WLD-059
+@ui
+Scenario: Confirming leaving discards the unposted comment
+  Given the visitor is a member and a published report has comments
+  And the member opens the report
+  And they write a comment without posting it
+  And they navigate away from the report
   When they confirm leaving
   Then the browser navigates away and the unposted comment is gone

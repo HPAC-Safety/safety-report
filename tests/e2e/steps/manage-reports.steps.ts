@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 
 import { signInAs } from "./auth"
 import { expect, type Page } from "@playwright/test"
+import { keyPress } from "./keys"
 import { present } from "./present"
 
 const { Given, When, Then } = createBdd()
@@ -280,6 +281,11 @@ When("the Safety Officer searches for {string}", async ({ page }, text: string) 
 
 When("the Safety Officer searches for a word that matches nothing", async ({ page }) => {
 	await page.getByRole("searchbox", { name: "Search reports" }).fill("zzsynthnothingmatchesanything")
+})
+
+Given("the Safety Officer has searched for {string}", async ({ page }, text: string) => {
+	await page.getByRole("searchbox", { name: "Search reports" }).fill(text)
+	await expect(page).toHaveURL(new RegExp(`[?&]q=${text}$`))
 })
 
 When("the Safety Officer clears the search box", async ({ page }) => {
@@ -833,7 +839,7 @@ When("the Safety Officer chooses Write summary", async ({ page }) => {
 	await page.getByRole("button", { name: "Write summary" }).click()
 })
 
-When("the Safety Officer types the English text", async ({ page }) => {
+When("the Safety Officer writes the English text", async ({ page }) => {
 	await page.getByLabel("English summary").fill("The pilot landed in a field.")
 })
 
@@ -1035,11 +1041,18 @@ Then("the {word} row shows the {string} badge and offers {word}", async ({ page 
 	await expect(rowButtons(page, word).first()).toHaveAccessibleName(action)
 })
 
-Then("each row action sent the version its row was listed with", ({ page }) => {
-	expect(present(listStubs.get(page)).sent).toEqual([
-		{ method: "POST", path: "/api/admin/reports/pendingaaaa/publish", version: "11.1" },
-		{ method: "POST", path: "/api/admin/reports/publishedaa/unpublish", version: "13.1" },
-	])
+/** The version each row was listed with, which its one row action sends back. */
+const ROW_ACTION_VERSIONS: Record<string, string> = {
+	"/api/admin/reports/pendingaaaa/publish": "11.1",
+	"/api/admin/reports/publishedaa/unpublish": "13.1",
+}
+
+Then("the row action sent the version its row was listed with", ({ page }) => {
+	const sent = present(listStubs.get(page)).sent
+	expect(sent).toHaveLength(1)
+	const [action] = sent
+	expect(Object.keys(ROW_ACTION_VERSIONS)).toContain(action.path)
+	expect(action).toEqual({ method: "POST", path: action.path, version: ROW_ACTION_VERSIONS[action.path] })
 })
 
 Then("a confirmation asks whether to delete it", async ({ page }) => {
@@ -1161,7 +1174,7 @@ Given("the next report page fails to load", async ({ page }) => {
  * it may already be visible (nothing to tab past) or still hidden behind
  * this row's own quick actions.
  */
-async function tabToButton(page: Page, name: string) {
+async function tabToButton(page: Page, name: string, key = "Tab") {
 	const target = page.getByRole("button", { name })
 	const isFocused = () => target.evaluate((element) => element === document.activeElement).catch(() => false)
 
@@ -1170,12 +1183,12 @@ async function tabToButton(page: Page, name: string) {
 	}
 
 	for (let tabs = 0; tabs < 50; tabs += 1) {
-		await page.keyboard.press("Tab")
+		await page.keyboard.press(key)
 		if (await isFocused()) {
 			return
 		}
 	}
-	throw new Error(`Could not reach the "${name}" action by tabbing.`)
+	throw new Error(`Could not reach the "${name}" action with the ${key} key.`)
 }
 
 When("the Safety Officer activates the {string} action", async ({ page }, name: string) => {
@@ -1183,6 +1196,16 @@ When("the Safety Officer activates the {string} action", async ({ page }, name: 
 	// way a keyboard visitor would rather than force-clicking past that.
 	await tabToButton(page, name)
 	await page.keyboard.press("Enter")
+})
+
+When(/^the Safety Officer reaches the "(.*)" action with (the .+ key)$/, async ({ page }, name: string, key: string) => {
+	await tabToButton(page, name, keyPress(key))
+})
+
+Given("the Safety Officer has loaded the older reports", async ({ page }) => {
+	await tabToButton(page, "Load more")
+	await page.keyboard.press("Enter")
+	await expect(row(page, "private-unpublished")).toBeVisible()
 })
 
 Then("the older reports load without leaving Manage reports", async ({ page }) => {

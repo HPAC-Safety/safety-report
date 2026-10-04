@@ -70,6 +70,12 @@ roles and why each trusts only the artifact before it:
   a status code, a table or column, a route, "the API", or a reason; the step
   definition keeps the detail
   ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
+- One behavior per scenario: at most one When, never after a Then, and at
+  most 8 steps; a later action is a new scenario with a new ID from
+  `node tools/spec/claim-prefixes.ts --next <area>`. No click, press, typing,
+  role, selector, or pixel in a step; a key is a noun phrase in an Examples
+  cell ("the Escape key")
+  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
 - Run `node tools/spec/generate-traceability.ts`,
   `node tools/spec/generate-spec-index.ts`,
   `node tools/spec/check-glossary.ts`, and
@@ -92,6 +98,9 @@ roles and why each trusts only the artifact before it:
   entry says `"staleIgnore": true` and the scenario passes; from then on CI
   fails the claim unless it passes in every run
   ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
+- A Then's definition asserts and never acts; a key comes from its Examples
+  cell through `tests/e2e/steps/keys.ts`
+  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
 - Test code is C# or TypeScript.
 - Synthetic fixtures: people, locations, reports, attachments.
 - The required phrases in model output are the role phrases.
@@ -135,6 +144,10 @@ roles and why each trusts only the artifact before it:
 - Declarative steps: `node tools/gherkin/lint-scenarios.ts` passes, and a
   reworded step's definition still asserts what it asserted before
   ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
+- One behavior: every assertion of a split scenario survives in exactly one
+  scenario, the original ID stays with the main behavior, and no Then step
+  definition performs an action the scenario claims
+  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
 - Records: `node tools/spec/check-records.ts` and, with the pull request's
   base as `BASE_SHA`, `node tools/spec/check-adr-immutability.ts` both pass
   ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).

@@ -68,6 +68,11 @@ Scenario: A draft on a Pending report needs approval
   Given a Pending report whose reporter consented to publication
   And a reviewer has edited either summary language
   Then the report is not on the public feed
+
+@REQ-REV-001
+Scenario: Publishing a Pending report's draft approves it and shows it on the public feed
+  Given a Pending report whose reporter consented to publication
+  And a reviewer has edited either summary language
   When a reviewer publishes the pair
   Then the latest revision is approved by that reviewer
   And the public feed shows the edited text
@@ -126,8 +131,8 @@ Scenario: Publication requires every guard to pass, with no bypass
 @ui
 Scenario: Opening a report shows its answers with private answers marked, and its summary pair
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer opens a pending report
+  And the Safety Officer opens Manage reports
+  When the Safety Officer opens a pending report
   Then its answers are shown under their questions, with each private answer marked private
   And both the English and French summary texts are shown with the model and prompt version
 
@@ -259,8 +264,8 @@ Examples:
 @ui
 Scenario: Editing a pending report's summary pair saves a draft
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer edits the English summary and saves
+  And the Safety Officer opens that report
+  When the Safety Officer edits the English summary and saves
   Then the report shows the "Pending" badge
   And the saved English text is shown
 
@@ -268,18 +273,25 @@ Scenario: Editing a pending report's summary pair saves a draft
 @ui
 Scenario: Editing a published report's summary keeps it Published
   Given a Safety Officer is on the admin site and a published report exists
-  When the Safety Officer opens that report
-  And the Safety Officer edits the English summary and saves
+  And the Safety Officer opens that report
+  When the Safety Officer edits the English summary and saves
   Then the report shows the "Published" badge
   And the saved English text is shown
 
 @REQ-MOD-207
 @ui
-Scenario: Save is offered only once a language has changed
+Scenario: Save is not offered before a language has changed
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer opens the summary editor
+  And the Safety Officer opens that report
+  When the Safety Officer opens the summary editor
   Then Save summary is not offered
+
+@REQ-REV-002
+@ui
+Scenario: Save is offered once a language has changed
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer opens that report
+  And the Safety Officer opens the summary editor
   When the Safety Officer changes the English text
   Then Save summary is offered
 
@@ -296,8 +308,8 @@ Scenario: The report view lists the summary's revisions
 @ui
 Scenario: Any revision can be viewed without changing the current summary
   Given a Safety Officer is on the admin site and a pending report with four summary revisions exists
-  When the Safety Officer opens that report
-  And the Safety Officer views the first revision
+  And the Safety Officer opens that report
+  When the Safety Officer views the first revision
   Then that revision's English and French text is shown
   And the current summary is unchanged
 
@@ -305,10 +317,17 @@ Scenario: Any revision can be viewed without changing the current summary
 @ui
 Scenario: Restoring a version asks for confirmation first
   Given a Safety Officer is on the admin site and a pending report with four summary revisions exists
-  When the Safety Officer opens that report
-  And the Safety Officer chooses Restore this version on the first revision
+  And the Safety Officer opens that report
+  When the Safety Officer chooses Restore this version on the first revision
   Then a confirmation asks whether to restore that version
   And nothing has been restored yet
+
+@REQ-REV-003
+@ui
+Scenario: Confirming the restore makes the restored text the current summary
+  Given a Safety Officer is on the admin site and a pending report with four summary revisions exists
+  And the Safety Officer opens that report
+  And the Safety Officer chooses Restore this version on the first revision
   When the Safety Officer confirms the restore
   Then the browser asks to restore that revision
   And the restored text is the current summary
@@ -317,16 +336,16 @@ Scenario: Restoring a version asks for confirmation first
 @ui
 Scenario: Publishing a consented report shows it Published
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer publishes it
+  And the Safety Officer opens that report
+  When the Safety Officer publishes it
   Then the report shows the "Published" badge
 
 @REQ-MOD-065
 @ui
 Scenario: Unpublishing with a note shows the note on the report
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer unpublishes it with the note "Duplicate of an earlier report"
+  And the Safety Officer opens that report
+  When the Safety Officer unpublishes it with the note "Duplicate of an earlier report"
   Then the report shows the "Unpublished" badge
   And the note "Duplicate of an earlier report" is shown
 
@@ -335,17 +354,24 @@ Scenario: Unpublishing with a note shows the note on the report
 Scenario: A stale action tells the reviewer to reload
   Given a Safety Officer is on the admin site and a pending report exists
   And another reviewer has changed that report since it was opened
-  When the Safety Officer opens that report
-  And the Safety Officer publishes it
+  And the Safety Officer opens that report
+  When the Safety Officer publishes it
   Then a message says the report changed and offers to reload it
 
 @REQ-MOD-067
 @ui
 Scenario: Deleting a report asks for confirmation first
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer chooses Delete
+  And the Safety Officer opens that report
+  When the Safety Officer chooses Delete
   Then a confirmation asks whether to delete the report
+
+@REQ-REV-004
+@ui
+Scenario: Confirming the deletion returns the reviewer to Manage reports
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer opens that report
+  And the Safety Officer chooses Delete
   When the Safety Officer confirms
   Then the browser returns to Manage reports
 
@@ -353,8 +379,8 @@ Scenario: Deleting a report asks for confirmation first
 @ui
 Scenario: Opening an attachment requests its own audited link
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer opens its document attachment
+  And the Safety Officer opens that report
+  When the Safety Officer opens its document attachment
   Then the browser requests that attachment's download link
 
 @REQ-MOD-069
@@ -387,9 +413,9 @@ Examples:
 @ui
 Scenario Outline: The editor offers a translate button for each language the reviewer changed
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
+  And the Safety Officer opens that report
   And the Safety Officer opens the summary editor
-  And the Safety Officer changes <changed>
+  When the Safety Officer changes <changed>
   Then the translate buttons offered are <buttons>
 
 Examples:
@@ -403,13 +429,30 @@ Examples:
 @ui
 Scenario: Translating asks before overwriting and shows what would change
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
+  And the Safety Officer opens that report
+  And the Safety Officer opens the summary editor
+  And the Safety Officer changes the English text
+  When the Safety Officer chooses Translate to French
+  Then a confirmation shows the current French text and the proposed translation with their differences marked
+
+@REQ-REV-005
+@ui
+Scenario: Keeping the current text at the translation's confirmation leaves it unchanged
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer opens that report
   And the Safety Officer opens the summary editor
   And the Safety Officer changes the English text
   And the Safety Officer chooses Translate to French
-  Then a confirmation shows the current French text and the proposed translation with their differences marked
   When the Safety Officer keeps the current text
   Then the French text is unchanged
+
+@REQ-REV-006
+@ui
+Scenario: Accepting a translation replaces the text and offers no translation back
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer opens that report
+  And the Safety Officer opens the summary editor
+  And the Safety Officer changes the English text
   When the Safety Officer chooses Translate to French and accepts the translation
   Then the French text is the proposed translation
   And the Translate to English button is not offered for it
@@ -418,9 +461,9 @@ Scenario: Translating asks before overwriting and shows what would change
 @ui
 Scenario: Writing a pair by hand offers the translate buttons too
   Given a Safety Officer is on the admin site and a summary-failed report exists
-  When the Safety Officer opens that report
+  And the Safety Officer opens that report
   And the Safety Officer chooses Write summary
-  And the Safety Officer types the English text
+  When the Safety Officer writes the English text
   Then the translate buttons offered are Translate to French
 
 @REQ-MOD-077
@@ -435,8 +478,8 @@ Scenario: The report detail gives a second language only for an answer that has 
 @ui
 Scenario: Opening a report shows a translation only under answers that have one
   Given a Safety Officer is on the admin site and reports exist in several states
-  When the Safety Officer opens Manage reports
-  And the Safety Officer opens a pending report
+  And the Safety Officer opens Manage reports
+  When the Safety Officer opens a pending report
   Then a translated narrative answer shows its translation beneath it
   And a name or email answer shows no translation line
 
@@ -531,16 +574,39 @@ Scenario: A private note never reaches the model or a translation provider
 
 @REQ-MOD-106
 @ui
-Scenario: A Safety Officer keeps private notes on the report page
+Scenario: The report page lists its private notes with their writer and time
   Given a Safety Officer is on the admin site and a pending report exists
   And another reviewer left the private note "Called the pilot; follow up Monday."
   When the Safety Officer opens that report
   Then the private notes section lists "Called the pilot; follow up Monday." with its writer and time
+
+@REQ-REV-007
+@ui
+Scenario: A Safety Officer adds a private note, listed first as theirs
+  Given a Safety Officer is on the admin site and a pending report exists
+  And another reviewer left the private note "Called the pilot; follow up Monday."
+  And the Safety Officer opens that report
   When the Safety Officer adds the private note "Investigator report requested."
   Then "Investigator report requested." is listed first, marked as theirs
+
+@REQ-REV-008
+@ui
+Scenario: A Safety Officer edits their private note, which keeps its history
+  Given a Safety Officer is on the admin site and a pending report exists
+  And another reviewer left the private note "Called the pilot; follow up Monday."
+  And the Safety Officer opens that report
+  And the Safety Officer has added the private note "Investigator report requested."
   When the Safety Officer edits that private note to "Investigator report received."
   Then that private note reads "Investigator report received." and is marked as edited
   And its history shows both revisions
+
+@REQ-REV-009
+@ui
+Scenario: A Safety Officer removes their private note
+  Given a Safety Officer is on the admin site and a pending report exists
+  And another reviewer left the private note "Called the pilot; follow up Monday."
+  And the Safety Officer opens that report
+  And the Safety Officer has added the private note "Investigator report received."
   When the Safety Officer removes that private note and confirms
   Then "Investigator report received." is no longer listed
 

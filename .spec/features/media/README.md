@@ -111,7 +111,7 @@ model — the summary never sees one.
 ## Public media
 
 A published report's page shows its image and video derivatives (REQ-MED-025
-to REQ-MED-036, REQ-MED-063 to REQ-MED-068,
+to REQ-MED-036, REQ-MED-063 to REQ-MED-068, REQ-MED-084,
 [ADR-0117](../../decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
 One view, `public_report_media`, holds the whole rule: the report is in
 `public_reports`, its reporter answered yes to media consent, and the file is
@@ -139,7 +139,7 @@ filed before it existed has no answer and shows no media.
 ## Public documents
 
 A published report also offers its validated documents (REQ-MED-037 to
-REQ-MED-042, REQ-MED-069,
+REQ-MED-042, REQ-MED-069, REQ-MED-084,
 [ADR-0119](../../decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 `public_report_media` lists a document that is neither deleted nor hidden, with no processing error
 once the Worker has recorded it validated (`validated_at`), on a report whose

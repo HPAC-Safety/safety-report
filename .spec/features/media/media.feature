@@ -369,38 +369,38 @@ Scenario: A reviewer reading the public report page is offered to hide a file
 Scenario Outline: The lightbox steps between its images by arrow key, and wraps at either end
   Given a published report shows two images
   And a visitor has the <from> image open in the lightbox
-  When the visitor uses the <key> key
+  When the visitor uses <key>
   Then the lightbox shows the <to> image
 
 Examples:
-  | from   | key        | to     |
-  | first  | ArrowRight | second |
-  | second | ArrowRight | first  |
-  | first  | ArrowLeft  | second |
+  | from   | key                 | to     |
+  | first  | the right arrow key | second |
+  | second | the right arrow key | first  |
+  | first  | the left arrow key  | second |
 
 @REQ-MED-067
 @ui
 Scenario Outline: The open lightbox keeps focus inside it
   Given a published report shows two images
   And a visitor has the first image open in the lightbox
-  When the visitor moves on through the lightbox several times with the <key> key
+  When the visitor moves on through the lightbox several times with <key>
   Then focus never leaves the lightbox while it is open
 
 Examples:
-  | key |
-  | Tab |
+  | key         |
+  | the Tab key |
 
 @REQ-MED-068
 @ui
 Scenario Outline: Closing the lightbox returns focus to the thumbnail that opened it
   Given a published report shows two images
   And a visitor has the first image open in the lightbox
-  When the visitor closes the lightbox with the <key> key
+  When the visitor closes the lightbox with <key>
   Then focus returns to the first image's thumbnail
 
 Examples:
-  | key    |
-  | Escape |
+  | key            |
+  | the Escape key |
 
 @REQ-MED-057
 @ui
@@ -447,7 +447,14 @@ Scenario: A processing or failed image's staff tile offers a raw-original downlo
   Given a Safety Officer is on the admin site and a report has a still-processing image
   When a Safety Officer opens the report in the admin area
   Then the image's tile is marked "processing"
-  And activating it downloads the raw original and does not open the lightbox
+
+@REQ-MED-083
+@ui
+Scenario: Activating a processing image's staff tile downloads the raw original
+  Given a Safety Officer is on the admin site and a report has a still-processing image
+  And a Safety Officer opens the report in the admin area
+  When the Safety Officer activates the image's tile
+  Then the raw original downloads and the lightbox does not open
 
 @REQ-MED-036
 @ui
@@ -456,6 +463,19 @@ Scenario: The admin report page shows whether each file is public
   When a Safety Officer opens the report in the admin area
   Then the public image reads as shown publicly and offers to hide it
   And the hidden image reads as hidden from the public and offers to show it
+
+@REQ-MED-084
+@ui
+Scenario Outline: Showing a hidden file on the public report marks it public in place
+  Given a published report has a public <kind> and a hidden <kind>
+  And a Safety Officer opens the report in the admin area
+  When the Safety Officer shows the hidden <kind> on the public report
+  Then no file reads as hidden from the public, and both read as shown publicly
+
+Examples:
+  | kind     |
+  | image    |
+  | document |
 
 @REQ-MED-037
 Scenario: A published report lists its validated documents when media consent names documents

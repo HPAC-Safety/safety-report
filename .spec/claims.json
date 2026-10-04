@@ -677,6 +677,363 @@
 			"citedBy": {"decisions":["ADR-0180"],"lessons":[]}
 		},
 		{
+			"id": "REQ-ARS-001",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Unpublishing from the list updates the row in place",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer unpublishes the published row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the published row shows the \"Unpublished\" badge and offers Publish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the row action sent the version its row was listed with","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-002",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Keeping the report at the confirmation deletes nothing",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer keeps the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the pending row is still listed and nothing was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-003",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Confirming the deletion removes the row from the list",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer confirms","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the pending row is no longer listed and it was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-004",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "The search text survives a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has searched for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer reloads the page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the search box still reads \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-005",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Manage reports' \"Load more\" fallback becomes visible once reached",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer reaches the \"Load more\" action with the Tab key","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-006",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Activating Manage reports' \"Load more\" fallback loads the older reports in place",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the older reports load without leaving Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-007",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Manage reports offers a visible Retry action when its next page fails to load",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has loaded the older reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the next report page fails to load","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the list offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-001",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A session from member credentials survives a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in with valid member credentials","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-002",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A session started from the member sign-in page persists across a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-003",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "Signing out clears the member's session",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header shows the member sign-in action again","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-004",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator's Admin menu offers every item",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"it opens with manage-reports, review-type-ahead-values, and manage-questions items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-005",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator's open Admin menu counts the reports waiting on their item",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"3 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the manage-reports item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the manage-questions item shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-006",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A Safety Officer's open Admin menu counts each kind of waiting work on its item",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"4 reports need action and 3 type-ahead values await review","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as a Safety Officer","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the manage-reports item shows a count of 4","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the review-type-ahead-values item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-007",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With nothing waiting, no item of the open Admin menu shows a count",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"0 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no item shows a count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-008",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An environment with no identity provider configured refuses every bearer token",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with no identity provider configured","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a request carrying a bearer token asks for something that needs authorization","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it is refused as unauthenticated before it is handled","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-009",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With the temporary interim issuer enabled, the fixed development accounts do not exist",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a sign-in is attempted with the fixed development Administrator account","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the sign-in is refused","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-010",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With the temporary interim issuer disabled, its JWKS does not exist",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the interim issuer's JWKS is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-011",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With the temporary interim issuer disabled, it issues no token",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a token is requested from the interim issuer","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-COM-001",
 			"area": "comments",
 			"file": ".spec/features/comments/comments.feature",
@@ -1088,19 +1445,17 @@
 			"id": "REQ-COM-021",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "Leaving with an unposted comment is confirmed before it is discarded",
+			"title": "Leaving with an unposted comment is confirmed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"types a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"navigates away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates away and the unposted comment is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they navigate away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -1426,6 +1781,56 @@
 				{"keyword":"Then","text":"that value's direction switch translates English to French","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/review-type-ahead-values.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-CTA-009",
+			"area": "choices-and-type-ahead",
+			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
+			"title": "Saving the correction sends the translated value",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer and three type-ahead values flagged for review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they begin correcting \"coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English wording to \"Cooper's\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they translate that value's wording","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the correction","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the correction is sent for that value","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/review-type-ahead-values.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-CTA-010",
+			"area": "choices-and-type-ahead",
+			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
+			"title": "Saving the question sends each choice's position",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open a single-select question offering \"Other\" pinned last, and \"Paraglider\" and \"Hang glider\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they reword \"Hang glider\" to \"Speed wing\" and set \"Paraglider\" to \"Pin to top\"","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the save sends \"Paraglider\" pinned first, \"Other\" pinned last, and \"Speed wing\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -1827,8 +2232,100 @@
 				{"keyword":"Given","text":"a Safety Officer reviews the reporter-added \"Model\" value \"Zeno 2\", offered under \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"\"Zeno 2\" is also linked to \"Gin\", a \"Make\" value since removed","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they also tick \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page sends \"Ozone\" and \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page sends \"Ozone\" and \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-018",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "The type-ahead review page keeps a dependent value's last parent choice ticked, and says why",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer reviews the reporter-added \"Model\" value \"Zeno 2\", offered under \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"\"Zeno 2\" is also linked to \"Gin\", a \"Make\" value since removed","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they open the value's parent choices","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page does not let them untick the last parent choice, and says why","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-019",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "A picker child with nothing under the parent's answer lets the reporter go on",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a required single-select \"Model\" question's choices depend on the single-select \"Make\" question, and nothing is offered under \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter answers \"Make\" with \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter goes on to the next page","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the next page is shown","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/report-form.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-020",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "A saved child answer no longer linked to its saved parent answer is restored empty",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter answered \"Make\" with \"Ozone\" and \"Model\" with \"Mentor 7\", a choice not offered under \"Ozone\", and the browser saved the report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they come back and continue the saved report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"\"Make\" holds \"Ozone\", and \"Model\" is restored empty","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-021",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "Save is refused while a dependent question's choice is offered under nothing",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator using English opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they make a type-ahead question's choices depend on a single-select question offering \"Other\" pinned last, and \"Ozone\" and \"Niviuk\" not pinned","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they tick a parent choice for every choice but the new one","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in English, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in French, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -3758,11 +4255,11 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report shows two images","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor has the first image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor uses the ArrowRight key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor uses the right arrow key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the lightbox shows the second image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor has the second image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the lightbox shows the first image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor uses the ArrowLeft key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"When","text":"the visitor uses the left arrow key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -3847,8 +4344,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report has a still-processing image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the image's tile is marked \"processing\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"activating it downloads the raw original and does not open the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the image's tile is marked \"processing\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -4343,6 +4839,52 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-MED-083",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Activating a processing image's staff tile downloads the raw original",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report has a still-processing image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer activates the image's tile","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the raw original downloads and the lightbox does not open","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-084",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Showing a hidden file on the public report marks it public in place",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report has a public image and a hidden image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer shows the hidden image on the public report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no file reads as hidden from the public, and both read as shown publicly","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report has a public document and a hidden document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer shows the hidden document on the public report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-MOD-001",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
@@ -4385,16 +4927,14 @@
 			"id": "REQ-MOD-003",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "Signing in with member credentials returns a session that survives a reload",
+			"title": "Signing in with member credentials returns a session",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in with valid member credentials","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -4445,18 +4985,14 @@
 			"id": "REQ-MOD-006",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "A member's signed-in session persists across a reload and clears on sign-out",
+			"title": "Signing in from the member sign-in page starts a session",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows the member sign-in action again","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -4467,16 +5003,14 @@
 			"id": "REQ-MOD-007",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "An Administrator's Admin menu offers every item",
+			"title": "An Administrator's header shows an Admin menu",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows an Admin menu and no other header nav change","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it opens with manage-reports, review-type-ahead-values, and manage-questions items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows an Admin menu and no other header nav change","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -4532,7 +5066,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the Manage reports item","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the browser navigates to the manage-reports page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the Manage questions item","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
@@ -5336,7 +5870,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses the \"Published\" filter","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"only published reports are listed","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the chosen filter stays in the address bar","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -5357,7 +5891,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens a pending report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"its answers are shown under their questions, with each private answer marked private","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"both the English and French summary texts are shown with the model and prompt version","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -5539,7 +6073,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer edits the English summary and saves","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Pending\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the saved English text is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -5560,7 +6094,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Published\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -5580,7 +6114,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer unpublishes it with the note \"Duplicate of an earlier report\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Unpublished\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the note \"Duplicate of an earlier report\" is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -5602,7 +6136,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer has changed that report since it was opened","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a message says the report changed and offers to reload it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -5622,11 +6156,9 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a confirmation asks whether to delete the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer confirms","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser returns to Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a confirmation asks whether to delete the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -5644,7 +6176,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens its document attachment","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the browser requests that attachment's download link","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -5713,8 +6245,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer changes nothing","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the translate buttons offered are none","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -5740,16 +6272,11 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Translate to French","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a confirmation shows the current French text and the proposed translation with their differences marked","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer keeps the current text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the French text is unchanged","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer chooses Translate to French and accepts the translation","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the French text is the proposed translation","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Translate to English button is not offered for it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a confirmation shows the current French text and the proposed translation with their differences marked","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -5767,9 +6294,9 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a summary-failed report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer chooses Write summary","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer types the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Write summary","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer writes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the translate buttons offered are Translate to French","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
@@ -5881,7 +6408,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens a pending report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a translated narrative answer shows its translation beneath it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a name or email answer shows no translation line","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -6059,10 +6586,7 @@
 			"steps": [
 				{"keyword":"Given","text":"3 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Admin menu shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the manage-reports item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the manage-questions item shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the Admin menu shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -6081,9 +6605,7 @@
 			"steps": [
 				{"keyword":"Given","text":"0 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Admin menu shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"no item shows a count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the Admin menu shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -6161,10 +6683,7 @@
 			"steps": [
 				{"keyword":"Given","text":"4 reports need action and 3 type-ahead values await review","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor signs in as a Safety Officer","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Admin menu shows a count of 7","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the manage-reports item shows a count of 4","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the review-type-ahead-values item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the Admin menu shows a count of 7","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -6444,7 +6963,7 @@
 			"id": "REQ-MOD-106",
 			"area": "review-and-publication",
 			"file": ".spec/features/review-and-publication/review-and-publication.feature",
-			"title": "A Safety Officer keeps private notes on the report page",
+			"title": "The report page lists its private notes with their writer and time",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -6453,14 +6972,7 @@
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer left the private note \"Called the pilot; follow up Monday.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private notes section lists \"Called the pilot; follow up Monday.\" with its writer and time","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer adds the private note \"Investigator report requested.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Investigator report requested.\" is listed first, marked as theirs","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer edits that private note to \"Investigator report received.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"that private note reads \"Investigator report received.\" and is marked as edited","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"its history shows both revisions","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer removes that private note and confirms","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Investigator report received.\" is no longer listed","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the private notes section lists \"Called the pilot; follow up Monday.\" with its writer and time","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-notes.steps.ts"],
 			"staleIgnore": false,
@@ -6802,19 +7314,17 @@
 			"id": "REQ-MOD-121",
 			"area": "admin-report-search",
 			"file": ".spec/features/admin-report-search/admin-report-search.feature",
-			"title": "Publishing and unpublishing from the list updates the row in place",
+			"title": "Publishing from the list updates the row in place",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row shows the \"Published\" badge and offers Unpublish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer unpublishes the published row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the published row shows the \"Unpublished\" badge and offers Publish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"each row action sent the version its row was listed with","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the row action sent the version its row was listed with","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6832,13 +7342,9 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a confirmation asks whether to delete it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer keeps the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the pending row is still listed and nothing was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer confirms","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the pending row is no longer listed and it was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a confirmation asks whether to delete it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6857,7 +7363,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer has changed the pending report since the list was loaded","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a message says the report changed and offers to reload the list","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row still shows the \"Pending\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -6958,21 +7464,14 @@
 			"id": "REQ-MOD-128",
 			"area": "admin-report-search",
 			"file": ".spec/features/admin-report-search/admin-report-search.feature",
-			"title": "Manage reports loads more automatically and offers the same hidden fallback and visible retry",
+			"title": "Manage reports' \"Load more\" fallback is not visible until it is needed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a keyboard visitor tabs to the \"Load more\" action","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"that visitor activates it","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the older reports load without leaving Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"the next report page fails to load","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the list offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6990,7 +7489,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"reports exist in every workflow state","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a reviewer lists reports","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reviewer has listed reports","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reviewer lists reports after a cursor naming a report no longer in the report list","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that list starts with the same report the first page did","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false}
 			],
@@ -7092,8 +7591,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer searches for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has searched for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer clears the search box","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every report is listed newest first as before the search","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -7125,18 +7624,16 @@
 			"id": "REQ-MOD-136",
 			"area": "admin-report-search",
 			"file": ".spec/features/admin-report-search/admin-report-search.feature",
-			"title": "The search text lives in the address bar and survives a reload",
+			"title": "The search text lives in the address bar",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the address bar carries \"q=Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer reloads the page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the search box still reads \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the address bar carries \"q=Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -7154,7 +7651,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for a word that matches nothing","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a message says no reports match that search","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no error is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -7530,7 +8027,7 @@
 			"id": "REQ-MOD-156",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "An environment with no identity provider configured still starts, answers public requests, and refuses every bearer token",
+			"title": "An environment with no identity provider configured still starts and answers public requests",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7538,9 +8035,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a deployment outside development with no identity provider configured","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the health check is requested","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the health check is answered with success","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a request carrying a bearer token asks for something that needs authorization","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it is refused as unauthenticated before it is handled","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the health check is answered with success","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],
 			"staleIgnore": false,
@@ -7551,7 +8046,7 @@
 			"id": "REQ-MOD-157",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist",
+			"title": "With the temporary interim issuer enabled, a member signs in with their members-site credentials",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7560,9 +8055,7 @@
 				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a member signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the member receives a token that later requests are accepted with","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"an allowlisted Administrator account's token carries the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a sign-in is attempted with the fixed development Administrator account","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the sign-in is refused","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"an allowlisted Administrator account's token carries the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
 			"staleIgnore": false,
@@ -7573,7 +8066,7 @@
 			"id": "REQ-MOD-158",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "With the temporary interim issuer disabled, none of its services exist",
+			"title": "With the temporary interim issuer disabled, its discovery document does not exist",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7581,9 +8074,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the interim issuer's discovery document is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the interim issuer's JWKS is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a token is requested from the interim issuer","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
 			"staleIgnore": false,
@@ -7815,7 +8306,7 @@
 				{"keyword":"Given","text":"they edit its English wording to \"Cooper's\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they translate that value's wording","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that value's French wording is filled with the translation and remains editable","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"nothing is saved until they save the correction","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the correction is not saved yet","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/review-type-ahead-values.steps.ts"],
 			"staleIgnore": false,
@@ -8147,20 +8638,18 @@
 			"id": "REQ-MOD-185",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "Leaving the summary editor with unsaved changes is confirmed before they are discarded",
+			"title": "Leaving the summary editor with unsaved changes is confirmed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"types into the English text without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"navigates to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that page and the edit is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -8178,13 +8667,11 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer and two type-ahead questions with values flagged for review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they begin correcting \"Coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they edit its English wording to \"Cooper's Hill\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they begin correcting \"Coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English wording to \"Cooper's Hill\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that page and the correction is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/review-type-ahead-values.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -8202,9 +8689,9 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer starts writing a private note without saving it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"navigates to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer starts writing a private note without saving it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
@@ -8394,10 +8881,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a Pending report whose reporter consented to publication","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a reviewer has edited either summary language","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report is not on the public feed","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a reviewer publishes the pair","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the latest revision is approved by that reviewer","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the public feed shows the edited text","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the report is not on the public feed","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs","tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],
 			"staleIgnore": false,
@@ -8503,7 +8987,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer views the first revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that revision's English and French text is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the current summary is unchanged","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -8524,13 +9008,10 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Restore this version on the first revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a confirmation asks whether to restore that version","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"nothing has been restored yet","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer confirms the restore","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser asks to restore that revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the restored text is the current summary","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"nothing has been restored yet","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -8567,7 +9048,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer edits the English summary and saves","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Published\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the saved English text is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -8581,18 +9062,16 @@
 			"id": "REQ-MOD-207",
 			"area": "review-and-publication",
 			"file": ".spec/features/review-and-publication/review-and-publication.feature",
-			"title": "Save is offered only once a language has changed",
+			"title": "Save is not offered before a language has changed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Save summary is not offered","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Save summary is offered","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"Save summary is not offered","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -11611,11 +12090,12 @@
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter is filling in the form","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the form asks the media consent question, and it must be answered to submit","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter goes on to the next page","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form asks the media consent question","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
-			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts","tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
 			"constraints": ["CON-SO-002"],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -12038,7 +12518,7 @@
 			"id": "REQ-QB-130",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "A reporter typing a removed type-ahead value names it without reviving it",
+			"title": "A reporter entering a removed type-ahead value names it without reviving it",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -12529,8 +13009,7 @@
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they open a single-select question offering \"Other\" pinned last, and \"Paraglider\" and \"Hang glider\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they reword \"Hang glider\" to \"Speed wing\" and set \"Paraglider\" to \"Pin to top\"","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the choices stay where they were while the Administrator edits","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the save sends \"Paraglider\" pinned first, \"Other\" pinned last, and \"Speed wing\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the choices stay where they were while the Administrator edits","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -12738,7 +13217,7 @@
 			"id": "REQ-QB-160",
 			"area": "report-form",
 			"file": ".spec/features/report-form/report-form.feature",
-			"title": "Typing into a type-ahead filters its list, ignoring case and accents",
+			"title": "Entering text in a type-ahead filters its list, ignoring case and accents",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -12876,7 +13355,7 @@
 				{"keyword":"When","text":"they add a choice written in English and ask for its translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that choice's French wording is filled with the translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that choice's French wording remains editable","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"nothing is saved until they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the question is not saved yet","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator is authoring a new multi-select question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator is authoring a new type-ahead question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
 			],
@@ -13058,7 +13537,7 @@
 				{"keyword":"Given","text":"an Administrator is editing a question whose wording is in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they edit its English question and help text and ask for their translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the French question and help text are replaced with their translations","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the drafts are saved only when they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the question is not saved yet","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -13557,8 +14036,7 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter answered \"Make\" with \"Niviuk\" and \"Model\" with \"Mentor 7\", and the browser saved the report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they come back and continue the saved report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Make\" holds \"Niviuk\", and \"Model\" holds \"Mentor 7\" and offers only the \"Niviuk\" models","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a saved \"Model\" answer no longer linked to the saved \"Make\" answer is restored empty","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"\"Make\" holds \"Niviuk\", and \"Model\" holds \"Mentor 7\" and offers only the \"Niviuk\" models","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -13626,8 +14104,7 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a required single-select \"Model\" question's choices depend on the single-select \"Make\" question, and nothing is offered under \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter answers \"Make\" with \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Model\" is disabled, and says no choice is listed for that answer","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the reporter can go on to the next page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"\"Model\" is disabled, and says no choice is listed for that answer","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -14029,9 +14506,7 @@
 				{"keyword":"Given","text":"an Administrator using English opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they make a type-ahead question's choices depend on a single-select question offering \"Other\" pinned last, and \"Ozone\" and \"Niviuk\" not pinned","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every choice row, a new one included, has an \"Offered under\" multi-select listing \"Niviuk\", \"Ozone\", \"Other\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in English, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in French, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -14289,7 +14764,7 @@
 			"id": "REQ-QB-233",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "Typing a merged-away wording offers the survivor, hinting the alias that matched",
+			"title": "Entering a merged-away wording offers the survivor, hinting the alias that matched",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -14312,7 +14787,7 @@
 			"id": "REQ-QB-234",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "A merged-away wording matches typing in the other language too",
+			"title": "A merged-away wording matches an entry in the other language too",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -14403,18 +14878,16 @@
 			"id": "REQ-QB-238",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "Leaving the question editor with an unsaved draft is confirmed before it is discarded",
+			"title": "Leaving the question editor with an unsaved draft is confirmed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator is authoring a new question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they write the English wording without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write the English wording without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that page and the draft is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -14432,8 +14905,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the first question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the second question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the first question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the second question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no confirmation of any kind appears","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
@@ -15349,6 +15822,251 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-QTR-010",
+			"area": "question-translation",
+			"file": ".spec/features/question-translation/question-translation.feature",
+			"title": "Saving the question saves its translated drafts",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is editing a question whose wording is in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English question and help text and ask for their translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the save sends the translated French question and help text","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-QTR-011",
+			"area": "question-translation",
+			"file": ".spec/features/question-translation/question-translation.feature",
+			"title": "Saving the question saves a choice's translated French wording",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is authoring a new single-select question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they add a choice written in English and ask for its translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the save sends that choice with its translated French wording","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is authoring a new multi-select question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is authoring a new type-ahead question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-001",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "Publishing a Pending report's draft approves it and shows it on the public feed",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Pending report whose reporter consented to publication","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reviewer has edited either summary language","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a reviewer publishes the pair","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the latest revision is approved by that reviewer","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the public feed shows the edited text","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.SummaryRevisions.cs","tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-002",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "Save is offered once a language has changed",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"Save summary is offered","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-003",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "Confirming the restore makes the restored text the current summary",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Restore this version on the first revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer confirms the restore","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser asks to restore that revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the restored text is the current summary","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-004",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "Confirming the deletion returns the reviewer to Manage reports",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer confirms","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser returns to Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-005",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "Keeping the current text at the translation's confirmation leaves it unchanged",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Translate to French","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer keeps the current text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the French text is unchanged","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-006",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "Accepting a translation replaces the text and offers no translation back",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer chooses Translate to French and accepts the translation","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the French text is the proposed translation","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the Translate to English button is not offered for it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-007",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "A Safety Officer adds a private note, listed first as theirs",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"another reviewer left the private note \"Called the pilot; follow up Monday.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer adds the private note \"Investigator report requested.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"\"Investigator report requested.\" is listed first, marked as theirs","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-notes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-008",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "A Safety Officer edits their private note, which keeps its history",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"another reviewer left the private note \"Called the pilot; follow up Monday.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has added the private note \"Investigator report requested.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer edits that private note to \"Investigator report received.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"that private note reads \"Investigator report received.\" and is marked as edited","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"its history shows both revisions","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-notes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-REV-009",
+			"area": "review-and-publication",
+			"file": ".spec/features/review-and-publication/review-and-publication.feature",
+			"title": "A Safety Officer removes their private note",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"another reviewer left the private note \"Called the pilot; follow up Monday.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has added the private note \"Investigator report received.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer removes that private note and confirms","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"\"Investigator report received.\" is no longer listed","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-notes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-RFM-001",
 			"area": "report-form",
 			"file": ".spec/features/report-form/report-form.feature",
@@ -15851,7 +16569,7 @@
 				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they have reached the media consent question and tried to submit without answering it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they remove the file, or answer no to publication consent","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the form no longer asks it, and submits no answer to it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form no longer asks it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
@@ -15878,6 +16596,57 @@
 				{"keyword":"Then","text":"the form moves on without asking Province","files":["tests/e2e/steps/country.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/country.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-RFM-022",
+			"area": "report-form",
+			"file": ".spec/features/report-form/report-form.feature",
+			"title": "The media consent question must be answered to submit",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter is filling in the form","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have reached the media consent question","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they submit the report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form says the media consent question is required and sends nothing","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-RFM-023",
+			"area": "report-form",
+			"file": ".spec/features/report-form/report-form.feature",
+			"title": "A report no longer asking for media consent is sent with no answer to it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter is filling in the form","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have reached the media consent question and tried to submit without answering it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they remove the file, or answer no to publication consent","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they submit the report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is sent with no answer to the media consent question","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -16905,8 +17674,7 @@
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission is refused for some uploads that expired","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"each of those files is marked expired with a prompt to attach it again","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"every other answer and upload is kept","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the reporter can submit again once the files are re-attached","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"every other answer and upload is kept","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/attachments.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
@@ -17628,7 +18396,7 @@
 				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a signed-in reporter picks a wing type, checks two conditions, and types a launch site the form does not offer","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a signed-in reporter picks a wing type, checks two conditions, and enters a launch site the form does not offer","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the reporter sends the report","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the wing type and both conditions are sent as their choices' identifiers","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the launch site is sent as the words typed","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false}
@@ -18176,20 +18944,20 @@
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the current page shows a date question that allows future dates, on a desktop","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the date question","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowDown key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the down arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"today has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowLeft key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the left arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the day 1 day before today has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the day 1 day before today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowUp key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the up arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the day 8 days before today has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the day 8 days before today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowRight key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the PageUp key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the right arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the Page Up key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the same day of the previous month has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the same day of the previous month","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the PageDown key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"When","text":"the reporter uses the Page Down key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/date-answers.steps.ts","tests/e2e/steps/report-form.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
@@ -19395,6 +20163,30 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-SUB-156",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "A report refused for expired uploads is submitted once the files are attached again",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter sends a report in one final request, each attachment having gone ahead of it straight to storage through a pre-signed upload link","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a submission is refused for some uploads that expired","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the reporter has attached the expired files again","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter submits the report again","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is sent with the kept file and the file attached again, never the expired upload","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/attachments.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-TF-001",
 			"area": "typeform-question-import-export",
 			"file": ".spec/features/typeform-question-import-export/typeform-question-import-export.feature",
@@ -19729,8 +20521,9 @@
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they import a Typeform draft whose key matches an existing question","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"choosing to review it opens the existing question for editing, and creates no new one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"they import a Typeform draft whose key matches an existing question","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they choose to review that draft","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the existing question opens for editing, and no new one is created","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/typeform-import.steps.ts"],
 			"staleIgnore": false,
@@ -19915,9 +20708,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a visitor loads the homepage","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the header shows links to view safety reports, submit a safety report, and contact","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows a visually distinct member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor activates any of those links or the member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that destination's page","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows a visually distinct member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
 			"staleIgnore": false,
@@ -19948,18 +20739,14 @@
 			"id": "REQ-WLD-004",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "On a mobile-width viewport, header navigation is reached through a hamburger toggle",
+			"title": "On a phone-width screen, header navigation is reached through a hamburger toggle",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a visitor loads the homepage on a mobile-width viewport","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header nav is hidden and a menu toggle is shown instead","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the menu toggle","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a dialog containing the header's navigation links and member sign-in action opens","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the menu toggle again","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the dialog closes","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a visitor loads the homepage on a phone-width screen","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header nav is hidden and a menu toggle is shown instead","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
 			"staleIgnore": false,
@@ -20034,18 +20821,14 @@
 			"id": "REQ-WLD-008",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "A visitor can toggle and persist a light/dark theme choice",
+			"title": "With no theme chosen, the page follows the operating system",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor has no stored theme preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page follows the operating system's light/dark preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor toggles the theme control","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the data-theme attribute updates immediately","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header logo matches the active theme","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the theme choice persists to local storage across a reload","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the page follows the operating system's light/dark preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/theme.steps.ts"],
 			"staleIgnore": false,
@@ -20056,16 +20839,14 @@
 			"id": "REQ-WLD-009",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "The footer sits at the bottom of the viewport on a short page but below the fold on a long one",
+			"title": "The footer sits at the bottom of the window on a short page",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a visitor loads a page whose content is shorter than the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the footer sits flush with the bottom of the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a visitor loads a page whose content is taller than the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the footer sits below the content, not pinned to the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a visitor loads a page whose content is shorter than the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the footer sits flush with the bottom of the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/footer.steps.ts"],
 			"staleIgnore": false,
@@ -20263,9 +21044,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a published report has both an English and a French summary text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor views it in a given locale","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"only that locale's text is shown, with no language control on the report itself","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the report shows the other language's text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"only that locale's text is shown, with no language control on the report itself","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -20350,10 +21129,8 @@
 				{"keyword":"Given","text":"a reporter uses assistive technology to complete the form","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every control has a programmatic label and usable keyboard order","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"groups use fieldset/legend","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"errors are linked to their questions and summarized","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"focus is visible and status updates use appropriate live regions","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"motion respects reduced-motion and touch targets/contrast are sufficient","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"media previews are never required to complete a report","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"motion respects reduced-motion and touch targets/contrast are sufficient","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
@@ -20898,7 +21675,6 @@
 				{"keyword":"Given","text":"a reviewer is on a published report in the admin site","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they choose to delete the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the admin site asks them to confirm before sending anything","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"cancelling sends no request","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they choose to unpublish the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-site.steps.ts"],
@@ -20925,6 +21701,273 @@
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":["ADR-0190","ADR-0193"],"lessons":["0043"]}
+		},
+		{
+			"id": "REQ-WLD-050",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Each homepage header link and the member sign-in action leads to its page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads the homepage","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor activates any of the header's links or its member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that destination's page","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-051",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "On a phone-width screen, the menu toggle opens the header's navigation",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads the homepage on a phone-width screen","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the menu toggle","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a dialog containing the header's navigation links and member sign-in action opens","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-052",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "On a phone-width screen, the menu toggle closes the open navigation again",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads the homepage on a phone-width screen","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor activates the menu toggle","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the menu toggle again","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the dialog closes","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-053",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "A visitor can toggle and persist a light/dark theme choice",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor has no stored theme preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor toggles the theme control","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page's theme changes immediately","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header logo matches the active theme","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the theme choice persists to local storage across a reload","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/theme.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-054",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "The footer sits below the fold on a long page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads a page whose content is taller than the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the footer sits below the content, not pinned to the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/footer.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-055",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Switching the site's language switches the summary text shown",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report has both an English and a French summary text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor views it in a given locale","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the report shows the other language's text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-056",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving the question editor discards the unsaved draft",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator is authoring a new question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write the English wording without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that page and the draft is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-057",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving the summary editor discards the unsaved changes",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that page and the edit is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-058",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving the type-ahead review page discards the uncorrected draft",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer and two type-ahead questions with values flagged for review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they begin correcting \"Coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English wording to \"Cooper's Hill\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that page and the correction is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/review-type-ahead-values.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-059",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving discards the unposted comment",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates away and the unposted comment is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-060",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Cancelling a destructive admin action sends nothing",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reviewer is on a published report in the admin site","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they choose to delete the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they cancel it","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"nothing is sent and the report still offers Unpublish","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they choose to unpublish the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-site.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-061",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Going on past an unanswered required question links its error to it and summarizes it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter uses assistive technology to complete a form whose narrative question is required","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have reached the narrative question","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they go on without answering it","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"errors are linked to their questions and summarized","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/report-form.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-062",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "A report goes on past its attachments with no file attached",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter uses assistive technology to complete the form","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have answered every page up to the attachments, attaching nothing","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter goes on to the next page","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"media previews are never required to complete a report","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/report-form.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
 		}
 	],
 	"constraints": [

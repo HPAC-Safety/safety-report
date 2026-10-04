@@ -129,6 +129,10 @@ Use the existing restrained HPAC token system: Tailwind v4 via
 Poppins for interface/body copy. Target WCAG 2.2 AA across both themes and
 languages.
 
+A phone-width screen, in the header scenarios, is 375 pixels wide: there the
+header's navigation moves behind a menu toggle (REQ-WLD-004, REQ-WLD-051,
+REQ-WLD-052).
+
 ## Leaving a form with unsaved changes (#659)
 
 Every editable form across the public and admin sites warns before it is left
@@ -164,12 +168,12 @@ Every editable form calls the hook with its own `dirty` condition:
 | Form | Route | Scenarios |
 |---|---|---|
 | Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121, REQ-SUB-122, REQ-SUB-128..130, REQ-SUB-154 |
-| Question editor | `/admin/questions` | REQ-QB-238, REQ-QB-239 |
-| Type-ahead value correction | `/admin/type-ahead-values` | REQ-MOD-186 |
-| Summary review editor | `/admin/reports/:reportId` | REQ-MOD-185 |
+| Question editor | `/admin/questions` | REQ-QB-238, REQ-WLD-056, REQ-QB-239 |
+| Type-ahead value correction | `/admin/type-ahead-values` | REQ-MOD-186, REQ-WLD-058 |
+| Summary review editor | `/admin/reports/:reportId` | REQ-MOD-185, REQ-WLD-057 |
 | Private notes composer | `/admin/reports/:reportId` | REQ-MOD-187 |
 | Private-attachment staging area | `/admin/reports/:reportId` | `media.feature` REQ-MOD-177 |
-| Published-report comment composer | `/reports/:reportId` | REQ-COM-021 |
+| Published-report comment composer | `/reports/:reportId` | REQ-COM-021, REQ-WLD-059 |
 
 A multi-step form's own step navigation (the report form's
 `/report/<question-key>` addresses, ADR-0099) never counts as leaving: the

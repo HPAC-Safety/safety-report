@@ -30,7 +30,9 @@ stays reachable by Tab at all times but is visually hidden until it holds
 keyboard focus, so a sighted visitor never sees a control auto-load already
 made unnecessary; a screen reader still reaches it in the normal reading
 order. Once a page fails to load, the control becomes visible unconditionally
-and reads "Retry." Every newly loaded batch is announced politely regardless
+and reads "Retry." On Manage reports the fallback is hidden until reached
+(REQ-MOD-128, REQ-ARS-005), loads the older reports in place (REQ-ARS-006),
+and turns into Retry on a failed page (REQ-ARS-007). Every newly loaded batch is announced politely regardless
 of how it loaded. The admin list gained server-side keyset paging for this
 (it had none before, REQ-MOD-129); its cursor carries only the last row's
 report ID, the same shape as the public feed's (ADR-0153) — never a
@@ -106,7 +108,7 @@ attachment file names — built on PostgreSQL's own full-text search and
   French query against an English answer (or the reverse) still finds the
   report (REQ-MOD-131, REQ-MOD-132).
 - **Lives in the address bar** as `?q=`, alongside the filter — bookmarkable,
-  and it survives a reload or the back button (REQ-MOD-136).
+  and it survives a reload or the back button (REQ-MOD-136, REQ-ARS-004).
 - **No results** shows a message naming the search text rather than an empty
   list with no explanation (REQ-MOD-137).
 - Reads what it finds, never which part matched: a hit is the whole report,
@@ -130,10 +132,11 @@ report. Each has a name in both languages and a tooltip:
 | Any other | Delete |
 
 Publish and Unpublish run the same audited commands as the report view, and
-the row's badge changes in place. Unpublishing from a row carries no note;
+the row's badge changes in place (REQ-MOD-121, REQ-ARS-001). Unpublishing from a row carries no note;
 declining a Pending report with a note stays in the report view. Delete asks
 for confirmation first, with the report view's dialog, because nothing
-restores a deleted report (REQ-DOM-007).
+restores a deleted report (REQ-DOM-007); keeping the report deletes nothing,
+and confirming removes the row (REQ-MOD-122, REQ-ARS-002, REQ-ARS-003).
 
 Each row carries the report's review version
 ([ADR-0105](../../decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)),

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Scenarios describe behavior, not implementation (CONV-004, #815).
+// Scenarios describe behavior, not implementation (CONV-004), one behavior
+// each (CONV-006, #815).
 //
 // Parses every .spec/features/<area>/<area>.feature with the pinned
 // @cucumber/gherkin parser and runs each rule below over it. A rule reads the
@@ -23,7 +24,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
-import { IdGenerator, type Background, type Feature, type Scenario, type Step } from '@cucumber/messages'
+import { IdGenerator, StepKeywordType, type Background, type Feature, type Scenario, type Step } from '@cucumber/messages'
 
 import { FEATURES } from '../spec/spec-paths.ts'
 import { isMain } from '../lib/actions.ts'
@@ -108,6 +109,69 @@ const HTTP_STATUS = /\b(?:20[0-46]|30[1-478]|40[0-9]|41[0-8]|42[2-9]|43[01]|451|
  */
 const PROPER_NAMES = ['CloudFront', 'QuickTime', 'YouTube', 'WhatsApp', 'JavaScript', 'TypeScript', 'GitHub', 'OpenAI', 'DeepL', 'PowerPoint', 'OpenDocument', 'LibreOffice', 'iPhone', 'iPad', 'iOS', 'macOS', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown']
 
+/** The most steps a scenario may have, its Background not counted (J15). */
+export const MAX_STEPS = 8
+
+/** Whether a unit is a Background, which the shape rules do not judge. */
+function isBackground(unit: Unit): boolean {
+	return unit.keyword.trim() === 'Background'
+}
+
+/**
+ * At most one action step, and no action after an outcome (J14). A When is an
+ * action, and an And or But takes the type of the step before it; a scenario
+ * with no When at all is allowed.
+ */
+export function oneWhen(unit: Unit): Array<{ line: number; found: string }> {
+	if (isBackground(unit)) return []
+	const found: Array<{ line: number; found: string }> = []
+	let type = StepKeywordType.CONTEXT
+	let actions = 0
+	let outcome = false
+	for (const step of unit.steps) {
+		if (step.keywordType !== undefined && step.keywordType !== StepKeywordType.CONJUNCTION && step.keywordType !== StepKeywordType.UNKNOWN) type = step.keywordType
+		if (type === StepKeywordType.OUTCOME) outcome = true
+		if (type !== StepKeywordType.ACTION) continue
+		actions += 1
+		if (outcome) found.push({ line: step.location.line, found: `${step.keyword.trim()} ${step.text} (after a Then)` })
+		else if (actions > 1) found.push({ line: step.location.line, found: `${step.keyword.trim()} ${step.text} (action ${actions})` })
+	}
+	return found
+}
+
+/**
+ * How a browser is driven, which a step never says: pointer and keyboard
+ * mechanics, element roles and selectors, CSS, and pixel sizes. Quoted
+ * interface copy is skipped. An Examples cell a step reads is step text, so it
+ * is held to the same patterns: it names an input ("the Escape key", "the
+ * pointer outside the question"), never a verb ("pressing Escape").
+ */
+const UI_MECHANICS: readonly RegExp[] = [
+	/\b(?:click|double-click|right-click|tap|hover|scroll|drag|press)(?:s|es|ed|ing)?\b/i,
+	/\bkey(?:stroke|press)s?\b/i,
+	/\btabs?\s+(?:to|through|past|into|out|away|back)\b|\btabb(?:ed|ing)\b/i,
+	/\bmouse\b/i,
+	/\b(?:aria|data)-[a-z][\w-]*/i,
+	/\brole\s*=|\b(?:combobox|listbox|textbox|spinbutton|menuitem|tablist|tabpanel)(?:es|s)?\b/i,
+	// DOM, but not a claim ID that happens to carry it (REQ-DOM-007).
+	/\b(?:selector|DOM|CSS|class name|z-index|viewport)s?\b(?!-\d)/i,
+	/\b\d+\s*(?:pixels?|px)\b|\bpixels?\b/i,
+	// Typing as a verb ("types into", "the reporter types"), not the noun ("content type").
+	/^types?\b(?!-)|\b(?:visitor|member|reporter|reviewer|officer|administrator|they|who)\s+types?\b|\b(?:has|have|had)\s+typed\b|\b(?:and|or|then)\s+types?\b(?!-|\s+of\b)|\btyping\b|\btypes?\s+into\b|\btypes\s+in\b/i,
+]
+
+/**
+ * A key's name, which only an Examples cell carries ("the Enter key", "the
+ * down arrow key twice"): a step or a title reads it through a placeholder.
+ */
+const KEY_NAMES: readonly RegExp[] = [
+	/\b(?:Tab|Enter|Escape|Esc|Space(?:bar)?|Home|End|Shift|Backspace|Delete key|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown|(?:up|down|left|right) arrow)\b/,
+]
+
+const UI_MESSAGE = 'say what the actor does or sees, not how the browser is driven; a key name belongs only in an Examples cell, as a noun phrase ("the Escape key")'
+const UI_STEPS = wordRule('no-ui-mechanics', UI_MESSAGE, [...UI_MECHANICS, ...KEY_NAMES], { kinds: ['title', 'step'] })
+const UI_CELLS = wordRule('no-ui-mechanics', UI_MESSAGE, UI_MECHANICS, { kinds: ['example'] })
+
 export const RULES: readonly Rule[] = [
 	wordRule('no-http-status', 'say the outcome in the glossary\'s words ("is refused as forbidden"), not as a status code; the code is asserted in the step definition', [HTTP_STATUS]),
 	wordRule('no-storage-identifiers', 'name what the reader knows, not a table, column, enum, setting, or wire type; the identifier lives in the step definition and the CON claim', [
@@ -138,6 +202,17 @@ export const RULES: readonly Rule[] = [
 	], { kinds: ['title', 'description', 'step', 'example'] }),
 	wordRule('no-rationale', 'say what happens, not why; the reason belongs in the area README', [/\b(?:because|instead of|rather than|so that|in order to)\b/i, /,\s*since\b/i], { kinds: ['title', 'description', 'step', 'example'] }),
 	wordRule('no-locale-codes', 'say English or French; a locale code belongs only in an Examples cell', [/\b(?:en|fr)-CA\b/], { kinds: ['title', 'step'] }),
+	{
+		id: 'one-when',
+		message: 'one behavior per scenario: one action step, a single When; an And or But after it is a second action, and no action may follow a Then; make earlier actions Givens or split the rest into their own scenarios',
+		check: oneWhen,
+	},
+	{
+		id: 'max-steps',
+		message: `at most ${MAX_STEPS} steps in a scenario, its Background not counted; split it or move the setup into one Given`,
+		check: (unit) => (isBackground(unit) || unit.steps.length <= MAX_STEPS ? [] : [{ line: unit.line, found: `${unit.steps.length} steps` }]),
+	},
+	{ id: 'no-ui-mechanics', message: UI_MESSAGE, check: (unit) => [...UI_STEPS.check(unit), ...UI_CELLS.check(unit)] },
 ]
 
 /** The parsed feature of one file; a syntax error throws. */

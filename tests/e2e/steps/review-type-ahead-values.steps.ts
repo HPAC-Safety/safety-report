@@ -486,10 +486,15 @@ Then("that value's French wording is filled with the translation and remains edi
 	await expect(french).toHaveValue("Cooper's")
 })
 
-Then("nothing is saved until they save the correction", async ({ page }) => {
+Then("the correction is not saved yet", ({ page }) => {
 	expect(reviews.get(page)?.length ?? 0).toBe(0)
+})
 
+When("they save the correction", async ({ page }) => {
 	await theValueRow(page).getByRole("button", { name: "Save correction" }).click()
+})
+
+Then("the correction is sent for that value", async ({ page }) => {
 	await expect.poll(() => present(reviews.get(page)).length).toBe(1)
 	expect(present(reviews.get(page))[0]).toMatchObject({ method: "PUT", id: "value-coopers" })
 })

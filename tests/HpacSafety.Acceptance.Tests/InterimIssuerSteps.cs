@@ -27,7 +27,8 @@ public sealed class InterimIssuerSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
-	private const string AdministratorEmail = "interim-issuer-acceptance-admin@example.test";
+	private const string AdministratorName = "interim-issuer-acceptance-admin";
+	private const string AdministratorEmail = AdministratorName + "@example.test";
 
 	private const string LoginPageBody = """
 										 <html><body>
@@ -44,13 +45,12 @@ public sealed class InterimIssuerSteps
 	[Given(@"a deployment outside development with the temporary interim issuer enabled")]
 	public async Task GivenInterimIssuerEnabled()
 	{
-		// Four scripted responses: one successful members-site round trip for
-		// the allowlisted administrator, then one rejected round trip (a
-		// re-rendered login page) for "admin"/"admin" — the members site has
-		// no such account either, so there is no back door even if
+		// The members site accepts only the allowlisted administrator; for
+		// "admin"/"admin" it re-renders its login page — it has no such
+		// account either, so there is no back door even if
 		// FixedAccountCredentialSource were mistakenly reachable.
 		var host = await BootedApi.ProductionShapedWithInterimIssuer(
-			new StubTransport(LoginPage(), Redirect(), LoginPage(), LoginPage()),
+			new StubTransport(),
 			administratorEmails: [AdministratorEmail]);
 		_client = host.CreateClient();
 	}
@@ -173,25 +173,26 @@ public sealed class InterimIssuerSteps
 	private sealed record TokenPayload(string AccessToken, string Role);
 
 	/// <summary>
-	///     A fixed script of responses for the members-site's two calls — the
-	///     same shape as <c>MembersSiteLoginSteps</c>'s own stub, kept as its
-	///     own copy because this type is temporary (ADR-0172) and deletes with
-	///     it.
+	///     The members site's two calls, answered by who signs in: its login
+	///     page for the form's token, then a redirect (accepted) for the
+	///     allowlisted administrator's credentials and the login page again
+	///     (refused) for any other. Kept apart from
+	///     <c>MembersSiteLoginSteps</c>'s stub because this type is temporary
+	///     (ADR-0172) and deletes with it.
 	/// </summary>
 	private sealed class StubTransport : HttpMessageHandler
 	{
-		private readonly Queue<HttpResponseMessage> _responses;
-
-		public StubTransport(params HttpResponseMessage[] responses)
-		{
-			_responses = new Queue<HttpResponseMessage>(responses);
-		}
-
-		protected override Task<HttpResponseMessage> SendAsync(
+		protected override async Task<HttpResponseMessage> SendAsync(
 			HttpRequestMessage request,
 			CancellationToken cancellationToken)
 		{
-			return Task.FromResult(_responses.Dequeue());
+			if (request.Method != HttpMethod.Post || request.Content is null)
+			{
+				return LoginPage();
+			}
+
+			var form = await request.Content.ReadAsStringAsync(cancellationToken);
+			return form.Contains(AdministratorName, StringComparison.Ordinal) ? Redirect() : LoginPage();
 		}
 	}
 }

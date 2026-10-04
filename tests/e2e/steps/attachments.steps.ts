@@ -460,12 +460,19 @@ Then("every other answer and upload is kept", async ({ page }) => {
 	for (let step = 0; step < 3; step++) await page.getByRole("button", { name: "Next" }).click()
 })
 
-Then("the reporter can submit again once the files are re-attached", async ({ page }) => {
-	const stub = stubFor(page)
+Given("the reporter has attached the expired files again", async ({ page }) => {
+	await page.getByRole("button", { name: "Back" }).click() // consent -> attachments
 	await page.getByRole("button", { name: "Remove stale.png" }).click()
 	await attach(page, "stale.png")
 	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(2)
+})
+
+When("the reporter submits the report again", async ({ page }) => {
 	await submitFromAttachments(page)
+})
+
+Then("the report is sent with the kept file and the file attached again, never the expired upload", async ({ page }) => {
+	const stub = stubFor(page)
 	await expect(page.getByRole("heading", { name: "Report submitted" })).toBeVisible()
 	expect(namedAttachments(stub).map((attachment) => attachment.fileName).sort()).toEqual(["kept.png", "stale.png"])
 	expect(namedAttachments(stub).map((attachment) => attachment.uploadId)).not.toContain(stub.issued[1])

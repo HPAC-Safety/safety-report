@@ -116,6 +116,7 @@ public sealed class ReportReviewSteps
 
 	// ── When ────────────────────────────────────────────────────────────────
 
+	[Given(@"a reviewer has listed reports")]
 	[When(@"a reviewer lists reports")]
 	public async Task WhenAReviewerListsReports()
 	{

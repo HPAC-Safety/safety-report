@@ -256,12 +256,12 @@ Scenario: A multi-select picker stays open while the reporter checks choices
 @ui
 Scenario Outline: Closing a multi-select picker from the keyboard returns focus to it and names the checked choices
   Given the reporter has checked two choices in an open multi-select picker
-  When the reporter uses the <key> key
+  When the reporter uses <key>
   Then the picker closes, returns focus to itself, and names both choices
 
 Examples:
-  | key    |
-  | Escape |
+  | key            |
+  | the Escape key |
 
 @REQ-SUB-132
 @ui
@@ -513,58 +513,58 @@ Examples:
 Scenario Outline: The calendar moves its focused day from the keyboard
   Given the current page shows a date question that allows future dates, on a desktop
   And the keyboard focus is on <from>
-  When the reporter uses the <key> key
+  When the reporter uses <key>
   Then <to> has focus in the calendar
 
 Examples:
-  | from                               | key        | to                                 |
-  | the date question                  | ArrowDown  | today                              |
-  | today                              | ArrowLeft  | the day 1 day before today         |
-  | the day 1 day before today         | ArrowUp    | the day 8 days before today        |
-  | the day 8 days before today        | ArrowDown  | the day 1 day before today         |
-  | the day 1 day before today         | ArrowRight | today                              |
-  | today                              | PageUp     | the same day of the previous month |
-  | the same day of the previous month | PageDown   | today                              |
+  | from                               | key                 | to                                 |
+  | the date question                  | the down arrow key  | today                              |
+  | today                              | the left arrow key  | the day 1 day before today         |
+  | the day 1 day before today         | the up arrow key    | the day 8 days before today        |
+  | the day 8 days before today        | the down arrow key  | the day 1 day before today         |
+  | the day 1 day before today         | the right arrow key | today                              |
+  | today                              | the Page Up key     | the same day of the previous month |
+  | the same day of the previous month | the Page Down key   | today                              |
 
 @REQ-SUB-148
 @ui
 Scenario Outline: Choosing the focused day from the keyboard fills the question and closes the calendar
   Given the current page shows a date question that allows future dates, on a desktop
   And the keyboard focus is on today
-  When the reporter uses the <key> key
+  When the reporter uses <key>
   Then the date question reads today as yyyy-mm-dd
   And the calendar closes
   And focus is on the date question
 
 Examples:
-  | key   |
-  | Enter |
+  | key           |
+  | the Enter key |
 
 @REQ-SUB-149
 @ui
 Scenario Outline: Closing the calendar from the keyboard returns focus to the date question
   Given the current page shows a date question that <allows> future dates, on a desktop
   And <opened>, and the keyboard focus is on today
-  When the reporter uses the <key> key
+  When the reporter uses <key>
   Then the calendar closes
   And focus is on the date question
 
 Examples:
-  | allows         | opened                                                                                        | key    |
-  | allows         | the date question's calendar has been opened from the keyboard after a day was chosen from it | Escape |
-  | does not allow | the pointer has opened the date question's calendar and activated its background              | Escape |
+  | allows         | opened                                                                                        | key            |
+  | allows         | the date question's calendar has been opened from the keyboard after a day was chosen from it | the Escape key |
+  | does not allow | the pointer has opened the date question's calendar and activated its background              | the Escape key |
 
 @REQ-SUB-111
 @ui
 Scenario Outline: Leaving a date question from the keyboard skips its calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
   And the reporter has reached the date question from the keyboard
-  When the reporter uses the <key> key
+  When the reporter uses <key>
   Then focus skips the calendar to the Next button, and the calendar closes
 
 Examples:
-  | key |
-  | Tab |
+  | key         |
+  | the Tab key |
 
 @REQ-SUB-131
 @ui
@@ -653,7 +653,7 @@ Examples:
 @REQ-SUB-083
 @ui
 Scenario: The form names each chosen choice by its identifier
-  Given a signed-in reporter picks a wing type, checks two conditions, and types a launch site the form does not offer
+  Given a signed-in reporter picks a wing type, checks two conditions, and enters a launch site the form does not offer
   When the reporter sends the report
   Then the wing type and both conditions are sent as their choices' identifiers
   And the launch site is sent as the words typed
@@ -1128,7 +1128,14 @@ Scenario: An expired upload is marked for re-attachment and nothing else is lost
   Given a submission is refused for some uploads that expired
   Then each of those files is marked expired with a prompt to attach it again
   And every other answer and upload is kept
-  And the reporter can submit again once the files are re-attached
+
+@REQ-SUB-156
+@ui
+Scenario: A report refused for expired uploads is submitted once the files are attached again
+  Given a submission is refused for some uploads that expired
+  And the reporter has attached the expired files again
+  When the reporter submits the report again
+  Then the report is sent with the kept file and the file attached again, never the expired upload
 
 @REQ-SUB-063
 @ui

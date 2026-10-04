@@ -55,7 +55,7 @@ Common commands:
 dotnet test HpacSafety.slnx
 dotnet test HpacSafety.slnx --filter "Category!=Integration"
 node --test $(find tests/js -name '*.test.ts')   # tests/js/gherkin needs npm --prefix tools/gherkin ci
-node tools/gherkin/lint-scenarios.ts      # scenarios describe behavior, not implementation (CONV-004)
+node tools/gherkin/lint-scenarios.ts      # scenarios describe behavior, one each (CONV-004, CONV-006)
 npm run typecheck                        # tsc over tools and tests/js (Node strips their types, never checks them)
 npm --prefix src/web run test:coverage   # Vitest, 100% on split components and tested helpers
 npm --prefix src/web run typecheck

@@ -3,6 +3,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page, type Route } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
+import { keyPress } from "./keys"
 import { mediaConsentFormQuestions, stubCurrentQuestions } from "./report-form-fixture"
 import { present } from "./present"
 
@@ -600,7 +601,15 @@ Then("the public {word} reads as shown publicly and offers to hide it", async ({
 Then("the hidden {word} reads as hidden from the public and offers to show it", async ({ page }, _kind: string) => {
 	const row = page.locator('[data-media]').filter({ has: page.locator('[data-visibility="hidden"]') })
 	await expect(row.locator('[data-visibility="hidden"]')).toHaveText("Hidden from the public")
+	await expect(row.getByRole("button", { name: "Show on the public report" })).toBeVisible()
+})
+
+When(/^the Safety Officer shows the hidden (image|document) on the public report$/, async ({ page }, _kind: string) => {
+	const row = page.locator('[data-media]').filter({ has: page.locator('[data-visibility="hidden"]') })
 	await row.getByRole("button", { name: "Show on the public report" }).click()
+})
+
+Then("no file reads as hidden from the public, and both read as shown publicly", async ({ page }) => {
 	await expect(page.locator('[data-visibility="hidden"]')).toHaveCount(0)
 	await expect(page.locator('[data-visibility="public"]')).toHaveCount(2)
 })
@@ -622,17 +631,17 @@ Given(/^a visitor has the (first|second) image open in the lightbox$/, async ({ 
 	await expect(page.getByRole("img", { name: `Photo ${POSITION[which]} of 2` })).toBeVisible()
 })
 
-When("the visitor uses the {word} key", async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the visitor uses (the .+ key)$/, async ({ page }, key: string) => {
+	await page.keyboard.press(keyPress(key))
 })
 
 Then(/^the lightbox shows the (first|second) image$/, async ({ page }, which: string) => {
 	await expect(page.getByRole("img", { name: `Photo ${POSITION[which]} of 2` })).toBeVisible()
 })
 
-When("the visitor moves on through the lightbox several times with the {word} key", async ({ page }, key: string) => {
+When(/^the visitor moves on through the lightbox several times with (the .+ key)$/, async ({ page }, key: string) => {
 	for (let index = 0; index < 6; index += 1) {
-		await page.keyboard.press(key)
+		await page.keyboard.press(keyPress(key))
 	}
 })
 
@@ -640,8 +649,8 @@ Then("focus never leaves the lightbox while it is open", async ({ page }) => {
 	await expect(lightbox(page).locator(":focus")).toHaveCount(1)
 })
 
-When("the visitor closes the lightbox with the {word} key", async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the visitor closes the lightbox with (the .+ key)$/, async ({ page }, key: string) => {
+	await page.keyboard.press(keyPress(key))
 })
 
 Then("focus returns to the first image's thumbnail", async ({ page }) => {
@@ -687,10 +696,15 @@ Then("the image's tile is marked {string}", async ({ page }, label: string) => {
 	await expect(page.locator('[data-media="image"]').getByTestId("attachment-state")).toHaveText(label)
 })
 
-Then("activating it downloads the raw original and does not open the lightbox", async ({ page }) => {
-	const download = page.waitForEvent("download")
+const tileDownloads = new WeakMap<Page, Promise<unknown>>()
+
+When("the Safety Officer activates the image's tile", async ({ page }) => {
+	tileDownloads.set(page, page.waitForEvent("download"))
 	await thumbnail(page, "image").click()
-	await download
+})
+
+Then("the raw original downloads and the lightbox does not open", async ({ page }) => {
+	await present(tileDownloads.get(page))
 	await expect(lightbox(page)).toHaveCount(0)
 })
 
@@ -767,11 +781,20 @@ async function attachAndConsent(page: Page, file: { name: string; mimeType: stri
 	await consentGroup(page, "May we publish a summary of this report?").getByRole("radio", { name: "Yes" }).click()
 }
 
-Then("the form asks the media consent question, and it must be answered to submit", async ({ page }) => {
+Then("the form asks the media consent question", async ({ page }) => {
+	await expect(consentGroup(page, "Photo, video, and document consent")).toBeVisible()
+})
+
+Given("they have reached the media consent question", async ({ page }) => {
 	await next(page) // -> media consent, which now follows
-	const media = consentGroup(page, "Photo, video, and document consent")
-	await expect(media).toBeVisible()
+	await expect(consentGroup(page, "Photo, video, and document consent")).toBeVisible()
+})
+
+When("they submit the report", async ({ page }) => {
 	await page.getByRole("button", { name: "Submit report" }).click()
+})
+
+Then("the form says the media consent question is required and sends nothing", async ({ page }) => {
 	await expect(page.getByText("This question is required.").first()).toBeVisible()
 	expect(present(forms.get(page)).submissions).toHaveLength(0)
 })
@@ -799,9 +822,11 @@ When("they remove the file, or answer no to publication consent", async ({ page 
 	await next(page)
 })
 
-Then("the form no longer asks it, and submits no answer to it", async ({ page }) => {
+Then("the form no longer asks it", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Submit report" })).toBeVisible()
-	await page.getByRole("button", { name: "Submit report" }).click()
+})
+
+Then("the report is sent with no answer to the media consent question", async ({ page }) => {
 	await expect.poll(() => present(forms.get(page)).submissions.length).toBe(1)
 	const answered = present(forms.get(page)).submissions[0].answers.map((answer) => answer.questionRevisionId)
 	expect(answered).toContain("rev-consent")

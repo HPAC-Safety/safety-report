@@ -90,7 +90,7 @@ function choiceForm(): StubQuestion[] {
 const sent = new WeakMap<Page, Request>()
 
 Given(
-	"a signed-in reporter picks a wing type, checks two conditions, and types a launch site the form does not offer",
+	"a signed-in reporter picks a wing type, checks two conditions, and enters a launch site the form does not offer",
 	async ({ page }) => {
 		await stubAuth(page)
 		await stubCurrentQuestions(page, choiceForm())

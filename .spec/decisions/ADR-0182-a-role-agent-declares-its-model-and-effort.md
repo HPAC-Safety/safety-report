@@ -2,7 +2,7 @@
 title: A role agent declares its model and effort
 description: Every agents/*.md carries name, description, model, and effort, and may carry the other keys Claude Code reads on an agent. Judgement roles run opus at high effort; build roles run sonnet at medium. An agent file is brief: a mission line, Read first, Produce, Refuse.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-30
 decision-makers: Chase Florell
 keywords: agents, role agents, frontmatter, model, effort, reasoning effort, orchestration, subagent, skillfile, ADR-0086, ADR-0087
@@ -10,7 +10,8 @@ keywords: agents, role agents, frontmatter, model, effort, reasoning effort, orc
 
 # ADR-0182 — A role agent declares its model and effort
 
-**Status:** Accepted. Decided by the owner on 2026-09-30 in
+**Status:** Superseded by
+[CONV-008](../conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md). Decided by the owner on 2026-09-30 in
 [#706](https://github.com/HPAC-Safety/safety-report/issues/706). Amends
 [ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md) and
 [ADR-0087](ADR-0087-every-markdown-file-declares-itself.md), which held an

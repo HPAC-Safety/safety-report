@@ -2,7 +2,7 @@
 title: Backend and ux replace the implementer, and the adversary takes privacy review
 description: The implementer role is retired and replaced by backend (everything but the web UI) and ux (the web UI), each carrying the chain contract; the adversary takes security and privacy hunting from the spec-reviewer. The chain is spec-author, test-writer, backend or ux, spec-reviewer.
 type: adr
-status: accepted
+status: superseded
 date: 2026-10-04
 decision-makers: Chase Florell
 keywords: agents, roles, implementer, backend, ux, adversary, critic, spec-reviewer, chain, ADR-0086
@@ -10,7 +10,8 @@ keywords: agents, roles, implementer, backend, ux, adversary, critic, spec-revie
 
 # ADR-0197 — Backend and ux replace the implementer, and the adversary takes privacy review
 
-**Status:** Accepted. Decided by Chase Florell on 2026-10-04 in
+**Status:** Superseded by
+[CONV-008](../conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md). Decided by Chase Florell on 2026-10-04 in
 [#842](https://github.com/HPAC-Safety/safety-report/issues/842). Supersedes
 [ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amends
 [ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md)'s model

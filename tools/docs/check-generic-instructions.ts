@@ -1,41 +1,35 @@
 #!/usr/bin/env node
 // A generic skill or role agent names nothing specific to this repository
-// (ADR-0131).
+// (CONV-009, CONV-008).
 //
 // The generic files are meant to be copied into another project unchanged.
 // Anything that names this product, its domain, its paths, or one of its
-// ADR, lesson, or claim numbers belongs in the project skill that extends the
-// generic one. This is the list of generic files and the terms they may not
-// contain; a split's project skill is deliberately not on the list.
+// ADR, lesson, convention, or claim numbers belongs in the project skill that
+// extends the generic one.
+//
+// The rule selects the files: every `agents/*.md`, and every
+// `skills/*/SKILL.md` whose directory name has no "hpac". A skill whose name
+// says hpac is project-specific, so it is not checked (CONV-009).
 //
 // The exit code is the contract.
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isMain } from '../lib/actions.ts'
 
 const ROOT = process.cwd()
 
-export const GENERIC_FILES = [
-	'agents/adversary.md',
-	'agents/ai-author.md',
-	'agents/backend.md',
-	'agents/infrastructure.md',
-	'agents/critic.md',
-	'agents/database-administrator.md',
-	'agents/spec-author.md',
-	'agents/spec-reviewer.md',
-	'agents/test-writer.md',
-	'agents/ux.md',
-	'skills/clarify-requirements/SKILL.md',
-	'skills/coding-conventions/SKILL.md',
-	'skills/deliver-change/SKILL.md',
-	'skills/design-ef-core-model/SKILL.md',
-	'skills/manage-ef-core-migrations/SKILL.md',
-	'skills/postgres-dba/SKILL.md',
-	'skills/test-from-scenarios/SKILL.md',
-]
+/** Every generic file under `root`: each agent, and each skill whose directory has no "hpac". */
+export function genericFiles(root: string = ROOT): string[] {
+	const names = (directory: string): string[] => (existsSync(join(root, directory)) ? readdirSync(join(root, directory)).sort() : [])
+	const agents = names('agents').filter((name) => name.endsWith('.md')).map((name) => `agents/${name}`)
+	const skills = names('skills')
+		.filter((name) => !/hpac/i.test(name) && existsSync(join(root, 'skills', name, 'SKILL.md')))
+		.map((name) => `skills/${name}/SKILL.md`)
+	return [...agents, ...skills]
+}
 
-// Each term is matched case-insensitively. `why` is what the author sees.
+// A pattern carries its own flags; most are case-insensitive. `why` is what
+// the author sees.
 export interface Forbidden {
 	pattern: RegExp
 	why: string
@@ -51,6 +45,9 @@ export const FORBIDDEN: readonly Forbidden[] = [
 	{ pattern: /\bADR-\d/i, why: 'cites a decision record by number' },
 	{ pattern: /\blesson \d/i, why: 'cites a lesson by number' },
 	{ pattern: /\b(REQ|CON)-[A-Z]+-\d/, why: 'cites a claim by ID' },
+	{ pattern: /CONV-\d/, why: 'cites a convention by number' },
+	// Case-sensitive: "the Worker" is this product's background service, and "the worker" is a plain noun.
+	{ pattern: /\bthe Worker\b/, why: 'names this product\'s background service' },
 	{ pattern: /\.spec\/|docs\/(decisions|lessons)\/|\btools\/[\w/-]+\.|\bsrc\/|features\//i, why: 'names a path in this repository' },
 ]
 
@@ -66,12 +63,12 @@ export function checkText(path: string, text: string): string[] {
 	return problems
 }
 
-export function main(root: string = ROOT, files: readonly string[] = GENERIC_FILES): number {
+export function main(root: string = ROOT, files: readonly string[] = genericFiles(root)): number {
 	const problems: string[] = []
 	for (const path of files) {
 		const full = join(root, path)
 		if (!existsSync(full)) {
-			problems.push(`${path}:1: listed as generic but does not exist — update GENERIC_FILES`)
+			problems.push(`${path}:1: listed as generic but does not exist`)
 			continue
 		}
 		problems.push(...checkText(path, readFileSync(full, 'utf8')))

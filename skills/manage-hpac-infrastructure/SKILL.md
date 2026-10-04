@@ -5,6 +5,10 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 
 # Manage HPAC Safety infrastructure
 
+Extends [`design-cloud-infrastructure`](../design-cloud-infrastructure/SKILL.md);
+read that first. This skill holds only what is specific to this repository,
+under the same section names where they exist, and wins where they differ.
+
 ## Target
 
 - In `ca-central-1`: the API and the Worker as Lambda functions (ADR-0042,
@@ -44,7 +48,6 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   name) and the `Project=HPAC-Safety` tag; that scoping, not the Resource
   Group, is the actual security boundary. Never create a long-lived AWS
   key.
-- Preserve least privilege.
 
 ## Terraform vs. the deploy role
 
@@ -125,7 +128,6 @@ Lessons from staging's first real release, #613 through #638
 - Migrations apply at startup: the API and the Worker each run
   `EnsureMigrated` (`MigrationRunner`) under an advisory lock, and there is no migrate job or
   migration deploy step (ADR-0055).
-- Keep tested backups.
 - Quarantine unreferenced uploads with lifecycle expiry; keep report-linked
   objects private.
 
@@ -149,12 +151,9 @@ Lessons from staging's first real release, #613 through #638
 
 - Alert on terminal summary failures and stuck or aged outbox work.
 - Keep logs content-free.
-- In CI where possible: validate formatting, static security, and a
-  credential-free plan path.
 
 ## Remove
 
 SES and email resources, separate public/admin site assumptions (ADR-0048), an
-ALB in front of the API (ADR-0159), a managed NAT gateway (ADR-0158), external
-publication integrations, speculative scaling, and secrets or alarms that
-exist only for retired features.
+ALB in front of the API (ADR-0159), a managed NAT gateway (ADR-0158), and
+external publication integrations.

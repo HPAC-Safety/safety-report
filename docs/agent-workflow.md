@@ -24,22 +24,22 @@ HPAC-specific. Search before adding generic guidance, and do not install a
 skill whose architecture conflicts with `.spec/features`.
 
 A skill and an agent are not the same thing. A skill is knowledge, loaded when
-its topic is in play, and it constrains nothing. An agent is a role, and what
-makes it useful is what it refuses. Ten are declared here. Four of them —
-`spec-author`, `test-writer`, a builder (`backend`, `ux`, or `infrastructure`),
-`spec-reviewer` — are the steps
-of the specification-driven chain, each holding one job and trusting only the
-artifact from the step before it
-([ADR-0197](../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md),
-which supersedes
-[ADR-0086](../.spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)).
-`ai-author` maintains the agent instructions and `database-administrator` the
-schema
-([ADR-0121](../.spec/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md));
-`critic` challenges a plan and `adversary` attacks a change
+its topic is in play, and it constrains nothing. An agent is a persona and a
+role, and what makes it useful is what it refuses. Ten are declared here, each
+with a human name; the file says who the agent is, what it does, and what it
+leaves to others, and how it works is in the generic skills it preloads
+([CONV-008](../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
+Four of them — `spec-author` (Jennifer), `test-writer` (Kevin), a builder
+(`backend` Brad, `ux` Tiffany, or `infrastructure` Dave), `spec-reviewer`
+(Jessica) — are the steps of the specification-driven chain, each holding one
+job and trusting only the artifact from the step before it. `ai-author` (Emily)
+maintains the agent instructions and `database-administrator` (Jane) the
+schema; `critic` (Karen) challenges a plan and `adversary` (Kyle) attacks a
+change
 ([CONV-007](../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
-Each declares the model and reasoning effort it runs on
-([ADR-0182](../.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
+Each declares the model and reasoning effort it runs on. A skill's name says
+`hpac` exactly when it is project-specific
+([CONV-009](../.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md)).
 They are definitions an operator invokes, not a pipeline: the repository's
 gates remain the enforcement.
 

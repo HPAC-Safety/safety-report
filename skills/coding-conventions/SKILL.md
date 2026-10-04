@@ -38,6 +38,35 @@ wins where they differ.
   vocabulary. The seam earns the pattern; naming a pattern never earns the
   seam.
 
+## Design and build
+
+For a role that designs and builds what the cited claims describe. The claims
+say *what*; you decide *how*, and prove it.
+
+- **Read first**:
+  - the cited claim IDs and their scenarios, and the accepted decisions they
+    touch;
+  - the code graph or index, before designing: the specification says *what*,
+    the graph says what exists, and reinventing an unseen service is the
+    commonest failure;
+  - the agent instructions and the project skill that extends the role agents;
+  - these conventions and their companion, and the focused skill for each
+    surface touched.
+- **Design before code**: the shape of the interface, the data flow, the
+  failure modes, and where each piece lives.
+  - Reuse over reinvention: cite what the graph showed you.
+  - A plan goes to the critic before it is final; a significant or
+    hard-to-reverse choice becomes a decision record.
+- **Build** the smallest design that satisfies the cited claims, in your own
+  worktree, within "Design" above.
+- **Tests you own**:
+  - unit and integration tests for the code you write;
+  - a focused privacy or boundary test on any privacy-sensitive surface the
+    project skill lists;
+  - the acceptance step definitions belong to the test writer.
+- **The report**: the design choices made, the files changed, and the test
+  results.
+
 ## Privacy
 
 - Protect privacy at every boundary where data crosses: DTOs, storage, model

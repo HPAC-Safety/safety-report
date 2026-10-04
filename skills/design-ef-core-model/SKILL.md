@@ -47,6 +47,7 @@ companion holds the project's conventions and wins where they differ.
 - Soft delete: `HasQueryFilter(e => e.DeletedAt == null)`; bypass with
   `IgnoreQueryFilters()` only where a read must see removed rows. EF Core 10+
   can name filters and disable one at a time.
+  - Cascade a soft delete explicitly, across the aggregate, with one timestamp.
 
 ## Map relationships
 

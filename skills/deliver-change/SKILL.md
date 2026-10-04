@@ -41,10 +41,16 @@ and wins where they differ.
 - **A sub-agent brief says to stop and ask.** Any brief handed to another
   agent tells it to stop and report a question rather than build on a guess,
   and the briefing agent has put its own open questions to the person first.
+  End the brief with: "if anything is ambiguous, stop and report the
+  question; do not guess".
 - **Sequence dependent issues.** Issues that edit the same migration, view,
-  or table run one after another, never side by side: the second starts from
-  the first's merged result, so neither rebases onto the other's schema.
-  Record the order as a blocked-by relation when the issues are filed.
+  or table run one after another, in filing order, never side by side: the
+  second starts from the first's merged result, so neither rebases onto the
+  other's schema. Migration timestamps and view definitions do not survive
+  being rebased across each other.
+  - Record the order as a blocked-by relation when the issues are filed: the
+    second is blocked by the first.
+  - Do not pick the second up until the first has merged.
 
 ### File a new issue
 
@@ -213,6 +219,28 @@ stronger one:
   content the change actually alters. A one-line change does not touch a
   dozen pages.
 
+#### Author a scenario
+
+- **Read first**: the specification index and its authority rules; the
+  area's page and its supporting page; every decision record that bears on the
+  behavior; the traceability matrix, for what is already claimed. A need that
+  is genuinely ambiguous goes through
+  [`clarify-requirements`](../clarify-requirements/SKILL.md).
+- **Write** the scenario in the area's existing `.feature` file: declarative
+  `Given`/`When`/`Then` that names the trigger and asserts something
+  observable. No UI mechanics outside a browser-tagged scenario, no class
+  names, and no endpoint the interfaces page lacks.
+- **A claim ID per new scenario**: the area's next unused number, never reused
+  or renumbered.
+- **Tags**: mark the scenario not built until it is, with the project's tag
+  naming the open issue that will build it; tag browser-observable behavior
+  with the browser tag.
+- **An out-of-scope line** in the supporting page wherever someone could
+  over-deliver; supporting detail that does not fit Gherkin (a table, a
+  validation order, a diagram) goes there too.
+- **Regenerate** the generated specification files before finishing, so a
+  duplicate, malformed, or missing ID fails there, not in review.
+
 ### Exemptions from scenario coverage
 
 - A behavior-changing pull request that changes no scenario fails the
@@ -245,6 +273,10 @@ stronger one:
   the same pull request, and name it in the lesson's `## Skill` section. The
   skill holds the general rule; the lesson keeps the incident. Agents read
   skills, not the lessons index.
+  - Update the generic skill when the rule transfers to any project, and the
+    project's companion skill when the rule names the project's tools or
+    paths.
+  - Name the skill it changed once; no footer naming the generic skill too.
 - **Incident** (an operational postmortem: something failed in running the
   system): symptom and root cause are what it owes. It may also name a skill
   it changed; never invent a rule just to give it one.
@@ -446,6 +478,17 @@ same numbers.
   `persist-credentials: false`. The persisted `GITHUB_TOKEN` header outranks
   the URL, so the push authenticates as `github-actions[bot]` and its CI waits
   for maintainer approval.
+
+## Required checks
+
+- A new CI job that can fail the main branch joins the main ruleset's required
+  status checks in the pull request that adds it, and its workflow triggers on
+  `merge_group`. A check nobody requires holds nothing back.
+
+## Workflow steps
+
+- A `run:` step is one command. Logic goes in a script with its own test, and
+  a plain sequence becomes separate steps.
 
 ## Concurrency and quotas
 

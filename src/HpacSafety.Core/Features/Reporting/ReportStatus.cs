@@ -4,7 +4,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     The lifecycle of an occurrence report. Stored as a stable invariant code and
 ///     localized only at the edge. Once the Worker is done with a report it is
 ///     Pending, Published, or Unpublished (ADR-0125). See
-///     skills/incident-domain-model/SKILL.md.
+///     skills/hpac-domain-model/SKILL.md.
 /// </summary>
 public enum ReportStatus
 {

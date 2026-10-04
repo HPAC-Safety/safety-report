@@ -63,7 +63,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
-| [0197](decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md) | Backend and ux replace the implementer, and the adversary takes privacy review | accepted | 2026-10-04 |
+| [0197](decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md) | Backend and ux replace the implementer, and the adversary takes privacy review | superseded | 2026-10-04 |
 | [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
 | [0195](decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md) | A built claim counts only when its scenario passed in the run | accepted | 2026-10-03 |
 | [0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md) | A split area keeps every claim ID, and a new claim takes the new area's prefix | accepted | 2026-10-03 |
@@ -78,7 +78,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0185](decisions/ADR-0185-a-submission-answers-only-current-revisions-and-the-browser-drops-the-rest.md) | A submission answers only current revisions, and the browser drops stale saved answers | accepted | 2026-09-30 |
 | [0184](decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md) | A generated map binds every claim to its step definitions | superseded | 2026-09-30 |
 | [0183](decisions/ADR-0183-the-specification-lives-in-a-spec-directory.md) | The specification lives in a .spec directory | partially-superseded | 2026-09-30 |
-| [0182](decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md) | A role agent declares its model and effort | accepted | 2026-09-30 |
+| [0182](decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md) | A role agent declares its model and effort | superseded | 2026-09-30 |
 | [0181](decisions/ADR-0181-a-one-time-migration-trims-label-colons-in-place.md) | A one-time migration trims label colons in place | accepted | 2026-09-30 |
 | [0180](decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md) | A summary is Markdown with one section per public paragraph question | accepted | 2026-09-30 |
 | [0179](decisions/ADR-0179-gemini-translates-everything-between-canadian-english-and-canadian-french.md) | Gemini translates everything between Canadian English and Canadian French | accepted | 2026-09-29 |
@@ -117,7 +117,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0142](decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md) | A web UI pull request shows its screenshots | accepted | 2026-09-26 |
 | [0141](decisions/ADR-0141-a-choice-is-translated-on-request-in-a-chosen-direction.md) | A choice is translated on request, one at a time, in a direction the administrator chooses | accepted | 2026-09-26 |
 | [0140](decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md) | A type-ahead is a combobox the form draws | accepted | 2026-09-26 |
-| [0139](decisions/ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md) | The database skills and agent join the generic classification | accepted | 2026-09-26 |
+| [0139](decisions/ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md) | The database skills and agent join the generic classification | superseded | 2026-09-26 |
 | [0138](decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md) | A date question allows future dates only when it says so | accepted | 2026-09-26 |
 | [0137](decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md) | A phone answer is stored in E.164 | accepted | 2026-09-26 |
 | [0136](decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md) | Choices are listed alphabetically in the reader's language | accepted | 2026-09-26 |
@@ -125,7 +125,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0134](decisions/ADR-0134-a-claim-reads-a-zip-packages-directory-as-well-as-its-leading-bytes.md) | A claim reads a zip package's directory as well as its leading bytes | accepted | 2026-09-26 |
 | [0133](decisions/ADR-0133-staff-keep-private-notes-on-a-report.md) | Staff keep private notes on a report | accepted | 2026-09-26 |
 | [0132](decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md) | A condition follows its parent through a fork | accepted | 2026-09-25 |
-| [0131](decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md) | A generic skill names no project, and a project skill extends it | accepted | 2026-09-25 |
+| [0131](decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md) | A generic skill names no project, and a project skill extends it | superseded | 2026-09-25 |
 | [0130](decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md) | A yes or no answer is stored as a boolean | accepted | 2026-09-25 |
 | [0129](decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md) | A type-ahead value is edited in place, merged, and reviewed by a safety officer | accepted | 2026-09-25 |
 | [0128](decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md) | An answer names its choice, and a picker option is fixed in place or replaced | accepted | 2026-09-25 |
@@ -135,7 +135,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0124](decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md) | The ai-author role may register its files and mend links | accepted | 2026-09-25 |
 | [0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md) | The Worker runs on Lambda and the website on S3 and CloudFront | accepted | 2026-09-25 |
 | [0122](decisions/ADR-0122-a-video-derivative-is-always-an-mp4.md) | A video's derivative is always an MP4 | accepted | 2026-09-24 |
-| [0121](decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md) | A fifth role maintains the agent instructions | accepted | 2026-09-24 |
+| [0121](decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md) | A fifth role maintains the agent instructions | superseded | 2026-09-24 |
 | [0120](decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md) | The .NET major moves in one pull request | accepted | 2026-09-24 |
 | [0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md) | A published report offers its documents for download | accepted | 2026-09-24 |
 | [0118](decisions/ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md) | The Worker image installs Ubuntu's ffmpeg | partially-superseded | 2026-09-24 |
@@ -312,6 +312,8 @@ first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
 | Convention | Title | Status | Date |
 |---|---|---|---|
+| [CONV-009](conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md) | A skill's name says hpac exactly when it is project-specific | accepted | 2026-10-04 |
+| [CONV-008](conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md) | An agent file is a persona and a role; its how lives in skills | accepted | 2026-10-04 |
 | [CONV-007](conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md) | A plan meets the critic and a change meets the adversary | accepted | 2026-10-04 |
 | [CONV-006](conventions/CONV-006-a-scenario-holds-one-behavior.md) | A scenario holds one behavior | accepted | 2026-10-03 |
 | [CONV-005](conventions/CONV-005-git-hooks-are-tracked-run-through-a-shim-and-split-one-check-per-file.md) | Git hooks are tracked, run through a shim, and split one check per file | accepted | 2026-10-03 |

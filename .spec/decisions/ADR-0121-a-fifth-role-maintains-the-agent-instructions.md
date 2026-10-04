@@ -2,7 +2,7 @@
 title: A fifth role maintains the agent instructions
 description: An ai-author agent owns how AGENTS.md, the project skills, and the role agents are written — direct, sectioned, each rule stated once — and may change wording but never a rule.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-24
 decision-makers: Chase Florell
 keywords: agents, skills, AGENTS.md, ai-author, instructions, style, skillfile, ADR-0037, ADR-0086
@@ -10,7 +10,8 @@ keywords: agents, skills, AGENTS.md, ai-author, instructions, style, skillfile, 
 
 # ADR-0121 — A fifth role maintains the agent instructions
 
-**Status:** Accepted. Extends
+**Status:** Superseded by
+[CONV-008](../conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md). Extends
 [ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amended by
 [ADR-0124](ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md):
 the role may also edit a skill's `agents/*.yaml` and its `Skillfile` entries,

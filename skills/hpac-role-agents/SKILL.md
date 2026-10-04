@@ -6,9 +6,13 @@ description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries f
 # HPAC Safety role agents
 
 Extends the generic role agents under [`agents/`](../../agents/). Each section
-holds only what is specific to this repository for that role. The four chain
-roles and why each trusts only the artifact before it:
-[ADR-0086](../../.spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md).
+holds only what is specific to this repository for that role, and is named
+with the agent's persona, as in "adversary (Kyle)". An agent file says who the
+agent is and what it does; how it works is in the generic skills it preloads
+([CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
+The four chain roles and why each trusts only the artifact before it:
+[ADR-0086](../../.spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md),
+which CONV-008 keeps.
 
 ## Every role
 
@@ -34,21 +38,22 @@ roles and why each trusts only the artifact before it:
   issue that will build it
   ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
 - Every example and fixture is synthetic: never real report content.
-- Model and effort, declared in each agent's frontmatter
-  ([ADR-0182](../../.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)):
+- Persona, model, and effort, declared in each agent's frontmatter and
+  description
+  ([CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)):
 
-  | Role | model | effort | Why |
-  |---|---|---|---|
-  | spec-author | opus | high | Judgement: reads widely, decides what to build |
-  | spec-reviewer | opus | high | Judgement: weighs a diff against claims and ADRs |
-  | database-administrator | opus | high | Judgement: schema mistakes outlive the code |
-  | test-writer | sonnet | medium | Build: binds a written scenario |
-  | ai-author | sonnet | medium | Build: rewrites wording, never rules |
-  | critic | opus | medium | Judgement: weighs a plan, one bounded pass; medium because the loop is capped and the findings are cited, not open-ended |
-  | adversary | opus | high | Judgement: hunts the hardest-to-see bugs and holes, read-only |
-  | backend | sonnet | medium | Build: designs and builds the server side within settled claims |
-  | ux | sonnet | medium | Build: designs and builds the web UI within settled claims |
-  | infrastructure | opus | high | Judgement: cloud and network mistakes outlive the code and reach production |
+  | Role | Persona | model | effort | Why |
+  |---|---|---|---|---|
+  | spec-author | Jennifer | opus | high | Judgement: reads widely, decides what to build |
+  | spec-reviewer | Jessica | opus | high | Judgement: weighs a diff against claims and ADRs |
+  | database-administrator | Jane | opus | high | Judgement: schema mistakes outlive the code |
+  | test-writer | Kevin | sonnet | medium | Build: binds a written scenario |
+  | ai-author | Emily | sonnet | medium | Build: rewrites wording, never rules |
+  | critic | Karen | opus | medium | Judgement: weighs a plan, one bounded pass; medium because the loop is capped and the findings are cited, not open-ended |
+  | adversary | Kyle | opus | high | Judgement: hunts the hardest-to-see bugs and holes, read-only |
+  | backend | Brad | sonnet | medium | Build: designs and builds the server side within settled claims |
+  | ux | Tiffany | sonnet | medium | Build: designs and builds the web UI within settled claims |
+  | infrastructure | Dave | opus | high | Judgement: cloud and network mistakes outlive the code and reach production |
 
 - No role uses the clone's shared stash, above all the builders and the
   test-writer, who edit files. The rule is written only; nothing enforces it
@@ -57,7 +62,7 @@ roles and why each trusts only the artifact before it:
   orchestrator spawns a role by its `name` and gets these settings, unless it
   overrides `model` for one call.
 
-## spec-author
+## spec-author (Jennifer)
 
 - Clarify with [`clarify-requirements`](../clarify-requirements/SKILL.md).
 - Claim IDs are `@REQ-<AREA>-<NNN>`, never reused or renumbered
@@ -88,7 +93,7 @@ roles and why each trusts only the artifact before it:
   immutable once accepted; conventions: `.spec/conventions/` ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
   `node tools/spec/check-records.ts` passes before finishing.
 
-## test-writer
+## test-writer (Kevin)
 
 - Runners
   ([ADR-0053](../../.spec/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)):
@@ -109,7 +114,7 @@ roles and why each trusts only the artifact before it:
 - Synthetic fixtures: people, locations, reports, attachments.
 - The required phrases in model output are the role phrases.
 
-## spec-reviewer
+## spec-reviewer (Jessica)
 
 - Contradiction between a feature file and an ADR:
   [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md).
@@ -133,7 +138,7 @@ roles and why each trusts only the artifact before it:
   base as `BASE_SHA`, `node tools/spec/check-adr-immutability.ts` both pass
   ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
 
-## database-administrator
+## database-administrator (Jane)
 
 - Conventions and commands:
   [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md), then
@@ -152,13 +157,16 @@ roles and why each trusts only the artifact before it:
 - Tables hold personal and medical information. Audit queries return counts
   and shapes, never row content.
 
-## ai-author
+## ai-author (Emily)
 
-The role: [ADR-0121](../../.spec/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md),
-amended by
+The role and its scope:
+[CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md),
+which lists what still holds of ADR-0121 and
 [ADR-0124](../../.spec/decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md).
-Generic and project files:
-[ADR-0131](../../.spec/decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md).
+Generic and project files, and the naming rule:
+[CONV-009](../../.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md).
+How the files are written: the generic
+[`write-agent-instructions`](../write-agent-instructions/SKILL.md).
 
 - **Edits**: `AGENTS.md`, `skills/*/SKILL.md` (and a skill's `agents/*.yaml`),
   `agents/*.md`, and their `Skillfile` entries.
@@ -176,22 +184,23 @@ Generic and project files:
 - Product behavior lives in `.spec/features`
   ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
 - An agent's frontmatter keys: [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md)
-  "Markdown".
+  "Markdown". Its body is the three sections CONV-008 names.
 - Checks:
   - `node tools/docs/check-frontmatter.ts` (rules:
     [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md) "Markdown");
-  - `node tools/docs/check-generic-instructions.ts` — every generic skill and agent
-    it lists names nothing specific to this repository. A new generic file is
-    added to its list; a new split's project skill is not. The pre-commit hook
-    and the `docs` CI job run it;
+  - `node tools/docs/check-generic-instructions.ts` — every agent and every
+    skill whose directory has no `hpac` names nothing specific to this
+    repository. It selects the files by that rule, so there is no list to
+    update. The pre-commit hook and the `docs` CI job run it;
   - `node tools/docs/check-links.ts` — every relative link resolves.
 - Stable handles here include `deliver-change` "Verify and publish" step
   numbers.
 
-## critic
+## critic (Karen)
 
 The rule and its bound:
-[CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md).
+[CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md):
+one pass and at most one recheck, then the owner decides.
 A `PreToolUse` hook (`tools/github/remind-critic.ts`, wired in
 `.claude/settings.json`) reminds on `ExitPlanMode` and on `gh issue create`;
 it never blocks.
@@ -208,7 +217,7 @@ it never blocks.
 - Cite the claim ID, ADR number, or file for each finding.
 - Never put report content, answers, or credentials in a finding.
 
-## adversary
+## adversary (Kyle)
 
 Runs by convention only
 ([CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
@@ -226,10 +235,10 @@ Runs by convention only
 - Test commands it may run: a filtered `dotnet test`, `CI=1 npm test` for e2e;
   never against production data.
 
-## backend
+## backend (Brad)
 
 The back-end engineer: designs and builds the server side
-([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
+([CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 - Owns `src/HpacSafety.*` (Api, Core, Infrastructure, Worker) and their unit
   and integration tests, `tools/` scripts, and the CI workflows. The web
@@ -242,7 +251,7 @@ The back-end engineer: designs and builds the server side
   [`persist-hpac-data`](../persist-hpac-data/SKILL.md),
   [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md),
   [`handle-hpac-media`](../handle-hpac-media/SKILL.md),
-  [`incident-domain-model`](../incident-domain-model/SKILL.md),
+  [`hpac-domain-model`](../hpac-domain-model/SKILL.md),
   [`anonymize-hpac-reports`](../anonymize-hpac-reports/SKILL.md).
 - Privacy-sensitive surfaces that need a focused privacy or boundary test:
   reports, questions, model input or output, attachments, authentication,
@@ -260,13 +269,13 @@ The back-end engineer: designs and builds the server side
 - Work only in its own worktree off fresh `origin/main`
   ([`deliver-change`](../deliver-change/SKILL.md) "Worktree and branch").
 
-## ux
+## ux (Tiffany)
 
 The UX designer and front-end engineer: designs and builds the web UI.
 
 - Owns `src/web` and its component tests; server code is `backend`'s, and the
   e2e step definitions the test-writer's.
-- Follows the backend section's rules for
+- Follows the backend (Brad) section's rules for
   claims, the graph, the exemption, and the never-log list, and
   [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md) and
   [`localize-hpac-app`](../localize-hpac-app/SKILL.md).
@@ -278,10 +287,10 @@ The UX designer and front-end engineer: designs and builds the web UI.
   stay synthetic.
 - Work only in its own worktree off fresh `origin/main`.
 
-## infrastructure
+## infrastructure (Dave)
 
 The cloud and DevOps engineer: designs and builds what the system runs on
-([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
+([CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 - Owns `infra/` (Terraform) and the workflows that provision or deploy:
   `terraform.yml`, `terraform-relock.yml`, `deploy-environment.yml`,

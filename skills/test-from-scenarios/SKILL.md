@@ -53,6 +53,13 @@ its tests must cover, and wins where they differ.
 
 ### Step definitions
 
+- **Read first**: the scenario, by claim ID, in its area's feature file — that
+  text is the specification, and you need not have seen the conversation
+  behind it — and the area's supporting page (tables, validation order, DTO
+  shapes).
+- **One step definition per step**, in the runner the scenario's tags select.
+- **A red test**: run it. It fails on the behavior, not on a missing binding or
+  a typo.
 - **Write from the scenario, not the conversation.** A binding that needs a
   fact the scenario does not state means the scenario is incomplete — amend it
   rather than encoding the fact in test code.

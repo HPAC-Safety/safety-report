@@ -133,11 +133,13 @@ public sealed class WebLocalizationAndDesignSteps
 		// cover; what matters to this scenario is that the hook reaches the
 		// same tool the local build does, before it checks parity.
 		//
-		// Comment lines are dropped first. Both tool names appear in the
-		// hook's header prose, so searching the whole file would find them
-		// there and pass whatever the code below it actually does.
+		// The hook runs each check from its own file under pre-commit.d;
+		// this one holds the locale check. Comment lines are dropped first.
+		// Both tool names appear in its header prose, so searching the whole
+		// file would find them there and pass whatever the code below it
+		// actually does.
 		var hookLines = File
-			.ReadAllLines(Path.Combine(RepositoryRoot(), ".githooks", "pre-commit"))
+			.ReadAllLines(Path.Combine(RepositoryRoot(), ".githooks", "pre-commit.d", "10-locales.sh"))
 			.Where(line => !line.TrimStart().StartsWith('#'))
 			.ToList();
 

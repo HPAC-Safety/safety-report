@@ -1,269 +1,38 @@
 #!/usr/bin/env sh
 #
-# Six genuinely independent checks, each gated on the kind of file actually
-# staged so an unrelated commit pays nothing. This file is the tracked
-# template; ./init-dev.sh copies it into the real hooks directory (see that
-# file for why it's a copy rather than core.hooksPath) — edit this copy, not
-# the installed one, and re-run ./init-dev.sh to pick up the change.
+# The pre-commit runner. Each check is its own file under pre-commit.d/,
+# NN-<check>.sh, run in lexical order with `sh`; each one gates itself on the
+# staged files it cares about and says what it guards (CONV-005). A new check
+# is a new file there, not a block here.
 #
-# "Independent" is load-bearing and was not true before: `set -e` let a locale
-# failure abort the script before `dotnet format` ran, so a commit refused for
-# a missing French key also silently skipped its formatting. Every check now
-# runs, and the hook fails at the end if any of them did.
-#
-# 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, an
-#    English `#`-stub, stale fr-CA.meta.json provenance, or a glossary
-#    mismatch. Before checking, tools/i18n/stub-missing-translations.ts (ADR-0054)
-#    runs first and re-stages the result: a key added to one language and not
-#    the other is filled into the missing side with a `#`-prefixed copy of the
-#    text it has, both directions, so a bare "add a key" commit never blocks
-#    on parity by itself — it only blocks on a stub CI still has to resolve.
-#    Then this runs the exact same checks as the "i18n" CI job
-#    (tools/i18n/check-locales.ts, tools/i18n/translate-locale.ts --check) but
-#    locally, before the commit exists, instead of after a push.
-#
-#    Two exceptions, on a branch only, both reported and allowed through: a
-#    FRENCH value still carrying its local `#` stub, and an ENGLISH value
-#    edited after it was translated (a stale fr-CA.meta.json source_hash).
-#    Both are pending work a workflow resolves rather than something the
-#    author can fix locally — translate-locale.ts --generate queues a stale
-#    hash for re-translation exactly as it queues a missing key. ADR-0057 has
-#    i18n-translate.yml commit the French straight onto a same-repo pull
-#    request's branch, so the stub is a known, temporary state that a workflow
-#    resolves — and with no translation credential (GEMINI_API_KEY) locally there is nothing a
-#    developer could do to satisfy the old rule except `--no-verify`, which
-#    also skipped the formatting check for a reason that had nothing to do
-#    with formatting. On main the stub is still fatal, and CI never passes
-#    --allow-pending-translation, so one still cannot reach main. An ENGLISH
-#    stub is fatal everywhere — no workflow ever writes English — so adding a
-#    key in French only still requires you to write the real English by hand.
-#
-# 2. Markdown frontmatter: every tracked .md/.mdc declares its title,
-#    description, and type (ADR-0087). Only the staged markdown is checked,
-#    and the runtime prompts (the Worker's, and the translation prompt in
-#    locales/) are exempt because their bytes are the model payload. CI's "docs" job re-checks the whole tree as a backstop for
-#    anyone who skipped this hook — but a rule that lives only in CI is not a
-#    rule (ADR-0073), which is why it is here first.
-#    When a skill or agent is staged, the generic ones are also checked for
-#    anything that names this repository (ADR-0131).
-#
-# 3. C# formatting: dotnet format --include <staged files>, auto-fixing and
-#    re-staging just those files, so formatting drift never reaches a commit
-#    without touching files outside the diff. CI's "build" job re-verifies
-#    the whole solution with --verify-no-changes as a server-side backstop
-#    for anyone who skipped this hook.
-#
-# 4. Source inventory: when a file under src/ is added or deleted, or
-#    docs/source-inventory.md is staged, tools/docs/check-inventories.ts checks
-#    that every directory under src/ holding a tracked file has a row, and
-#    every row names one (ADR-0143). It reads the index, so it judges exactly
-#    what this commit holds. CI's "docs" job re-checks as the backstop.
-#
-# 5. Component split: when a file under src/web/src is staged, or the guard
-#    itself, tools/web/check-component-split.ts checks that every *.view.tsx is
-#    markup only and that no shipped file imports test code (ADR-0188). It
-#    reads the working tree, as CI's "web" job does.
-#
-# 6. ESLint: when a TypeScript or JavaScript file is staged, eslint runs over
-#    just those files; when the config or the root package.json is staged, over
-#    everything. The same rules as CI's "lint" job (ADR-0188), which needs the
-#    root dependencies (`npm ci` at the repository root) and, for type-aware
-#    rules, the web app's, the browser suite's and the Gherkin check's
-#    (`npm --prefix src/web ci`, `npm --prefix tests/e2e ci`,
-#    `npm --prefix tools/gherkin ci`). When anything under tests/e2e is staged,
-#    the browser suite is also type-checked (`npm run typecheck:e2e`), as CI's
-#    "lint" job does, because Playwright transpiles without checking.
+# Every check runs, and the commit is refused at the end if any failed: one
+# failing check must never skip another (the `set -e` bug, #207).
 
 set -u
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
-
-# `set -e` is deliberately not used — it is what made the two checks
-# dependent — so this cd guards itself.
+HOOK_DIR=$(cd "$(dirname "$0")" && pwd) || exit 1
+REPO_ROOT=$(git rev-parse --show-toplevel) || exit 1
 cd "$REPO_ROOT" || exit 1
 
-status=0
+# Added, copied, modified, or renamed staged paths, one per line, read once. A
+# check that needs another --diff-filter asks git itself.
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 
-staged() {
-	git diff --cached --name-only --diff-filter=ACMR
-}
+# Main is strict where a branch is not. A detached HEAD counts as a branch.
+BRANCH=$(git symbolic-ref --quiet --short HEAD || echo "")
 
-# A detached HEAD is not main, and is not somewhere a translation lands
-# either; treat it like a branch rather than refusing to commit at all.
-branch=$(git symbolic-ref --quiet --short HEAD || echo "")
+export STAGED BRANCH
 
-if [ "$branch" = "main" ]; then
-	pending_translation_flag=""
-else
-	pending_translation_flag="--allow-pending-translation"
-fi
-
-if staged | grep -q '^locales/'; then
-	if ! command -v node >/dev/null 2>&1; then
-		echo "pre-commit: node is not on PATH, cannot verify locales/ — see README.md" >&2
+status=0 ran=0
+for check in "$HOOK_DIR"/pre-commit.d/*.sh; do
+	[ -f "$check" ] || continue
+	ran=$((ran + 1))
+	if ! sh "$check"; then
+		echo "pre-commit: $(basename "$check") failed" >&2
 		status=1
-	else
-		# Which locale files the developer actually put in this commit,
-		# captured before the stubber rewrites anything.
-		STAGED_LOCALES=$(staged | grep '^locales/' || true)
-
-		node tools/i18n/stub-missing-translations.ts --locales locales
-
-		# fr-CA.json is generated and never hand-authored (ADR-0021,
-		# ADR-0056), so staging it is safe — and it is what makes the commit
-		# self-consistent: a new English key and its French placeholder land
-		# together rather than one without the other.
-		[ -f locales/fr-CA.json ] && git add -- locales/fr-CA.json
-
-		# en-CA.json is hand-authored, so it is re-staged only if it was
-		# already staged. The stubber rewrites a whole file from the working
-		# tree, so adding it unconditionally would sweep in unstaged edits the
-		# developer deliberately left out of this commit — the same trap the
-		# formatting block below avoids by re-adding only what it formatted.
-		#
-		# The stubber touches en-CA.json only for a key that exists in French
-		# and not English, and the `#` stub that produces is fatal everywhere:
-		# no workflow writes English, so that one is always fixed by hand.
-		if echo "$STAGED_LOCALES" | grep -q '^locales/en-CA\.json$'; then
-			git add -- locales/en-CA.json
-		fi
-
-		node tools/i18n/check-locales.ts || status=1
-
-		# shellcheck disable=SC2086 # empty on main, one flag elsewhere
-		node tools/i18n/translate-locale.ts --check --locales locales $pending_translation_flag || status=1
 	fi
-fi
+done
 
-if staged | grep -qE '\.(md|mdc)$'; then
-	if ! command -v node >/dev/null 2>&1; then
-		echo "pre-commit: node is not on PATH, cannot verify markdown frontmatter — see README.md" >&2
-		status=1
-	else
-		STAGED_MARKDOWN=$(staged | grep -E '\.(md|mdc)$')
-
-		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
-		node tools/docs/check-frontmatter.ts $STAGED_MARKDOWN || status=1
-
-		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
-		node tools/docs/check-links.ts $STAGED_MARKDOWN || status=1
-
-		# The specification index is generated from .spec/ (ADR-0183).
-		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/'; then
-			node tools/spec/generate-spec-index.ts --check || status=1
-		fi
-
-		# A generic skill or role agent names nothing specific to this
-		# repository, so it can be reused elsewhere (ADR-0131).
-		if echo "$STAGED_MARKDOWN" | grep -qE '^(skills|agents)/'; then
-			node tools/docs/check-generic-instructions.ts || status=1
-		fi
-
-		# A decision record's number is claimed by naming a file, and two
-		# branches claim the same one often enough that it is worth catching
-		# here rather than after a rebase (ADR-0091, lesson 0003).
-		if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/decisions/ADR-'; then
-			node tools/spec/adr-numbers.ts || status=1
-		fi
-
-		# Every ADR, lesson, and convention keeps its shape (ADR-0192).
-		if echo "$STAGED_MARKDOWN" | grep -qE '^\.spec/(decisions|lessons|conventions)/'; then
-			node tools/spec/check-records.ts || status=1
-		fi
-	fi
-fi
-
-# An accepted ADR changes only its status and is never deleted (ADR-0192). The
-# index is judged against the merge base with origin/main, as CI judges the
-# pull request against its base.
-if git diff --cached --name-only --diff-filter=MDR | grep -q '^\.spec/decisions/ADR-'; then
-	if command -v node >/dev/null 2>&1; then
-		node tools/spec/check-adr-immutability.ts --staged || status=1
-	fi
-fi
-
-# A workflow step runs one command; its logic lives in a tested script under
-# tools/ (ADR-0189).
-if staged | grep -qE '^\.github/(workflows|actions)/'; then
-	if command -v node >/dev/null 2>&1; then
-		node tools/github/check-workflow-steps.ts || status=1
-	fi
-fi
-
-# A deleted or renamed file breaks every link to it, in files this commit never
-# touched, so the whole tree is checked (ADR-0183).
-if git diff --cached --name-only --diff-filter=DR | grep -q .; then
-	if command -v node >/dev/null 2>&1; then
-		node tools/docs/check-links.ts || status=1
-	fi
-fi
-
-if git diff --cached --name-only --diff-filter=AD | grep -q '^src/' \
-	|| staged | grep -q '^docs/source-inventory\.md$'; then
-	if ! command -v node >/dev/null 2>&1; then
-		echo "pre-commit: node is not on PATH, cannot verify the source inventory — see README.md" >&2
-		status=1
-	else
-		node tools/docs/check-inventories.ts || status=1
-	fi
-fi
-
-if staged | grep -qE '^(src/web/src/|tools/web/check-component-split\.ts$)'; then
-	if ! command -v node >/dev/null 2>&1; then
-		echo "pre-commit: node is not on PATH, cannot check the component split — see README.md" >&2
-		status=1
-	else
-		node tools/web/check-component-split.ts || status=1
-	fi
-fi
-
-STAGED_SCRIPTS=$(staged | grep -E '\.(ts|tsx|mjs|js|cjs)$' || true)
-if [ -n "$STAGED_SCRIPTS" ] || staged | grep -qE '^(eslint\.config\.mjs|tsconfig\.json|package(-lock)?\.json|src/web/tsconfig\.json|src/web/tsconfig\.node\.json|tests/e2e/tsconfig\.json)$'; then
-	if ! command -v node >/dev/null 2>&1; then
-		echo "pre-commit: node is not on PATH, cannot lint — see README.md" >&2
-		status=1
-	elif [ ! -x node_modules/.bin/eslint ]; then
-		echo "pre-commit: ESLint is not installed; run npm ci at the repository root" >&2
-		status=1
-	elif [ ! -d src/web/node_modules ] || [ ! -d tests/e2e/node_modules ] || [ ! -d tools/gherkin/node_modules ]; then
-		echo "pre-commit: ESLint's type-aware rules need the web app's and the browser suite's packages; run npm --prefix src/web ci, npm --prefix tests/e2e ci and npm --prefix tools/gherkin ci" >&2
-		status=1
-	elif staged | grep -qE '^(eslint\.config\.mjs|tsconfig\.json|package(-lock)?\.json|src/web/tsconfig\.json|src/web/tsconfig\.node\.json|tests/e2e/tsconfig\.json)$'; then
-		node_modules/.bin/eslint . || status=1
-	else
-		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
-		node_modules/.bin/eslint $STAGED_SCRIPTS || status=1
-	fi
-
-	# Playwright transpiles the browser suite without checking it, so a type
-	# error in a step is found here and in CI's "lint" job, nowhere else. The
-	# packages it needs are the ones the lint above already insisted on.
-	if command -v node >/dev/null 2>&1 && [ -x node_modules/.bin/eslint ] && [ -d tests/e2e/node_modules ] \
-		&& staged | grep -qE '^(tests/e2e/|tsconfig\.json$|package(-lock)?\.json$)'; then
-		npm run --silent typecheck:e2e || status=1
-	fi
-fi
-
-if staged | grep -qE '\.(cs|csproj)$'; then
-	if ! command -v dotnet >/dev/null 2>&1; then
-		echo "pre-commit: dotnet is not on PATH, cannot run dotnet format — see README.md" >&2
-		status=1
-	else
-		STAGED_CS=$(staged | grep -E '\.(cs|csproj)$')
-
-		# --include scopes formatting to the staged files, not the whole
-		# solution, so a commit touching two files never rewrites (and
-		# re-stages) unrelated ones elsewhere in the tree that also happen to
-		# be out of format.
-		# shellcheck disable=SC2086 # word-split on purpose: one path per --include arg
-		if dotnet format HpacSafety.slnx --include $STAGED_CS; then
-			echo "$STAGED_CS" | while IFS= read -r f; do
-				[ -f "$f" ] && git add -- "$f"
-			done
-		else
-			status=1
-		fi
-	fi
-fi
-
+# No checks at all means a broken checkout, not a clean commit: fail closed.
+[ "$ran" -gt 0 ] || { echo "pre-commit: no checks found in $HOOK_DIR/pre-commit.d" >&2; exit 1; }
 exit "$status"

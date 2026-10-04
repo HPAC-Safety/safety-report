@@ -226,15 +226,16 @@ fi
 # ------------------------------------------------------------- git hooks ------
 #
 # .githooks/pre-commit (tracked, versioned like everything else in this repo)
-# runs two checks, each gated on what's actually staged: locale parity
-# between en-CA.json and fr-CA.json (a stray `#`-stub, a missing key, stale
-# provenance), and dotnet format on staged C# files — the exact classes of
-# drift that otherwise only surface after a push, in CI's "i18n" and "build"
-# jobs. .githooks/post-merge and .githooks/post-rewrite regenerate
-# .spec/claims.json, .spec/traceability.md, and .spec/README.md after a merge
-# or rebase finishes, and merge the specification into the local graphify graph —
-# see those files and the merge-driver note below for why. post-rewrite also runs dotnet format
-# on the C# files a rebase rewrote, because a rebase commits without running
+# runs every check under .githooks/pre-commit.d, one file each, each gated on
+# what's actually staged — locale parity, markdown, workflow steps, ESLint,
+# dotnet format on staged C# files, and the rest — the classes of drift that
+# otherwise only surface after a push, in CI (CONV-005). .githooks/post-merge
+# and .githooks/post-rewrite regenerate .spec/claims.json,
+# .spec/traceability.md, and .spec/README.md after a merge or rebase finishes,
+# and merge the specification into the local graphify graph, through the
+# shared .githooks/lib/regenerate-spec.sh — see those files and the
+# merge-driver note below for why. post-rewrite also runs dotnet format on the
+# C# files a rebase rewrote, because a rebase commits without running
 # pre-commit.
 #
 # Installed as a thin shim (tools/dev/git-hook-shim.sh), not a copy, into the
@@ -255,7 +256,7 @@ fi
 # (which also replaces a full copy installed before the shim existed).
 #
 # A dev-machine convenience, not a CI gate — CI enforces the pre-commit
-# checks directly in the "i18n" and "build" jobs, and re-checks
+# checks directly, each check file naming its backstop job, and re-checks
 # .spec/claims.json and .spec/traceability.md in the "docs" job — so a missing hook is
 # reported with note(), not missing(): it must never fail a fresh CI
 # checkout's `--check` step.

@@ -121,6 +121,17 @@ describe('tools/dev/git-hook-shim.sh', () => {
 		assert.equal(run.status, 0)
 	})
 
+	it('runs nothing, and succeeds, when its name is a directory of checks rather than a hook', () => {
+		mkdirSync(join(main, '.githooks', 'pre-commit.d'), { recursive: true })
+		writeFileSync(join(main, '.githooks', 'pre-commit.d', '10-check.sh'), 'echo ran > "$(git rev-parse --show-toplevel)/dir-ran.txt"\n')
+		installShim(main, 'pre-commit.d')
+
+		const run = spawnSync('sh', [join(main, '.git', 'hooks', 'pre-commit.d')], { cwd: main, env, encoding: 'utf8' })
+
+		assert.equal(run.status, 0)
+		assert.throws(() => readFileSync(join(main, 'dir-ran.txt')))
+	})
+
 	it('runs nothing, and succeeds, outside a work tree', () => {
 		const outside = mkdtempSync(join(tmpdir(), 'hook-shim-outside-'))
 		try {
@@ -138,6 +149,10 @@ describe('init-dev.sh installs the shim', () => {
 	it('copies the shim under every hook name, not the hook itself', () => {
 		assert.match(script, /cp "tools\/dev\/git-hook-shim\.sh" "\$HOOKS_DIR\/\$hook"/)
 		assert.doesNotMatch(script, /cp "\.githooks\/\$hook"/)
+	})
+
+	it('installs it under the four hook names only, never a check directory or a shared script', () => {
+		assert.match(script, /^for hook in pre-commit commit-msg post-merge post-rewrite; do$/m)
 	})
 
 	it('compares each installed hook with the shim, so a stale full copy is replaced', () => {

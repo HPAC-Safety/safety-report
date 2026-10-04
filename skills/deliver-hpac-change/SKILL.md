@@ -46,10 +46,16 @@ names and step numbers.
   name, and it runs the tracked `.githooks/<name>` of the current worktree. Edit
   `.githooks/<name>`, never the installed file; a moved tool needs no re-install
   ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)
-  amendment).
+  amendment). Never set `core.hooksPath` or add a hook manager such as Husky
+  ([CONV-005](../../.spec/conventions/CONV-005-git-hooks-are-tracked-run-through-a-shim-and-split-one-check-per-file.md)).
+- A new pre-commit check is a new file, `.githooks/pre-commit.d/NN-<check>.sh`:
+  it gates itself on `$STAGED`, says what it guards and its CI backstop, and
+  exits non-zero to fail. `.githooks/pre-commit` only runs them all, in order,
+  and names each that failed (CONV-005).
 - `post-merge` and `post-rewrite` regenerate and stage `.spec/claims.json`,
   `.spec/traceability.md`, and `.spec/README.md`, then merge the specification
-  into the local graphify graph. On `main` they only merge the graph, which is
+  into the local graphify graph, through the shared
+  `.githooks/lib/regenerate-spec.sh`. On `main` they only merge the graph, which is
   untracked: the primary checkout only fast-forwards to `origin/main`, which
   already carries the generated files, so a pull leaves `main` clean (#802).
 

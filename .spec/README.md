@@ -311,6 +311,7 @@ first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
 | Convention | Title | Status | Date |
 |---|---|---|---|
+| [CONV-005](conventions/CONV-005-git-hooks-are-tracked-run-through-a-shim-and-split-one-check-per-file.md) | Git hooks are tracked, run through a shim, and split one check per file | accepted | 2026-10-03 |
 | [CONV-004](conventions/CONV-004-scenarios-describe-behavior-not-implementation.md) | Scenarios describe behavior, not implementation | accepted | 2026-10-03 |
 | [CONV-003](conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md) | Scenarios and area READMEs use the glossary's words | accepted | 2026-10-03 |
 | [CONV-002](conventions/CONV-002-an-area-past-800-lines-is-split-and-its-scenarios-keep-their-ids.md) | An area past about 800 lines is split, and its scenarios keep their IDs | accepted | 2026-10-03 |

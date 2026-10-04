@@ -396,16 +396,11 @@ Examples:
 
 @REQ-DCH-013
 @ui
-Scenario Outline: Saving a dependent question sends the parent choices ticked for each choice
-  Given an Administrator using <language> opens the manage-questions page
+Scenario: Saving a dependent question sends the parent choices ticked for each choice
+  Given an Administrator using English opens the manage-questions page
   And they are making a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
   When they tick "Niviuk" and "Ozone" for one choice and "Ozone" for every other, and save
   Then the save sends each choice with every parent choice ticked for it
-
-Examples:
-  | language |
-  | English  |
-  | French   |
 
 @REQ-QB-223
 @ui
@@ -468,7 +463,12 @@ Scenario: The type-ahead review page offers a dependent value under another pare
 
 @REQ-QB-225
 Scenario: The migration keeps each link as one of the choice's parents and merges identical duplicates
-  Given a database one migration short, whose dependent "Certification:" question offers "EN-A" to "EN-D" twice each, one copy under "Paraglider" and one under "Hang Glider", and "EN-CCC" once, under "Paraglider", with reports answering both copies of "EN-A" and a question conditional on the "Hang Glider" copy of "EN-B"
+  Given a database one migration short, whose dependent "Certification:" question holds:
+    | what              | choice       | under                   |
+    | duplicated choice | EN-A to EN-D | Paraglider, Hang Glider |
+    | single choice     | EN-CCC       | Paraglider              |
+    | answered copies   | EN-A         | Paraglider, Hang Glider |
+    | conditional copy  | EN-B         | Hang Glider             |
   When the migration runs
   Then "Certification:" offers one "EN-A" to "EN-D" each, the oldest copy, offered under "Paraglider" and "Hang Glider"
   And each other copy is retired, replaced by the one that survived

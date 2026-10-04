@@ -39,21 +39,21 @@ public sealed class ChoiceParentMigrationSteps
 	private string ConnectionString =>
 		_connectionString ?? throw new InvalidOperationException("No database has been created for this scenario.");
 
-	[Given(@"a database one migration short, whose dependent {string} question offers {string} to {string} twice each, one copy under {string} and one under {string}, and {string} once, under {string}, with reports answering both copies of {string} and a question conditional on the {string} copy of {string}")]
+	[Given(@"a database one migration short, whose dependent {string} question holds:")]
 	public async Task GivenTodaysCertificationDuplicatesAnsweredAndConditional(string question,
-																			  string first,
-																			  string last,
-																			  string firstParent,
-																			  string secondParent,
-																			  string once,
-																			  string onceParent,
-																			  string answered,
-																			  string conditionParent,
-																			  string condition)
+																			  Table holds)
 	{
-		await GivenTodaysCertificationDuplicates(question, first, last, firstParent, secondParent, once, onceParent);
-		await GivenReportsAnsweredBothCopies(question, answered);
-		await GivenAConditionOnACopy(conditionParent, condition);
+		var rows = holds.Rows.Select(row => (row["what"], row["choice"], row["under"])).ToList();
+		rows.ShouldBe([
+			("duplicated choice", "EN-A to EN-D", "Paraglider, Hang Glider"),
+			("single choice", "EN-CCC", "Paraglider"),
+			("answered copies", "EN-A", "Paraglider, Hang Glider"),
+			("conditional copy", "EN-B", "Hang Glider"),
+		]);
+
+		await GivenTodaysCertificationDuplicates(question, "EN-A", "EN-D", "Paraglider", "Hang Glider", "EN-CCC", "Paraglider");
+		await GivenReportsAnsweredBothCopies(question, "EN-A");
+		await GivenAConditionOnACopy("Hang Glider", "EN-B");
 	}
 
 	private async Task GivenTodaysCertificationDuplicates(string question,

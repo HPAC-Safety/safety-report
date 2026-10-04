@@ -817,10 +817,8 @@ Then("its {string} control lists {string}'s choices", async ({ page }, control: 
 })
 
 When("they also tick {string}", async ({ page }, parentChoice: string) => {
-	const checkbox = valueParents(page).getByRole("checkbox", { name: parentChoice })
-	// The control's list is open when a scenario has just read it, and closed otherwise.
-	if (!(await checkbox.isVisible())) await valueParents(page).getByRole("combobox").click()
-	await checkbox.check()
+	await valueParents(page).getByRole("combobox").click()
+	await valueParents(page).getByRole("checkbox", { name: parentChoice }).check()
 	await page.keyboard.press("Escape")
 	await page.getByRole("button", { name: "Change" }).click()
 })

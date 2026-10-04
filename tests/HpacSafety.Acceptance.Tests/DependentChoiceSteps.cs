@@ -279,7 +279,7 @@ public sealed class DependentChoiceSteps
 	}
 
 	[When(@"an Administrator makes its choices depend on the {string} question, offering {string} under {string} and {string}, and {string} under {string}")]
-	public async Task WhenOfferingBoth(string _,
+	public async Task WhenOfferingBoth(string parent,
 									   string first,
 									   string firstParent,
 									   string firstOtherParent,
@@ -287,8 +287,8 @@ public sealed class DependentChoiceSteps
 									   string secondParent)
 	{
 		var model = await View(_childName!);
-		var make = await View("Make");
-		_response = await Put(_childName!, RequestFrom(model, _ids["Make"], OptionsUnder(model,
+		var make = await View(parent);
+		_response = await Put(_childName!, RequestFrom(model, _ids[parent], OptionsUnder(model,
 			(first, [ChoiceId(make, firstParent), ChoiceId(make, firstOtherParent)]),
 			(second, [ChoiceId(make, secondParent)]))));
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());

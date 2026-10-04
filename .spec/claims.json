@@ -1424,8 +1424,7 @@
 				{"keyword":"Given","text":"an Administrator using English opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they are making a type-ahead question's choices depend on a single-select question offering \"Other\" pinned last, and \"Ozone\" and \"Niviuk\" not pinned","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they tick \"Niviuk\" and \"Ozone\" for one choice and \"Ozone\" for every other, and save","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the save sends each choice with every parent choice ticked for it","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the save sends each choice with every parent choice ticked for it","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -13163,7 +13162,7 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a database one migration short, whose dependent \"Certification:\" question offers \"EN-A\" to \"EN-D\" twice each, one copy under \"Paraglider\" and one under \"Hang Glider\", and \"EN-CCC\" once, under \"Paraglider\", with reports answering both copies of \"EN-A\" and a question conditional on the \"Hang Glider\" copy of \"EN-B\"","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a database one migration short, whose dependent \"Certification:\" question holds:","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the migration runs","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"\"Certification:\" offers one \"EN-A\" to \"EN-D\" each, the oldest copy, offered under \"Paraglider\" and \"Hang Glider\"","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"each other copy is retired, replaced by the one that survived","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},

@@ -196,10 +196,11 @@ The trigger is a `role="combobox"` button, as the single-select's is
 (`REQ-QB-208`): `aria-expanded` and `aria-controls` name the list, and
 `aria-haspopup="dialog"` says what it is, because the list is a labelled
 non-modal dialog holding one real checkbox per choice, not a listbox
-(`REQ-SUB-132`). A combobox is the role that supports `aria-invalid`, which the
+(`REQ-SUB-132`, `REQ-SUB-144`). A combobox is the role that supports `aria-invalid`, which the
 admin editor sets on an "Offered under" picker whose choice has no parent
 ticked (`REQ-QB-222`). A button with no role cannot carry it. Enter and Space
-still open it, as on any button, and Escape closes it and returns focus to it.
+still open it, as on any button, and Escape closes it and returns focus to it
+(`REQ-SUB-143`).
 
 ## Returning to a saved report (#344)
 
@@ -395,14 +396,17 @@ has a placeholder of its own. Clicking or focusing it opens a calendar popover u
 - the popover is a labelled dialog, and the question is the combobox that
   controls it: `role="combobox"`, `aria-haspopup="dialog"`, `aria-expanded`,
   and `aria-controls`, the WAI-ARIA 1.2 date-picker combobox pattern
-  (`REQ-SUB-131`). A press on the popover's background does not take focus
-  from the question, so the popover does not close under the pointer. None of its
+  (`REQ-SUB-131`, `REQ-SUB-150`). A press on the popover's background does not take focus
+  from the question, so the popover does not close under the pointer
+  (`REQ-SUB-151`). None of its
   controls is in the Tab
   order until focus is inside it, so Tab from the question goes on past it and
-  closes it. From the question, ArrowDown moves into it.
+  closes it (`REQ-SUB-111`). From the question, ArrowDown moves into it.
   Inside it, the arrow keys move by a day or a week, Page Up and Page Down by a
-  month, Enter chooses the focused day, and Escape closes it and returns focus
-  to the question.
+  month (`REQ-SUB-104`), Enter chooses the focused day (`REQ-SUB-148`), and
+  Escape closes it and returns focus to the question (`REQ-SUB-149`). Each of
+  these is a Scenario Outline whose Examples name the key, one row per key;
+  the steps say only that the reporter uses it.
 
 Typed text that is not a real `yyyy-mm-dd` date, or a future date where the
 question does not allow one, shows an inline message in the reader's language

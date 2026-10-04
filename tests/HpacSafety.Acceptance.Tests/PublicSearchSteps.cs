@@ -17,7 +17,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     Fuzzy public search over the published summary and visible member
 ///     comments, in the visitor's current site language only (#574,
-///     ADR-0157, REQ-MOD-140..149). Every match, and every non-match, is
+///     ADR-0157, REQ-MOD-140..149, REQ-PUB-025..027). Every match, and every non-match, is
 ///     read straight through <c>GET /api/v1/public/reports?q=</c>, the same
 ///     anonymous endpoint the public feed uses.
 /// </summary>
@@ -130,7 +130,7 @@ public sealed class PublicSearchSteps
 		await Hide(commentId);
 	}
 
-	[Given(@"another published report carrying a comment that is later deleted")]
+	[Given(@"a published report carrying a comment that is later deleted")]
 	public async Task GivenAnotherPublishedReportWithADeletedComment()
 	{
 		var reportId = await BootedReports.Seed(ReportStatus.Published, true);

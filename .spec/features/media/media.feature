@@ -305,7 +305,7 @@ Scenario: A reviewer hides a file and shows it again, and both are audited
 @REQ-MED-031
 Scenario: A member who is not a reviewer cannot hide or show a file
   Given a published report shows a processed image
-  And a member who is not a reviewer is signed in
+  And the visitor is a member who is not a reviewer
   When the member tries to hide the image
   Then the API answers 403
   And the report still lists the image
@@ -339,7 +339,7 @@ Scenario: Media that is no longer public is removed from the page
 @REQ-MED-035
 @ui
 Scenario: A reviewer hides a file from the public report page, still marked in the staff strip
-  Given a Safety Officer is signed in and a published report shows an image
+  Given a Safety Officer is on the admin site and a published report shows an image
   When the Safety Officer opens the report
   Then the image offers to hide it
   When the Safety Officer hides the image and confirms
@@ -391,7 +391,7 @@ Scenario: A reporter's video in the lightbox carries no captions, and the lightb
 @REQ-MED-059
 @ui
 Scenario: The admin report page uses the same strip and lightbox, and works for an unpublished report
-  Given a Safety Officer is signed in and an unpublished report has an image and a hidden document
+  Given a Safety Officer is on the admin site and an unpublished report has an image and a hidden document
   When a Safety Officer opens the report in the admin area
   Then the report shows the same thumbnail strip and lightbox as the public report page
   And the hidden document's thumbnail is marked "Hidden from the public" and offers to show it
@@ -399,7 +399,7 @@ Scenario: The admin report page uses the same strip and lightbox, and works for 
 @REQ-MED-060
 @ui
 Scenario: A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox
-  Given a Safety Officer is signed in and a report has a still-processing image
+  Given a Safety Officer is on the admin site and a report has a still-processing image
   When a Safety Officer opens the report in the admin area
   Then the image's tile is marked "processing"
   And activating it downloads the raw original rather than opening the lightbox
@@ -633,7 +633,7 @@ Scenario: A private note may refer to a private attachment on its own report onl
 @REQ-MOD-115
 @ui
 Scenario: A Safety Officer stages, describes, adds, downloads, and removes a private attachment on the report page
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer stages the private attachment "coroner-report.zip"
   Then the staged attachment "coroner-report.zip" finishes uploading and offers a description box
@@ -648,7 +648,7 @@ Scenario: A Safety Officer stages, describes, adds, downloads, and removes a pri
 @REQ-MOD-116
 @ui
 Scenario: A private note refers to a private attachment on the report page
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   And the report carries the private attachment "police-report.pdf"
   When the Safety Officer opens that report
   And the Safety Officer adds the private note "See the police report." referring to "police-report.pdf"
@@ -657,7 +657,7 @@ Scenario: A private note refers to a private attachment on the report page
 @REQ-MOD-117
 @ui
 Scenario: A Safety Officer cancels a private attachment while it uploads
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   And storage is slow to accept a private attachment
   When the Safety Officer opens that report
   And the Safety Officer stages the private attachment "investigation-archive.zip"
@@ -669,7 +669,7 @@ Scenario: A Safety Officer cancels a private attachment while it uploads
 @REQ-MOD-173
 @ui
 Scenario Outline: Several private attachments staged at once each upload independently
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer <method> the private attachments "site-photo.jpg" and "weather-log.pdf" at once
   Then both staged attachments finish uploading independently, each with its own progress
@@ -686,7 +686,7 @@ Examples:
 @REQ-MOD-174
 @ui
 Scenario: Removing a staged private attachment before it is added leaves the others staged
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer drops the private attachments "keep-me.pdf" and "drop-me.pdf" at once
   Then both staged attachments finish uploading independently, each with its own progress
@@ -698,7 +698,7 @@ Scenario: Removing a staged private attachment before it is added leaves the oth
 @REQ-MOD-175
 @ui
 Scenario: A too-large private attachment is refused on its own row while the others proceed
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once
   Then the too-large attachment's staged row states the private cap and cannot be added
@@ -709,7 +709,7 @@ Scenario: A too-large private attachment is refused on its own row while the oth
 @REQ-MOD-176
 @ui
 Scenario: "Add N attachments" is disabled until every staged private attachment has settled
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   And storage is slow to accept a private attachment
   When the Safety Officer opens that report
   And the Safety Officer stages the private attachment "slow-upload.zip"
@@ -720,7 +720,7 @@ Scenario: "Add N attachments" is disabled until every staged private attachment 
 @REQ-MOD-177
 @ui
 Scenario: Leaving the report page with staged, un-added private attachments warns
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer stages the private attachment "unfinished.pdf"
   Then the staged attachment "unfinished.pdf" finishes uploading and offers a description box
@@ -737,7 +737,7 @@ Scenario: Leaving the report page with staged, un-added private attachments warn
 @REQ-MOD-180
 @ui
 Scenario: A staged private attachment cannot be removed or re-described while it is being added
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   And the report is slow to accept a private attachment
   When the Safety Officer opens that report
   And the Safety Officer stages the private attachment "held.pdf"
@@ -750,7 +750,7 @@ Scenario: A staged private attachment cannot be removed or re-described while it
 @REQ-MOD-181
 @ui
 Scenario: Leaving the report page with only refused private attachments staged does not warn
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer drops only a private attachment larger than the private cap
   Then the too-large attachment's staged row states the private cap and cannot be added

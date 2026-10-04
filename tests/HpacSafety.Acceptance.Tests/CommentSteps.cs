@@ -59,13 +59,13 @@ public sealed class CommentSteps
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
 	}
 
-	[Given(@"a member is signed in")]
+	[Given(@"the visitor is a member")]
 	public void GivenAMemberIsSignedIn()
 	{
 		// Contextual — the member's token is minted per request below.
 	}
 
-	[Given(@"another member is signed in")]
+	[Given(@"the visitor is another member")]
 	public void GivenAnotherMemberIsSignedIn()
 	{
 		// Contextual — a second, non-reviewer member with a subject of their own.

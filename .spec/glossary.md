@@ -23,10 +23,11 @@ every table below whose header has a **Banned in scenarios** column, and fails
 any banned synonym in a `.feature` file or a `.spec/features/<area>/README.md`
 ([CONV-003](conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
 
-- **What it reads.** In a `.feature` file: every line except tags, comments,
-  doc strings, and table rows — so step text, names, and descriptions. In an
-  area README: the prose, without its frontmatter, fenced code, or link
-  targets. Examples and data-table cells are data and are not read.
+- **What it reads.** In a `.feature` file: step text, names, descriptions,
+  and the body rows of every Examples table, because a step reads those cells
+  through its `<placeholder>`. Not tags, comments, doc strings, an Examples
+  header, or a step's own data table, which is data. In an area README: the
+  prose, without its frontmatter, fenced code, or link targets.
 - **What it skips.** Anything in `"double quotes"` or `` `code` ``, and every
   `<placeholder>`. Quote an interface string, a page title, or a value
   exactly as the user sees it.
@@ -46,7 +47,7 @@ later scenario-style rules.
 
 | Term | Definition | Banned in scenarios | Exempt areas |
 |---|---|---|---|
-| **Member** | Anyone signed in with a valid token, whatever their role. A role already implies a valid token, so no role is written "signed-in" (J2). | `authenticated member`, `/\bsigned[- ]in (?=(?:Administrator\|Safety Officer\|User\|reviewer\|member)s?\b)/i`, `caller`, `/\busers?\b(?![ -](?:records?\|tables?\|ids?\|aggregate\|facing))/` | — |
+| **Member** | Anyone signed in with a valid token, whatever their role. A role already implies a valid token, so no role is written "signed-in", nor said to be "signed in" (J2). | `authenticated member`, `/\bsigned[- ]in (?=(?:Administrator\|Safety Officer\|User\|reviewer\|member)s?\b)/i`, `/\b(?:Administrator\|Safety Officer\|User\|[Mm]ember\|[Rr]eviewer)s? (?:is\|are) signed in\b/`, `caller`, `/\busers?\b(?![ -](?:records?\|tables?\|ids?\|aggregate\|facing))/` | — |
 | **User** | The lowest role: it files a report and comments, and nothing else. Always capitalised, and only as the role's name. | — | — |
 | **Reporter** | The member filing a report. Nothing stored records who they are. | `submitter` | — |
 | **Safety Officer** | The role that reviews reports, edits and approves summaries, and publishes. Always this spelling and case; the role claim's own value, `SafetyOfficer`, only in quotes or code. | `/\b[Ss]afety officers?\b/`, `/\bSafetyOfficers?\b/` | — |
@@ -66,8 +67,8 @@ later scenario-style rules.
 | **Submission** | The one final request that files a report, and the moment it is accepted. Not the report. | — | — |
 | **Saved report** | The reporter's unfinished answers and uploads, kept only in that browser for 15 days. "Draft" stays for a summary draft. | — | — |
 | **Report status** | **Submitted**, **Summarizing**, **Pending**, **Summary failed**, **Published**, **Unpublished**: the `ReportStatus` values, capitalised as names. | `SummaryFailed` | — |
-| **Deleted** | A record marked deleted: hidden and terminal, never physically removed (J7). | `/\bsoft[- ]?delet\w*/i`, `/\bstamp(?:s\|ed\|ing)?\b/i`, `/\barchiv(?:e\|es\|ed\|ing)\b/i` | — |
-| **Erased** | Physically gone. Only an unclaimed upload, or an upload of an abandoned saved report, is ever erased. | — | — |
+| **Deleted** | A record marked deleted: terminal, out of every normal path, and never physically removed (J7). "Archive" stays for a file format, such as a zip archive. | `/\bsoft[- ]?delet\w*/i`, `/\bstamp(?:s\|ed\|ing)?\b/i`, `/\barchiv(?:ed\|ing)\b/i` | — |
+| **Erased** | Physically gone. Only an unclaimed upload, an upload of an abandoned saved report, or a Typeform import note (`pending_import_logic`) an Administrator resolves (ADR-0077) is ever erased. | — | — |
 | **Report list** | The reviewers' list of reports on the admin site, with its filters (J9). The type-ahead review page is its own page. | `/\bqueues?\b/i`, `dashboard`, `dashboards` | — |
 | **Report detail** | One report's page on the admin site. | `detail view`, `detail page`, `detail views`, `detail pages` | — |
 | **Public feed** | The public list of published reports. | — | — |
@@ -77,21 +78,21 @@ later scenario-style rules.
 
 | Term | Definition | Banned in scenarios | Exempt areas |
 |---|---|---|---|
-| **Question** | One item of the report form, with a type, a label, and immutable revisions. An input on any other page is a box: the email box, the search box (J4). | `/\bfields?\b/i` | `typeform-question-import-export` |
+| **Question** | One item of the report form, with a type, a label, and immutable revisions; on the form it is also the input a reporter types into or picks from. An input on any other page is a box: the email box, the search box (J4). A landing or bailout field is a place a pilot lands, not an input, so the pattern leaves it alone. | `/(?<!landing \|bailout )\bfields?\b/i` | `typeform-question-import-export` |
 | **Question key** | The stable identifier every revision of a question, and its fork, shares. | `stable key`, `stable keys` | — |
 | **Question revision** | One immutable wording-and-settings record of a question. An answer names exactly one. | — | — |
 | **Fork** | The new question, with the same key, that editing an answered question creates. The old one is deleted. | — | — |
 | **Label** | A question's wording, stored without a closing colon. | — | — |
 | **Help text** | A question's optional guidance. | — | — |
-| **Question type** | **short text**, **paragraph**, **email**, **phone**, **date**, **time**, **number**, **single-select**, **multi-select**, **type-ahead**, **yes/no**, **checkbox**, **file upload**, **statement**, **group** (J12). | `long text`, `/\bdrop-?downs?\b/i` | `typeform-question-import-export` |
+| **Question type** | **short text**, **paragraph**, **email**, **phone**, **date**, **time**, **number**, **single-select**, **multi-select**, **type-ahead**, **yes/no**, **checkbox**, **file upload**, **statement**, **group** (J12). Typeform names its own types, so its area keeps them. | `/\blong[- ]text\b/i`, `/\bdrop-?downs?\b/i` | `typeform-question-import-export` |
 | **Picker** | A single-select or a multi-select question (ADR-0128). | — | — |
 | **Choice** | One selectable entry a single-select, multi-select, or type-ahead owns, outside its revisions. A picker's entry is a picker choice (J5). A menu's entries are items. | `/\b(?<!sign-in )(?<!Content-Type-)options?\b/i` | — |
 | **Type-ahead value** | A choice of a type-ahead question (J6, ADR-0129). | — | — |
 | **Reporter-added value** | A type-ahead value a reporter typed at submission, flagged for review. | `reporter-added choice`, `reporter-added choices` | — |
-| **Removed** | A choice an Administrator removed: no longer offered, and still named by every answer that names it. A dependent choice's link is removed the same way. | — | — |
+| **Removed** | A choice that an Administrator, or for a type-ahead value a reviewer, removed (ADR-0129): no longer offered, and still named by every answer that names it. A dependent choice's link is removed the same way. | — | — |
 | **Replaced** | A picker choice superseded by a new one. | — | — |
 | **Merged** | A type-ahead value folded into another. | — | — |
-| **Retired** | The state of the old choice after a replace or a merge. | — | — |
+| **Retired** | The state of the old choice after a replace or a merge, and of a question a fork superseded (ADR-0128): kept for the answers given under it, never offered again. A deleted question stays "deleted". | — | — |
 | **Live** | A question or choice that is not deleted, removed, or retired. Only for questions and choices; a report is Published, never live. | `/\b(?:go\|goes\|going\|went\|gone) live\b/i` | — |
 | **Conditional question** | A question shown only when a yes/no or single-select **parent question** has a given answer. | — | — |
 | **Dependent choice** | A choice offered only under one or more **parent choices** of an earlier question (ADR-0151). | — | — |
@@ -122,15 +123,15 @@ later scenario-style rules.
 | Term | Definition | Banned in scenarios | Exempt areas |
 |---|---|---|---|
 | **Upload** | A file in private quarantine, under an opaque upload ID, before a submission claims it. | — | — |
-| **Attachment** | An upload a submission has claimed: an image, a video, or a document. | `evidence` | — |
-| **Image** | One kind of attachment. Not a photo. | `photo`, `photos` | — |
+| **Attachment** | An upload a submission has claimed: an image, a video, or a document. "Evidence" means proof, as in "production evidence", never an attachment. | `/(?<!production )\bevidence\b/i` | — |
+| **Image** | One kind of attachment. Not a photo. A file name such as `photo.jpg` is data, so the pattern leaves a word followed by an extension alone. | `/\bphotos?\b(?!\.\w)/i` | — |
 | **Video** | One kind of attachment. | — | — |
 | **Document** | One kind of attachment: PDF, DOC, DOCX, RTF, Markdown, text, or ODT. | — | — |
 | **Media** | A report's images and videos, never its documents (J10). | — | — |
 | **Derivative** | The re-encoded, metadata-stripped image or remuxed video that may be published. | — | — |
 | **Original** | The file as it arrived. It is never published. | — | — |
 | **Quarantine** | Private storage for uploads before a submission claims them. | — | — |
-| **Hidden** | Taken off the public page by a reviewer: an image, video, document, or comment. It can be shown again. | — | — |
+| **Hidden** | Taken off the public page by a reviewer. An image, video, or document can be shown again; a comment cannot (ADR-0114). | — | — |
 | **Private attachment** | A file a reviewer adds to a report. Never public, and distinct from a reporter's attachment. | — | — |
 | **Private note** | A reviewer's note on a report. Never public. | — | — |
 | **Comment** | A member's public remark on a published report. | — | — |

@@ -250,7 +250,7 @@ Then("opening a version in the history shows its sections the same way", async (
 })
 
 Given(
-	"a Safety Officer and a report with a long-text answer written in Markdown and its Worker translation",
+	"a Safety Officer and a report with a paragraph answer written in Markdown and its Worker translation",
 	async ({ page }) => {
 		await stubReportDetail(
 			page,

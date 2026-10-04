@@ -91,7 +91,7 @@ function answer(key: string, label: string, type: string): StubAnswer {
 }
 
 Given(
-	'a Safety Officer and a report with a short-text answer labelled "Date", a yes\\/no answer labelled "Injured?" and a long-text answer labelled "Description"',
+	'a Safety Officer and a report with a short-text answer labelled "Date", a yes\\/no answer labelled "Injured?" and a paragraph answer labelled "Description"',
 	async ({ page }) => {
 		await stubReportDetail(
 			page,

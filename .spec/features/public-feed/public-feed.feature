@@ -196,7 +196,7 @@ Scenario: The public feed offers a visible Retry action when its next page fails
 @REQ-MOD-083
 @ui
 Scenario: A reviewer can open a published report's public page
-  Given a Safety Officer is signed in and a published report exists
+  Given a Safety Officer is on the admin site and a published report exists
   When the Safety Officer opens that report
   Then the report view links to the report's public address
   And a report that is not published shows no such link

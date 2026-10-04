@@ -18,9 +18,9 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 /// <remarks>
 ///     These run against the booted host rather than the domain, because that is
-///     what they are about: "the API rejects the operation regardless of what the
+///     what they are about: "the API refuses the operation regardless of what the
 ///     UI would have shown" cannot be shown by calling a domain method. Detailed
-///     coverage — every rejected token shape, every role at every endpoint — lives
+///     coverage — every refused token shape, every role at every endpoint — lives
 ///     in <c>HpacSafety.Api.Tests</c>; these prove the feature file's sentences are
 ///     true of the running system.
 /// </remarks>
@@ -126,7 +126,7 @@ public sealed class AuthorizationSteps
 		_response.ShouldNotBeNull();
 	}
 
-	[When(@"^that member attempts to (submit an occurrence report|list the review queue|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|delete a report|create a question revision|edit a question's choices)$")]
+	[When(@"^that member attempts to (submit an occurrence report|read the report list|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|delete a report|create a question revision|edit a question's choices)$")]
 	public async Task WhenMemberAttemptsCapability(string capability)
 	{
 		// One representative endpoint call per capability, each on its own fresh
@@ -136,7 +136,7 @@ public sealed class AuthorizationSteps
 		_response = capability switch
 		{
 			"submit an occurrence report" => await Submit(),
-			"list the review queue" => await _client!.GetAsync(new Uri("/api/admin/reports", UriKind.Relative)),
+			"read the report list" => await _client!.GetAsync(new Uri("/api/admin/reports", UriKind.Relative)),
 			"read a report's private detail" => await _client!.GetAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
 			"obtain an attachment link" => await ObtainAttachmentLink(),
 			"edit a report's summary" => await EditSummary(),
@@ -296,7 +296,7 @@ public sealed class AuthorizationSteps
 		body.ShouldContain("insufficient-role");
 	}
 
-	[Then(@"the API {word} the attempt")]
+	[Then(@"^the API (accepts|allows|forbids|refuses) the attempt$")]
 	public async Task ThenApiOutcome(string outcome)
 	{
 		if (_reviews.Count > 0)

@@ -59,7 +59,7 @@ public sealed class AnswerTranslationModeSteps
 
 	// ── REQ-SUB-071: only free text marked for translation is sent ──────────
 
-	[Given(@"a submitted report answers a long-text question marked for translation")]
+	[Given(@"a submitted report answers a paragraph question marked for translation")]
 	public async Task GivenALongTextAnswerMarkedForTranslation()
 	{
 		_answers["long_text"] = (await CreateQuestion("long_text", isTranslatable: true), "The wind picked up on final.", null);
@@ -89,7 +89,7 @@ public sealed class AnswerTranslationModeSteps
 		await RunTheWorker();
 	}
 
-	[Then(@"only the long-text answer is sent to the translator")]
+	[Then(@"only the paragraph answer is sent to the translator")]
 	public void ThenOnlyTheLongTextAnswerIsSent()
 	{
 		_translator.Sent.ShouldBe(["The wind picked up on final."]);

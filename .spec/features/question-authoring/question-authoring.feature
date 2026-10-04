@@ -398,9 +398,9 @@ Examples:
   | autocomplete  | stores those choices |
   | single_select | stores those choices |
   | multi_select  | stores those choices |
-  | time          | is rejected          |
-  | short_text    | is rejected          |
-  | yes_no        | is rejected          |
+  | time          | is refused           |
+  | short_text    | is refused           |
+  | yes_no        | is refused           |
 
 @REQ-QB-061
 Scenario: A question key is normalized and cannot be reused
@@ -639,7 +639,7 @@ Examples:
 @REQ-QB-241
 @ui
 Scenario Outline: The admin report detail adds the colon after an answerable question's label, in the locale's style
-  Given a Safety Officer and a report with a short-text answer labelled "Date", a yes/no answer labelled "Injured?" and a long-text answer labelled "Description"
+  Given a Safety Officer and a report with a short-text answer labelled "Date", a yes/no answer labelled "Injured?" and a paragraph answer labelled "Description"
   When they open that report in <locale>
   Then the answers are labelled <labels>
 

@@ -405,8 +405,8 @@ Examples:
   | fr-CA  | the report form showing its errors    |
   | en-CA  | the public feed                       |
   | fr-CA  | the public feed                       |
-  | en-CA  | the admin review queue                |
-  | fr-CA  | the admin review queue                |
+  | en-CA  | the admin report list                 |
+  | fr-CA  | the admin report list                 |
 
 @REQ-WLD-023
 @ui
@@ -491,7 +491,7 @@ Scenario: Switching from one open question editor straight to another starts cle
 @REQ-MOD-185
 @ui
 Scenario: Leaving the summary editor with unsaved changes is confirmed before they are discarded
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer opens the summary editor
   And types into the English text without saving
@@ -515,7 +515,7 @@ Scenario: Leaving the type-ahead review page with an uncorrected draft is confir
 @REQ-MOD-187
 @ui
 Scenario: Leaving with an unsaved private note is confirmed
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer starts writing a private note without saving it
   And navigates to another admin page
@@ -524,7 +524,7 @@ Scenario: Leaving with an unsaved private note is confirmed
 @REQ-COM-021
 @ui
 Scenario: Leaving with an unposted comment is confirmed before it is discarded
-  Given a member is signed in and a published report has comments
+  Given the visitor is a member and a published report has comments
   When the member opens the report
   And types a comment without posting it
   And navigates away from the report

@@ -6,7 +6,7 @@ and reviewers can hide any of them.
 @REQ-COM-001
 Scenario: A member comments on a published report
   Given a report is published
-  And a member is signed in
+  And the visitor is a member
   When the member posts a comment on it
   Then the API answers 201 with the comment
   And the comment is listed on that report for every reader, signed in or not
@@ -21,7 +21,7 @@ Scenario: Commenting requires a member
 @REQ-COM-003
 Scenario: A report no visitor can see cannot be commented on
   Given a report is not public
-  And a member is signed in
+  And the visitor is a member
   When the member posts a comment on it
   Then the API answers 404
   And no comment is stored
@@ -29,7 +29,7 @@ Scenario: A report no visitor can see cannot be commented on
 @REQ-COM-004
 Scenario Outline: A comment must have text, and at most 2000 characters
   Given a report is published
-  And a member is signed in
+  And the visitor is a member
   When the member posts a comment whose text is <text>
   Then the API answers 400
   And no comment is stored
@@ -50,7 +50,7 @@ Scenario: A comment is stored in the language it was written in, and the Worker 
 @REQ-COM-006
 Scenario: Posting a comment never waits for, or calls, a translation provider
   Given a report is published
-  And a member is signed in
+  And the visitor is a member
   And no translation provider is reachable
   When the member posts a comment on it
   Then the API answers 201
@@ -82,7 +82,7 @@ Scenario: An author's deleted comment disappears but is not erased
 @REQ-COM-010
 Scenario Outline: Nobody may change another member's comment
   Given a member commented on a published report
-  And another member is signed in
+  And the visitor is another member
   When the other member tries to <action> the comment
   Then the API answers 403
   And the comment is unchanged
@@ -103,7 +103,7 @@ Scenario: A reviewer hides a comment, and the hiding is audited
 @REQ-COM-012
 Scenario: A member who is not a reviewer cannot hide a comment
   Given a member commented on a published report
-  And another member is signed in
+  And the visitor is another member
   When the other member tries to hide the comment
   Then the API answers 403
   And the comment is still listed
@@ -143,7 +143,7 @@ Scenario: An anonymous visitor is invited to sign in to comment
 @REQ-COM-017
 @ui
 Scenario: A member posts, edits, and deletes their own comment
-  Given a member is signed in and a published report has comments
+  Given the visitor is a member and a published report has comments
   When the member opens the report
   Then a comment box is shown with a reminder not to name or identify people
   When the member posts a comment
@@ -174,7 +174,7 @@ Scenario: A comment still awaiting translation shows its original text
 @REQ-COM-020
 @ui
 Scenario: A reviewer hides a comment from the report page
-  Given a Safety Officer is signed in and a published report has comments
+  Given a Safety Officer is on the admin site and a published report has comments
   When the Safety Officer opens the report
   Then every comment offers to hide it
   When the Safety Officer hides a comment and confirms

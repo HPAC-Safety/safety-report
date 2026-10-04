@@ -1497,7 +1497,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 					new { questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"), value = (string?)"x" },
 				},
 			}),
-			"a non-null field from the wrong answer shape" => await Post(new
+			"a non-null value from the wrong answer shape" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]

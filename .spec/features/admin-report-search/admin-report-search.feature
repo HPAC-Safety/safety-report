@@ -111,7 +111,7 @@ Scenario: The admin report list carries every non-deleted attachment's count
 @REQ-MOD-052
 @ui
 Scenario: The Manage reports page lists reports with a status badge and a Private badge
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   Then each report shows its submission time and a badge for its workflow status
   And a report whose reporter refused consent also shows a "Private (no consent)" badge
@@ -120,7 +120,7 @@ Scenario: The Manage reports page lists reports with a status badge and a Privat
 @REQ-MOD-125
 @ui
 Scenario: Manage reports shows each row's reporter and pilot names, blank when unanswered
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   Then the pending row shows reporter name "Alex Rivera" and pilot name "Sam Chen"
   And the published row shows no reporter or pilot name
@@ -128,7 +128,7 @@ Scenario: Manage reports shows each row's reporter and pilot names, blank when u
 @REQ-MOD-154
 @ui
 Scenario: Manage reports shows each row's attachment icon and count, omitted at zero
-  Given a Safety Officer is signed in and Manage reports holds a report with attachments and one with none
+  Given a Safety Officer is on the admin site and Manage reports holds a report with attachments and one with none
   When the Safety Officer opens Manage reports
   Then the row with attachments shows an attachment icon with its count, accessibly labelled
   And the row with none shows no attachment icon
@@ -136,7 +136,7 @@ Scenario: Manage reports shows each row's attachment icon and count, omitted at 
 @REQ-MOD-053
 @ui
 Scenario: Choosing a filter on Manage reports narrows the list
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer chooses the "Published" filter
   Then only published reports are listed
@@ -145,7 +145,7 @@ Scenario: Choosing a filter on Manage reports narrows the list
 @REQ-MOD-120
 @ui
 Scenario Outline: Each row of Manage reports offers the quick actions its state allows
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   Then the <row> row offers <actions>
 
@@ -161,7 +161,7 @@ Examples:
 @REQ-MOD-121
 @ui
 Scenario: Publishing and unpublishing from the list updates the row in place
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer publishes the pending row
   Then the pending row shows the "Published" badge and offers Unpublish
@@ -172,7 +172,7 @@ Scenario: Publishing and unpublishing from the list updates the row in place
 @REQ-MOD-122
 @ui
 Scenario: Deleting from the list asks for confirmation first
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer chooses Delete on the pending row
   Then a confirmation asks whether to delete it
@@ -185,7 +185,7 @@ Scenario: Deleting from the list asks for confirmation first
 @REQ-MOD-123
 @ui
 Scenario: A stale row action tells the reviewer to reload the list
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   And another reviewer has changed the pending report since the list was loaded
   When the Safety Officer opens Manage reports
   And the Safety Officer publishes the pending row
@@ -254,7 +254,7 @@ Scenario: The search query text is never logged
 @REQ-MOD-134
 @ui
 Scenario: Clearing the search box returns to newest submitted first
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer searches for "Alex"
   And the Safety Officer clears the search box
@@ -263,7 +263,7 @@ Scenario: Clearing the search box returns to newest submitted first
 @REQ-MOD-136
 @ui
 Scenario: The search text lives in the address bar and survives a reload
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer searches for "Alex"
   Then the address bar carries "q=Alex"
@@ -273,7 +273,7 @@ Scenario: The search text lives in the address bar and survives a reload
 @REQ-MOD-137
 @ui
 Scenario: A search matching nothing shows a message naming the query, not an error
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer searches for a word that matches nothing
   Then a message says no reports match that search
@@ -282,14 +282,14 @@ Scenario: A search matching nothing shows a message naming the query, not an err
 @REQ-MOD-179
 @ui
 Scenario: Opening Manage reports afresh loads its first page again, not the list kept from earlier
-  Given a Safety Officer is signed in and more reports exist than fit on one page
+  Given a Safety Officer is on the admin site and more reports exist than fit on one page
   When the Safety Officer goes to another page and opens Manage reports again from the Admin menu
   Then Manage reports asks for its first page again
 
 @REQ-MOD-128
 @ui
 Scenario: Manage reports loads more automatically and offers the same hidden fallback and visible retry
-  Given a Safety Officer is signed in and more reports exist than fit on one page
+  Given a Safety Officer is on the admin site and more reports exist than fit on one page
   Then the "Load more" action is not visible
   When a keyboard visitor tabs to the "Load more" action
   Then it becomes visible

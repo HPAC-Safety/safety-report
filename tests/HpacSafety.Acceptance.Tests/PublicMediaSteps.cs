@@ -174,7 +174,7 @@ public sealed class PublicMediaSteps
 		(await Listed()).ShouldBe([_imageId]);
 	}
 
-	[Given(@"a member who is not a reviewer is signed in")]
+	[Given(@"the visitor is a member who is not a reviewer")]
 	public void GivenAMemberWhoIsNotAReviewer()
 	{
 		// The member signs in in the When step below.

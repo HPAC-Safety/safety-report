@@ -244,14 +244,14 @@ function rows(page: Page) {
 	return page.getByRole("list", { name: "Reports" }).getByRole("listitem")
 }
 
-Given("a Safety Officer is signed in and reports exist in several states", async ({ page }) => {
+Given("a Safety Officer is on the admin site and reports exist in several states", async ({ page }) => {
 	await stubReports(page)
 	await signInAs(page, "safety_officer")
 })
 
 // --- REQ-MOD-154: Manage reports shows each row's attachment icon and count ---
 
-Given("a Safety Officer is signed in and Manage reports holds a report with attachments and one with none", async ({ page }) => {
+Given("a Safety Officer is on the admin site and Manage reports holds a report with attachments and one with none", async ({ page }) => {
 	await stubReports(page)
 	present(present(listStubs.get(page)).rows.find((candidate) => candidate.id === "pendingaaaa")).attachmentCount = 3
 	await signInAs(page, "safety_officer")
@@ -617,12 +617,12 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 	})
 }
 
-Given("a Safety Officer is signed in and a {word} report exists", async ({ page }, word: string) => {
+Given("a Safety Officer is on the admin site and a {word} report exists", async ({ page }, word: string) => {
 	await stubReview(page, STATUS_BY_WORD[word], word)
 	await signInAs(page, "safety_officer")
 })
 
-Given("a Safety Officer is signed in and a pending report with four summary revisions exists", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a pending report with four summary revisions exists", async ({ page }) => {
 	await stubReview(page, "pending", "history")
 	await signInAs(page, "safety_officer")
 })
@@ -813,7 +813,7 @@ async function stubTranslate(page: Page) {
 	})
 }
 
-Given("a Safety Officer is signed in and a report whose French text was machine-translated exists", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a report whose French text was machine-translated exists", async ({ page }) => {
 	await stubReview(page, "pending", "machine-translated")
 	await signInAs(page, "safety_officer")
 })
@@ -898,7 +898,7 @@ Then("the French text is labelled as machine-translated", async ({ page }) => {
 const STORED_TYPE: Record<string, string> = { date: "date", time: "time", "yes/no": "yes_no", phone: "phone" }
 
 Given(
-	"a Safety Officer is signed in and a report with a {} answer stored as {string} exists",
+	"a Safety Officer is on the admin site and a report with a {} answer stored as {string} exists",
 	async ({ page }, type: string, stored: string) => {
 		const detail = {
 			...DETAIL,
@@ -1115,7 +1115,7 @@ async function disableAutoLoad(page: Page) {
 	})
 }
 
-Given("a Safety Officer is signed in and more reports exist than fit on one page", async ({ page }) => {
+Given("a Safety Officer is on the admin site and more reports exist than fit on one page", async ({ page }) => {
 	await disableAutoLoad(page)
 	await stubPagedReports(page, false)
 	await signInAs(page, "safety_officer")

@@ -182,10 +182,10 @@ Scenario Outline: A development sign-in verified against the members site resolv
   Then the API returns a signed development token with the <role> role
 
 Examples:
-  | email                       | listed                                 | role          |
-  | admin@example.test          | on the development Administrator list  | Administrator |
-  | officer@example.test        | on the development safety-officer list | SafetyOfficer |
-  | nobody-special@example.test | on neither development list            | User          |
+  | email                       | listed                                  | role           |
+  | admin@example.test          | on the development Administrator list   | Administrator  |
+  | officer@example.test        | on the development Safety Officer list  | Safety Officer |
+  | nobody-special@example.test | on neither development list             | User           |
 
 @REQ-MOD-021
 Scenario: Bad members-site credentials show the same generic failure as bad fixed-account credentials
@@ -255,7 +255,7 @@ Scenario Outline: A User may only submit a report
 Examples:
   | capability                     | outcome |
   | submit an occurrence report    | allows  |
-  | list the review queue          | forbids |
+  | read the report list           | forbids |
   | read a report's private detail | forbids |
   | obtain an attachment link      | forbids |
   | edit a report's summary        | forbids |
@@ -274,7 +274,7 @@ Scenario Outline: A Safety Officer reviews and publishes but does not author que
 Examples:
   | capability                     | outcome |
   | submit an occurrence report    | allows  |
-  | list the review queue          | allows  |
+  | read the report list           | allows  |
   | read a report's private detail | allows  |
   | obtain an attachment link      | allows  |
   | edit a report's summary        | allows  |
@@ -293,7 +293,7 @@ Scenario Outline: An Administrator has every Safety Officer capability and autho
 Examples:
   | capability                     | outcome |
   | submit an occurrence report    | allows  |
-  | list the review queue          | allows  |
+  | read the report list           | allows  |
   | read a report's private detail | allows  |
   | obtain an attachment link      | allows  |
   | edit a report's summary        | allows  |
@@ -311,8 +311,8 @@ Scenario Outline: Only an Administrator may author a question revision
 
 Examples:
   | role           | outcome |
-  | User           | rejects |
-  | Safety Officer | rejects |
+  | User           | refuses |
+  | Safety Officer | refuses |
   | Administrator  | accepts |
 
 @REQ-MOD-029

@@ -121,6 +121,9 @@ export function stripLiterals(line: string): string {
 export function featureLines(source: string): Array<[number, string]> {
 	const read: Array<[number, string]> = []
 	let docString: string | null = null
+	// Where an Examples table is: its header names placeholders, but each body
+	// row is text a step reads through them. A step's own data table is data.
+	let examples: 'none' | 'header' | 'body' = 'none'
 	for (const [index, raw] of source.split('\n').entries()) {
 		const line = raw.trim()
 		if (docString) {
@@ -131,7 +134,13 @@ export function featureLines(source: string): Array<[number, string]> {
 			docString = line.slice(0, 3)
 			continue
 		}
-		if (line === '' || line.startsWith('#') || line.startsWith('@') || line.startsWith('|')) continue
+		if (line === '' || line.startsWith('#') || line.startsWith('@')) continue
+		if (line.startsWith('|')) {
+			if (examples === 'header') examples = 'body'
+			else if (examples === 'body') read.push([index + 1, stripLiterals(line)])
+			continue
+		}
+		examples = /^(Examples|Scenarios):/.test(line) ? 'header' : 'none'
 		read.push([index + 1, stripLiterals(line)])
 	}
 	return read

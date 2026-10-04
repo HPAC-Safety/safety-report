@@ -449,7 +449,7 @@
 				{"keyword":"Then","text":"it states the rule that an aircraft make or model becomes its category","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that \"redacted\", \"caviardé\", placeholders, and invented names are never written","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that every private marker is resolved and never appears literally","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it states the rule that the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it states the rule that the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that each expected section is a \"## \" heading with its exact label, in form order","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that other public facts are woven into the section they fit","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that each statement goes in the section whose question it best answers","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
@@ -687,7 +687,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a member is signed in","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 201 with the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is listed on that report for every reader, signed in or not","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
@@ -728,7 +728,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report is not public","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a member is signed in","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 404","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no comment is stored","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
@@ -749,7 +749,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a member is signed in","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment whose text is empty","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 400","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no comment is stored","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
@@ -792,7 +792,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a member is signed in","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"no translation provider is reachable","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 201","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
@@ -876,7 +876,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a member commented on a published report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"another member is signed in","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is another member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the other member tries to edit the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 403","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is unchanged","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
@@ -919,7 +919,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a member commented on a published report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"another member is signed in","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is another member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the other member tries to hide the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 403","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is still listed","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
@@ -1021,7 +1021,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a member is signed in and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a comment box is shown with a reminder not to name or identify people","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
@@ -1088,7 +1088,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every comment offers to hide it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer hides a comment and confirms","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
@@ -1109,7 +1109,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a member is signed in and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"types a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"navigates away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
@@ -2520,7 +2520,7 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report shows a processed image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a member who is not a reviewer is signed in","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor is a member who is not a reviewer","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member tries to hide the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API answers 403","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report still lists the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
@@ -2610,7 +2610,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a published report shows an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report shows an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the image offers to hide it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer hides the image and confirms","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
@@ -3164,7 +3164,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and an unpublished report has an image and a hidden document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and an unpublished report has an image and a hidden document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the same thumbnail strip and lightbox as the public report page","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the hidden document's thumbnail is marked \"Hidden from the public\" and offers to show it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
@@ -3186,7 +3186,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report has a still-processing image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report has a still-processing image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the image's tile is marked \"processing\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"activating it downloads the raw original rather than opening the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
@@ -3610,8 +3610,8 @@
 				{"keyword":"Given","text":"\"admin@example.test\" is on the development Administrator list","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that email signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API returns a signed development token with the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"\"officer@example.test\" is on the development safety-officer list","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API returns a signed development token with the SafetyOfficer role","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"officer@example.test\" is on the development Safety Officer list","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the API returns a signed development token with the Safety Officer role","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"\"nobody-special@example.test\" is on neither development list","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API returns a signed development token with the User role","files":["tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs"],"ambiguous":false}
 			],
@@ -3711,7 +3711,7 @@
 				{"keyword":"Given","text":"a member has the User role","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to submit an occurrence report","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API allows the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"that member attempts to list the review queue","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member attempts to read the report list","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API forbids the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to read a report's private detail","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to obtain an attachment link","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
@@ -3740,7 +3740,7 @@
 				{"keyword":"Given","text":"a member has the Safety Officer role","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to submit an occurrence report","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API allows the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"that member attempts to list the review queue","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member attempts to read the report list","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to read a report's private detail","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to obtain an attachment link","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to edit a report's summary","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
@@ -3769,7 +3769,7 @@
 				{"keyword":"Given","text":"a member has the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to submit an occurrence report","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API allows the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"that member attempts to list the review queue","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member attempts to read the report list","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to read a report's private detail","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to obtain an attachment link","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to edit a report's summary","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
@@ -3796,7 +3796,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a member has the User role","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to create a question revision","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API rejects the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the API refuses the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a member has the Safety Officer role","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a member has the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API accepts the attempt","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
@@ -4213,7 +4213,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"each report shows its submission time and a badge for its workflow status","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a report whose reporter refused consent also shows a \"Private (no consent)\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4234,7 +4234,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses the \"Published\" filter","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"only published reports are listed","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4255,7 +4255,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens a pending report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"its answers are shown under their questions, with each private answer marked private","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4410,16 +4410,16 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the offered actions are Edit summary, Publish, Unpublish, Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the offered actions are Edit summary, Unpublish, Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a unpublished report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a unpublished report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the offered actions are Edit summary, Publish, Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a summary-failed report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a summary-failed report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the offered actions are Write summary, Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a private-unpublished report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a private-unpublished report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the offered actions are Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
@@ -4437,7 +4437,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer edits the English summary and saves","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Pending\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4458,7 +4458,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Published\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -4478,7 +4478,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer unpublishes it with the note \"Duplicate of an earlier report\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Unpublished\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4499,7 +4499,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer has changed that report since it was opened","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4520,7 +4520,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a confirmation asks whether to delete the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4542,7 +4542,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens its document attachment","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the browser requests that attachment's download link","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -4611,7 +4611,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer changes nothing","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4638,7 +4638,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4665,7 +4665,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a summary-failed report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a summary-failed report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Write summary","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer types the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4686,7 +4686,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report whose French text was machine-translated exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report whose French text was machine-translated exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the English text is labelled as edited by a reviewer","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the French text is labelled as machine-translated","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -4706,20 +4706,20 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a date answer stored as \"2026-09-13\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a date answer stored as \"2026-09-13\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the interface language is English","files":["tests/e2e/steps/locale.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"September 13, 2026\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no translation is shown beside it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the interface language is French","files":["tests/e2e/steps/locale.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"13 septembre 2026\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a time answer stored as \"14:30\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a time answer stored as \"14:30\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"2:30 p.m.\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"14 h 30\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a yes/no answer stored as \"true\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a yes/no answer stored as \"true\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"Yes\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"Oui\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a yes/no answer stored as \"false\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a yes/no answer stored as \"false\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"No\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"Non\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -4738,7 +4738,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a date answer stored as \"2026-13-45\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a date answer stored as \"2026-13-45\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the interface language is English","files":["tests/e2e/steps/locale.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"2026-13-45\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -4779,7 +4779,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens a pending report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a translated narrative answer shows its translation beneath it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -4882,7 +4882,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report view links to the report's public address","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a report that is not published shows no such link","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -5357,7 +5357,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer left the private note \"Called the pilot; follow up Monday.\"","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the private notes section lists \"Called the pilot; follow up Monday.\" with its writer and time","files":["tests/e2e/steps/private-notes.steps.ts"],"ambiguous":false},
@@ -5579,7 +5579,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"coroner-report.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the staged attachment \"coroner-report.zip\" finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -5608,7 +5608,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report carries the private attachment \"police-report.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer adds the private note \"See the police report.\" referring to \"police-report.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -5631,7 +5631,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"storage is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"investigation-archive.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -5655,15 +5655,15 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a phone answer stored as \"+16045551234\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a phone answer stored as \"+16045551234\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the interface language is English","files":["tests/e2e/steps/locale.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"+1 604 555 1234\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no translation is shown beside it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the interface language is French","files":["tests/e2e/steps/locale.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a phone answer stored as \"+442079460018\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a phone answer stored as \"+442079460018\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"+44 20 7946 0018\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a report with a phone answer stored as \"604-555-1234\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report with a phone answer stored as \"604-555-1234\" exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads \"604-555-1234\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/locale.steps.ts","tests/e2e/steps/manage-reports.steps.ts"],
@@ -5702,7 +5702,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row offers Publish, Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the published row offers Unpublish, Delete","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -5726,7 +5726,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row shows the \"Published\" badge and offers Unpublish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -5749,7 +5749,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a confirmation asks whether to delete it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -5773,7 +5773,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer has changed the pending report since the list was loaded","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -5823,7 +5823,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row shows reporter name \"Alex Rivera\" and pilot name \"Sam Chen\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the published row shows no reporter or pilot name","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -5886,7 +5886,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a keyboard visitor tabs to the \"Load more\" action","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
@@ -6013,7 +6013,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer clears the search box","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -6053,7 +6053,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the address bar carries \"q=Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -6075,7 +6075,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for a word that matches nothing","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a message says no reports match that search","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -6435,7 +6435,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and Manage reports holds a report with attachments and one with none","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and Manage reports holds a report with attachments and one with none","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the row with attachments shows an attachment icon with its count, accessibly labelled","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the row with none shows no attachment icon","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -6874,7 +6874,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer drops the private attachments \"site-photo.jpg\" and \"weather-log.pdf\" at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"both staged attachments finish uploading independently, each with its own progress","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -6901,7 +6901,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer drops the private attachments \"keep-me.pdf\" and \"drop-me.pdf\" at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"both staged attachments finish uploading independently, each with its own progress","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -6927,7 +6927,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the too-large attachment's staged row states the private cap and cannot be added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -6952,7 +6952,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"storage is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"slow-upload.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -6977,7 +6977,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"unfinished.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the staged attachment \"unfinished.pdf\" finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -7027,7 +7027,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer goes to another page and opens Manage reports again from the Admin menu","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"Manage reports asks for its first page again","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -7048,7 +7048,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"held.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -7075,7 +7075,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer drops only a private attachment larger than the private cap","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the too-large attachment's staged row states the private cap and cannot be added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
@@ -7116,7 +7116,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"types into the English text without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
@@ -7164,7 +7164,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer starts writing a private note without saving it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"navigates to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
@@ -7447,7 +7447,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the revision history lists four revisions, newest first","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"each shows its author, its time, and how each language was written","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -7468,7 +7468,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer views the first revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that revision's English and French text is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -7489,7 +7489,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report with four summary revisions exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Restore this version on the first revision","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a confirmation asks whether to restore that version","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -7532,7 +7532,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer edits the English summary and saves","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report shows the \"Published\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -7553,7 +7553,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is signed in and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"Save summary is not offered","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
@@ -7589,13 +7589,13 @@
 			"id": "REQ-MOD-209",
 			"area": "review-and-publication",
 			"file": ".spec/features/review-and-publication/review-and-publication.feature",
-			"title": "The admin report detail renders a long-text answer and its translation as Markdown",
+			"title": "The admin report detail renders a paragraph answer and its translation as Markdown",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer and a report with a long-text answer written in Markdown and its Worker translation","files":["tests/e2e/steps/summary-markdown.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer and a report with a paragraph answer written in Markdown and its Worker translation","files":["tests/e2e/steps/summary-markdown.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they open that report","files":["tests/e2e/steps/summary-markdown.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer shows its bold text as bold and its list as a list","files":["tests/e2e/steps/summary-markdown.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"its translation shows the same formatting","files":["tests/e2e/steps/summary-markdown.steps.ts"],"ambiguous":false},
@@ -8877,7 +8877,7 @@
 				{"keyword":"Given","text":"an Administrator authors a single_select question","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator authors a multi_select question","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator authors a time question","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the question is rejected","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the question is refused","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator authors a short_text question","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator authors a yes_no question","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false}
 			],
@@ -12846,7 +12846,7 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer and a report with a short-text answer labelled \"Date\", a yes/no answer labelled \"Injured?\" and a long-text answer labelled \"Description\"","files":["tests/e2e/steps/label-colon.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer and a report with a short-text answer labelled \"Date\", a yes/no answer labelled \"Injured?\" and a paragraph answer labelled \"Description\"","files":["tests/e2e/steps/label-colon.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they open that report in English","files":["tests/e2e/steps/label-colon.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the answers are labelled \"Date:\", \"Injured?\", \"Description:\"","files":["tests/e2e/steps/label-colon.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they open that report in French","files":["tests/e2e/steps/label-colon.steps.ts"],"ambiguous":false},
@@ -13622,7 +13622,7 @@
 				{"keyword":"Given","text":"a submission DTO contains a duplicate question_revision_id","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the API validates it","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the API refuses the submission","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a submission DTO contains a non-null field from the wrong answer shape","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a submission DTO contains a non-null value from the wrong answer shape","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission DTO contains a malformed upload ID","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission DTO contains the same upload ID named more than once","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission DTO contains more upload IDs than the attachment limit","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
@@ -14957,11 +14957,11 @@
 				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report request is JSON that names each attachment by the upload ID the upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a submitted report answers a long-text question marked for translation","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a submitted report answers a paragraph question marked for translation","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"it answers a short-text question not marked for translation","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"it answers an email, a phone number, a date, a time, a number, and a yes/no question","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker translates that report's answers","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"only the long-text answer is sent to the translator","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"only the paragraph answer is sent to the translator","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the yes/no answer, stored as a boolean, is never sent to the translator","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"every other answer, the yes/no answer included, keeps no second language","files":["tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs"],"ambiguous":false}
 			],
@@ -17551,7 +17551,7 @@
 				{"keyword":"Given","text":"a visitor's stored theme preference is dark and their language is fr-CA","files":["tests/e2e/steps/dark-mode.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they open the report form showing its errors","files":["tests/e2e/steps/dark-mode.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they open the public feed","files":["tests/e2e/steps/dark-mode.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the admin review queue","files":["tests/e2e/steps/dark-mode.steps.ts"],"ambiguous":false}
+				{"keyword":"When","text":"they open the admin report list","files":["tests/e2e/steps/dark-mode.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dark-mode.steps.ts"],
 			"staleIgnore": false,

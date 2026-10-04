@@ -53,7 +53,7 @@ public sealed class MembersSiteLoginSteps
 		_administratorEmail = email;
 	}
 
-	[Given(@"{string} is on the development safety-officer list")]
+	[Given(@"{string} is on the development Safety Officer list")]
 	public void GivenEmailIsOnTheSafetyOfficerList(string email)
 	{
 		_safetyOfficerEmail = email;
@@ -101,13 +101,13 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "member@example.test", password = "whatever" });
 	}
 
-	[Then(@"the API returns a signed development token with the {word} role")]
+	[Then(@"^the API returns a signed development token with the (User|Safety Officer|Administrator) role$")]
 	public async Task ThenTokenHasRole(string role)
 	{
 		_response!.EnsureSuccessStatusCode();
 
 		var payload = await _response.Content.ReadFromJsonAsync<TokenPayload>();
-		var expectedRole = Enum.Parse<MemberRole>(role);
+		var expectedRole = GlossaryNames.Role(role);
 
 		payload!.Role.ShouldBe(MemberRoles.CodeFor(expectedRole));
 	}

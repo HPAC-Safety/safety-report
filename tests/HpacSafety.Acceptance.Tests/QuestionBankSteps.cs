@@ -536,7 +536,7 @@ public sealed class QuestionBankSteps
 		_question!.Choices.Count.ShouldBe(2);
 	}
 
-	[Then(@"the question is rejected")]
+	[Then(@"the question is refused")]
 	public void ThenTheRevisionIsRejected()
 	{
 		_rejection.ShouldBeOfType<DomainRuleViolationException>();

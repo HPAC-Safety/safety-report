@@ -125,7 +125,7 @@ Scenario: Publication requires every guard to pass, with no bypass
 @REQ-MOD-054
 @ui
 Scenario: Opening a report shows its answers with private answers marked, and its summary pair
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer opens a pending report
   Then its answers are shown under their questions, with each private answer marked private
@@ -134,7 +134,7 @@ Scenario: Opening a report shows its answers with private answers marked, and it
 @REQ-MOD-075
 @ui
 Scenario Outline: A date, time, or yes/no answer reads in the reviewer's language, not in its stored form
-  Given a Safety Officer is signed in and a report with a <type> answer stored as "<stored>" exists
+  Given a Safety Officer is on the admin site and a report with a <type> answer stored as "<stored>" exists
   And the interface language is <language>
   When the Safety Officer opens that report
   Then the answer reads "<shown>"
@@ -154,7 +154,7 @@ Examples:
 @REQ-MOD-076
 @ui
 Scenario: A stored date that is not a real date is shown as stored
-  Given a Safety Officer is signed in and a report with a date answer stored as "2026-13-45" exists
+  Given a Safety Officer is on the admin site and a report with a date answer stored as "2026-13-45" exists
   And the interface language is English
   When the Safety Officer opens that report
   Then the answer reads "2026-13-45"
@@ -162,7 +162,7 @@ Scenario: A stored date that is not a real date is shown as stored
 @REQ-MOD-118
 @ui
 Scenario Outline: A phone answer reads formatted, and one stored before phone numbers were validated reads as stored
-  Given a Safety Officer is signed in and a report with a phone answer stored as "<stored>" exists
+  Given a Safety Officer is on the admin site and a report with a phone answer stored as "<stored>" exists
   And the interface language is <language>
   When the Safety Officer opens that report
   Then the answer reads "<shown>"
@@ -243,7 +243,7 @@ Examples:
 @REQ-MOD-062
 @ui
 Scenario Outline: The report view offers only the actions its state allows
-  Given a Safety Officer is signed in and a <status> report exists
+  Given a Safety Officer is on the admin site and a <status> report exists
   When the Safety Officer opens that report
   Then the offered actions are <actions>
 
@@ -258,7 +258,7 @@ Examples:
 @REQ-MOD-063
 @ui
 Scenario: Editing a pending report's summary pair saves a draft
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer edits the English summary and saves
   Then the report shows the "Pending" badge
@@ -267,7 +267,7 @@ Scenario: Editing a pending report's summary pair saves a draft
 @REQ-MOD-206
 @ui
 Scenario: Editing a published report's summary keeps it Published
-  Given a Safety Officer is signed in and a published report exists
+  Given a Safety Officer is on the admin site and a published report exists
   When the Safety Officer opens that report
   And the Safety Officer edits the English summary and saves
   Then the report shows the "Published" badge
@@ -276,7 +276,7 @@ Scenario: Editing a published report's summary keeps it Published
 @REQ-MOD-207
 @ui
 Scenario: Save is offered only once a language has changed
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer opens the summary editor
   Then Save summary is not offered
@@ -286,7 +286,7 @@ Scenario: Save is offered only once a language has changed
 @REQ-MOD-202
 @ui
 Scenario: The report view lists the summary's revisions
-  Given a Safety Officer is signed in and a pending report with four summary revisions exists
+  Given a Safety Officer is on the admin site and a pending report with four summary revisions exists
   When the Safety Officer opens that report
   Then the revision history lists four revisions, newest first
   And each shows its author, its time, and how each language was written
@@ -295,7 +295,7 @@ Scenario: The report view lists the summary's revisions
 @REQ-MOD-203
 @ui
 Scenario: Any revision can be viewed without changing the current summary
-  Given a Safety Officer is signed in and a pending report with four summary revisions exists
+  Given a Safety Officer is on the admin site and a pending report with four summary revisions exists
   When the Safety Officer opens that report
   And the Safety Officer views the first revision
   Then that revision's English and French text is shown
@@ -304,7 +304,7 @@ Scenario: Any revision can be viewed without changing the current summary
 @REQ-MOD-204
 @ui
 Scenario: Restoring a version asks for confirmation first
-  Given a Safety Officer is signed in and a pending report with four summary revisions exists
+  Given a Safety Officer is on the admin site and a pending report with four summary revisions exists
   When the Safety Officer opens that report
   And the Safety Officer chooses Restore this version on the first revision
   Then a confirmation asks whether to restore that version
@@ -316,7 +316,7 @@ Scenario: Restoring a version asks for confirmation first
 @REQ-MOD-064
 @ui
 Scenario: Publishing a consented report shows it Published
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer publishes it
   Then the report shows the "Published" badge
@@ -324,7 +324,7 @@ Scenario: Publishing a consented report shows it Published
 @REQ-MOD-065
 @ui
 Scenario: Unpublishing with a note shows the note on the report
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer unpublishes it with the note "Duplicate of an earlier report"
   Then the report shows the "Unpublished" badge
@@ -333,7 +333,7 @@ Scenario: Unpublishing with a note shows the note on the report
 @REQ-MOD-066
 @ui
 Scenario: A stale action tells the reviewer to reload
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   And another reviewer has changed that report since it was opened
   When the Safety Officer opens that report
   And the Safety Officer publishes it
@@ -342,7 +342,7 @@ Scenario: A stale action tells the reviewer to reload
 @REQ-MOD-067
 @ui
 Scenario: Deleting a report asks for confirmation first
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer chooses Delete
   Then a confirmation asks whether to delete the report
@@ -352,7 +352,7 @@ Scenario: Deleting a report asks for confirmation first
 @REQ-MOD-068
 @ui
 Scenario: Opening an attachment requests its own audited link
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer opens its document attachment
   Then the browser requests that attachment's download link
@@ -386,7 +386,7 @@ Examples:
 @REQ-MOD-071
 @ui
 Scenario Outline: The editor offers a translate button for each language the reviewer changed
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer opens the summary editor
   And the Safety Officer changes <changed>
@@ -402,7 +402,7 @@ Examples:
 @REQ-MOD-072
 @ui
 Scenario: Translating asks before overwriting and shows what would change
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   When the Safety Officer opens that report
   And the Safety Officer opens the summary editor
   And the Safety Officer changes the English text
@@ -417,7 +417,7 @@ Scenario: Translating asks before overwriting and shows what would change
 @REQ-MOD-073
 @ui
 Scenario: Writing a pair by hand offers the translate buttons too
-  Given a Safety Officer is signed in and a summary-failed report exists
+  Given a Safety Officer is on the admin site and a summary-failed report exists
   When the Safety Officer opens that report
   And the Safety Officer chooses Write summary
   And the Safety Officer types the English text
@@ -434,7 +434,7 @@ Scenario: The report detail gives a second language only for an answer that has 
 @REQ-MOD-078
 @ui
 Scenario: Opening a report shows a translation only under answers that have one
-  Given a Safety Officer is signed in and reports exist in several states
+  Given a Safety Officer is on the admin site and reports exist in several states
   When the Safety Officer opens Manage reports
   And the Safety Officer opens a pending report
   Then a translated narrative answer shows its translation beneath it
@@ -443,7 +443,7 @@ Scenario: Opening a report shows a translation only under answers that have one
 @REQ-MOD-074
 @ui
 Scenario: The report view shows how each summary language was produced
-  Given a Safety Officer is signed in and a report whose French text was machine-translated exists
+  Given a Safety Officer is on the admin site and a report whose French text was machine-translated exists
   When the Safety Officer opens that report
   Then the English text is labelled as edited by a reviewer
   And the French text is labelled as machine-translated
@@ -532,7 +532,7 @@ Scenario: A private note never reaches the model or a translation provider
 @REQ-MOD-106
 @ui
 Scenario: A Safety Officer keeps private notes on the report page
-  Given a Safety Officer is signed in and a pending report exists
+  Given a Safety Officer is on the admin site and a pending report exists
   And another reviewer left the private note "Called the pilot; follow up Monday."
   When the Safety Officer opens that report
   Then the private notes section lists "Called the pilot; follow up Monday." with its writer and time
@@ -554,8 +554,8 @@ Scenario: The admin review page renders a summary and its revision history as Ma
 
 @REQ-MOD-209
 @ui
-Scenario: The admin report detail renders a long-text answer and its translation as Markdown
-  Given a Safety Officer and a report with a long-text answer written in Markdown and its Worker translation
+Scenario: The admin report detail renders a paragraph answer and its translation as Markdown
+  Given a Safety Officer and a report with a paragraph answer written in Markdown and its Worker translation
   When they open that report
   Then the answer shows its bold text as bold and its list as a list
   And its translation shows the same formatting

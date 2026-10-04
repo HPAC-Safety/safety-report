@@ -354,7 +354,7 @@ Then("the page removes the image", async ({ page }) => {
 
 // --- REQ-MED-035: a reviewer hides a file from the public page ---
 
-Given("a Safety Officer is signed in and a published report shows an image", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a published report shows an image", async ({ page }) => {
 	await stubReport(page, [IMAGE], [{ id: IMAGE.id, kind: "image", format: null, state: "ready", visibility: "public" }])
 	await signInAs(page, "safety_officer")
 })
@@ -626,7 +626,7 @@ Then("focus returns to the first image's thumbnail", async ({ page }) => {
 // --- REQ-MED-059: the admin report page uses the same strip and lightbox ---
 
 Given(
-	"a Safety Officer is signed in and an unpublished report has an image and a hidden document",
+	"a Safety Officer is on the admin site and an unpublished report has an image and a hidden document",
 	async ({ page }) => {
 		await stubAdminReport(page, "unpublished", [
 			{ id: "imagefile1", kind: "image", state: "ready", visibility: "when_published", format: null },
@@ -653,7 +653,7 @@ Then("the hidden document's thumbnail is marked {string} and offers to show it",
 
 // --- REQ-MED-060: a processing/failed staff tile downloads the raw original ---
 
-Given("a Safety Officer is signed in and a report has a still-processing image", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a report has a still-processing image", async ({ page }) => {
 	await stubAdminReport(page, "pending", [{ id: "processing1", kind: "image", state: "processing", visibility: "private", format: null }])
 })
 

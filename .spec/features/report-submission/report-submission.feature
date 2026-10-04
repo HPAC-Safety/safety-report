@@ -649,11 +649,11 @@ Scenario: The Worker mechanically translates every answer that needs it
 
 @REQ-SUB-071
 Scenario: Only free text marked for translation is machine-translated
-  Given a submitted report answers a long-text question marked for translation
+  Given a submitted report answers a paragraph question marked for translation
   And it answers a short-text question not marked for translation
   And it answers an email, a phone number, a date, a time, a number, and a yes/no question
   When the Worker translates that report's answers
-  Then only the long-text answer is sent to the translator
+  Then only the paragraph answer is sent to the translator
   And the yes/no answer, stored as a boolean, is never sent to the translator
   And every other answer, the yes/no answer included, keeps no second language
 
@@ -679,7 +679,7 @@ Scenario Outline: The API refuses a malformed submission DTO
 Examples:
   | problem                                             |
   | a duplicate question_revision_id                    |
-  | a non-null field from the wrong answer shape        |
+  | a non-null value from the wrong answer shape        |
   | a malformed upload ID                               |
   | the same upload ID named more than once             |
   | more upload IDs than the attachment limit           |

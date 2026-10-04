@@ -176,7 +176,7 @@ Examples:
   | an aircraft make or model becomes its category                                           |
   | "redacted", "caviardé", placeholders, and invented names are never written               |
   | every private marker is resolved and never appears literally                             |
-  | the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object          |
+  | the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object            |
   | each expected section is a "## " heading with its exact label, in form order             |
   | other public facts are woven into the section they fit                                   |
   | each statement goes in the section whose question it best answers                        |

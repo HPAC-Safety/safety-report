@@ -48,7 +48,7 @@ public sealed class SummarizationProviderSteps
 			["\"redacted\"", "\"caviardé\"", "a placeholder", "an invented name"],
 		["every private marker is resolved and never appears literally"] =
 			["Resolve every marker", "must never appear in a summary"],
-		["the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object"] =
+		["the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object"] =
 			["{\"ai_summary_en\":\"...\",\"ai_summary_fr\":\"...\"}", "no additional key"],
 		["each expected section is a \"## \" heading with its exact label, in form order"] =
 			["`## ` followed by the exact `label_en`", "exact `label_fr`", "Write no other heading of any kind", "in the order given"],

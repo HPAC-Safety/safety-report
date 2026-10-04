@@ -128,12 +128,12 @@ Given("a published report has comments", async ({ page }) => {
 	await stubReport(page, OTHERS())
 })
 
-Given("a member is signed in and a published report has comments", async ({ page }) => {
+Given("the visitor is a member and a published report has comments", async ({ page }) => {
 	await stubReport(page, OTHERS())
 	await signInAs(page, "user")
 })
 
-Given("a Safety Officer is signed in and a published report has comments", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a published report has comments", async ({ page }) => {
 	await stubReport(page, OTHERS())
 	await signInAs(page, "safety_officer")
 })

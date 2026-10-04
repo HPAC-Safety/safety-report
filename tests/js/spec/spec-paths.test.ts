@@ -27,7 +27,7 @@ describe('the places that cannot import the specification paths', () => {
 		for (const steps of [REQNROLL_STEPS, PLAYWRIGHT_STEPS]) assert.ok(workflow.includes(`- ${steps}/**`), steps)
 	})
 
-	for (const path of ['.githooks/post-merge', '.githooks/post-rewrite', '.github/workflows/traceability.yml', 'tools/dev/ci-local.sh']) {
+	for (const path of ['.githooks/lib/regenerate-spec.sh', '.github/workflows/traceability.yml', 'tools/dev/ci-local.sh']) {
 		it(`${path} regenerates every generated file`, () => {
 			const text = read(path)
 
@@ -35,9 +35,19 @@ describe('the places that cannot import the specification paths', () => {
 		})
 	}
 
-	for (const path of ['.githooks/post-merge', '.githooks/post-rewrite', 'init-dev.sh']) {
+	for (const path of ['.githooks/lib/regenerate-spec.sh', 'init-dev.sh']) {
 		it(`${path} merges the specification into the local graph`, () => {
 			assert.ok(read(path).includes('node tools/spec/graph-fragment.ts'))
+		})
+	}
+
+	for (const path of ['.githooks/post-merge', '.githooks/post-rewrite']) {
+		it(`${path} regenerates through the shared script`, () => {
+			const text = read(path)
+
+			assert.ok(text.includes('. "$HOOK_DIR/lib/regenerate-spec.sh"'))
+			assert.ok(text.includes('merge_spec_graph'))
+			assert.match(text, /^regenerate_spec post-(merge|rewrite)$/m)
 		})
 	}
 

@@ -113,6 +113,20 @@ describe('what the lint reads', () => {
 		assert.deepEqual(featureLines(source).map(([line]) => line), [2, 3, 5, 6])
 	})
 
+	it('reads an Examples table\'s body rows, which steps read through placeholders, but not its header or a data table', () => {
+		const source = [
+			'Scenario Outline: A role',
+			'  Given a <role>',
+			'  | a data table row |',
+			'',
+			'Examples:',
+			'  | role |',
+			'  | safety officer |',
+		].join('\n')
+
+		assert.deepEqual(featureLines(source).map(([line]) => line), [1, 2, 5, 7])
+	})
+
 	it('reads a README\'s prose, but not its frontmatter, fences, comments, or link targets', () => {
 		const source = ['---', 'title: field', '---', 'A field.', '```', 'field', '```', '<!-- field -->', 'See [the list](field.md).'].join('\n')
 		const read = readmeLines(source)
@@ -188,5 +202,74 @@ describe('checkGlossary', () => {
 
 	it('finds no banned synonym in this repository', () => {
 		assert.deepEqual(checkGlossary(REPO).violations, [])
+	})
+})
+
+// The real glossary's patterns, sample by sample: what each must refuse, and
+// the narrow carve-outs each must leave alone (CONV-003).
+describe('the real glossary', () => {
+	const { entries } = readGlossary(readFileSync(join(REPO, GLOSSARY), 'utf8'))
+	const found = (text: string, area = 'report-form'): string[] => scan('x.feature', area, [[1, stripLiterals(text)]], entries).map((violation) => violation.found)
+
+	const mustFlag: Array<[string, string]> = [
+		['Given a signed-in Administrator opens it', 'signed-in '],
+		['Then a long-text answer is shown', 'long-text'],
+		['Given a Safety Officer is signed in', 'Safety Officer is signed in'],
+		['Given a member is signed in', 'member is signed in'],
+		['When the safety officer opens it', 'safety officer'],
+		['Given a SafetyOfficer', 'SafetyOfficer'],
+		['When an administrator saves it', 'administrator'],
+		['Then the report is soft-deleted', 'soft-deleted'],
+		['Then the question is stamped as deleted', 'stamped'],
+		['Then the report is archived', 'archived'],
+		['Then it appears in the review queue', 'queue'],
+		['When they type in the field', 'field'],
+		['Then the attempt is rejected', 'rejected'],
+		['When a visitor logs in', 'logs in'],
+		['Then a photo is shown', 'photo'],
+		['Fixing a picker option', 'option'],
+		['an authorized reviewer', 'authorized reviewer'],
+		['a Safety Officer or an Administrator', 'Safety Officer or an Administrator'],
+		['a reporter-added choice', 'reporter-added choice'],
+		['the public never sees it', 'the public '],
+		['the submitter', 'submitter'],
+		['records the subject', 'subject'],
+		['the report goes live', 'goes live'],
+		['a bilingual pair', 'bilingual pair'],
+		['Concurrent workers claim it', 'workers'],
+	]
+	for (const [text, banned] of mustFlag) {
+		it(`flags "${banned}" in "${text}"`, () => {
+			assert.ok(found(text).some((match) => match === banned), found(text).join(', ') || 'nothing found')
+		})
+	}
+
+	const mustPass = [
+		'Then the summary is visible to the public',
+		'Then the sign-in page shows a third-party sign-in option',
+		'When the visitor activates the Admin menu',
+		'Then it joins to no user table and no user record',
+		'Then the summary names the landing field',
+		'Then the bailout field is named',
+		'Given a zip archive',
+		'| reports/pilot/photo.jpg | photo.jpg |',
+		'If production evidence shows it matters',
+		'Then the token subject is recorded',
+		'Given a Safety Officer is on the admin site',
+		'Then the response carries X-Content-Type-Options: nosniff',
+		'Then every optional question is skipped',
+		'Then the "review queue" title is shown',
+		'Then the paragraph answer is shown',
+	]
+	for (const text of mustPass) {
+		it(`passes "${text}"`, () => {
+			assert.deepEqual(found(text), [])
+		})
+	}
+
+	it('lets Typeform keep its field and its own type names, and the Worker reject a response', () => {
+		assert.deepEqual(found('Given a Typeform long text field', 'typeform-question-import-export'), [])
+		assert.deepEqual(found('Then the summary is rejected', 'ai-anonymization'), [])
+		assert.deepEqual(found('Then the summary is rejected', 'report-form'), ['rejected'])
 	})
 })

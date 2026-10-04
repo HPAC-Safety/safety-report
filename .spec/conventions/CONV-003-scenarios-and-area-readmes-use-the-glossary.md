@@ -20,6 +20,10 @@ date: 2026-10-03
   add the term or the banned synonym in the same pull request as the
   scenarios that need it. An exemption is a whole area, named in the row's
   **Exempt areas** cell, and needs a reason on the issue.
+- A narrower carve-out lives inside the pattern itself — a lookbehind or
+  lookahead that leaves one fixed phrase alone, such as "landing field" or a
+  file name like `photo.jpg` — and that row's definition says why. Never
+  reword a scenario around a pattern that is too wide; narrow the pattern.
 - Renaming a step renames its step definition's text in the same commit —
   the Reqnroll attribute or the playwright-bdd string — and never changes a
   claim ID. Before renaming, check that the new text binds nowhere else and

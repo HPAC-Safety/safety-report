@@ -81,27 +81,63 @@ _prune_kind() {
 	_prune_installed "$2" "$_k" "$_listed"
 }
 
+# Where the stamp, the background log, and the background lock live: under
+# .skillfile/cache/, which .gitignore already ignores.
+AGENT_TOOLING_STATE_DIR=.skillfile/cache/agent-tooling
+
+# A checksum over the sorted list and contents of everything skillfile installs
+# from: Skillfile, Skillfile.lock, and every file under agents/ and skills/. The
+# working tree counts, so an uncommitted edit changes it.
+_content_fingerprint() {
+	{
+		for _f in Skillfile Skillfile.lock; do
+			[ -f "$_f" ] && printf '%s\n' "$_f"
+		done
+		find agents skills -type f 2>/dev/null
+	} | LC_ALL=C sort | while IFS= read -r _f; do
+		printf '%s\n' "$_f"
+		cat -- "$_f"
+	done | cksum
+}
+
+# Record what the last successful install was made from.
+_write_stamp() {
+	mkdir -p "$AGENT_TOOLING_STATE_DIR" 2>/dev/null || return 0
+	_content_fingerprint >"$AGENT_TOOLING_STATE_DIR/stamp" 2>/dev/null
+	return 0
+}
+
 # The names installed under $1 for kind $2, one per line: the regular .md files
-# of an agent (minus .md), or the directories of a skill.
+# of an agent (minus .md), or the directories of a skill. A symlinked entry
+# counts only when its name is one of the lines in $3: the prune leaves symlinks
+# alone, so a declared name behind one is installed, and an undeclared one is
+# not skillfile's to count.
 _installed_names() {
 	for _p in "$1"/*; do
-		{ [ -e "$_p" ] && [ ! -L "$_p" ]; } || continue
+		[ -e "$_p" ] || continue
 		_b=$(basename "$_p")
 		if [ "$2" = agent ]; then
+			case $_b in *.md) _n=${_b%.md} ;; *) continue ;; esac
 			[ -f "$_p" ] || continue
-			case $_b in *.md) printf '%s\n' "${_b%.md}" ;; esac
 		else
-			[ -d "$_p" ] && printf '%s\n' "$_b"
+			[ -d "$_p" ] || continue
+			_n=$_b
 		fi
+		if [ -L "$_p" ]; then
+			printf '%s\n' "$3" | grep -Fxq -- "$_n" || continue
+		fi
+		printf '%s\n' "$_n"
 	done
 	return 0
 }
 
-# True when the installed names equal the declared names, for both kinds, so a
-# missing and an extra entry both count as out of sync. A kind whose comparison
-# cannot be trusted (the listing failed or is empty, the Skillfile has a
-# directory entry, or its directory is a symlink) is reported in sync, the same
-# safety rules as the prune.
+# True when what is installed matches what is declared: for both kinds the
+# installed names equal the declared names (so a missing and an extra entry both
+# count as out of sync), and the content fingerprint equals the stamp the last
+# install wrote (so an edited agent or skill, or a Skillfile.lock bump, counts;
+# a missing stamp is out of sync). A kind whose names cannot be compared (the
+# listing failed or is empty, the Skillfile has a directory entry, or its
+# directory is a symlink) is skipped, the same safety rules as the prune.
 agent_tooling_in_sync() {
 	command -v skillfile >/dev/null 2>&1 || return 0
 	for _sk in "agent .claude/agents" "skill .claude/skills"; do
@@ -111,11 +147,11 @@ agent_tooling_in_sync() {
 		[ -n "$_listed" ] || continue
 		_has_directory_entry "$_kind" && continue
 		[ -L "$_where" ] && continue
-		_have=$(_installed_names "$_where" "$_kind" | sort)
+		_have=$(_installed_names "$_where" "$_kind" "$_listed" | sort)
 		_want=$(printf '%s\n' "$_listed" | sort)
 		[ "$_have" = "$_want" ] || return 1
 	done
-	return 0
+	[ "$(cat "$AGENT_TOOLING_STATE_DIR/stamp" 2>/dev/null)" = "$(_content_fingerprint)" ]
 }
 
 # True on main, or on a detached HEAD at origin/main (a worktree on the tip).
@@ -151,5 +187,8 @@ install_agent_tooling() {
 			echo "${1:-install-agent-tooling}: Skillfile.lock changed by skillfile install — include it in your next commit."
 		fi
 	fi
+
+	# Written last, after the lock is settled, so the stamp matches what is on disk.
+	_write_stamp
 	return 0
 }

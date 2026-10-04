@@ -26,7 +26,10 @@ any installed agent or skill the `Skillfile` no longer declares. Personal agents
 and skills go in `~/.claude`, not `.claude/`. A fast-forward rebase, `git
 worktree add`, `merge --squash`, and a hand-resolved conflicted merge fire no
 such hook; the `SessionStart` check (`tools/dev/sync-agent-tooling.sh`, wired in
-`.claude/settings.json`) catches what the git hooks can't see, and
+`.claude/settings.json`) catches what the git hooks can't see, and an edit to an
+agent or skill that changes no name. It compares the installed names and a
+content fingerprint with the last install's stamp; when they differ it syncs in
+the background and logs to `.skillfile/cache/agent-tooling/sync.log`.
 `./init-dev.sh` remains the manual fallback. Keep local skills concise and
 HPAC-specific. Search before adding generic guidance, and do not install a
 skill whose architecture conflicts with `.spec/features`.

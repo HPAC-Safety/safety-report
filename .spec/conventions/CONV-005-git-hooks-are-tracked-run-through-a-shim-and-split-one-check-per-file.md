@@ -61,9 +61,16 @@ date: 2026-10-03
     hand-resolved conflicted merge fire only `post-checkout` or `post-commit`,
     which graphify owns, so they do not run it. The session-start check
     (`tools/dev/sync-agent-tooling.sh`, a `SessionStart` hook in
-    `.claude/settings.json`) catches what the git hooks can't see: it runs the
-    same install only when the installed names differ from the declared ones.
-    `./init-dev.sh` remains the manual fallback.
+    `.claude/settings.json`) catches what the git hooks can't see. It is in
+    sync when the installed names equal the declared ones and a content
+    fingerprint (`cksum` over `Skillfile`, `Skillfile.lock`, and every file
+    under `agents/` and `skills/`, working tree included) equals the stamp the
+    last successful install wrote, so an edited agent or a lock bump counts and
+    a missing stamp does not. Out of sync, it starts the same install detached,
+    under a mkdir lock stale after 10 minutes, and returns at once. The stamp,
+    the lock, and the log (`sync.log`) live in `.skillfile/cache/agent-tooling/`,
+    which is gitignored. It always exits 0. `./init-dev.sh` remains the manual
+    fallback.
 - No hook manager: not Husky, lint-staged, lefthook, or the pre-commit
   framework.
 

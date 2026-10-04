@@ -78,6 +78,7 @@ describe('the agent-tooling install and prune', () => {
 		git(root, 'init', '-q', '-b', 'work')
 		writeFileSync(join(root, 'Skillfile.lock'), 'locked\n')
 		writeFileSync(join(root, 'README.md'), 'one\n')
+		writeFileSync(join(root, '.gitignore'), '.skillfile/cache/\n.claude/\n')
 		git(root, 'add', '.')
 		git(root, 'commit', '-q', '-m', 'first')
 	})

@@ -63,6 +63,9 @@ need (issue)
 6. **Steps describe behavior, not implementation.** No status code, storage
    name, transport term, or reason in a step; `lint-scenarios` fails one
    ([CONV-004](.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
+7. **One behavior per scenario.** At most one When and 8 steps, no browser
+   mechanics, a key only as an Examples cell, and a Then never acts
+   ([CONV-006](.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
 
 ### The `feature-coverage` exemption
 

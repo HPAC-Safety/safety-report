@@ -153,6 +153,9 @@ Rules:
   reason, or a locale code in a step, in the `cucumber` job, which
   `tools/dev/ci-local.sh` runs. No git hook runs it
   ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
+  The same lint holds a scenario to one behavior: at most one When, at most 8
+  steps, and no browser mechanics, a key named only in an Examples cell
+  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
 - An area past about 800 lines is split, not grouped with `Rule:` blocks, and
   its scenarios keep their IDs: the procedure, and the next ID with
   `node tools/spec/claim-prefixes.ts --next <area>`, are

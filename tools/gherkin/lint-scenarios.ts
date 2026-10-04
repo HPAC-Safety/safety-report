@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Scenarios describe behavior, not implementation (CONV-004, #815).
+// Scenarios describe behavior, not implementation (CONV-004), one behavior
+// each (CONV-006, #815).
 //
 // Parses every .spec/features/<area>/<area>.feature with the pinned
 // @cucumber/gherkin parser and runs each rule below over it. A rule reads the

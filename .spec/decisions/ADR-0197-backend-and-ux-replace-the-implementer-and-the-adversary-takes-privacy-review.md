@@ -37,6 +37,11 @@ split into the agent it belongs to.
   overlapping scope.
 - **Builders that only make a failing test pass.** Rejected: nobody would own
   the design of an API, a screen, or a network, and it would be improvised.
+- **One agent per job title** (business analyst, solution lead, UX designer,
+  front-end engineer, and so on). Rejected: a title alone changes nothing an
+  agent does, and each extra file is more overlap to police. A solution-lead
+  agent could not dispatch the others, because a sub-agent cannot spawn
+  sub-agents.
 - **backend also owns infrastructure.** Rejected: the cloud and network need
   different expertise and carry a different blast radius (production,
   exposure, cost), as the schema does for the database-administrator.
@@ -62,6 +67,17 @@ split into the agent it belongs to.
   acceptance step definitions. Each still builds only what cited claims
   describe, sends a design plan to the critic, records a significant choice as
   an ADR, and never writes the specification.
+- **Ten agents are a full-stack team.** Each agent's description opens with its
+  team role: business analyst (spec-author), QA engineer (test-writer),
+  back-end engineer (backend), UX designer and front-end engineer (ux), cloud
+  and DevOps engineer (infrastructure), database engineer
+  (database-administrator), code reviewer (spec-reviewer), security engineer
+  (adversary), design reviewer (critic), and maintainer of agent instructions
+  (ai-author). The main session plans and dispatches; the critic checks its
+  plans. There is no solution-lead agent.
+- **A new agent earns its file** only when it reads different context, needs
+  different tools, runs a different model, or refuses different work. The
+  decision that adds one records which of these holds.
 - The chain is spec-author → test-writer → backend | ux | infrastructure →
   spec-reviewer. Each step still trusts only the artifact from the step before
   it.

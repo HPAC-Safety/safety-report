@@ -170,6 +170,9 @@ contributor who never invokes one is unaffected.
     before any pull request or merge.
   - A hook reminds about the critic and never blocks
     ([CONV-007](.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
+- The ten agents are a full-stack team; each description opens with its team
+  role. A new agent earns a file only when it reads, uses, runs, or refuses
+  something none of these does (ADR-0197).
 - The ten agents are generic. This repository's paths, tags, commands, and
   privacy boundaries for each are in
   [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).

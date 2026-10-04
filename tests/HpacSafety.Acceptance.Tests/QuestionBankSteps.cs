@@ -232,7 +232,7 @@ public sealed class QuestionBankSteps
 		GivenAPilotTypeQuestion();
 	}
 
-	[When(@"an Administrator makes a rating question depend on the ""(.*)"" choice")]
+	[Given(@"an Administrator made a rating question depend on the ""(.*)"" choice")]
 	[When(@"an Administrator makes a different rating question depend on the ""(.*)"" choice")]
 	public void WhenARatingQuestionDependsOnTheOption(string optionLabel)
 	{

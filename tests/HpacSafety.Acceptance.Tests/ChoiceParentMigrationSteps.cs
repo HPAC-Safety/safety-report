@@ -39,14 +39,31 @@ public sealed class ChoiceParentMigrationSteps
 	private string ConnectionString =>
 		_connectionString ?? throw new InvalidOperationException("No database has been created for this scenario.");
 
-	[Given(@"a database one migration short, whose dependent {string} question offers {string} to {string} twice each, one copy under {string} and one under {string}, and {string} once, under {string}")]
-	public async Task GivenTodaysCertificationDuplicates(string question,
-														 string first,
-														 string last,
-														 string firstParent,
-														 string secondParent,
-														 string once,
-														 string onceParent)
+	[Given(@"a database one migration short, whose dependent {string} question holds:")]
+	public async Task GivenTodaysCertificationDuplicatesAnsweredAndConditional(string question,
+																			  Table holds)
+	{
+		ArgumentNullException.ThrowIfNull(holds);
+		var rows = holds.Rows.Select(row => (row["what"], row["choice"], row["under"])).ToList();
+		rows.ShouldBe([
+			("duplicated choice", "EN-A to EN-D", "Paraglider, Hang Glider"),
+			("single choice", "EN-CCC", "Paraglider"),
+			("answered copies", "EN-A", "Paraglider, Hang Glider"),
+			("conditional copy", "EN-B", "Hang Glider"),
+		]);
+
+		await GivenTodaysCertificationDuplicates(question, "EN-A", "EN-D", "Paraglider", "Hang Glider", "EN-CCC", "Paraglider");
+		await GivenReportsAnsweredBothCopies(question, "EN-A");
+		await GivenAConditionOnACopy("Hang Glider", "EN-B");
+	}
+
+	private async Task GivenTodaysCertificationDuplicates(string question,
+														  string first,
+														  string last,
+														  string firstParent,
+														  string secondParent,
+														  string once,
+														  string onceParent)
 	{
 		first.ShouldBe("EN-A");
 		last.ShouldBe("EN-D");
@@ -79,9 +96,8 @@ public sealed class ChoiceParentMigrationSteps
 			""");
 	}
 
-	[Given(@"reports answered {string} with both copies of {string}")]
-	public async Task GivenReportsAnsweredBothCopies(string _,
-													 string __)
+	private async Task GivenReportsAnsweredBothCopies(string _,
+													  string __)
 	{
 		await Execute(
 			"""
@@ -95,9 +111,8 @@ public sealed class ChoiceParentMigrationSteps
 			""");
 	}
 
-	[Given(@"a question is conditional on the {string} copy of {string}")]
-	public async Task GivenAConditionOnACopy(string _,
-											 string __)
+	private async Task GivenAConditionOnACopy(string _,
+											  string __)
 	{
 		await Execute(
 			"""

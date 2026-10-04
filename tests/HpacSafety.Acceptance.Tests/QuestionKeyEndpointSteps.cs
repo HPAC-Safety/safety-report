@@ -31,6 +31,13 @@ public sealed class QuestionKeyEndpointSteps
 		await Save();
 	}
 
+	[Given(@"an Administrator saved two new questions with the same English wording and no key")]
+	public async Task GivenTwoQuestionsAreSavedWithoutAKey()
+	{
+		await GivenAQuestionIsSavedWithoutAKey();
+		await Save();
+	}
+
 	[Then(@"its key is derived from its English wording")]
 	public void ThenItsKeyIsDerived()
 	{

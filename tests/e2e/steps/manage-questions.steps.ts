@@ -346,11 +346,15 @@ Then("the new question appears in the list with its type and version", async ({ 
 	await expect(row).toContainText("Version 1")
 })
 
-When("they choose the type-ahead list type", async ({ page }) => {
+When("they make it a type-ahead question", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("autocomplete")
 })
 
-When("they choose the single-line text type instead", async ({ page }) => {
+Given("they made it a type-ahead question", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("autocomplete")
+})
+
+When("they make it a single-line text question instead", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("short_text")
 })
 
@@ -359,7 +363,7 @@ Then("the page offers a choice editor", async ({ page }) => {
 	await expect(page.getByLabel("Shared choice list")).toHaveCount(0)
 })
 
-Then("the page offers neither", async ({ page }) => {
+Then("the page offers no choice editor", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Add a choice" })).toBeHidden()
 })
 
@@ -375,6 +379,11 @@ Then(/^the condition picker offers only the yes\/no and single-select questions 
 // Cucumber expressions read `yes/no` as an alternation, so this one is a
 // regular expression rather than an expression string.
 When(/^they choose a yes\/no question as the condition$/, async ({ page }) => {
+	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("aaaaaaaaaaa")
+})
+
+// A regular expression for the same reason as the step above.
+Given(/^they chose a yes\/no question as the condition$/, async ({ page }) => {
 	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("aaaaaaaaaaa")
 })
 
@@ -498,12 +507,12 @@ const wordingGroup = (page: Page) => page.getByRole("group", { name: "Question w
 const choicesGroup = (page: Page) => page.getByRole("group", { name: "Choices", exact: true })
 const translateButton = (page: Page) => wordingGroup(page).getByRole("button", { name: "Translate", exact: true })
 
-When("they write the English wording and press Translate", async ({ page }) => {
+When("they write the English wording and ask for its translation", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("Were you injured?")
 	await translateButton(page).click()
 })
 
-When("they write the French wording and press Translate", async ({ page }) => {
+When("they write the French wording and ask for its translation", async ({ page }) => {
 	await page.getByLabel("Question (French)").fill("Avez-vous été blessé ?")
 	await translateButton(page).click()
 })
@@ -591,11 +600,19 @@ Given("the first question has been answered", async ({ page }) => {
 	await expect(page.getByRole("list", { name: "Questions on the form" })).toBeVisible()
 })
 
-When("they edit its English wording", async ({ page }) => {
+async function editFirstQuestionsEnglishWording(page: Page) {
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
 
 	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
 	await page.getByLabel("Question (English)").fill("Did you need medical attention?")
+}
+
+When("they edit its English wording", async ({ page }) => {
+	await editFirstQuestionsEnglishWording(page)
+})
+
+Given("they edited its English wording", async ({ page }) => {
+	await editFirstQuestionsEnglishWording(page)
 })
 
 Then("the page says that saving retires this question and creates a new one", async ({ page }) => {
@@ -620,6 +637,10 @@ Then("the list shows one question for that key, with the new wording", async ({ 
 })
 
 When("they add a choice", async ({ page }) => {
+	await page.getByRole("button", { name: "Add a choice" }).click()
+})
+
+Given("they added a choice", async ({ page }) => {
 	await page.getByRole("button", { name: "Add a choice" }).click()
 })
 
@@ -651,6 +672,12 @@ Then("the choice is sent without a code", ({ page }) => {
 })
 
 When("they open the second question for editing", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(1).getByRole("button", { name: "Edit" }).click()
+})
+
+Given("they opened the second question for editing", async ({ page }) => {
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
 
 	await rows.nth(1).getByRole("button", { name: "Edit" }).click()
@@ -704,10 +731,6 @@ Then("a type-ahead question with reporter-added values says how many are waiting
 	await expect(launchSiteRow(page)).toContainText("Reporter-added choices waiting to be reviewed: 1")
 })
 
-When("they open that question", async ({ page }) => {
-	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
-})
-
 Then("each reporter-added value is marked as such", async ({ page }) => {
 	const choices = page.getByTestId("question-choice")
 
@@ -753,6 +776,15 @@ When("they choose paragraph", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("long_text")
 })
 
+Given("they chose paragraph", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("long_text")
+})
+
+Given("they chose paragraph and then short text", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("long_text")
+	await page.getByLabel("Type").selectOption("short_text")
+})
+
 When("they choose short text", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("short_text")
 })
@@ -785,6 +817,15 @@ When("they choose date", async ({ page }) => {
 })
 
 When("they choose time", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("time")
+})
+
+Given("they chose date", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("date")
+})
+
+Given("they chose date and then time", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("date")
 	await page.getByLabel("Type").selectOption("time")
 })
 
@@ -870,6 +911,10 @@ async function expectWordingLabels(page: Page, shown: string[], hidden: string[]
 }
 
 When("they choose instructional text", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("statement")
+})
+
+Given("they chose instructional text", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("statement")
 })
 
@@ -1077,9 +1122,17 @@ Then("every other choice's Translate action stays unavailable", async ({ page })
 	}
 })
 
-When("they add a choice written in English and press its Translate action", async ({ page }) => {
+async function addEnglishChoiceAndTranslate(page: Page) {
 	await addChoice(page, { en: "Niviuk" })
 	await choiceTranslate(thatChoice(page)).click()
+}
+
+When("they add a choice written in English and ask for its translation", async ({ page }) => {
+	await addEnglishChoiceAndTranslate(page)
+})
+
+Given("they added a choice written in English and asked for its translation", async ({ page }) => {
+	await addEnglishChoiceAndTranslate(page)
 })
 
 Then("that choice's French wording is filled with the translation", async ({ page }) => {
@@ -1094,7 +1147,7 @@ Then("that choice's French wording remains editable", async ({ page }) => {
 	await expect(french).toHaveValue("Niviuk")
 })
 
-Then("nothing is saved until they press Save", async ({ page }) => {
+Then("nothing is saved until they save the question", async ({ page }) => {
 	expect(choiceTraffic.get(page)?.saves).toBe(0)
 
 	const saving = page.waitForRequest(
@@ -1114,12 +1167,16 @@ When("they flip the direction switch", async ({ page }) => {
 	await directionSwitch(page).click()
 })
 
+Given("they flipped the choices' direction switch", async ({ page }) => {
+	await directionSwitch(page).click()
+})
+
 Then("the direction switch translates French to English, and says so", async ({ page }) => {
 	await expect(directionSwitch(page)).toHaveAccessibleName("Translate French to English")
 	await expect(page.locator("[aria-live=polite]").filter({ hasText: "Translate French to English" })).toHaveCount(1)
 })
 
-When("they add a choice written in French and press its Translate action", async ({ page }) => {
+When("they add a choice written in French and ask for its translation", async ({ page }) => {
 	await addChoice(page, { fr: "Voile de secours" })
 	await choiceTranslate(thatChoice(page)).click()
 })
@@ -1129,7 +1186,7 @@ Then("that choice's English wording is filled with the translation", async ({ pa
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("Voile de secours")
 })
 
-When("they edit the English wording of one choice and press its Translate action", async ({ page }) => {
+When("they edit the English wording of one choice and ask for its translation", async ({ page }) => {
 	choicesBefore.set(page, await wordingOfChoices(page))
 	thatChoiceIndex.set(page, 1)
 	await thatChoice(page).getByLabel("Choice (English)").fill("Speed wing")
@@ -1200,7 +1257,7 @@ Then("the choice written in both languages offers no Translate action", async ({
 	await expect(choiceTranslate(choices(page).nth(0))).toBeDisabled()
 })
 
-When("they press that choice's Translate action", async ({ page }) => {
+When("they ask for that choice's translation", async ({ page }) => {
 	await choiceTranslate(thatChoice(page)).click()
 })
 
@@ -1216,7 +1273,7 @@ Then("the wording's direction switch translates English to French", async ({ pag
 	await expect(wordingDirectionSwitch(page)).toHaveAccessibleName("Translate English to French")
 })
 
-When("they flip the wording's direction switch to French to English", async ({ page }) => {
+Given("they flipped the wording's direction switch to French to English", async ({ page }) => {
 	await wordingDirectionSwitch(page).click()
 	await expect(wordingDirectionSwitch(page)).toHaveAccessibleName("Translate French to English")
 })
@@ -1244,7 +1301,7 @@ When("they edit its English help text", async ({ page }) => {
 	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
 })
 
-When("they edit its English question and help text and press Translate", async ({ page }) => {
+When("they edit its English question and help text and ask for their translation", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("Were you hurt?")
 	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
 	await translateButton(page).click()
@@ -1255,7 +1312,7 @@ Then("the French question and help text are replaced with their translations", a
 	await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
 })
 
-Then("the drafts are saved only when they press Save", async ({ page }) => {
+Then("the drafts are saved only when they save the question", async ({ page }) => {
 	expect(choiceTraffic.get(page)?.saves).toBe(0)
 
 	const saving = page.waitForRequest(
@@ -1313,20 +1370,28 @@ Given("the translation provider is slow to answer", async ({ page }) => {
 	})
 })
 
-When("they edit its English help text and press Translate", async ({ page }) => {
+async function editHelpTextAndTranslate(page: Page) {
 	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
 	await translateButton(page).click()
 	if (!heldTranslations.has(page)) {
 		await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
 	}
+}
+
+When("they edit its English help text and ask for its translation", async ({ page }) => {
+	await editHelpTextAndTranslate(page)
 })
 
-When("they flip the wording's direction switch before the translation arrives", async ({ page }) => {
+Given("they edited its English help text and asked for its translation", async ({ page }) => {
+	await editHelpTextAndTranslate(page)
+})
+
+Given("they flipped the wording's direction switch before the translation arrived", async ({ page }) => {
 	await expect(wordingGroup(page).getByRole("button", { name: "Translating…" })).toBeVisible()
 	await wordingDirectionSwitch(page).click()
 })
 
-When("they type the French help text themselves before the translation arrives", async ({ page }) => {
+Given("they wrote the French help text themselves before the translation arrived", async ({ page }) => {
 	await expect(wordingGroup(page).getByRole("button", { name: "Translating…" })).toBeVisible()
 	await page.getByLabel("Help text (French)").fill("Toute blessure, même petite.")
 })
@@ -1343,6 +1408,6 @@ Then("the French help text keeps its wording", async ({ page }) => {
 	await expect(page.getByLabel("Help text (French)")).toHaveValue("Incluez toute blessure, même légère.")
 })
 
-Then("the French help text is what they typed", async ({ page }) => {
+Then("the French help text is what they wrote", async ({ page }) => {
 	await expect(page.getByLabel("Help text (French)")).toHaveValue("Toute blessure, même petite.")
 })

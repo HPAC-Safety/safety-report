@@ -30,6 +30,10 @@ Scenario: A dependency is one level deep
   Given the "Model" question's choices depend on the "Make" question
   When an Administrator makes a third question's choices depend on "Model"
   Then the dependency is refused, saying "Model" already depends on another question
+
+@REQ-DCH-001
+Scenario: A question other questions depend on cannot itself depend on another
+  Given the "Model" question's choices depend on the "Make" question
   When an Administrator makes the "Make" question's choices depend on a third question
   Then the dependency is refused, saying other questions' choices already depend on "Make"
 
@@ -38,6 +42,9 @@ Scenario: The parent comes before the child on the form
   Given the "Make" question comes after the "Model" question on the form
   When an Administrator makes the "Model" question's choices depend on "Make"
   Then the dependency is refused, naming both questions
+
+@REQ-DCH-002
+Scenario: A child cannot move before its parent on the form
   Given the "Model" question's choices depend on the "Make" question, which comes before it
   When an Administrator moves "Model" before "Make"
   Then the new order is refused, naming both questions
@@ -45,8 +52,7 @@ Scenario: The parent comes before the child on the form
 @REQ-QB-184
 Scenario: A dependency and its links sit outside revisions
   Given an answered "Make" question and an answered "Model" question
-  When an Administrator makes "Model"'s choices depend on "Make" and links each choice
-  And later links one choice to a different parent choice
+  When an Administrator makes "Model"'s choices depend on "Make", links each choice, and later links one choice to a different parent choice
   Then neither question gains a revision, and neither is replaced
   And every earlier answer still names the choice it named
 
@@ -102,7 +108,7 @@ Scenario: The report form's questions name each dependency and each link
 @REQ-QB-192
 Scenario Outline: A reporter's new value in a dependent type-ahead is linked to the parent's answer
   Given the type-ahead "Model" question's choices depend on the type-ahead "Make" question
-  When a reporter answers "Make" with <make> and types "Zeno 2" for "Model", which "Model" does not offer
+  When a reporter answers "Make" with <make> and "Model" with "Zeno 2", which "Model" does not offer
   Then "Model" gains a reporter-added value "Zeno 2", linked to <linked>
   And the "Model" answer names that value and nothing about "Make"
 
@@ -113,12 +119,25 @@ Examples:
 
 @REQ-QB-195
 @ui
-Scenario: An Administrator picks the question a question's choices depend on, and clears it
+Scenario: An Administrator picks the question a question's choices depend on
+  Given an Administrator opens the manage-questions page
+  And they are editing a type-ahead question placed after a single-select "Make", a type-ahead "Site", a multi-select "Conditions", and a type-ahead "Model" whose choices depend on "Make"
+  When they pick "Make", link every choice, and save
+  Then the save names "Make" as the question its choices depend on
+
+@REQ-DCH-003
+@ui
+Scenario: Only an earlier single-select or type-ahead that depends on nothing is offered as the parent
   Given an Administrator opens the manage-questions page
   When they edit a type-ahead question placed after a single-select "Make", a type-ahead "Site", a multi-select "Conditions", and a type-ahead "Model" whose choices depend on "Make"
   Then its "Choices depend on" control offers "Make" and "Site" only
-  When they pick "Make", link every choice, and save
-  Then the save names "Make" as the question its choices depend on
+
+@REQ-DCH-004
+@ui
+Scenario: An Administrator clears the question a question's choices depend on
+  Given an Administrator opens the manage-questions page
+  And they are editing a type-ahead question placed after a single-select "Make", a type-ahead "Site", a multi-select "Conditions", and a type-ahead "Model" whose choices depend on "Make"
+  And they picked "Make", linked every choice, and saved
   When they clear "Choices depend on" and save
   Then the save names no parent question and keeps every choice's link
 
@@ -127,10 +146,23 @@ Scenario: An Administrator picks the question a question's choices depend on, an
 Scenario Outline: A dependent question offers only the choices linked to the parent's answer
   Given a <child> "Model" question's choices depend on a single-select "Make" question offering "Niviuk" and "Ozone"
   And "Model" offers "Mentor 7" and "Ikuma" linked to "Niviuk", and "Rush 6" linked to "Ozone"
-  When a reporter using <language> opens the page asking both
-  Then "Model" is disabled, and says to answer "Make" first
+  And a reporter using <language> opened the page asking both
   When they answer "Make" with "Niviuk"
   Then "Model" is enabled and offers only "Ikuma" and "Mentor 7"
+
+Examples:
+  | child         | language |
+  | single-select | English  |
+  | type-ahead    | English  |
+  | type-ahead    | French   |
+
+@REQ-DCH-005
+@ui
+Scenario Outline: A dependent question waits for the parent's answer
+  Given a <child> "Model" question's choices depend on a single-select "Make" question offering "Niviuk" and "Ozone"
+  And "Model" offers "Mentor 7" and "Ikuma" linked to "Niviuk", and "Rush 6" linked to "Ozone"
+  When a reporter using <language> opens the page asking both
+  Then "Model" is disabled, and says to answer "Make" first
 
 Examples:
   | child         | language |
@@ -145,16 +177,29 @@ Scenario: Changing the parent's answer clears a child answer it no longer offers
   And a reporter answered "Make" with "Niviuk" and picked "Mentor 7" for "Model"
   When they change "Make" to "Ozone"
   Then "Model" is empty and offers only "Rush 6"
-  When they type "Zeno 2", a value "Model" does not offer, and change "Make" to "Niviuk"
+
+@REQ-DCH-006
+@ui
+Scenario: A child answer the reporter entered survives a change of the parent's answer
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And a reporter answered "Make" with "Niviuk" and picked "Mentor 7" for "Model"
+  And the reporter changed "Make" to "Ozone"
+  When they enter "Zeno 2", a value "Model" does not offer, and change "Make" to "Niviuk"
   Then "Model" still holds "Zeno 2"
 
 @REQ-QB-199
 @ui
-Scenario: A parent answered with a new value leaves the child nothing to pick, but a value to type
+Scenario: A parent answered with a new value leaves the child nothing to pick, but a value to enter
   Given the type-ahead "Model" question's choices depend on the type-ahead "Make" question
-  When a reporter types "Gin", a value "Make" does not offer, for "Make"
+  When a reporter enters "Gin", a value "Make" does not offer, for "Make"
   Then "Model" is enabled and its list offers no choice
-  When they type "Zeno 2" for "Model" and send the report
+
+@REQ-DCH-007
+@ui
+Scenario: A parent and a child answered with new values are sent as the words entered
+  Given the type-ahead "Model" question's choices depend on the type-ahead "Make" question
+  And a reporter entered "Gin", a value "Make" does not offer, for "Make"
+  When they enter "Zeno 2" for "Model" and send the report
   Then "Make" is sent as "Gin" and "Model" as "Zeno 2", both as the words typed
 
 @REQ-QB-200
@@ -169,8 +214,14 @@ Scenario: A saved report restores the parent and child answers together
 @ui
 Scenario: A dependent child that cannot be answered yet does not hold the reporter back
   Given a required "Model" question's choices depend on an optional "Make" question
-  When a reporter leaves "Make" unanswered and presses Next
+  When a reporter leaves "Make" unanswered and goes to the next page
   Then the form moves on past "Model", which cannot be answered until "Make" is
+
+@REQ-DCH-008
+@ui
+Scenario: A report is sent with no answer to a dependent child that could not be answered
+  Given a required "Model" question's choices depend on an optional "Make" question
+  And a reporter left "Make" unanswered and went to the next page
   When they consent and send the report
   Then the report is sent with no answer to "Model"
 
@@ -180,7 +231,7 @@ Scenario: A picker child with nothing under the parent's answer says so and does
   Given a required single-select "Model" question's choices depend on the single-select "Make" question, and nothing is offered under "Gin"
   When a reporter answers "Make" with "Gin"
   Then "Model" is disabled, and says no choice is listed for that answer
-  And pressing Next moves on
+  And the reporter can go on to the next page
 
 @REQ-QB-205
 @ui
@@ -195,6 +246,9 @@ Scenario: The parent comes before the child wherever grouping places them
   Given a group question comes before the "Make" question on the form
   When an Administrator makes a question grouped under that group depend on "Make"
   Then the dependency is refused, naming both questions
+
+@REQ-DCH-009
+Scenario: Grouping cannot place a parent after its child
   Given the "Model" question's choices depend on the "Make" question, which comes before it
   When an Administrator groups "Make" under a group question placed after "Model"
   Then the change is refused, naming both questions
@@ -217,7 +271,11 @@ Scenario: Every choice of a dependent question is offered under at least one par
   When an Administrator makes its choices depend on the "Make" question, offering only "Mentor 7" under "Niviuk"
   Then the save is refused, naming "Rush 6"
   And nothing is saved
-  When they offer "Mentor 7" under "Niviuk" and "Ozone", and "Rush 6" under "Ozone", in the same save
+
+@REQ-DCH-010
+Scenario: A dependency is saved once every choice is offered under a parent choice
+  Given a type-ahead question "Model" offers "Mentor 7" and "Rush 6"
+  When an Administrator makes its choices depend on the "Make" question, offering "Mentor 7" under "Niviuk" and "Ozone", and "Rush 6" under "Ozone"
   Then the dependency is saved, with "Mentor 7" under both and "Rush 6" under "Ozone"
   And adding a choice to "Model" under no parent choice is refused
   And offering a choice under a choice of any question other than "Make" is refused
@@ -241,7 +299,17 @@ Scenario Outline: A parent choice is removed only while every child choice under
   And "Other" is offered under "Niviuk" and "Ozone", and "Mentor 7" under "Niviuk" only
   When <who> removes "Niviuk"
   Then the removal is refused, naming "Mentor 7" and not "Other"
-  When "Mentor 7" is also offered under "Ozone" and <who> removes "Niviuk" again
+
+Examples:
+  | parent        | who                                            |
+  | single-select | an Administrator saving the question           |
+  | type-ahead    | a Safety Officer on the type-ahead review page |
+
+@REQ-DCH-011
+Scenario Outline: A parent choice every child choice has another parent for is removed, and its links stay
+  Given the "Model" question's choices depend on a <parent> "Make" question
+  And "Other" and "Mentor 7" are each offered under "Niviuk" and "Ozone"
+  When <who> removes "Niviuk"
   Then "Niviuk" is removed
   And "Other" and "Mentor 7" keep their "Niviuk" links, which filter nothing
   And saving "Model" again, as the editor sends it, succeeds and keeps the "Niviuk" links
@@ -264,14 +332,14 @@ Scenario: Merging a parent value into one the child choice already names leaves 
 @REQ-QB-216
 Scenario: A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer
   Given the "Model" question offers "Other" under "Niviuk" and "Ozone"
-  When a reporter answers "Make" with "Ozone" and types " other " for "Model"
+  When a reporter answers "Make" with "Ozone" and "Model" with " other "
   Then the "Model" answer names that "Other"
   And "Model" gains no new value, and "Other" is not flagged for review
 
 @REQ-QB-217
 Scenario: A reporter's typed value matching a value under another parent answer links it and flags it
   Given the "Model" question offers "Mentor 7" under "Niviuk" only
-  When a reporter answers "Make" with "Ozone" and types "mentor 7" for "Model"
+  When a reporter answers "Make" with "Ozone" and "Model" with "mentor 7"
   Then the "Model" answer names "Mentor 7"
   And "Model" gains no new value
   And "Mentor 7" is offered under "Niviuk" and "Ozone", and is flagged for review
@@ -279,22 +347,27 @@ Scenario: A reporter's typed value matching a value under another parent answer 
 @REQ-QB-218
 Scenario: A reporter's typed value matching a merged value names the value it was merged into
   Given the "Model" value "Mentr 7" was merged into "Mentor 7", which is offered under "Niviuk" only
-  When a reporter answers "Make" with "Ozone" and types "Mentr 7" for "Model"
+  When a reporter answers "Make" with "Ozone" and "Model" with "Mentr 7"
   Then the "Model" answer names "Mentor 7"
   And "Mentor 7" is offered under "Niviuk" and "Ozone", and is flagged for review
 
 @REQ-QB-219
 Scenario: A reporter's typed value matching a removed value brings it back flagged, not revived
   Given the "Model" value "Zeno 1" was removed
-  When a reporter answers "Make" with "Ozone" and types "Zeno 1" for "Model"
+  When a reporter answers "Make" with "Ozone" and "Model" with "Zeno 1"
   Then the "Model" answer names "Zeno 1"
   And "Zeno 1" is flagged for review and still removed
 
 @REQ-QB-220
-Scenario: A reviewer adds and removes a dependent type-ahead value's parents, never down to none
+Scenario: A reviewer offers a dependent type-ahead value under another parent choice
   Given a reporter added the "Model" value "Zeno 2", offered under "Ozone"
   When a Safety Officer offers "Zeno 2" under "Ozone" and "Niviuk"
   Then "Zeno 2" is offered under both, and every answer naming it still names it
+
+@REQ-DCH-012
+Scenario: A reviewer removes a dependent type-ahead value's parent choice, never down to none
+  Given a reporter added the "Model" value "Zeno 2", offered under "Ozone"
+  And a Safety Officer offered "Zeno 2" under "Ozone" and "Niviuk"
   When they offer it under "Niviuk" only
   Then its "Ozone" link is marked removed, not erased
   And offering it under no parent choice is refused
@@ -315,13 +388,19 @@ Scenario Outline: Each choice of a dependent question picks the parent choices i
   When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
   Then every choice row, a new one included, has an "Offered under" multi-select listing "Niviuk", "Ozone", "Other"
   And Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
-  When they tick "Niviuk" and "Ozone" for one choice and "Ozone" for every other, and save
-  Then the save sends each choice with every parent choice ticked for it
 
 Examples:
   | language |
   | English  |
   | French   |
+
+@REQ-DCH-013
+@ui
+Scenario: Saving a dependent question sends the parent choices ticked for each choice
+  Given an Administrator using English opens the manage-questions page
+  And they are making a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
+  When they tick "Niviuk" and "Ozone" for one choice and "Ozone" for every other, and save
+  Then the save sends each choice with every parent choice ticked for it
 
 @REQ-QB-223
 @ui
@@ -330,36 +409,66 @@ Scenario: The form offers one choice under each of its parent answers and keeps 
   And "Model" offers "Other" under "Niviuk" and "Ozone", "Mentor 7" under "Niviuk", and "Rush 6" under "Ozone"
   When a reporter answers "Make" with "Niviuk"
   Then "Model" offers "Mentor 7" and "Other"
-  When they pick "Other" and change "Make" to "Ozone"
+
+@REQ-DCH-014
+@ui
+Scenario: A choice offered under both parent answers is kept when the parent's answer changes
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And "Model" offers "Other" under "Niviuk" and "Ozone", "Mentor 7" under "Niviuk", and "Rush 6" under "Ozone"
+  And a reporter answered "Make" with "Niviuk" and picked "Other" for "Model"
+  When they change "Make" to "Ozone"
   Then "Model" still holds "Other" and offers "Other" and "Rush 6"
+
+@REQ-DCH-015
+@ui
+Scenario: A saved report restores a choice kept across the parent's answers
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And "Model" offers "Other" under "Niviuk" and "Ozone", "Mentor 7" under "Niviuk", and "Rush 6" under "Ozone"
+  And a reporter answered "Make" with "Niviuk" and picked "Other" for "Model"
+  And the reporter changed "Make" to "Ozone"
   When the browser saved the report and they come back and continue it
   Then "Make" holds "Ozone" and "Model" holds "Other"
 
 @REQ-QB-227
 @ui
-Scenario: Words typed into a dependent type-ahead are kept and sent as typed, even when they read as a choice under another answer
+Scenario: Words entered in a dependent type-ahead are kept, even when they read as a choice under another answer
   Given the type-ahead "Model" question's choices depend on the single-select "Make" question
-  When a reporter answers "Make" with "Ozone" and types "Mentor 7", which is offered only under "Niviuk"
+  When a reporter answers "Make" with "Ozone" and enters "Mentor 7", which is offered only under "Niviuk"
   Then "Model" still holds "Mentor 7"
-  When they press Next, consent, and send the report
+
+@REQ-DCH-016
+@ui
+Scenario: Words entered in a dependent type-ahead are sent as entered, even when they read as a choice under another answer
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And a reporter answered "Make" with "Ozone" and entered "Mentor 7", which is offered only under "Niviuk"
+  When they go to the next page, consent, and send the report
   Then "Model" is sent as the words "Mentor 7"
 
 @REQ-QB-224
 @ui
-Scenario: The type-ahead review page shows every parent of a dependent value and edits them
+Scenario: The type-ahead review page shows every parent of a dependent value
   Given a Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
   And "Zeno 2" is also linked to "Gin", a "Make" value since removed
   Then the value shows that it is offered under "Ozone"
   And its "Offered under" control lists "Make"'s choices
+
+@REQ-DCH-017
+@ui
+Scenario: The type-ahead review page offers a dependent value under another parent choice, never under none
+  Given a Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
+  And "Zeno 2" is also linked to "Gin", a "Make" value since removed
   When they also tick "Niviuk"
   Then the page sends "Ozone" and "Niviuk"
   And the page does not let them untick the last parent choice, and says why
 
 @REQ-QB-225
 Scenario: The migration keeps each link as one of the choice's parents and merges identical duplicates
-  Given a database one migration short, whose dependent "Certification:" question offers "EN-A" to "EN-D" twice each, one copy under "Paraglider" and one under "Hang Glider", and "EN-CCC" once, under "Paraglider"
-  And reports answered "Certification:" with both copies of "EN-A"
-  And a question is conditional on the "Hang Glider" copy of "EN-B"
+  Given a database one migration short, whose dependent "Certification:" question holds:
+    | what              | choice       | under                   |
+    | duplicated choice | EN-A to EN-D | Paraglider, Hang Glider |
+    | single choice     | EN-CCC       | Paraglider              |
+    | answered copies   | EN-A         | Paraglider, Hang Glider |
+    | conditional copy  | EN-B         | Hang Glider             |
   When the migration runs
   Then "Certification:" offers one "EN-A" to "EN-D" each, the oldest copy, offered under "Paraglider" and "Hang Glider"
   And each other copy is retired, replaced by the one that survived

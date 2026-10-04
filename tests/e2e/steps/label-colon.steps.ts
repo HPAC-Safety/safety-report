@@ -188,6 +188,11 @@ When("they write {string} as the English wording and {string} as the French word
 	await page.getByLabel("Question (French)").fill(french)
 })
 
+Given("they wrote {string} as the English wording and {string} as the French wording", async ({ page }, english: string, french: string) => {
+	await page.getByLabel("Question (English)").fill(english)
+	await page.getByLabel("Question (French)").fill(french)
+})
+
 Then("a message says the form adds the colon itself", async ({ page }) => {
 	await expect(page.getByRole("alert").filter({ hasText: "The form adds the colon itself" })).toBeVisible()
 })

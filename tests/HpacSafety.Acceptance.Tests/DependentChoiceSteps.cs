@@ -278,16 +278,17 @@ public sealed class DependentChoiceSteps
 		model.GetProperty("options").EnumerateArray().ShouldAllBe(option => option.GetProperty("parentChoiceIds").GetArrayLength() == 0);
 	}
 
-	[When(@"they offer {string} under {string} and {string}, and {string} under {string}, in the same save")]
-	public async Task WhenOfferingBoth(string first,
+	[When(@"an Administrator makes its choices depend on the {string} question, offering {string} under {string} and {string}, and {string} under {string}")]
+	public async Task WhenOfferingBoth(string parent,
+									   string first,
 									   string firstParent,
 									   string firstOtherParent,
 									   string second,
 									   string secondParent)
 	{
 		var model = await View(_childName!);
-		var make = await View("Make");
-		_response = await Put(_childName!, RequestFrom(model, _ids["Make"], OptionsUnder(model,
+		var make = await View(parent);
+		_response = await Put(_childName!, RequestFrom(model, _ids[parent], OptionsUnder(model,
 			(first, [ChoiceId(make, firstParent), ChoiceId(make, firstOtherParent)]),
 			(second, [ChoiceId(make, secondParent)]))));
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
@@ -396,8 +397,15 @@ public sealed class DependentChoiceSteps
 		await Remember(parent, child);
 	}
 
-	[When(@"an Administrator makes {string}'s choices depend on {string} and links each choice")]
-	public async Task WhenTheAnsweredChildIsLinked(string child,
+	[When(@"an Administrator makes {string}'s choices depend on {string}, links each choice, and later links one choice to a different parent choice")]
+	public async Task WhenTheAnsweredChildIsLinkedAndRelinked(string child,
+															  string parent)
+	{
+		await WhenTheAnsweredChildIsLinked(child, parent);
+		await WhenOneLinkChanges();
+	}
+
+	private async Task WhenTheAnsweredChildIsLinked(string child,
 												   string parent)
 	{
 		var model = await View(child);
@@ -406,8 +414,7 @@ public sealed class DependentChoiceSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
 	}
 
-	[When(@"later links one choice to a different parent choice")]
-	public async Task WhenOneLinkChanges()
+	private async Task WhenOneLinkChanges()
 	{
 		var model = await View(_childName!);
 		var make = await View("Make");
@@ -537,22 +544,14 @@ public sealed class DependentChoiceSteps
 		ChoiceId(await View("Make"), "Niviuk").ShouldNotBeNull();
 	}
 
-	[When(@"{string} is also offered under {string} and an Administrator saving the question removes {string} again")]
-	public async Task WhenAlsoOfferedAndAdministratorRemoves(string choice,
-															 string otherParent,
-															 string parentChoice)
+	[Given(@"{string} and {string} are each offered under {string} and {string}")]
+	public async Task GivenBothOfferedUnderBoth(string shared,
+												string other,
+												string firstParent,
+												string secondParent)
 	{
-		await OfferAlsoUnder(choice, otherParent);
-		await WhenAnAdministratorRemovesTheParentChoice(parentChoice);
-	}
-
-	[When(@"{string} is also offered under {string} and a Safety Officer on the type-ahead review page removes {string} again")]
-	public async Task WhenAlsoOfferedAndSafetyOfficerRemoves(string choice,
-															 string otherParent,
-															 string parentChoice)
-	{
-		await OfferAlsoUnder(choice, otherParent);
-		await WhenASafetyOfficerRemovesTheParentValue(parentChoice);
+		await GivenOneSharedAndOneAlone(shared, firstParent, secondParent, other, firstParent);
+		await OfferAlsoUnder(other, secondParent);
 	}
 
 	[Then(@"{string} is removed")]
@@ -783,11 +782,11 @@ public sealed class DependentChoiceSteps
 
 	// ---- REQ-QB-192, REQ-QB-193: a reporter's typed value ----
 
-	[When(@"a reporter answers {string} with its {string} choice and types {string} for {string}, which {string} does not offer")]
+	[When(@"a reporter answers {string} with its {string} choice and {string} with {string}, which {string} does not offer")]
 	public async Task WhenAReporterTypesUnderAChoice(string parent,
 													 string parentChoice,
-													 string typed,
 													 string child,
+													 string typed,
 													 string _)
 	{
 		_response = await SubmitRaw(
@@ -796,12 +795,12 @@ public sealed class DependentChoiceSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
 	}
 
-	[When(@"a reporter answers {string} with {string}, a value {string} does not offer and types {string} for {string}, which {string} does not offer")]
+	[When(@"a reporter answers {string} with {string}, a value {string} does not offer and {string} with {string}, which {string} does not offer")]
 	public async Task WhenAReporterTypesUnderATypedParent(string parent,
 														  string parentTyped,
 														  string _,
-														  string typed,
 														  string child,
+														  string typed,
 														  string __)
 	{
 		_response = await SubmitRaw(Typed(parent, parentTyped), Typed(child, typed));
@@ -840,11 +839,11 @@ public sealed class DependentChoiceSteps
 		answer.TranslatedValue.ShouldBeNull();
 	}
 
-	[When(@"a reporter answers {string} with {string} and types {string} for {string}")]
+	[When(@"a reporter answers {string} with {string} and {string} with {string}")]
 	public async Task WhenAReporterTypesAnExistingWording(string parent,
 														  string parentChoice,
-														  string typed,
-														  string child)
+														  string child,
+														  string typed)
 	{
 		await Remember(child);
 		_answersBefore = await AnswerIds(child);
@@ -960,6 +959,7 @@ public sealed class DependentChoiceSteps
 	}
 
 	[When(@"a Safety Officer offers {string} under {string} and {string}")]
+	[Given(@"a Safety Officer offered {string} under {string} and {string}")]
 	public async Task WhenASafetyOfficerOffersUnderBoth(string value,
 														string firstParent,
 														string secondParent)

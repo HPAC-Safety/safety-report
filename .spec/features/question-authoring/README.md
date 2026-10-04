@@ -53,7 +53,7 @@ A statement is shown to Administrators as **Instructional text**. It is a
 title and a description, not a question and help text, so the editor labels
 its wording that way and gives each description several lines (`REQ-QB-141`).
 Both still live in the revision's label and help text; only the editor's
-labels differ by type. The description is stored exactly as typed, line breaks
+labels differ by type (`REQ-QAU-008`). The description is stored exactly as typed, line breaks
 included (`REQ-QB-142`), and the reporter's form shows it with its paragraphs
 wherever the statement appears: as the introduction, on a page of its own, or
 under a group (`REQ-QB-143`).
@@ -72,7 +72,8 @@ A question's label is stored without a colon, and the interface draws it
   shows on the reporter form, the admin report detail, and the question bank
   previews, which show each language's label in that language's style
   (`REQ-QB-240`, `REQ-QB-241`, `REQ-QB-242`).
-- **New labels.** The editor refuses a label ending in `:` (`REQ-QB-243`), and
+- **New labels.** The editor refuses a label ending in `:` until the colon is
+  removed (`REQ-QB-243`, `REQ-QAU-020`), and
   so does the API, with a problem worded in both languages (`REQ-QB-244`).
   Typeform import strips the colon from a title (`REQ-TF-024`).
 - **Stored labels.** One migration removed the trailing colon from every stored
@@ -123,10 +124,12 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   wording an answer was given against.
 - An Administrator authoring, seeing, or recoding a choice code. A new
   choice's code is derived from its English wording, and a choice fixed in
-  place keeps the code it has (`REQ-QB-092`).
+  place keeps the code it has (`REQ-QB-092`, `REQ-QAU-004`). Two choices whose
+  wording reduces to the same code are refused (`REQ-QAU-005`).
 - An Administrator authoring, seeing, or changing a question key. A new
   question's key is derived from its English wording and never reuses a key any
-  question holds, deleted and retired ones included (`REQ-QB-096`). Only an imported
+  question holds, deleted and retired ones included (`REQ-QAU-007`,
+  `REQ-QAU-006`, `REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.
   Renaming an existing key is not built.
 - Formatting in a statement's description: no Markdown, rich text, or links.

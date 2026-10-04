@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -34,6 +34,7 @@ install)
 	[ -n "\${FAKE_REWRITES_LOCK-}" ] && echo rewritten > Skillfile.lock
 	exit 0 ;;
 list)
+	[ "$2" = --json ] && { cat "$FAKE_DIR/list.json"; exit 0; }
 	case "$3" in
 	--agents) cat "$FAKE_DIR/agents.txt" ;;
 	--skills) cat "$FAKE_DIR/skills.txt" ;;
@@ -176,6 +177,89 @@ describe('the agent-tooling install and prune', () => {
 
 		assert.match(result.stdout, /post-merge: Skillfile\.lock changed by skillfile install — include it in your next commit\./)
 		assert.equal(readFileSync(join(root, 'Skillfile.lock'), 'utf8'), 'rewritten\n')
+	})
+
+	it('removes a retired name that is a substring of a declared one', () => {
+		declare(['spec-reviewer'], ['coding-conventions'])
+		installed('.claude/agents/spec-reviewer.md', '.claude/agents/reviewer.md')
+
+		run('install_agent_tooling test')
+
+		assert.ok(existsSync(join(root, '.claude/agents/spec-reviewer.md')))
+		assert.ok(!existsSync(join(root, '.claude/agents/reviewer.md')))
+	})
+
+	it('never prunes through a symlinked .claude/skills', () => {
+		declare(['backend'], ['coding-conventions'])
+		const elsewhere = join(fake, 'elsewhere')
+		mkdirSync(join(elsewhere, 'personal'), { recursive: true })
+		mkdirSync(join(root, '.claude'), { recursive: true })
+		symlinkSync(elsewhere, join(root, '.claude/skills'))
+
+		run('install_agent_tooling test')
+
+		assert.ok(existsSync(join(elsewhere, 'personal')))
+	})
+
+	it('keeps a non-.md file and a subdirectory under .claude/agents', () => {
+		declare(['backend'], ['coding-conventions'])
+		installed('.claude/agents/notes.txt', '.claude/agents/sub/inner.md')
+
+		run('install_agent_tooling test')
+
+		assert.ok(existsSync(join(root, '.claude/agents/notes.txt')))
+		assert.ok(existsSync(join(root, '.claude/agents/sub/inner.md')))
+	})
+
+	it('keeps a plain file under .claude/skills', () => {
+		declare(['backend'], ['coding-conventions'])
+		installed('.claude/skills/notes.md')
+
+		run('install_agent_tooling test')
+
+		assert.ok(existsSync(join(root, '.claude/skills/notes.md')))
+	})
+
+	it('prunes nothing of a kind whose Skillfile has a directory entry, and says why', () => {
+		declare(['backend'], ['one'])
+		writeFileSync(
+			join(fake, 'list.json'),
+			JSON.stringify({ entries: [{ name: 'one', entity_type: 'skill', source_type: 'github', location: 'owner/repo:skills' }] }, null, 2),
+		)
+		installed('.claude/skills/one/SKILL.md', '.claude/skills/deployed-by-the-directory/SKILL.md', '.claude/agents/implementer.md')
+
+		const result = run('install_agent_tooling test')
+
+		assert.ok(existsSync(join(root, '.claude/skills/deployed-by-the-directory')))
+		assert.match(result.stdout, /not pruning skills/)
+		assert.ok(!existsSync(join(root, '.claude/agents/implementer.md')), 'the other kind is still pruned')
+	})
+
+	it('wakes for a non-ASCII path git would otherwise quote', () => {
+		commitChange('agents/é.md')
+		assert.equal(run('agent_tooling_changed').status, 0)
+	})
+
+	it('leaves a Skillfile.lock that was already changed before the install', () => {
+		git(root, 'checkout', '-q', '-B', 'main')
+		declare(['backend'], ['coding-conventions'])
+		writeFileSync(join(root, 'Skillfile.lock'), 'mine\n')
+
+		const result = run('install_agent_tooling post-merge', { FAKE_REWRITES_LOCK: '1' })
+
+		assert.equal(result.stdout, '')
+		assert.equal(readFileSync(join(root, 'Skillfile.lock'), 'utf8'), 'rewritten\n', 'neither restored nor announced')
+	})
+
+	it('restores a Skillfile.lock the install rewrote, on a detached HEAD at origin/main', () => {
+		git(root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
+		git(root, 'checkout', '-q', '--detach')
+		declare(['backend'], ['coding-conventions'])
+
+		const result = run('install_agent_tooling post-merge', { FAKE_REWRITES_LOCK: '1' })
+
+		assert.equal(result.stdout, '')
+		assert.equal(readFileSync(join(root, 'Skillfile.lock'), 'utf8'), 'locked\n')
 	})
 
 	it('restores a Skillfile.lock the install rewrote, on main', () => {

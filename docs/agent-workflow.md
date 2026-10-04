@@ -23,7 +23,9 @@ never edit or commit those copies. The post-merge and post-rewrite hooks and
 `init-dev.sh` keep `.claude/` in step: after a change to `Skillfile`,
 `Skillfile.lock`, `agents/`, or `skills/` they run `skillfile install` and delete
 any installed agent or skill the `Skillfile` no longer declares. Personal agents
-and skills go in `~/.claude`, not `.claude/`. Keep local skills concise and
+and skills go in `~/.claude`, not `.claude/`. A fast-forward rebase, `git
+worktree add`, `merge --squash`, and a hand-resolved conflicted merge fire no
+such hook: after one, run `./init-dev.sh`. Keep local skills concise and
 HPAC-specific. Search before adding generic guidance, and do not install a
 skill whose architecture conflicts with `.spec/features`.
 

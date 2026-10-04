@@ -41,18 +41,25 @@ date: 2026-10-03
   installed: `post-merge` and `post-rewrite` share
   `lib/regenerate-spec.sh`, and each keeps its own skip-on-`main` (#802) and
   rewrite-type logic.
-- The agent-tooling install is the second thing a hook runs on `main`, after
-  the graph merge. `post-merge` and `post-rewrite` share
-  `lib/install-agent-tooling.sh` with `init-dev.sh`:
+- The agent-tooling install is the second thing a hook runs on `main`, beside
+  the graph merge; it runs before the skip-on-`main` branch. `post-merge` and
+  `post-rewrite` share `lib/install-agent-tooling.sh` with `init-dev.sh`:
   - it wakes only when `git diff --name-only ORIG_HEAD HEAD` touches
     `Skillfile`, `Skillfile.lock`, `agents/`, or `skills/`, and is silent when
     `skillfile` is not on `PATH`;
-  - it runs `skillfile install`, then deletes every `.claude/agents/*.md` and
-    `.claude/skills/<dir>` that `skillfile list --names-only` does not name;
+  - it runs `skillfile install`, then deletes each regular `.md` file under
+    `.claude/agents` and each directory under `.claude/skills` that
+    `skillfile list --names-only` does not name. It never follows a symlink,
+    leaves anything else there alone, and prunes nothing for a kind whose
+    Skillfile has a directory entry, which can deploy names the listing omits;
   - it is allowed on `main` because its output under `.claude/` is gitignored
     (#849), like the graph merge. `skillfile install` can rewrite the tracked
-    `Skillfile.lock`, so on `main` the script restores it, and elsewhere it
-    says to include it in the next commit.
+    `Skillfile.lock`; when the lock was clean beforehand, the script restores
+    it on `main` (or a detached `HEAD` at `origin/main`) and elsewhere says to
+    include it in the next commit. A lock already changed is left alone;
+  - a fast-forward rebase, `git worktree add`, `merge --squash`, and a
+    hand-resolved conflicted merge fire only `post-checkout` or `post-commit`,
+    which graphify owns, so they do not run it. After one, run `./init-dev.sh`.
 - No hook manager: not Husky, lint-staged, lefthook, or the pre-commit
   framework.
 

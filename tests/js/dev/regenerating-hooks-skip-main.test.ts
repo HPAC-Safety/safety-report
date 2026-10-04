@@ -33,7 +33,8 @@ function runHook(root: string, name: string, args: string[], stdin = '') {
 	writeFileSync(join(bin, 'node'), `#!/usr/bin/env sh\necho "$@" >> "${join(root, 'node-called.txt')}"\n`)
 	chmodSync(join(bin, 'node'), 0o755)
 	// The hooks also install agent tooling; a stand-in `skillfile` keeps the real one out of the throwaway repository.
-	writeFileSync(join(bin, 'skillfile'), `#!/usr/bin/env sh\necho "$@" >> "${join(root, 'skillfile-called.txt')}"\n`)
+	// Its install rewrites the committed Skillfile.lock, as the real one can.
+	writeFileSync(join(bin, 'skillfile'), `#!/usr/bin/env sh\necho "$@" >> "${join(root, 'skillfile-called.txt')}"\n[ "$1" = install ] && echo rewritten > Skillfile.lock\nexit 0\n`)
 	chmodSync(join(bin, 'skillfile'), 0o755)
 	return spawnSync('sh', [join(REPO, '.githooks', name), ...args], {
 		cwd: root,
@@ -50,6 +51,7 @@ describe('the hooks that regenerate the specification', () => {
 		root = mkdtempSync(join(tmpdir(), 'regen-hooks-'))
 		git(root, 'init', '-q', '-b', 'main')
 		writeFileSync(join(root, 'file.txt'), 'one\n')
+		writeFileSync(join(root, 'Skillfile.lock'), 'locked\n')
 		git(root, 'add', '.')
 		git(root, '-c', 'core.hooksPath=/dev/null', 'commit', '-q', '-m', 'first')
 	})
@@ -70,12 +72,14 @@ describe('the hooks that regenerate the specification', () => {
 		})
 
 		it(`${name} installs agent tooling on main too, and leaves no tracked change`, () => {
+			git(root, 'checkout', '-q', '--', 'Skillfile.lock')
 			git(root, 'checkout', '-q', 'main')
 			rmSync(join(root, 'skillfile-called.txt'), { force: true })
 
 			runHook(root, name, [...args])
 
 			assert.equal(readFileSync(join(root, 'skillfile-called.txt'), 'utf8').split('\n')[0], 'install', 'skillfile install ran')
+			assert.equal(readFileSync(join(root, 'Skillfile.lock'), 'utf8'), 'locked\n', 'the rewritten lock was restored')
 			assert.equal(git(root, 'diff', '--name-only').out, '', 'no tracked file changed')
 		})
 

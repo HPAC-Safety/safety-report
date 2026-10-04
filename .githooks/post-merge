@@ -36,7 +36,7 @@ cd "$REPO_ROOT" || exit 0
 # .claude/agents and .claude/skills are gitignored, so this runs on main too: it
 # installs what the Skillfile declares and prunes what it no longer does, and
 # restores a Skillfile.lock the install rewrote when on main.
-agent_tooling_changed && install_agent_tooling post-merge
+agent_tooling_changed && { install_agent_tooling post-merge || echo "post-merge: skillfile install failed — run it directly to see why"; }
 
 # The primary checkout's main only ever fast-forwards to origin/main, which
 # already carries the claims, matrix, and index CI regenerated and checked

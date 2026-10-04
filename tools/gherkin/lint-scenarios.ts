@@ -140,15 +140,15 @@ export function oneWhen(unit: Unit): Array<{ line: number; found: string }> {
 
 /**
  * How a browser is driven, which a step never says: pointer and keyboard
- * mechanics, key names, focus, element roles and selectors, CSS, and pixel
+ * mechanics, key names, element roles and selectors, CSS, and pixel
  * sizes. Quoted interface copy is skipped, and Examples cells are not read, so
  * a per-key Scenario Outline names its keys in the table.
  */
 const UI_MECHANICS: readonly RegExp[] = [
 	/\b(?:click|double-click|right-click|tap|hover|scroll|drag|press)(?:s|es|ed|ing)?\b/i,
-	/\bkey(?:stroke|board|press)s?\b/i,
+	/\bkey(?:stroke|press)s?\b/i,
+	/\btabs?\s+(?:to|through|past|into|out|away|back)\b|\btabb(?:ed|ing)\b/i,
 	/\bmouse\b/i,
-	/\bfocus(?:es|ed|ing|able)?\b/i,
 	/\b(?:Tab|Enter|Escape|Esc|Space(?:bar)?|Home|End|Shift|Backspace|Delete key|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown)\b/,
 	/\b(?:aria|data)-[a-z][\w-]*/i,
 	/\brole\s*=|\b(?:combobox|listbox|textbox|spinbutton|menuitem|tablist|tabpanel)(?:es|s)?\b/i,

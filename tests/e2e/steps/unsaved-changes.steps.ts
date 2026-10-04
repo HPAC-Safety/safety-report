@@ -44,12 +44,7 @@ When("they navigate to another admin page", async ({ page }) => {
 	await page.getByRole("menuitem", { name: "Manage reports" }).click()
 })
 
-When("navigates to another admin page", async ({ page }) => {
-	await page.getByRole("button", { name: "Admin" }).click()
-	await page.getByRole("menuitem", { name: "Manage reports" }).click()
-})
-
-When("navigates away from the report", async ({ page }) => {
+When("they navigate away from the report", async ({ page }) => {
 	await page.getByRole("banner").getByRole("link", { name: "View safety reports" }).click()
 })
 
@@ -67,15 +62,11 @@ When("they write the English wording without saving", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("A draft question, never saved")
 })
 
-When("types into the English text without saving", async ({ page }) => {
-	await page.getByLabel("English summary").fill("A draft edit, never saved.")
-})
-
 When("the Safety Officer starts writing a private note without saving it", async ({ page }) => {
 	await page.getByLabel("Add a private note").fill("A draft private note, never saved.")
 })
 
-When("types a comment without posting it", async ({ page }) => {
+When("they write a comment without posting it", async ({ page }) => {
 	await page.getByLabel("Add a comment").fill("A draft comment, never posted.")
 })
 

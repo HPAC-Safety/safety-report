@@ -1444,19 +1444,17 @@
 			"id": "REQ-COM-021",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "Leaving with an unposted comment is confirmed before it is discarded",
+			"title": "Leaving with an unposted comment is confirmed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"types a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"navigates away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates away and the unposted comment is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they navigate away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -8452,20 +8450,18 @@
 			"id": "REQ-MOD-185",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "Leaving the summary editor with unsaved changes is confirmed before they are discarded",
+			"title": "Leaving the summary editor with unsaved changes is confirmed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"types into the English text without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"navigates to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that page and the edit is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -8483,13 +8479,11 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer and two type-ahead questions with values flagged for review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they begin correcting \"Coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they edit its English wording to \"Cooper's Hill\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they begin correcting \"Coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English wording to \"Cooper's Hill\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that page and the correction is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/review-type-ahead-values.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -8507,9 +8501,9 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer starts writing a private note without saving it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"navigates to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer starts writing a private note without saving it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
@@ -14700,18 +14694,16 @@
 			"id": "REQ-QB-238",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "Leaving the question editor with an unsaved draft is confirmed before it is discarded",
+			"title": "Leaving the question editor with an unsaved draft is confirmed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator is authoring a new question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they write the English wording without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write the English wording without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that page and the draft is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -14729,8 +14721,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the first question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they open the second question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the first question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the second question for editing","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no confirmation of any kind appears","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
@@ -20409,9 +20401,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a visitor loads the homepage","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the header shows links to view safety reports, submit a safety report, and contact","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows a visually distinct member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor activates any of those links or the member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser navigates to that destination's page","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows a visually distinct member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
 			"staleIgnore": false,
@@ -20442,18 +20432,14 @@
 			"id": "REQ-WLD-004",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "On a mobile-width viewport, header navigation is reached through a hamburger toggle",
+			"title": "On a phone-width screen, header navigation is reached through a hamburger toggle",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a visitor loads the homepage on a mobile-width viewport","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header nav is hidden and a menu toggle is shown instead","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the menu toggle","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a dialog containing the header's navigation links and member sign-in action opens","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the menu toggle again","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the dialog closes","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a visitor loads the homepage on a phone-width screen","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header nav is hidden and a menu toggle is shown instead","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
 			"staleIgnore": false,
@@ -20528,18 +20514,14 @@
 			"id": "REQ-WLD-008",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "A visitor can toggle and persist a light/dark theme choice",
+			"title": "With no theme chosen, the page follows the operating system",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor has no stored theme preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page follows the operating system's light/dark preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor toggles the theme control","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the data-theme attribute updates immediately","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header logo matches the active theme","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the theme choice persists to local storage across a reload","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the page follows the operating system's light/dark preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/theme.steps.ts"],
 			"staleIgnore": false,
@@ -20550,16 +20532,14 @@
 			"id": "REQ-WLD-009",
 			"area": "web-localization-and-design",
 			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
-			"title": "The footer sits at the bottom of the viewport on a short page but below the fold on a long one",
+			"title": "The footer sits at the bottom of the window on a short page",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a visitor loads a page whose content is shorter than the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the footer sits flush with the bottom of the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a visitor loads a page whose content is taller than the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the footer sits below the content, not pinned to the viewport","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a visitor loads a page whose content is shorter than the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the footer sits flush with the bottom of the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/footer.steps.ts"],
 			"staleIgnore": false,
@@ -20757,9 +20737,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a published report has both an English and a French summary text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor views it in a given locale","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"only that locale's text is shown, with no language control on the report itself","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the report shows the other language's text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"only that locale's text is shown, with no language control on the report itself","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -21419,6 +21397,212 @@
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":["ADR-0190","ADR-0193"],"lessons":["0043"]}
+		},
+		{
+			"id": "REQ-WLD-050",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Each homepage header link and the member sign-in action leads to its page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads the homepage","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor activates any of the header's links or its member sign-in action","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that destination's page","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-051",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "On a phone-width screen, the menu toggle opens the header's navigation",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads the homepage on a phone-width screen","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the menu toggle","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a dialog containing the header's navigation links and member sign-in action opens","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-052",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "On a phone-width screen, the menu toggle closes the open navigation again",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads the homepage on a phone-width screen","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor activates the menu toggle","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the menu toggle again","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the dialog closes","files":["tests/e2e/steps/homepage.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/homepage.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-053",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "A visitor can toggle and persist a light/dark theme choice",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor has no stored theme preference","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor toggles the theme control","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page's theme changes immediately","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header logo matches the active theme","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the theme choice persists to local storage across a reload","files":["tests/e2e/steps/theme.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/theme.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-054",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "The footer sits below the fold on a long page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor loads a page whose content is taller than the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the footer sits below the content, not pinned to the window","files":["tests/e2e/steps/footer.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/footer.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-055",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Switching the site's language switches the summary text shown",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report has both an English and a French summary text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor views it in a given locale","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the report shows the other language's text","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-056",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving the question editor discards the unsaved draft",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator is authoring a new question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write the English wording without saving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that page and the draft is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-057",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving the summary editor discards the unsaved changes",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens the summary editor","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer changes the English text","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that page and the edit is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-058",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving the type-ahead review page discards the uncorrected draft",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer and two type-ahead questions with values flagged for review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they begin correcting \"Coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English wording to \"Cooper's Hill\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate to another admin page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates to that page and the correction is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/review-type-ahead-values.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-059",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Confirming leaving discards the unposted comment",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they write a comment without posting it","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they navigate away from the report","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser navigates away and the unposted comment is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
 		}
 	],
 	"constraints": [

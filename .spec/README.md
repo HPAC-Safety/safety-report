@@ -42,7 +42,7 @@ the prefix shown after it
 | [Report submission](features/report-submission/report-submission.feature) | `REQ-SUB` | 143 | 0 | 99 | [README](features/report-submission/README.md) — Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios. |
 | [Review and publication](features/review-and-publication/review-and-publication.feature) | `REQ-REV` (also `REQ-MOD`) | 65 | 0 | 33 | [README](features/review-and-publication/README.md) — Supporting detail for reviewing a report, its summary revisions, publication, private notes, and how a reviewer reads an answer. |
 | [Typeform question import and export](features/typeform-question-import-export/typeform-question-import-export.feature) | `REQ-TF` | 23 | 0 | 1 | [README](features/typeform-question-import-export/README.md) — Supporting detail for importing and exporting the question bank as Typeform JSON. |
-| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` (also `REQ-COM`, `REQ-MOD`, `REQ-QB`) | 55 | 0 | 31 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
+| [Web, localization, and design](features/web-localization-and-design/web-localization-and-design.feature) | `REQ-WLD` (also `REQ-COM`, `REQ-MOD`, `REQ-QB`) | 65 | 0 | 41 | [README](features/web-localization-and-design/README.md) — Supporting detail for the bilingual React sites, design system, and accessibility scenarios. |
 
 ## Constraint pages
 

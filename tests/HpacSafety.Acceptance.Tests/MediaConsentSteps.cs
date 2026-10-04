@@ -59,7 +59,7 @@ public sealed class MediaConsentSteps
 		_fileName = "checklist.pdf";
 	}
 
-	[Given(@"^it answers yes to the consent_media question's (current|earlier, superseded) revision$")]
+	[Given(@"^it answers yes to the media consent question's (current|earlier, superseded) revision$")]
 	public async Task GivenItAnswersYesToARevision(string revision)
 	{
 		_mediaAnswer = true;
@@ -71,7 +71,7 @@ public sealed class MediaConsentSteps
 				.MaxBy(candidate => candidate.RevisionNumber)!.Id.Value;
 	}
 
-	[Given(@"the consent_media question as seeded")]
+	[Given(@"the media consent question as seeded")]
 	public async Task GivenTheSeededMediaConsentQuestion()
 	{
 		_seeded = await MediaConsentQuestion();
@@ -102,7 +102,7 @@ public sealed class MediaConsentSteps
 		revision.HelpTextFr!.ShouldContain("renseignements personnels");
 	}
 
-	[Given(@"it answers the consent_media question with {word}")]
+	[Given(@"it answers the media consent question with {word}")]
 	public void GivenItAnswersMediaConsent(string answer)
 	{
 		_mediaAnswer = answer switch
@@ -113,20 +113,20 @@ public sealed class MediaConsentSteps
 		};
 	}
 
-	[Given(@"it answers the consent_media question with no answer")]
+	[Given(@"it answers the media consent question with no answer")]
 	public void GivenItLeavesMediaConsentUnanswered()
 	{
 		_mediaAnswer = null;
 	}
 
-	[Given(@"a submission answers the consent_media question with a value that is neither yes nor no")]
+	[Given(@"a submission answers the media consent question with a value that is neither yes nor no")]
 	public async Task GivenAnUnreadableMediaConsent()
 	{
 		await GivenASubmissionWithAnImage();
 		_mediaAnswer = "maybe";
 	}
 
-	[When(@"the API accepts the submission")]
+	[When(@"the report is accepted")]
 	[When(@"the reporter submits it")]
 	public async Task WhenTheReporterSubmits()
 	{
@@ -209,13 +209,13 @@ public sealed class MediaConsentSteps
 		(await PublicationConsentOnTheForm()).GetProperty("isRequired").GetBoolean().ShouldBeTrue();
 	}
 
-	[When(@"the reporter submits without an answer to consent_publish")]
+	[When(@"the reporter submits without answering the publication consent question")]
 	public async Task WhenTheReporterSubmitsWithoutConsent()
 	{
 		_response = await Post([new { questionRevisionId = await ShortTextRevisionId(), value = (object?)"x" }]);
 	}
 
-	[Then(@"an Administrator cannot save a consent_publish revision that is optional")]
+	[Then(@"an Administrator cannot save an optional revision of the publication consent question")]
 	public void ThenConsentCannotBeSavedOptional()
 	{
 		// Against the domain, not the shared host: revising the one consent
@@ -238,7 +238,7 @@ public sealed class MediaConsentSteps
 
 	// --- REQ-QB-016: consent_publish must resolve to an explicit yes or no ---
 
-	[Given(@"the consent_publish revision has no preselected value")]
+	[Given(@"the publication consent revision has no preselected value")]
 	public async Task GivenConsentHasNoPreselectedValue()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);

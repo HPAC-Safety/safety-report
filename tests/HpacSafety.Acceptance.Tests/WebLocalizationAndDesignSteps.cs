@@ -93,7 +93,7 @@ public sealed class WebLocalizationAndDesignSteps
 		// Contextual only, see above.
 	}
 
-	[Then(@"it comes from a committed locale catalogue with key parity between en-CA and fr-CA")]
+	[Then(@"it comes from a committed locale catalogue with key parity between English and French")]
 	public void ThenLocaleKeyParity()
 	{
 		RunNodeTool("tools/i18n/check-locales.ts");
@@ -107,7 +107,7 @@ public sealed class WebLocalizationAndDesignSteps
 
 	private string _localesDir = string.Empty;
 
-	[Given(@"a key exists in en-CA\.json but not in fr-CA\.json, or in fr-CA\.json but not in en-CA\.json")]
+	[Given(@"a key exists in the English catalogue but not the French one, or in the French one but not the English one")]
 	public void GivenEachFileHasAKeyTheOtherLacks()
 	{
 		_localesDir = Path.Combine(Path.GetTempPath(), $"locales-stub-{Guid.NewGuid():N}");
@@ -212,7 +212,7 @@ public sealed class WebLocalizationAndDesignSteps
 			"Contact us", "Nous joindre");
 	}
 
-	[Given(@"a key is edited in both en-CA\.json and fr-CA\.json")]
+	[Given(@"a key is edited in both the English and the French catalogue")]
 	public void GivenBothLanguagesEdited()
 	{
 		WriteCorrectionFixture(

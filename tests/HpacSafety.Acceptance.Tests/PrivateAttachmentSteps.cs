@@ -327,7 +327,7 @@ public sealed partial class PrivateAttachmentSteps
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the API mints a pre-signed PUT to a quarantine key named only by a new upload ID")]
+	[Then(@"a pre-signed upload link is minted for a quarantine key named only by a new upload ID")]
 	public async Task ThenAPutToQuarantineIsMinted()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();
@@ -343,7 +343,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await StoredLength($"quarantine/{_uploadId}")).ShouldBeNull();
 	}
 
-	[Then(@"^the PUT is signed for the content type (.+) and exactly (.+)$")]
+	[Then(@"^the upload link is signed for the content type (.+) and exactly (.+)$")]
 	public async Task ThenThePutIsSignedFor(string contentType, string size)
 	{
 		var minted = _minted;
@@ -377,7 +377,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await StoredCount()).ShouldBe(0);
 	}
 
-	[Then(@"^the API answers 400 with the reason (.+) and mints nothing$")]
+	[Then(@"^it is refused as invalid with the reason ""(.+)"", and nothing is minted$")]
 	public async Task ThenRefusedWithReason(string reason)
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -418,7 +418,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await StoredLength($"quarantine/{_uploadId}")).ShouldBeNull();
 	}
 
-	[Then(@"no reporter attachment, derivative, or outbox message was created for it")]
+	[Then(@"no reporter attachment, derivative, or Worker job was created for it")]
 	public async Task ThenNoReporterAttachmentOrWork()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
@@ -429,7 +429,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await OutboxCount()).ShouldBe(_outboxBefore);
 	}
 
-	[Then(@"^each link is a pre-signed GET that lives at most 15 minutes and forces a download named ""(.+)""$")]
+	[Then(@"^each link is a pre-signed download link that lives at most 15 minutes and forces a download named ""(.+)""$")]
 	public void ThenEachLinkForcesADownload(string fileName)
 	{
 		_links.Count.ShouldBe(2);
@@ -461,7 +461,7 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[Then(@"two DownloadedPrivateAttachment audit entries record the Safety Officer's token subject and the attachment")]
+	[Then(@"two private-attachment-downloaded audit entries record the Safety Officer's token subject and the attachment")]
 	public async Task ThenTwoDownloadsAreAudited()
 	{
 		var entries = await AuditEntries(AuditAction.DownloadedPrivateAttachment);
@@ -528,7 +528,7 @@ public sealed partial class PrivateAttachmentSteps
 		}
 	}
 
-	[Then(@"the reviewer attachment endpoints answer 404 for the private attachment's id")]
+	[Then(@"every reviewer attachment request for the private attachment's id is not found")]
 	public async Task ThenTheReviewerAttachmentEndpointsAnswer404()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
@@ -541,13 +541,13 @@ public sealed partial class PrivateAttachmentSteps
 		new[] { view.StatusCode, download.StatusCode, hide.StatusCode }.ShouldAllBe(status => status == HttpStatusCode.NotFound);
 	}
 
-	[Then(@"^the API answers (401|403|with success) to every one of those private-attachment requests$")]
+	[Then(@"^every one of those private-attachment requests is (refused as unauthenticated|refused as forbidden|answered with success)$")]
 	public void ThenEveryRequestAnswers(string outcome)
 	{
 		HttpStatusCode[] expected = outcome switch
 		{
-			"401" => [.. Enumerable.Repeat(HttpStatusCode.Unauthorized, 5)],
-			"403" => [.. Enumerable.Repeat(HttpStatusCode.Forbidden, 5)],
+			"refused as unauthenticated" => [.. Enumerable.Repeat(HttpStatusCode.Unauthorized, 5)],
+			"refused as forbidden" => [.. Enumerable.Repeat(HttpStatusCode.Forbidden, 5)],
 			_ => [HttpStatusCode.Created, HttpStatusCode.Created, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.NoContent],
 		};
 
@@ -599,7 +599,7 @@ public sealed partial class PrivateAttachmentSteps
 		document.RootElement.GetProperty("attachments").GetArrayLength().ShouldBe(0);
 	}
 
-	[Then(@"the private attachment is no longer listed, and downloading or removing it answers 404")]
+	[Then(@"the private attachment is no longer listed, and downloading or removing it is not found")]
 	public async Task ThenNoLongerListed()
 	{
 		(await Listed()).Select(attachment => attachment.GetProperty("id").GetString()).ShouldNotContain(_attachmentId);
@@ -619,7 +619,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await StoredLength(stored.BlobKey)).ShouldBe(stored.ByteSize);
 	}
 
-	[Then(@"one audit entry records the Administrator's token subject, RemovedPrivateAttachment, the attachment, and the time")]
+	[Then(@"one audit entry records the Administrator's token subject, a private-attachment-removed action, the attachment, and the time")]
 	public async Task ThenTheRemovalIsAudited()
 	{
 		var stored = await Stored();
@@ -632,7 +632,7 @@ public sealed partial class PrivateAttachmentSteps
 		(entries[0].Detail ?? string.Empty).ShouldNotContain("Synthetic");
 	}
 
-	[Then(@"the API answers 400 and no private attachment is stored")]
+	[Then(@"it is refused as invalid and no private attachment is stored")]
 	public async Task ThenRefusedAndNothingStored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -657,7 +657,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await StoredLength(stored.BlobKey)).ShouldBe(stored.ByteSize);
 	}
 
-	[Then(@"minting, adding, listing, or downloading private attachments on that report answers 404")]
+	[Then(@"every request to mint, add, list, or download private attachments on that report is not found")]
 	public async Task ThenEveryRouteIsNotFound()
 	{
 		using var officer = Reviewer(_officer, "safety_officer");
@@ -690,7 +690,7 @@ public sealed partial class PrivateAttachmentSteps
 		_publicBodies.ShouldContain(body => body.Contains(_reportId, StringComparison.Ordinal));
 	}
 
-	[Then(@"asking for the private attachment's identifier as public media answers 404")]
+	[Then(@"asking for the private attachment's identifier as public media is not found")]
 	public async Task ThenThePublicMediaLinkIsNotFound()
 	{
 		using var anonymous = (await BootedApi.Factory()).CreateClient();
@@ -704,7 +704,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await database.PublicReportMedia.AnyAsync(media => media.Id == _attachmentId)).ShouldBeFalse();
 	}
 
-	[Then(@"no database view other than admin_report_search_document reads the private-attachment table")]
+	[Then(@"only the admin search reads private attachments")]
 	public async Task ThenNoViewReadsTheTable()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
@@ -762,7 +762,7 @@ public sealed partial class PrivateAttachmentSteps
 		history[1].GetProperty("attachment").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
-	[Then(@"a private note referring to the other report's private attachment is refused with 400 and nothing is stored")]
+	[Then(@"a private note referring to the other report's private attachment is refused as invalid and nothing is stored")]
 	public async Task ThenAnotherReportsAttachmentIsRefused()
 	{
 		var before = (await ListedNotes()).Count;
@@ -780,7 +780,7 @@ public sealed partial class PrivateAttachmentSteps
 		_otherReportId.ShouldNotBe(_reportId);
 	}
 
-	[Then(@"a private note referring to a removed private attachment is refused with 400")]
+	[Then(@"a private note referring to a removed private attachment is refused as invalid")]
 	public async Task ThenARemovedAttachmentIsRefused()
 	{
 		using var admin = Reviewer(_administrator, "administrator");
@@ -844,7 +844,7 @@ public sealed partial class PrivateAttachmentSteps
 		(await Stored()).ContentType.ShouldBe("image/jpeg");
 	}
 
-	[Then(@"no derivative of it exists and no outbox message asks for one")]
+	[Then(@"no derivative of it exists and no Worker job asks for one")]
 	public async Task ThenNoDerivativeExists()
 	{
 		var listed = await BootedApi.Storage.ListObjectsV2Async(new ListObjectsV2Request { BucketName = BootedApi.BucketName, Prefix = $"{_reportId}/" });

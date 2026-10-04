@@ -84,7 +84,7 @@ public sealed partial class QuestionLabelColonSteps
 		_refusalBody = await _refusal.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	[Then(@"the API refuses it with a problem that says, in English and French, that the form adds the colon itself")]
+	[Then(@"it is refused as invalid, with a problem that says, in English and French, that the form adds the colon itself")]
 	public void ThenTheApiRefusesWithABilingualProblem()
 	{
 		_refusal!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

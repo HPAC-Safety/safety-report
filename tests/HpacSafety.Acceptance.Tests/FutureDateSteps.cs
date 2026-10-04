@@ -51,13 +51,13 @@ public sealed class FutureDateSteps
 
 	// --- REQ-QB-154: false unless an Administrator says so ---
 
-	[Given(@"^an Administrator creates a date question through the API (without saying whether it allows future dates|allowing future dates)$")]
+	[Given(@"^an Administrator creates a date question (without saying whether it allows future dates|allowing future dates)$")]
 	public async Task GivenADateQuestionCreatedThroughTheApi(string saying)
 	{
 		_question = await Create("date", saying == "allowing future dates" ? true : null);
 	}
 
-	[Then(@"^the saved question reads allowFutureDates as the JSON boolean (true|false)$")]
+	[Then(@"^the saved question allows future dates: (true|false)$")]
 	public async Task ThenTheSavedQuestionReadsTheSetting(string stored)
 	{
 		var expected = stored == "true" ? JsonValueKind.True : JsonValueKind.False;
@@ -71,7 +71,7 @@ public sealed class FutureDateSteps
 
 	// --- REQ-QB-155: only a date question ---
 
-	[Given(@"an Administrator creates a short-text, time, or number question through the API")]
+	[Given(@"an Administrator creates a short-text, time, or number question")]
 	public async Task GivenNonDateQuestions()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -86,7 +86,7 @@ public sealed class FutureDateSteps
 		}
 	}
 
-	[Then(@"the API refuses to save each one")]
+	[Then(@"saving each one is refused as invalid")]
 	public void ThenTheApiRefusesEach()
 	{
 		_refusals.Count.ShouldBe(3);
@@ -203,7 +203,7 @@ public sealed class FutureDateSteps
 		_publicQuestions = await client.GetFromJsonAsync<JsonElement>(PublicQuestions);
 	}
 
-	[Then(@"each carries allowFutureDates as the JSON boolean matching its setting")]
+	[Then(@"each says whether it allows future dates, true or false, matching its setting")]
 	public void ThenEachCarriesTheSetting()
 	{
 		foreach (var (allows, created) in _bySetting)

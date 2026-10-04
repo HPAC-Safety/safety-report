@@ -142,7 +142,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_edited.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
 	}
 
-	[When(@"the API prepares the edit DTO")]
+	[When(@"the edit is prepared")]
 	public async Task WhenTheApiPreparesTheEditDto()
 	{
 		var list = await (await Admin()).GetFromJsonAsync<JsonElement>(AdminQuestions);
@@ -150,7 +150,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_dto = list.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == id);
 	}
 
-	[Then(@"it loads the latest revision and copies every setting into that DTO")]
+	[Then(@"it starts from the latest revision, with every setting copied")]
 	public async Task ThenTheDtoCopiesTheLatestRevision()
 	{
 		var latest = (await LoadQuestion(_created.GetProperty("id").GetString()!)).CurrentRevision;
@@ -172,7 +172,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_saved = await (await Admin()).PutAsJsonAsync(uri, Request(null, fields with { LabelEn = "A twice-reworded synthetic question" }));
 	}
 
-	[Then(@"the API validates both languages, then saves a new complete row rather than patching the existing revision")]
+	[Then(@"both languages are validated, and a new complete revision is saved, the existing revision unchanged")]
 	public async Task ThenTheEditIsANewCompleteRow()
 	{
 		_blankLanguage!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

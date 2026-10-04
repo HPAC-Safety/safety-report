@@ -198,13 +198,13 @@ public sealed class PrivateNoteSteps
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"^the API answers (401|403|with success) to every one of those requests$")]
+	[Then(@"^every one of those requests is (refused as unauthenticated|refused as forbidden|answered with success)$")]
 	public void ThenEveryRequestAnswers(string outcome)
 	{
 		HttpStatusCode[] expected = outcome switch
 		{
-			"401" => [.. Enumerable.Repeat(HttpStatusCode.Unauthorized, 5)],
-			"403" => [.. Enumerable.Repeat(HttpStatusCode.Forbidden, 5)],
+			"refused as unauthenticated" => [.. Enumerable.Repeat(HttpStatusCode.Unauthorized, 5)],
+			"refused as forbidden" => [.. Enumerable.Repeat(HttpStatusCode.Forbidden, 5)],
 			_ => [HttpStatusCode.Created, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.NoContent],
 		};
 
@@ -264,7 +264,7 @@ public sealed class PrivateNoteSteps
 		stored.Revisions.Single(revision => revision.Number == 1).AuthorSubject.ShouldBe(_officer);
 	}
 
-	[Then(@"an edit based on an earlier revision is refused with 409 and saves nothing")]
+	[Then(@"an edit based on an earlier revision is refused as out of date and saves nothing")]
 	public async Task ThenAStaleEditIsRefused()
 	{
 		using var stale = await EditAs(_officer, "safety_officer", "Synthetic: an edit from an old view.", 2);
@@ -272,7 +272,7 @@ public sealed class PrivateNoteSteps
 		(await Stored()).Revisions.Count.ShouldBe(3);
 	}
 
-	[Then(@"the private note is no longer listed, and editing it or reading its history answers 404")]
+	[Then(@"the private note is no longer listed, and editing it or reading its history is not found")]
 	public async Task ThenNoLongerListed()
 	{
 		(await Listed()).Select(note => note.GetProperty("id").GetString()).ShouldNotContain(_noteId);
@@ -294,7 +294,7 @@ public sealed class PrivateNoteSteps
 		note.Revisions.ShouldAllBe(revision => revision.Deleted == note.Deleted);
 	}
 
-	[Then(@"one audit entry records the Administrator's token subject, RemovedPrivateNote, the note, and the time, without its text")]
+	[Then(@"one audit entry records the Administrator's token subject, a private-note-removed action, the note, and the time, without its text")]
 	public async Task ThenTheRemovalIsAudited()
 	{
 		var note = await Stored();
@@ -311,7 +311,7 @@ public sealed class PrivateNoteSteps
 		(entries[0].Detail ?? string.Empty).ShouldNotContain("Synthetic");
 	}
 
-	[Then(@"the API answers 400 and no private note is stored")]
+	[Then(@"it is refused as invalid and no private note is stored")]
 	public async Task ThenRefusedAndNothingStored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -332,7 +332,7 @@ public sealed class PrivateNoteSteps
 		note.Revisions.ShouldAllBe(revision => revision.Deleted == report.Deleted);
 	}
 
-	[Then(@"adding, listing, or editing private notes on that report answers 404")]
+	[Then(@"every request to add, list, or edit private notes on that report is not found")]
 	public async Task ThenEveryNoteRouteIsNotFound()
 	{
 		using var officer = await Reviewer(_officer, "safety_officer");
@@ -361,7 +361,7 @@ public sealed class PrivateNoteSteps
 		_publicBodies.ShouldContain(body => body.Contains(_reportId, StringComparison.Ordinal));
 	}
 
-	[Then(@"no database view other than admin_report_search_document reads a private-note table")]
+	[Then(@"only the admin search reads private notes")]
 	public async Task ThenNoViewReadsTheNotes()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();

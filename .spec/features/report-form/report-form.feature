@@ -16,19 +16,19 @@ Scenario Outline: Every answer is stored in its written form
   Then the stored value is <stored>
 
 Examples:
-  | language | type       | submitted       | stored                                  |
-  | English  | yes_no     | JSON true       | the boolean true                        |
-  | English  | yes_no     | JSON false      | the boolean false                       |
-  | French   | yes_no     | JSON true       | the boolean true                        |
-  | French   | yes_no     | JSON false      | the boolean false                       |
-  | English  | checkbox   | JSON true       | the boolean true                        |
-  | French   | checkbox   | JSON false      | the boolean false                       |
-  | English  | yes_no     | JSON null       | nothing, because the answer was skipped |
-  | English  | date       | 2026-09-21      | 2026-09-21                              |
-  | French   | date       | 2026-09-21      | 2026-09-21                              |
-  | English  | time       | 14:30           | 14:30                                   |
-  | English  | date       | an empty string | nothing, because the answer was skipped |
-  | English  | short_text | a line of prose | that line, as typed                     |
+  | language | type       | submitted       | stored                             |
+  | English  | yes/no     | the value true  | the value true                     |
+  | English  | yes/no     | the value false | the value false                    |
+  | French   | yes/no     | the value true  | the value true                     |
+  | French   | yes/no     | the value false | the value false                    |
+  | English  | checkbox   | the value true  | the value true                     |
+  | French   | checkbox   | the value false | the value false                    |
+  | English  | yes/no     | the value null  | nothing, as the answer was skipped |
+  | English  | date       | 2026-09-21      | 2026-09-21                         |
+  | French   | date       | 2026-09-21      | 2026-09-21                         |
+  | English  | time       | 14:30           | 14:30                              |
+  | English  | date       | an empty string | nothing, as the answer was skipped |
+  | English  | short text | a line of prose | that line, as typed                |
 
 @REQ-QB-118
 Scenario Outline: An answer not in its written form is refused
@@ -49,24 +49,24 @@ Examples:
   | English  | checkbox | checked                    |
   | English  | checkbox | yes                        |
   | French   | checkbox | oui                        |
-  | English  | yes_no   | yes                        |
-  | French   | yes_no   | non                        |
-  | English  | yes_no   | true                       |
-  | English  | date     | JSON true                  |
-  | English  | number   | JSON false                 |
+  | English  | yes/no   | yes                        |
+  | French   | yes/no   | non                        |
+  | English  | yes/no   | the word "true"            |
+  | English  | date     | the value true             |
+  | English  | number   | the value false            |
 
 @REQ-QB-119
 Scenario Outline: A yes or no answer has no second language
   Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
   When the answer is persisted
-  Then it holds no words and no second language in either column, and its translation mode is none
+  Then it holds no words and no second language, and its translation mode is none
   And no translation provider was called and nothing waits for the Worker to translate it
 
 Examples:
-  | language | type     | submitted  |
-  | English  | yes_no   | JSON true  |
-  | French   | yes_no   | JSON false |
-  | French   | checkbox | JSON true  |
+  | language | type     | submitted       |
+  | English  | yes/no   | the value true  |
+  | French   | yes/no   | the value false |
+  | French   | checkbox | the value true  |
 
 @REQ-QB-120
 Scenario Outline: Only true enables a conditional question, in either language
@@ -85,37 +85,37 @@ Examples:
 Scenario Outline: Only true is consent, in either language
   Given a reporter writing in <language> answers <consent> <answer>
   When the answer is projected onto the report
-  Then the report records <consent> as <recorded>
+  Then <consent> is <recorded> on the report
 
 Examples:
-  | language | consent         | answer | recorded |
-  | English  | consent_publish | true   | given    |
-  | French   | consent_publish | true   | given    |
-  | English  | consent_publish | false  | refused  |
-  | French   | consent_publish | false  | refused  |
-  | French   | consent_media   | true   | given    |
-  | English  | consent_media   | false  | refused  |
+  | language | consent             | answer | recorded |
+  | English  | publication consent | true   | given    |
+  | French   | publication consent | true   | given    |
+  | English  | publication consent | false  | refused  |
+  | French   | publication consent | false  | refused  |
+  | French   | media consent       | true   | given    |
+  | English  | media consent       | false  | refused  |
 
 @REQ-QB-137
-Scenario Outline: A yes or no stored as a word is converted to a boolean once
-  Given a <type> answer was stored as the word "<word>" before yes/no answers were booleans
+Scenario Outline: A yes or no stored as a word is converted to true or false once
+  Given a <type> answer was stored as the word "<word>" before yes/no answers were stored as true or false
   When the database is migrated
-  Then that answer's boolean is <boolean>
+  Then that answer reads <value>
   And the converted answer carries no words and no second language, and its translation mode is none
   And its locale is unchanged
 
 Examples:
-  | type     | word | boolean |
-  | yes_no   | yes  | true    |
-  | yes_no   | oui  | true    |
-  | yes_no   | no   | false   |
-  | yes_no   | non  | false   |
+  | type     | word | value   |
+  | yes/no   | yes  | true    |
+  | yes/no   | oui  | true    |
+  | yes/no   | no   | false   |
+  | yes/no   | non  | false   |
   | checkbox | yes  | true    |
   | checkbox | non  | false   |
 
 @REQ-QB-138
 Scenario: A yes or no stored as anything but the four words stops the conversion
-  Given a yes_no answer was stored as the word "maybe" before yes/no answers were booleans
+  Given a yes/no answer was stored as the word "maybe" before yes/no answers were stored as true or false
   When the database is migrated
   Then the migration fails and names no answer's value
   And no answer was converted
@@ -388,7 +388,7 @@ Scenario: An attachment question an Administrator already reworded is left alone
 
 @REQ-QB-112
 Scenario: Media consent is a system question that can never be removed or made conditional
-  Given the consent_media question exists
+  Given the media consent question exists
   When an Administrator tries to delete it
   Then the attempt is refused
   And trying to stop asking it is refused the same way
@@ -413,8 +413,8 @@ Examples:
 @REQ-QB-114
 Scenario Outline: A media consent answer is recorded on the report
   Given a submission answers yes to publication consent and attaches an image
-  And it answers the consent_media question with <answer>
-  When the API accepts the submission
+  And it answers the media consent question with <answer>
+  When the report is accepted
   Then the report records media consent as <recorded>
 
 Examples:
@@ -425,34 +425,34 @@ Examples:
 
 @REQ-QB-115
 Scenario: A media consent answer must be an explicit yes or no
-  Given a submission answers the consent_media question with a value that is neither yes nor no
+  Given a submission answers the media consent question with a value that is neither yes nor no
   When the reporter submits it
   Then the submission is refused as invalid
 
 @REQ-QB-116
 Scenario: A media consent answer covers documents when it answers the wording the form showed
   Given a submission answers yes to publication consent and attaches a document
-  And it answers yes to the consent_media question's current revision
-  When the API accepts the submission
+  And it answers yes to the media consent question's current revision
+  When the report is accepted
   Then the report records media consent as yes
   And the report records document consent as yes
 
 @REQ-QB-247
 Scenario: A media consent answer naming an earlier wording is refused, so no document is published on it
   Given a submission answers yes to publication consent and attaches a document
-  And it answers yes to the consent_media question's earlier, superseded revision
+  And it answers yes to the media consent question's earlier, superseded revision
   When the reporter submits it
   Then the submission is refused as invalid
 
 @REQ-QB-117
 Scenario: Media consent names documents and says they are published as uploaded
-  Given the consent_media question as seeded
+  Given the media consent question as seeded
   Then its wording in both languages asks about images, videos, and documents
   And it says that documents are published exactly as they were uploaded and may contain personal details
 
 @REQ-QB-249
-Scenario: The API sends Country as an optional single-select of every country, with Canada and the United States pinned first
-  When the report form's questions are read from the API
+Scenario: The form offers Country as an optional single-select of every country, with Canada and the United States pinned first
+  When the report form's questions are read
   Then the Country question is an optional single-select labelled "Country" and "Pays"
   And its help text is "Country where the occurrence happened." and "Pays où l'évènement a eu lieu."
   And it offers 249 countries, each coded by its lowercase ISO 3166-1 alpha-2 code

@@ -55,7 +55,7 @@ public sealed class AttachmentAccessSteps
 		_body.ShouldBeNull();
 	}
 
-	[Then(@"the attachment reads as awaiting processing rather than failed")]
+	[Then(@"the attachment reads as awaiting processing, not failed")]
 	public async Task ThenTheAttachmentReadsAsAwaitingProcessing()
 	{
 		var database = await DatabaseAsync();
@@ -112,7 +112,7 @@ public sealed class AttachmentAccessSteps
 		_body.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
 	}
 
-	[Then(@"the reviewer receives a short-lived URL to the derivative, served inline rather than as a forced download, so the lightbox can embed it, with the header X-Content-Type-Options: nosniff")]
+	[Then(@"the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so a browser never guesses its content type")]
 	public void ThenTheReviewerReceivesAShortLivedInlineUrl()
 	{
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -125,7 +125,7 @@ public sealed class AttachmentAccessSteps
 
 	// A document is never rendered by the browser: the URL forces a download and
 	// the response forbids sniffing its type (ADR-0089).
-	[Then(@"the URL forces a download, with the header X-Content-Type-Options: nosniff")]
+	[Then(@"the URL forces a download, marked so a browser never guesses its content type")]
 	public void ThenTheUrlForcesADownloadWithNosniff()
 	{
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -147,7 +147,7 @@ public sealed class AttachmentAccessSteps
 		_body!.FileName.ShouldBe(expected);
 	}
 
-	[Then(@"there is no API blob proxy or public URL")]
+	[Then(@"no proxy and no public link serves the file")]
 	public void ThenThereIsNoApiBlobProxyOrPublicUrl()
 	{
 		// The response is a JSON envelope naming a pre-signed URL, never the
@@ -196,8 +196,8 @@ public sealed class AttachmentAccessSteps
 		// download asserted there. There is no third endpoint to check.
 	}
 
-	[When(@"a reviewer requests its raw original instead of its view link")]
-	[When(@"a reviewer requests its raw original instead of its download link")]
+	[When(@"a reviewer requests its raw original, not its view link")]
+	[When(@"a reviewer requests its raw original, not its download link")]
 	public async Task WhenAnAuthorizedReviewerRequestsItsRawOriginal()
 	{
 		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);

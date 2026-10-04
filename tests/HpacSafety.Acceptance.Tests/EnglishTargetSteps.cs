@@ -59,7 +59,7 @@ public sealed class EnglishTargetSteps : IDisposable
 		sent.RootElement.GetProperty("target_lang").GetString().ShouldBe(code);
 	}
 
-	[Then(@"startup fails, naming the Translation:EnglishTarget setting")]
+	[Then(@"startup fails, naming the English target setting")]
 	public void ThenStartupFails()
 	{
 		_startup.ShouldBeOfType<OptionsValidationException>().Message.ShouldContain("Translation:EnglishTarget");

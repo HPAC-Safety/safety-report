@@ -13,7 +13,7 @@ Background:
   And at most one live question exists for a question key
 
 @REQ-QB-001
-Scenario: Editing an unanswered question creates a new revision instead of mutating one
+Scenario: Editing an unanswered question creates a new revision and changes none
   Given an active question revision exists for a question key
   And no answer references that question
   When an Administrator changes its wording, help text, translations, type, order, privacy, active state, or required state
@@ -54,7 +54,7 @@ Scenario: Only one question per key is live at a time
 
 @REQ-QB-006
 Scenario: Publication consent revises in place even when answered
-  Given the consent_publish question has been answered on at least one report
+  Given the publication consent question has been answered on at least one report
   When an Administrator changes its wording
   Then a new revision is created for it
   And the question keeps its identifier
@@ -63,23 +63,23 @@ Scenario: Publication consent revises in place even when answered
 @REQ-QB-008
 Scenario: Editing a question copies the latest revision into a new one
   Given an Administrator requests to edit a question with an existing revision
-  When the API prepares the edit DTO
-  Then it loads the latest revision and copies every setting into that DTO
+  When the edit is prepared
+  Then it starts from the latest revision, with every setting copied
   When the Administrator saves the edit
-  Then the API validates both languages, then saves a new complete row rather than patching the existing revision
+  Then both languages are validated, and a new complete revision is saved, the existing revision unchanged
 
 @REQ-QB-009
 Scenario: Only the latest active, non-deleted revision is shown on the form
   Given a question key has multiple revisions
   And only one of them is both active and not deleted
-  When the API assembles the current form
+  When the current form is assembled
   Then that revision is the one included for the key
   And an older active revision never reappears after a later revision deactivates or deletes the question
 
 @REQ-QB-010
 Scenario: Form questions are ordered deterministically
   Given the current form includes several question revisions
-  When the API orders them for display
+  When they are ordered for display
   Then they are ordered by sort order
   And ties are broken by question key
 
@@ -87,28 +87,28 @@ Scenario: Form questions are ordered deterministically
 Scenario: The current form is public
   Given no bearer token is presented
   When a request asks for the current form
-  Then the API answers rather than refusing the request
+  Then the request is answered, not refused
 
 @REQ-QB-012
-Scenario: A group question's response nests its children rather than repeating them
+Scenario: A group question's entry nests its children and does not repeat them
   Given a live group question exists as a section heading
   And another live question is grouped under it
-  When the API assembles the current form
+  When the current form is assembled
   Then the group's entry carries that question as a child, in order
   And the child does not also appear as its own top-level entry
 
 @REQ-QB-013
 Scenario: The current form's response includes a question's conditional dependency
   Given a question is conditional on a yes-or-no question
-  When the API assembles the current form
+  When the current form is assembled
   Then the conditional question's entry names the question it depends on
 
 @REQ-QB-014
-Scenario: consent_publish can never be optional
+Scenario: Publication consent can never be optional
   Given the form is assembled for a reporter
-  When the reporter submits without an answer to consent_publish
+  When the reporter submits without answering the publication consent question
   Then the submission is refused as invalid
-  And an Administrator cannot save a consent_publish revision that is optional
+  And an Administrator cannot save an optional revision of the publication consent question
 
 @REQ-QB-015
 Scenario: An Administrator chooses whether an ordinary question must be answered
@@ -123,9 +123,9 @@ Scenario Outline: Only free text can be marked as needing translation
   Then the new revision <records>
 
 Examples:
-  | type       | records                                        |
-  | long_text  | records that its answers need translation      |
-  | short_text | records that its answers do not need translation |
+  | type       | records                                          |
+  | paragraph  | records that its answers need translation        |
+  | short text | records that its answers do not need translation |
   | email      | records that its answers do not need translation |
   | date       | records that its answers do not need translation |
 
@@ -145,8 +145,8 @@ Scenario: Whether a question needs translation is a revision setting
 
 @REQ-QB-154
 Scenario Outline: A date question allows future dates only when an Administrator says so
-  Given an Administrator creates a date question through the API <saying>
-  Then the saved question reads allowFutureDates as the JSON boolean <stored>
+  Given an Administrator creates a date question <saying>
+  Then the saved question allows future dates: <stored>
 
 Examples:
   | saying                                        | stored |
@@ -155,9 +155,9 @@ Examples:
 
 @REQ-QB-155
 Scenario: Only a date question can allow future dates
-  Given an Administrator creates a short-text, time, or number question through the API
+  Given an Administrator creates a short-text, time, or number question
   When they mark it as allowing future dates
-  Then the API refuses to save each one
+  Then saving each one is refused as invalid
 
 @REQ-QB-156
 Scenario: Whether a date question allows future dates is a revision setting
@@ -174,8 +174,8 @@ Scenario: The migration leaves the occurrence date refusing future dates, with n
   And it is still the revision it was seeded as
 
 @REQ-QB-016
-Scenario: consent_publish must resolve to an explicit yes or no
-  Given the consent_publish revision has no preselected value
+Scenario: Publication consent must resolve to an explicit yes or no
+  Given the publication consent revision has no preselected value
   When the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no
   Then the submission is refused as invalid
 
@@ -183,7 +183,7 @@ Scenario: consent_publish must resolve to an explicit yes or no
 Scenario: Only consent is projected onto the report aggregate
   Given a submitted report has answers to several ordinary questions
   When those answers are persisted
-  Then only the consent_publish and consent_media answers are projected onto the report aggregate, with consent_documents derived from consent_media
+  Then only the publication consent and media consent answers are projected onto the report aggregate, with document consent derived from media consent
   And every other answer, including dates, times, provinces, injury severities, and aircraft details, remains a stored string read through its question key
 
 @REQ-QB-026
@@ -233,7 +233,7 @@ Examples:
 Scenario Outline: An answer naming a statement or a group is refused
   Given an Administrator authors a <type> question
   When a submission carries an answer naming that question's revision
-  Then the API refuses the submission
+  Then the report is refused as invalid
   And nothing is stored
 
 Examples:
@@ -254,7 +254,7 @@ Scenario: An Administrator writes instructional text as a title and a descriptio
 @REQ-QB-142
 Scenario: Instructional text keeps the line breaks its description was written with
   Given an Administrator saves instructional text whose description spans several lines
-  When the API assembles the current form
+  When the current form is assembled
   Then the description is served with its line breaks unchanged
 
 @REQ-QB-143
@@ -364,7 +364,7 @@ Scenario: A single-select dependency must name one of the parent's live choices
 Scenario: A yes/no dependency does not name a choice
   Given a yes/no question
   When an Administrator makes another question depend on it
-  Then the dependency needs no required choice, because the condition is always "answered yes"
+  Then the dependency needs no required choice: its condition is always "answered yes"
 
 @REQ-QB-057
 Scenario: A question cannot be conditional on itself or form a cycle
@@ -375,7 +375,7 @@ Scenario: A question cannot be conditional on itself or form a cycle
 
 @REQ-QB-058
 Scenario: Publication consent can never be made conditional
-  Given the consent_publish question exists
+  Given the publication consent question exists
   When an Administrator tries to make it conditional on another question
   Then the attempt is refused
 
@@ -395,12 +395,12 @@ Scenario Outline: A question type either takes choices or does not
 
 Examples:
   | type          | outcome              |
-  | autocomplete  | stores those choices |
-  | single_select | stores those choices |
-  | multi_select  | stores those choices |
+  | type-ahead    | stores those choices |
+  | single-select | stores those choices |
+  | multi-select  | stores those choices |
   | time          | is refused           |
-  | short_text    | is refused           |
-  | yes_no        | is refused           |
+  | short text    | is refused           |
+  | yes/no        | is refused           |
 
 @REQ-QB-061
 Scenario: A question key is normalized and cannot be reused
@@ -412,12 +412,12 @@ Scenario: A question key is normalized and cannot be reused
 Scenario: Deleting a question keeps it and its history
   Given an active question nobody has answered
   When an Administrator deletes it
-  Then the question is marked deleted rather than erased
+  Then the question is marked deleted, not erased
   And it refuses any further revision
 
 @REQ-QB-063
 Scenario: Publication consent can never be deleted or deactivated
-  Given the consent_publish question exists
+  Given the publication consent question exists
   When an Administrator tries to delete it
   Then the attempt is refused
   And trying to stop asking it is refused the same way
@@ -514,7 +514,7 @@ Scenario: The editor offers Allow future dates only for a date question, uncheck
   When they choose time
   Then Allow future dates is not offered
   When they choose date, check Allow future dates, write the question in both languages, and save
-  Then the saved question is sent with allowFutureDates true
+  Then the saved question is sent allowing future dates
 
 @REQ-QB-085
 @ui
@@ -550,7 +550,7 @@ Scenario: Reviewing an imported Typeform draft prefills the editor
 
 @REQ-QB-089
 @ui
-Scenario: An Administrator downloads the question bank as Typeform JSON
+Scenario: An Administrator downloads the question bank as Typeform files
   Given an Administrator opens the manage-questions page
   When they choose to export the question bank
   Then a zip file download begins
@@ -668,10 +668,10 @@ Scenario: The question editor refuses a label that ends in a colon
   Then the message goes away and Save is enabled
 
 @REQ-QB-244
-Scenario Outline: The API refuses a question whose label ends in a colon, in either language
+Scenario Outline: A question whose label ends in a colon is refused, in either language
   Given an Administrator
   When they <action> a question whose <language> label is "<label>"
-  Then the API refuses it with a problem that says, in English and French, that the form adds the colon itself
+  Then it is refused as invalid, with a problem that says, in English and French, that the form adds the colon itself
   And no question or revision is stored
 
 Examples:

@@ -110,7 +110,7 @@ When("the reporter submits the report", async ({ page }) => {
 })
 
 Then(
-	/^the yes\/no answer is sent as the JSON boolean false and the consent answer as the JSON boolean true$/,
+	/^the yes\/no answer is sent as false and the consent answer as true$/,
 	({ page }) => {
 		const body = present(sent.get(page)).postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
 		const valueOf = (revisionId: string) => body.answers.find((answer) => answer.questionRevisionId === revisionId)?.value

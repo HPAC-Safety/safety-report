@@ -122,8 +122,8 @@ public sealed class PublicQuestionEndpointSteps
 		// Contextual — the request below is made with a plain, unauthenticated client.
 	}
 
-	[When(@"the API assembles the current form")]
-	[When(@"the API orders them for display")]
+	[When(@"the current form is assembled")]
+	[When(@"they are ordered for display")]
 	public async Task WhenTheApiAssemblesTheCurrentForm()
 	{
 		var host = await BootedApi.Factory();
@@ -171,7 +171,7 @@ public sealed class PublicQuestionEndpointSteps
 		// HpacSafety.Api.Tests rather than re-created here.
 	}
 
-	[Then(@"the API answers rather than refusing the request")]
+	[Then(@"the request is answered, not refused")]
 	public void ThenTheApiAnswersRatherThanRefusing()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);

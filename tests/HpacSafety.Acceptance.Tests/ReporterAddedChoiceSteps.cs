@@ -80,7 +80,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_answer = new Report(Locale.EnCa, Noon).Answer(_question, "Cooper's", Noon);
 	}
 
-	[Given(@"the consent_publish question has been answered on at least one report")]
+	[Given(@"the publication consent question has been answered on at least one report")]
 	public void GivenAnAnsweredConsentQuestion()
 	{
 		_question = Question.CreateConsentPublish(

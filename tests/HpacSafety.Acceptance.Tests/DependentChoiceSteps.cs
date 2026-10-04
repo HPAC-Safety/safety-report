@@ -1149,7 +1149,7 @@ public sealed class DependentChoiceSteps
 		await WhenTheRequiredChildIsSentEmptyUnderAnEmptyParentChoice(parent, parentChoice, child);
 	}
 
-	[Then(@"the API accepts the report and records no answer to {string}")]
+	[Then(@"the report is accepted with no answer to {string}")]
 	public async Task ThenAcceptedWithoutTheChild(string child)
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
@@ -1235,13 +1235,13 @@ public sealed class DependentChoiceSteps
 		await Remember(parent, child);
 	}
 
-	[Then(@"the API accepts the report")]
+	[Then(@"the report is accepted")]
 	public async Task ThenTheReportIsAccepted()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"the API refuses the submission, naming {string} and {string} by key, and no report, answer, or choice is written")]
+	[Then(@"the report is refused as invalid, naming {string} and {string} by key, and no report, answer, or choice is written")]
 	public async Task ThenRefusedAndNothingWritten(string child,
 												   string parent)
 	{
@@ -1249,7 +1249,7 @@ public sealed class DependentChoiceSteps
 		await ThenNothingIsWritten();
 	}
 
-	[Then(@"the API refuses the submission, naming {string} and {string} by key")]
+	[Then(@"the report is refused as invalid, naming {string} and {string} by key")]
 	public async Task ThenTheSubmissionIsRefused(string child,
 												 string parent)
 	{

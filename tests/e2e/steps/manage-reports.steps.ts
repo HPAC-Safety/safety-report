@@ -758,7 +758,7 @@ When("the Safety Officer confirms the restore", async ({ page }) => {
 	await page.getByRole("dialog").getByRole("button", { name: "Restore version" }).click()
 })
 
-Then("the browser asks the API to restore that revision", async ({ page }) => {
+Then("the browser asks to restore that revision", async ({ page }) => {
 	await expect
 		.poll(() => present(reviewStubs.get(page)).requests)
 		.toContain("POST /api/admin/reports/reviewaaaaa/summary/revisions/revisionaa1/rollback")

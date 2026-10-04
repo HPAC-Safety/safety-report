@@ -129,7 +129,7 @@ Given("a report ID that is not found", async ({ page }) => {
 	await stubFeed(page)
 })
 
-Given("a published report has both ai_summary_en and ai_summary_fr", async ({ page }) => {
+Given("a published report has both an English and a French summary text", async ({ page }) => {
 	await stubFeed(page)
 })
 

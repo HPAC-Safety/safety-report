@@ -112,7 +112,10 @@ export const RULES: readonly Rule[] = [
 		/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/,
 		// camelCase or PascalCase with two or more humps: AiSummaryEn, allowFutureDates.
 		new RegExp(`\\b(?!(?:${PROPER_NAMES.join('|')})\\b)(?:[a-z]+|[A-Z][a-z0-9]+)(?:[A-Z][a-z0-9]+)+\\b`),
-		/\b(?:Postgres(?:QL)?|SQL|columns?|join tables?|triggers?|enums?)\b/i,
+		// A configuration key: Translation:Model.
+		/\b[A-Z]\w*:[A-Z]\w*\b/,
+		/\b(?:Postgres(?:QL)?|SQL|columns?|join tables?|enums?)\b/i,
+		/\b(?:database|table|immutability) triggers?\b/i,
 		/\b(?:outbox(?:es)?|DTOs?|booleans?)\b/i,
 		/\bJSON\b/,
 	]),

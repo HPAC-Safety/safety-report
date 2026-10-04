@@ -87,9 +87,9 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- Background: documented facts about the endpoint, not actions. ---
 
-	[Given(@"a reporter writes a report through POST \/api\/v1\/reports and sends each attachment through a pre-signed PUT that POST \/api\/v1\/uploads mints")]
+	[Given(@"a reporter sends a report in one final request, each attachment having gone ahead of it straight to storage through a pre-signed upload link")]
 	[Given(@"both require a valid member bearer token")]
-	[Given(@"the report request is JSON that names each attachment by the upload ID the upload returned")]
+	[Given(@"the report names each attachment by the upload ID its upload returned")]
 	[Given(@"the bearer token is transport\/security metadata, not persisted report content")]
 	public void GivenBackgroundFact()
 	{
@@ -200,7 +200,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_refused.ShouldContain(entry => entry.Submission == "typed text in a single-select");
 	}
 
-	[Then(@"the submission DTO contains exactly one answer entry for each of those revisions")]
+	[Then(@"the submission contains exactly one answer entry for each of those revisions")]
 	[Then(@"every other answer uses ""value"", a single string, alongside the locale it was given in")]
 	[Then(@"file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name")]
 	[Then(@"the other answer shapes are null")]
@@ -220,7 +220,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_fileRevisionId = await CreateSyntheticQuestion("file_upload");
 	}
 
-	[When(@"the submission DTO is built")]
+	[When(@"the submission is built")]
 	public async Task WhenTheSubmissionDtoIsBuilt()
 	{
 		_response = await Post(new
@@ -244,7 +244,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- A submitted select value must be one the revision offered ---
 
-	[When(@"the API validates the submission")]
+	[When(@"the submission is validated")]
 	public async Task WhenTheApiValidatesTheSubmission()
 	{
 		if (_choiceValidation)
@@ -322,7 +322,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
 	}
 
-	[When(@"the API commits the submission")]
+	[When(@"the server commits the submission")]
 	public async Task WhenTheApiCommitsTheSubmission()
 	{
 		if (_typeAheadRevisionId is not null)
@@ -426,7 +426,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"no endpoint ever changes an answer's value or the locale it was given in")]
+	[Then(@"no request ever changes an answer's value or the locale it was given in")]
 	public async Task ThenNoEndpointEverChangesValueOrLocale()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -497,7 +497,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		// claim loop is not re-verified at the acceptance layer here.
 	}
 
-	[When(@"the Worker claims that report's translation outbox message")]
+	[When(@"the Worker claims that report's translation job")]
 	public void WhenTheWorkerClaimsThatReportsTranslationOutboxMessage()
 	{
 	}
@@ -587,7 +587,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		stored.TranslationSource.ShouldBe(TranslationSource.Auto);
 	}
 
-	[Then(@"no endpoint accepts a human-supplied translation for it")]
+	[Then(@"no request can supply a human translation for it")]
 	public async Task ThenNoEndpointAcceptsAHumanSuppliedTranslation()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -597,7 +597,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		put.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Then(@"no endpoint lists answers waiting for one")]
+	[Then(@"no request lists answers waiting for one")]
 	public async Task ThenNoEndpointListsAnswersWaitingForOne()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -607,7 +607,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- The API rejects a malformed submission DTO (outline) ---
 
-	[Given(@"a submission DTO contains (.*)$")]
+	[Given(@"^a malformed submission has (.*)$")]
 	public async Task GivenASubmissionDtoContains(string problem)
 	{
 		_reporter ??= await BootedApi.SignedInAs(MemberRole.User);
@@ -615,7 +615,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_problem = problem;
 	}
 
-	[When(@"the API validates it")]
+	[When(@"it is validated")]
 	public async Task WhenTheApiValidatesIt()
 	{
 		_response = await MalformedSubmissionFor(_problem!);
@@ -623,7 +623,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- REQ-WLD-018: client validation never replaces server validation ---
 
-	[Given(@"a submission reaches the API")]
+	[Given(@"a submission reaches the server")]
 	public async Task GivenASubmissionReachesTheApi()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
@@ -632,7 +632,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_selectRevisionId = await RevisionIdFor(key);
 	}
 
-	[When(@"the API independently validates it")]
+	[When(@"the server independently validates it")]
 	public async Task WhenTheApiIndependentlyValidatesIt()
 	{
 		// Each of these is one the form would never send: it cannot offer a value
@@ -654,7 +654,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		})));
 	}
 
-	[Then(@"the API's validation is authoritative regardless of what the client allowed or displayed")]
+	[Then(@"the server's validation is authoritative regardless of what the client allowed or displayed")]
 	public void ThenTheApiValidationIsAuthoritative()
 	{
 		_refused.Count.ShouldBe(2);
@@ -701,8 +701,8 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_namedAnswers = [Answer(revisionId), Answer(revisionId)];
 	}
 
-	[Then(@"the API refuses the submission")]
-	public async Task ThenTheApiRefusesTheSubmission()
+	[Then(@"the report is refused as invalid")]
+	public async Task ThenTheReportIsRefusedAsInvalid()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest, await _response.Content.ReadAsStringAsync());
 	}
@@ -766,7 +766,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[When(@"the API returns an error to the reporter")]
+	[When(@"the error is returned to the reporter")]
 	public void WhenTheApiReturnsAnErrorToTheReporter()
 	{
 		// Already returned by the Given step above.
@@ -847,7 +847,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		problem.GetRawText().ShouldNotContain("refused.bin");
 	}
 
-	[Then(@"the API read only the upload's size and the bytes sniffing needs, never the whole file into memory")]
+	[Then(@"only the upload's size and the bytes sniffing needs were read, never the whole file into memory")]
 	public void ThenTheApiReadOnlyWhatSniffingNeeds()
 	{
 		var key = $"quarantine/{_refusedUploadId}";
@@ -856,11 +856,6 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThan(_refusedUploadSize);
 	}
 
-	[Then(@"the API refuses the submission with 400")]
-	public void ThenTheApiRejectsTheSubmissionWith400()
-	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
 
 	[Then(@"the response lists exactly the upload IDs it could not find")]
 	public async Task ThenTheResponseListsExactlyTheMissingUploads()
@@ -869,7 +864,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		problem.GetProperty("expiredUploadIds").EnumerateArray().Select(id => id.GetString()).ShouldBe([_expiredUploadId]);
 	}
 
-	[Then(@"no report, answer, file, or outbox row is created")]
+	[Then(@"no report, answer, file, or Worker job is created")]
 	public async Task ThenNothingIsCreated()
 	{
 		(await AnswerCarryingMarkerExists()).ShouldBeFalse();
@@ -936,7 +931,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_extraRevisionId = await CreateSyntheticQuestion("long_text");
 	}
 
-	[Then(@"one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for each claimed upload, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file")]
+	[Then(@"one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for each claimed upload, one summarization job, one answer-translation job, and one independent attachment-processing job per file")]
 	public async Task ThenOneTransactionPersistsEverything()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -966,7 +961,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		await EnsureConsentQuestion();
 	}
 
-	[When(@"the API returns from the failed request")]
+	[When(@"the failed request returns")]
 	public async Task WhenTheApiReturnsFromTheFailedRequest()
 	{
 		// The closest observable proxy for "the transaction failed": a
@@ -1003,7 +998,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		await EnsureConsentQuestion();
 	}
 
-	[When(@"the API responds")]
+	[When(@"the submission is answered")]
 	public async Task WhenTheApiResponds()
 	{
 		_response = await Post(new
@@ -1013,7 +1008,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[Then(@"the response is 202 Accepted with an opaque report ID and the status ""submitted""")]
+	[Then(@"the report is accepted, with an opaque report ID and the status ""submitted""")]
 	public async Task ThenTheResponseIs202WithAnOpaqueReportId()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -1081,7 +1076,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_logs.Lines.ShouldAllBe(line => !line.Contains(receipt, StringComparison.Ordinal));
 	}
 
-	[Then(@"no stored value of that report, its answers, or its outbox is the reporter's token subject or a hash of it")]
+	[Then(@"no stored value of that report, its answers, or its Worker jobs is the reporter's token subject or a hash of it")]
 	public async Task ThenNoStoredValueIsTheSubjectOrItsHash()
 	{
 		var stored = await StoredRowsOf((await SubmittedBody()).GetProperty("id").GetString()!);
@@ -1123,7 +1118,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_extraRevisionId = await CreateSyntheticQuestion("short_text");
 	}
 
-	[When(@"the API processes the submission")]
+	[When(@"the submission is processed")]
 	public async Task WhenTheApiProcessesTheSubmission()
 	{
 		using var anonymous = (await BootedApi.Factory()).CreateClient();
@@ -1139,7 +1134,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await anonymous.PostAsync(Submit, content);
 	}
 
-	[Then(@"the API refuses it before any report state is created")]
+	[Then(@"it is refused as unauthenticated before any report state is created")]
 	public async Task ThenTheApiRejectsItBeforeAnyReportStateIsCreated()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -1193,14 +1188,14 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await DirectUpload.Mint(_reporter!, "application/pdf", 15);
 	}
 
-	[Then(@"the API refuses the request with 429 and a safe retry signal")]
+	[Then(@"the request is refused as too frequent, with a safe retry signal")]
 	public void ThenTheApiRejectsTheRequestWith429AndASafeRetrySignal()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a member cannot forge, and is never stored on the report")]
+	[Then(@"the client address used for rate limiting is the viewer address CloudFront always sets, which a member cannot forge, and is never stored on the report")]
 	public async Task ThenTheClientIpComesOnlyFromTrustedHeadersAndIsNeverStored()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();
@@ -1219,14 +1214,14 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	private HttpClient? _unverifiedClient;
 
-	[Given(@"the booted API requires CloudFront's origin-secret header")]
+	[Given(@"the server requires CloudFront's origin secret")]
 	public async Task GivenTheBootedApiRequiresCloudFrontsOriginSecretHeader()
 	{
 		var verified = await BootedApi.OriginVerified("acceptance-test-origin-secret");
 		_unverifiedClient = verified.CreateClient();
 	}
 
-	[When(@"a submission request arrives without that header")]
+	[When(@"a submission request arrives without that secret")]
 	public async Task WhenASubmissionRequestArrivesWithoutThatHeader()
 	{
 		_response = await _unverifiedClient!.PostAsync(Submit, ReportPart(new
@@ -1236,7 +1231,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		}));
 	}
 
-	[Then(@"the API refuses it with 403, before authentication or any endpoint runs")]
+	[Then(@"it is refused as forbidden, before authentication or anything else runs")]
 	public void ThenTheApiRefusesItWith403BeforeAuthenticationOrAnyEndpointRuns()
 	{
 		// No bearer token was ever attached, and a submission needs one
@@ -1281,7 +1276,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[Then(@"the API does not refuse it")]
+	[Then(@"it is not refused")]
 	public void ThenTheApiDoesNotRejectIt()
 	{
 		_response!.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
@@ -1289,7 +1284,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- A successful submission nudges the Worker (ADR-0123) ---
 
-	[Given(@"the booted API records each nudge it sends the Worker, and a submission is ready to persist")]
+	[Given(@"the server records each nudge it sends the Worker, and a submission is ready to persist")]
 	public async Task GivenTheBootedApiRecordsNudgesAndASubmissionIsReadyToPersist()
 	{
 		var recording = await BootedApi.NudgeRecorded();
@@ -1323,7 +1318,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[Then(@"the API accepts it")]
+	[Then(@"the submission is accepted")]
 	public void ThenTheApiAcceptsIt()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -1387,8 +1382,8 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_logs.Lines.ShouldAllBe(line => !line.Contains(_submitterSubject!, StringComparison.OrdinalIgnoreCase));
 	}
 
-	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the reporter's token subject")]
-	[Then(@"no column, join table, or hash anywhere links the report to the member who filed it")]
+	[Then(@"no stored report, answer, file, upload, consent projection, or Worker job records the reporter's token subject")]
+	[Then(@"no stored value, link, or hash anywhere ties the report to the member who filed it")]
 	public void ThenNoStoredStateRecordsTheSubmittersSubject()
 	{
 		// Structural, not runtime: neither Report, ReportAnswer, ReportFile, nor
@@ -1462,7 +1457,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 		return problem switch
 		{
-			"a duplicate question_revision_id" => await Post(new
+			"a duplicate question revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -1471,7 +1466,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 					new { questionRevisionId = consent, value = (bool?)false },
 				},
 			}),
-			"an unknown question_revision_id" => await Post(new
+			"an unknown question revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -1480,7 +1475,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 					new { questionRevisionId = (string?)"not-a-real-id", value = (string?)"x" },
 				},
 			}),
-			"a question_revision_id for a deleted revision" => await Post(new
+			"a deleted question revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -1489,7 +1484,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 					new { questionRevisionId = (string?)await DeletedRevisionId(), value = (string?)"x" },
 				},
 			}),
-			"no explicit answer to the consent_publish revision" => await Post(new
+			"no explicit answer to the publication consent revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]

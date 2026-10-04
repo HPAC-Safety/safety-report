@@ -191,7 +191,7 @@ When(/^they choose to (delete|unpublish) the report$/, async ({ page }, action: 
 	await page.getByRole("button", { name: action === "delete" ? "Delete" : "Unpublish", exact: true }).click()
 })
 
-Then("the admin site asks them to confirm before calling the API", async ({ page }) => {
+Then("the admin site asks them to confirm before sending anything", async ({ page }) => {
 	if (chosen.get(page) === "delete") {
 		await expect(page.getByRole("dialog", { name: "Delete this report?" })).toBeVisible()
 		await expect(page.getByRole("button", { name: "Delete report" })).toBeVisible()

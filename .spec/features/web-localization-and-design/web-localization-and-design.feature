@@ -132,18 +132,18 @@ Scenario: A page left open across a deploy keeps its interface text in both lang
 Scenario: Application chrome strings come from committed locale catalogues
   Given the UI renders chrome or a stable validation/error message
   When the string is displayed
-  Then it comes from a committed locale catalogue with key parity between en-CA and fr-CA
+  Then it comes from a committed locale catalogue with key parity between English and French
   And no user-facing literal appears directly in code
 
 @REQ-WLD-011
 Scenario: A translation missing locally is stubbed with a visible marker, and CI must replace it before merge
-  Given a key exists in en-CA.json but not in fr-CA.json, or in fr-CA.json but not in en-CA.json
+  Given a key exists in the English catalogue but not the French one, or in the French one but not the English one
   When the local build runs, or a commit is made that stages a locales/ file
   Then the file missing that key gains it, with the other file's text prefixed with a # marker
   And a key still carrying that # marker fails locale verification, so it can never reach main untranslated
 
 @REQ-WLD-012
-Scenario: A French value edited by hand is recorded rather than overwritten
+Scenario: A French value edited by hand is recorded, not overwritten
   Given a French value is edited by hand and its English is unchanged
   When the locales are verified
   Then the edit is accepted as a human correction
@@ -151,7 +151,7 @@ Scenario: A French value edited by hand is recorded rather than overwritten
 
 @REQ-WLD-013
 Scenario: Editing both languages at once is one correction, not a conflict
-  Given a key is edited in both en-CA.json and fr-CA.json
+  Given a key is edited in both the English and the French catalogue
   When the locales are verified
   Then the edit is accepted as a human correction
   And neither language is overwritten
@@ -185,7 +185,7 @@ Examples:
 Scenario Outline: The kept, dormant DeepL adapter with no usable English target refuses to start
   Given the translation settings name <setting> as the English target
   When the translator's settings are validated at startup
-  Then startup fails, naming the Translation:EnglishTarget setting
+  Then startup fails, naming the English target setting
 
 Examples:
   | setting |
@@ -214,7 +214,7 @@ Scenario: Every runtime translation is told the required rendering of every list
   Then the prompt instructs the model to render "upload" as "téléverser" and never "télécharg…"
 
 @REQ-WLD-047
-Scenario: Every translation localizes place names rather than copying them
+Scenario: Every translation localizes place names and does not copy them
   Given a Gemini key is configured
   When text is translated in either direction
   Then the prompt instructs the model to localize place names into the target language
@@ -225,7 +225,7 @@ Scenario: Every translation localizes place names rather than copying them
 Scenario: With no Gemini key translation is unavailable, in every environment
   Given no Gemini key is configured, in Development or anywhere else
   When text is translated
-  Then translation is refused rather than echoed back
+  Then translation is refused, not echoed back
   And no request is sent to any provider
   And the translator reports itself unconfigured
 
@@ -250,7 +250,7 @@ Examples:
   | one translation                 |
   | three translations              |
   | an empty translation            |
-  | a sentence instead of the JSON  |
+  | a sentence and no translations  |
 
 @REQ-WLD-039
 Scenario Outline: Placeholders and markup survive the round trip, or the reply is refused
@@ -276,14 +276,14 @@ Examples:
   | model            | effort  | outcome                                                       |
   | nothing          | nothing | translation asks for gemini-3.7-flash at low reasoning        |
   | gemini-3.5-pro   | high    | translation asks for gemini-3.5-pro at high reasoning         |
-  | blank            | low     | startup fails, naming the Translation:Model setting           |
-  | gemini-3.7-flash | extreme | startup fails, naming the Translation:ReasoningEffort setting |
+  | blank            | low     | startup fails, naming the model setting                       |
+  | gemini-3.7-flash | extreme | startup fails, naming the reasoning effort setting            |
 
 @REQ-WLD-041
 Scenario: Translation uses the same Gemini key as summaries
   Given the summary call's Gemini key is configured
   And no translation-only key exists
-  When the API or the Worker translates text
+  When the server or the Worker translates text
   Then the request is authorized with that key
 
 @REQ-WLD-042
@@ -300,7 +300,7 @@ Scenario: A translation model no provider handler claims stops startup when a ke
   Given a Gemini key is configured
   And the Translation settings name claude-x as the model and low as the reasoning effort
   When the host starts
-  Then startup fails, naming the Translation:Model setting
+  Then startup fails, naming the model setting
 
 @REQ-WLD-044
 Scenario: With no key, a translation model no provider handler claims leaves translation unavailable
@@ -322,9 +322,9 @@ Scenario: Question content comes from the bilingual database revision
 Scenario: Required questions, and only those, are marked required on the form
   Given the form renders its questions in database order
   When a reporter views the form
-  Then only the questions made required display required treatment, and consent_publish is always one of them
+  Then only the questions made required display required treatment, and the publication consent question is always one of them
   And every optional question offers a natural blank/skipped state with no coerced answer
-  And consent_publish has no selected default and requires an explicit yes or no
+  And the publication consent question has no selected default and requires an explicit yes or no
 
 @REQ-WLD-016
 @ui
@@ -339,18 +339,18 @@ Scenario: The form explains local storage and warns about attachments
 Scenario: The client shows inline validation before submission
   Given a reporter enters an answer
   When the client validates it before submission
-  Then the client shows inline validation using the same stable type/choice rules and localized messages the API uses
+  Then the client shows inline validation using the same stable type/choice rules and localized messages the server uses
 
 @REQ-WLD-018
 Scenario: Client validation never replaces server validation
-  Given a submission reaches the API
-  When the API independently validates it
-  Then the API's validation is authoritative regardless of what the client allowed or displayed
+  Given a submission reaches the server
+  When the server independently validates it
+  Then the server's validation is authoritative regardless of what the client allowed or displayed
 
 @REQ-WLD-019
 @ui
 Scenario: The interface language alone decides which summary text is shown
-  Given a published report has both ai_summary_en and ai_summary_fr
+  Given a published report has both an English and a French summary text
   When a visitor views it in a given locale
   Then only that locale's text is shown, with no language control on the report itself
   When the visitor switches the site's language
@@ -374,7 +374,7 @@ Examples:
 Scenario Outline: A destructive admin action asks for confirmation
   Given a reviewer is on a published report in the admin site
   When they choose to <action>
-  Then the admin site asks them to confirm before calling the API
+  Then the admin site asks them to confirm before sending anything
   And cancelling sends no request
 
 Examples:

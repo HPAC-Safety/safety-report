@@ -346,7 +346,7 @@ public sealed class ReportReviewSteps
 		_detailBody.ShouldNotContain("http", Case.Insensitive);
 	}
 
-	[Then(@"an audit entry records the reviewer's token subject, ViewedRawReport, the report, and the time")]
+	[Then(@"an audit entry records the reviewer's token subject, a raw-report-viewed action, the report, and the time")]
 	public async Task ThenAViewedRawReportRowIsWritten()
 	{
 		var entry = await ViewedRawReportEntry();

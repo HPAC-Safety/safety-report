@@ -290,7 +290,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.PublishedReport)).Count.ShouldBe(1);
 	}
 
-	[Then(@"no Administrator, migration, background job, or direct API request can bypass any of these guards")]
+	[Then(@"no Administrator, migration, background job, or direct request can bypass any of these guards")]
 	public async Task ThenNoCallerCanBypassTheGuards()
 	{
 		// An administrator publishing a report without consent is refused.
@@ -361,7 +361,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		detail.GetProperty("unpublishNote").GetString().ShouldBe(Note);
 	}
 
-	[Then(@"the note never reaches the public API, the audit log, or the application logs")]
+	[Then(@"the note never reaches anything a visitor reads, the audit log, or the application logs")]
 	public async Task ThenTheNoteStaysReviewerOnly()
 	{
 		foreach (var entry in await AuditEntries(AuditAction.UnpublishedReport))
@@ -417,7 +417,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.EditedSummary)).Count.ShouldBe(1);
 	}
 
-	[Then(@"the API answers 409 with a problem that asks them to reload")]
+	[Then(@"the change is refused as out of date, with a problem that asks them to reload")]
 	public async Task ThenTheApiAnswersStale()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Conflict);
@@ -435,10 +435,16 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.EditedSummary)).Count.ShouldBe(1);
 	}
 
-	[Then(@"^one audit entry records the reviewer's token subject, (\w+), the report, and the time$")]
+	[Then(@"^one audit entry records the reviewer's token subject, a (summary-edited|report-published|report-unpublished|summary-restored) action, the report, and the time$")]
 	public async Task ThenOneAuditEntryRecords(string auditAction)
 	{
-		var entries = await AuditEntries(Enum.Parse<AuditAction>(auditAction));
+		var entries = await AuditEntries(auditAction switch
+		{
+			"summary-edited" => AuditAction.EditedSummary,
+			"report-published" => AuditAction.PublishedReport,
+			"report-unpublished" => AuditAction.UnpublishedReport,
+			_ => AuditAction.RolledBackSummary,
+		});
 		var entry = entries.ShouldHaveSingleItem();
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
 		entry.TargetType.ShouldBe("Report");
@@ -481,10 +487,10 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 			new { texts = new[] { "The pilot landed." }, from = "en-CA", to = "fr-CA" });
 	}
 
-	[Then(@"^the API answers (forbidden|a translation)$")]
+	[Then(@"^the translation request is (refused as forbidden|answered with a translation)$")]
 	public async Task ThenTheApiAnswers(string outcome)
 	{
-		if (outcome == "forbidden")
+		if (outcome == "refused as forbidden")
 		{
 			_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 			return;

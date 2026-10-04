@@ -76,7 +76,7 @@ public sealed class MediaValidationSteps
 		_detected = MediaType.Parse(mime);
 	}
 
-	[When(@"the API validates the attachment's content type")]
+	[When(@"the attachment's content type is validated")]
 	public void WhenTheApiValidatesTheAttachmentsContentType()
 	{
 		var policy = new MediaPolicyOptions().ToPolicy();
@@ -177,7 +177,7 @@ public sealed class MediaValidationSteps
 		Should.Throw<DomainRuleViolationException>(() => _outcome.DerivativeKey);
 	}
 
-	[Then(@"it is not marked as a processing failure, because nothing failed that the reporter should lose their footage over")]
+	[Then(@"it is not marked as a processing failure")]
 	public void ThenItIsNotAProcessingFailure()
 	{
 		_outcome.Status.ShouldNotBe(MediaIngestStatus.Rejected);

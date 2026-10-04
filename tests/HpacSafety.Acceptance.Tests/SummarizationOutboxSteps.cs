@@ -222,7 +222,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		input.ShouldNotContain("officer:synthetic");
 	}
 
-	[Then(@"no outbox message names the private note or its revision")]
+	[Then(@"no Worker job names the private note or its revision")]
 	public async Task ThenNoOutboxMessageNamesTheNote()
 	{
 		var named = new[] { _note!.Id, _note.Current.Id };
@@ -273,7 +273,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		input.ShouldNotContain("private/");
 	}
 
-	[Then(@"no outbox message names the private attachment")]
+	[Then(@"no Worker job names the private attachment")]
 	public async Task ThenNoOutboxMessageNamesTheAttachment()
 	{
 		var id = _attachment!.Id;

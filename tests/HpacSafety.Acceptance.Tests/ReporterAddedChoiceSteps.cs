@@ -96,7 +96,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		GivenAnAnsweredQuestion(type.Replace('-', '_'));
 	}
 
-	[Given(@"it offers choices an Administrator wrote and a reporter-added choice")]
+	[Given(@"it offers choices an Administrator wrote and a reporter-added value")]
 	public void GivenWrittenAndReporterChoices()
 	{
 		_question.Choices.Select(choice => choice.AddedByReporter).ShouldBe([false, false, true], ignoreOrder: true);
@@ -121,7 +121,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-123..125: a picker option is fixed in place or replaced (ADR-0128) ---
 
-	[Given(@"a single-select question has been answered with its option ""(.*)""")]
+	[Given(@"a single-select question has been answered with its choice ""(.*)""")]
 	public void GivenASingleSelectAnsweredWithItsOption(string label)
 	{
 		_question = Picker(label, "Mara");
@@ -142,7 +142,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_named = _question.OfferedChoiceLabelled(answered, Locale.EnCa);
 	}
 
-	[When(@"an Administrator fixes that option's wording in place to ""(.*)""")]
+	[When(@"an Administrator fixes that choice's wording in place to ""(.*)""")]
 	public void WhenAnAdministratorFixesTheOption(string wording)
 	{
 		Save([.. _question.Choices.Select(choice => choice == _named
@@ -162,7 +162,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 			: new QuestionOptionInput(choice.Code, choice.LabelEn, choice.LabelFr))]);
 	}
 
-	[Then(@"the option keeps its identifier")]
+	[Then(@"the choice keeps its identifier")]
 	public void ThenTheOptionKeepsItsIdentifier()
 	{
 		_question.Choices.ShouldContain(choice => choice.Id == _named!.Id);
@@ -488,7 +488,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		});
 	}
 
-	[Then(@"^the attempt is (accepted|refused)$")]
+	[Then(@"^the merge or correction is (accepted|refused)$")]
 	public void ThenTheAttemptIs(string outcome)
 	{
 		if (outcome == "accepted")
@@ -562,7 +562,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.Choices.Count(choice => choice.Code == "mount_7").ShouldBe(1);
 	}
 
-	[Then(@"an administrator's wording is never replaced by a reporter's")]
+	[Then(@"an Administrator's wording is never replaced by a reporter's")]
 	public void ThenTheWordingIsNotReplaced()
 	{
 		_added!.LabelEn.ShouldBe("Mount 7");
@@ -576,7 +576,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
 	}
 
-	[Then(@"the submission is rejected and the question is unchanged")]
+	[Then(@"the submission is refused and the question is unchanged")]
 	public void ThenRejectedAndUnchanged()
 	{
 		_refusal.ShouldNotBeNull();
@@ -590,7 +590,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_live.Choices.Select(choice => choice.Code).ShouldBe(_question.Choices.Select(choice => choice.Code), ignoreOrder: true);
 	}
 
-	[Then(@"the reporter-added choice is still marked as reporter-added")]
+	[Then(@"the reporter-added value is still marked as reporter-added")]
 	public void ThenTheMarkIsKept()
 	{
 		_live.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();

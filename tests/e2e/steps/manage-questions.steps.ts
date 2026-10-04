@@ -317,14 +317,14 @@ Given("the question bank stores each question as a stable, non-localized key", a
 
 Given("each revision has a monotonically increasing revision number for its key", async () => {})
 
-Given("at most one live question exists for a stable key", async () => {})
+Given("at most one live question exists for a question key", async () => {})
 
-Given("a signed-in Administrator opens the manage-questions page", async ({ page }) => {
+Given("an Administrator opens the manage-questions page", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await expect(page.getByRole("list", { name: "Questions on the form" })).toBeVisible()
 })
 
-Given("a signed-in Administrator is authoring a new question", async ({ page }) => {
+Given("an Administrator is authoring a new question", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await page.getByRole("button", { name: "Add a question" }).click()
 })
@@ -354,7 +354,7 @@ When("they choose the single-line text type instead", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("short_text")
 })
 
-Then("the page offers an option editor", async ({ page }) => {
+Then("the page offers a choice editor", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Add a choice" })).toBeVisible()
 	await expect(page.getByLabel("Shared choice list")).toHaveCount(0)
 })
@@ -378,7 +378,7 @@ When(/^they choose a yes\/no question as the condition$/, async ({ page }) => {
 	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("aaaaaaaaaaa")
 })
 
-Then("no required-option control is offered", async ({ page }) => {
+Then("no required-choice control is offered", async ({ page }) => {
 	await expect(page.getByLabel("Required answer")).toBeHidden()
 })
 
@@ -386,7 +386,7 @@ When("they choose a single-select question as the condition instead", async ({ p
 	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("ddddddddddd")
 })
 
-Then("a required-option control offers that question's live options", async ({ page }) => {
+Then("a required-choice control offers that question's live choices", async ({ page }) => {
 	const picker = page.getByLabel("Required answer")
 	const offered = await picker.locator("option").allTextContents()
 
@@ -483,7 +483,7 @@ Then("the form is filled with its current wording, type, and behaviour", async (
 })
 
 Given(
-	"a signed-in Administrator is authoring a question on a server with no translation provider",
+	"an Administrator is authoring a question on a server with no translation provider",
 	async ({ page }) => {
 		await signInAndOpenQuestions(page, { translation: false })
 		await page.getByRole("button", { name: "Add a question" }).click()
@@ -508,15 +508,15 @@ When("they write the French wording and press Translate", async ({ page }) => {
 	await translateButton(page).click()
 })
 
-Then("the French field is filled with the translation", async ({ page }) => {
+Then("the French wording is filled with the translation", async ({ page }) => {
 	await expect(page.getByLabel("Question (French)")).toHaveValue("[fr-CA] Were you injured?")
 })
 
-Then("the English field is filled with the translation", async ({ page }) => {
+Then("the English wording is filled with the translation", async ({ page }) => {
 	await expect(page.getByLabel("Question (English)")).toHaveValue("[en-CA] Avez-vous été blessé ?")
 })
 
-Then("the French field remains editable", async ({ page }) => {
+Then("the French wording remains editable", async ({ page }) => {
 	// A translation is a draft, not a locked value — the administrator corrects
 	// it and what they save is theirs.
 	const french = page.getByLabel("Question (French)")
@@ -700,7 +700,7 @@ function launchSiteRow(page: Page) {
 	return page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem").filter({ hasText: launchSite })
 }
 
-Then("a type-ahead question with reporter-added choices says how many are waiting to be reviewed", async ({ page }) => {
+Then("a type-ahead question with reporter-added values says how many are waiting to be reviewed", async ({ page }) => {
 	await expect(launchSiteRow(page)).toContainText("Reporter-added choices waiting to be reviewed: 1")
 })
 
@@ -708,7 +708,7 @@ When("they open that question", async ({ page }) => {
 	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
 })
 
-Then("each reporter-added choice is marked as such", async ({ page }) => {
+Then("each reporter-added value is marked as such", async ({ page }) => {
 	const choices = page.getByTestId("question-choice")
 
 	await expect(choices).toHaveCount(2)
@@ -717,7 +717,7 @@ Then("each reporter-added choice is marked as such", async ({ page }) => {
 	await expect(choices.nth(1)).toContainText("Waiting for the French wording")
 })
 
-Given("a signed-in Administrator opens a type-ahead question with a reporter-added choice", async ({ page }) => {
+Given("an Administrator opens a type-ahead question with a reporter-added value", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
 })
@@ -749,7 +749,7 @@ Then("the corrected wording is shown on the question", async ({ page }) => {
 
 const needsTranslation = (page: Page) => page.getByRole("checkbox", { name: "Auto-translate answer" })
 
-When("they choose long text", async ({ page }) => {
+When("they choose paragraph", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("long_text")
 })
 
@@ -823,7 +823,7 @@ function questionRow(page: Page, label: string) {
 }
 
 When(
-	'they reword the "Paraglider" option of a single-select question and mark it to be replaced',
+	'they reword the "Paraglider" choice of a single-select question and mark it to be replaced',
 	async ({ page }) => {
 		await questionRow(page, "Hang glider or paraglider?").getByRole("button", { name: "Edit" }).click()
 		const choice = page.getByTestId("question-choice").nth(1)
@@ -840,7 +840,7 @@ When(
 	},
 )
 
-Then("the save sends that option to be replaced, under its old code with its new wording", ({ page }) => {
+Then("the save sends that choice to be replaced, under its old code with its new wording", ({ page }) => {
 	const options = replacedBodies.get(page)?.options ?? []
 
 	expect(options.find((option) => option.code === "paraglider")).toMatchObject({
@@ -918,11 +918,11 @@ When(
 	},
 )
 
-Then("its options are listed {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+Then("the editor lists its choices {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
 	expect(await editorOptions(page)).toEqual([first, second, third])
 })
 
-Then("each option offers the positions {string}, {string}, and {string}", async ({ page }, none: string, top: string, bottom: string) => {
+Then("each choice offers the positions {string}, {string}, and {string}", async ({ page }, none: string, top: string, bottom: string) => {
 	const choices = page.getByTestId("question-choice")
 	const count = await choices.count()
 	expect(count).toBeGreaterThan(0)
@@ -945,7 +945,7 @@ When(
 	},
 )
 
-Then("the options stay where they were while the Administrator edits", async ({ page }) => {
+Then("the choices stay where they were while the Administrator edits", async ({ page }) => {
 	expect(await editorOptions(page)).toEqual(["Speed wing", "Paraglider", "Other"])
 })
 
@@ -972,7 +972,7 @@ When(
 	},
 )
 
-Then("the required-option control lists {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+Then("the required-choice control lists {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
 	const picker = page.getByLabel("Required answer")
 
 	await expect(picker).toBeVisible()
@@ -1038,7 +1038,7 @@ async function addChoice(page: Page, { en = "", fr = "" }: { en?: string; fr?: s
 	if (fr) await choices(page).nth(index).getByLabel("Choice (French)").fill(fr)
 }
 
-Given("a signed-in Administrator is authoring a new {word} question worded in both languages", async ({ page }, type: string) => {
+Given("an Administrator is authoring a new {word} question worded in both languages", async ({ page }, type: string) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await page.getByRole("button", { name: "Add a question" }).click()
@@ -1047,7 +1047,7 @@ Given("a signed-in Administrator is authoring a new {word} question worded in bo
 	await page.getByLabel("Question (French)").fill("Qui a fabriqué votre aile?")
 })
 
-Given("a signed-in Administrator is editing a single-select question whose choices are written in both languages", async ({ page }) => {
+Given("an Administrator is editing a single-select question whose choices are written in both languages", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await aircraftRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1082,11 +1082,11 @@ When("they add a choice written in English and press its Translate action", asyn
 	await choiceTranslate(thatChoice(page)).click()
 })
 
-Then("that choice's French field is filled with the translation", async ({ page }) => {
+Then("that choice's French wording is filled with the translation", async ({ page }) => {
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] Niviuk")
 })
 
-Then("that choice's French field remains editable", async ({ page }) => {
+Then("that choice's French wording remains editable", async ({ page }) => {
 	const french = thatChoice(page).getByLabel("Choice (French)")
 
 	await expect(french).not.toHaveAttribute("readonly", "")
@@ -1124,7 +1124,7 @@ When("they add a choice written in French and press its Translate action", async
 	await choiceTranslate(thatChoice(page)).click()
 })
 
-Then("that choice's English field is filled with the translation", async ({ page }) => {
+Then("that choice's English wording is filled with the translation", async ({ page }) => {
 	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("[en-CA] Voile de secours")
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("Voile de secours")
 })
@@ -1141,7 +1141,7 @@ Then("only that choice's wording is sent to be translated", ({ page }) => {
 	expect(choiceTraffic.get(page)?.translated).toEqual(["Speed wing"])
 })
 
-Then("only that choice's French field changes", async ({ page }) => {
+Then("only that choice's French wording changes", async ({ page }) => {
 	const before = choicesBefore.get(page) ?? []
 	const expected = before.map((wording, index) => (index === 1 ? { en: "Speed wing", fr: "[fr-CA] Speed wing" } : wording))
 
@@ -1162,7 +1162,7 @@ When("they add a choice written in English", async ({ page }) => {
 })
 
 Given(
-	"a signed-in Administrator is editing a type-ahead question with choices on a server with no translation provider",
+	"an Administrator is editing a type-ahead question with choices on a server with no translation provider",
 	async ({ page }) => {
 		await signInAndOpenQuestions(page, { translation: false })
 		await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1183,7 +1183,7 @@ Then("every choice's Translate action is unavailable and says why", async ({ pag
 
 // The stub's type-ahead offers "Cooper's" in both languages and "mount 7",
 // a reporter's value, in English only; the editor lists them in that order.
-Given("a signed-in Administrator is editing a type-ahead question with a choice written only in English", async ({ page }) => {
+Given("an Administrator is editing a type-ahead question with a choice written only in English", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1204,7 +1204,7 @@ When("they press that choice's Translate action", async ({ page }) => {
 	await choiceTranslate(thatChoice(page)).click()
 })
 
-Then("that choice's French field is filled with the translation of its English", async ({ page }) => {
+Then("that choice's French wording is filled with the translation of its English", async ({ page }) => {
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] mount 7")
 	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("mount 7")
 	expect(choiceTraffic.get(page)?.translated).toEqual(["mount 7"])
@@ -1223,7 +1223,7 @@ When("they flip the wording's direction switch to French to English", async ({ p
 
 // The stub's first question, "Were you injured?", is worded in both languages
 // and has no help text in either.
-Given("a signed-in Administrator is editing a question whose wording is in both languages", async ({ page }) => {
+Given("an Administrator is editing a question whose wording is in both languages", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")

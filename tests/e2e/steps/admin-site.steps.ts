@@ -42,7 +42,7 @@ interface Origin {
 
 const reportPageOrigin = new WeakMap<Page, Origin>()
 
-Given("a signed-in Safety Officer is on the public report page", async ({ page }) => {
+Given("a Safety Officer is on the public report page", async ({ page }) => {
 	await signInAs(page, "safety_officer")
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?$/, (route) => route.fulfill({ json: [] }))
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, (route) => route.fulfill({ json: PUBLIC_REPORT }))
@@ -58,12 +58,12 @@ Given("a signed-in Safety Officer is on the public report page", async ({ page }
 	reportPageOrigin.set(page, { origin: new URL(page.url()).origin })
 })
 
-When("they follow the Admin menu to the review queue", async ({ page }) => {
+When("they follow the Admin menu to the report list", async ({ page }) => {
 	await page.locator("header").getByRole("button", { name: /^Admin/ }).click()
 	await page.getByRole("menu", { name: "Admin" }).getByRole("menuitem", { name: /^Manage reports/ }).click()
 })
 
-Then("the review queue loads on the same origin as the report page", async ({ page }) => {
+Then("the report list loads on the same origin as the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 	await expect(page.getByRole("heading", { level: 1, name: "Manage reports" })).toBeVisible()
 	expect(new URL(page.url()).origin).toBe(present(reportPageOrigin.get(page)).origin)
@@ -223,7 +223,7 @@ const PDF = Buffer.from("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Roo
 const downloads = new WeakMap<Page, Download>()
 const adminRequests = new WeakMap<Page, string[]>()
 
-Given("an authorized reviewer opens a document attachment", async ({ page }) => {
+Given("a reviewer opens a document attachment", async ({ page }) => {
 	const report = {
 		...reportDetail(),
 		consent: true,

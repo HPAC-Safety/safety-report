@@ -75,7 +75,7 @@ public sealed partial class SeededWordingSteps
 		live.LabelFr.ShouldBe(labelFr);
 	}
 
-	[Then(@"its help text asks for photos, videos, or documents in both languages")]
+	[Then(@"its help text asks for images, videos, or documents in both languages")]
 	public async Task ThenItsHelpTextAsksForSeveralFiles()
 	{
 		var live = await LiveRevision();
@@ -158,7 +158,7 @@ public sealed partial class SeededWordingSteps
 		(await Count("SELECT count(*) FROM questions WHERE key = @key", ("key", AttachmentKey))).ShouldBe(1);
 	}
 
-	[Then(@"the original attachment question is stamped as deleted and keeps its single-file wording")]
+	[Then(@"the original attachment question is marked deleted and keeps its single-file wording")]
 	public async Task ThenTheOriginalIsRetiredWithItsWording()
 	{
 		(await Count("SELECT count(*) FROM questions WHERE id = @id AND deleted IS NOT NULL", ("id", _originalQuestionId!)))

@@ -44,7 +44,7 @@ All compartments are private. Storage blocks public access, uses TLS in
 transit and provider-managed encryption at rest, and grants least-privilege
 access to the API/Worker roles. There are no application-encrypted blobs.
 Referenced report objects follow report retention and are not physically
-purged by the application after soft deletion.
+purged by the application after deletion.
 
 ## Processing records
 
@@ -93,7 +93,7 @@ The same now holds for a still-processing or failed **image** (REQ-MED-013,
 REQ-MED-053, widening ADR-0094 — #427): either way the reviewer strip marks
 the tile Processing or Failed, and `GET
 /api/admin/reports/{reportId}/attachments/{attachmentId}/original` gives an
-authorized reviewer a short-lived, forced, audited download of the raw
+reviewer a short-lived, forced, audited download of the raw
 original under its own `AuditAction.DownloadedOriginalMedia`, never rendered
 inline and never opened in the lightbox. It refuses once a derivative exists
 (REQ-MED-054, use `/view` instead) and for a document (REQ-MED-055, use
@@ -125,7 +125,7 @@ resumes where it was, paused if it was paused and playing if it was playing —
 and removes the file if the answer is 404. So a hide or
 an unpublish reaches every open page within fifteen minutes.
 
-Moderation happens after publication. A safety officer or administrator hides
+Moderation happens after publication. A reviewer hides
 a file from the public report page or the admin report page, and shows it
 again from the admin report page; both are audited. The file itself is never
 deleted by a hide.
@@ -139,7 +139,7 @@ filed before it existed has no answer and shows no media.
 A published report also offers its validated documents (REQ-MED-037 to
 REQ-MED-042,
 [ADR-0119](../../decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
-`public_report_media` lists a live, unhidden document with no processing error
+`public_report_media` lists a document that is neither deleted nor hidden, with no processing error
 once the Worker has recorded it validated (`validated_at`), on a report whose
 `consent_documents` is yes. The report page lists its opaque id, the kind
 `document`, and a coarse format, nothing more.
@@ -151,7 +151,7 @@ reaches the public.
 
 `consent_documents` is `consent_media`'s answer, recorded only when the
 reporter answered the wording the form showed at submission. Media consent was
-reworded to name documents. A yes given before that shows the report's photos
+reworded to name documents. A yes given before that shows the report's images
 and video and keeps its documents private. A yes to a superseded wording that a
 stale draft still held is refused at submission, like any answer to a superseded
 revision
@@ -240,7 +240,7 @@ for the full record.
 
 ## Private attachments (#507)
 
-A safety officer or administrator may add files to a report that are for
+A reviewer may add files to a report that are for
 staff only: a coroner's report, a police report, an investigation archive
 ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 They are not the reporter's attachments, and none of the rules above about
@@ -280,7 +280,7 @@ lists its file name, size, optional description, who added it (**You**, or
 the adder's opaque token subject), and when.
 
 Adding files uses the same dashed drop zone as the reporter form's attachment
-field (#658): dropped or chosen, several at once, each begins uploading the
+question (#658): dropped or chosen, several at once, each begins uploading the
 moment it is staged, with its own progress and its own Cancel or Remove
 control and description box. Removing a staged, already-uploaded row asks no
 API to erase it; its bytes simply expire by the 15-day quarantine lifecycle
@@ -305,7 +305,7 @@ refer to one (REQ-MOD-116).
   describe.
 - The file name is required and is sanitized; the description is optional
   plain text of at most 500 characters (REQ-MOD-110).
-- Removal soft-deletes the row, records who removed it, and writes one
+- Removal deletes the row, records who removed it, and writes one
   `RemovedPrivateAttachment` audit entry; the bytes stay in storage. Deleting
   the report does the same to its private attachments (REQ-MOD-109,
   REQ-MOD-111).

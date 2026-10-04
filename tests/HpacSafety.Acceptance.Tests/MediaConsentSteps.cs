@@ -77,7 +77,7 @@ public sealed class MediaConsentSteps
 		_seeded = await MediaConsentQuestion();
 	}
 
-	[Then(@"its wording in both languages asks about photos, videos, and documents")]
+	[Then(@"its wording in both languages asks about images, videos, and documents")]
 	public void ThenItsWordingNamesEveryKindOfFile()
 	{
 		var revision = _seeded!.CurrentRevision;
@@ -187,8 +187,8 @@ public sealed class MediaConsentSteps
 		};
 	}
 
-	[Then(@"the API rejects the submission")]
-	public void ThenTheApiRejectsTheSubmission()
+	[Then(@"the submission is refused as invalid")]
+	public void ThenTheSubmissionIsRefusedAsInvalid()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 

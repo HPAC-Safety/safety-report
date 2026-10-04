@@ -154,7 +154,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		_concurrentModelCalls.ShouldBe(1);
 	}
 
-	[Given(@"a report has non-private answered fields and private answered fields")]
+	[Given(@"a report has non-private answers and private answers")]
 	public async Task GivenMixedFields()
 	{
 		_db = await WorkerDatabase.NewMigratedContext();
@@ -290,13 +290,13 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		await ClaimAndProcess(_db!, _summarizer);
 	}
 
-	[Then(@"report_content contains only non-private answered fields eligible to contribute facts")]
+	[Then(@"report_content contains only non-private answers eligible to contribute facts")]
 	public void ThenReportContentOnlyNonPrivate()
 	{
 		_summarizer!.LastInput!.ReportContent.Select(field => field.QuestionKey).ShouldBe(["narrative"]);
 	}
 
-	[Then(@"private_context contains only private answered fields, supplied to help recognize identifying details that recur in report content")]
+	[Then(@"private_context contains only private answers, supplied to help recognize identifying details that recur in report content")]
 	public void ThenPrivateContextOnlyPrivate()
 	{
 		_summarizer!.LastInput!.PrivateContext.Select(field => field.QuestionKey).ShouldBe(["pilot_name"]);
@@ -362,7 +362,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		(input.ReportContent.Count + input.PrivateContext.Count).ShouldBe(2);
 	}
 
-	[Given(@"the model returns a valid two-field response")]
+	[Given(@"the model returns a valid two-key response")]
 	public async Task GivenAValidResponse()
 	{
 		_db = await WorkerDatabase.NewMigratedContext();
@@ -451,7 +451,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		}
 	}
 
-	[Then(@"the report becomes SummaryFailed with a safe operational error")]
+	[Then(@"the report becomes Summary failed with a safe operational error")]
 	public async Task ThenReportBecomesSummaryFailed()
 	{
 		var persisted = await _db!.Reports.SingleAsync(r => r.Id == _report!.Id);
@@ -460,7 +460,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		persisted.SummaryError.ShouldNotContain("Ada Lovelace");
 	}
 
-	[Then(@"the report appears in the review queue")]
+	[Then(@"the report appears in the report list")]
 	public async Task ThenReportAppearsInReviewQueue()
 	{
 		// The review queue (issue #25) reads by status; SummaryFailed is one of the

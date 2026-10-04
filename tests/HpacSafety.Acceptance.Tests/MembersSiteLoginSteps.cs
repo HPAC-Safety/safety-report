@@ -47,13 +47,13 @@ public sealed class MembersSiteLoginSteps
 		// Development-shaped host, where the route always exists.
 	}
 
-	[Given(@"{string} is on the development administrator list")]
+	[Given(@"{string} is on the development Administrator list")]
 	public void GivenEmailIsOnTheAdministratorList(string email)
 	{
 		_administratorEmail = email;
 	}
 
-	[Given(@"{string} is on the development safety-officer list")]
+	[Given(@"{string} is on the development Safety Officer list")]
 	public void GivenEmailIsOnTheSafetyOfficerList(string email)
 	{
 		_safetyOfficerEmail = email;
@@ -67,7 +67,7 @@ public sealed class MembersSiteLoginSteps
 		_loginEmail = email;
 	}
 
-	[When(@"that email logs in with credentials the members site accepts")]
+	[When(@"that email signs in with credentials the members site accepts")]
 	public async Task WhenThatEmailLogsInSuccessfully()
 	{
 		var email = _administratorEmail ?? _safetyOfficerEmail ?? _loginEmail
@@ -82,7 +82,7 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = email, password = "whatever-the-stub-accepts" });
 	}
 
-	[When(@"a login is attempted with credentials the members site does not accept")]
+	[When(@"a sign-in is attempted with credentials the members site does not accept")]
 	public async Task WhenLoginAttemptedWithBadCredentials()
 	{
 		var client = await BootedApi.MembersSiteStubbed(new StubTransport(LoginPage(), LoginPage()));
@@ -91,7 +91,7 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "nobody-special@example.test", password = "wrong-password" });
 	}
 
-	[When(@"the members site cannot be reached during a login attempt")]
+	[When(@"the members site cannot be reached during a sign-in attempt")]
 	public async Task WhenMembersSiteCannotBeReached()
 	{
 		var client = await BootedApi.MembersSiteStubbed(
@@ -101,13 +101,13 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "member@example.test", password = "whatever" });
 	}
 
-	[Then(@"the API returns a signed development token with the {word} role")]
+	[Then(@"^the API returns a signed development token with the (User|Safety Officer|Administrator) role$")]
 	public async Task ThenTokenHasRole(string role)
 	{
 		_response!.EnsureSuccessStatusCode();
 
 		var payload = await _response.Content.ReadFromJsonAsync<TokenPayload>();
-		var expectedRole = Enum.Parse<MemberRole>(role);
+		var expectedRole = GlossaryNames.Role(role);
 
 		payload!.Role.ShouldBe(MemberRoles.CodeFor(expectedRole));
 	}
@@ -160,14 +160,14 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "user", password = "still-wrong" });
 	}
 
-	[Then(@"the API rejects further attempts with 429 and a safe retry signal")]
+	[Then(@"the API refuses further attempts with 429 and a safe retry signal")]
 	public void ThenTheApiRejectsFurtherAttemptsWith429AndASafeRetrySignal()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the rejection does not reveal whether any attempted username or password was valid")]
+	[Then(@"the refusal does not reveal whether any attempted username or password was valid")]
 	public async Task ThenTheRejectionDoesNotRevealCredentialValidity()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();

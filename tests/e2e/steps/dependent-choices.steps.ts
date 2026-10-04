@@ -210,7 +210,7 @@ Then(
 
 const languages = new WeakMap<Page, string>()
 
-Given("a signed-in Administrator using {word} opens the manage-questions page", async ({ page }, language: string) => {
+Given("an Administrator using {word} opens the manage-questions page", async ({ page }, language: string) => {
 	languages.set(page, language)
 	await stubAuth(page)
 	await signInAs(page, "administrator")
@@ -464,7 +464,7 @@ When("they change {string} to {string}", async ({ page }, _parent: string, make:
 
 // ---- A dependent type-ahead's own hint and threshold (REQ-QB-231, ADR-0152) ----
 
-When("they open {string}'s list by clicking the field", async ({ page }, _child: string) => {
+When("they open {string}'s list by clicking the question", async ({ page }, _child: string) => {
 	await modelField(page).click()
 })
 
@@ -698,7 +698,7 @@ Then("{string} is sent as the words {string}", ({ page }, _child: string, typed:
 const relinks = new WeakMap<Page, { id: string; body: unknown }[]>()
 
 Given(
-	"a signed-in Safety Officer reviews the reporter-added {string} value {string}, offered under {string}",
+	"a Safety Officer reviews the reporter-added {string} value {string}, offered under {string}",
 	async ({ page }, child: string, value: string, parentChoice: string) => {
 		const choices = [
 			{ id: "niviuk", labelEn: "Niviuk", labelFr: "Niviuk", pin: "none" },

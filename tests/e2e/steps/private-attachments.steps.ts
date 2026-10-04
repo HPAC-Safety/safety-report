@@ -241,7 +241,7 @@ Given("the report carries the private attachment {string}", async ({ page }, fil
 
 // --- Staging one file (REQ-MOD-115, REQ-MOD-117) ---
 
-When("the safety officer stages the private attachment {string}", async ({ page }, fileName: string) => {
+When("the Safety Officer stages the private attachment {string}", async ({ page }, fileName: string) => {
 	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
 	await section(page).getByLabel("Add a private attachment").setInputFiles({
 		name: fileName,
@@ -257,13 +257,13 @@ Then("the staged attachment {string} finishes uploading and offers a description
 })
 
 When(
-	"the safety officer describes the staged attachment {string} as {string}",
+	"the Safety Officer describes the staged attachment {string} as {string}",
 	async ({ page }, fileName: string, description: string) => {
 		await stagedRow(page, fileName).getByLabel("Description (optional)").fill(description)
 	},
 )
 
-When("the safety officer adds the staged private attachments", async ({ page }) => {
+When("the Safety Officer adds the staged private attachments", async ({ page }) => {
 	await addAllButton(page).click()
 })
 
@@ -286,7 +286,7 @@ Then(
 	},
 )
 
-When("the safety officer downloads the private attachment {string}", async ({ page }, fileName: string) => {
+When("the Safety Officer downloads the private attachment {string}", async ({ page }, fileName: string) => {
 	downloadsByPage.set(page, page.waitForEvent("download"))
 	await attachmentNamed(page, fileName).getByRole("button", { name: "Download" }).click()
 })
@@ -297,7 +297,7 @@ Then("the browser saves a file named {string}", async ({ page }, fileName: strin
 })
 
 When(
-	"the safety officer removes the private attachment {string} and confirms",
+	"the Safety Officer removes the private attachment {string} and confirms",
 	async ({ page }, fileName: string) => {
 		const item = attachmentNamed(page, fileName)
 		await item.getByRole("button", { name: "Remove" }).click()
@@ -312,7 +312,7 @@ Then("the private attachments section lists no attachments", async ({ page }) =>
 })
 
 When(
-	"the safety officer adds the private note {string} referring to {string}",
+	"the Safety Officer adds the private note {string} referring to {string}",
 	async ({ page }, text: string, fileName: string) => {
 		const notes = page.getByRole("region", { name: "Private notes" })
 		await notes.getByLabel("Add a private note").fill(text)
@@ -342,7 +342,7 @@ Then(
 	},
 )
 
-When("the safety officer cancels the staged upload {string}", async ({ page }, fileName: string) => {
+When("the Safety Officer cancels the staged upload {string}", async ({ page }, fileName: string) => {
 	await stagedRow(page, fileName).getByRole("button", { name: `Cancel uploading ${fileName}` }).click()
 })
 
@@ -372,7 +372,7 @@ async function dropOnZone(page: Page, ...names: string[]) {
 }
 
 When(
-	/^the safety officer (drops|chooses, through the picker,) the private attachments "([^"]+)" and "([^"]+)" at once$/,
+	/^the Safety Officer (drops|chooses, through the picker,) the private attachments "([^"]+)" and "([^"]+)" at once$/,
 	async ({ page }, method: string, first: string, second: string) => {
 		if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
 		if (method === "drops") {
@@ -402,7 +402,7 @@ Then(
 	},
 )
 
-When("the safety officer removes the staged attachment {string}", async ({ page }, fileName: string) => {
+When("the Safety Officer removes the staged attachment {string}", async ({ page }, fileName: string) => {
 	await stagedRow(page, fileName).getByRole("button", { name: `Remove ${fileName}` }).click()
 })
 
@@ -440,7 +440,7 @@ async function dropWithOversized(page: Page, withOrdinary: boolean) {
 	for (const type of ["dragenter", "dragover", "drop"]) await zone.dispatchEvent(type, { dataTransfer })
 }
 
-When("the safety officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
+When("the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
 	await dropWithOversized(page, true)
 })
 
@@ -479,7 +479,7 @@ Then("{string} becomes enabled", async ({ page }, buttonLabel: string) => {
 // mechanism — see unsaved-changes.steps.ts for the beforeunload and
 // bilingual-dialog steps this scenario reuses. ---
 
-When("the safety officer tries to close or reload the tab", async ({ page }) => {
+When("the Safety Officer tries to close or reload the tab", async ({ page }) => {
 	const dialogPromise = page.waitForEvent("dialog")
 	page.reload().catch(() => {}) // The reload never completes: the dialog cancels it.
 	const dialog = await dialogPromise
@@ -487,7 +487,7 @@ When("the safety officer tries to close or reload the tab", async ({ page }) => 
 	await dialog.dismiss()
 })
 
-When("the safety officer navigates away from the report through a link", async ({ page }) => {
+When("the Safety Officer navigates away from the report through a link", async ({ page }) => {
 	await page.getByRole("link", { name: "Back to reports" }).click()
 })
 
@@ -495,11 +495,11 @@ When("they keep the page", async ({ page }) => {
 	await page.getByRole("dialog", { name: "Leave without saving?" }).getByRole("button", { name: "Stay" }).click()
 })
 
-Then("the safety officer stays on the report page", async ({ page }) => {
+Then("the Safety Officer stays on the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports\/[^/]+$/)
 })
 
-Then("the safety officer leaves the report page", async ({ page }) => {
+Then("the Safety Officer leaves the report page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 })
 
@@ -528,11 +528,11 @@ When("the report finishes accepting the private attachment", ({ page }) => {
 
 // --- Only refused files staged: no leave warning (REQ-MOD-181) ---
 
-When("the safety officer drops only a private attachment larger than the private cap", async ({ page }) => {
+When("the Safety Officer drops only a private attachment larger than the private cap", async ({ page }) => {
 	await dropWithOversized(page, false)
 })
 
-When("the safety officer reloads the report page", async ({ page }) => {
+When("the Safety Officer reloads the report page", async ({ page }) => {
 	const dialogs: Dialog[] = []
 	page.on("dialog", (dialog) => {
 		dialogs.push(dialog)

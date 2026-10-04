@@ -412,12 +412,12 @@ Then("the search box is empty and the full feed is shown again", async ({ page }
 
 const ADMIN_LINK_ROLES: Record<string, Role> = {
 	Administrator: "administrator",
-	SafetyOfficer: "safety_officer",
+	"Safety Officer": "safety_officer",
 	User: "user",
 }
 
 Given(
-	/^(?:a signed-in (Administrator|SafetyOfficer|User)|a signed-out visitor) visits a published report's page$/,
+	/^(?:an? (Administrator|Safety Officer|User)|an anonymous visitor) visits a published report's page$/,
 	async ({ page }, roleLabel?: string) => {
 		await stubFeed(page)
 
@@ -435,7 +435,7 @@ function adminLink(page: Page) {
 	return page.locator("[data-admin-link]")
 }
 
-Then("the page offers a link to that report's admin detail page", async ({ page }) => {
+Then("the page offers a link to its report detail", async ({ page }) => {
 	await expect(adminLink(page)).toBeVisible()
 	await expect(adminLink(page)).toHaveAttribute("href", `/admin/reports/${FIRST.id}`)
 })
@@ -444,12 +444,12 @@ When("the visitor activates that link", async ({ page }) => {
 	await adminLink(page).click()
 })
 
-Then("the browser opens the report's admin detail page, in the same tab", async ({ page, context }) => {
+Then("the browser opens its report detail, in the same tab", async ({ page, context }) => {
 	await expect(page).toHaveURL(new RegExp(`/admin/reports/${FIRST.id}$`))
 	expect(context.pages()).toHaveLength(1)
 })
 
-Then("the page offers no link to the admin detail page", async ({ page }) => {
+Then("the page offers no link to the report detail", async ({ page }) => {
 	await expect(adminLink(page)).toHaveCount(0)
 })
 

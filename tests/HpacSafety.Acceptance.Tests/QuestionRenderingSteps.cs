@@ -34,7 +34,7 @@ public sealed class QuestionRenderingSteps
 	private string? _questionId;
 	private JsonElement _rendered;
 
-	[Given(@"a question revision has English and French labels, help, and options authored by an Administrator")]
+	[Given(@"a question revision has English and French labels, help, and choices authored by an Administrator")]
 	public async Task GivenAnAuthoredBilingualQuestion()
 	{
 		using var admin = await BootedApi.SignedInAs(MemberRole.Administrator);

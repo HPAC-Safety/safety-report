@@ -85,13 +85,13 @@ public sealed class InterimIssuerSteps
 		me.StatusCode.ShouldBe(HttpStatusCode.OK);
 	}
 
-	[Then(@"an allowlisted administrator account's token carries the Administrator role")]
+	[Then(@"an allowlisted Administrator account's token carries the Administrator role")]
 	public void ThenTokenCarriesAdministratorRole()
 	{
 		_issuedToken!.Role.ShouldBe(MemberRoles.CodeFor(MemberRole.Administrator));
 	}
 
-	[When(@"a sign-in is attempted with the fixed development administrator account")]
+	[When(@"a sign-in is attempted with the fixed development Administrator account")]
 	public async Task WhenSignInAttemptedWithFixedDevelopmentAdministratorAccount()
 	{
 		// FixedAccountCredentialSource is never registered for the interim
@@ -149,7 +149,7 @@ public sealed class InterimIssuerSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Then(@"the response carries only a public key, never a private key field")]
+	[Then(@"the response carries only a public key, never a private key")]
 	public async Task ThenResponseCarriesOnlyAPublicKey()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();

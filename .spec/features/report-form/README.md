@@ -11,23 +11,23 @@ prefix: REQ-RFM
 Supporting detail for [`report-form.feature`](report-form.feature)
 that doesn't fit Gherkin.
 
-## The type-ahead field
+## The type-ahead question
 
-A type-ahead question looks like the form's other pickers: one field, whose
-list opens directly beneath it, as wide as the field and drawn in the form's
+A type-ahead question looks like the form's other pickers: one question, whose
+list opens directly beneath it, as wide as the question and drawn in the form's
 own surface, font, border, and focus ring. The form draws that list itself;
 the browser's own suggestion list (`<datalist>`) is not used, so it looks the
 same in every browser (`REQ-QB-159`,
 [ADR-0140](../../decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
 Unlike the single-select and the multi-select, it has **no caret**: it reads
-as a place to type, not a dropdown to pick from
+as a place to type, not a picker to choose from
 ([ADR-0152](../../decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
 
-- **Opening.** Clicking the field, pressing Alt and the down arrow, or typing
+- **Opening.** Clicking the question, pressing Alt and the down arrow, or typing
   opens the list.
 - **A hint below 3 characters.** Trimmed of spaces, fewer than 3 typed
   characters shows the open list with no choices, only a hint row: "Type 3 or
-  more letters to see matching choices, or enter your own." No option is
+  more letters to see matching choices, or enter your own." No choice is
   active there, so the up and down arrows and Enter do nothing. Reaching 3
   characters replaces the hint with the matching choices; deleting back below
   3 brings the hint back. This is announced to assistive technology through a
@@ -35,7 +35,7 @@ as a place to type, not a dropdown to pick from
   [ADR-0152](../../decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
   A dependent type-ahead follows the same rule, on top of its own narrowing by
   the parent's answer (`REQ-QB-231`, ADR-0146).
-- **Reopening filters by what the field holds** (`REQ-QB-232`, ADR-0152).
+- **Reopening filters by what the question holds** (`REQ-QB-232`, ADR-0152).
 - **Filtering.** At 3 or more characters, what the reporter typed narrows the
   list to the choices whose wording contains it anywhere, ignoring case and
   accents, in the reader's language (`REQ-QB-160`). The list keeps the order
@@ -53,9 +53,9 @@ as a place to type, not a dropdown to pick from
 - **Keyboard and pointer.** At 3 or more characters, the down and up arrows
   move the highlighted choice through the list, and pointing at a choice
   highlights it. Enter takes the highlighted choice, Alt and the down arrow
-  open the list without moving, and Escape or a press outside the field
-  closes it, keeping what the field holds (`REQ-QB-161`). Tab moves on and
-  closes it too (`REQ-QB-162`). The field follows the WAI-ARIA 1.2 combobox
+  open the list without moving, and Escape or a press outside the question
+  closes it, keeping what the question holds (`REQ-QB-161`). Tab moves on and
+  closes it too (`REQ-QB-162`). The question follows the WAI-ARIA 1.2 combobox
   pattern, and keeps its label, help text, and error.
 - **A picked choice.** A choice taken from the list is sent as that choice,
   by its identifier, even where another choice carries the same wording
@@ -63,7 +63,7 @@ as a place to type, not a dropdown to pick from
   wording, ignoring case, or else sent as typed.
 - **A value it does not offer.** The reporter may still type one, of any
   length. The list says nothing matches once 3 or more characters match no
-  choice, and the words typed stay in the field and are sent as a
+  choice, and the words typed stay in the question and are sent as a
   reporter-added value (`REQ-QB-162`, `REQ-SUB-083`,
   [ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - **One-language choices.** A choice a reporter added in one language is
@@ -72,16 +72,16 @@ as a place to type, not a dropdown to pick from
 - **Small screens.** The list never makes the page scroll sideways, and a long
   list scrolls within itself (`REQ-QB-163`).
 
-## The single-select and multi-select fields
+## The single-select and multi-select questions
 
 A single-select and a multi-select look and feel like the type-ahead: the
-same field style and list, drawn by the form, with the same rows, separators,
+same question style and list, drawn by the form, with the same rows, separators,
 and highlighted row. Unlike the type-ahead, each keeps a caret and shows its
 full list as soon as it opens — the threshold and hint above are the
 type-ahead's alone. Each keeps its own input type
 ([ADR-0150](../../decisions/ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md)).
 
-- **Single-select.** A field with a caret shows the chosen choice, or "Choose
+- **Single-select.** A question with a caret shows the chosen choice, or "Choose
   one". It is not the browser's `<select>` (`REQ-QB-208`). It follows the
   WAI-ARIA 1.2 select-only combobox pattern:
   - **Opening.** Clicking it, Enter, Space, the down arrow, or Alt and the
@@ -97,9 +97,9 @@ type-ahead's alone. Each keeps its own input type
     the question unanswered (`REQ-QB-210`).
   - **The pointer** picks a choice by a click on its row (`REQ-QB-268`). The
     rows are `role="option"` and never take focus: the keyboard drives them
-    from the field through `aria-activedescendant`, as in the type-ahead
+    from the question through `aria-activedescendant`, as in the type-ahead
     (`REQ-QB-267`), so a row has no key handler of its own and the click is
-    taken once, on the field's container, for whichever row it landed on.
+    taken once, on the question's container, for whichever row it landed on.
   - **The answer** is held and sent by its choice's identifier, as before.
     Nothing can be typed into a single-select; that stays the type-ahead's.
   - **Disabled.** A dependent single-select waiting on its parent looks and
@@ -115,7 +115,7 @@ type-ahead's alone. Each keeps its own input type
 
 The seeded attachment question departs from Typeform on purpose. Typeform took
 one file and asked for the rest by email. This form takes several, so the
-question reads "Photos or videos" and asks for photos, videos, or documents
+question reads "Photos or videos" and asks for images, videos, or documents
 (`REQ-QB-104`).
 
 A database seeded before that change is corrected by a migration that follows

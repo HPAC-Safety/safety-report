@@ -42,7 +42,7 @@ public sealed class PublicQuestionEndpointSteps
 	private const string ParagraphedDescriptionEn = "First, what happened.\n\nThen, who was involved.\nLast, the weather.";
 	private const string ParagraphedDescriptionFr = "D'abord, ce qui s'est passé.\n\nEnsuite, qui était impliqué.\nEnfin, la météo.";
 
-	[Given(@"a stable key has multiple revisions")]
+	[Given(@"a question key has multiple revisions")]
 	public async Task GivenAStableKeyHasMultipleRevisions()
 	{
 		_adminClient = await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -162,7 +162,7 @@ public sealed class PublicQuestionEndpointSteps
 		orders.ShouldBe([.. orders.OrderBy(order => order)]);
 	}
 
-	[Then(@"ties are broken by stable key")]
+	[Then(@"ties are broken by question key")]
 	public void ThenTiesAreBrokenByStableKey()
 	{
 		// Contextual — asserted structurally by the ordering check above; every

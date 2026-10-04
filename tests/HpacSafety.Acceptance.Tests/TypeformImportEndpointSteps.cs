@@ -57,7 +57,7 @@ public sealed class TypeformImportEndpointSteps
 		_response = await _client.PostAsync(Import, content);
 	}
 
-	[Then(@"the import is rejected")]
+	[Then(@"the import is refused")]
 	public void ThenTheImportIsRejected()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -125,7 +125,7 @@ public sealed class TypeformImportEndpointSteps
 		_originalKeys = [keyA, keyB];
 	}
 
-	[Given(@"a live question has a stable key, a dependency, and a group membership")]
+	[Given(@"a live question has a question key, a dependency, and a group membership")]
 	public async Task GivenALiveQuestionHasADependencyAndAGroupMembership()
 	{
 		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -218,7 +218,7 @@ public sealed class TypeformImportEndpointSteps
 		_reimportedPreview = await reimported.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	[Then(@"the resulting drafts match the original questions' key, type, wording, and options")]
+	[Then(@"the resulting drafts match the original questions' key, type, wording, and choices")]
 	public void ThenTheResultingDraftsMatchTheOriginalQuestions()
 	{
 		var drafts = _reimportedPreview.GetProperty("drafts").EnumerateArray().ToList();
@@ -407,7 +407,7 @@ public sealed class TypeformImportEndpointSteps
 		_secondResponse = await _client.GetAsync(Export);
 	}
 
-	[Then(@"the API rejects both attempts")]
+	[Then(@"the API refuses both attempts")]
 	public void ThenTheApiRejectsTheAttempt()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

@@ -79,7 +79,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		await SeedAndLoad(ReportStatus.Unpublished, false);
 	}
 
-	[Given(@"a report is SummaryFailed")]
+	[Given(@"a report is Summary failed")]
 	public async Task GivenAFailedReport()
 	{
 		await SeedAndLoad(ReportStatus.SummaryFailed, true);
@@ -130,7 +130,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		await Send("publish", new { version = _version });
 	}
 
-	[When(@"^a SafetyOfficer lists reports needing action and reads the pending counts$")]
+	[When(@"^a Safety Officer lists reports needing action and reads the pending counts$")]
 	public async Task WhenNeedsActionAndCountsAreRead()
 	{
 		// The booted database is shared with scenarios running in parallel, which
@@ -290,7 +290,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.PublishedReport)).Count.ShouldBe(1);
 	}
 
-	[Then(@"no Administrator, migration, background worker, or direct API caller can bypass any of these guards")]
+	[Then(@"no Administrator, migration, background job, or direct API request can bypass any of these guards")]
 	public async Task ThenNoCallerCanBypassTheGuards()
 	{
 		// An administrator publishing a report without consent is refused.
@@ -351,7 +351,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		(await AuditEntries(AuditAction.UnpublishedReport)).Count.ShouldBe(1);
 	}
 
-	[Then(@"the detail view shows the note to reviewers")]
+	[Then(@"the report detail shows the note to reviewers")]
 	public async Task ThenTheDetailShowsTheNote()
 	{
 		_result.GetProperty("unpublishNote").GetString().ShouldBe(Note);
@@ -459,10 +459,10 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── REQ-MOD-069: who may translate ──────────────────────────────────────
 
-	[Given(@"^a member signed in as (User|SafetyOfficer|Administrator)$")]
+	[Given(@"^a member signed in as (User|Safety Officer|Administrator)$")]
 	public void GivenAMemberSignedInAs(string role)
 	{
-		_role = Enum.Parse<MemberRole>(role);
+		_role = GlossaryNames.Role(role);
 	}
 
 	[When(@"that member requests a translation")]
@@ -497,7 +497,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── REQ-MOD-070: how each language was produced ─────────────────────────
 
-	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of a generated pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
+	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of the Worker's summary pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
 	public void GivenASituation(string situation)
 	{
 		_situation = situation;
@@ -515,7 +515,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		{
 			case "the Worker produced the pair":
 				break;
-			case "a reviewer edited only the English text of a generated pair":
+			case "a reviewer edited only the English text of the Worker's summary pair":
 				_sourcesReport.EditSummary("The pilot landed firmly.", _sourcesReport.Summary!.AiSummaryFr, "subject-officer", at);
 				break;
 			case "a reviewer edited the English text and accepted its French translation":

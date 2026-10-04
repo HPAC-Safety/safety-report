@@ -1,12 +1,12 @@
 Feature: Comments
-Any signed-in member may comment on a published report. Everyone can read the
+Any member may comment on a published report. Everyone can read the
 comments in either official language. Authors can edit or delete their own,
 and reviewers can hide any of them.
 
 @REQ-COM-001
-Scenario: A signed-in member comments on a published report
+Scenario: A member comments on a published report
   Given a report is published
-  And a member is signed in
+  And the visitor is a member
   When the member posts a comment on it
   Then the API answers 201 with the comment
   And the comment is listed on that report for every reader, signed in or not
@@ -19,9 +19,9 @@ Scenario: Commenting requires a member
   And no comment is stored
 
 @REQ-COM-003
-Scenario: A report the public cannot see cannot be commented on
+Scenario: A report no visitor can see cannot be commented on
   Given a report is not public
-  And a member is signed in
+  And the visitor is a member
   When the member posts a comment on it
   Then the API answers 404
   And no comment is stored
@@ -29,7 +29,7 @@ Scenario: A report the public cannot see cannot be commented on
 @REQ-COM-004
 Scenario Outline: A comment must have text, and at most 2000 characters
   Given a report is published
-  And a member is signed in
+  And the visitor is a member
   When the member posts a comment whose text is <text>
   Then the API answers 400
   And no comment is stored
@@ -50,7 +50,7 @@ Scenario: A comment is stored in the language it was written in, and the Worker 
 @REQ-COM-006
 Scenario: Posting a comment never waits for, or calls, a translation provider
   Given a report is published
-  And a member is signed in
+  And the visitor is a member
   And no translation provider is reachable
   When the member posts a comment on it
   Then the API answers 201
@@ -61,7 +61,7 @@ Scenario: The API tells a reader which comments are theirs and never who wrote t
   Given two members have each commented on a published report
   When the first member reads the report's comments
   Then only the first member's comment is marked as theirs
-  And no comment carries its author's subject or any other identity
+  And no comment carries its author's token subject or any other identity
   And an anonymous reader sees no comment marked as theirs
 
 @REQ-COM-008
@@ -77,12 +77,12 @@ Scenario: An author's deleted comment disappears but is not erased
   Given a member commented on a published report
   When the member deletes the comment
   Then the comment is no longer listed and the report's comment count drops by one
-  And the comment and its revisions are soft-deleted, not removed from the database
+  And the comment and its revisions are deleted, not erased
 
 @REQ-COM-010
 Scenario Outline: Nobody may change another member's comment
   Given a member commented on a published report
-  And another member is signed in
+  And the visitor is another member
   When the other member tries to <action> the comment
   Then the API answers 403
   And the comment is unchanged
@@ -95,7 +95,7 @@ Examples:
 @REQ-COM-011
 Scenario: A reviewer hides a comment, and the hiding is audited
   Given a member commented on a published report
-  When a safety officer hides the comment
+  When a Safety Officer hides the comment
   Then the comment is no longer listed and the report's comment count drops by one
   And the audit log records who hid it, without its text
   And the comment is kept in the database
@@ -103,7 +103,7 @@ Scenario: A reviewer hides a comment, and the hiding is audited
 @REQ-COM-012
 Scenario: A member who is not a reviewer cannot hide a comment
   Given a member commented on a published report
-  And another member is signed in
+  And the visitor is another member
   When the other member tries to hide the comment
   Then the API answers 403
   And the comment is still listed
@@ -132,9 +132,9 @@ Scenario: The feed shows how many comments each report has
 
 @REQ-COM-016
 @ui
-Scenario: A visitor who is not signed in is invited to sign in to comment
+Scenario: An anonymous visitor is invited to sign in to comment
   Given a published report has comments
-  When a visitor who is not signed in opens it
+  When an anonymous visitor opens it
   Then the comments are shown, each labelled "Member"
   And instead of a comment box the page offers to sign in to comment
   When the visitor signs in from there
@@ -142,8 +142,8 @@ Scenario: A visitor who is not signed in is invited to sign in to comment
 
 @REQ-COM-017
 @ui
-Scenario: A signed-in member posts, edits, and deletes their own comment
-  Given a member is signed in and a published report has comments
+Scenario: A member posts, edits, and deletes their own comment
+  Given the visitor is a member and a published report has comments
   When the member opens the report
   Then a comment box is shown with a reminder not to name or identify people
   When the member posts a comment
@@ -174,8 +174,8 @@ Scenario: A comment still awaiting translation shows its original text
 @REQ-COM-020
 @ui
 Scenario: A reviewer hides a comment from the report page
-  Given a safety officer is signed in and a published report has comments
-  When the safety officer opens the report
+  Given a Safety Officer is on the admin site and a published report has comments
+  When the Safety Officer opens the report
   Then every comment offers to hide it
-  When the safety officer hides a comment and confirms
+  When the Safety Officer hides a comment and confirms
   Then that comment is no longer listed

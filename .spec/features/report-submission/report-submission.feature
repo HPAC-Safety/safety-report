@@ -215,13 +215,13 @@ Scenario: The Next button becomes Submit on the final page
 
 @REQ-SUB-034
 @ui
-Scenario: A multi-select question is a picker dropdown, not a flat list
+Scenario: A multi-select question is one closed picker, not a flat list
   Given the current page shows a multi-select question
-  Then its options are hidden behind one closed picker labelled by the question
-  When the reporter opens the picker and checks two options
-  Then the picker stays open with both options checked
+  Then its choices are hidden behind one closed picker labelled by the question
+  When the reporter opens the picker and checks two choices
+  Then the picker stays open with both choices checked
   When the reporter presses Escape
-  Then the picker closes, returns focus to itself, and names both chosen options
+  Then the picker closes, returns focus to itself, and names both choices
 
 @REQ-SUB-132
 @ui
@@ -229,13 +229,13 @@ Scenario: A multi-select picker is a combobox that pops up a dialog of checkboxe
   Given the current page shows a multi-select question
   Then its closed picker is a combobox labelled by the question, collapsed, with a dialog as its popup
   When the reporter opens the picker
-  Then the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each option
+  Then the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each choice
 
 @REQ-SUB-085
 @ui
 Scenario Outline: An email or phone question opens the matching keyboard
   Given the current page shows an optional <type> question
-  Then its field has type "<input type>", input mode "<input mode>", and autocomplete "<autocomplete>"
+  Then its input has type "<input type>", input mode "<input mode>", and autocomplete "<autocomplete>"
 
 Examples:
   | type  | input type | input mode | autocomplete |
@@ -276,7 +276,7 @@ Scenario: A phone number that is not valid for its country holds the reporter on
 Scenario: The phone country picker starts on Canada
   Given the current page shows an optional phone question
   Then its country picker shows "🇨🇦 +1"
-  And the phone field's placeholder is "(555) 555-5555"
+  And the phone question's placeholder is "(555) 555-5555"
 
 @REQ-SUB-090
 @ui
@@ -284,9 +284,9 @@ Scenario Outline: A phone number takes its chosen country's mask as it is typed
   Given the current page shows an optional phone question
   When the reporter chooses <country> in its country picker
   Then its country picker shows "<shown>"
-  And the phone field's placeholder is "<placeholder>"
+  And the phone question's placeholder is "<placeholder>"
   When the reporter types "<digits>" into it
-  Then the phone field reads "<masked>"
+  Then the phone question reads "<masked>"
 
 Examples:
   | country        | shown   | placeholder    | digits     | masked         |
@@ -313,7 +313,7 @@ Examples:
 Scenario: Before "@" is typed, every suggested domain is offered for what has been typed
   Given the current page shows an optional email question
   When the reporter types "chas" into it
-  Then the field is a combobox whose suggestion list is labelled "Suggested email addresses"
+  Then the question is a combobox whose suggestion list is labelled "Suggested email addresses"
   And the suggestions below it are, in order:
     | chas@gmail.com   |
     | chas@yahoo.com   |
@@ -340,11 +340,11 @@ Scenario: After "@", the suggestions narrow to the domains beginning with what f
 
 @REQ-SUB-094
 @ui
-Scenario Outline: Choosing a suggestion fills the field
+Scenario Outline: Choosing a suggestion fills the question
   Given the current page shows an optional email question
   When the reporter types "chase.florell@h" into it
   And the reporter chooses "chase.florell@hotmail.com" <how>
-  Then the email field reads "chase.florell@hotmail.com"
+  Then the email question reads "chase.florell@hotmail.com"
   And no suggestions are shown
 
 Examples:
@@ -361,10 +361,10 @@ Scenario: An address at a domain outside the suggestions is accepted
 
 @REQ-SUB-098
 @ui
-Scenario Outline: On a desktop, clicking or focusing a date field opens a one-month calendar under it
+Scenario Outline: On a desktop, clicking or focusing a date question opens a one-month calendar under it
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter <opens> the date field
-  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  When the reporter <opens> the date question
+  Then a calendar labelled "Choose a date" opens under the question, showing today's month
   And today is marked in it
   And it has "Previous month" and "Next month" buttons
 
@@ -375,27 +375,27 @@ Examples:
 
 @REQ-SUB-099
 @ui
-Scenario: Choosing a day fills the field as yyyy-mm-dd and closes the calendar
+Scenario: Choosing a day fills the question as yyyy-mm-dd and closes the calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter clicks the date field and chooses the 1st of today's month
-  Then the date field reads the 1st of today's month as yyyy-mm-dd
+  When the reporter clicks the date question and chooses the 1st of today's month
+  Then the date question reads the 1st of today's month as yyyy-mm-dd
   And the calendar closes
   And the chosen day is announced in words
-  When the reporter clicks the date field and chooses the 1st of today's month again
+  When the reporter clicks the date question and chooses the 1st of today's month again
   Then the announcement is cleared and the chosen day is announced again
 
 @REQ-SUB-112
 @ui
 Scenario: A date question with a placeholder of its own still names the yyyy-mm-dd format
   Given the current page shows a date question whose placeholder is "When did it happen?", on a desktop
-  Then the date field's placeholder is "When did it happen?"
-  And the date field is described by the format "yyyy-mm-dd"
+  Then the date question's placeholder is "When did it happen?"
+  And the date question is described by the format "yyyy-mm-dd"
 
 @REQ-SUB-100
 @ui
 Scenario Outline: The calendar disables the days after today unless the question allows future dates
   Given the current page shows a date question that <allows> future dates, on a desktop
-  When the reporter clicks the date field
+  When the reporter clicks the date question
   Then the calendar shows today's month
   And every day after today is <state>
 
@@ -408,7 +408,7 @@ Examples:
 @ui
 Scenario Outline: A typed date that is malformed, or in the future where not allowed, holds the reporter on its page
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter types "<typed>" into the date field and presses Next
+  When the reporter types "<typed>" into the date question and presses Next
   Then the reporter stays on the date page
   And an inline message says "<message>"
 
@@ -424,7 +424,7 @@ Examples:
 @ui
 Scenario: A date typed as yyyy-mm-dd is sent as typed
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter types "2024-02-29" into the date field and presses Next
+  When the reporter types "2024-02-29" into the date question and presses Next
   And the reporter submits the report from the next page
   Then the date answer is sent as "2024-02-29"
 
@@ -432,7 +432,7 @@ Scenario: A date typed as yyyy-mm-dd is sent as typed
 @ui
 Scenario Outline: The calendar is in the reader's language
   Given the current page shows a date question in <language>, on a desktop
-  When the reporter clicks the date field
+  When the reporter clicks the date question
   Then the calendar names today's month in <language>
   And its weekday headings start on <first day>
   And its buttons and pickers are labelled from the <language> catalogue
@@ -446,7 +446,7 @@ Examples:
 @ui
 Scenario: The calendar works from the keyboard
   Given the current page shows a date question that allows future dates, on a desktop
-  When the reporter tabs into the date field and presses ArrowDown
+  When the reporter tabs into the date question and presses ArrowDown
   Then today has focus in the calendar
   When the reporter presses ArrowLeft
   Then the day 1 day before today has focus
@@ -461,50 +461,50 @@ Scenario: The calendar works from the keyboard
   When the reporter presses PageDown
   Then today has focus in the calendar
   When the reporter presses Enter
-  Then the date field reads today as yyyy-mm-dd
+  Then the date question reads today as yyyy-mm-dd
   And the calendar closes
-  And focus is on the date field
+  And focus is on the date question
   When the reporter presses ArrowDown and then Escape
   Then the calendar closes
-  And focus is on the date field
+  And focus is on the date question
 
 @REQ-SUB-111
 @ui
-Scenario: Tabbing past a date field skips its calendar
+Scenario: Tabbing past a date question skips its calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter tabs into the date field
-  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  When the reporter tabs into the date question
+  Then a calendar labelled "Choose a date" opens under the question, showing today's month
   When the reporter presses Tab
   Then focus skips the calendar to the Next button, and the calendar closes
 
 @REQ-SUB-131
 @ui
-Scenario: A desktop date field is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus
+Scenario: A desktop date question is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus
   Given the current page shows a date question that does not allow future dates, on a desktop
-  Then the date field is a collapsed combobox with a dialog as its popup
-  When the reporter clicks the date field
-  Then the date field is expanded and controls the dialog labelled "Choose a date"
+  Then the date question is a collapsed combobox with a dialog as its popup
+  When the reporter clicks the date question
+  Then the date question is expanded and controls the dialog labelled "Choose a date"
   When the reporter presses the calendar's background
-  Then the calendar stays open and focus is on the date field
+  Then the calendar stays open and focus is on the date question
   When the reporter presses ArrowDown and then Escape
   Then the calendar closes
-  And focus is on the date field
+  And focus is on the date question
 
 @REQ-SUB-105
 @ui
 Scenario: The reporter jumps to a month and year a few years back
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter clicks the date field
+  When the reporter clicks the date question
   And the reporter chooses March in the calendar's month picker and 2023 in its year picker
   Then the calendar shows March 2023
   When the reporter chooses the 14th
-  Then the date field reads "2023-03-14"
+  Then the date question reads "2023-03-14"
 
 @REQ-SUB-106
 @ui
 Scenario Outline: On a touch device, a date question uses the device's own date picker
   Given the current page shows a date question that <allows> future dates, on a touch device
-  Then the date field is a native date input <limit>
+  Then the date question is a native date input <limit>
   And tapping it opens no calendar of the form's own
 
 Examples:
@@ -516,7 +516,7 @@ Examples:
 @ui
 Scenario: On a touch device, a future date the device's picker lets through still holds the reporter on its page
   Given the current page shows a date question that does not allow future dates, on a touch device
-  When the device's picker sets the date field to "9999-12-31" and the reporter presses Next
+  When the device's picker sets the date question to "9999-12-31" and the reporter presses Next
   Then the reporter stays on the date page
   And an inline message says "Choose a date that is not in the future."
 
@@ -529,7 +529,7 @@ Scenario: One answer entry per shown answer-producing revision
   And a type-ahead answer naming a value the question does not offer carries the typed text in "value" instead
   And every other answer uses "value", a single string, alongside the locale it was given in
   And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
-  And fields for the other answer shapes are null
+  And the other answer shapes are null
 
 @REQ-SUB-077
 @ui
@@ -566,7 +566,7 @@ Scenario: A submitted choice must be one the question offers
   Given a reporter submits a single-select, multi-select, or type-ahead answer naming choices by identifier
   When the API validates the submission
   Then the answer is accepted only if every named choice is a live choice of that question
-  And a removed choice, or another question's choice, is rejected
+  And a removed choice, or another question's choice, is refused
   And only a type-ahead also accepts typed text naming a value it does not yet offer
 
 @REQ-SUB-113
@@ -649,11 +649,11 @@ Scenario: The Worker mechanically translates every answer that needs it
 
 @REQ-SUB-071
 Scenario: Only free text marked for translation is machine-translated
-  Given a submitted report answers a long-text question marked for translation
+  Given a submitted report answers a paragraph question marked for translation
   And it answers a short-text question not marked for translation
   And it answers an email, a phone number, a date, a time, a number, and a yes/no question
   When the Worker translates that report's answers
-  Then only the long-text answer is sent to the translator
+  Then only the paragraph answer is sent to the translator
   And the yes/no answer, stored as a boolean, is never sent to the translator
   And every other answer, the yes/no answer included, keeps no second language
 
@@ -671,15 +671,15 @@ Scenario: There is no API endpoint left to supply or correct an answer's transla
   And no endpoint lists answers waiting for one
 
 @REQ-SUB-008
-Scenario Outline: The API rejects a malformed submission DTO
+Scenario Outline: The API refuses a malformed submission DTO
   Given a submission DTO contains <problem>
   When the API validates it
-  Then the API rejects the submission
+  Then the API refuses the submission
 
 Examples:
   | problem                                             |
   | a duplicate question_revision_id                    |
-  | a non-null field from the wrong answer shape        |
+  | a non-null value from the wrong answer shape        |
   | a malformed upload ID                               |
   | the same upload ID named more than once             |
   | more upload IDs than the attachment limit           |
@@ -706,7 +706,7 @@ Examples:
 Scenario Outline: A malformed email or phone answer is refused by its question key
   Given a reporter writing in English submits <submitted> as the answer to an <type> question
   When the submission is made
-  Then the submission is rejected
+  Then the submission is refused
   And the refusal names the question by its key
   And no stored answer carries that value
 
@@ -727,7 +727,7 @@ Examples:
 Scenario Outline: A future date is refused by its question key unless the question allows future dates
   Given a reporter writing in English submits <date> as the answer to a date question that does not allow future dates
   When the submission is made
-  Then the submission is rejected
+  Then the submission is refused
   And the refusal names the question by its key
   And the refusal says the question does not allow a date after today
   And no stored answer carries that value
@@ -808,17 +808,17 @@ Scenario: The UI prevents duplicate submission while a request is in flight
   And clears saved local state only after a definite 202 response
 
 @REQ-SUB-017
-Scenario: A rate-limited submission is rejected
+Scenario: A rate-limited submission is refused
   Given a submission request arrives
   When the per-IP rate limit is exceeded
-  Then the API rejects the request with 429 and a safe retry signal
-  And the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a caller cannot forge, and is never stored on the report
+  Then the API refuses the request with 429 and a safe retry signal
+  And the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a member cannot forge, and is never stored on the report
 
 @REQ-SUB-018
-Scenario: An unauthenticated submission is rejected
+Scenario: An unauthenticated submission is refused
   Given a submission request carries no bearer token
   When the API processes the submission
-  Then the API rejects it before any report state is created
+  Then the API refuses it before any report state is created
 
 @REQ-SUB-019
 Scenario Outline: A member of any role may submit a report
@@ -827,29 +827,29 @@ Scenario Outline: A member of any role may submit a report
   Then the API accepts it
 
 Examples:
-  | role          |
-  | User          |
-  | SafetyOfficer |
-  | Administrator |
+  | role           |
+  | User           |
+  | Safety Officer |
+  | Administrator  |
 
 @REQ-SUB-020
-Scenario: A stored report carries no submitter subject, user id, or link
+Scenario: A stored report carries no reporter token subject, user id, or link
   Given a reporter submits a valid report while signed in
   When the submission is committed
-  Then no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject
+  Then no stored report, answer, file, upload, consent projection, or outbox message records the reporter's token subject
   And no column, join table, or hash anywhere links the report to the member who filed it
 
 @REQ-SUB-021
 Scenario: No audit entry or log line records who submitted a report
   Given a reporter submits a valid report while signed in
   When the submission completes
-  Then no audit entry attributes the submission to a subject
-  And no log line records the submitting subject at any level
+  Then no audit entry attributes the submission to a token subject
+  And no log line records the reporter's token subject at any level
 
 @REQ-SUB-022
 @ui
-Scenario: A signed-out visitor is asked to sign in before the report page is offered
-  Given a signed-out visitor opens the report page
+Scenario: An anonymous visitor is asked to sign in before the report page is offered
+  Given an anonymous visitor opens the report page
   Then the report page content is not shown
   And the page explains that filing a report requires an HPAC member sign-in
   And it offers a sign-in action
@@ -857,7 +857,7 @@ Scenario: A signed-out visitor is asked to sign in before the report page is off
 @REQ-SUB-023
 @ui
 Scenario: The report page tells the reporter that signing in does not attach them to the report
-  Given a signed-in member opens the report page
+  Given a member opens the report page
   Then the report page content is shown
   And a notice states that signing in only confirms HPAC membership
   And the notice states that the report is not linked to their account
@@ -865,7 +865,7 @@ Scenario: The report page tells the reporter that signing in does not attach the
 @REQ-SUB-024
 @ui
 Scenario: The not-tracked notice is shown in the reporter's chosen language
-  Given a signed-in member opens the report page in French
+  Given a member opens the report page in French
   Then the notice is shown in French
 
 @REQ-SUB-072
@@ -883,7 +883,7 @@ Scenario: Minting an upload returns a pre-signed PUT for one quarantine key and 
 Scenario Outline: A declared file the API will not accept gets no upload URL
   Given a member asks to upload <file>
   When the API checks the declared type and size
-  Then the API rejects it with a safe rejection reason of "<reason>"
+  Then the API refuses it with a safe refusal reason of "<reason>"
   And no upload URL is minted
 
 Examples:
@@ -912,8 +912,8 @@ Examples:
 Scenario Outline: A submission validates every upload it claims
   Given a submission claims an upload whose stored file is <file>
   When the API validates the submission
-  Then the API rejects the submission with 400
-  And the response names that upload ID with a safe rejection reason of "<reason>"
+  Then the API refuses the submission with 400
+  And the response names that upload ID with a safe refusal reason of "<reason>"
   And no report, answer, file, or outbox row is created
   And the API read only the upload's size and the bytes sniffing needs, never the whole file into memory
 
@@ -927,7 +927,7 @@ Examples:
 Scenario: A submission naming an expired or unknown upload is refused by name
   Given a submission names an upload ID that no longer exists in quarantine
   When the API validates the submission
-  Then the API rejects the submission with 400
+  Then the API refuses the submission with 400
   And the response lists exactly the upload IDs it could not find
   And no report, answer, file, or outbox row is created
 
@@ -939,16 +939,16 @@ Scenario: A claimed upload leaves quarantine once the report commits
   And the upload is removed from quarantine, with the lifecycle rule as the backstop if that removal fails
 
 @REQ-SUB-043
-Scenario: An unauthenticated upload is rejected
+Scenario: An unauthenticated upload is refused
   Given an upload request carries no bearer token
   When the API receives it
-  Then the API rejects it before anything is written to object storage
+  Then the API refuses it before anything is written to object storage
 
 @REQ-SUB-044
-Scenario: A rate-limited upload is rejected
+Scenario: A rate-limited upload is refused
   Given an upload request arrives
   When the per-IP upload rate limit is exceeded
-  Then the API rejects the request with 429 and a safe retry signal
+  Then the API refuses the request with 429 and a safe retry signal
 
 @REQ-SUB-045
 @ui
@@ -1065,9 +1065,9 @@ Scenario: An expired saved report's uploads are erased
 
 @REQ-SUB-058
 @ui
-Scenario: The attachment field is a drop zone with a large choose-files control
+Scenario: The attachment question is a drop zone with a large choose-files control
   Given the current page shows a file-upload question
-  Then the field shows a drop zone with a large upload icon and a localized "drag files here, or choose files" prompt
+  Then the question shows a drop zone with a large upload icon and a localized "drag files here, or choose files" prompt
   And the type, count, and size guidance sits inside the drop zone
 
 @REQ-SUB-059
@@ -1111,7 +1111,7 @@ Scenario: A request that reached the API without CloudFront's origin-secret head
 Scenario: The rate limiter partitions by the CloudFront viewer address, not the shared connection
   Given the per-IP submission rate limit is exhausted for one CloudFront viewer address
   When a submission request arrives from a different CloudFront viewer address
-  Then the API does not reject it
+  Then the API does not refuse it
 
 @REQ-SUB-118
 Scenario: A successful submission nudges the Worker
@@ -1175,13 +1175,13 @@ Scenario: The report stores only the receipt's SHA-256 hash
 Scenario: The receipt links a report to a browser, never to a member
   Given a reporter submits a valid report while signed in
   When the submission is committed
-  Then no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it
-  And the stored receipt hash is not derived from the subject
+  Then no stored value of that report, its answers, or its outbox is the reporter's token subject or a hash of it
+  And the stored receipt hash is not derived from the token subject
 
 @REQ-SUB-136
 @ui
 Scenario: The browser keeps the receipt after the 202 and never puts it in an address
-  Given a signed-in member submits a valid report
+  Given a member submits a valid report
   When the API answers 202 with a receipt
   Then the browser keeps the report ID and the receipt in its own storage
   And no request address, query string, or navigation carries the receipt

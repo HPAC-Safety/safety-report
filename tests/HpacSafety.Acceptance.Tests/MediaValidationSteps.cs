@@ -121,7 +121,7 @@ public sealed class MediaValidationSteps
 		_stripper.Invocations.ShouldBe(0, "an image decoder must never touch video (ADR-0025, ADR-0094)");
 	}
 
-	[Then(@"the derivative carries no container metadata, location, device, creation, or filename fields")]
+	[Then(@"the derivative carries no container metadata, location, device, creation, or filename entries")]
 	public void ThenTheDerivativeCarriesNoMetadata()
 	{
 		// The fake remuxer stands for ffmpeg, so what is asserted here is that a

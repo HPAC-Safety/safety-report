@@ -41,12 +41,13 @@ describe('the places that cannot import the specification paths', () => {
 		})
 	}
 
-	it('ci.yml checks every generated file and every link', () => {
+	it('ci.yml checks every generated file, every link, and the glossary', () => {
 		const ci = read('.github/workflows/ci.yml')
 
 		assert.ok(ci.includes('node tools/spec/generate-traceability.ts --check'))
 		assert.ok(ci.includes('node tools/spec/generate-spec-index.ts --check'))
 		assert.ok(ci.includes('node tools/docs/check-links.ts'))
+		assert.ok(ci.includes('node tools/spec/check-glossary.ts'))
 	})
 
 	it('.gitattributes keeps the checked-out side of every generated file on a conflict', () => {

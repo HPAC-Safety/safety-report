@@ -5,19 +5,19 @@ import { signInAs, stubAuth, type Role } from "./auth"
 
 const { Given, When, Then } = createBdd()
 
-Given("a visitor activates the member-login action", async ({ page }) => {
+Given("a visitor activates the member sign-in action", async ({ page }) => {
 	await stubAuth(page)
 	await page.goto("/")
 	await page.locator("header").getByRole("link", { name: "Member login" }).click()
 })
 
-Then("the login page shows an email field, a password field, and a login action", async ({ page }) => {
+Then("the sign-in page shows an email box, a password box, and a sign-in action", async ({ page }) => {
 	await expect(page.getByLabel("Email")).toBeVisible()
 	await expect(page.getByLabel("Password")).toBeVisible()
 	await expect(page.getByRole("button", { name: "Log in" })).toBeVisible()
 })
 
-Then("the email field is an email input, so a phone offers its email keyboard", async ({ page }) => {
+Then("the email box is an email input, so a phone offers its email keyboard", async ({ page }) => {
 	const email = page.getByLabel("Email")
 	await expect(email).toHaveAttribute("type", "email")
 	await expect(email).toHaveAttribute("autocomplete", "email")
@@ -25,7 +25,7 @@ Then("the email field is an email input, so a phone offers its email keyboard", 
 	await expect(email).toHaveAttribute("spellcheck", "false")
 })
 
-Then("the login page shows no third-party sign-in option", async ({ page }) => {
+Then("the sign-in page shows no third-party sign-in option", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Continue with Google" })).toBeHidden()
 })
 
@@ -33,11 +33,11 @@ Given("the API reports that a third-party provider is configured", async ({ page
 	await stubAuth(page, { thirdPartySignIn: true })
 })
 
-Then("the login page also shows a third-party sign-in option", async ({ page }) => {
+Then("the sign-in page also shows a third-party sign-in option", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible()
 })
 
-Given("a visitor signs in from the member login page", async ({ page }) => {
+Given("a visitor signs in from the member sign-in page", async ({ page }) => {
 	await signInAs(page, "administrator")
 })
 
@@ -45,10 +45,10 @@ Given("a visitor signs in with valid member credentials", async ({ page }) => {
 	await signInAs(page, "administrator")
 })
 
-Given(/^a visitor signs in as an? (Administrator|SafetyOfficer|User)$/, async ({ page }, role: string) => {
+Given(/^a visitor signs in as an? (Administrator|Safety Officer|User)$/, async ({ page }, role: string) => {
 	const roles: Record<string, Role> = {
 		Administrator: "administrator",
-		SafetyOfficer: "safety_officer",
+		"Safety Officer": "safety_officer",
 		User: "user",
 	}
 	await signInAs(page, roles[role])
@@ -62,7 +62,7 @@ Given("a visitor submits credentials that are not valid", async ({ page }) => {
 	await page.getByRole("button", { name: "Log in" }).click()
 })
 
-Then("the login page shows one generic failure message", async ({ page }) => {
+Then("the sign-in page shows one generic failure message", async ({ page }) => {
 	const alerts = page.getByRole("alert")
 	await expect(alerts).toHaveCount(1)
 	await expect(alerts).toBeVisible()
@@ -74,11 +74,11 @@ Then("the failure does not say whether the email or the password was wrong", asy
 	expect(message).not.toMatch(/unknown|no such|incorrect password|wrong password/i)
 })
 
-Then("the header still shows the member-login action", async ({ page }) => {
+Then("the header still shows the member sign-in action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
 })
 
-Then("the header shows a logout action instead of the member-login action", async ({ page }) => {
+Then("the header shows a sign-out action instead of the member sign-in action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeHidden()
 })
@@ -87,14 +87,14 @@ When("the page reloads", async ({ page }) => {
 	await page.reload()
 })
 
-Then("the header still shows the logout action", async ({ page }) => {
+Then("the header still shows the sign-out action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
 })
 
 // Every request a page sends to the API from the moment its member logs out.
 const apiRequestsSinceLogout = new WeakMap<Page, string[]>()
 
-Given("a signed-in member activates the logout action", async ({ page }) => {
+Given("a member activates the sign-out action", async ({ page }) => {
 	await signInAs(page, "user")
 
 	const sent: string[] = []
@@ -112,16 +112,16 @@ When("the client discards its token", async ({ page }) => {
 	expect(await page.evaluate(() => sessionStorage.getItem("hpac.session"))).toBeNull()
 })
 
-Then("no request reaches the API for that logout", async ({ page }) => {
+Then("no request reaches the API for that sign-out", async ({ page }) => {
 	await page.waitForLoadState("networkidle")
 	expect(apiRequestsSinceLogout.get(page)).toEqual([])
 })
 
-When("the visitor activates the logout action", async ({ page }) => {
+When("the visitor activates the sign-out action", async ({ page }) => {
 	await page.locator("header").getByRole("button", { name: "Log out" }).click()
 })
 
-Then("the header shows the member-login action again", async ({ page }) => {
+Then("the header shows the member sign-in action again", async ({ page }) => {
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
 })
 
@@ -138,7 +138,7 @@ When("the visitor activates the Admin menu", async ({ page }) => {
 })
 
 Then(
-	"it opens with manage-reports, review-type-ahead-values, and manage-questions options",
+	"it opens with manage-reports, review-type-ahead-values, and manage-questions items",
 	async ({ page }) => {
 		const menu = page.getByRole("menu", { name: "Admin" })
 		await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
@@ -151,23 +151,23 @@ Then(
 	},
 )
 
-Then("it opens with manage-reports and review-type-ahead-values options", async ({ page }) => {
+Then("it opens with manage-reports and review-type-ahead-values items", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
 	await expect(menu.getByRole("menuitem", { name: "Type-ahead values to review" })).toBeVisible()
 	await expect(menu.getByRole("menuitem")).toHaveCount(2)
 })
 
-Then("it offers no manage-questions option", async ({ page }) => {
+Then("it offers no manage-questions item", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeHidden()
 })
 
-Then("the header shows a logout action", async ({ page }) => {
+Then("the header shows a sign-out action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
 })
 
-Then("every option is on one line and none is truncated", async ({ page }) => {
+Then("every item is on one line and none is truncated", async ({ page }) => {
 	const options = await page
 		.getByRole("menu", { name: "Admin" })
 		.getByRole("menuitem")
@@ -205,7 +205,7 @@ const ADMIN_MENU_DESTINATIONS: Record<string, string> = {
 	"manage-questions": "/admin/questions",
 }
 
-When(/^the visitor activates the (.+) option$/, async ({ page }, option: string) => {
+When(/^the visitor activates the (.+) item$/, async ({ page }, option: string) => {
 	await page.getByRole("menuitem", { name: option }).click()
 })
 

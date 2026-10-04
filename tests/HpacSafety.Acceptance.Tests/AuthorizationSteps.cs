@@ -18,9 +18,9 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 /// <remarks>
 ///     These run against the booted host rather than the domain, because that is
-///     what they are about: "the API rejects the operation regardless of what the
+///     what they are about: "the API refuses the operation regardless of what the
 ///     UI would have shown" cannot be shown by calling a domain method. Detailed
-///     coverage — every rejected token shape, every role at every endpoint — lives
+///     coverage — every refused token shape, every role at every endpoint — lives
 ///     in <c>HpacSafety.Api.Tests</c>; these prove the feature file's sentences are
 ///     true of the running system.
 /// </remarks>
@@ -85,7 +85,7 @@ public sealed class AuthorizationSteps
 		_client = host.CreateClient();
 	}
 
-	[Given(@"an authenticated member without the required role calls an admin operation")]
+	[Given(@"a member without the required role calls an admin operation")]
 	public async Task GivenMemberWithoutRequiredRole()
 	{
 		// A User is signed in and proven to be a member. That is exactly the
@@ -96,13 +96,14 @@ public sealed class AuthorizationSteps
 		_response = await _client.GetAsync(Questions);
 	}
 
-	// {word}, not (User|SafetyOfficer|Administrator): Reqnroll reads this as a
-	// Cucumber Expression, where parentheses mean "optional text" rather than
-	// alternation, so the regex form silently matches nothing.
-	[Given(@"a member has the {word} role")]
+	// Anchored with ^ and $, so Reqnroll reads it as a regular expression: as a
+	// Cucumber Expression, the parentheses would mean "optional text" rather
+	// than alternation, and it would silently match nothing. The role is named
+	// as the glossary names it ("Safety Officer").
+	[Given(@"^a member has the (User|Safety Officer|Administrator) role$")]
 	public async Task GivenMemberHasRole(string role)
 	{
-		_role = Enum.Parse<MemberRole>(role);
+		_role = GlossaryNames.Role(role);
 		_client = await BootedApi.SignedInAs(_role);
 	}
 
@@ -125,7 +126,7 @@ public sealed class AuthorizationSteps
 		_response.ShouldNotBeNull();
 	}
 
-	[When(@"^that member attempts to (submit an occurrence report|list the review queue|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|soft-delete a report|create a question revision|edit a question's choices)$")]
+	[When(@"^that member attempts to (submit an occurrence report|read the report list|read a report's private detail|obtain an attachment link|edit a report's summary|publish a report|unpublish a report|delete a report|create a question revision|edit a question's choices)$")]
 	public async Task WhenMemberAttemptsCapability(string capability)
 	{
 		// One representative endpoint call per capability, each on its own fresh
@@ -135,13 +136,13 @@ public sealed class AuthorizationSteps
 		_response = capability switch
 		{
 			"submit an occurrence report" => await Submit(),
-			"list the review queue" => await _client!.GetAsync(new Uri("/api/admin/reports", UriKind.Relative)),
+			"read the report list" => await _client!.GetAsync(new Uri("/api/admin/reports", UriKind.Relative)),
 			"read a report's private detail" => await _client!.GetAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
 			"obtain an attachment link" => await ObtainAttachmentLink(),
 			"edit a report's summary" => await EditSummary(),
 			"publish a report" => await Review(ReportStatus.Pending, "publish", version => new { version }),
 			"unpublish a report" => await Review(ReportStatus.Published, "unpublish", version => new { version, note = "Synthetic note: duplicate." }),
-			"soft-delete a report" => await _client!.DeleteAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
+			"delete a report" => await _client!.DeleteAsync(new Uri($"/api/admin/reports/{await BootedReports.Seed(ReportStatus.Pending, true)}", UriKind.Relative)),
 			"create a question revision" => await CreateQuestion(),
 			"edit a question's choices" => await EditChoices(),
 			_ => throw new ArgumentOutOfRangeException(nameof(capability), capability, "Not a capability the role outlines name."),
@@ -285,7 +286,7 @@ public sealed class AuthorizationSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 	}
 
-	[Then(@"the API rejects the operation regardless of what the UI would have shown")]
+	[Then(@"the API refuses the operation regardless of what the UI would have shown")]
 	public async Task ThenRejectedRegardlessOfUi()
 	{
 		// 403, not 401: they are signed in, and it is still not theirs.
@@ -295,7 +296,7 @@ public sealed class AuthorizationSteps
 		body.ShouldContain("insufficient-role");
 	}
 
-	[Then(@"the API {word} the attempt")]
+	[Then(@"^the API (accepts|allows|forbids|refuses) the attempt$")]
 	public async Task ThenApiOutcome(string outcome)
 	{
 		if (_reviews.Count > 0)

@@ -25,10 +25,10 @@ public sealed class ReviewLifecycleSteps
 	private ReportStatus _from;
 	private Exception? _refusal;
 
-	[Given(@"^a report is in state (\w+)$")]
+	[Given(@"^a report is in state (\w+(?: failed)?)$")]
 	public void GivenAReportIsInState(string state)
 	{
-		_from = Enum.Parse<ReportStatus>(state);
+		_from = GlossaryNames.Status(state);
 		_report = In(_from, consent: true);
 	}
 
@@ -44,7 +44,7 @@ public sealed class ReviewLifecycleSteps
 				_report = In(ReportStatus.Submitted, consent: false);
 				_report.KeepUnpublished();
 				break;
-			case "a valid bilingual pair is saved":
+			case "a valid summary pair is saved":
 				_report.AttachSummary(Summary.Generate(_report.Id, "The pilot landed.", "Le pilote s'est posé.", "gemini-3.7-flash", "summarize-anonymize.v3", Now));
 				_report.AwaitReview();
 				break;
@@ -68,10 +68,10 @@ public sealed class ReviewLifecycleSteps
 		}
 	}
 
-	[Then(@"^the report moves to state (\w+)$")]
+	[Then(@"^the report moves to state (\w+(?: failed)?)$")]
 	public void ThenTheReportMovesTo(string state)
 	{
-		_report.Status.ShouldBe(Enum.Parse<ReportStatus>(state));
+		_report.Status.ShouldBe(GlossaryNames.Status(state));
 	}
 
 	[When(@"^an officer tries to (.+)$")]
@@ -95,10 +95,10 @@ public sealed class ReviewLifecycleSteps
 		_refusal.ShouldBeOfType<ReviewTransitionException>();
 	}
 
-	[Then(@"^the report stays in state (\w+)$")]
+	[Then(@"^the report stays in state (\w+(?: failed)?)$")]
 	public void ThenTheReportStaysIn(string state)
 	{
-		_report.Status.ShouldBe(Enum.Parse<ReportStatus>(state));
+		_report.Status.ShouldBe(GlossaryNames.Status(state));
 		_report.Status.ShouldBe(_from);
 	}
 
@@ -119,7 +119,7 @@ public sealed class ReviewLifecycleSteps
 		_report.UnpublishNote.ShouldBeNull();
 	}
 
-	[Then(@"^soft deletion is still the one thing an officer can do to it \(REQ-DOM-007\)$")]
+	[Then(@"^deletion is still the one thing an officer can do to it \(REQ-DOM-007\)$")]
 	public void ThenSoftDeletionStillWorks()
 	{
 		_report.SoftDelete(Now);

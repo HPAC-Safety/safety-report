@@ -87,7 +87,7 @@ public sealed class AuthenticationSteps
 
 	[When(@"it is presented to any authenticated endpoint")]
 	[When(@"it is presented to the API")]
-	[When(@"the API establishes the caller's identity")]
+	[When(@"the API establishes the member's identity")]
 	public void WhenItIsValidated()
 	{
 		var parameters = AuthenticationServiceCollectionExtensions.ValidationParametersFor(
@@ -134,7 +134,7 @@ public sealed class AuthenticationSteps
 		MemberRoles.EffectiveRole(_principal!, Options.RoleClaimType).ShouldBe(MemberRole.User);
 	}
 
-	[Then(@"it reads only the subject and the role claim")]
+	[Then(@"it reads only the token subject and the role claim")]
 	public void ThenOnlySubjectAndRole()
 	{
 		var identity = MemberRoles.IdentityOf(_principal!, Options.RoleClaimType);

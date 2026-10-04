@@ -35,7 +35,7 @@ public sealed class ConsentViewSteps
 			consent ? ReportStatus.Pending : ReportStatus.Unpublished, consent, mediaConsent: mediaConsent);
 	}
 
-	[When(@"a safety officer reads the report list and the report's detail")]
+	[When(@"a Safety Officer reads the report list and the report's detail")]
 	public async Task WhenASafetyOfficerReadsTheReport()
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);

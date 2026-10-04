@@ -59,7 +59,7 @@ is untouched and versions only move forward. A Published report shows the
 restored text at once; any other report holds it as a draft (REQ-MOD-196,
 REQ-MOD-197, REQ-MOD-204). Restoring is audited as `RolledBackSummary`, and
 neither it nor an edit records any text in the audit log (REQ-MOD-061). A
-Safety Officer or an Administrator may edit and restore; a User may not
+reviewer may edit and restore; a User may not
 (REQ-MOD-201).
 
 **Not built:** regenerating a summary with the model, and showing revision
@@ -71,7 +71,7 @@ asks the reviewer to reload. Each action is audited (`REQ-MOD-061`).
 
 ## Private notes (#508)
 
-A safety officer or administrator may keep notes on a report: calls made,
+A reviewer may keep notes on a report: calls made,
 follow-ups, what an investigator said
 ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)).
 The report view has a **Private notes** section, newest note first. Each note
@@ -86,11 +86,11 @@ edit any note, open a note's history, or remove a note after confirming.
   each with its own text, writer, and time. An edit based on a revision that
   is no longer the latest is refused with `409`, so two reviewers cannot
   silently overwrite each other (REQ-MOD-100).
-- Removal soft-deletes the note and its revisions and writes one
+- Removal deletes the note and its revisions and writes one
   content-free `RemovedPrivateNote` audit entry. Deleting the report does the
   same to its notes (REQ-MOD-101, REQ-MOD-103).
 - The endpoints live under `/api/admin/reports/{reportId}/private-notes` and
-  answer only a Safety Officer or an Administrator (REQ-MOD-098). Nothing else
+  answer only a reviewer (REQ-MOD-098). Nothing else
   reads the notes: not the report detail DTO, not a database view, not the
   public feed or comments, not the Worker or the model, and never a
   translation provider (REQ-MOD-104, REQ-MOD-105).
@@ -111,7 +111,7 @@ That form is for storage only. The report view shows such an answer in the
 interface language the reviewer chose, not the language the reporter
 answered in: `2026-09-13` reads "September 13, 2026" in English and
 "13 septembre 2026" in French, `14:30` reads "2:30 p.m." or "14 h 30", and
-`true` reads "Yes" or "Oui". The detail view names each question's type so
+`true` reads "Yes" or "Oui". The report detail names each question's type so
 the page can tell these answers from free text. Because the formatted value
 already reads in the reviewer's language, the view shows no second-language
 translation beside it. A stored value that is not a real date or time is
@@ -131,7 +131,7 @@ pair is written by hand after summarization failed.
 Each saved language records how it was produced — `generated` by the Worker,
 `human` when a reviewer typed it, or `machine` when it is an accepted
 translation — and the report view shows it. Translation goes through the
-server's translation port; safety officers and administrators may use it.
+server's translation port; Safety Officers and Administrators may use it.
 
 ## Out of scope
 
@@ -149,7 +149,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Editing one language without the other in separate saves: the pair is
   saved together.
 - Showing an unpublishing note anywhere but the admin report view.
-- An Approve step separate from Publish, or a Reject or Reopen action
+- An Approve step separate from Publish, or a `Reject` or `Reopen` action
   ([ADR-0125](../../decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.

@@ -185,6 +185,8 @@ export function render({ areas, pages, decisions, lessons, conventions }: Inputs
 		'in [`features/README.md`](features/README.md). Every claim and constraint, with',
 		'what verifies it and the step definitions that bind it, is in',
 		'[`traceability.md`](traceability.md), and as data in [`claims.json`](claims.json).',
+		'The words scenarios use, and the synonyms they may not, are in',
+		'[`glossary.md`](glossary.md) ([CONV-003](conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).',
 		'',
 		'## Feature areas',
 		'',

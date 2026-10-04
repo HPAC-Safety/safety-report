@@ -465,7 +465,7 @@ Then("consent_publish has no selected default and requires an explicit yes or no
 	await expect(page.getByRole("radio", { name: "No" })).not.toBeChecked()
 })
 
-Then("the client shows inline validation using the same stable type\\/option rules and localized messages the API uses", async ({ page }) => {
+Then("the client shows inline validation using the same stable type\\/choice rules and localized messages the API uses", async ({ page }) => {
 	await expect(page.getByText("This question is required.")).toBeVisible()
 })
 
@@ -481,7 +481,7 @@ Then("groups use fieldset\\/legend", async ({ page }) => {
 	await expect(page.locator("fieldset legend", { hasText: "Aircraft" })).toBeVisible()
 })
 
-Then("errors are linked to their fields and summarized", async ({ page }) => {
+Then("errors are linked to their questions and summarized", async ({ page }) => {
 	const questions = defaultFormQuestions()
 	const narrative = present(questions.find((q) => q.key === "narrative"))
 	narrative.isRequired = true
@@ -570,7 +570,7 @@ Given("the current page shows a multi-select question", async ({ page }) => {
 	await goNext(page) // intro -> the multi-select page
 })
 
-Then("its options are hidden behind one closed picker labelled by the question", async ({ page }) => {
+Then("its choices are hidden behind one closed picker labelled by the question", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
 	await expect(picker).toContainText("Choose any")
@@ -588,7 +588,7 @@ When("the reporter opens the picker", async ({ page }) => {
 	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 })
 
-Then("the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each option", async ({ page }) => {
+Then("the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each choice", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "true")
 	const dialog = page.getByRole("dialog", { name: "Which conditions applied?" })
@@ -598,13 +598,13 @@ Then("the picker is expanded and controls a dialog labelled by the question, hol
 	for (const option of ["Gusty", "Thermic", "Turbulent"]) await expect(dialog.getByRole("checkbox", { name: option })).toBeVisible()
 })
 
-When("the reporter opens the picker and checks two options", async ({ page }) => {
+When("the reporter opens the picker and checks two choices", async ({ page }) => {
 	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 	await page.getByRole("checkbox", { name: "Gusty" }).check()
 	await page.getByRole("checkbox", { name: "Turbulent" }).check()
 })
 
-Then("the picker stays open with both options checked", async ({ page }) => {
+Then("the picker stays open with both choices checked", async ({ page }) => {
 	await expect(page.getByRole("combobox", { name: /Which conditions applied\?/ })).toHaveAttribute("aria-expanded", "true")
 	await expect(page.getByRole("checkbox", { name: "Gusty" })).toBeChecked()
 	await expect(page.getByRole("checkbox", { name: "Turbulent" })).toBeChecked()
@@ -615,7 +615,7 @@ When("the reporter presses Escape", async ({ page }) => {
 	await page.keyboard.press("Escape")
 })
 
-Then("the picker closes, returns focus to itself, and names both chosen options", async ({ page }) => {
+Then("the picker closes, returns focus to itself, and names both choices", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
 	await expect(picker).toBeFocused()
@@ -711,7 +711,7 @@ Then("no dialog asks whether to continue", async ({ page }) => {
 
 // ------------------------------ a one-language reporter-added choice (REQ-QB-103) --
 
-Given("a type-ahead question has a reporter-added choice typed only in English", async ({ page }) => {
+Given("a type-ahead question has a reporter-added value typed only in English", async ({ page }) => {
 	await openForm(page, typeAheadFormQuestions())
 })
 
@@ -1060,7 +1060,7 @@ When("a reporter using English opens that question on a screen {int} pixels wide
 })
 
 Then(
-	"the question is a combobox field with no caret, described by its help text, and no browser suggestion list",
+	"the question is a combobox with no caret, described by its help text, and no browser suggestion list",
 	async ({ page }) => {
 		const field = page.getByRole("combobox", { name: "Which one applies?" })
 		await expect(field).toBeVisible()
@@ -1086,7 +1086,7 @@ Then(
 	},
 )
 
-When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) => {
+When(/^they open the question's list by (.+)$/, async ({ page }, opening: string) => {
 	const field = typeAheadField(page)
 	const keys: Record<string, string> = {
 		"pressing Alt and the down arrow": "Alt+ArrowDown",
@@ -1098,7 +1098,7 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0152).
 		const box = present(await field.boundingBox())
 		await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
-	} else if (opening === "clicking the field") await field.click()
+	} else if (opening === "clicking the question") await field.click()
 	else if (keys[opening]) {
 		await field.focus()
 		await page.keyboard.press(keys[opening])
@@ -1124,7 +1124,7 @@ async function expectListBeneathField(page: Page) {
 	expect(listBox.y - (fieldBox.y + fieldBox.height)).toBeLessThanOrEqual(8)
 }
 
-Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
+Then(/^a list as wide as the question opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
 	await expectListBeneathField(page)
 	expect((await listEntries(page)).filter((entry) => entry !== "|")).toEqual(quotedList(quoted))
 })
@@ -1138,7 +1138,7 @@ async function expectHint(page: Page) {
 	await expect(page.getByRole("status").filter({ hasText: HINT_TEXT })).toBeAttached()
 }
 
-Then("the list opens directly beneath the field, as wide as it, offering only the hint to type 3 or more letters", async ({ page }) => {
+Then("the list opens directly beneath the question, as wide as it, offering only the hint to type 3 or more letters", async ({ page }) => {
 	await expectListBeneathField(page)
 	await expectHint(page)
 })
@@ -1152,11 +1152,11 @@ When("they press Backspace", async ({ page }) => {
 	await page.keyboard.press("Backspace")
 })
 
-Then("the field holds {string}", async ({ page }, value: string) => {
+Then("the question holds {string}", async ({ page }, value: string) => {
 	await expect(typeAheadField(page)).toHaveValue(value)
 })
 
-When("they type {string} in the field", async ({ page }, typed: string) => {
+When("they type {string} in the question", async ({ page }, typed: string) => {
 	await typeAheadField(page).pressSequentially(typed)
 })
 
@@ -1164,13 +1164,13 @@ Then(/^its list offers only (".*")$/, async ({ page }, quoted: string) => {
 	await expect(typeAheadList(page).getByRole("option")).toHaveText(quotedList(quoted))
 })
 
-When("they type {string} in the field and press the down arrow twice", async ({ page }, typed: string) => {
+When("they type {string} in the question and press the down arrow twice", async ({ page }, typed: string) => {
 	await typeAheadField(page).pressSequentially(typed)
 	await page.keyboard.press("ArrowDown")
 	await page.keyboard.press("ArrowDown")
 })
 
-Then("{string} is the field's active option", async ({ page }, label: string) => {
+Then("{string} is the question's active choice", async ({ page }, label: string) => {
 	const option = typeAheadList(page).getByRole("option", { name: label, exact: true })
 	// A type-ahead selects the highlighted option; a single-select keeps aria-selected for the chosen one (ADR-0150).
 	if (!(await isSingleSelect(page))) await expect(option).toHaveAttribute("aria-selected", "true")
@@ -1215,12 +1215,12 @@ When("they click {string} in the list", async ({ page }, label: string) => {
 	await typeAheadList(page).getByRole("option", { name: label, exact: true }).click()
 })
 
-Then("the field has focus", async ({ page }) => {
+Then("the question has focus", async ({ page }) => {
 	await expect(typeAheadField(page)).toBeFocused()
 	await expect(page.locator('[role="option"][tabindex]')).toHaveCount(0)
 })
 
-When("they pick {string} from the field's list", async ({ page }, label: string) => {
+When("they pick {string} from the question's list", async ({ page }, label: string) => {
 	await pickChoice(page, "Which one applies?", label)
 })
 
@@ -1231,7 +1231,7 @@ Then("the browser's saved report holds no answer to that question", async ({ pag
 })
 
 Then(
-	"the question is a combobox field with a caret showing {string}, described by its help text, and no browser select",
+	"the question is a combobox with a caret showing {string}, described by its help text, and no browser select",
 	async ({ page }, placeholder: string) => {
 		const field = page.getByRole("combobox", { name: "Which one applies?" })
 		await expect(field).toBeVisible()
@@ -1276,7 +1276,7 @@ Then("each choice is a row at least 44 pixels tall holding a checkbox", async ({
 	}
 })
 
-Then("the {string} row is highlighted as a type-ahead's active option is", async ({ page }, label: string) => {
+Then("the {string} row is highlighted as a type-ahead's active choice is", async ({ page }, label: string) => {
 	await expectHighlighted(page, page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label }))
 })
 
@@ -1321,7 +1321,7 @@ When("they press Escape", async ({ page }) => {
 	await page.keyboard.press("Escape")
 })
 
-When("they press outside the field", async ({ page }) => {
+When("they press outside the question", async ({ page }) => {
 	await expect(typeAheadList(page)).toBeVisible()
 	// The page's left margin: outside the field, its caret, its label, and its list.
 	const field = present(await typeAheadField(page).boundingBox())
@@ -1334,7 +1334,7 @@ Then("its list is open", async ({ page }) => {
 	await expect(typeAheadField(page)).toBeFocused()
 })
 
-Then("the list is closed and the field holds {string}", async ({ page }, value: string) => {
+Then("the list is closed and the question holds {string}", async ({ page }, value: string) => {
 	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "false")
 	await expect(typeAheadList(page)).toBeHidden()
 	// A single-select shows its choice as the field's text; a type-ahead holds it as the input's value.

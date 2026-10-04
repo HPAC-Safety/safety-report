@@ -21,6 +21,9 @@ export const LEGACY_DECISIONS = 'docs/decisions'
 
 export const LESSONS = '.spec/lessons'
 
+/** The specification's vocabulary; tools/spec/check-glossary.ts reads its banned synonyms. */
+export const GLOSSARY = '.spec/glossary.md'
+
 /** New process, tooling, and agent-workflow rules: `CONV-NNN-*.md` (ADR-0192). */
 export const CONVENTIONS = '.spec/conventions'
 

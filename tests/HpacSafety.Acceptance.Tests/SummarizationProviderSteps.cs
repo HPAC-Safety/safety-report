@@ -48,7 +48,7 @@ public sealed class SummarizationProviderSteps
 			["\"redacted\"", "\"caviardé\"", "a placeholder", "an invented name"],
 		["every private marker is resolved and never appears literally"] =
 			["Resolve every marker", "must never appear in a summary"],
-		["the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object"] =
+		["the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object"] =
 			["{\"ai_summary_en\":\"...\",\"ai_summary_fr\":\"...\"}", "no additional key"],
 		["each expected section is a \"## \" heading with its exact label, in form order"] =
 			["`## ` followed by the exact `label_en`", "exact `label_fr`", "Write no other heading of any kind", "in the order given"],
@@ -103,13 +103,13 @@ public sealed class SummarizationProviderSteps
 		}
 	}
 
-	[Then(@"a response with exactly two nonblank string fields ""ai_summary_en"" and ""ai_summary_fr"", each a summary written as Markdown, is accepted")]
+	[Then(@"a response with exactly two nonblank string keys ""ai_summary_en"" and ""ai_summary_fr"", each a summary written as Markdown, is accepted")]
 	public void ThenTheExactResponseIsAccepted()
 	{
 		_validations[0].Failure.ShouldBeNull();
 	}
 
-	[Then(@"a response with a Markdown fence around the JSON, commentary, an extra key, a null field, or only one language is rejected")]
+	[Then(@"a response with a Markdown fence around the JSON, commentary, an extra key, a null value, or only one language is rejected")]
 	public void ThenEveryOtherShapeIsRejected()
 	{
 		foreach (var (response, failure) in _validations.Skip(1))

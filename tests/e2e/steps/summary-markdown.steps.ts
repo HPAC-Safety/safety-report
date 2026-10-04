@@ -217,7 +217,7 @@ Then("the summary's section heading is still a level-two heading", async ({ page
 // --- The admin pages ---
 
 Given(
-	'a signed-in Safety Officer and a report whose summary has a "## Description" section in each language',
+	'a Safety Officer and a report whose summary has a "## Description" section in each language',
 	async ({ page }) => {
 		await stubReportDetail(page, reportDetail())
 	},
@@ -250,7 +250,7 @@ Then("opening a version in the history shows its sections the same way", async (
 })
 
 Given(
-	"a signed-in Safety Officer and a report with a long-text answer written in Markdown and its Worker translation",
+	"a Safety Officer and a report with a paragraph answer written in Markdown and its Worker translation",
 	async ({ page }) => {
 		await stubReportDetail(
 			page,
@@ -346,7 +346,7 @@ Then("it shows no heading and no Markdown characters", async ({ page }) => {
 
 // --- REQ-MOD-211: nothing advertises Markdown ---
 
-Given("a signed-in Safety Officer and a report whose summary is Markdown", async ({ page }) => {
+Given("a Safety Officer and a report whose summary is Markdown", async ({ page }) => {
 	await stubReportDetail(page, reportDetail())
 	await openReport(page)
 })

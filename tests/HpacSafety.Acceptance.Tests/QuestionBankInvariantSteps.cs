@@ -40,7 +40,7 @@ public sealed partial class QuestionBankInvariantSteps
 		_saved = await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	[Then(@"the stable key is a non-empty, unique, non-localized identifier")]
+	[Then(@"the question key is a non-empty, unique, non-localized identifier")]
 	public async Task ThenTheKeyIsAStableIdentifier()
 	{
 		var key = _saved.GetProperty("key").GetString();

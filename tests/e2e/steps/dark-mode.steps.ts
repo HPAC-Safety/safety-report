@@ -12,7 +12,7 @@ const { Given, When, Then } = createBdd()
 
 /*
  * REQ-WLD-022: the dark theme, in both languages, on the form, the form
- * showing errors, the public feed, and the admin review queue. The API is
+ * showing errors, the public feed, and the admin report list. The API is
  * stubbed at the network boundary; what is asserted is what axe finds in the
  * rendered page and what the focused control looks like.
  */
@@ -27,13 +27,13 @@ Given(
 	},
 )
 
-When(/^they open (the report form|the report form showing its errors|the public feed|the admin review queue)$/, async ({ page }, target: string) => {
+When(/^they open (the report form|the report form showing its errors|the public feed|the admin report list)$/, async ({ page }, target: string) => {
 	if (target === "the public feed") {
 		await stubAuth(page)
 		await stubFeed(page)
 		await page.goto("/reports")
 		await expect(page.getByRole("list").getByRole("listitem").first()).toBeVisible()
-	} else if (target === "the admin review queue") {
+	} else if (target === "the admin report list") {
 		await stubReports(page)
 		await signInAs(page, "safety_officer")
 		await page.goto("/admin/reports")

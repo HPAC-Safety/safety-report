@@ -34,7 +34,7 @@ and reads "Retry." Every newly loaded batch is announced politely regardless
 of how it loaded. The admin list gained server-side keyset paging for this
 (it had none before, REQ-MOD-129); its cursor carries only the last row's
 report ID, the same shape as the public feed's (ADR-0153) — never a
-timestamp — and a cursor naming a report no longer in the queue restarts the
+timestamp — and a cursor naming a report no longer in the report list restarts the
 list from the top, ordinally past the anchor by ID the same way the public
 feed's cursor does. The browser's back button restores the same accumulated
 rows and scroll position rather than reloading the first page. Only a return
@@ -80,8 +80,8 @@ REQ-MOD-096).
 | Summary failed | Summary failed |
 
 The list carries status and
-timing only — never answer or summary text. Opening a report shows its detail
-view, and that read is audited as `ViewedRawReport`
+timing only — never answer or summary text. Opening a report shows its report
+detail, and that read is audited as `ViewedRawReport`
 ([REQ-MOD-051](../review-and-publication/review-and-publication.feature)).
 Attachments are listed by kind and state; opening one goes through its own
 audited view or download request (REQ-MOD-046).
@@ -114,7 +114,7 @@ attachment file names — built on PostgreSQL's own full-text search and
 - Only live (non-deleted) reports, the same as the rest of the list. The
   search text itself is never logged (REQ-MOD-139) — report content is never
   logged (`AGENTS.md` invariant 8).
-- SafetyOfficer and Administrator only, the same authorization the rest of
+- Reviewers only, the same authorization the rest of
   Manage reports already requires; the search box adds no route and no
   policy of its own.
 

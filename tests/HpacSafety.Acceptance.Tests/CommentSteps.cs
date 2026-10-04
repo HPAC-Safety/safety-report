@@ -59,13 +59,13 @@ public sealed class CommentSteps
 		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
 	}
 
-	[Given(@"a member is signed in")]
+	[Given(@"the visitor is a member")]
 	public void GivenAMemberIsSignedIn()
 	{
 		// Contextual — the member's token is minted per request below.
 	}
 
-	[Given(@"another member is signed in")]
+	[Given(@"the visitor is another member")]
 	public void GivenAnotherMemberIsSignedIn()
 	{
 		// Contextual — a second, non-reviewer member with a subject of their own.
@@ -191,7 +191,7 @@ public sealed class CommentSteps
 		};
 	}
 
-	[When(@"a safety officer hides the comment")]
+	[When(@"a Safety Officer hides the comment")]
 	public async Task WhenASafetyOfficerHides()
 	{
 		await Hide(_commentId);
@@ -286,7 +286,7 @@ public sealed class CommentSteps
 		_listed.EnumerateArray().Select(Id).ShouldContain(_otherCommentId);
 	}
 
-	[Then(@"no comment carries its author's subject or any other identity")]
+	[Then(@"no comment carries its author's token subject or any other identity")]
 	public void ThenNoIdentity()
 	{
 		string[] allowed = ["id", "text", "locale", "translatedText", "createdAt", "updatedAt", "edited", "isMine"];
@@ -341,7 +341,7 @@ public sealed class CommentSteps
 		(await CommentCount()).ShouldBe(_countBefore);
 	}
 
-	[Then(@"the comment and its revisions are soft-deleted, not removed from the database")]
+	[Then(@"the comment and its revisions are deleted, not erased")]
 	public async Task ThenSoftDeleted()
 	{
 		var comment = await Stored();

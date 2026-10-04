@@ -79,7 +79,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-005: only one question per key is live ---
 
-	[Given(@"a stable key has a retired question and a live one")]
+	[Given(@"a question key has a retired question and a live one")]
 	public async Task GivenARetiredAndALiveQuestion()
 	{
 		_created = await CreateQuestion();
@@ -111,7 +111,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_resolvedFromDatabase!.Id.Value.ShouldBe(_liveId);
 	}
 
-	[Then(@"a second live question for the same key is rejected")]
+	[Then(@"a second live question for the same key is refused")]
 	public async Task ThenASecondLiveQuestionIsRejected()
 	{
 		var key = Key();
@@ -150,7 +150,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_dto = list.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == id);
 	}
 
-	[Then(@"it loads the latest revision and copies all fields into that DTO")]
+	[Then(@"it loads the latest revision and copies every setting into that DTO")]
 	public async Task ThenTheDtoCopiesTheLatestRevision()
 	{
 		var latest = (await LoadQuestion(_created.GetProperty("id").GetString()!)).CurrentRevision;

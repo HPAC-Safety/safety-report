@@ -184,7 +184,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 			.ShouldAllBe(status => status == HttpStatusCode.Accepted);
 	}
 
-	[Then(@"a removed choice, or another question's choice, is rejected")]
+	[Then(@"a removed choice, or another question's choice, is refused")]
 	public void ThenARemovedOrForeignChoiceIsRejected()
 	{
 		foreach (var (submission, response) in _refused)
@@ -203,7 +203,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	[Then(@"the submission DTO contains exactly one answer entry for each of those revisions")]
 	[Then(@"every other answer uses ""value"", a single string, alongside the locale it was given in")]
 	[Then(@"file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name")]
-	[Then(@"fields for the other answer shapes are null")]
+	[Then(@"the other answer shapes are null")]
 	public void ThenTheDtoShapeIsHonored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, "the API accepts a DTO built exactly this way");
@@ -621,12 +621,6 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await MalformedSubmissionFor(_problem!);
 	}
 
-	[Then(@"the API rejects the submission")]
-	public void ThenTheApiRejectsTheSubmission()
-	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
 	// --- REQ-WLD-018: client validation never replaces server validation ---
 
 	[Given(@"a submission reaches the API")]
@@ -843,7 +837,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_uploadId = _refusedUploadId;
 	}
 
-	[Then(@"the response names that upload ID with a safe rejection reason of ""(.*)""")]
+	[Then(@"the response names that upload ID with a safe refusal reason of ""(.*)""")]
 	public async Task ThenTheResponseNamesThatUploadWithReason(string reason)
 	{
 		var problem = await ResponseBody();
@@ -862,7 +856,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThan(_refusedUploadSize);
 	}
 
-	[Then(@"the API rejects the submission with 400")]
+	[Then(@"the API refuses the submission with 400")]
 	public void ThenTheApiRejectsTheSubmissionWith400()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -1087,7 +1081,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_logs.Lines.ShouldAllBe(line => !line.Contains(receipt, StringComparison.Ordinal));
 	}
 
-	[Then(@"no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it")]
+	[Then(@"no stored value of that report, its answers, or its outbox is the reporter's token subject or a hash of it")]
 	public async Task ThenNoStoredValueIsTheSubjectOrItsHash()
 	{
 		var stored = await StoredRowsOf((await SubmittedBody()).GetProperty("id").GetString()!);
@@ -1106,7 +1100,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		}
 	}
 
-	[Then(@"the stored receipt hash is not derived from the subject")]
+	[Then(@"the stored receipt hash is not derived from the token subject")]
 	public async Task ThenTheReceiptHashIsNotDerivedFromTheSubject()
 	{
 		var body = await SubmittedBody();
@@ -1145,7 +1139,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await anonymous.PostAsync(Submit, content);
 	}
 
-	[Then(@"the API rejects it before any report state is created")]
+	[Then(@"the API refuses it before any report state is created")]
 	public async Task ThenTheApiRejectsItBeforeAnyReportStateIsCreated()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -1199,14 +1193,14 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_response = await DirectUpload.Mint(_reporter!, "application/pdf", 15);
 	}
 
-	[Then(@"the API rejects the request with 429 and a safe retry signal")]
+	[Then(@"the API refuses the request with 429 and a safe retry signal")]
 	public void ThenTheApiRejectsTheRequestWith429AndASafeRetrySignal()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a caller cannot forge, and is never stored on the report")]
+	[Then(@"the client IP used for rate limiting comes from CloudFront-Viewer-Address, which CloudFront always sets and a member cannot forge, and is never stored on the report")]
 	public async Task ThenTheClientIpComesOnlyFromTrustedHeadersAndIsNeverStored()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();
@@ -1287,7 +1281,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[Then(@"the API does not reject it")]
+	[Then(@"the API does not refuse it")]
 	public void ThenTheApiDoesNotRejectIt()
 	{
 		_response!.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
@@ -1315,7 +1309,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	[Given(@"a reporter holds a valid member token with the (.*) role")]
 	public async Task GivenAReporterHoldsAValidMemberTokenWithTheRole(string role)
 	{
-		_reporter = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role));
+		_reporter = await BootedApi.SignedInAs(GlossaryNames.Role(role));
 		await EnsureConsentQuestion();
 	}
 
@@ -1368,7 +1362,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- REQ-SUB-021: no audit entry or log line records who submitted ---
 
-	[Then(@"no audit entry attributes the submission to a subject")]
+	[Then(@"no audit entry attributes the submission to a token subject")]
 	public async Task ThenNoAuditEntryAttributesTheSubmission()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
@@ -1385,7 +1379,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		entries.ShouldBeEmpty();
 	}
 
-	[Then(@"no log line records the submitting subject at any level")]
+	[Then(@"no log line records the reporter's token subject at any level")]
 	public void ThenNoLogLineRecordsTheSubject()
 	{
 		// A capture that saw nothing would prove nothing.
@@ -1393,7 +1387,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_logs.Lines.ShouldAllBe(line => !line.Contains(_submitterSubject!, StringComparison.OrdinalIgnoreCase));
 	}
 
-	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject")]
+	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the reporter's token subject")]
 	[Then(@"no column, join table, or hash anywhere links the report to the member who filed it")]
 	public void ThenNoStoredStateRecordsTheSubmittersSubject()
 	{
@@ -1503,7 +1497,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 					new { questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"), value = (string?)"x" },
 				},
 			}),
-			"a non-null field from the wrong answer shape" => await Post(new
+			"a non-null value from the wrong answer shape" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]

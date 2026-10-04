@@ -100,7 +100,7 @@ type Review = { method: string; id: string; body: unknown }
 const reviews = new WeakMap<Page, Review[]>()
 const scrollBefore = new WeakMap<Page, number>()
 
-Given("a signed-in Safety Officer and two type-ahead questions with values flagged for review", async ({ page }) => {
+Given("a Safety Officer and two type-ahead questions with values flagged for review", async ({ page }) => {
 	await reviewPage(page, duplicateValues())
 })
 
@@ -128,7 +128,7 @@ Then("every flagged value is listed under its question's heading, with its langu
 	await expect(valueRow(page, "Cooper's")).toContainText("Answers naming it: 5")
 })
 
-Given("a signed-in Safety Officer and three type-ahead values flagged for review", async ({ page }) => {
+Given("a Safety Officer and three type-ahead values flagged for review", async ({ page }) => {
 	await reviewPage(page, flaggedValues())
 })
 
@@ -245,7 +245,7 @@ Then("the page lists no value left to review", async ({ page }) => {
 // ------------------------ grouped by question, A→Z (REQ-MOD-160, REQ-MOD-161) --
 
 Given(
-	"a signed-in Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first",
+	"a Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first",
 	async ({ page }) => {
 		await reviewPage(page, [
 			{ ...LAUNCH, id: "value-launch-zephyr", labelEn: "Zephyr Ridge", labelFr: null, typedIn: "en-CA", isRemoved: false, answerCount: 1, addedAt: "2026-09-20T12:00:00Z", mergeTargets: [] },
@@ -293,7 +293,7 @@ Then(
 
 // ------------------------ every action keeps the reviewer's place (REQ-MOD-162, REQ-MOD-163) --
 
-Given("a signed-in Safety Officer and twenty flagged values under one type-ahead question", async ({ page }) => {
+Given("a Safety Officer and twenty flagged values under one type-ahead question", async ({ page }) => {
 	await reviewPage(page, twentyValues())
 })
 
@@ -343,7 +343,7 @@ Then("the scroll position is unchanged", async ({ page }) => {
 })
 
 Given(
-	"a signed-in Safety Officer and two flagged values of the same question, one also awaiting review in its own right",
+	"a Safety Officer and two flagged values of the same question, one also awaiting review in its own right",
 	async ({ page }) => {
 		await mergeKeepsIndependentlyFlaggedTarget(page)
 	},
@@ -402,7 +402,7 @@ Then('"Cooper\'s" is still listed, showing 5 answers naming it', async ({ page }
 // ------------------------ merge targets listed as the form lists them (ADR-0136) --
 
 Given(
-	"a signed-in Safety Officer reviews a type-ahead value whose question offers {string} pinned last, and {string} and {string} not pinned",
+	"a Safety Officer reviews a type-ahead value whose question offers {string} pinned last, and {string} and {string} not pinned",
 	async ({ page }, last: string, first: string, second: string) => {
 		// The server's order: unpinned by ID, then pinned last — not alphabetical.
 		const mergeTargets = [
@@ -441,7 +441,7 @@ const directionSwitch = (row: ReturnType<typeof valueRow>) =>
 	row.getByRole("button", { name: /^Translate (English to French|French to English)$/ })
 
 Given(
-	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server with no translation provider",
+	"a Safety Officer and three type-ahead values flagged for review, on a server with no translation provider",
 	async ({ page }) => {
 		await reviewPage(page, flaggedValues(), { translation: "unavailable" })
 	},
@@ -483,7 +483,7 @@ Then("that value's Translate action is unavailable and says why", async ({ page 
 	await expect(theValueRow(page).getByText("Translation is not available on this server.")).toBeVisible()
 })
 
-Then("that value's French field is filled with the translation and remains editable", async ({ page }) => {
+Then("that value's French wording is filled with the translation and remains editable", async ({ page }) => {
 	const french = theValueRow(page).getByLabel("French wording")
 
 	await expect(french).toHaveValue("[fr-CA] Cooper's")
@@ -518,7 +518,7 @@ When(/^they write its French wording as "([^"]+)" and press Translate$/, async (
 	await translateButton(theValueRow(page)).click()
 })
 
-Then("that value's English field is filled with the translation", async ({ page }) => {
+Then("that value's English wording is filled with the translation", async ({ page }) => {
 	await expect(theValueRow(page).getByLabel("English wording")).toHaveValue("[en-CA] Site d'essai")
 })
 
@@ -526,14 +526,14 @@ Then("that value's English field is filled with the translation", async ({ page 
 // ------------------------ a failed or overtaken translation (REQ-MOD-171, REQ-MOD-172) --
 
 Given(
-	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation fails",
+	"a Safety Officer and three type-ahead values flagged for review, on a server whose translation fails",
 	async ({ page }) => {
 		await reviewPage(page, flaggedValues(), { translation: "fails" })
 	},
 )
 
 Given(
-	"a signed-in Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released",
+	"a Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released",
 	async ({ page }) => {
 		await reviewPage(page, flaggedValues(), { translation: "held" })
 	},
@@ -543,7 +543,7 @@ Then("that value's row says the translation failed", async ({ page }) => {
 	await expect(theValueRow(page).getByRole("alert")).toHaveText("The translation provider did not answer.")
 })
 
-Then(/^that value's French field still reads "([^"]*)"$/, async ({ page }, wording: string) => {
+Then(/^that value's French wording still reads "([^"]*)"$/, async ({ page }, wording: string) => {
 	await expect(theValueRow(page).getByLabel("French wording")).toHaveValue(wording)
 })
 
@@ -568,7 +568,7 @@ Then("its answer is dropped and Translate is no longer shown as working", async 
 // ------------------------ a value's aliases, chains included (ADR-0129 amendment, issue #654) --
 
 Given(
-	"a signed-in Safety Officer reviews a flagged value that two earlier wordings, one itself merged from a third, were merged into",
+	"a Safety Officer reviews a flagged value that two earlier wordings, one itself merged from a third, were merged into",
 	async ({ page }) => {
 		await reviewPage(page, [
 			{

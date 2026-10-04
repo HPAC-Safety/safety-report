@@ -48,7 +48,7 @@ public sealed partial class QuestionLabelColonSteps
 
 	// --- REQ-QB-244: the API refuses a label that ends in a colon ---
 
-	[Given(@"a signed-in Administrator")]
+	[Given(@"an Administrator")]
 	public async Task GivenASignedInAdministrator()
 	{
 		_client = await BootedApi.SignedInAs(MemberRole.Administrator);

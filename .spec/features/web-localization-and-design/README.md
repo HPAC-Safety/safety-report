@@ -18,9 +18,9 @@ There is one website on one origin
 ([ADR-0048](../../decisions/ADR-0048-one-website-admin-as-a-route.md)):
 
 - the public routes contain the report form, public feed, and public detail;
-- the member-login route signs a member in;
+- the member sign-in route signs a member in;
 - `/admin` contains review and question editing, and appears only for a member
-  whose token carries the SafetyOfficer or Administrator role.
+  whose token carries a reviewer's role.
 
 There is no allowlist management screen, because there is no allowlist
 ([ADR-0065](../../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
@@ -53,7 +53,7 @@ English text, as does a build with no French file at all.
 
 Dates, numbers, and accessible labels use locale-aware formatting. Stored
 codes/values remain invariant. A free-text answer gets a second language only
-when an administrator marked its question for translation, and then off the
+when an Administrator marked its question for translation, and then off the
 submission path
 ([ADR-0112](../../decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
 the reporter's own words are never changed. Summary texts are returned together
@@ -206,7 +206,7 @@ read as Markdown, through one shared component
   The same in the light and dark themes (`REQ-WLD-046`). The admin pages'
   rendering is unchanged.
 - **Where.** The public report page; the admin review page and its revision
-  history (`REQ-MOD-208`); a long-text answer and its translation on the admin
+  history (`REQ-MOD-208`); a paragraph answer and its translation on the
   report detail (`REQ-MOD-209`). The public feed shows the first section's body
   as plain text (`REQ-MOD-210`).
 - **Hidden.** Nothing tells a person they may use Markdown: textareas stay

@@ -15,7 +15,7 @@ that doesn't fit Gherkin.
 
 Identity arrives as a signed JWT, presented as `Authorization: Bearer <jwt>`.
 The API validates the signature, the issuer, the audience `hpac-safety-api`,
-and the lifetime, then reads exactly two claims: the subject and the role.
+and the lifetime, then reads exactly two claims: the token subject and the role.
 Nothing else — not a name, not an email address, not a picture
 ([ADR-0064](../../decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 
@@ -63,10 +63,10 @@ every authorization-protected endpoint refuses every token with 401
 own small RS256 identity provider: `GET /api/auth/interim/.well-known/openid-configuration`
 and `GET /api/auth/interim/jwks` are mapped alongside `POST /api/auth/token`,
 which reuses Development's own members-site credential check and hard-coded
-administrator allowlist (ADR-0079) — **`FixedAccountCredentialSource` is not
+Administrator allowlist (ADR-0079) — **`FixedAccountCredentialSource` is not
 registered here**, so the fixed development accounts
 (`admin`/`admin`, `officer`/`officer`, `user`/`user`) do not exist outside
-Development; only a real members-site login, checked against
+Development; only a real members-site sign-in, checked against
 `MembersSiteLoginOptions`' allowlists, signs a member in on staging.
 Validation is pinned in-process to this host's own key and issuer,
 `urn:hpac-safety:interim-issuer` — no metadata fetch, same as Development.
@@ -80,8 +80,8 @@ real identity provider is chosen
 | Role | Capabilities |
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
-| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports; keep private notes on a report ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); add, download, and remove a report's private attachments ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
-| Administrator | Every SafetyOfficer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker option ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
+| Safety Officer | View the report list and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and delete reports; keep private notes on a report ([ADR-0133](../../decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); add, download, and remove a report's private attachments ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
+| Administrator | Every Safety Officer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker choice ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
 
 Submission is a membership capability rather than a privileged one, so any of
 the three roles may file a report — and the report records nothing about who
@@ -94,7 +94,7 @@ did ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-
 The Admin menu shows how much work is waiting, so a reviewer sees it without
 opening each page. **Manage reports** carries the number of reports the
 *Needs action* filter lists, and **Type-ahead values to review** carries the
-number in that queue. The closed **Admin** button carries the total of the
+number awaiting review on the type-ahead review page. The closed **Admin** button carries the total of the
 counts the member can see. A count of zero shows no badge. The badge is a
 filled brand-red pill ([design system](../../../docs/design-system.md)).
 
@@ -102,9 +102,9 @@ filled brand-red pill ([design system](../../../docs/design-system.md)).
 so it is not audited. It still gives an Administrator the number of answers
 waiting for the Worker's automatic translation
 ([REQ-MOD-084..086](../admin-report-search/admin-report-search.feature)), an
-operational signal only — there is no page or nav option to act on it, since
+operational signal only — there is no page or nav item to act on it, since
 nothing but the Worker ever fills that second language (ADR-0174). The counts
-are read from the same database views as the list and the queue, so they
+are read from the same database views as the two lists, so they
 cannot disagree with them. The menu refetches on each navigation.
 
 ## Out of scope
@@ -122,7 +122,7 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   ([ADR-0065](../../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 - A revocation endpoint or a member record to revoke. Access is granted and
   revoked at the identity provider; a revoked member's token simply stops being
-  issued, and audit rows keep the opaque subject they were written with.
+  issued, and audit rows keep the opaque token subject they were written with.
 - Handling a member's password, outside Development's carve-out and its
   temporary staging extension
   ([ADR-0079](../../decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md),

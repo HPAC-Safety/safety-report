@@ -49,7 +49,7 @@ public sealed class QuestionBankSteps
 		// Contextual, as above.
 	}
 
-	[Given(@"at most one live question exists for a stable key")]
+	[Given(@"at most one live question exists for a question key")]
 	public void GivenOneLiveQuestionPerKey()
 	{
 		// Contextual. Enforced by the partial unique index (ADR-0071) and
@@ -132,7 +132,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(Ordinary("were_you_injured", QuestionType.YesNo));
 	}
 
-	[Then(@"trying to make it conditional on another question is rejected the same way")]
+	[Then(@"trying to make it conditional on another question is refused the same way")]
 	public void ThenMakingItConditionalIsRejected()
 	{
 		var other = _questions.Find(question => question.Key == "were_you_injured")!;
@@ -140,7 +140,7 @@ public sealed class QuestionBankSteps
 		Should.Throw<DomainRuleViolationException>(() => _question!.DependOn(other.Id, null, Noon.AddHours(1)));
 	}
 
-	[Then(@"trying to give it another role is rejected the same way")]
+	[Then(@"trying to give it another role is refused the same way")]
 	public void ThenGivingItAnotherRoleIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() => _question!.AssignRole(QuestionRole.None));
@@ -188,7 +188,7 @@ public sealed class QuestionBankSteps
 		_rejection = Record(() => _question!.DependOn(other.Id, null, Noon.AddHours(1)));
 	}
 
-	[Then(@"the attempt is rejected")]
+	[Then(@"the attempt is refused")]
 	public void ThenTheAttemptIsRejected()
 	{
 		_rejection.ShouldBeOfType<DomainRuleViolationException>();
@@ -203,14 +203,14 @@ public sealed class QuestionBankSteps
 		Should.NotThrow(() => QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id));
 	}
 
-	[Then(@"a question offered as its own condition is rejected the same way")]
+	[Then(@"a question offered as its own condition is refused the same way")]
 	public void ThenSelfDependencyIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() =>
 			QuestionDependencies.EnsureDependencyAllowed(_questions, _question!.Id, _question.Id));
 	}
 
-	[Then(@"a single-select question naming one of its live options is accepted as the condition instead")]
+	[Then(@"a single-select question naming one of its live choices is accepted as the condition instead")]
 	public void ThenASingleSelectQuestionIsAccepted()
 	{
 		var parent = PilotType();
@@ -232,8 +232,8 @@ public sealed class QuestionBankSteps
 		GivenAPilotTypeQuestion();
 	}
 
-	[When(@"an Administrator makes a rating question depend on the ""(.*)"" option")]
-	[When(@"an Administrator makes a different rating question depend on the ""(.*)"" option")]
+	[When(@"an Administrator makes a rating question depend on the ""(.*)"" choice")]
+	[When(@"an Administrator makes a different rating question depend on the ""(.*)"" choice")]
 	public void WhenARatingQuestionDependsOnTheOption(string optionLabel)
 	{
 		var parent = _questions.Single(question => question.Key == "pilot_type");
@@ -251,7 +251,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(child);
 	}
 
-	[Then(@"each rating question's saved dependency names its own required option")]
+	[Then(@"each rating question's saved dependency names its own required choice")]
 	public void ThenEachRatingQuestionNamesItsOwnOption()
 	{
 		var parent = _questions.Single(question => question.Key == "pilot_type");
@@ -290,7 +290,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(_question);
 	}
 
-	[Then(@"the dependency needs no required option, because the condition is always ""answered yes""")]
+	[Then(@"the dependency needs no required choice, because the condition is always ""answered yes""")]
 	public void ThenTheDependencyNeedsNoOption()
 	{
 		_question!.DependsOnChoiceId.ShouldBeNull();
@@ -536,7 +536,7 @@ public sealed class QuestionBankSteps
 		_question!.Choices.Count.ShouldBe(2);
 	}
 
-	[Then(@"the question is rejected")]
+	[Then(@"the question is refused")]
 	public void ThenTheRevisionIsRejected()
 	{
 		_rejection.ShouldBeOfType<DomainRuleViolationException>();
@@ -557,7 +557,7 @@ public sealed class QuestionBankSteps
 		_question!.Key.ShouldBe("occurrence_date");
 	}
 
-	[Then(@"a key that reduces to nothing at all is rejected")]
+	[Then(@"a key that reduces to nothing at all is refused")]
 	public void ThenAnEmptyKeyIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() =>
@@ -603,7 +603,7 @@ public sealed class QuestionBankSteps
 		_question!.Deleted.ShouldBe(Noon.AddHours(1));
 	}
 
-	[Then(@"the deletion is rejected")]
+	[Then(@"the deletion is refused")]
 	public void ThenDeletionIsRejected()
 	{
 		_rejection.ShouldNotBeNull();
@@ -628,7 +628,7 @@ public sealed class QuestionBankSteps
 		_question.Deleted.ShouldBeNull();
 	}
 
-	[Then(@"the question is stamped as deleted rather than removed")]
+	[Then(@"the question is marked deleted rather than erased")]
 	public void ThenItIsStampedDeleted()
 	{
 		_question!.Deleted.ShouldBe(Noon.AddHours(1));
@@ -648,13 +648,13 @@ public sealed class QuestionBankSteps
 		_rejection = Record(() => _question!.Delete(false, Noon.AddHours(1)));
 	}
 
-	[Then(@"trying to stop asking it is rejected the same way")]
+	[Then(@"trying to stop asking it is refused the same way")]
 	public void ThenDeactivatingConsentIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() => _question!.Deactivate(Noon.AddHours(1)));
 	}
 
-	[Then(@"an ordinary edit that clears its active flag is rejected the same way")]
+	[Then(@"an ordinary edit that clears its active flag is refused the same way")]
 	public void ThenAnOrdinaryEditCannotDeactivateConsent()
 	{
 		// The dedicated method refused this all along; the administrator's
@@ -672,7 +672,7 @@ public sealed class QuestionBankSteps
 
 	// ------------------------------------------------------ no way back --
 
-	[Given(@"a question has been stamped as deleted")]
+	[Given(@"a question has been marked deleted")]
 	public void GivenARetiredQuestion()
 	{
 		_question = Ordinary("occurrence_notes", QuestionType.LongText);

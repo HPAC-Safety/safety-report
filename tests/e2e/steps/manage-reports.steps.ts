@@ -244,14 +244,14 @@ function rows(page: Page) {
 	return page.getByRole("list", { name: "Reports" }).getByRole("listitem")
 }
 
-Given("a safety officer is signed in and reports exist in several states", async ({ page }) => {
+Given("a Safety Officer is on the admin site and reports exist in several states", async ({ page }) => {
 	await stubReports(page)
 	await signInAs(page, "safety_officer")
 })
 
 // --- REQ-MOD-154: Manage reports shows each row's attachment icon and count ---
 
-Given("a safety officer is signed in and Manage reports holds a report with attachments and one with none", async ({ page }) => {
+Given("a Safety Officer is on the admin site and Manage reports holds a report with attachments and one with none", async ({ page }) => {
 	await stubReports(page)
 	present(present(listStubs.get(page)).rows.find((candidate) => candidate.id === "pendingaaaa")).attachmentCount = 3
 	await signInAs(page, "safety_officer")
@@ -265,32 +265,32 @@ Then("the row with none shows no attachment icon", async ({ page }) => {
 	await expect(row(page, "published").getByText(/attachments?/)).toHaveCount(0)
 })
 
-When("the safety officer opens Manage reports", async ({ page }) => {
+When("the Safety Officer opens Manage reports", async ({ page }) => {
 	await page.goto("/admin/reports")
 	await expect(page.getByRole("heading", { level: 1, name: "Manage reports" })).toBeVisible()
 })
 
-When("the safety officer chooses the {string} filter", async ({ page }, filter: string) => {
+When("the Safety Officer chooses the {string} filter", async ({ page }, filter: string) => {
 	await page.getByRole("navigation", { name: "Filter reports" }).getByRole("link", { name: filter, exact: true }).click()
 })
 
-When("the safety officer searches for {string}", async ({ page }, text: string) => {
+When("the Safety Officer searches for {string}", async ({ page }, text: string) => {
 	await page.getByRole("searchbox", { name: "Search reports" }).fill(text)
 })
 
-When("the safety officer searches for a word that matches nothing", async ({ page }) => {
+When("the Safety Officer searches for a word that matches nothing", async ({ page }) => {
 	await page.getByRole("searchbox", { name: "Search reports" }).fill("zzsynthnothingmatchesanything")
 })
 
-When("the safety officer clears the search box", async ({ page }) => {
+When("the Safety Officer clears the search box", async ({ page }) => {
 	await page.getByRole("searchbox", { name: "Search reports" }).fill("")
 })
 
-When("the safety officer reloads the page", async ({ page }) => {
+When("the Safety Officer reloads the page", async ({ page }) => {
 	await page.reload()
 })
 
-When("the safety officer opens a pending report", async ({ page }) => {
+When("the Safety Officer opens a pending report", async ({ page }) => {
 	await page.locator(`[data-report-id="${ROWS[0].id}"] a`).click()
 	await expect(page.getByRole("heading", { level: 1, name: "Report" })).toBeVisible()
 })
@@ -617,12 +617,12 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 	})
 }
 
-Given("a safety officer is signed in and a {word} report exists", async ({ page }, word: string) => {
+Given("a Safety Officer is on the admin site and a {word} report exists", async ({ page }, word: string) => {
 	await stubReview(page, STATUS_BY_WORD[word], word)
 	await signInAs(page, "safety_officer")
 })
 
-Given("a safety officer is signed in and a pending report with four summary revisions exists", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a pending report with four summary revisions exists", async ({ page }) => {
 	await stubReview(page, "pending", "history")
 	await signInAs(page, "safety_officer")
 })
@@ -631,7 +631,7 @@ Given("another reviewer has changed that report since it was opened", ({ page })
 	present(reviewStubs.get(page)).stale = true
 })
 
-When("the safety officer opens that report", async ({ page }) => {
+When("the Safety Officer opens that report", async ({ page }) => {
 	await page.goto("/admin/reports/reviewaaaaa")
 	await expect(page.getByRole("heading", { level: 1, name: /^(Report|Signalement)$/ })).toBeVisible()
 	await expect(page.locator('[data-badge="status"]')).toBeVisible()
@@ -648,31 +648,31 @@ Then("the offered actions are {}", async ({ page }, list: string) => {
 	}
 })
 
-When("the safety officer edits the English summary and saves", async ({ page }) => {
+When("the Safety Officer edits the English summary and saves", async ({ page }) => {
 	await page.getByRole("button", { name: "Edit summary" }).click()
 	await page.getByLabel("English summary").fill("The pilot landed firmly after the collapse.")
 	await page.getByRole("button", { name: "Save summary" }).click()
 })
 
-When("the safety officer publishes it", async ({ page }) => {
+When("the Safety Officer publishes it", async ({ page }) => {
 	await page.getByRole("button", { name: "Publish", exact: true }).click()
 })
 
-When("the safety officer unpublishes it with the note {string}", async ({ page }, note: string) => {
+When("the Safety Officer unpublishes it with the note {string}", async ({ page }, note: string) => {
 	await page.getByRole("button", { name: "Unpublish", exact: true }).click()
 	await page.getByLabel("Note for other reviewers (optional)").fill(note)
 	await page.getByRole("button", { name: "Unpublish report" }).click()
 })
 
-When("the safety officer chooses Delete", async ({ page }) => {
+When("the Safety Officer chooses Delete", async ({ page }) => {
 	await page.getByRole("button", { name: "Delete" }).click()
 })
 
-When("the safety officer confirms", async ({ page }) => {
+When("the Safety Officer confirms", async ({ page }) => {
 	await page.getByRole("dialog").getByRole("button", { name: "Delete report" }).click()
 })
 
-When("the safety officer opens its document attachment", async ({ page }) => {
+When("the Safety Officer opens its document attachment", async ({ page }) => {
 	await page.route("**/attachment-opened", (route) => route.fulfill({ body: "synthetic" }))
 	await page.getByRole("button", { name: /^Download/ }).click()
 })
@@ -724,7 +724,7 @@ Then("the restored revision says which revision it was restored from", async ({ 
 	await expect(page.locator('[data-revision="2"] [data-revision-restored-from]')).toHaveCount(0)
 })
 
-When("the safety officer views the first revision", async ({ page }) => {
+When("the Safety Officer views the first revision", async ({ page }) => {
 	await page.locator('[data-revision="1"]').getByRole("button", { name: "View this version" }).click()
 })
 
@@ -739,7 +739,7 @@ Then("the current summary is unchanged", async ({ page }) => {
 	expect(present(reviewStubs.get(page)).requests.filter((request) => !request.startsWith("GET"))).toEqual([])
 })
 
-When("the safety officer chooses Restore this version on the first revision", async ({ page }) => {
+When("the Safety Officer chooses Restore this version on the first revision", async ({ page }) => {
 	await page.locator('[data-revision="1"]').getByRole("button", { name: "Restore this version" }).click()
 })
 
@@ -754,7 +754,7 @@ Then("nothing has been restored yet", async ({ page }) => {
 	await expect(page.locator("[data-summary-history] [data-revision]")).toHaveCount(4)
 })
 
-When("the safety officer confirms the restore", async ({ page }) => {
+When("the Safety Officer confirms the restore", async ({ page }) => {
 	await page.getByRole("dialog").getByRole("button", { name: "Restore version" }).click()
 })
 
@@ -813,39 +813,39 @@ async function stubTranslate(page: Page) {
 	})
 }
 
-Given("a safety officer is signed in and a report whose French text was machine-translated exists", async ({ page }) => {
+Given("a Safety Officer is on the admin site and a report whose French text was machine-translated exists", async ({ page }) => {
 	await stubReview(page, "pending", "machine-translated")
 	await signInAs(page, "safety_officer")
 })
 
-When("the safety officer opens the summary editor", async ({ page }) => {
+When("the Safety Officer opens the summary editor", async ({ page }) => {
 	await stubTranslate(page)
 	await page.getByRole("button", { name: "Edit summary" }).click()
 })
 
-When("the safety officer changes {}", async ({ page }, what: string) => {
+When("the Safety Officer changes {}", async ({ page }, what: string) => {
 	if (what.includes("English")) await page.getByLabel("English summary").fill("The pilot landed firmly after the collapse.")
 	if (what.includes("French")) await page.getByLabel("French summary").fill("Le pilote s'est posé fermement après la fermeture.")
 })
 
-When("the safety officer chooses Write summary", async ({ page }) => {
+When("the Safety Officer chooses Write summary", async ({ page }) => {
 	await stubTranslate(page)
 	await page.getByRole("button", { name: "Write summary" }).click()
 })
 
-When("the safety officer types the English text", async ({ page }) => {
+When("the Safety Officer types the English text", async ({ page }) => {
 	await page.getByLabel("English summary").fill("The pilot landed in a field.")
 })
 
-When("the safety officer chooses Translate to French", async ({ page }) => {
+When("the Safety Officer chooses Translate to French", async ({ page }) => {
 	await page.getByRole("button", { name: "Translate to French" }).click()
 })
 
-When("the safety officer keeps the current text", async ({ page }) => {
+When("the Safety Officer keeps the current text", async ({ page }) => {
 	await page.getByRole("dialog").getByRole("button", { name: "Keep current text" }).click()
 })
 
-When("the safety officer chooses Translate to French and accepts the translation", async ({ page }) => {
+When("the Safety Officer chooses Translate to French and accepts the translation", async ({ page }) => {
 	await page.getByRole("button", { name: "Translate to French" }).click()
 	await page.getByRole("dialog").getByRole("button", { name: "Use translation" }).click()
 })
@@ -898,7 +898,7 @@ Then("the French text is labelled as machine-translated", async ({ page }) => {
 const STORED_TYPE: Record<string, string> = { date: "date", time: "time", "yes/no": "yes_no", phone: "phone" }
 
 Given(
-	"a safety officer is signed in and a report with a {} answer stored as {string} exists",
+	"a Safety Officer is on the admin site and a report with a {} answer stored as {string} exists",
 	async ({ page }, type: string, stored: string) => {
 		const detail = {
 			...DETAIL,
@@ -968,7 +968,7 @@ Then("a report that is not published shows no such link", async ({ page }) => {
 // ── A multi-select answer listed as the form lists its choices (REQ-QB-153, ADR-0136) ──
 
 Given(
-	"a signed-in Safety Officer opens a report whose multi-select answer names {string}, {string} pinned last, and {string}",
+	"a Safety Officer opens a report whose multi-select answer names {string}, {string} pinned last, and {string}",
 	async ({ page }, first: string, last: string, second: string) => {
 		const choice = (value: string, pin: string) => ({ value, locale: "en-CA", translatedValue: `${value} (fr)`, translationSource: "choice", pin })
 		const detail = {
@@ -1014,19 +1014,19 @@ Then("the {word} row offers {}", async ({ page }, word: string, list: string) =>
 	await expect(row(page, word).getByRole("group")).toHaveAccessibleName(/^Actions for the report submitted /)
 })
 
-When("the safety officer publishes the pending row", async ({ page }) => {
+When("the Safety Officer publishes the pending row", async ({ page }) => {
 	await rowButtons(page, "pending").and(page.getByRole("button", { name: "Publish", exact: true })).click()
 })
 
-When("the safety officer unpublishes the published row", async ({ page }) => {
+When("the Safety Officer unpublishes the published row", async ({ page }) => {
 	await rowButtons(page, "published").and(page.getByRole("button", { name: "Unpublish", exact: true })).click()
 })
 
-When("the safety officer chooses Delete on the pending row", async ({ page }) => {
+When("the Safety Officer chooses Delete on the pending row", async ({ page }) => {
 	await rowButtons(page, "pending").and(page.getByRole("button", { name: "Delete", exact: true })).click()
 })
 
-When("the safety officer keeps the report", async ({ page }) => {
+When("the Safety Officer keeps the report", async ({ page }) => {
 	await page.getByRole("dialog").getByRole("button", { name: "Keep report" }).click()
 })
 
@@ -1115,7 +1115,7 @@ async function disableAutoLoad(page: Page) {
 	})
 }
 
-Given("a safety officer is signed in and more reports exist than fit on one page", async ({ page }) => {
+Given("a Safety Officer is on the admin site and more reports exist than fit on one page", async ({ page }) => {
 	await disableAutoLoad(page)
 	await stubPagedReports(page, false)
 	await signInAs(page, "safety_officer")
@@ -1128,7 +1128,7 @@ Given("a safety officer is signed in and more reports exist than fit on one page
 const firstPageRequests = new WeakMap<Page, { count: number }>()
 
 When(
-	"the safety officer goes to another page and opens Manage reports again from the Admin menu",
+	"the Safety Officer goes to another page and opens Manage reports again from the Admin menu",
 	async ({ page }) => {
 		await page.getByRole("contentinfo").getByRole("link", { name: "Contact", exact: true }).click()
 		await expect(page).toHaveURL(/\/contact$/)
@@ -1178,7 +1178,7 @@ async function tabToButton(page: Page, name: string) {
 	throw new Error(`Could not reach the "${name}" action by tabbing.`)
 }
 
-When("the safety officer activates the {string} action", async ({ page }, name: string) => {
+When("the Safety Officer activates the {string} action", async ({ page }, name: string) => {
 	// The control is hidden until keyboard focus (ADR-0155); reach it the same
 	// way a keyboard visitor would rather than force-clicking past that.
 	await tabToButton(page, name)

@@ -113,7 +113,7 @@ order (which breaks the moment the two language forms diverge).
   `REQ-TF-024`).
 - Never fabricates a translation. The English file leads; a field or choice
   with no French counterpart by `ref` defaults its French side to the English
-  text and is flagged for an administrator to author, and a French-only field
+  text and is flagged for an Administrator to author, and a French-only field
   is not imported
   ([ADR-0078](../../decisions/ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md)).
 - Never silently drops content it cannot fully represent. An unsupported
@@ -135,11 +135,11 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - A live connection to Typeform: no API sync, no webhook, no scheduled poll.
   Import and export move files a human supplies or downloads.
 - Auto-mapping a real branching rule. Every one is recorded as pending for an
-  administrator to wire by hand
+  Administrator to wire by hand
   ([ADR-0078](../../decisions/ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md)).
 - Importing a question straight into the bank. An import produces drafts that
-  an administrator reviews through the ordinary editor.
+  an Administrator reviews through the ordinary editor.
 - QSF or any other vendor format
   ([ADR-0077](../../decisions/ADR-0077-typeform-json-import-and-export.md)).
 - Machine-translating an imported question. The import carries what the two
-  files say; an administrator authors the rest.
+  files say; an Administrator authors the rest.

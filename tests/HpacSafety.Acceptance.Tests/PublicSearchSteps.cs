@@ -212,13 +212,13 @@ public sealed class PublicSearchSteps
 		await Search(query, language == "French" ? "fr-CA" : "en-CA");
 	}
 
-	[When(@"^(an anonymous visitor|a User|a SafetyOfficer|an Administrator) searches for the public word$")]
+	[When(@"^(an anonymous visitor|a User|a Safety Officer|an Administrator) searches for the public word$")]
 	public async Task WhenSearchesForThePublicWord(string who)
 	{
 		await Search(PublicWord, "en-CA", who);
 	}
 
-	[When(@"^(an anonymous visitor|a User|a SafetyOfficer|an Administrator) searches for each private-only word$")]
+	[When(@"^(an anonymous visitor|a User|a Safety Officer|an Administrator) searches for each private-only word$")]
 	public async Task WhenSearchesForEachPrivateOnlyWord(string who)
 	{
 		_privateOnlySearchResults.Clear();
@@ -465,7 +465,7 @@ public sealed class PublicSearchSteps
 		return who switch
 		{
 			"a User" => await BootedApi.SignedInAs(MemberRole.User),
-			"a SafetyOfficer" => await BootedApi.SignedInAs(MemberRole.SafetyOfficer),
+			"a Safety Officer" => await BootedApi.SignedInAs(MemberRole.SafetyOfficer),
 			"an Administrator" => await BootedApi.SignedInAs(MemberRole.Administrator),
 			_ => (await BootedApi.Factory()).CreateClient(),
 		};

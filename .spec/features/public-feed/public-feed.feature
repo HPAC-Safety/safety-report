@@ -14,48 +14,48 @@ Scenario: The feed's attachment count is the public count for a visitor and the 
   Given a published report has one public attachment and one attachment only staff may see
   When an anonymous visitor lists the feed
   Then the report's attachment count is 1
-  When a signed-in safety officer lists the feed
+  When a Safety Officer lists the feed
   Then the report's attachment count is 2
 
 @REQ-MOD-155
-Scenario: An ordinary member's token widens nothing; only SafetyOfficer or Administrator does
+Scenario: An ordinary member's token widens nothing; only a reviewer's does
   Given a published report has one public attachment and one attachment only staff may see
-  When a signed-in member with the User role lists the feed
+  When a member with the User role lists the feed
   Then the report's attachment count is 1
-  When a signed-in Administrator lists the feed
+  When an Administrator lists the feed
   Then the report's attachment count is 2
 
 @REQ-MOD-152
-Scenario: A signed-in safety officer sees every attachment on the public report page, each marked public or not
+Scenario: A Safety Officer sees every attachment on the public report page, each marked public or not
   Given a published report has a public image and a hidden image
-  When a signed-in safety officer asks the public API for that report
+  When a Safety Officer asks the public API for that report
   Then the response carries a staff attachment for each file, with its state and public visibility
   And the hidden file's visibility reads "hidden"
   And the public file's visibility reads "public"
 
 @REQ-MOD-164
 @ui
-Scenario Outline: A published report page offers a same-tab link to its admin detail page for a reviewer
+Scenario Outline: A published report page offers a same-tab link to its report detail for a reviewer
   Given <visitor> visits a published report's page
-  Then the page offers a link to that report's admin detail page
+  Then the page offers a link to its report detail
   When the visitor activates that link
-  Then the browser opens the report's admin detail page, in the same tab
+  Then the browser opens its report detail, in the same tab
 
 Examples:
-  | visitor                    |
-  | a signed-in Administrator  |
-  | a signed-in SafetyOfficer  |
+  | visitor            |
+  | an Administrator   |
+  | a Safety Officer   |
 
 @REQ-MOD-165
 @ui
 Scenario Outline: A published report page offers no admin link to a non-reviewer
   Given <visitor> visits a published report's page
-  Then the page offers no link to the admin detail page
+  Then the page offers no link to the report detail
 
 Examples:
-  | visitor              |
-  | a signed-in User      |
-  | a signed-out visitor  |
+  | visitor               |
+  | a User                |
+  | an anonymous visitor  |
 
 @REQ-MOD-037
 Scenario: The public feed lists only publishable reports, newest submitted first
@@ -196,8 +196,8 @@ Scenario: The public feed offers a visible Retry action when its next page fails
 @REQ-MOD-083
 @ui
 Scenario: A reviewer can open a published report's public page
-  Given a safety officer is signed in and a published report exists
-  When the safety officer opens that report
+  Given a Safety Officer is on the admin site and a published report exists
+  When the Safety Officer opens that report
   Then the report view links to the report's public address
   And a report that is not published shows no such link
 
@@ -222,7 +222,7 @@ Scenario: Search is scoped to the visitor's current site language only
   Then the report is listed among the results
 
 @REQ-MOD-143
-Scenario Outline: The public search never widens by caller role
+Scenario Outline: The public search never widens by the member's role
   Given a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains
   And another report is not publishable, and its summary contains a further private-only word
   When <who> searches for the public word
@@ -234,7 +234,7 @@ Examples:
   | who                  |
   | an anonymous visitor |
   | a User               |
-  | a SafetyOfficer      |
+  | a Safety Officer     |
   | an Administrator     |
 
 @REQ-MOD-144

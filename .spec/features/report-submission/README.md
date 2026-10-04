@@ -63,7 +63,7 @@ upload.
 
 ### The drop zone (#367)
 
-The field is a bordered drop zone rather than the browser's bare file control.
+The question is a bordered drop zone rather than the browser's bare file control.
 One button, holding a large upload icon and the prompt "Drag files here, or
 choose files", opens the file chooser; it is an ordinary button, so the
 keyboard reaches it and nothing depends on a pointer. The type, count, and
@@ -125,7 +125,7 @@ checks each against the other's answer before writing anything:
 Either refusal names both questions by key (`REQ-SUB-113`, `REQ-SUB-115`,
 [ADR-0151](../../decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)).
 
-Field names are camelCase on the wire (ASP.NET's default JSON casing), not
+Property names are camelCase on the wire (ASP.NET's default JSON casing), not
 the snake_case the Gherkin prose uses when it names them — the scenarios are
 talking about the concept, not literal JSON.
 
@@ -153,8 +153,8 @@ its second language depends on its question:
 | Yes/no, checkbox | None, ever: a boolean holds no words; the interface renders it in the reader's language |
 | Text not marked, email, phone, date, time, number, file | None, ever |
 
-Each answer records which of these applies (`translation_mode`), so the admin
-report view never shows a "translation" of an answer that has none. This
+Each answer records which of these applies (`translation_mode`), so the report
+detail never shows a "translation" of an answer that has none. This
 endpoint enqueues one answer-translation outbox message and never calls a
 translation provider itself; reading a choice's label is a lookup, not a
 translation.
@@ -162,7 +162,7 @@ translation.
 **The Worker writes a free-text answer's second language exactly once**
 (ADR-0174). There is no human path: no endpoint or admin page ever supplies
 or corrects `value_translated`. A second automatic supply is refused, and a
-row already written by an administrator before ADR-0174 (`translation_source
+row already written by an Administrator before ADR-0174 (`translation_source
 = human`) is left exactly as stored.
 
 Out of scope: detecting which language a reporter actually typed, and
@@ -187,15 +187,15 @@ here is a separate server concept:
    default selection.
 5. Next becomes Submit on the last page.
 
-A `multi_select` ("Pick several") question renders as a picker dropdown, the
+A `multi_select` ("Pick several") question renders as one closed picker, the
 same closed-control shape as a single-select: one trigger labelled by the
-question, naming what is chosen, that opens a list of checkable options and
+question, naming what is chosen, that opens a list of checkable choices and
 stays open while several are checked. Escape or leaving it closes it.
 
 The trigger is a `role="combobox"` button, as the single-select's is
 (`REQ-QB-208`): `aria-expanded` and `aria-controls` name the list, and
 `aria-haspopup="dialog"` says what it is, because the list is a labelled
-non-modal dialog holding one real checkbox per option, not a listbox
+non-modal dialog holding one real checkbox per choice, not a listbox
 (`REQ-SUB-132`). A combobox is the role that supports `aria-invalid`, which the
 admin editor sets on an "Offered under" picker whose choice has no parent
 ticked (`REQ-QB-222`). A button with no role cannot carry it. Enter and Space
@@ -300,7 +300,7 @@ does not have, or a conditional page not currently shown, becomes `/report`.
 
 ## Email and phone answers (#513)
 
-An email or phone question may be left blank unless an administrator made it
+An email or phone question may be left blank unless an Administrator made it
 required; a blank one is sent as `null` and stored as no answer. Once a value
 is entered it must be well formed, in the form and in the API
 ([ADR-0137](../../decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md)).
@@ -320,7 +320,7 @@ revalidated.
 naming the question by its key and never echoing the value, before anything
 is written.
 
-**The phone field.**
+**The phone question.**
 
 - It opens the telephone keypad (`type="tel"`, `inputmode="tel"`,
   `autocomplete="tel"`).
@@ -328,13 +328,13 @@ is written.
   calling code, and defaulting to Canada (🇨🇦 `+1`). Each country is listed by
   its flag, its name in the interface language, and its calling code.
 - The number is formatted as it is typed, by the chosen country's own
-  convention: `(604) 555-1234` for +1, `20 7946 0018` for +44. The field's
+  convention: `(604) 555-1234` for +1, `20 7946 0018` for +44. The question's
   placeholder is that country's pattern, every digit shown as `5`.
 - The number is validated against the chosen country's rules, and sent in
   E.164.
 - The saved report keeps the chosen country beside the typed number.
 
-**The email field.**
+**The email question.**
 
 - It opens the email keyboard (`type="email"`, `inputmode="email"`,
   `autocomplete="email"`).
@@ -345,12 +345,12 @@ is written.
     typed so far: `chas` offers `chas@gmail.com` through `chas@mail.com`.
   - After `@`, only the domains beginning with what follows it are offered:
     `chase.florell@g` offers only `chase.florell@gmail.com`.
-  - Nothing is offered for an empty field, for more than one `@`, or once the
-    field already holds a suggestion.
+  - Nothing is offered for an empty answer, for more than one `@`, or once the
+    question already holds a suggestion.
   - Choosing a suggestion, by pointer or by arrow keys and Enter, fills the
-    field. Escape closes the list.
+    question. Escape closes the list.
   - A suggestion never blocks an address at any other domain.
-- The field is a combobox (`role="combobox"`) controlling a labelled listbox,
+- The question is a combobox (`role="combobox"`) controlling a labelled listbox,
   with the highlighted suggestion named by `aria-activedescendant`.
 
 ## Date answers
@@ -360,7 +360,7 @@ A date answer is stored as `yyyy-mm-dd` whichever way it was entered
 Nothing about storage or the wire format changes with the picker.
 
 **Future dates are a per-question setting.** A date question's revision
-carries `allow_future_dates`, `false` unless an administrator checks **Allow
+carries `allow_future_dates`, `false` unless an Administrator checks **Allow
 future dates** in the question editor. The checkbox appears only for a date
 question. Changing it is an ordinary question edit: a new revision while the
 question is unanswered, a replacement question once it has been answered
@@ -377,7 +377,7 @@ refused future date gets `400` naming the question by its key, never the
 value, before anything is written. `GET /api/v1/questions/` carries each
 question's `allowFutureDates` so the form can apply the same rule.
 
-**On a desktop** (a fine pointer), the field is a text box that takes
+**On a desktop** (a fine pointer), the question is a text input that takes
 `yyyy-mm-dd` only, and says so to assistive technology even when the question
 has a placeholder of its own. Clicking or focusing it opens a calendar popover under it:
 
@@ -387,28 +387,28 @@ has a placeholder of its own. Clicking or focusing it opens a calendar popover u
 - when the question does not allow future dates, the days after today are
   disabled, and so are the pickers' later months and years; it always opens
   on the chosen date's month, or today's;
-- choosing a day fills the field as `yyyy-mm-dd`, closes the popover, and
+- choosing a day fills the question as `yyyy-mm-dd`, closes the popover, and
   announces the chosen day in words;
 - month and weekday names follow the reader's language, and the week starts
   on Sunday in English and Monday in French. Every button and picker is
   labelled from the locale catalogues;
-- the popover is a labelled dialog, and the text field is the combobox that
+- the popover is a labelled dialog, and the question is the combobox that
   controls it: `role="combobox"`, `aria-haspopup="dialog"`, `aria-expanded`,
   and `aria-controls`, the WAI-ARIA 1.2 date-picker combobox pattern
   (`REQ-SUB-131`). A press on the popover's background does not take focus
-  from the field, so the popover does not close under the pointer. None of its
+  from the question, so the popover does not close under the pointer. None of its
   controls is in the Tab
-  order until focus is inside it, so Tab from the field goes on past it and
-  closes it. From the field, ArrowDown moves into it.
+  order until focus is inside it, so Tab from the question goes on past it and
+  closes it. From the question, ArrowDown moves into it.
   Inside it, the arrow keys move by a day or a week, Page Up and Page Down by a
   month, Enter chooses the focused day, and Escape closes it and returns focus
-  to the field.
+  to the question.
 
 Typed text that is not a real `yyyy-mm-dd` date, or a future date where the
 question does not allow one, shows an inline message in the reader's language
 when the reporter presses Next, and the form stays on that page.
 
-**On a touch device** (`(pointer: coarse)`), the field is a native
+**On a touch device** (`(pointer: coarse)`), the question is a native
 `<input type="date">`, so the phone shows its own picker. Its value is always
 `yyyy-mm-dd`. When the question does not allow future dates, its `max` is the
 reporter's local today; some mobile pickers ignore `max`, so the same inline
@@ -421,8 +421,8 @@ The API performs, in order:
 1. request-size, JSON-shape, trusted-client-IP, rate-limit, and bearer-token
    checks;
 2. DTO syntax, locale, duplicate, and count checks;
-3. revision lookup including soft-deleted rows;
-4. rejection of unknown, deleted, and non-current revisions (any revision but
+3. revision lookup including deleted rows;
+4. refusal of unknown, deleted, and non-current revisions (any revision but
    the highest-numbered one of a live question) and validation against that
    revision's type and the question's live choices, including the written
    form of a date, time, email, or phone answer, and a date after today in
@@ -471,7 +471,7 @@ not change what they are willing to write down.
 **The receipt is not an identity.** The `202` body also carries a receipt: at
 least 256 random bits from a cryptographically secure generator, base64url. The
 report stores only its SHA-256 hash, in a unique, nullable `receipt_hash`, and
-neither the receipt nor the member's subject is stored or logged
+neither the receipt nor the member's token subject is stored or logged
 ([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-SUB-133` to `REQ-SUB-135`). The browser keeps
 `{ reportId, receipt }` in `localStorage` (`REQ-SUB-136`), which is how it later
 sees its own unpublished report (see the public-feed area's README). It proves
@@ -489,12 +489,12 @@ identifying the reporter.
 The rate limit itself is a sliding-window `RateLimiter` policy, partitioned by
 client IP, using ASP.NET Core's built-in middleware rather than a third-party
 package. The client IP comes from `CloudFront-Viewer-Address`, which only
-CloudFront sets and a caller cannot override — there is no ALB, and CloudFront
+CloudFront sets and a member cannot override — there is no ALB, and CloudFront
 is the one public entry point for the API, reached on the path `/api/*`
 ([ADR-0159](../../decisions/ADR-0159-cloudfront-routes-api-to-a-function-url-no-alb.md),
 superseding [ADR-0081](../../decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
 The client IP is used only in memory for the rate-limiter partition key; it is
-never persisted on a report or logged. A rejected request gets `429` with a
+never persisted on a report or logged. A refused request gets `429` with a
 safe, content-free problem response.
 
 Administrative operations are authorized by role on the same token; see
@@ -528,14 +528,14 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   question with a read-only table.
 - Opening a page straight from its address, a French or otherwise localized
   page slug, a page number in the address, or anything the reporter entered in
-  the address. The address holds only an administrator-authored question key.
+  the address. The address holds only an Administrator-authored question key.
 - Custom text on the browser's own unload prompt — no browser lets a page
   supply it. Anything beyond `beforeunload` and the in-app route blocker
   (`Leaving the form with unsaved changes`, above), such as a server-side
   draft that would make the warning unnecessary.
 - Keeping the saved page in `sessionStorage`. It would be gone when the tab
   closes, which is exactly when a reporter comes back to continue.
-- Recording who submitted a report — no subject, no user id, no audit line, no
+- Recording who submitted a report — no token subject, no user id, no audit line, no
   log line. The receipt hash identifies a browser, not a member, and never goes in a URL
   ([ADR-0067](../../decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 - A "my reports" page, another device or browser seeing a report, editing or withdrawing a report, or a notification (see the public-feed area's README).

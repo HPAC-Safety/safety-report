@@ -23,14 +23,14 @@ included, to the replacement
 
 The list has no order of its own. Wherever choices are shown — the report
 form's single-select, multi-select, and type-ahead, the question editor's
-options, the required-option control, the type-ahead review page, and a
+choices, the required-choice control, the type-ahead review page, and a
 multi-select answer on a report — they are listed alphabetically in the
 reader's language, ignoring accents and case, so the English and French lists
 may differ in order. An Administrator may pin a choice **first** or **last**;
 by default it is not pinned. The list shows three groups in turn — pinned
 first, not pinned, pinned last — each alphabetical, with a separator between
 groups. A value a reporter adds is not pinned and takes its alphabetical place
-at once. The editor re-sorts its options when it opens, never while the
+at once. The editor re-sorts its choices when it opens, never while the
 Administrator is typing
 ([ADR-0136](../../decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
 
@@ -39,8 +39,8 @@ languages are read from the choice. A removed choice is hidden from the form,
 never erased, and every answer that named it still names it and reads its
 wording ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
 
-- **Picker options** (single-select, multi-select) are authored by an
-  Administrator in both languages. Changing an option's wording, they choose
+- **Picker choices** (single-select, multi-select) are authored by an
+  Administrator in both languages. Changing a choice's wording, they choose
   to **fix it in place** (same choice; every answer reads the fix) or
   **replace it** (the old choice is retired, still named by every earlier
   answer, and a new choice takes its place). A condition naming a replaced
@@ -50,10 +50,10 @@ wording ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-pi
   that replaced the parent and its copy of the choice
   ([ADR-0132](../../decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
 - **Type-ahead values** are corrected in place for every answer that names
-  them, removed by soft delete, and merged: merging B into A retires B, and
+  them, removed by delete, and merged: merging B into A retires B, and
   answers naming B read A without being rewritten. A value a reporter adds is
   flagged for review, offered at once in the language it was typed, and given
-  its other language by the Worker. A Safety Officer or an Administrator
+  its other language by the Worker. A reviewer
   reviews it ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
   A merged value's wording is not only resolved at submission: the survivor
   carries it as an **alias**, so the form offers the survivor while a
@@ -66,7 +66,7 @@ wording ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-pi
 A single-select or multi-select question always keeps at least one live
 choice: one with none could not be answered, so saving it, retyping a question
 into it without choices, or removing its last choice is refused. A type-ahead
-may start with none, because reporters add to it. A Typeform field imported
+may start with none, because reporters add to it. A question imported from Typeform
 with no choices opens as a draft the Administrator completes before saving.
 
 ## Out of scope
@@ -78,14 +78,14 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Shared choice lists, or reusing one question's choices on another in any
   form ([ADR-0095](../../decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 - A reporter editing, curating, or removing a choice. A reporter may add a
-  missing value to a type-ahead; a Safety Officer or an Administrator reviews
+  missing value to a type-ahead; a reviewer reviews
   it ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - A reporter adding a choice to a single-select or multi-select question.
 - A record of exactly which choices a reporter was shown. The answer names the
   choice it was given under ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
 - Holding a reporter's new type-ahead value back until it is approved. It is
   offered at once and reviewed afterwards ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
-- Merging picker options, or a Safety Officer editing one. A picker option is
+- Merging picker choices, or a Safety Officer editing one. A picker choice is
   fixed or replaced by an Administrator ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
 - Replacing a type-ahead value, or un-merging one. A type-ahead value is only
   ever corrected in place ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
@@ -99,8 +99,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   a stable order and the reader's browser collates it, because only the reader
   knows their language.
 - Copying a choice's wording onto an answer, in either language.
-- Sorting of the type-ahead review queue other than grouped by question and
+- Sorting of the type-ahead review page other than grouped by question and
   alphabetical within each group; the API's own order is otherwise unchanged.
   What each review action does on the server is unchanged too — only how the
-  page renders and refetches the queue changed
+  page renders and refetches its list changed
   ([#651](https://github.com/HPAC-Safety/safety-report/issues/651)).

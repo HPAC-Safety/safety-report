@@ -24,12 +24,12 @@ Given("the report request is JSON that names each attachment by the upload ID th
 
 Given("the bearer token is transport\\/security metadata, not persisted report content", async () => {})
 
-Given("a signed-out visitor opens the report page", async ({ page }) => {
+Given("an anonymous visitor opens the report page", async ({ page }) => {
 	await stubAuth(page)
 	await page.goto("/report")
 })
 
-Given("a signed-in member opens the report page", async ({ page }) => {
+Given("a member opens the report page", async ({ page }) => {
 	// Any role may file a report: submission is a membership capability, not a
 	// privileged one (ADR-0067). `User` is the weakest, so it is the honest
 	// one to assert with.
@@ -38,7 +38,7 @@ Given("a signed-in member opens the report page", async ({ page }) => {
 	await page.goto("/report")
 })
 
-Given("a signed-in member opens the report page in French", async ({ page }) => {
+Given("a member opens the report page in French", async ({ page }) => {
 	await stubCurrentQuestions(page)
 	await signInAs(page, "user")
 	await page.goto("/report")

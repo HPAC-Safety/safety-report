@@ -15,7 +15,7 @@ const { Given, When, Then } = createBdd()
 // for that route's data" can be asserted without guessing at timing.
 const adminRequestsSeenAfterNavigation = new WeakMap<Page, string[]>()
 
-Given("a visitor is signed out", async ({ page }) => {
+Given("an anonymous visitor", async ({ page }) => {
 	await stubAuth(page)
 })
 
@@ -23,7 +23,7 @@ When("the visitor navigates directly to an admin route", async ({ page }) => {
 	await page.goto("/admin/reports")
 })
 
-Then("the browser is redirected to the member-login page", async ({ page }) => {
+Then("the browser is redirected to the member sign-in page", async ({ page }) => {
 	await expect(page).toHaveURL(/\/login$/)
 })
 

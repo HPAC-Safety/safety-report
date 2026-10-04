@@ -99,7 +99,7 @@ public sealed class PublicMediaSteps
 		// Seeded by the next step, which says how the reporter answered.
 	}
 
-	[Given(@"^the reporter answered media consent (yes, to wording that named only photos and video|no|not at all)$")]
+	[Given(@"^the reporter answered media consent (yes, to wording that named only images and video|no|not at all)$")]
 	public async Task GivenTheReporterAnsweredMediaConsent(string answer)
 	{
 		bool? consent = answer switch
@@ -174,7 +174,7 @@ public sealed class PublicMediaSteps
 		(await Listed()).ShouldBe([_imageId]);
 	}
 
-	[Given(@"a member who is not a reviewer is signed in")]
+	[Given(@"the visitor is a member who is not a reviewer")]
 	public void GivenAMemberWhoIsNotAReviewer()
 	{
 		// The member signs in in the When step below.
@@ -204,25 +204,25 @@ public sealed class PublicMediaSteps
 		_linkResponse = await client.GetAsync(LinkUri(_documentId));
 	}
 
-	[When(@"a safety officer hides the image")]
+	[When(@"a Safety Officer hides the image")]
 	public async Task WhenASafetyOfficerHidesTheImage()
 	{
 		await ChangeVisibility(_imageId, "hide");
 	}
 
-	[When(@"the safety officer shows the image again")]
+	[When(@"the Safety Officer shows the image again")]
 	public async Task WhenTheSafetyOfficerShowsTheImage()
 	{
 		await ChangeVisibility(_imageId, "show");
 	}
 
-	[When(@"a safety officer hides the document")]
+	[When(@"a Safety Officer hides the document")]
 	public async Task WhenASafetyOfficerHidesTheDocument()
 	{
 		await ChangeVisibility(_documentId, "hide");
 	}
 
-	[When(@"the safety officer shows the document again")]
+	[When(@"the Safety Officer shows the document again")]
 	public async Task WhenTheSafetyOfficerShowsTheDocument()
 	{
 		await ChangeVisibility(_documentId, "show");
@@ -234,7 +234,7 @@ public sealed class PublicMediaSteps
 		await Change(report => report.Unpublish());
 	}
 
-	[When(@"an administrator deletes the report")]
+	[When(@"an Administrator deletes the report")]
 	public async Task WhenAnAdministratorDeletesTheReport()
 	{
 		await Change(report => report.SoftDelete(DateTimeOffset.UtcNow));

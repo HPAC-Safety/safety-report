@@ -88,8 +88,8 @@ public sealed class AttachmentAccessSteps
 		await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
 	}
 
-	[When(@"an authorized reviewer requests to view it")]
-	[When(@"an authorized reviewer requests it")]
+	[When(@"a reviewer requests to view it")]
+	[When(@"a reviewer requests it")]
 	[When(@"the view completes")]
 	public async Task WhenAnAuthorizedReviewerRequestsIt()
 	{
@@ -196,8 +196,8 @@ public sealed class AttachmentAccessSteps
 		// download asserted there. There is no third endpoint to check.
 	}
 
-	[When(@"an authorized reviewer requests its raw original instead of its view link")]
-	[When(@"an authorized reviewer requests its raw original instead of its download link")]
+	[When(@"a reviewer requests its raw original instead of its view link")]
+	[When(@"a reviewer requests its raw original instead of its download link")]
 	public async Task WhenAnAuthorizedReviewerRequestsItsRawOriginal()
 	{
 		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);

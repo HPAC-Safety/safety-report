@@ -28,7 +28,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-001: an unanswered question revises ---
 
-	[Given(@"an active question revision exists for a stable key")]
+	[Given(@"an active question revision exists for a question key")]
 	public void GivenAnActiveQuestionRevision()
 	{
 		outcome.Original = Question.Create(
@@ -109,7 +109,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-002 and REQ-QB-003: an answered question forks ---
 
-	[Then(@"the original question is stamped as deleted")]
+	[Then(@"the original question is marked deleted")]
 	public void ThenTheOriginalIsStampedDeleted()
 	{
 		outcome.Original!.Deleted.ShouldNotBeNull();
@@ -123,7 +123,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 		outcome.Live.Deleted.ShouldBeNull();
 	}
 
-	[Then(@"the new question carries the same stable key")]
+	[Then(@"the new question carries the same question key")]
 	public void ThenTheNewQuestionKeepsTheKey()
 	{
 		outcome.Live!.Key.ShouldBe(outcome.Original!.Key);
@@ -159,7 +159,7 @@ public sealed class QuestionForkSteps(QuestionEditOutcome outcome)
 		live.CurrentRevision.LabelEn.ShouldNotBe(outcome.OriginalLabelEn);
 	}
 
-	[Then(@"it is never stamped as deleted")]
+	[Then(@"it is never marked deleted")]
 	public void ThenItIsNeverDeleted()
 	{
 		outcome.Original!.Deleted.ShouldBeNull();

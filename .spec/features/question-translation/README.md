@@ -17,10 +17,10 @@ What not to build here. The global list in
 [system overview](../../system-overview.md) still holds; this narrows it
 to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-development.md)).
 
-- Machine translation on the submission path. Translation is administrator-
+- Machine translation on the submission path. Translation is Administrator-
   initiated while authoring, or Worker-run off the submission path
   ([ADR-0080](../../decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).
-- Translating every choice at once, or automatically. An administrator
+- Translating every choice at once, or automatically. An Administrator
   translates one choice at a time from the Choices panel, in the direction its
   switch shows: a choice missing its other language, or one whose source was
   edited. The wording's Translate translates the question and help text that
@@ -32,5 +32,5 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
 - Translating a choice on the submission path. A reporter-added type-ahead
   value gets its other language from the Worker
   ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
-- Keeping a brand name untranslated. The administrator corrects the draft.
+- Keeping a brand name untranslated. The Administrator corrects the draft.
 - Saving a question in one language.

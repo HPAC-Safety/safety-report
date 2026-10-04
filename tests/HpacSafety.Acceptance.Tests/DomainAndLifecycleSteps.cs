@@ -66,7 +66,7 @@ public sealed class DomainAndLifecycleSteps
 		_outboxId = outboxMessage.Id;
 	}
 
-	[When(@"a safety officer soft-deletes it")]
+	[When(@"a Safety Officer deletes it")]
 	public async Task WhenASafetyOfficerSoftDeletesIt()
 	{
 		var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
@@ -74,7 +74,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"one application transaction stamps the same deleted timestamp on the report and all owned and dependent rows: answers, summary, files, and report outbox items")]
+	[Then(@"one application transaction marks the report and all its owned and dependent rows deleted with one deletion time: answers, summary, files, and report outbox items")]
 	public async Task ThenOneTransactionStampsEveryOwnedRow()
 	{
 		var host = await BootedApi.Factory();
@@ -144,7 +144,7 @@ public sealed class DomainAndLifecycleSteps
 		await Task.CompletedTask;
 	}
 
-	[Given(@"a question is retired, either by an Administrator or by being replaced through an edit")]
+	[Given(@"a question is deleted by an Administrator, or retired by being replaced through an edit")]
 	public async Task GivenAQuestionIsRetired()
 	{
 		var client = await BootedApi.SignedInAs(MemberRole.Administrator);
@@ -178,7 +178,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the question is stamped with a deleted timestamp rather than removed")]
+	[Then(@"the question keeps its row, marked deleted")]
 	public async Task ThenTheQuestionIsStampedDeleted()
 	{
 		var host = await BootedApi.Factory();
@@ -252,7 +252,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the revision is stamped with a deleted timestamp")]
+	[Then(@"the revision is marked deleted")]
 	public async Task ThenTheRevisionIsStamped()
 	{
 		var host = await BootedApi.Factory();
@@ -346,7 +346,7 @@ public sealed class DomainAndLifecycleSteps
 		await GivenAReportExists();
 	}
 
-	[When(@"no safety officer has deleted it")]
+	[When(@"no Safety Officer has deleted it")]
 	public void WhenNoSafetyOfficerHasDeletedIt()
 	{
 		// Nothing to do — the Given already left the report undeleted.

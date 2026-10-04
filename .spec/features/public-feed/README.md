@@ -64,13 +64,13 @@ identifying hint in a small community. The language travels only on a report's
 own page, from the `public_reports` view's `language` column; the feed and its
 search never carry it. Not built: labelling comments or attachments.
 
-A signed-in Administrator or Safety Officer sees a same-tab link, next to the
-published date, from a report's public page to that same report's admin
-detail page (`/admin/reports/<id>`, #657). The public payload is unchanged —
-the link needs only the report ID the page already has, and the signed-in
+A reviewer sees a same-tab link, next to the
+published date, from a report's public page to its own report
+detail (`/admin/reports/<id>`, #657). The public payload is unchanged —
+the link needs only the report ID the page already has, and the
 member's role decided from the token (invariant 7); the admin route's own
-guard and the admin endpoints, not the button's presence, keep the detail
-page private. A `User`, or a visitor who is not signed in, sees nothing extra.
+guard and the admin endpoints, not the button's presence, keep the report
+detail private. A `User`, or an anonymous visitor, sees nothing extra.
 
 A search box at the top of `/reports` fuzzy-searches the approved published
 summary and visible member comments, in the visitor's current site
@@ -119,7 +119,7 @@ member identity; the stored report holds only the hash of a random token
   publication consent never has a summary and stays listed until a moderator
   deletes it.
 - **Not the raw answers.** The holder reads the summary, not their answers.
-- **Attachments.** The public rules, through the same media view the public reads:
+- **Attachments.** The public rules, through the same media view a visitor reads:
   verified image and video derivatives only, only with media consent, a reviewer-hidden
   item stays hidden, documents only as forced downloads under media-consent wording
   that names documents, pre-signed URLs of at most 15 minutes.

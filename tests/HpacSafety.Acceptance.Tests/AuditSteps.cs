@@ -88,7 +88,7 @@ public sealed class AuditSteps
 			"/api/auth/token", new { username = _attemptedUsername, password = "not-the-real-password" });
 	}
 
-	[When(@"the attempt is rejected")]
+	[When(@"the attempt is refused")]
 	public void WhenAttemptIsRejected()
 	{
 		_response!.IsSuccessStatusCode.ShouldBeFalse();
@@ -167,8 +167,8 @@ public sealed class AuditSteps
 		entries.ShouldAllBe(entry => entry.OccurredAt >= _started.AddSeconds(-1) && entry.OccurredAt <= _finished.AddSeconds(1));
 	}
 
-	[Then(@"the subject is stored as an opaque string that joins to no user record")]
-	[Then(@"the subject is an opaque string that joins to no user record")]
+	[Then(@"the token subject is stored as an opaque string that joins to no user record")]
+	[Then(@"the token subject is an opaque string that joins to no user record")]
 	public async Task ThenTheSubjectJoinsToNothing()
 	{
 		(await EntriesBy(_subject)).ShouldNotBeEmpty();
@@ -255,7 +255,7 @@ public sealed class AuditSteps
 
 	// --- REQ-MOD-047: a failed audit write blocks the action ---
 
-	[Given(@"an administrator or reviewer performs an action that must be audited")]
+	[Given(@"an Administrator or reviewer performs an action that must be audited")]
 	public async Task GivenAnActionThatMustBeAudited()
 	{
 		var host = await BootedApi.Factory();
@@ -321,7 +321,7 @@ public sealed class AuditSteps
 		(await EntriesBy(_subject)).ShouldNotContain(entry => entry.Action == AuditAction.CreatedQuestion || entry.Action == AuditAction.PublishedReport);
 	}
 
-	[Then(@"the caller sees the action as failed, not succeeded")]
+	[Then(@"the member sees the action as failed, not succeeded")]
 	public void ThenTheCallerSeesFailure()
 	{
 		_blocked.Count.ShouldBe(2);

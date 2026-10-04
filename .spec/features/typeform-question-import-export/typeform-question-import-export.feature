@@ -11,7 +11,7 @@ Background:
 @REQ-TF-001
 Scenario: Import requires both languages
   When an Administrator submits only one of the two files
-  Then the import is rejected
+  Then the import is refused
   And no draft is produced
 
 @REQ-TF-002
@@ -81,7 +81,7 @@ Scenario: The generated answer-recap screen is not imported
   Then no draft is produced for it
 
 @REQ-TF-011
-Scenario: A field type with no equivalent is rejected, not silently dropped
+Scenario: A field type with no equivalent is refused, not silently dropped
   Given a Typeform field of a type this system does not support
   When the pair is mapped
   Then the import report lists it as not imported
@@ -120,7 +120,7 @@ Scenario: The imported draft's key comes from the Typeform ref
 @REQ-TF-017
 @ui
 Scenario: Re-importing the same form updates in place
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they import a Typeform draft whose key matches an existing question
   Then choosing to review it opens the existing question for editing instead of creating a new one
 
@@ -132,7 +132,7 @@ Scenario: Export produces a zip of two Typeform-shaped files
 
 @REQ-TF-019
 Scenario: Export preserves data Typeform has no field for
-  Given a live question has a stable key, a dependency, and a group membership
+  Given a live question has a question key, a dependency, and a group membership
   When it is exported
   Then the exported field carries that data in a namespaced extension object
   And a plain Typeform file otherwise validates without it
@@ -141,7 +141,7 @@ Scenario: Export preserves data Typeform has no field for
 Scenario: Exporting and reimporting reproduces the same drafts
   Given the question bank has several live questions
   When an Administrator exports it and imports the result back in
-  Then the resulting drafts match the original questions' key, type, wording, and options
+  Then the resulting drafts match the original questions' key, type, wording, and choices
 
 @REQ-TF-022
 Scenario: A date question's Allow future dates setting survives an export and reimport
@@ -163,7 +163,7 @@ Scenario: A choice dependency survives an export and reimport
 Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role
   When that member attempts to import or export
-  Then the API rejects both attempts
+  Then the API refuses both attempts
 
 @REQ-TF-024
 Scenario: Importing a question strips a trailing colon from its title

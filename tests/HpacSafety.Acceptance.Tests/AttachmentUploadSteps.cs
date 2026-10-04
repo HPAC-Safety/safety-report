@@ -160,7 +160,7 @@ public sealed class AttachmentUploadSteps
 		};
 	}
 
-	[Then(@"the API rejects it with a safe rejection reason of ""(.*)""")]
+	[Then(@"the API refuses it with a safe refusal reason of ""(.*)""")]
 	public async Task ThenTheApiRejectsItWithReason(string reason)
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -260,7 +260,7 @@ public sealed class AttachmentUploadSteps
 		_response = await DirectUpload.Mint(anonymous, _declaredType, _declaredSize);
 	}
 
-	[Then(@"the API rejects it before anything is written to object storage")]
+	[Then(@"the API refuses it before anything is written to object storage")]
 	public async Task ThenTheApiRejectsItBeforeAnythingIsStored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -287,7 +287,7 @@ public sealed class AttachmentUploadSteps
 		await _response.Content.LoadIntoBufferAsync();
 	}
 
-	[Then(@"the API rejects the attachment")]
+	[Then(@"the API refuses the attachment")]
 	public async Task ThenTheApiRejectsTheAttachment()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -611,7 +611,7 @@ public sealed class AttachmentUploadSteps
 		_blobKey = (await ClaimedFile()).BlobKey;
 	}
 
-	[When(@"a safety officer soft-deletes the report")]
+	[When(@"a Safety Officer deletes the report")]
 	public async Task WhenASafetyOfficerSoftDeletesTheReport()
 	{
 		var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
@@ -619,7 +619,7 @@ public sealed class AttachmentUploadSteps
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the report row remains, stamped with a deleted timestamp")]
+	[Then(@"the report row remains, marked deleted")]
 	public async Task ThenTheReportRowRemains()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();

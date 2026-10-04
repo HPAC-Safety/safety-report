@@ -36,7 +36,7 @@ both.
   a catch-all such as "Other", is one choice offered under each make it
   applies to. Wording is unique on the child, in either language, ignoring
   case and whitespace (`REQ-QB-212`, `REQ-QB-213`). An unticked link is
-  stamped removed, never erased, and ticking it again restores it.
+  marked removed, never erased, and ticking it again restores it.
 - **The editor.** With a parent set, every choice row, a new one included, has
   an "Offered under" multi-select of the parent's live choices, listed as the
   form lists them. A save with any choice offered under nothing is refused,
@@ -76,7 +76,7 @@ both.
   target (`REQ-QB-218`); a removed match comes back flagged and is not revived
   (`REQ-QB-219`). A new value is offered under the parent's answer, even when
   that answer is itself a new value (`REQ-QB-192`).
-- **Review.** A Safety Officer or an Administrator adds or removes a value's
+- **Review.** A reviewer adds or removes a value's
   parents on the type-ahead review page, never down to none. A merged value's
   parents are not changed: it reads as its target (`REQ-QB-220`,
   `REQ-QB-224`); a merge keeps every parent (`REQ-QB-221`).

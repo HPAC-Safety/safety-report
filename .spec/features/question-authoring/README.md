@@ -11,7 +11,7 @@ prefix: REQ-QAU
 Supporting detail for [`question-authoring.feature`](question-authoring.feature)
 that doesn't fit Gherkin.
 
-## Revision fields
+## Revision settings
 
 Each revision contains:
 
@@ -21,9 +21,9 @@ Each revision contains:
 - question type;
 - form sort order and optional section/group key;
 - `is_private`, `is_active`, `is_system`, and `is_required` flags;
-- `allow_future_dates`, `false` unless an administrator allows future dates.
+- `allow_future_dates`, `false` unless an Administrator allows future dates.
   Only a date question may set it, and changing it is a revision like any
-  other field
+  other setting
   ([ADR-0138](../../decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md));
 - creation timestamp and the revision it supersedes, when any;
 - a nullable `deleted` timestamp.
@@ -37,22 +37,22 @@ second guard, and an edit cannot remove it.
 
 The query the API uses to assemble the form is a read DTO; it does not expose
 persistence entities. It includes the revision ID, key, type, section, flags,
-bilingual copy, and bilingual options needed to render and validate the form.
+bilingual copy, and bilingual choices needed to render and validate the form.
 The response carries both translations so a locale toggle never has to replace
 the question identities already shown.
 
 ## Question types
 
-The answer shapes are short text, long text, email, phone, date, time, number,
+The answer shapes are short text, paragraph, email, phone, date, time, number,
 single select, multi-select, type-ahead, yes/no, checkbox, and file upload. A
 statement and a group are display-only and produce no answer.
-Dropdowns versus radio buttons are presentation choices for the same
+A closed picker versus radio buttons is a presentation decision for the same
 single-select domain type.
 
-A statement is shown to administrators as **Instructional text**. It is a
+A statement is shown to Administrators as **Instructional text**. It is a
 title and a description, not a question and help text, so the editor labels
 its wording that way and gives each description several lines (`REQ-QB-141`).
-Both still live in the revision's label and help-text fields; only the editor's
+Both still live in the revision's label and help text; only the editor's
 labels differ by type. The description is stored exactly as typed, line breaks
 included (`REQ-QB-142`), and the reporter's form shows it with its paragraphs
 wherever the statement appears: as the introduction, on a page of its own, or
@@ -116,20 +116,20 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   ([ADR-0180](../../decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
 - A general-purpose form builder: scoring, surveys, quizzes, form templates, or
   arbitrary branching. A question may be conditional on a yes/no question or on
-  a single-select question naming a required option, and that is the whole of
+  a single-select question naming a required choice, and that is the whole of
   it ([ADR-0060](../../decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
   [ADR-0074](../../decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
-- Mutating a revision, reviving a retired question, or any edit that loses the
+- Mutating a revision, reviving a deleted or retired question, or any edit that loses the
   wording an answer was given against.
-- An administrator authoring, seeing, or recoding an option code. A new
+- An Administrator authoring, seeing, or recoding a choice code. A new
   choice's code is derived from its English wording, and a choice fixed in
   place keeps the code it has (`REQ-QB-092`).
-- An administrator authoring, seeing, or changing a question key. A new
+- An Administrator authoring, seeing, or changing a question key. A new
   question's key is derived from its English wording and never reuses a key any
-  question holds, retired ones included (`REQ-QB-096`). Only an imported
+  question holds, deleted and retired ones included (`REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.
   Renaming an existing key is not built.
 - Formatting in a statement's description: no Markdown, rich text, or links.
   Line breaks are the only structure it keeps (`REQ-QB-143`).
 - Renaming a statement's "Ask this question" behaviour checkbox, or relabelling
-  a group's fields. Only a statement's wording labels differ (`REQ-QB-141`).
+  a group's editor boxes. Only a statement's wording labels differ (`REQ-QB-141`).

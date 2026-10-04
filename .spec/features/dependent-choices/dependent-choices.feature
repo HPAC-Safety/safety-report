@@ -7,7 +7,7 @@ choices it is offered under.
 Background:
   Given the question bank stores each question as a stable, non-localized key
   And each revision has a monotonically increasing revision number for its key
-  And at most one live question exists for a stable key
+  And at most one live question exists for a question key
 
 @REQ-QB-179
 Scenario Outline: A picker or type-ahead's choices may depend on another picker or type-ahead
@@ -114,7 +114,7 @@ Examples:
 @REQ-QB-195
 @ui
 Scenario: An Administrator picks the question a question's choices depend on, and clears it
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they edit a type-ahead question placed after a single-select "Make", a type-ahead "Site", a multi-select "Conditions", and a type-ahead "Model" whose choices depend on "Make"
   Then its "Choices depend on" control offers "Make" and "Site" only
   When they pick "Make", link every choice, and save
@@ -185,7 +185,7 @@ Scenario: A picker child with nothing under the parent's answer says so and does
 @REQ-QB-205
 @ui
 Scenario: The manage-questions page shows why a question cannot move above its parent
-  Given a signed-in Administrator opens the manage-questions page
+  Given an Administrator opens the manage-questions page
   When they move a question whose choices depend on the question above it up, and the API refuses the new order
   Then the page shows the refusal, naming both questions
   And the list keeps its order
@@ -259,7 +259,7 @@ Scenario: Merging a parent value into one the child choice already names leaves 
   And "Other" is offered under "Nivuik" and "Niviuk"
   When a Safety Officer merges the parent value "Nivuik" into "Niviuk"
   Then "Other" is offered under "Niviuk" once
-  And its link to "Nivuik" is stamped removed, not erased
+  And its link to "Nivuik" is marked removed, not erased
 
 @REQ-QB-216
 Scenario: A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer
@@ -296,7 +296,7 @@ Scenario: A reviewer adds and removes a dependent type-ahead value's parents, ne
   When a Safety Officer offers "Zeno 2" under "Ozone" and "Niviuk"
   Then "Zeno 2" is offered under both, and every answer naming it still names it
   When they offer it under "Niviuk" only
-  Then its "Ozone" link is stamped removed, not erased
+  Then its "Ozone" link is marked removed, not erased
   And offering it under no parent choice is refused
   And offering it under a choice of any question other than "Make" is refused
   And changing the parents of a "Model" value that was merged into another is refused
@@ -311,7 +311,7 @@ Scenario: Merging dependent type-ahead values offers the survivor under every pa
 @REQ-QB-222
 @ui
 Scenario Outline: Each choice of a dependent question picks the parent choices it is offered under
-  Given a signed-in Administrator using <language> opens the manage-questions page
+  Given an Administrator using <language> opens the manage-questions page
   When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
   Then every choice row, a new one included, has an "Offered under" multi-select listing "Niviuk", "Ozone", "Other"
   And Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
@@ -347,7 +347,7 @@ Scenario: Words typed into a dependent type-ahead are kept and sent as typed, ev
 @REQ-QB-224
 @ui
 Scenario: The type-ahead review page shows every parent of a dependent value and edits them
-  Given a signed-in Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
+  Given a Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
   And "Zeno 2" is also linked to "Gin", a "Make" value since removed
   Then the value shows that it is offered under "Ozone"
   And its "Offered under" control lists "Make"'s choices

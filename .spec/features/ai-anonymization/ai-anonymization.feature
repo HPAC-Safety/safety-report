@@ -13,7 +13,7 @@ Scenario: Exactly one model call summarizes and anonymizes a report
 
 @REQ-AI-002
 Scenario: An exact private value in report content is deterministically marked before the model call
-  Given a private answer's value appears verbatim in a report_content field
+  Given a private answer's value appears verbatim in a report_content answer
   When the Worker builds the marked report_content
   Then that occurrence is replaced with a marker naming the private question it came from
   And the replacement happens before the model call, not as a separate call or stage
@@ -21,27 +21,27 @@ Scenario: An exact private value in report content is deterministically marked b
 @REQ-AI-003
 Scenario: A token from a multi-word private value is also marked
   Given a private answer's value is multiple words
-  And one of its words, at or above the minimum match length and not on the stopword list, appears alone in a report_content field
+  And one of its words, at or above the minimum match length and not on the stopword list, appears alone in a report_content answer
   When the Worker builds the marked report_content
   Then that occurrence is replaced with a marker naming the private question it came from
 
 @REQ-AI-004
 Scenario: A common short word is never marked as a false positive
-  Given a report_content field contains a word that is below the minimum match length or on the stopword list
+  Given a report_content answer contains a word that is below the minimum match length or on the stopword list
   And that word also appears as a token of a private answer's value
   When the Worker builds the marked report_content
   Then that word is left unmarked
 
 @REQ-AI-005
 Scenario: Overlapping candidate matches resolve longest match first
-  Given a report_content field contains a private answer's whole multi-word value verbatim
+  Given a report_content answer contains a private answer's whole multi-word value verbatim
   When the Worker builds the marked report_content
   Then the whole value is replaced with a single marker
   And its individual words are not separately marked inside that same span
 
 @REQ-AI-006
 Scenario: Matching is case-insensitive and whitespace-normalized
-  Given a private answer's value appears in a report_content field with different casing or extra whitespace
+  Given a private answer's value appears in a report_content answer with different casing or extra whitespace
   When the Worker builds the marked report_content
   Then that occurrence is still replaced with a marker
 
@@ -49,13 +49,13 @@ Scenario: Matching is case-insensitive and whitespace-normalized
 Scenario: private_context is still supplied alongside the marking pass
   Given the Worker has built the marked report_content for a report
   When the Worker builds the model input DTO
-  Then private_context still contains every private answered field, unchanged
+  Then private_context still contains every private answer, unchanged
   And the model receives both the marked report_content and the unmarked private_context
 
 @REQ-AI-028
 Scenario: A private yes/no answer is never a marking candidate
   Given a private yes/no answer is true
-  And a report_content field contains the word "true"
+  And a report_content answer contains the word "true"
   When the Worker builds the marked report_content
   Then that word is left unmarked
   And private_context still carries the yes/no answer as true
@@ -72,27 +72,27 @@ Examples:
   | French   | false  |
 
 @REQ-AI-008
-Scenario: Concurrent workers cannot claim the same summarization outbox item twice
+Scenario: Concurrent Worker instances cannot claim the same summarization outbox item twice
   Given a summarization outbox item is pending
   When two Worker instances attempt to claim it concurrently
   Then exactly one Worker claims the item
   And the other Worker finds no work and makes no model call
 
 @REQ-AI-009
-Scenario: Only eligible, labeled fields reach the model
-  Given a report has non-private answered fields and private answered fields
+Scenario: Only eligible, labeled answers reach the model
+  Given a report has non-private answers and private answers
   When the Worker claims the message and builds the model input DTO
-  Then report_content contains only non-private answered fields eligible to contribute facts
-  And private_context contains only private answered fields, supplied to help recognize identifying details that recur in report content
+  Then report_content contains only non-private answers eligible to contribute facts
+  And private_context contains only private answers, supplied to help recognize identifying details that recur in report content
   And skipped/null answers, both system consent answers, and file-upload answers are excluded from both arrays
   And the DTO contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames
 
 @REQ-AI-011
-Scenario: The Worker accepts only the exact two-field JSON response
+Scenario: The Worker accepts only the exact two-key JSON response
   Given the model returns a response for a summarization attempt
   When the Worker validates the response
-  Then a response with exactly two nonblank string fields "ai_summary_en" and "ai_summary_fr", each a summary written as Markdown, is accepted
-  And a response with a Markdown fence around the JSON, commentary, an extra key, a null field, or only one language is rejected
+  Then a response with exactly two nonblank string keys "ai_summary_en" and "ai_summary_fr", each a summary written as Markdown, is accepted
+  And a response with a Markdown fence around the JSON, commentary, an extra key, a null value, or only one language is rejected
 
 @REQ-AI-016
 Scenario: Documents never reach the model
@@ -103,7 +103,7 @@ Scenario: Documents never reach the model
 
 @REQ-AI-017
 Scenario: A valid response is persisted as revision 1 of one pair-level summary
-  Given the model returns a valid two-field response
+  Given the model returns a valid two-key response
   When the Worker persists it
   Then one summary row is created whose revision 1 holds AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and its creation timestamp
   And revision 1 records no author and both languages as generated
@@ -120,8 +120,8 @@ Scenario: Retries repeat the single-call operation without adding stages
 Scenario: Exhausted retries surface a manually authorable failure
   Given a report's summarization retry budget is exhausted
   When the Worker gives up on the attempt
-  Then the report becomes SummaryFailed with a safe operational error
-  And the report appears in the review queue
+  Then the report becomes Summary failed with a safe operational error
+  And the report appears in the report list
   And a human can author both summary texts manually and continue review
 
 @REQ-AI-021
@@ -176,7 +176,7 @@ Examples:
   | an aircraft make or model becomes its category                                           |
   | "redacted", "caviardé", placeholders, and invented names are never written               |
   | every private marker is resolved and never appears literally                             |
-  | the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object          |
+  | the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object            |
   | each expected section is a "## " heading with its exact label, in form order             |
   | other public facts are woven into the section they fit                                   |
   | each statement goes in the section whose question it best answers                        |
@@ -236,7 +236,7 @@ Scenario: A summary with the wrong headings is a failed attempt under the retry 
   And the model answers every attempt with headings that do not match the expected sections
   When the outbox retries the attempt until its budget is exhausted
   Then each attempt fails and none saves a summary
-  And the report becomes SummaryFailed
+  And the report becomes Summary failed
   And a human can author both summary texts manually and continue review
 
 @REQ-AI-027

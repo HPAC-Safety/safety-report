@@ -369,7 +369,7 @@ public sealed class StoredAnswerSteps
 		(await AnswersToTheQuestion()).ShouldHaveSingleItem().NeedsTranslation.ShouldBeFalse();
 	}
 
-	[Then(@"the submission is rejected")]
+	[Then(@"the submission is refused")]
 	public async Task ThenTheSubmissionIsRejected()
 	{
 		_submission!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

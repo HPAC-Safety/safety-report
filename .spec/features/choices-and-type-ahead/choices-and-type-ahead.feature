@@ -306,7 +306,15 @@ Scenario: An Administrator sets each choice's position, and the choices stay whe
   And they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
   When they reword "Hang glider" to "Speed wing" and set "Paraglider" to "Pin to top"
   Then the choices stay where they were while the Administrator edits
-  And the save sends "Paraglider" pinned first, "Other" pinned last, and "Speed wing" not pinned
+
+@REQ-CTA-010
+@ui
+Scenario: Saving the question sends each choice's position
+  Given an Administrator opens the manage-questions page
+  And they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
+  And they reword "Hang glider" to "Speed wing" and set "Paraglider" to "Pin to top"
+  When they save the question
+  Then the save sends "Paraglider" pinned first, "Other" pinned last, and "Speed wing" not pinned
 
 @REQ-CTA-003
 @ui
@@ -478,7 +486,18 @@ Scenario: Translating a value drafts the other language, still editable, and sav
   And they edit its English wording to "Cooper's"
   When they translate that value's wording
   Then that value's French wording is filled with the translation and remains editable
-  And nothing is saved until they save the correction
+  And the correction is not saved yet
+
+@REQ-CTA-009
+@ui
+Scenario: Saving the correction sends the translated value
+  Given a Safety Officer and three type-ahead values flagged for review
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they edit its English wording to "Cooper's"
+  And they translate that value's wording
+  When they save the correction
+  Then the correction is sent for that value
 
 @REQ-MOD-169
 @ui

@@ -130,7 +130,7 @@ question reads "Photos or videos" and asks for images, videos, or documents
 
 The form asks the media consent question only while a file is attached and
 publication consent is yes, and stops asking it once the file is removed or
-publication consent is withdrawn (`REQ-QB-113`, `REQ-RFM-020`).
+publication consent is withdrawn (`REQ-QB-113`, `REQ-RFM-022`, `REQ-RFM-020`, `REQ-RFM-023`).
 
 A database seeded before that change is corrected by a migration that follows
 the same rule as an Administrator's edit. An unanswered question gets a new

@@ -1,6 +1,7 @@
 import { createBdd } from "playwright-bdd"
 
 import { signInAs } from "./auth"
+import { present } from "./present"
 import { expect, type Page } from "@playwright/test"
 
 const { Given, When, Then } = createBdd()
@@ -936,7 +937,22 @@ Then("its wording is asked for as a question and help text in each language", as
 
 // ------------------------ each option's position, listed as the form lists it (ADR-0136) --
 
-const pinnedBodies = new WeakMap<Page, { options: { code: string | null; labelEn: string; pin?: string }[] }>()
+/*
+ * The body of the question an Administrator saved, and how it went: "POST" for
+ * a new question, or "PUT <path>" for an edit. A Then reads what was sent.
+ */
+const savedQuestions = new WeakMap<Page, unknown>()
+const savedQuestionMethods = new WeakMap<Page, string>()
+
+When("they save the question", async ({ page }) => {
+	const saving = page.waitForRequest(
+		(request) => ["POST", "PUT"].includes(request.method()) && /\/api\/admin\/questions(\/[a-z]+)?$/.test(new URL(request.url()).pathname),
+	)
+	await page.getByRole("button", { name: "Save" }).click()
+	const request = await saving
+	savedQuestions.set(page, JSON.parse(request.postData() ?? "{}"))
+	savedQuestionMethods.set(page, request.method() === "POST" ? "POST" : `PUT ${new URL(request.url()).pathname}`)
+})
 
 function aircraftRow(page: Page) {
 	return questionRow(page, "Hang glider or paraglider?")
@@ -996,14 +1012,9 @@ Then("the choices stay where they were while the Administrator edits", async ({ 
 
 Then(
 	"the save sends {string} pinned first, {string} pinned last, and {string} not pinned",
-	async ({ page }, first: string, last: string, none: string) => {
-		const saving = page.waitForRequest(
-			(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/ddddddddddd"),
-		)
-		await page.getByRole("button", { name: "Save" }).click()
-		pinnedBodies.set(page, JSON.parse((await saving).postData() ?? "{}") as { options: { code: string | null; labelEn: string; pin?: string }[] })
-
-		const pins = Object.fromEntries((pinnedBodies.get(page)?.options ?? []).map((option) => [option.labelEn, option.pin]))
+	({ page }, first: string, last: string, none: string) => {
+		const body = present(savedQuestions.get(page)) as { options: { labelEn: string; pin?: string }[] }
+		const pins = Object.fromEntries(body.options.map((option) => [option.labelEn, option.pin]))
 		expect(pins).toEqual({ [first]: "first", [last]: "last", [none]: "none" })
 	},
 )
@@ -1147,15 +1158,13 @@ Then("that choice's French wording remains editable", async ({ page }) => {
 	await expect(french).toHaveValue("Niviuk")
 })
 
-Then("nothing is saved until they save the question", async ({ page }) => {
+Then("the question is not saved yet", ({ page }) => {
 	expect(choiceTraffic.get(page)?.saves).toBe(0)
+})
 
-	const saving = page.waitForRequest(
-		(request) => request.method() === "POST" && request.url().endsWith("/api/admin/questions"),
-	)
-	await page.getByRole("button", { name: "Save" }).click()
-	const body = JSON.parse((await saving).postData() ?? "{}") as { options: { labelEn: string; labelFr: string }[] }
-
+Then("the save sends that choice with its translated French wording", ({ page }) => {
+	const body = present(savedQuestions.get(page)) as { options: { labelEn: string; labelFr: string }[] }
+	expect(savedQuestionMethods.get(page)).toBe("POST")
 	expect(body.options.map(({ labelEn, labelFr }) => ({ labelEn, labelFr }))).toEqual([{ labelEn: "Niviuk", labelFr: "Niviuk" }])
 })
 
@@ -1312,14 +1321,9 @@ Then("the French question and help text are replaced with their translations", a
 	await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
 })
 
-Then("the drafts are saved only when they save the question", async ({ page }) => {
-	expect(choiceTraffic.get(page)?.saves).toBe(0)
-
-	const saving = page.waitForRequest(
-		(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/aaaaaaaaaaa"),
-	)
-	await page.getByRole("button", { name: "Save" }).click()
-	const body = JSON.parse((await saving).postData() ?? "{}") as { labelFr: string; helpTextFr: string | null }
+Then("the save sends the translated French question and help text", ({ page }) => {
+	const body = present(savedQuestions.get(page)) as { labelFr: string; helpTextFr: string | null }
+	expect(savedQuestionMethods.get(page)).toBe("PUT /api/admin/questions/aaaaaaaaaaa")
 
 	expect({ labelFr: body.labelFr, helpTextFr: body.helpTextFr }).toEqual({
 		labelFr: "[fr-CA] Were you hurt?",

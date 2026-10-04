@@ -1785,6 +1785,56 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-CTA-009",
+			"area": "choices-and-type-ahead",
+			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
+			"title": "Saving the correction sends the translated value",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer and three type-ahead values flagged for review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they begin correcting \"coopers\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English wording to \"Cooper's\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they translate that value's wording","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the correction","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the correction is sent for that value","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/review-type-ahead-values.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-CTA-010",
+			"area": "choices-and-type-ahead",
+			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
+			"title": "Saving the question sends each choice's position",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they open a single-select question offering \"Other\" pinned last, and \"Paraglider\" and \"Hang glider\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they reword \"Hang glider\" to \"Speed wing\" and set \"Paraglider\" to \"Pin to top\"","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the save sends \"Paraglider\" pinned first, \"Other\" pinned last, and \"Speed wing\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-DCH-001",
 			"area": "dependent-choices",
 			"file": ".spec/features/dependent-choices/dependent-choices.feature",
@@ -2181,10 +2231,55 @@
 				{"keyword":"Given","text":"a Safety Officer reviews the reporter-added \"Model\" value \"Zeno 2\", offered under \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"\"Zeno 2\" is also linked to \"Gin\", a \"Make\" value since removed","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they also tick \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page sends \"Ozone\" and \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page sends \"Ozone\" and \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-018",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "The type-ahead review page keeps a dependent value's last parent choice ticked, and says why",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer reviews the reporter-added \"Model\" value \"Zeno 2\", offered under \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"\"Zeno 2\" is also linked to \"Gin\", a \"Make\" value since removed","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they open the value's parent choices","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page does not let them untick the last parent choice, and says why","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-019",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "A picker child with nothing under the parent's answer lets the reporter go on",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a required single-select \"Model\" question's choices depend on the single-select \"Make\" question, and nothing is offered under \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter answers \"Make\" with \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter goes on to the next page","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the next page is shown","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -4201,8 +4296,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report has a still-processing image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the image's tile is marked \"processing\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"activating it downloads the raw original and does not open the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the image's tile is marked \"processing\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -4692,6 +4786,28 @@
 				{"keyword":"Then","text":"the private attachments section lists \"held.pdf\" only","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-083",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Activating a processing image's staff tile downloads the raw original",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a report has a still-processing image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer activates the image's tile","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the raw original downloads and the lightbox does not open","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -8118,7 +8234,7 @@
 				{"keyword":"Given","text":"they edit its English wording to \"Cooper's\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they translate that value's wording","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that value's French wording is filled with the translation and remains editable","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"nothing is saved until they save the correction","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the correction is not saved yet","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/review-type-ahead-values.steps.ts"],
 			"staleIgnore": false,
@@ -11902,11 +12018,12 @@
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter is filling in the form","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the form asks the media consent question, and it must be answered to submit","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter goes on to the next page","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form asks the media consent question","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
-			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts","tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
 			"constraints": ["CON-SO-002"],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -12820,8 +12937,7 @@
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they open a single-select question offering \"Other\" pinned last, and \"Paraglider\" and \"Hang glider\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they reword \"Hang glider\" to \"Speed wing\" and set \"Paraglider\" to \"Pin to top\"","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the choices stay where they were while the Administrator edits","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the save sends \"Paraglider\" pinned first, \"Other\" pinned last, and \"Speed wing\" not pinned","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the choices stay where they were while the Administrator edits","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -13167,7 +13283,7 @@
 				{"keyword":"When","text":"they add a choice written in English and ask for its translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that choice's French wording is filled with the translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that choice's French wording remains editable","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"nothing is saved until they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the question is not saved yet","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator is authoring a new multi-select question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator is authoring a new type-ahead question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
 			],
@@ -13349,7 +13465,7 @@
 				{"keyword":"Given","text":"an Administrator is editing a question whose wording is in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they edit its English question and help text and ask for their translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the French question and help text are replaced with their translations","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the drafts are saved only when they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the question is not saved yet","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -13917,8 +14033,7 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a required single-select \"Model\" question's choices depend on the single-select \"Make\" question, and nothing is offered under \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter answers \"Make\" with \"Gin\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Model\" is disabled, and says no choice is listed for that answer","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the reporter can go on to the next page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"\"Model\" is disabled, and says no choice is listed for that answer","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -15638,6 +15753,54 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-QTR-010",
+			"area": "question-translation",
+			"file": ".spec/features/question-translation/question-translation.feature",
+			"title": "Saving the question saves its translated drafts",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is editing a question whose wording is in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they edit its English question and help text and ask for their translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the save sends the translated French question and help text","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-QTR-011",
+			"area": "question-translation",
+			"file": ".spec/features/question-translation/question-translation.feature",
+			"title": "Saving the question saves a choice's translated French wording",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is authoring a new single-select question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they add a choice written in English and ask for its translation","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they save the question","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the save sends that choice with its translated French wording","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is authoring a new multi-select question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator is authoring a new type-ahead question worded in both languages","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-REV-001",
 			"area": "review-and-publication",
 			"file": ".spec/features/review-and-publication/review-and-publication.feature",
@@ -16337,7 +16500,7 @@
 				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they have reached the media consent question and tried to submit without answering it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they remove the file, or answer no to publication consent","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the form no longer asks it, and submits no answer to it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form no longer asks it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
@@ -16364,6 +16527,57 @@
 				{"keyword":"Then","text":"the form moves on without asking Province","files":["tests/e2e/steps/country.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/country.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-RFM-022",
+			"area": "report-form",
+			"file": ".spec/features/report-form/report-form.feature",
+			"title": "The media consent question must be answered to submit",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter is filling in the form","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have reached the media consent question","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they submit the report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form says the media consent question is required and sends nothing","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-RFM-023",
+			"area": "report-form",
+			"file": ".spec/features/report-form/report-form.feature",
+			"title": "A report no longer asking for media consent is sent with no answer to it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter is filling in the form","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have reached the media consent question and tried to submit without answering it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they remove the file, or answer no to publication consent","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they submit the report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is sent with no answer to the media consent question","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they answer yes to publication consent and attach a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -17391,8 +17605,7 @@
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission is refused for some uploads that expired","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"each of those files is marked expired with a prompt to attach it again","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"every other answer and upload is kept","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the reporter can submit again once the files are re-attached","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"every other answer and upload is kept","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/attachments.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
@@ -19881,6 +20094,30 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-SUB-156",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "A report refused for expired uploads is submitted once the files are attached again",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter sends a report in one final request, each attachment having gone ahead of it straight to storage through a pre-signed upload link","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a submission is refused for some uploads that expired","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the reporter has attached the expired files again","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter submits the report again","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is sent with the kept file and the file attached again, never the expired upload","files":["tests/e2e/steps/attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/attachments.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-TF-001",
 			"area": "typeform-question-import-export",
 			"file": ".spec/features/typeform-question-import-export/typeform-question-import-export.feature",
@@ -20215,8 +20452,9 @@
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they import a Typeform draft whose key matches an existing question","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"choosing to review it opens the existing question for editing, and creates no new one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"they import a Typeform draft whose key matches an existing question","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they choose to review that draft","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the existing question opens for editing, and no new one is created","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/typeform-import.steps.ts"],
 			"staleIgnore": false,
@@ -21370,7 +21608,6 @@
 				{"keyword":"Given","text":"a reviewer is on a published report in the admin site","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they choose to delete the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the admin site asks them to confirm before sending anything","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"cancelling sends no request","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they choose to unpublish the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-site.steps.ts"],
@@ -21600,6 +21837,27 @@
 				{"keyword":"Then","text":"the browser navigates away and the unposted comment is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-060",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Cancelling a destructive admin action sends nothing",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reviewer is on a published report in the admin site","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they choose to delete the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they cancel it","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"nothing is sent and the report still offers Unpublish","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they choose to unpublish the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-site.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}

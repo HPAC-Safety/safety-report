@@ -688,10 +688,15 @@ Then("the image's tile is marked {string}", async ({ page }, label: string) => {
 	await expect(page.locator('[data-media="image"]').getByTestId("attachment-state")).toHaveText(label)
 })
 
-Then("activating it downloads the raw original and does not open the lightbox", async ({ page }) => {
-	const download = page.waitForEvent("download")
+const tileDownloads = new WeakMap<Page, Promise<unknown>>()
+
+When("the Safety Officer activates the image's tile", async ({ page }) => {
+	tileDownloads.set(page, page.waitForEvent("download"))
 	await thumbnail(page, "image").click()
-	await download
+})
+
+Then("the raw original downloads and the lightbox does not open", async ({ page }) => {
+	await present(tileDownloads.get(page))
 	await expect(lightbox(page)).toHaveCount(0)
 })
 
@@ -768,11 +773,20 @@ async function attachAndConsent(page: Page, file: { name: string; mimeType: stri
 	await consentGroup(page, "May we publish a summary of this report?").getByRole("radio", { name: "Yes" }).click()
 }
 
-Then("the form asks the media consent question, and it must be answered to submit", async ({ page }) => {
+Then("the form asks the media consent question", async ({ page }) => {
+	await expect(consentGroup(page, "Photo, video, and document consent")).toBeVisible()
+})
+
+Given("they have reached the media consent question", async ({ page }) => {
 	await next(page) // -> media consent, which now follows
-	const media = consentGroup(page, "Photo, video, and document consent")
-	await expect(media).toBeVisible()
+	await expect(consentGroup(page, "Photo, video, and document consent")).toBeVisible()
+})
+
+When("they submit the report", async ({ page }) => {
 	await page.getByRole("button", { name: "Submit report" }).click()
+})
+
+Then("the form says the media consent question is required and sends nothing", async ({ page }) => {
 	await expect(page.getByText("This question is required.").first()).toBeVisible()
 	expect(present(forms.get(page)).submissions).toHaveLength(0)
 })
@@ -800,9 +814,11 @@ When("they remove the file, or answer no to publication consent", async ({ page 
 	await next(page)
 })
 
-Then("the form no longer asks it, and submits no answer to it", async ({ page }) => {
+Then("the form no longer asks it", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Submit report" })).toBeVisible()
-	await page.getByRole("button", { name: "Submit report" }).click()
+})
+
+Then("the report is sent with no answer to the media consent question", async ({ page }) => {
 	await expect.poll(() => present(forms.get(page)).submissions.length).toBe(1)
 	const answered = present(forms.get(page)).submissions[0].answers.map((answer) => answer.questionRevisionId)
 	expect(answered).toContain("rev-consent")

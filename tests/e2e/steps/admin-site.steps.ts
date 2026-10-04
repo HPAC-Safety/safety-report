@@ -202,14 +202,13 @@ Then("the admin site asks them to confirm before sending anything", async ({ pag
 	expect(writes.get(page)).toEqual([])
 })
 
-Then("cancelling sends no request", async ({ page }) => {
-	if (chosen.get(page) === "delete") {
-		await page.getByRole("button", { name: "Keep report" }).click()
-		await expect(page.getByRole("dialog")).toHaveCount(0)
-	} else {
-		await page.getByRole("button", { name: "Cancel" }).click()
-		await expect(page.getByRole("form", { name: "Unpublish the report" })).toHaveCount(0)
-	}
+When("they cancel it", async ({ page }) => {
+	await page.getByRole("button", { name: chosen.get(page) === "delete" ? "Keep report" : "Cancel" }).click()
+})
+
+Then("nothing is sent and the report still offers Unpublish", async ({ page }) => {
+	await expect(page.getByRole("dialog")).toHaveCount(0)
+	await expect(page.getByRole("form", { name: "Unpublish the report" })).toHaveCount(0)
 	await expect(page.getByRole("button", { name: "Unpublish", exact: true })).toBeVisible()
 	expect(writes.get(page)).toEqual([])
 })

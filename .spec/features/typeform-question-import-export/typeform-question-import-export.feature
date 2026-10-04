@@ -121,8 +121,9 @@ Scenario: The imported draft's key comes from the Typeform ref
 @ui
 Scenario: Re-importing the same form updates in place
   Given an Administrator opens the manage-questions page
-  When they import a Typeform draft whose key matches an existing question
-  Then choosing to review it opens the existing question for editing, and creates no new one
+  And they import a Typeform draft whose key matches an existing question
+  When they choose to review that draft
+  Then the existing question opens for editing, and no new one is created
 
 @REQ-TF-018
 Scenario: Export produces a zip of two Typeform-shaped files

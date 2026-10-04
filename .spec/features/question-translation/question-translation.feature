@@ -88,7 +88,15 @@ Scenario: Translate replaces the French wording with drafts
   Given an Administrator is editing a question whose wording is in both languages
   When they edit its English question and help text and ask for their translation
   Then the French question and help text are replaced with their translations
-  And the drafts are saved only when they save the question
+  And the question is not saved yet
+
+@REQ-QTR-010
+@ui
+Scenario: Saving the question saves its translated drafts
+  Given an Administrator is editing a question whose wording is in both languages
+  And they edit its English question and help text and ask for their translation
+  When they save the question
+  Then the save sends the translated French question and help text
 
 @REQ-QB-174
 @ui
@@ -162,7 +170,21 @@ Scenario Outline: A choice's English is translated into its French as a draft
   When they add a choice written in English and ask for its translation
   Then that choice's French wording is filled with the translation
   And that choice's French wording remains editable
-  And nothing is saved until they save the question
+  And the question is not saved yet
+
+  Examples:
+    | type          |
+    | single-select |
+    | multi-select  |
+    | type-ahead    |
+
+@REQ-QTR-011
+@ui
+Scenario Outline: Saving the question saves a choice's translated French wording
+  Given an Administrator is authoring a new <type> question worded in both languages
+  And they add a choice written in English and ask for its translation
+  When they save the question
+  Then the save sends that choice with its translated French wording
 
   Examples:
     | type          |

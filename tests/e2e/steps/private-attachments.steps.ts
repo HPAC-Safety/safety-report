@@ -1,6 +1,7 @@
 import { createBdd } from "playwright-bdd"
 import { expect, type Dialog, type Download, type Page } from "@playwright/test"
 import { present } from "./present"
+import { tryToReload } from "./unload"
 
 const { Given, When, Then } = createBdd()
 
@@ -608,12 +609,8 @@ Then("{string} becomes enabled", async ({ page }, buttonLabel: string) => {
 // mechanism — see unsaved-changes.steps.ts for the beforeunload and
 // bilingual-dialog steps this scenario reuses. ---
 
-When("the Safety Officer tries to close or reload the tab", async ({ page }) => {
-	const dialogPromise = page.waitForEvent("dialog")
-	page.reload().catch(() => {}) // The reload never completes: the dialog cancels it.
-	const dialog = await dialogPromise
-	expect(dialog.type()).toBe("beforeunload")
-	await dialog.dismiss()
+When("the Safety Officer tries to close or reload the tab", ({ page }) => {
+	tryToReload(page)
 })
 
 When("the Safety Officer navigates away from the report through a link", async ({ page }) => {

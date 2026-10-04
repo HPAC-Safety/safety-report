@@ -447,7 +447,14 @@ Scenario: A processing or failed image's staff tile offers a raw-original downlo
   Given a Safety Officer is on the admin site and a report has a still-processing image
   When a Safety Officer opens the report in the admin area
   Then the image's tile is marked "processing"
-  And activating it downloads the raw original and does not open the lightbox
+
+@REQ-MED-083
+@ui
+Scenario: Activating a processing image's staff tile downloads the raw original
+  Given a Safety Officer is on the admin site and a report has a still-processing image
+  And a Safety Officer opens the report in the admin area
+  When the Safety Officer activates the image's tile
+  Then the raw original downloads and the lightbox does not open
 
 @REQ-MED-036
 @ui

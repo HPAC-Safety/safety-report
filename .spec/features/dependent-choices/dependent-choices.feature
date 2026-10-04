@@ -231,7 +231,14 @@ Scenario: A picker child with nothing under the parent's answer says so and does
   Given a required single-select "Model" question's choices depend on the single-select "Make" question, and nothing is offered under "Gin"
   When a reporter answers "Make" with "Gin"
   Then "Model" is disabled, and says no choice is listed for that answer
-  And the reporter can go on to the next page
+
+@REQ-DCH-019
+@ui
+Scenario: A picker child with nothing under the parent's answer lets the reporter go on
+  Given a required single-select "Model" question's choices depend on the single-select "Make" question, and nothing is offered under "Gin"
+  And a reporter answers "Make" with "Gin"
+  When the reporter goes on to the next page
+  Then the next page is shown
 
 @REQ-QB-205
 @ui
@@ -459,7 +466,14 @@ Scenario: The type-ahead review page offers a dependent value under another pare
   And "Zeno 2" is also linked to "Gin", a "Make" value since removed
   When they also tick "Niviuk"
   Then the page sends "Ozone" and "Niviuk"
-  And the page does not let them untick the last parent choice, and says why
+
+@REQ-DCH-018
+@ui
+Scenario: The type-ahead review page keeps a dependent value's last parent choice ticked, and says why
+  Given a Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
+  And "Zeno 2" is also linked to "Gin", a "Make" value since removed
+  When they open the value's parent choices
+  Then the page does not let them untick the last parent choice, and says why
 
 @REQ-QB-225
 Scenario: The migration keeps each link as one of the choice's parents and merges identical duplicates

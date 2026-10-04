@@ -406,7 +406,19 @@ Scenario Outline: A destructive admin action asks for confirmation
   Given a reviewer is on a published report in the admin site
   When they choose to <action>
   Then the admin site asks them to confirm before sending anything
-  And cancelling sends no request
+
+Examples:
+  | action               |
+  | delete the report    |
+  | unpublish the report |
+
+@REQ-WLD-060
+@ui
+Scenario Outline: Cancelling a destructive admin action sends nothing
+  Given a reviewer is on a published report in the admin site
+  And they choose to <action>
+  When they cancel it
+  Then nothing is sent and the report still offers Unpublish
 
 Examples:
   | action               |

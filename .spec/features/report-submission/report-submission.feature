@@ -1128,7 +1128,14 @@ Scenario: An expired upload is marked for re-attachment and nothing else is lost
   Given a submission is refused for some uploads that expired
   Then each of those files is marked expired with a prompt to attach it again
   And every other answer and upload is kept
-  And the reporter can submit again once the files are re-attached
+
+@REQ-SUB-156
+@ui
+Scenario: A report refused for expired uploads is submitted once the files are attached again
+  Given a submission is refused for some uploads that expired
+  And the reporter has attached the expired files again
+  When the reporter submits the report again
+  Then the report is sent with the kept file and the file attached again, never the expired upload
 
 @REQ-SUB-063
 @ui

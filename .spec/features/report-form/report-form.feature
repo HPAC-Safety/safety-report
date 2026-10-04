@@ -576,8 +576,23 @@ Scenario: Media consent is a system question that can never be removed or made c
 @ui
 Scenario Outline: The form asks for media consent only when there is a file to share
   Given a reporter is filling in the form
-  When they answer yes to publication consent and attach <file>
-  Then the form asks the media consent question, and it must be answered to submit
+  And they answer yes to publication consent and attach <file>
+  When the reporter goes on to the next page
+  Then the form asks the media consent question
+
+Examples:
+  | file       |
+  | an image   |
+  | a document |
+
+@REQ-RFM-022
+@ui
+Scenario Outline: The media consent question must be answered to submit
+  Given a reporter is filling in the form
+  And they answer yes to publication consent and attach <file>
+  And they have reached the media consent question
+  When they submit the report
+  Then the form says the media consent question is required and sends nothing
 
 Examples:
   | file       |
@@ -591,7 +606,22 @@ Scenario Outline: The form stops asking for media consent once the file is remov
   And they answer yes to publication consent and attach <file>
   And they have reached the media consent question and tried to submit without answering it
   When they remove the file, or answer no to publication consent
-  Then the form no longer asks it, and submits no answer to it
+  Then the form no longer asks it
+
+Examples:
+  | file       |
+  | an image   |
+  | a document |
+
+@REQ-RFM-023
+@ui
+Scenario Outline: A report no longer asking for media consent is sent with no answer to it
+  Given a reporter is filling in the form
+  And they answer yes to publication consent and attach <file>
+  And they have reached the media consent question and tried to submit without answering it
+  And they remove the file, or answer no to publication consent
+  When they submit the report
+  Then the report is sent with no answer to the media consent question
 
 Examples:
   | file       |

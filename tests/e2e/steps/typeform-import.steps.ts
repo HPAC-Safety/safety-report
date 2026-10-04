@@ -150,18 +150,20 @@ When("they import a Typeform draft whose key matches an existing question", asyn
 	await page.getByRole("button", { name: "Import", exact: true }).click()
 })
 
-Then(
-	"choosing to review it opens the existing question for editing, and creates no new one",
-	async ({ page }) => {
-		// A new question would be a POST to the question collection itself.
-		const created: string[] = []
-		page.on("request", (request) => {
-			if (request.method() === "POST" && new URL(request.url()).pathname === "/api/admin/questions") created.push(request.url())
-		})
+const createdQuestions = new WeakMap<Page, string[]>()
 
-		await page.getByRole("button", { name: "Review", exact: true }).first().click()
+When("they choose to review that draft", async ({ page }) => {
+	// A new question would be a POST to the question collection itself.
+	const created: string[] = []
+	createdQuestions.set(page, created)
+	page.on("request", (request) => {
+		if (request.method() === "POST" && new URL(request.url()).pathname === "/api/admin/questions") created.push(request.url())
+	})
 
-		await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible()
-		expect(created).toEqual([])
-	},
-)
+	await page.getByRole("button", { name: "Review", exact: true }).first().click()
+})
+
+Then("the existing question opens for editing, and no new one is created", async ({ page }) => {
+	await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible()
+	expect(createdQuestions.get(page)).toEqual([])
+})

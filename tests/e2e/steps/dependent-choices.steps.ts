@@ -830,9 +830,11 @@ Then("the page sends {string} and {string}", async ({ page }, first: string, sec
 	expect([...sentIds].sort()).toEqual([first.toLowerCase(), second.toLowerCase()].sort())
 })
 
-Then("the page does not let them untick the last parent choice, and says why", async ({ page }) => {
-	await page.reload()
+When("they open the value's parent choices", async ({ page }) => {
 	await valueParents(page).getByRole("combobox").click()
+})
+
+Then("the page does not let them untick the last parent choice, and says why", async ({ page }) => {
 	const ozone = valueParents(page).getByRole("checkbox", { name: "Ozone" })
 	await expect(ozone).toBeChecked()
 	await expect(ozone).toBeDisabled()
@@ -873,8 +875,8 @@ Then("{string} is disabled, and says no choice is listed for that answer", async
 	await expect(page.getByTestId("question-note")).toContainText("No choice is listed for your answer to")
 })
 
-Then("the reporter can go on to the next page", async ({ page }) => {
-	await page.getByRole("button", { name: "Next" }).click()
+// The next page is the consent question, the only yes/no on this form.
+Then("the next page is shown", async ({ page }) => {
 	await expect(page.getByRole("radio", { name: "Yes" })).toBeVisible()
 })
 

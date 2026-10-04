@@ -810,7 +810,7 @@ When(
 	},
 )
 
-Then("the saved question is sent with allowFutureDates true", ({ page }) => {
+Then("the saved question is sent allowing future dates", ({ page }) => {
 	expect(sentQuestions.get(page)?.allowFutureDates).toBe(true)
 })
 

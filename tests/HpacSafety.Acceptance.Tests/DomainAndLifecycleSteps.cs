@@ -74,7 +74,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"one application transaction marks the report and all its owned and dependent rows deleted with one deletion time: answers, summary, files, and report outbox items")]
+	[Then(@"one application transaction marks the report and everything it owns deleted with one deletion time: answers, summary, attachments, and Worker jobs")]
 	public async Task ThenOneTransactionStampsEveryOwnedRow()
 	{
 		var host = await BootedApi.Factory();
@@ -383,7 +383,7 @@ public sealed class DomainAndLifecycleSteps
 	private TinyId _requeuedMessageId;
 	private TinyId _requeuedMessageId2;
 
-	[Given(@"an outbox message has reached the poison threshold and stopped retrying")]
+	[Given(@"a Worker job has reached the poison threshold and stopped retrying")]
 	public async Task GivenAPoisonedOutboxMessage()
 	{
 		var host = await BootedApi.Factory();
@@ -415,7 +415,7 @@ public sealed class DomainAndLifecycleSteps
 			database, At.AddMinutes(1), from: null, to: null, logger, CancellationToken.None);
 	}
 
-	[Then(@"the message's poison state is cleared and its attempt count resets")]
+	[Then(@"the job's poison state is cleared and its attempt count resets")]
 	public async Task ThenPoisonStateIsCleared()
 	{
 		var host = await BootedApi.Factory();
@@ -438,7 +438,7 @@ public sealed class DomainAndLifecycleSteps
 		message.NextAttemptAt.ShouldBeLessThanOrEqualTo(At.AddMinutes(1));
 	}
 
-	[Then(@"only the requeued count and the message's own identifier are logged, never its payload")]
+	[Then(@"only the requeued count and the job's own identifier are logged, never its payload")]
 	public void ThenOnlyCountAndIdAreLogged()
 	{
 		// The shared booted host's database may carry poison rows other
@@ -451,7 +451,7 @@ public sealed class DomainAndLifecycleSteps
 		_requeueResult.RequeuedIds.ShouldContain(_requeuedMessageId.ToString());
 	}
 
-	[Given(@"one outbox message was poisoned before the given window and another was poisoned within it")]
+	[Given(@"one Worker job was poisoned before the given window and another was poisoned within it")]
 	public async Task GivenMessagesPoisonedBeforeAndWithinAWindow()
 	{
 		var host = await BootedApi.Factory();
@@ -489,7 +489,7 @@ public sealed class DomainAndLifecycleSteps
 			database, At, At.AddHours(-1), At, logger, CancellationToken.None);
 	}
 
-	[Then(@"only the message poisoned within the window is requeued")]
+	[Then(@"only the job poisoned within the window is requeued")]
 	public void ThenOnlyTheWithinWindowMessageIsRequeued()
 	{
 		// See ThenOnlyCountAndIdAreLogged: the shared host's database is not
@@ -500,7 +500,7 @@ public sealed class DomainAndLifecycleSteps
 		_requeueResult.RequeuedIds.ShouldNotContain(_requeuedMessageId.ToString());
 	}
 
-	[Then(@"the message poisoned before the window is left poisoned")]
+	[Then(@"the job poisoned before the window is left poisoned")]
 	public async Task ThenTheBeforeWindowMessageIsLeftPoisoned()
 	{
 		var host = await BootedApi.Factory();

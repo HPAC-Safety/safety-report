@@ -29,7 +29,7 @@ Then("the sign-in page shows no third-party sign-in option", async ({ page }) =>
 	await expect(page.getByRole("button", { name: "Continue with Google" })).toBeHidden()
 })
 
-Given("the API reports that a third-party provider is configured", async ({ page }) => {
+Given("a third-party sign-in provider is configured", async ({ page }) => {
 	await stubAuth(page, { thirdPartySignIn: true })
 })
 
@@ -78,7 +78,7 @@ Then("the header still shows the member sign-in action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
 })
 
-Then("the header shows a sign-out action instead of the member sign-in action", async ({ page }) => {
+Then("the header shows a sign-out action and no member sign-in action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeHidden()
 })
@@ -112,7 +112,7 @@ When("the client discards its token", async ({ page }) => {
 	expect(await page.evaluate(() => sessionStorage.getItem("hpac.session"))).toBeNull()
 })
 
-Then("no request reaches the API for that sign-out", async ({ page }) => {
+Then("no request reaches the server for that sign-out", async ({ page }) => {
 	await page.waitForLoadState("networkidle")
 	expect(apiRequestsSinceLogout.get(page)).toEqual([])
 })

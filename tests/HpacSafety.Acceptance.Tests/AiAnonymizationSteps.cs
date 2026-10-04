@@ -21,7 +21,7 @@ public sealed class AiAnonymizationSteps
 	private SummarizationInput _input = null!;
 	private SummarizationInput _marked = null!;
 
-	[Given(@"a private answer's value appears verbatim in a report_content answer")]
+	[Given(@"a private answer's value appears verbatim in an answer of the report content")]
 	public void GivenAPrivateValueAppearsVerbatimInReportContent()
 	{
 		BuildInput(privateValue: "Ada Lovelace", reportContentValue: "Ada Lovelace reported a hard landing.");
@@ -33,14 +33,14 @@ public sealed class AiAnonymizationSteps
 		// Asserted by the fixture the next step builds — "Ada Lovelace" is two words.
 	}
 
-	[Given(@"one of its words, at or above the minimum match length and not on the stopword list, appears alone in a report_content answer")]
+	[Given(@"one of its words, at or above the minimum match length and not on the stopword list, appears alone in an answer of the report content")]
 	public void GivenOneOfItsWordsAppearsAloneInReportContent()
 	{
 		"Lovelace".Length.ShouldBeGreaterThanOrEqualTo(PrivateValueMarker.MinimumTokenLength);
 		BuildInput(privateValue: "Ada Lovelace", reportContentValue: "Lovelace radioed the tower.");
 	}
 
-	[Given(@"a report_content answer contains a word that is below the minimum match length or on the stopword list")]
+	[Given(@"an answer of the report content contains a word that is below the minimum match length or on the stopword list")]
 	public void GivenAReportContentFieldContainsAShortOrStopword()
 	{
 		BuildInput(privateValue: "North Bay Airport", reportContentValue: "The aircraft flew north before landing.");
@@ -52,19 +52,19 @@ public sealed class AiAnonymizationSteps
 		// Already true of the fixture built above — "north" is a token of "North Bay Airport".
 	}
 
-	[Given(@"a report_content answer contains a private answer's whole multi-word value verbatim")]
+	[Given(@"an answer of the report content contains a private answer's whole multi-word value verbatim")]
 	public void GivenAReportContentFieldContainsTheWholeValueVerbatim()
 	{
 		BuildInput(privateValue: "Ada Lovelace", reportContentValue: "Ada Lovelace reported the failure.");
 	}
 
-	[Given(@"a private answer's value appears in a report_content answer with different casing or extra whitespace")]
+	[Given(@"a private answer's value appears in an answer of the report content with different casing or extra whitespace")]
 	public void GivenAPrivateValueAppearsWithDifferentCasingOrWhitespace()
 	{
 		BuildInput(privateValue: "Ada Lovelace", reportContentValue: "ADA   LOVELACE was flying.");
 	}
 
-	[Given(@"the Worker has built the marked report_content for a report")]
+	[Given(@"the Worker has built the marked report content for a report")]
 	public void GivenTheWorkerHasBuiltMarkedReportContent()
 	{
 		BuildInput(privateValue: "Ada Lovelace", reportContentValue: "Ada Lovelace reported a hard landing.");
@@ -79,7 +79,7 @@ public sealed class AiAnonymizationSteps
 		// Completed by the next step, which supplies the report content.
 	}
 
-	[Given(@"a report_content answer contains the word ""true""")]
+	[Given(@"an answer of the report content contains the word ""true""")]
 	public void GivenReportContentContainsTheWordTrue()
 	{
 		_input = SummarizationInput.Partition([
@@ -88,7 +88,7 @@ public sealed class AiAnonymizationSteps
 		]);
 	}
 
-	[Then(@"private_context still carries the yes\/no answer as true")]
+	[Then(@"the private context still carries the yes\/no answer as true")]
 	public void ThenPrivateContextStillCarriesTheBoolean()
 	{
 		var field = _marked.PrivateContext.ShouldHaveSingleItem();
@@ -96,13 +96,13 @@ public sealed class AiAnonymizationSteps
 		field.IsBoolean.ShouldBeTrue();
 	}
 
-	[When(@"the Worker builds the marked report_content")]
+	[When(@"the Worker builds the marked report content")]
 	public void WhenTheWorkerBuildsTheMarkedReportContent()
 	{
 		_marked = PrivateValueMarker.Mark(_input);
 	}
 
-	[When(@"the Worker builds the model input DTO")]
+	[When(@"the Worker builds the model input")]
 	public void WhenTheWorkerBuildsTheModelInputDto()
 	{
 		_marked = PrivateValueMarker.Mark(_input);
@@ -148,13 +148,13 @@ public sealed class AiAnonymizationSteps
 		_marked.ReportContent.Single().Value.ShouldBe($"[PRIVATE:{PrivateQuestionKey}] was flying.");
 	}
 
-	[Then(@"private_context still contains every private answer, unchanged")]
+	[Then(@"the private context still contains every private answer, unchanged")]
 	public void ThenPrivateContextStillContainsEveryPrivateAnsweredField()
 	{
 		_marked.PrivateContext.ShouldBe(_input.PrivateContext);
 	}
 
-	[Then(@"the model receives both the marked report_content and the unmarked private_context")]
+	[Then(@"the model receives both the marked report content and the unmarked private context")]
 	public void ThenTheModelReceivesBothSections()
 	{
 		_marked.ReportContent.Single().Value.ShouldContain($"[PRIVATE:{PrivateQuestionKey}]");

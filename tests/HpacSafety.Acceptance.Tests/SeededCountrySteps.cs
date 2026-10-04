@@ -152,7 +152,7 @@ public sealed partial class SeededWordingSteps
 		await Execute(SqlScript.Read(CountryScript));
 	}
 
-	[When(@"the report form's questions are read from the API")]
+	[When(@"the report form's questions are read")]
 	public async Task WhenTheFormIsReadFromTheApi()
 	{
 		var host = await BootedApi.Factory();

@@ -758,7 +758,7 @@ When("the Safety Officer confirms the restore", async ({ page }) => {
 	await page.getByRole("dialog").getByRole("button", { name: "Restore version" }).click()
 })
 
-Then("the browser asks the API to restore that revision", async ({ page }) => {
+Then("the browser asks to restore that revision", async ({ page }) => {
 	await expect
 		.poll(() => present(reviewStubs.get(page)).requests)
 		.toContain("POST /api/admin/reports/reviewaaaaa/summary/revisions/revisionaa1/rollback")
@@ -1190,6 +1190,6 @@ Then("the older reports load without leaving Manage reports", async ({ page }) =
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 })
 
-Then("the list offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
+Then("the list offers a visible {string} action and does not fail silently", async ({ page }, name: string) => {
 	await expect(page.getByRole("button", { name })).toBeVisible()
 })

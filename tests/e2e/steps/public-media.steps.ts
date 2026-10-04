@@ -338,7 +338,7 @@ Given("a visitor opens a published report showing an image", async ({ page }) =>
 	stub.expired.add(`${IMAGE.id}-1`)
 })
 
-When("the image's link stops working because the image is no longer public", async ({ page }) => {
+When("the image's link stops working once the image is no longer public", async ({ page }) => {
 	// The first link is issued; asked again after it fails, the API says the
 	// file is no longer public.
 	stubOf(page).goneAfter[IMAGE.id] = 1
@@ -441,7 +441,7 @@ Given("a visitor has the lightbox open on the one public image a report has", as
 	await expect(lightbox(page)).toBeVisible()
 })
 
-When("the image's link answers 404 because the image is no longer public", async ({ page }) => {
+When("the image's link is not found once the image is no longer public", async ({ page }) => {
 	// Shared by both scenarios above: only one of these two ids is ever the one
 	// open in the lightbox at this point, so setting both is harmless — the
 	// stub only ever consults the id the page actually asks it for.
@@ -461,7 +461,7 @@ Then(
 	},
 )
 
-Then("the image's thumbnail is removed from the strip and the lightbox closes, since nothing remains to show", async ({ page }) => {
+Then("the image's thumbnail is removed from the strip and the lightbox closes with nothing left to show", async ({ page }) => {
 	await expect(lightbox(page)).toHaveCount(0)
 	await expect(page.locator('[data-media="image"]')).toHaveCount(0)
 	await expect(strip(page)).toHaveCount(0)
@@ -661,7 +661,7 @@ Then("the image's tile is marked {string}", async ({ page }, label: string) => {
 	await expect(page.locator('[data-media="image"]').getByTestId("attachment-state")).toHaveText(label)
 })
 
-Then("activating it downloads the raw original rather than opening the lightbox", async ({ page }) => {
+Then("activating it downloads the raw original and does not open the lightbox", async ({ page }) => {
 	const download = page.waitForEvent("download")
 	await thumbnail(page, "image").click()
 	await download

@@ -298,7 +298,7 @@ public sealed class ReportReviewSteps
 		published.GetProperty("status").GetString().ShouldBe("published");
 	}
 
-	[Then(@"no ViewedRawReport entry is written for that report")]
+	[Then(@"no raw-report-viewed audit entry is written for that report")]
 	public async Task ThenNoViewedRawReportEntryIsWritten()
 	{
 		var factory = await BootedApi.Factory();
@@ -346,7 +346,7 @@ public sealed class ReportReviewSteps
 		_detailBody.ShouldNotContain("http", Case.Insensitive);
 	}
 
-	[Then(@"an audit entry records the reviewer's token subject, ViewedRawReport, the report, and the time")]
+	[Then(@"an audit entry records the reviewer's token subject, a raw-report-viewed action, the report, and the time")]
 	public async Task ThenAViewedRawReportRowIsWritten()
 	{
 		var entry = await ViewedRawReportEntry();

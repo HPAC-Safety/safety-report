@@ -95,7 +95,7 @@ public sealed class AnswerTranslationModeSteps
 		_translator.Sent.ShouldBe(["The wind picked up on final."]);
 	}
 
-	[Then(@"^the yes/no answer, stored as a boolean, is never sent to the translator$")]
+	[Then(@"^the yes/no answer, stored as true or false, is never sent to the translator$")]
 	public async Task ThenTheYesNoAnswerIsNeverSentToTheTranslator()
 	{
 		var answer = (await StoredAnswers()).Single(answer => answer.QuestionRevisionId == TinyId.Parse(_answers["yes_no"].RevisionId));
@@ -285,11 +285,10 @@ public sealed class AnswerTranslationModeSteps
 
 	// ── REQ-QB-108: only free text can need translation, by default ─────────
 
-	[Given(@"^an Administrator authors an? (\w+) question without saying whether it needs translation$")]
+	[Given(@"^an Administrator authors an? (.+) question without saying whether it needs translation$")]
 	public void GivenAQuestionAuthoredWithoutTheFlag(string type)
 	{
-		ArgumentNullException.ThrowIfNull(type);
-		EnumCode.TryParse<QuestionType>(type, out var parsed).ShouldBeTrue(type);
+		var parsed = GlossaryNames.QuestionType(type);
 		_question = Question.Create("synthetic", parsed, "A question", "Une question", Noon);
 		_revision = _question.CurrentRevision;
 	}

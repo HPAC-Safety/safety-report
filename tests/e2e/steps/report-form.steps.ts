@@ -427,7 +427,7 @@ Then("retains local state if the network result is uncertain", async ({ page }) 
 	expect(await readDraftFromBrowser(page)).not.toBeNull()
 })
 
-Then("clears saved local state only after a definite 202 response", async ({ page }) => {
+Then("clears saved local state only after a definite acceptance", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Report submitted" })).toBeVisible()
 	expect(await readDraftFromBrowser(page)).toBeNull()
 })
@@ -444,7 +444,7 @@ Then("entered answers are neither cleared nor remapped", async ({ page }) => {
 	await expect(page.getByLabel("What happened?")).toHaveValue("Written in English.")
 })
 
-Then("only the questions made required display required treatment, and consent_publish is always one of them", async ({ page }) => {
+Then("only the questions made required display required treatment, and the publication consent question is always one of them", async ({ page }) => {
 	await resetToIntro(page)
 	await expect(page.getByText("Required")).not.toBeVisible()
 	await reachLastPage(page)
@@ -458,14 +458,14 @@ Then("every optional question offers a natural blank\\/skipped state with no coe
 	await expect(page.getByText("Was anyone injured?")).toBeVisible()
 })
 
-Then("consent_publish has no selected default and requires an explicit yes or no", async ({ page }) => {
+Then("the publication consent question has no selected default and requires an explicit yes or no", async ({ page }) => {
 	await resetToIntro(page)
 	await reachLastPage(page)
 	await expect(page.getByRole("radio", { name: "Yes" })).not.toBeChecked()
 	await expect(page.getByRole("radio", { name: "No" })).not.toBeChecked()
 })
 
-Then("the client shows inline validation using the same stable type\\/choice rules and localized messages the API uses", async ({ page }) => {
+Then("the client shows inline validation using the same stable type\\/choice rules and localized messages the server uses", async ({ page }) => {
 	await expect(page.getByText("This question is required.")).toBeVisible()
 })
 
@@ -754,7 +754,7 @@ function reportAddress(stepKey?: string): RegExp {
 	return stepKey ? new RegExp(`/report/${stepKey}$`) : /\/report$/
 }
 
-Given("a reporter is on the form's introduction at \\/report", async ({ page }) => {
+Given("a reporter is on the form's introduction, at the form's own address", async ({ page }) => {
 	await openForm(page)
 	await expect(page).toHaveURL(reportAddress())
 })
@@ -803,12 +803,12 @@ When("the reporter opens the address of a page the form does not have", async ({
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
 })
 
-Then("the address names the page now shown, as \\/report\\/<question-key>", async ({ page }) => {
+Then("the address names the page now shown by its question key", async ({ page }) => {
 	await expect(page.getByLabel("What happened?")).toBeVisible()
 	await expect(page).toHaveURL(reportAddress("narrative"))
 })
 
-Then("the address is \\/report", async ({ page }) => {
+Then("the address is the form's own address", async ({ page }) => {
 	await expect(page).toHaveURL(reportAddress())
 })
 
@@ -827,7 +827,7 @@ Then("the address names the page the reporter was last on", async ({ page }) => 
 	await expect(page).toHaveURL(reportAddress("injury_detail"))
 })
 
-Then("the form opens at its introduction at \\/report", async ({ page }) => {
+Then("the form opens at its introduction, at the form's own address", async ({ page }) => {
 	await expect(page.getByRole("heading", { level: 1 })).toContainText("Thanks for taking the time")
 	await expect(page).toHaveURL(reportAddress())
 })

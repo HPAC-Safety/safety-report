@@ -227,7 +227,7 @@ Then("the page offers no comments", async ({ page }) => {
 	await expect(page.getByRole("textbox")).toHaveCount(0)
 })
 
-Then("the receipt is sent in the request body and not in any address", ({ page }) => {
+Then("the receipt is sent inside the request and never in any address", ({ page }) => {
 	const asked = lookups.get(page) ?? []
 	expect(asked.length).toBeGreaterThan(0)
 
@@ -262,7 +262,7 @@ Given("a member submits a valid report", async ({ page }) => {
 	await page.getByRole("group", { name: /May we publish a summary of this report\?/ }).getByRole("radio", { name: "Yes" }).click()
 })
 
-When("the API answers 202 with a receipt", async ({ page }) => {
+When("the report is accepted with a receipt", async ({ page }) => {
 	const answered = page.waitForResponse((response) => response.url().includes("/api/v1/reports/") && response.status() === 202)
 	await page.getByRole("button", { name: "Submit report" }).click()
 	await answered
@@ -274,6 +274,6 @@ Then("the browser keeps the report ID and the receipt in its own storage", async
 		.toBe(JSON.stringify([{ reportId: "synthetic-report-id", receipt: RECEIPT }]))
 })
 
-Then("no request address, query string, or navigation carries the receipt", ({ page }) => {
+Then("no request address or navigation carries the receipt", ({ page }) => {
 	expect((addresses.get(page) ?? []).filter((address) => address.includes(RECEIPT))).toEqual([])
 })

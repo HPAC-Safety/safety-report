@@ -29,6 +29,7 @@ public sealed class ReporterImmutabilitySteps
 	private PostgresException? _refusal;
 	private int? _rows;
 	private ScratchHost? _scratch;
+	private Guarded.StoredPart? _part;
 
 	[Given(@"a submitted report with answers, a file, and a summary")]
 	public async Task GivenASubmittedReport()
@@ -36,36 +37,42 @@ public sealed class ReporterImmutabilitySteps
 		_reportId = await BootedReports.Seed(ReportStatus.Published, true, arrange: report => BootedReports.AddProcessedImage(report));
 	}
 
-	[Given(@"a statement has set (.+) on a (report_answers|report_files|reports|summary_revisions) row")]
-	public async Task GivenAStatementHasSet(string assignment,
-											string table)
+	[Given(@"^a stored (answer|attachment|report|summary revision)'s (.+) has been written$")]
+	public async Task GivenAStoredPartHasBeenWritten(string record,
+													 string part)
 	{
-		await Update(table, assignment);
+		_part = Guarded.Part(record, part);
+		await Update(_part.Table, _part.Written());
 		_refusal.ShouldBeNull("The setup write was refused.");
 	}
 
-	[When(@"a statement sets (.+) on a (report_answers|report_files|reports|summary_revisions) row")]
-	public async Task WhenAStatementSets(string assignment,
-										 string table)
+	[When(@"^a stored (answer|attachment|report|summary revision)'s (.+) is (changed|cleared|written)$")]
+	public async Task WhenAStoredPartIsChanged(string record,
+											   string part,
+											   string change)
 	{
-		await Update(table, assignment);
+		_part = Guarded.Part(record, part);
+		await Update(_part.Table, _part.Assignment(change));
 	}
 
-	[When(@"a statement sets (.+) on that row")]
-	public async Task WhenAStatementSetsOnThatRow(string assignment)
+	[When(@"^it is (changed|cleared)$")]
+	public async Task WhenItIsChanged(string change)
 	{
-		await Update(_table, assignment);
+		var part = _part ?? throw new InvalidOperationException("No stored part was written first.");
+		await Update(part.Table, part.Assignment(change));
 	}
 
-	[When(@"a statement deletes a (.+) row")]
-	public async Task WhenAStatementDeletes(string table)
+	[When(@"^a stored (report|answer|attachment|summary revision) is erased$")]
+	public async Task WhenAStoredRecordIsErased(string record)
 	{
+		var table = Guarded.Table(record);
 		await Run(table, $"DELETE FROM {table} WHERE id = @id");
 	}
 
-	[When(@"^a statement truncates (report_answers|report_files|reports|summary_revisions)$")]
-	public async Task WhenAStatementTruncates(string table)
+	[When(@"^every stored (report|answer|attachment|summary revision) is erased at once$")]
+	public async Task WhenEveryStoredRecordIsErased(string record)
 	{
+		var table = Guarded.Table(record);
 		// CASCADE, so a foreign key cannot refuse it before the trigger does. It
 		// runs in a transaction that is always rolled back: should the trigger
 		// ever be missing, the database still keeps every row.
@@ -92,43 +99,52 @@ public sealed class ReporterImmutabilitySteps
 		}
 	}
 
-	[When(@"a migration disables the reports trigger, sets language = 'fr-CA', and enables it again in one transaction")]
+	[When(@"a stored report's language and submission time are written back unchanged, with a new review state")]
+	public async Task WhenALockedPartIsWrittenBackUnchanged()
+	{
+		await Update("reports", "language = language, submitted_at = submitted_at, status = 'unpublished'");
+	}
+
+	[When(@"a migration lifts the report's guard, changes its language to French, and restores the guard in one transaction")]
 	public async Task WhenAMigrationChangesALockedColumn()
 	{
 		_rows = await PastTheImmutabilityTriggers.Write("reports", $"UPDATE reports SET language = 'fr-CA' WHERE id = {_reportId}");
 		_refusal = null;
 	}
 
-	[Then(@"Postgres refuses it, naming (.+)")]
-	public void ThenPostgresRefusesIt(string column)
+	/// <summary>The trigger refused the write with SQLSTATE 23000, its message naming the guarded column (ADR-0178).</summary>
+	[Then(@"the change is refused, naming that part")]
+	public void ThenTheChangeIsRefused()
+	{
+		var part = _part ?? throw new InvalidOperationException("No stored part was changed.");
+		_refusal.ShouldNotBeNull("The statement was not refused.");
+		_refusal.SqlState.ShouldBe("23000");
+		_refusal.MessageText.ShouldStartWith($"{part.Table}.{part.Column} ");
+	}
+
+	/// <summary>The trigger refused a DELETE or TRUNCATE with SQLSTATE 23000: "&lt;table&gt; rows are never deleted".</summary>
+	[Then(@"the erasure is refused, saying that kind of record is never erased")]
+	public void ThenTheErasureIsRefused()
 	{
 		_refusal.ShouldNotBeNull("The statement was not refused.");
 		_refusal.SqlState.ShouldBe("23000");
-		_refusal.MessageText.ShouldStartWith(column + " ");
+		_refusal.MessageText.ShouldBe($"{_table} rows are never deleted");
 	}
 
-	[Then(@"Postgres refuses it, saying (.+) rows are never deleted")]
-	public void ThenPostgresRefusesTheDelete(string table)
-	{
-		_refusal.ShouldNotBeNull("The statement was not refused.");
-		_refusal.SqlState.ShouldBe("23000");
-		_refusal.MessageText.ShouldBe($"{table} rows are never deleted");
-	}
-
-	[Then(@"the row is as it was")]
+	[Then(@"^the (?:report|answer|attachment|summary revision) is as it was$")]
 	public async Task ThenTheRowIsAsItWas()
 	{
 		(await Fingerprint()).ShouldBe(_fingerprint);
 	}
 
-	[Then(@"the write succeeds")]
+	[Then(@"the change is kept")]
 	public void ThenTheWriteSucceeds()
 	{
 		_refusal.ShouldBeNull($"The statement was refused: {_refusal?.MessageText}");
 		_rows.ShouldBe(1);
 	}
 
-	[Then(@"the row now reads differently")]
+	[Then(@"^the (?:report|answer|attachment|summary revision) now reads differently$")]
 	public async Task ThenTheRowNowReadsDifferently()
 	{
 		(await Fingerprint()).ShouldNotBe(_fingerprint);
@@ -140,11 +156,12 @@ public sealed class ReporterImmutabilitySteps
 		(await Scalar("SELECT language FROM reports WHERE id = @id", _reportId)).ShouldBe("fr-CA");
 	}
 
-	[Then(@"a later statement setting language = 'en-CA' on a reports row is refused, naming reports.language")]
+	[Then(@"a later change to the report's language is refused, naming that part")]
 	public async Task ThenALaterStatementIsRefused()
 	{
+		_part = Guarded.Part("report", "language");
 		await Update("reports", "language = 'en-CA'");
-		ThenPostgresRefusesIt("reports.language");
+		ThenTheChangeIsRefused();
 	}
 
 	/// <summary>The host the scenario's row lives on: its own scratch database once a truncation has moved it, else the shared one.</summary>
@@ -232,6 +249,118 @@ public sealed class ReporterImmutabilitySteps
 		parameter.Value = id;
 		command.Parameters.Add(parameter);
 		return (await command.ExecuteScalarAsync())?.ToString();
+	}
+}
+
+/// <summary>
+///     The stored parts REQ-DOM-018 to REQ-DOM-029 name in the reader's words,
+///     each mapped to the table and column the immutability triggers guard and
+///     to the SQL that changes, clears, or writes it (ADR-0178, J13 on #815).
+///     The column names live here and in CON-DP-013 to CON-DP-016, not in the
+///     scenarios.
+/// </summary>
+internal static class Guarded
+{
+	/// <summary>One stored part: its table and column, and each write a scenario makes to it.</summary>
+	internal sealed record StoredPart(string Table, string Column, string? Changed = null, string? Cleared = null, string? Write = null)
+	{
+		public string Assignment(string change)
+		{
+			return change switch
+			{
+				"changed" => Changed,
+				"cleared" => Cleared,
+				"written" => Write,
+				_ => null,
+			} ?? throw new ArgumentOutOfRangeException(nameof(change), change, $"No {change} write for {Table}.{Column}.");
+		}
+
+		public string Written()
+		{
+			return Assignment("written");
+		}
+	}
+
+	private static readonly Dictionary<(string Record, string Part), StoredPart> Parts = new()
+	{
+		[("answer", "identifier")] = new("report_answers", "id", "id = 'xxxxxxxxxx1'"),
+		[("answer", "report")] = new("report_answers", "report_id", "report_id = 'xxxxxxxxxx1'"),
+		[("answer", "question")] = new("report_answers", "question_id", "question_id = 'xxxxxxxxxx1'"),
+		[("answer", "question revision")] = new("report_answers", "question_revision_id", "question_revision_id = 'xxxxxxxxxx1'"),
+		[("answer", "question key")] = new("report_answers", "question_key", "question_key = 'another_key'"),
+		[("answer", "privacy")] = new("report_answers", "is_private", "is_private = NOT is_private"),
+		[("answer", "wording")] = new("report_answers", "value", "value = 'A different account.'", "value = NULL"),
+		[("answer", "yes or no")] = new("report_answers", "value_boolean", "value_boolean = true"),
+		[("answer", "choice")] = new("report_answers", "choice_id", "choice_id = 'xxxxxxxxxx1'"),
+		[("answer", "language")] = new("report_answers", "locale", "locale = 'fr-CA'"),
+		[("answer", "translation need")] = new("report_answers", "translation_mode", "translation_mode = 'machine'"),
+		[("answer", "answer time")] = new("report_answers", "answered_at", "answered_at = answered_at + interval '1 day'"),
+		[("answer", "second language")] = new("report_answers", "translated_value", "translated_value = 'Second.'", "translated_value = NULL", "translated_value = 'First.'"),
+		[("answer", "second language source")] = new("report_answers", "translation_source", "translation_source = 'human'", "translation_source = NULL", "translation_source = 'auto'"),
+		[("answer", "deletion time")] = new("report_answers", "deleted", "deleted = now() + interval '1 day'", "deleted = NULL", "deleted = now()"),
+
+		[("attachment", "identifier")] = new("report_files", "id", "id = 'xxxxxxxxxx1'"),
+		[("attachment", "report")] = new("report_files", "report_id", "report_id = 'xxxxxxxxxx1'"),
+		[("attachment", "answer")] = new("report_files", "report_answer_id", "report_answer_id = 'xxxxxxxxxx1'"),
+		[("attachment", "kind")] = new("report_files", "kind", "kind = 'video'"),
+		[("attachment", "stored original")] = new("report_files", "blob_key", "blob_key = 'another/original/key'"),
+		[("attachment", "file name")] = new("report_files", "original_file_name", "original_file_name = 'another.jpg'"),
+		[("attachment", "content type")] = new("report_files", "content_type", "content_type = 'image/png'"),
+		[("attachment", "size")] = new("report_files", "byte_size", "byte_size = byte_size + 1"),
+		[("attachment", "upload time")] = new("report_files", "uploaded_at", "uploaded_at = uploaded_at + interval '1 day'"),
+		[("attachment", "stripped copy")] = new("report_files", "stripped_blob_key", Cleared: "exif_stripped_at = NULL, stripped_blob_key = NULL", Write: "stripped_blob_key = 'report/stripped/other', exif_stripped_at = now()"),
+		[("attachment", "processing error")] = new("report_files", "processing_error_code", Write: "processing_error_code = 'unreadable'"),
+		[("attachment", "hidden state")] = new("report_files", "hidden_at", Write: "hidden_at = now(), hidden_by_subject = 'synthetic-officer'"),
+		[("attachment", "deletion time")] = new("report_files", "deleted", Write: "deleted = now()"),
+
+		[("report", "identifier")] = new("reports", "id", "id = 'xxxxxxxxxx1'"),
+		[("report", "language")] = new("reports", "language", "language = 'fr-CA'"),
+		[("report", "submission time")] = new("reports", "submitted_at", "submitted_at = submitted_at + interval '1 day'"),
+		[("report", "publication consent")] = new("reports", "consent_publish", "consent_publish = NOT consent_publish", "consent_publish = NULL"),
+		[("report", "media consent")] = new("reports", "consent_media", "consent_media = true"),
+		[("report", "document consent")] = new("reports", "consent_documents", "consent_documents = true"),
+		[("report", "review state")] = new("reports", "status", "status = 'unpublished'"),
+		[("report", "publish time")] = new("reports", "published_at", Write: "published_at = now()"),
+		[("report", "unpublish note")] = new("reports", "unpublish_note", Write: "unpublish_note = 'Out of scope.'"),
+		[("report", "summary error")] = new("reports", "summary_error", Write: "summary_error = 'Provider was down'"),
+		[("report", "deletion time")] = new("reports", "deleted", Write: "deleted = now()"),
+
+		[("summary revision", "identifier")] = new("summary_revisions", "id", "id = 'xxxxxxxxxx1'"),
+		[("summary revision", "summary")] = new("summary_revisions", "summary_id", "summary_id = 'xxxxxxxxxx1'"),
+		[("summary revision", "number")] = new("summary_revisions", "sequence", "sequence = sequence + 1"),
+		[("summary revision", "English text")] = new("summary_revisions", "ai_summary_en", "ai_summary_en = 'Rewritten.'"),
+		[("summary revision", "French text")] = new("summary_revisions", "ai_summary_fr", "ai_summary_fr = 'Réécrit.'"),
+		[("summary revision", "English source")] = new("summary_revisions", "source_en", "source_en = 'human'"),
+		[("summary revision", "French source")] = new("summary_revisions", "source_fr", "source_fr = 'human'"),
+		[("summary revision", "model")] = new("summary_revisions", "model", "model = 'another-model'"),
+		[("summary revision", "prompt version")] = new("summary_revisions", "prompt_version", "prompt_version = 'another.v9'"),
+		[("summary revision", "author")] = new("summary_revisions", "author_subject", "author_subject = 'someone-else'"),
+		[("summary revision", "creation time")] = new("summary_revisions", "created_at", "created_at = created_at + interval '1 day'"),
+		[("summary revision", "restored revision")] = new("summary_revisions", "restored_from_id", "restored_from_id = 'xxxxxxxxxx1'"),
+		[("summary revision", "approval")] = new("summary_revisions", "approved_at", Cleared: "approved_at = NULL, approved_by_subject = NULL", Write: "approved_at = now(), approved_by_subject = 'another-approver'"),
+		[("summary revision", "deletion time")] = new("summary_revisions", "deleted", Cleared: "deleted = NULL", Write: "deleted = now()"),
+	};
+
+	/// <summary>The guarded table a record kind is stored in.</summary>
+	public static string Table(string record)
+	{
+		return record switch
+		{
+			"report" => "reports",
+			"answer" => "report_answers",
+			"attachment" => "report_files",
+			"summary revision" => "summary_revisions",
+			_ => throw new ArgumentOutOfRangeException(nameof(record), record, "Not a record the immutability triggers guard."),
+		};
+	}
+
+	/// <summary>The stored part a scenario names.</summary>
+	public static StoredPart Part(string record,
+								  string part)
+	{
+		return Parts.TryGetValue((record, part), out var found)
+			? found
+			: throw new ArgumentOutOfRangeException(nameof(part), part, $"No guarded part \"{part}\" of a stored {record}.");
 	}
 }
 

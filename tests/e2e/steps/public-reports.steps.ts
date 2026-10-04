@@ -125,11 +125,11 @@ Given("a visitor has the address of a published report", async ({ page }) => {
 	await stubFeed(page)
 })
 
-Given("a report ID the public API answers with 404", async ({ page }) => {
+Given("a report ID that is not found", async ({ page }) => {
 	await stubFeed(page)
 })
 
-Given("a published report has both ai_summary_en and ai_summary_fr", async ({ page }) => {
+Given("a published report has both an English and a French summary text", async ({ page }) => {
 	await stubFeed(page)
 })
 
@@ -142,7 +142,7 @@ When("the visitor opens that address directly", async ({ page }) => {
 	await page.goto(`/reports/${FIRST.id}`)
 })
 
-When("a visitor opens \\/reports\\/ followed by that ID", async ({ page }) => {
+When("a visitor opens the report address for that ID", async ({ page }) => {
 	await page.goto(`/reports/${HIDDEN_ID}`)
 })
 
@@ -151,8 +151,8 @@ When("a visitor views it in a given locale", async ({ page, context }) => {
 	await page.goto(`/reports/${FIRST.id}`)
 })
 
-Then("the address bar shows \\/reports\\/ followed by that report's ID", async ({ page }) => {
-	await expect(page).toHaveURL(new RegExp(`/reports/${FIRST.id}$`))
+Then("the address bar shows {string} followed by that report's ID", async ({ page }, path: string) => {
+	await expect(page).toHaveURL(new RegExp(`${path}${FIRST.id}$`))
 })
 
 Then("the page shows that report's full summary in the visitor's language", async ({ page }) => {
@@ -364,7 +364,7 @@ When("a visitor activates the {string} action without scrolling", async ({ page 
 	await page.keyboard.press("Enter")
 })
 
-Then("the feed offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
+Then("the feed offers a visible {string} action and does not fail silently", async ({ page }, name: string) => {
 	await expect(page.getByRole("button", { name })).toBeVisible()
 })
 

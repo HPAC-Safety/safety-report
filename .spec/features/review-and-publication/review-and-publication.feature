@@ -14,7 +14,7 @@ Scenario: A report detail exposes only what the reviewer needs
 Scenario: Opening a report detail is audited
   Given a reviewer opens a report detail
   When the detail query runs
-  Then an audit entry records the reviewer's token subject, ViewedRawReport, the report, and the time
+  Then an audit entry records the reviewer's token subject, a raw-report-viewed action, the report, and the time
   And the audit entry records no report content
 
 @REQ-MOD-032
@@ -53,7 +53,7 @@ Scenario: A rollback saves a new revision equal to the old one
   Then the summary has 3 revisions
   And the new revision has the first revision's text and sources and names it as restored from
   And the first and second revisions are unchanged
-  And the restoring is audited as RolledBackSummary without any text
+  And the restoring is audited as a summary-restored action, without any text
 
 @REQ-MOD-197
 Scenario: A rollback on a live report is published at once
@@ -93,20 +93,20 @@ Scenario: The history lists every revision with its author, time, and source
 Scenario Outline: Only a reviewer edits or restores, and only to an earlier revision that exists
   Given a Pending report whose reporter consented to publication
   When <attempt>
-  Then the request is refused with <status> and saves nothing
+  Then the request is <outcome> and saves nothing
 
 Examples:
-  | attempt                                          | status |
-  | a User edits the summary pair                    | 403    |
-  | a User restores the first revision               | 403    |
-  | a reviewer restores the current revision         | 400    |
-  | a reviewer restores a revision that does not exist | 404  |
+  | attempt                                            | outcome              |
+  | a User edits the summary pair                      | refused as forbidden |
+  | a User restores the first revision                 | refused as forbidden |
+  | a reviewer restores the current revision           | refused as invalid   |
+  | a reviewer restores a revision that does not exist | not found            |
 
 @REQ-MOD-205
 Scenario: A save that changes neither language is refused
   Given a Pending report whose reporter consented to publication
   When a reviewer saves the summary pair unchanged
-  Then the request is refused with 400 and saves nothing
+  Then the request is refused as invalid and saves nothing
 
 @REQ-MOD-033
 Scenario: Publishing approves the current summary pair once
@@ -120,7 +120,7 @@ Scenario: Publication requires every guard to pass, with no bypass
   Given a report is non-deleted, has explicit positive consent, has two nonblank summary texts, and a reviewer publishes it
   When the publication is recorded
   Then the pair is approved and the report is Published in the same action
-  And no Administrator, migration, background job, or direct API request can bypass any of these guards
+  And no Administrator, migration, background job, or direct request can bypass any of these guards
 
 @REQ-MOD-054
 @ui
@@ -206,7 +206,7 @@ Scenario: Unpublishing may carry a note that only reviewers see
   Given a reviewer unpublishes a report with a note
   When the unpublishing is recorded
   Then the report detail shows the note to reviewers
-  And the note never reaches the public API, the audit log, or the application logs
+  And the note never reaches anything a visitor reads, the audit log, or the application logs
   And unpublishing without a note also succeeds
 
 @REQ-MOD-059
@@ -222,23 +222,23 @@ Scenario: A review action based on a stale view is refused
   Given two reviewers opened the same report
   And the first reviewer has saved a change to it
   When the second reviewer sends a change based on the view they loaded
-  Then the API answers 409 with a problem that asks them to reload
+  Then the change is refused as out of date, with a problem that asks them to reload
   And nothing the second reviewer sent is saved
 
 @REQ-MOD-061
 Scenario Outline: Every review action writes one content-free audit entry in its own transaction
   Given a report on which a reviewer can <action>
   When the reviewer does so
-  Then one audit entry records the reviewer's token subject, <audit action>, the report, and the time
+  Then one audit entry records the reviewer's token subject, a <audit action> action, the report, and the time
   And the entry records no summary text, answer, or unpublishing note
 
 Examples:
-  | action                | audit action      |
-  | edit the summary pair | EditedSummary     |
-  | publish the pair      | PublishedReport   |
-  | unpublish the report  | UnpublishedReport |
-  | write a manual pair   | EditedSummary     |
-  | restore a summary version | RolledBackSummary |
+  | action                    | audit action       |
+  | edit the summary pair     | summary-edited     |
+  | publish the pair          | report-published   |
+  | unpublish the report      | report-unpublished |
+  | write a manual pair       | summary-edited     |
+  | restore a summary version | summary-restored   |
 
 @REQ-MOD-062
 @ui
@@ -310,7 +310,7 @@ Scenario: Restoring a version asks for confirmation first
   Then a confirmation asks whether to restore that version
   And nothing has been restored yet
   When the Safety Officer confirms the restore
-  Then the browser asks the API to restore that revision
+  Then the browser asks to restore that revision
   And the restored text is the current summary
 
 @REQ-MOD-064
@@ -361,13 +361,13 @@ Scenario: Opening an attachment requests its own audited link
 Scenario Outline: Only a reviewer may request a machine translation
   Given a member signed in as <role>
   When that member requests a translation
-  Then the API answers <outcome>
+  Then the translation request is <outcome>
 
 Examples:
-  | role           | outcome       |
-  | User           | forbidden     |
-  | Safety Officer | a translation |
-  | Administrator  | a translation |
+  | role           | outcome                     |
+  | User           | refused as forbidden        |
+  | Safety Officer | answered with a translation |
+  | Administrator  | answered with a translation |
 
 @REQ-MOD-070
 Scenario Outline: Each summary language records how it was produced
@@ -455,14 +455,14 @@ Scenario: The report view shows how each summary language was produced
 Scenario Outline: Only a reviewer may keep private notes
   Given a report carrying one private note
   When <who> adds, lists, edits, reads the history of, and removes private notes on it
-  Then the API answers <outcome> to every one of those requests
+  Then every one of those requests is <outcome>
 
 Examples:
-  | who                  | outcome            |
-  | an anonymous visitor | 401                |
-  | a User               | 403                |
-  | a Safety Officer     | with success       |
-  | an Administrator     | with success       |
+  | who                  | outcome                    |
+  | an anonymous visitor | refused as unauthenticated |
+  | a User               | refused as forbidden       |
+  | a Safety Officer     | answered with success      |
+  | an Administrator     | answered with success      |
 
 @REQ-MOD-099
 Scenario Outline: Staff add any number of private notes to a report in any status
@@ -486,21 +486,21 @@ Scenario: Editing a private note adds a revision and keeps every earlier one
   When an Administrator edits that private note twice
   Then the private note lists the latest text, written by the Administrator, marked as edited
   And its history lists all three revisions oldest first, each unchanged with its own text, writer, and time
-  And an edit based on an earlier revision is refused with 409 and saves nothing
+  And an edit based on an earlier revision is refused as out of date and saves nothing
 
 @REQ-MOD-101
 Scenario: Removing a private note deletes it
   Given a Safety Officer wrote a private note on a report and edited it once
   When an Administrator removes that private note
-  Then the private note is no longer listed, and editing it or reading its history answers 404
+  Then the private note is no longer listed, and editing it or reading its history is not found
   And the private note and both its revisions are marked deleted at one time, and nothing is erased
-  And one audit entry records the Administrator's token subject, RemovedPrivateNote, the note, and the time, without its text
+  And one audit entry records the Administrator's token subject, a private-note-removed action, the note, and the time, without its text
 
 @REQ-MOD-102
 Scenario Outline: A private note is plain text of 1 to 4000 characters
   Given a pending report that staff keep private notes on
   When a Safety Officer adds a private note whose text is <text>
-  Then the API answers 400 and no private note is stored
+  Then it is refused as invalid and no private note is stored
 
 Examples:
   | text                 |
@@ -513,21 +513,21 @@ Scenario: A deleted report's private notes go with it
   Given a report carrying one private note
   When a Safety Officer deletes that report
   Then the private note and its revision are marked deleted at the report's deletion time
-  And adding, listing, or editing private notes on that report answers 404
+  And every request to add, list, or edit private notes on that report is not found
 
 @REQ-MOD-104
 Scenario: No public or member read ever returns a private note, not even a count
   Given a published report whose reporter consented to publication and media carries one private note
   When an anonymous visitor and a User read the public feed, that report's public page, and its comments
   Then no response carries the private note's text or identifier, or any count of private notes
-  And no database view other than admin_report_search_document reads a private-note table
+  And only the admin search reads private notes
 
 @REQ-MOD-105
 Scenario: A private note never reaches the model or a translation provider
   Given a consented report carrying one private note is due for summarization
-  When the Worker claims the message and builds the model input DTO
+  When the Worker claims the job and builds the model input
   Then the model input carries nothing from the private note
-  And no outbox message names the private note or its revision
+  And no Worker job names the private note or its revision
 
 @REQ-MOD-106
 @ui

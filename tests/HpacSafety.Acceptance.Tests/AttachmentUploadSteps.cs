@@ -65,8 +65,8 @@ public sealed class AttachmentUploadSteps
 		_declaredSize = SyntheticPdf.Length;
 	}
 
-	[When(@"the API mints the upload")]
-	[When(@"the API checks the declared type and size")]
+	[When(@"the upload is minted")]
+	[When(@"the declared type and size are checked")]
 	public async Task WhenTheApiMintsTheUpload()
 	{
 		// The declaration is all the request carries: no filename, no bytes.
@@ -74,7 +74,7 @@ public sealed class AttachmentUploadSteps
 		await _response.Content.LoadIntoBufferAsync();
 	}
 
-	[Then(@"the response is 201 Created with an opaque upload ID, the attachment's kind, a pre-signed PUT URL, and when that URL expires")]
+	[Then(@"it is created with an opaque upload ID, the attachment's kind, a pre-signed upload link, and when that link expires")]
 	public async Task ThenTheResponseIs201WithAnUploadIdKindUrlAndExpiry()
 	{
 		var text = await _response!.Content.ReadAsStringAsync();
@@ -160,7 +160,7 @@ public sealed class AttachmentUploadSteps
 		};
 	}
 
-	[Then(@"the API refuses it with a safe refusal reason of ""(.*)""")]
+	[Then(@"it is refused as invalid with a safe refusal reason of ""(.*)""")]
 	public async Task ThenTheApiRejectsItWithReason(string reason)
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -178,7 +178,7 @@ public sealed class AttachmentUploadSteps
 
 	// --- REQ-SUB-074: storage accepts only the upload the URL was signed for ---
 
-	[Given(@"the API minted an upload URL")]
+	[Given(@"an upload URL has been minted")]
 	public async Task GivenTheApiMintedAnUploadUrl()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
@@ -205,7 +205,7 @@ public sealed class AttachmentUploadSteps
 			case "a content type other than the declared one":
 				_response = await DirectUpload.Put(_uploadUrl!, new ByteArrayContent(SyntheticPdf), "image/png");
 				break;
-			case "the PUT after the URL has expired":
+			case "an upload after the URL has expired":
 				// A URL minted by the same chokepoint the API uses, living one
 				// second, so its expiry is real rather than simulated.
 				await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
@@ -220,7 +220,7 @@ public sealed class AttachmentUploadSteps
 				}
 
 				break;
-			case "the PUT to any key other than the one it was minted for":
+			case "an upload to any key other than the one it was minted for":
 				var elsewhere = $"quarantine/{UploadId.New().Value}";
 				var retargeted = new UriBuilder(_uploadUrl!) { Path = $"/{BootedApi.BucketName}/{elsewhere}" }.Uri;
 				_response = await DirectUpload.Put(retargeted, new ByteArrayContent(SyntheticPdf), _declaredType);
@@ -253,14 +253,14 @@ public sealed class AttachmentUploadSteps
 		_declaredSize = SyntheticPdf.Length;
 	}
 
-	[When(@"the API receives it")]
+	[When(@"it is received")]
 	public async Task WhenTheApiReceivesAnAnonymousUpload()
 	{
 		using var anonymous = (await BootedApi.Factory()).CreateClient();
 		_response = await DirectUpload.Mint(anonymous, _declaredType, _declaredSize);
 	}
 
-	[Then(@"the API refuses it before anything is written to object storage")]
+	[Then(@"it is refused as unauthenticated before anything is written to object storage")]
 	public async Task ThenTheApiRejectsItBeforeAnythingIsStored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -280,14 +280,14 @@ public sealed class AttachmentUploadSteps
 		_fileName = "photo.png";
 	}
 
-	[When(@"the API validates the attachment")]
+	[When(@"the attachment is validated")]
 	public async Task WhenTheApiValidatesTheAttachment()
 	{
 		_response = await SubmitClaiming(_uploadId!, _fileName);
 		await _response.Content.LoadIntoBufferAsync();
 	}
 
-	[Then(@"the API refuses the attachment")]
+	[Then(@"the attachment is refused")]
 	public async Task ThenTheApiRejectsTheAttachment()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -308,7 +308,7 @@ public sealed class AttachmentUploadSteps
 
 	// --- REQ-MED-045: a sent upload waits, unvalidated, in quarantine ---
 
-	[Given(@"a reporter's browser has sent a file through the pre-signed PUT the API minted for it")]
+	[Given(@"a reporter's browser has sent a file through the pre-signed upload link minted for it")]
 	public async Task GivenAReportersBrowserHasSentAFile()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
@@ -447,8 +447,8 @@ public sealed class AttachmentUploadSteps
 		_uploadId = await DirectUpload.Send(_reporter, SyntheticPdf, "application/pdf");
 	}
 
-	[When(@"the API claims the attachment")]
-	[When(@"the API ingests it")]
+	[When(@"the submission claims the attachment")]
+	[When(@"the upload is ingested")]
 	public async Task WhenTheApiClaimsTheAttachment()
 	{
 		using var response = await SubmitClaiming(_uploadId!, _fileName);
@@ -468,7 +468,7 @@ public sealed class AttachmentUploadSteps
 		(await ClaimedFile()).OriginalFileName.ShouldBe(expected == "(none)" ? null : expected);
 	}
 
-	[Then(@"it is not logged, placed in an exception, used in a key, sent to the model, or included in any public DTO")]
+	[Then(@"it is not logged, placed in an exception, used in a key, sent to the model, or included in anything public")]
 	public async Task ThenTheFilenameReachesNothingElse()
 	{
 		// The key is asserted here. Logging and exceptions never receive it:

@@ -14,7 +14,7 @@ Background:
 Scenario: Two reporters naming the same new site produce one choice
   Given a reporter has already added a site to a type-ahead question
   When another reporter submits the same site name
-  Then the existing choice is reused rather than duplicated
+  Then the existing choice is reused, not duplicated
   And an Administrator's wording is never replaced by a reporter's
 
 @REQ-QB-097
@@ -24,10 +24,10 @@ Scenario Outline: Only a type-ahead grows from reporters' answers
   Then <outcome>
 
 Examples:
-  | type          | outcome                                                     |
-  | autocomplete  | the report is accepted and the question gains the value     |
-  | single_select | the submission is refused and the question is unchanged     |
-  | multi_select  | the submission is refused and the question is unchanged     |
+  | type          | outcome                                                 |
+  | type-ahead    | the report is accepted and the question gains the value |
+  | single-select | the submission is refused and the question is unchanged |
+  | multi-select  | the submission is refused and the question is unchanged |
 
 @REQ-QB-122
 Scenario Outline: An answer names the choice it was given under
@@ -39,9 +39,9 @@ Scenario Outline: An answer names the choice it was given under
 
 Examples:
   | type          |
-  | single_select |
-  | multi_select  |
-  | autocomplete  |
+  | single-select |
+  | multi-select  |
+  | type-ahead    |
 
 @REQ-QB-123
 Scenario: Fixing a picker choice in place corrects every answer that named it
@@ -78,7 +78,7 @@ Scenario: A condition follows its parent question when the parent forks
 
 @REQ-QB-139
 @ui
-Scenario: An Administrator chooses to replace a picker choice rather than fix it
+Scenario: An Administrator chooses to replace a picker choice, not fix it
   Given an Administrator opens the manage-questions page
   When they reword the "Paraglider" choice of a single-select question and mark it to be replaced
   Then the save sends that choice to be replaced, under its old code with its new wording
@@ -89,15 +89,15 @@ Scenario Outline: A removed choice is no longer offered but still names every an
   Given a <type> question has been answered with one of its choices
   When that choice is removed
   Then the form stops offering it
-  And the choice is retired rather than erased
+  And the choice is retired, not erased
   And the earlier answer still names it and reads its wording
   And the question keeps its identifier and its current revision
 
 Examples:
   | type          |
-  | single_select |
-  | multi_select  |
-  | autocomplete  |
+  | single-select |
+  | multi-select  |
+  | type-ahead    |
 
 @REQ-QB-127
 Scenario: A fork's choices are new rows, and old answers keep naming the retired question's
@@ -160,12 +160,12 @@ Scenario Outline: Only a type-ahead value can be merged or edited by a Safety Of
   Then the merge or correction is <outcome>
 
 Examples:
-  | type          | action                     | outcome  |
-  | autocomplete  | merge it into the other    | accepted |
-  | autocomplete  | correct its wording        | accepted |
-  | single_select | merge it into the other    | refused  |
-  | single_select | correct its wording        | refused  |
-  | multi_select  | merge it into the other    | refused  |
+  | type          | action                  | outcome  |
+  | type-ahead    | merge it into the other | accepted |
+  | type-ahead    | correct its wording     | accepted |
+  | single-select | merge it into the other | refused  |
+  | single-select | correct its wording     | refused  |
+  | multi-select  | merge it into the other | refused  |
 
 @REQ-QB-134
 Scenario: The Worker supplies a reporter-added value's other language
@@ -233,7 +233,7 @@ Scenario: Existing answers are linked to their choices without being rewritten
   And neither answer's stored text changes
 
 @REQ-QB-144
-Scenario: The API sends each choice's pin, pinned-first choices first and pinned-last choices last
+Scenario: Each choice is read with its pin, pinned-first choices first and pinned-last choices last
   Given an Administrator saves a single-select question with "Other" pinned last, "United States" and "Canada" pinned first, and "Mexico" and "Brazil" not pinned
   When the report form's questions and the editor's questions are read
   Then each lists that question's pinned-first choices, then its unpinned choices, then its pinned-last choices
@@ -248,10 +248,10 @@ Scenario Outline: A question's choices are listed alphabetically in the reader's
 
 Examples:
   | type          | language | order                                                             |
-  | single_select | English  | "Blue Ridge", "Green Ridge", "Silver Ridge", "Stone Ridge"        |
-  | single_select | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
-  | multi_select  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
-  | autocomplete  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | single-select | English  | "Blue Ridge", "Green Ridge", "Silver Ridge", "Stone Ridge"        |
+  | single-select | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | multi-select  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | type-ahead    | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
 
 @REQ-QB-146
 @ui
@@ -262,10 +262,10 @@ Scenario Outline: Pinned choices come first or last, each group alphabetical
   And <separators>
 
 Examples:
-  | type          | separators                                                       |
-  | single_select | a separator is drawn after "Southland" and after "Westland"     |
-  | multi_select  | a separator is drawn after "Southland" and after "Westland"     |
-  | autocomplete  | a separator is drawn after "Southland" and after "Westland"     |
+  | type          | separators                                                  |
+  | single-select | a separator is drawn after "Southland" and after "Westland" |
+  | multi-select  | a separator is drawn after "Southland" and after "Westland" |
+  | type-ahead    | a separator is drawn after "Southland" and after "Westland" |
 
 @REQ-QB-147
 Scenario: A value a reporter adds to a type-ahead is not pinned
@@ -322,13 +322,13 @@ Scenario: A multi-select answer on the report page is listed as the form lists i
 Scenario Outline: A reviewer reviews type-ahead values
   Given a member has the <role> role
   When that member approves, corrects, merges, relinks, or removes a reporter-added type-ahead value
-  Then the API <outcome> the attempt
+  Then that member's attempt is <outcome>
 
 Examples:
-  | role           | outcome  |
-  | User           | forbids  |
-  | Safety Officer | allows   |
-  | Administrator  | allows   |
+  | role           | outcome              |
+  | User           | refused as forbidden |
+  | Safety Officer | allowed              |
+  | Administrator  | allowed              |
 
 @REQ-MOD-097
 @ui
@@ -337,7 +337,7 @@ Scenario: A Safety Officer approves, corrects, and removes type-ahead values on 
   When they open the review-type-ahead-values page
   Then each value is listed under its question's heading, with the language it was typed in and how many answers name it
   When they approve "Mount 7", correct "coopers" to "Cooper's", and remove "Test site"
-  Then the API is asked to approve, correct, and remove exactly those values
+  Then exactly those values are sent to be approved, corrected, and removed
   And the page lists no value left to review
 
 @REQ-MOD-095
@@ -353,7 +353,7 @@ Scenario: A Safety Officer reviews flagged type-ahead values on one page
 @REQ-MOD-160
 @ui
 Scenario: The type-ahead review page groups flagged values under their question, questions ordered alphabetically
-  Given a Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first
+  Given a Safety Officer and flagged values under two type-ahead questions, which arrive with the later question first
   When they open the review-type-ahead-values page
   Then the question headings read, top to bottom, "Where did this happen?" then "Where did you launch?"
 

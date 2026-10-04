@@ -244,7 +244,7 @@ public sealed partial class ReviewActionSteps
 		revisions[1].GetProperty("restoredFromSequence").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
-	[Then(@"the restoring is audited as RolledBackSummary without any text")]
+	[Then(@"the restoring is audited as a summary-restored action, without any text")]
 	public async Task ThenTheRestoringIsAudited()
 	{
 		var entry = (await AuditEntries(AuditAction.RolledBackSummary)).ShouldHaveSingleItem();
@@ -303,10 +303,10 @@ public sealed partial class ReviewActionSteps
 		_result.GetProperty("summaryRevisions")[1].GetProperty("restoredFromSequence").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
-	[Then(@"^the request is refused with (\d+) and saves nothing$")]
-	public async Task ThenTheRequestIsRefused(int status)
+	[Then(@"^the request is (refused as forbidden|refused as invalid|not found) and saves nothing$")]
+	public async Task ThenTheRequestIsRefused(string outcome)
 	{
-		((int)_response!.StatusCode).ShouldBe(status);
+		_response!.StatusCode.ShouldBe(Outcomes.Status(outcome));
 
 		var detail = await ReadDetail();
 		detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(1);

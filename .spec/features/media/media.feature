@@ -1,7 +1,7 @@
 @xunit:collection(MeasuresAllocation)
 Feature: Attachments
 A reporter may attach images, videos, and documents to the finalized
-report. Every attachment is validated by content rather than by name, and
+report. Every attachment is validated by its content, never by its name, and
 only images/videos get a safe derivative. Image and video originals stay
 private. A published report shows its verified image and video derivatives
 when the reporter also consented to sharing media, and offers its validated
@@ -17,7 +17,7 @@ Background:
 @REQ-MED-001
 Scenario Outline: Only allowlisted content types are accepted
   Given an uploaded file has detected content type <mime>
-  When the API validates the attachment's content type
+  When the attachment's content type is validated
   Then the attachment is accepted as an allowlisted <kind>
 
 Examples:
@@ -40,21 +40,21 @@ Examples:
 @REQ-MED-002
 Scenario: Declared content type must agree with detected content type
   Given an attachment's declared content type differs from its detected, allowlisted type
-  When the API validates the attachment
-  Then the API refuses the attachment
+  When the attachment is validated
+  Then the attachment is refused
   And the file extension and client filename are never trusted as the basis for acceptance
 
 @REQ-MED-003
 Scenario: The client filename is kept only as a reviewer's download name
   Given a submission names an attachment with a client-supplied filename
-  When the API claims the attachment
+  When the submission claims the attachment
   Then the sanitized filename is stored on the report file
-  And it is not logged, placed in an exception, used in a key, sent to the model, or included in any public DTO
+  And it is not logged, placed in an exception, used in a key, sent to the model, or included in anything public
   And the object key encodes only an opaque upload, report, or file identity and a managed compartment
 
 @REQ-MED-045
 Scenario: A sent upload waits, unvalidated, in a private quarantine compartment
-  Given a reporter's browser has sent a file through the pre-signed PUT the API minted for it
+  Given a reporter's browser has sent a file through the pre-signed upload link minted for it
   Then its bytes sit at a private quarantine key named only by the minted upload ID
   And no database row, report, or member is linked to it
   And no reviewer link can be issued for it
@@ -86,12 +86,12 @@ Scenario: Every video is remuxed to strip metadata, never transcoded
   And the derivative is an MP4 container, stored as video/mp4, whatever container the video arrived in
 
 @REQ-MED-015
-Scenario: A video that cannot be stripped is kept rather than refused
+Scenario: A video that cannot be stripped is kept, not refused
   Given an accepted video attachment cannot be remuxed into a verified derivative
   When processing finishes
   Then the upload still succeeds and the original is retained
   And the attachment is marked as having no derivative to show
-  And it is not marked as a processing failure, because nothing failed that the reporter should lose their footage over
+  And it is not marked as a processing failure
 
 @REQ-MED-008
 Scenario: A document is validated but never transformed
@@ -105,16 +105,16 @@ Scenario: A document is validated but never transformed
 @REQ-MED-009
 Scenario: Each attachment fails and processes independently of the report
   Given a report has multiple attachments, one of which is slow or corrupt
-  When the Worker processes the report's outbox items
-  Then each file's processing is an independent outbox item
+  When the Worker processes the report's Worker jobs
+  Then each file's processing is an independent Worker job
   And the slow or corrupt file neither rolls back the valid report nor forces an additional AI call
 
 @REQ-MED-010
 Scenario: A reviewer gets a short-lived inline URL only for successfully processed media
   Given an image or video attachment has finished processing successfully
   When a reviewer requests to view it
-  Then the reviewer receives a short-lived URL to the derivative, served inline rather than as a forced download, so the lightbox can embed it, with the header X-Content-Type-Options: nosniff
-  And there is no API blob proxy or public URL
+  Then the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so a browser never guesses its content type
+  And no proxy and no public link serves the file
 
 @REQ-MED-011
 Scenario: A reviewer downloads a validated document as an unredacted original
@@ -122,8 +122,8 @@ Scenario: A reviewer downloads a validated document as an unredacted original
   When a reviewer requests it
   Then the reviewer receives a short-lived URL to the private original
   And the download is named with the reporter's sanitized filename, or a server-minted name when there is none
-  And the URL forces a download, with the header X-Content-Type-Options: nosniff
-  And there is no API blob proxy or public URL
+  And the URL forces a download, marked so a browser never guesses its content type
+  And no proxy and no public link serves the file
 
 @REQ-MED-012
 @ui
@@ -154,13 +154,13 @@ Scenario: A still-processing image or video is never viewed inline, but its raw 
 @REQ-MED-054
 Scenario: The raw-original download refuses once a derivative exists
   Given an image or video attachment has finished processing successfully
-  When a reviewer requests its raw original instead of its view link
+  When a reviewer requests its raw original, not its view link
   Then the raw-original download is refused
 
 @REQ-MED-055
 Scenario: The raw-original download refuses a document
   Given a document attachment has passed validation
-  When a reviewer requests its raw original instead of its download link
+  When a reviewer requests its raw original, not its download link
   Then the raw-original download is refused
 
 @REQ-MED-016
@@ -179,7 +179,7 @@ Scenario: A cancelled upload leaves nothing in storage
 @REQ-MED-018
 Scenario: A claimed upload is copied into the report's original compartment
   Given a submission claims an accepted upload
-  When the API ingests it
+  When the upload is ingested
   Then the upload's bytes are copied unchanged, inside storage, to the report's original compartment
   And the original is named by the report file's own id, never by the upload ID or the reporter's filename
   And no derivative is written before the Worker processes the file
@@ -187,7 +187,7 @@ Scenario: A claimed upload is copied into the report's original compartment
 @REQ-MED-019
 Scenario Outline: A reporter's filename is sanitized before it is stored
   Given a submission names an attachment with the filename <given>
-  When the API claims the attachment
+  When the submission claims the attachment
   Then the stored filename is <stored>
 
 Examples:
@@ -210,7 +210,7 @@ Scenario: An attachment awaits the Worker before a reviewer may view it
   Given a submitted image the Worker has not yet processed
   When a reviewer requests to view it
   Then no link is issued
-  And the attachment reads as awaiting processing rather than failed
+  And the attachment reads as awaiting processing, not failed
 
 @REQ-MED-022
 Scenario: Processing an attachment twice changes nothing
@@ -237,7 +237,7 @@ Scenario: Processing never holds a whole attachment in memory
 Scenario: A published report lists its verified images and video when media was consented to
   Given a published report whose reporter consented to publication and to sharing media
   And the report has a processed image and a video with a verified derivative
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists both files in the order they were attached
   And each file carries only its opaque id and whether it is an image or a video
 
@@ -246,7 +246,7 @@ Scenario Outline: A file that is neither a verified derivative nor a validated d
   Given a published report whose reporter consented to publication and to sharing media
   And the report has <file>
   When a visitor asks for that file's public link
-  Then the API returns 404
+  Then the link is not found
   And the report lists no media
 
 Examples:
@@ -260,9 +260,9 @@ Examples:
 @REQ-MED-027
 Scenario Outline: Media is public only when the reporter consented to sharing it
   Given a published report with a processed image whose media consent is <consent>
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists no media
-  And a visitor asking for the image's public link gets 404
+  And a visitor's request for the image's public link is not found
 
 Examples:
   | consent    |
@@ -275,7 +275,7 @@ Scenario: A visitor gets a short-lived inline link to a public file
   When an anonymous visitor asks for the image's public link
   Then the visitor receives a pre-signed URL to the image's derivative that expires within fifteen minutes
   And the URL serves the derivative inline, under the derivative's own image content type
-  And the response carries the header X-Content-Type-Options: nosniff
+  And the response is marked so a browser never guesses its content type
   And the response names no file name, size, or storage key
 
 @REQ-MED-029
@@ -283,7 +283,7 @@ Scenario Outline: A file stops being public when its report or a reviewer withdr
   Given a published report shows a processed image
   When <withdrawal>
   Then the report lists no media
-  And a visitor asking for the image's public link gets 404
+  And a visitor's request for the image's public link is not found
 
 Examples:
   | withdrawal                              |
@@ -307,7 +307,7 @@ Scenario: A member who is not a reviewer cannot hide or show a file
   Given a published report shows a processed image
   And the visitor is a member who is not a reviewer
   When the member tries to hide the image
-  Then the API answers 403
+  Then the attempt is refused as forbidden
   And the report still lists the image
 
 @REQ-MED-032
@@ -333,7 +333,7 @@ Scenario: An expired link is replaced and the video resumes where it was
 @ui
 Scenario: Media that is no longer public is removed from the page
   Given a visitor opens a published report showing an image
-  When the image's link stops working because the image is no longer public
+  When the image's link stops working once the image is no longer public
   Then the page removes the image
 
 @REQ-MED-035
@@ -366,17 +366,17 @@ Scenario: A document's thumbnail is never opened in the lightbox
 
 @REQ-MED-058
 @ui
-Scenario: A 404 removes the item from both the strip and an open lightbox
+Scenario: A link that is not found removes the item from both the strip and an open lightbox
   Given a visitor has the lightbox open on a public image, and another item remains after it
-  When the image's link answers 404 because the image is no longer public
+  When the image's link is not found once the image is no longer public
   Then the image's thumbnail is removed from the strip and the lightbox steps to the remaining item without closing
 
 @REQ-MED-061
 @ui
-Scenario: A 404 on the only remaining lightbox item closes it
+Scenario: A link not found on the only remaining lightbox item closes it
   Given a visitor has the lightbox open on the one public image a report has
-  When the image's link answers 404 because the image is no longer public
-  Then the image's thumbnail is removed from the strip and the lightbox closes, since nothing remains to show
+  When the image's link is not found once the image is no longer public
+  Then the image's thumbnail is removed from the strip and the lightbox closes with nothing left to show
 
 @REQ-MED-062
 @ui
@@ -402,7 +402,7 @@ Scenario: A processing or failed image's staff tile offers a raw-original downlo
   Given a Safety Officer is on the admin site and a report has a still-processing image
   When a Safety Officer opens the report in the admin area
   Then the image's tile is marked "processing"
-  And activating it downloads the raw original rather than opening the lightbox
+  And activating it downloads the raw original and does not open the lightbox
 
 @REQ-MED-036
 @ui
@@ -416,7 +416,7 @@ Scenario: The admin report page shows whether each file is public
 Scenario: A published report lists its validated documents when media consent names documents
   Given a published report whose reporter consented to publication and to sharing media under wording that names documents
   And the report has a validated PDF document and a processed image
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists both files in the order they were attached
   And the document carries only its opaque id, the kind document, and the format pdf
 
@@ -424,9 +424,9 @@ Scenario: A published report lists its validated documents when media consent na
 Scenario Outline: A document is public only when its media consent named documents
   Given a published report with a processed image and a validated document
   And the reporter answered media consent <consent>
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists <listed>
-  And a visitor asking for the document's public link gets 404
+  And a visitor's request for the document's public link is not found
 
 Examples:
   | consent                                              | listed          |
@@ -440,7 +440,7 @@ Scenario: A visitor gets a short-lived forced download of a public document
   When an anonymous visitor asks for the document's public link
   Then the visitor receives a pre-signed URL to the document's unchanged original that expires within fifteen minutes
   And the URL forces a download under a name made from the file id and the format, never the reporter's file name
-  And the response carries the header X-Content-Type-Options: nosniff
+  And the response is marked so a browser never guesses its content type
   And the response names no reporter file name or size
 
 @REQ-MED-040
@@ -448,7 +448,7 @@ Scenario: A reviewer hides a document and shows it again, and both are audited
   Given a published report offers a validated document
   When a Safety Officer hides the document
   Then the report lists no media
-  And a visitor asking for the document's public link gets 404
+  And a visitor's request for the document's public link is not found
   And the audit log records who hid the document
   When the Safety Officer shows the document again
   Then the report lists the document
@@ -485,8 +485,8 @@ Scenario: A published QuickTime video is served as an MP4
 Scenario Outline: Staff mint a private upload for a file of any type
   Given a pending report that staff add private attachments to
   When a Safety Officer declares a <declared> file of <size> for that report's private attachments
-  Then the API mints a pre-signed PUT to a quarantine key named only by a new upload ID
-  And the PUT is signed for the content type <signed> and exactly <size>
+  Then a pre-signed upload link is minted for a quarantine key named only by a new upload ID
+  And the upload link is signed for the content type <signed> and exactly <size>
   And nothing about the upload is written to the database
 
 Examples:
@@ -502,7 +502,7 @@ Scenario Outline: A private upload larger than the configured cap is refused bef
   Given the private attachment cap is configured as <cap>
   And a pending report that staff add private attachments to
   When a Safety Officer declares a file of <size> for that report's private attachments
-  Then the API answers 400 with the reason <reason> and mints nothing
+  Then it is refused as invalid with the reason "<reason>", and nothing is minted
   And a file of exactly <cap> is minted
 
 Examples:
@@ -517,15 +517,15 @@ Scenario: Adding a private attachment stores its bytes unchanged in the report's
   When the Safety Officer adds that upload to the report as "Coroner report.zip"
   Then its bytes sit, byte for byte and nowhere else on the report, at the report's private key named by the attachment's id
   And the upload no longer sits in quarantine
-  And no reporter attachment, derivative, or outbox message was created for it
+  And no reporter attachment, derivative, or Worker job was created for it
 
 @REQ-MED-049
 Scenario: A private attachment downloads unchanged under its sanitized name, and each download is audited
   Given a report carries the private attachment "Coroner: report?.zip"
   When a Safety Officer asks for its download link twice
-  Then each link is a pre-signed GET that lives at most 15 minutes and forces a download named "Coroner report.zip"
+  Then each link is a pre-signed download link that lives at most 15 minutes and forces a download named "Coroner report.zip"
   And the bytes each link serves are identical to those uploaded
-  And two DownloadedPrivateAttachment audit entries record the Safety Officer's token subject and the attachment
+  And two private-attachment-downloaded audit entries record the Safety Officer's token subject and the attachment
 
 @REQ-MED-050
 Scenario: An unclaimed private upload waits in quarantine and expires with every other upload
@@ -538,27 +538,27 @@ Scenario: Only the private attachment link signs a URL for the private compartme
   Given a report carries the private attachment "Coroner: report?.zip"
   Then the reviewer media link and the public media link both refuse the private attachment's key
   And the private attachment link refuses every key outside the private compartment
-  And the reviewer attachment endpoints answer 404 for the private attachment's id
+  And every reviewer attachment request for the private attachment's id is not found
 
 @REQ-MED-052
 Scenario: Nothing anonymizes a private attachment
   Given a Safety Officer adds a JPEG image carrying its camera's location metadata as a private attachment
   When the Safety Officer downloads it
   Then the stored bytes and the downloaded bytes are identical to those uploaded, location metadata included
-  And no derivative of it exists and no outbox message asks for one
+  And no derivative of it exists and no Worker job asks for one
 
 @REQ-MOD-107
 Scenario Outline: Only a reviewer may reach private attachments
   Given a report carrying one private attachment
   When <who> mints a private upload for, adds, lists, downloads, and removes private attachments on it
-  Then the API answers <outcome> to every one of those private-attachment requests
+  Then every one of those private-attachment requests is <outcome>
 
 Examples:
-  | who                  | outcome      |
-  | an anonymous visitor | 401          |
-  | a User               | 403          |
-  | a Safety Officer     | with success |
-  | an Administrator     | with success |
+  | who                  | outcome                    |
+  | an anonymous visitor | refused as unauthenticated |
+  | a User               | refused as forbidden       |
+  | a Safety Officer     | answered with success      |
+  | an Administrator     | answered with success      |
 
 @REQ-MOD-108
 Scenario Outline: Staff add private attachments to a report in any status
@@ -581,15 +581,15 @@ Examples:
 Scenario: Removing a private attachment deletes it and keeps its bytes
   Given a report carrying one private attachment
   When an Administrator removes that private attachment
-  Then the private attachment is no longer listed, and downloading or removing it answers 404
+  Then the private attachment is no longer listed, and downloading or removing it is not found
   And its row is marked deleted with the Administrator's token subject, and its bytes are still stored
-  And one audit entry records the Administrator's token subject, RemovedPrivateAttachment, the attachment, and the time
+  And one audit entry records the Administrator's token subject, a private-attachment-removed action, the attachment, and the time
 
 @REQ-MOD-110
 Scenario Outline: A private attachment needs a usable name, a short description, and a sent upload
   Given a pending report that staff add private attachments to
   When a Safety Officer adds a private attachment whose <field> is <value>
-  Then the API answers 400 and no private attachment is stored
+  Then it is refused as invalid and no private attachment is stored
 
 Examples:
   | field       | value                    |
@@ -603,22 +603,22 @@ Scenario: A deleted report's private attachments go with it
   Given a report carrying one private attachment
   When a Safety Officer deletes the report carrying that private attachment
   Then the private attachment is marked deleted at the report's deletion time, and its bytes are still stored
-  And minting, adding, listing, or downloading private attachments on that report answers 404
+  And every request to mint, add, list, or download private attachments on that report is not found
 
 @REQ-MOD-112
 Scenario: No public or member read ever returns a private attachment, not even a count
   Given a published report whose reporter consented to publication and media carries one private attachment
   When an anonymous visitor and a User read the public feed, that report's public page, and its public media
   Then no response carries the private attachment's name, description, or identifier, or any count of private attachments
-  And asking for the private attachment's identifier as public media answers 404
-  And no database view other than admin_report_search_document reads the private-attachment table
+  And asking for the private attachment's identifier as public media is not found
+  And only the admin search reads private attachments
 
 @REQ-MOD-113
 Scenario: A private attachment never reaches the model
   Given a consented report carrying one private attachment is due for summarization
-  When the Worker claims the message and builds the model input DTO
+  When the Worker claims the job and builds the model input
   Then the model input carries nothing from the private attachment
-  And no outbox message names the private attachment
+  And no Worker job names the private attachment
 
 @REQ-MOD-114
 Scenario: A private note may refer to a private attachment on its own report only
@@ -627,8 +627,8 @@ Scenario: A private note may refer to a private attachment on its own report onl
   Then the private note lists the private attachment it refers to, by identifier and file name
   When an Administrator edits that private note to refer to no private attachment
   Then the private note refers to none, and its history shows the first revision still referring to it
-  And a private note referring to the other report's private attachment is refused with 400 and nothing is stored
-  And a private note referring to a removed private attachment is refused with 400
+  And a private note referring to the other report's private attachment is refused as invalid and nothing is stored
+  And a private note referring to a removed private attachment is refused as invalid
 
 @REQ-MOD-115
 @ui

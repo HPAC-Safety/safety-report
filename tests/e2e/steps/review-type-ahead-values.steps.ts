@@ -229,7 +229,7 @@ When('they approve "Mount 7", correct "coopers" to "Cooper\'s", and remove "Test
 	await valueRow(page, "Test site").getByRole("button", { name: "Remove" }).click()
 })
 
-Then("the API is asked to approve, correct, and remove exactly those values", async ({ page }) => {
+Then("exactly those values are sent to be approved, corrected, and removed", async ({ page }) => {
 	await expect.poll(() => present(reviews.get(page)).length).toBe(3)
 	const [approve, correct, remove] = present(reviews.get(page))
 
@@ -245,7 +245,7 @@ Then("the page lists no value left to review", async ({ page }) => {
 // ------------------------ grouped by question, A→Z (REQ-MOD-160, REQ-MOD-161) --
 
 Given(
-	"a Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first",
+	"a Safety Officer and flagged values under two type-ahead questions, which arrive with the later question first",
 	async ({ page }) => {
 		await reviewPage(page, [
 			{ ...LAUNCH, id: "value-launch-zephyr", labelEn: "Zephyr Ridge", labelFr: null, typedIn: "en-CA", isRemoved: false, answerCount: 1, addedAt: "2026-09-20T12:00:00Z", mergeTargets: [] },

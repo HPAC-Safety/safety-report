@@ -48,13 +48,19 @@ function watchAdminRequests(page: Page) {
 	})
 }
 
-When(/^the visitor navigates directly to (\/admin\/[a-z-]+), which their role cannot use$/, async ({ page }, route: string) => {
+// The admin pages a scenario names, by the Admin menu item that opens them.
+const ADMIN_PAGES: Record<string, string> = {
+	"manage-reports": "/admin/reports",
+	"manage-questions": "/admin/questions",
+}
+
+When(/^the visitor navigates directly to the ([a-z-]+) page, which their role cannot use$/, async ({ page }, name: string) => {
 	watchAdminRequests(page)
 	adminRequestsSeenAfterNavigation.set(page, [])
-	await page.goto(route)
+	await page.goto(ADMIN_PAGES[name])
 })
 
-Then(/^the page shows a forbidden \(403\) view in place of the route's content$/, async ({ page }) => {
+Then("the page shows a forbidden view in place of that page's content", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "You cannot open this page" })).toBeVisible()
 })
 
@@ -62,14 +68,15 @@ Then("it is not the not-found page", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Page not found" })).toBeHidden()
 })
 
-When(/^the visitor navigates directly to (\/admin\/[a-z-]+)$/, async ({ page }, route: string) => {
-	await page.goto(route)
+// The page an Administrator once used to correct an answer's translation by hand (REQ-MOD-184).
+When("the visitor navigates directly to the old answer-translations page", async ({ page }) => {
+	await page.goto("/admin/answer-translations")
 })
 
 Then("the page shows the not-found view", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible()
 })
 
-Then("no request for that route's data is made, the Admin menu's pending counts aside", ({ page }) => {
+Then("no request for that page's data is made, the Admin menu's pending counts aside", ({ page }) => {
 	expect(adminRequestsSeenAfterNavigation.get(page) ?? []).toEqual([])
 })

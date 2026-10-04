@@ -182,7 +182,7 @@ public sealed class PublicMediaSteps
 
 	// ── When ────────────────────────────────────────────────────────────────
 
-	[When(@"the public API returns the report")]
+	[When(@"a visitor reads the report")]
 	public void WhenThePublicApiReturnsTheReport()
 	{
 		// Read in each Then step, so every assertion sees the current state.
@@ -290,7 +290,7 @@ public sealed class PublicMediaSteps
 		(await Listed()).ShouldBe([_documentId]);
 	}
 
-	[Then(@"a visitor asking for the document's public link gets 404")]
+	[Then(@"a visitor's request for the document's public link is not found")]
 	public async Task ThenTheDocumentLinkIs404()
 	{
 		using var client = await Anonymous();
@@ -349,8 +349,8 @@ public sealed class PublicMediaSteps
 		entry.ActorSubject.ShouldBe(file.HiddenBySubject);
 	}
 
-	[Then(@"the API returns 404")]
-	[Then(@"a visitor asking for the image's public link gets 404")]
+	[Then(@"the link is not found")]
+	[Then(@"a visitor's request for the image's public link is not found")]
 	public async Task ThenTheLinkIs404()
 	{
 		using var client = await Anonymous();
@@ -411,7 +411,7 @@ public sealed class PublicMediaSteps
 		served.Content.Headers.ContentDisposition?.DispositionType.ShouldBe("inline");
 	}
 
-	[Then(@"the response carries the header X-Content-Type-Options: nosniff")]
+	[Then(@"the response is marked so a browser never guesses its content type")]
 	public void ThenTheResponseCarriesNosniff()
 	{
 		_linkResponse!.Headers.GetValues("X-Content-Type-Options").ShouldBe(["nosniff"]);
@@ -462,7 +462,7 @@ public sealed class PublicMediaSteps
 		(await store.Describe(BlobKey.For(_reportId, MediaCompartment.Stripped, _imageId), CancellationToken.None)).ShouldNotBeNull();
 	}
 
-	[Then(@"the API answers 403")]
+	[Then(@"the attempt is refused as forbidden")]
 	public void ThenTheApiAnswers403()
 	{
 		_hideResponse!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

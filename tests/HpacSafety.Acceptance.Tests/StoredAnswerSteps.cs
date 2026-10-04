@@ -61,8 +61,8 @@ public sealed class StoredAnswerSteps
 	private bool _private;
 	private bool _consentToPublish;
 
-	// The value as JSON puts it on the wire: a string, or for "JSON true",
-	// "JSON false", and "JSON null" that literal (ADR-0130).
+	// The value as JSON puts it on the wire: a string, or for "the value true",
+	// "the value false", and "the value null" that JSON literal (ADR-0130).
 	private object? _submittedValue;
 	private Locale _language = Locale.EnCa;
 	private HttpResponseMessage? _submission;
@@ -77,9 +77,10 @@ public sealed class StoredAnswerSteps
 
 	// --- REQ-QB-122: an answer names the choice it was given under ---
 
-	[Given(@"^a reporter answering in English is shown an? (single_select|multi_select|autocomplete) question whose choices are written in both official languages$")]
-	public async Task GivenAChoiceQuestion(string type)
+	[Given(@"^a reporter answering in English is shown an? (single-select|multi-select|type-ahead) question whose choices are written in both official languages$")]
+	public async Task GivenAChoiceQuestion(string named)
 	{
+		var type = GlossaryNames.QuestionTypeCode(named);
 		_admin = await BootedApi.SignedInAs(MemberRole.Administrator);
 
 		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, Colours));
@@ -164,7 +165,7 @@ public sealed class StoredAnswerSteps
 		_report = report;
 	}
 
-	[Then(@"only the consent_publish and consent_media answers are projected onto the report aggregate, with consent_documents derived from consent_media")]
+	[Then(@"only the publication consent and media consent answers are projected onto the report aggregate, with document consent derived from media consent")]
 	public void ThenOnlyConsentIsProjected()
 	{
 		_report!.ConsentPublish.ShouldBe(true);
@@ -200,11 +201,12 @@ public sealed class StoredAnswerSteps
 
 	// --- REQ-QB-019, REQ-QB-118, REQ-QB-119, REQ-SUB-096, REQ-SUB-097: the written form, or a refusal ---
 
-	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to an? (\w+) question$")]
+	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to an? (.+) question$")]
 	public async Task GivenAReporterSubmitsAnAnswer(string language,
 													string submitted,
-													string type)
+													string named)
 	{
+		var type = GlossaryNames.QuestionTypeCode(named);
 		_language = language == "French" ? Locale.FrCa : Locale.EnCa;
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, []));
@@ -215,16 +217,17 @@ public sealed class StoredAnswerSteps
 		{
 			"an empty string" => string.Empty,
 			"a line of prose" => Prose,
-			"JSON true" => "true",
-			"JSON false" => "false",
-			"JSON null" => "null",
+			"the value true" => "true",
+			"the value false" => "false",
+			"the value null" => "null",
+			"the word \"true\"" => "true",
 			_ => submitted,
 		};
 		_submittedValue = submitted switch
 		{
-			"JSON true" => true,
-			"JSON false" => false,
-			"JSON null" => null,
+			"the value true" => true,
+			"the value false" => false,
+			"the value null" => null,
 			_ => _submitted,
 		};
 	}
@@ -334,11 +337,11 @@ public sealed class StoredAnswerSteps
 
 		switch (stored)
 		{
-			case "the boolean true" or "the boolean false":
-				answer.BooleanValue.ShouldBe(stored == "the boolean true");
+			case "the value true" or "the value false":
+				answer.BooleanValue.ShouldBe(stored == "the value true");
 				answer.Value.ShouldBeNull();
 				break;
-			case "nothing, because the answer was skipped":
+			case "nothing, as the answer was skipped":
 				answer.Value.ShouldBeNull();
 				answer.BooleanValue.ShouldBeNull();
 				break;
@@ -349,7 +352,7 @@ public sealed class StoredAnswerSteps
 		}
 	}
 
-	[Then(@"it holds no words and no second language in either column, and its translation mode is none")]
+	[Then(@"it holds no words and no second language, and its translation mode is none")]
 	public async Task ThenItHoldsNoWordsAndNoSecondLanguage()
 	{
 		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();

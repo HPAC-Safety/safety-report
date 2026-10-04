@@ -136,7 +136,7 @@ public sealed class AdminSearchSteps
 		_foundIds.ShouldContain(_reportId);
 	}
 
-	[Then(@"the request is refused as unauthorized")]
+	[Then(@"the request is refused as unauthenticated")]
 	public void ThenRefusedAsUnauthorized()
 	{
 		_lastStatus.ShouldBe(HttpStatusCode.Unauthorized);

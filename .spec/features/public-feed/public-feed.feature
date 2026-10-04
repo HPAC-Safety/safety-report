@@ -3,10 +3,10 @@ Visitors read published reports in the public feed and on each report's
 own page, and search them in the site's language.
 
 @REQ-MOD-036
-Scenario: The public DTO exposes only the approved summary and its metadata
+Scenario: A published report carries only its approved summary and metadata
   Given a report is published
-  When the public API returns it
-  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
+  When a visitor reads it
+  Then the response contains only the opaque report ID, the English and French summary texts, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer
   And it never contains question keys, labels, answers, consent values, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-150
@@ -28,7 +28,7 @@ Scenario: An ordinary member's token widens nothing; only a reviewer's does
 @REQ-MOD-152
 Scenario: A Safety Officer sees every attachment on the public report page, each marked public or not
   Given a published report has a public image and a hidden image
-  When a Safety Officer asks the public API for that report
+  When a Safety Officer reads that report's public page
   Then the response carries a staff attachment for each file, with its state and public visibility
   And the hidden file's visibility reads "hidden"
   And the public file's visibility reads "public"
@@ -68,10 +68,10 @@ Scenario: The public feed lists only publishable reports, newest submitted first
   And no cursor reveals a submission time
 
 @REQ-MOD-038
-Scenario: An unknown or non-public report id returns 404
+Scenario: An unknown or non-public report id is not found
   Given a report id is unknown, deleted, pending, unpublished, or not consented
-  When the public API is asked for that report
-  Then the API returns 404
+  When a visitor asks for that report
+  Then the report is not found
   And non-public ids are indistinguishable from unknown ids
 
 @REQ-MOD-153
@@ -87,7 +87,7 @@ Scenario: The public feed shows each report's attachment icon and count, omitted
 Scenario: Each report in the public feed opens at its own address
   Given the public feed has published reports
   When a visitor opens View safety reports and selects one
-  Then the address bar shows /reports/ followed by that report's ID
+  Then the address bar shows "/reports/" followed by that report's ID
   And the page shows that report's full summary in the visitor's language
 
 @REQ-MOD-080
@@ -137,7 +137,7 @@ Scenario: The translation label follows the header's language toggle without a r
 @REQ-MOD-193
 Scenario Outline: A published report's own page carries the language it was written in, and the feed does not
   Given a report written in <written> has been published
-  When the public API returns the report
+  When a visitor reads the report
   Then the response's language is "<code>"
   When the public feed is queried
   Then no feed item carries a language
@@ -150,8 +150,8 @@ Examples:
 @REQ-MOD-081
 @ui
 Scenario: An address for a report that is not public shows not found
-  Given a report ID the public API answers with 404
-  When a visitor opens /reports/ followed by that ID
+  Given a report ID that is not found
+  When a visitor opens the report address for that ID
   Then the page says the report was not found
   And it says nothing about whether such a report exists
 
@@ -191,7 +191,7 @@ Scenario: The public feed's next page offers a keyboard-only fallback and announ
 Scenario: The public feed offers a visible Retry action when its next page fails to load
   Given the public feed's next page fails to load
   When a visitor activates the "Load more" action without scrolling
-  Then the feed offers a visible "Retry" action instead of failing silently
+  Then the feed offers a visible "Retry" action and does not fail silently
 
 @REQ-MOD-083
 @ui
@@ -311,7 +311,7 @@ Scenario: Another visitor never sees a report that is not published
   Given John has submitted a report that is not published
   And Cheryl, signed in or not, holds no receipt for it
   When Cheryl lists the public feed and asks for that report's page
-  Then the feed does not list it and the page answers 404
+  Then the feed does not list it and the page is not found
   And asking with a receipt that is not John's shows nothing either
 
 @REQ-PUB-002
@@ -379,7 +379,7 @@ Scenario: The holder opens their own report's page and its file links
   When John asks for that report's page and for the image's link with his receipt
   Then the page carries its summary, submitted date, language, and image
   And the link is a pre-signed URL that lives at most 15 minutes
-  And the same requests without his receipt answer 404
+  And the same requests without his receipt are not found
 
 @REQ-PUB-010
 @ui
@@ -425,4 +425,4 @@ Scenario: The holder opens their own report's page
   When the visitor opens that report's address
   Then the page shows the report with its pill, its submitted date, and its summary labelled as a draft
   And the page offers no comments
-  And the receipt is sent in the request body and not in any address
+  And the receipt is sent inside the request and never in any address

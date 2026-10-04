@@ -83,13 +83,13 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 		await Claim(PhotoWithExif(), MediaType.Png, "not a picture at all"u8.ToArray());
 	}
 
-	[When(@"the Worker processes the report's outbox items")]
+	[When(@"the Worker processes the report's Worker jobs")]
 	public async Task WhenTheWorkerProcessesTheReportsOutboxItems()
 	{
 		await DrainAttachmentMessages();
 	}
 
-	[Then(@"each file's processing is an independent outbox item")]
+	[Then(@"each file's processing is an independent Worker job")]
 	public async Task ThenEachFileIsAnIndependentOutboxItem()
 	{
 		var messages = await _db!.OutboxMessages

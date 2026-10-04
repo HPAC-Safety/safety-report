@@ -140,7 +140,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		seeded.Id = await BootedReports.Seed(ReportStatus.Published, true);
 	}
 
-	[Given(@"ConsentPublish is exactly true")]
+	[Given(@"the reporter's publication consent is exactly yes")]
 	[Given(@"both English and French summary texts are nonblank")]
 	[Given(@"the pair has a current human approval")]
 	[Given(@"the report is Published")]
@@ -156,7 +156,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		await Violate($"UPDATE summaries SET deleted = now() WHERE report_id = {seeded.Id}");
 	}
 
-	[Given(@"ConsentPublish is not exactly true")]
+	[Given(@"the publication consent is not exactly yes")]
 	public async Task GivenConsentIsNotExactlyTrue()
 	{
 		// A locked column: written the way a migration would (ADR-0178).
@@ -185,8 +185,8 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── When ────────────────────────────────────────────────────────────────
 
-	[When(@"the public API returns it")]
-	[When(@"the public API returns the report")]
+	[When(@"a visitor reads it")]
+	[When(@"a visitor reads the report")]
 	[When(@"the public query evaluates the report")]
 	public async Task WhenThePublicApiReturnsTheReport()
 	{
@@ -244,7 +244,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		_response = await client.GetAsync(new Uri(Feed, UriKind.Relative));
 	}
 
-	[When(@"a Safety Officer asks the public API for that report")]
+	[When(@"a Safety Officer reads that report's public page")]
 	public async Task WhenASignedInSafetyOfficerAsksForThatReport()
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
@@ -291,7 +291,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			.ShouldBe(1);
 	}
 
-	[When(@"the public API is asked for that report")]
+	[When(@"a visitor asks for that report")]
 	public async Task WhenThePublicApiIsAskedForEachReport()
 	{
 		using var client = await Anonymous();
@@ -304,7 +304,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer")]
+	[Then(@"the response contains only the opaque report ID, the English and French summary texts, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer")]
 	public async Task ThenTheResponseIsExactlyTheAllowlist()
 	{
 		var body = await Body();
@@ -406,7 +406,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		}
 	}
 
-	[Then(@"the API returns 404")]
+	[Then(@"the report is not found")]
 	public void ThenEveryResponseIs404()
 	{
 		_responses.ShouldAllBe(response => response.StatusCode == HttpStatusCode.NotFound);

@@ -122,7 +122,10 @@ rewrite the domain already forbids
 ([ADR-0178](decisions/ADR-0178-the-database-refuses-changes-to-the-reporters-account-and-to-summary-revisions.md)).
 A refusal is `SQLSTATE 23000`, names the table and column, and never a value.
 An `UPDATE` that names a locked column but leaves its value as it was is not a
-change and passes.
+change and passes. The scenarios name each column in the reader's words — "a
+stored answer's wording" is `report_answers.value` — and the step definitions
+hold that map, so the column names below live only here and in the tests
+([CONV-004](conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
 
 **CON-DP-013** `report_answers`, `report_files`, and `reports` refuse an update
 to the reporter's account; every other column stays writable.

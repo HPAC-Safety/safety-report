@@ -59,7 +59,7 @@ Examples:
 @REQ-DOM-003
 Scenario: A report is publishable only when every invariant holds
   Given a report and its summary row are not deleted
-  And ConsentPublish is exactly true
+  And the reporter's publication consent is exactly yes
   And both English and French summary texts are nonblank
   And the pair has a current human approval
   And the report is Published
@@ -76,7 +76,7 @@ Scenario Outline: A report is not publishable when one invariant fails
 Examples:
   | violation                                   |
   | the report or summary row is deleted        |
-  | ConsentPublish is not exactly true          |
+  | the publication consent is not exactly yes  |
   | the English or French summary text is blank |
   | the pair has no current human approval      |
   | the report is not Published                 |
@@ -100,7 +100,7 @@ Scenario: A report without publication consent is never summarized
 Scenario: Deletion removes a report from every normal path
   Given a report exists in any lifecycle state
   When a Safety Officer deletes it
-  Then one application transaction marks the report and all its owned and dependent rows deleted with one deletion time: answers, summary, files, and report outbox items
+  Then one application transaction marks the report and everything it owns deleted with one deletion time: answers, summary, attachments, and Worker jobs
   And an immutable audit entry is recorded
   And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
   And public and normal admin queries hide the report immediately
@@ -157,207 +157,207 @@ Examples:
   | a report is unpublished                 |
 
 @REQ-DOM-016
-Scenario: An operator requeues poisoned outbox work
-  Given an outbox message has reached the poison threshold and stopped retrying
+Scenario: An operator requeues a poisoned Worker job
+  Given a Worker job has reached the poison threshold and stopped retrying
   When the Worker is invoked with a requeue-poison payload
-  Then the message's poison state is cleared and its attempt count resets
+  Then the job's poison state is cleared and its attempt count resets
   And it becomes claimable again immediately
-  And only the requeued count and the message's own identifier are logged, never its payload
+  And only the requeued count and the job's own identifier are logged, never its payload
 
 @REQ-DOM-017
-Scenario: A poison-requeue payload naming a time window only requeues messages poisoned within it
-  Given one outbox message was poisoned before the given window and another was poisoned within it
+Scenario: A poison-requeue payload naming a time window only requeues jobs poisoned within it
+  Given one Worker job was poisoned before the given window and another was poisoned within it
   When the Worker is invoked with a requeue-poison payload naming that window
-  Then only the message poisoned within the window is requeued
-  And the message poisoned before the window is left poisoned
+  Then only the job poisoned within the window is requeued
+  And the job poisoned before the window is left poisoned
 
 @REQ-DOM-018
-Scenario Outline: The database refuses a change to what a reporter answered
+Scenario Outline: What a reporter answered cannot be changed once stored
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a report_answers row
-  Then Postgres refuses it, naming <column>
-  And the row is as it was
+  When a stored answer's <part> is <change>
+  Then the change is refused, naming that part
+  And the answer is as it was
 
 Examples:
-  | column                              | assignment                                   |
-  | report_answers.id                   | id = 'xxxxxxxxxx1'                           |
-  | report_answers.report_id            | report_id = 'xxxxxxxxxx1'                    |
-  | report_answers.question_id          | question_id = 'xxxxxxxxxx1'                  |
-  | report_answers.question_revision_id | question_revision_id = 'xxxxxxxxxx1'         |
-  | report_answers.question_key         | question_key = 'another_key'                 |
-  | report_answers.is_private           | is_private = NOT is_private                  |
-  | report_answers.value                | value = 'A different account.'               |
-  | report_answers.value                | value = NULL                                 |
-  | report_answers.value_boolean        | value_boolean = true                         |
-  | report_answers.choice_id            | choice_id = 'xxxxxxxxxx1'                    |
-  | report_answers.locale               | locale = 'fr-CA'                             |
-  | report_answers.translation_mode     | translation_mode = 'machine'                 |
-  | report_answers.answered_at          | answered_at = answered_at + interval '1 day' |
+  | part              | change  |
+  | identifier        | changed |
+  | report            | changed |
+  | question          | changed |
+  | question revision | changed |
+  | question key      | changed |
+  | privacy           | changed |
+  | wording           | changed |
+  | wording           | cleared |
+  | yes or no         | changed |
+  | choice            | changed |
+  | language          | changed |
+  | translation need  | changed |
+  | answer time       | changed |
 
 @REQ-DOM-019
 Scenario Outline: An answer's second language and its deletion time are written once
   Given a submitted report with answers, a file, and a summary
-  And a statement has set <first> on a report_answers row
-  When a statement sets <second> on that row
-  Then Postgres refuses it, naming <column>
-  And the row is as it was
+  And a stored answer's <part> has been written
+  When it is <change>
+  Then the change is refused, naming that part
+  And the answer is as it was
 
 Examples:
-  | column                            | first                               | second                                   |
-  | report_answers.translated_value   | translated_value = 'First.'         | translated_value = 'Second.'             |
-  | report_answers.translated_value   | translated_value = 'First.'         | translated_value = NULL                  |
-  | report_answers.translation_source | translation_source = 'auto'         | translation_source = 'human'             |
-  | report_answers.translation_source | translation_source = 'auto'         | translation_source = NULL                |
-  | report_answers.deleted            | deleted = now()                     | deleted = NULL                           |
-  | report_answers.deleted            | deleted = now()                     | deleted = now() + interval '1 day'       |
+  | part                   | change  |
+  | second language        | changed |
+  | second language        | cleared |
+  | second language source | changed |
+  | second language source | cleared |
+  | deletion time          | cleared |
+  | deletion time          | changed |
 
 @REQ-DOM-020
-Scenario Outline: The database refuses a change to what an attachment arrived as
+Scenario Outline: What an attachment arrived as cannot be changed once stored
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a report_files row
-  Then Postgres refuses it, naming <column>
-  And the row is as it was
+  When a stored attachment's <part> is <change>
+  Then the change is refused, naming that part
+  And the attachment is as it was
 
 Examples:
-  | column                          | assignment                                   |
-  | report_files.id                 | id = 'xxxxxxxxxx1'                           |
-  | report_files.report_id          | report_id = 'xxxxxxxxxx1'                    |
-  | report_files.report_answer_id   | report_answer_id = 'xxxxxxxxxx1'             |
-  | report_files.kind               | kind = 'video'                               |
-  | report_files.blob_key           | blob_key = 'another/original/key'            |
-  | report_files.original_file_name | original_file_name = 'another.jpg'           |
-  | report_files.content_type       | content_type = 'image/png'                   |
-  | report_files.byte_size          | byte_size = byte_size + 1                    |
-  | report_files.uploaded_at        | uploaded_at = uploaded_at + interval '1 day' |
+  | part             | change  |
+  | identifier       | changed |
+  | report           | changed |
+  | answer           | changed |
+  | kind             | changed |
+  | stored original  | changed |
+  | file name        | changed |
+  | content type     | changed |
+  | size             | changed |
+  | upload time      | changed |
 
 @REQ-DOM-021
 Scenario Outline: What the Worker and a reviewer record about an attachment stays writable
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a report_files row
-  Then the write succeeds
-  And the row now reads differently
+  When a stored attachment's <part> is <change>
+  Then the change is kept
+  And the attachment now reads differently
 
 Examples:
-  | assignment                                                            |
-  | stripped_blob_key = 'report/stripped/other', exif_stripped_at = now() |
-  | exif_stripped_at = NULL, stripped_blob_key = NULL                     |
-  | processing_error_code = 'unreadable'                                  |
-  | hidden_at = now(), hidden_by_subject = 'synthetic-officer'            |
-  | deleted = now()                                                       |
+  | part             | change  |
+  | stripped copy    | written |
+  | stripped copy    | cleared |
+  | processing error | written |
+  | hidden state     | written |
+  | deletion time    | written |
 
 @REQ-DOM-022
-Scenario Outline: The database refuses a change to a report's language, submission time, or consent
+Scenario Outline: A report's language, submission time, and consent cannot be changed once stored
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a reports row
-  Then Postgres refuses it, naming <column>
-  And the row is as it was
+  When a stored report's <part> is <change>
+  Then the change is refused, naming that part
+  And the report is as it was
 
 Examples:
-  | column                    | assignment                                     |
-  | reports.id                | id = 'xxxxxxxxxx1'                             |
-  | reports.language          | language = 'fr-CA'                             |
-  | reports.submitted_at      | submitted_at = submitted_at + interval '1 day' |
-  | reports.consent_publish   | consent_publish = NOT consent_publish          |
-  | reports.consent_publish   | consent_publish = NULL                         |
-  | reports.consent_media     | consent_media = true                           |
-  | reports.consent_documents | consent_documents = true                       |
+  | part                 | change  |
+  | identifier           | changed |
+  | language             | changed |
+  | submission time      | changed |
+  | publication consent  | changed |
+  | publication consent  | cleared |
+  | media consent        | changed |
+  | document consent     | changed |
 
 @REQ-DOM-023
 Scenario Outline: A report's review state and its deletion time stay writable
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a reports row
-  Then the write succeeds
-  And the row now reads differently
+  When a stored report's <part> is <change>
+  Then the change is kept
+  And the report now reads differently
 
 Examples:
-  | assignment                          |
-  | status = 'unpublished'              |
-  | published_at = now()                |
-  | unpublish_note = 'Out of scope.'    |
-  | summary_error = 'Provider was down' |
-  | deleted = now()                     |
+  | part             | change  |
+  | review state     | changed |
+  | publish time     | written |
+  | unpublish note   | written |
+  | summary error    | written |
+  | deletion time    | written |
 
 @REQ-DOM-024
-Scenario Outline: The database refuses a change to a saved summary revision
+Scenario Outline: A saved summary revision cannot be changed
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a summary_revisions row
-  Then Postgres refuses it, naming <column>
-  And the row is as it was
+  When a stored summary revision's <part> is <change>
+  Then the change is refused, naming that part
+  And the summary revision is as it was
 
 Examples:
-  | column                             | assignment                                 |
-  | summary_revisions.id               | id = 'xxxxxxxxxx1'                         |
-  | summary_revisions.summary_id       | summary_id = 'xxxxxxxxxx1'                 |
-  | summary_revisions.sequence         | sequence = sequence + 1                    |
-  | summary_revisions.ai_summary_en    | ai_summary_en = 'Rewritten.'               |
-  | summary_revisions.ai_summary_fr    | ai_summary_fr = 'Réécrit.'                 |
-  | summary_revisions.source_en        | source_en = 'human'                        |
-  | summary_revisions.source_fr        | source_fr = 'human'                        |
-  | summary_revisions.model            | model = 'another-model'                    |
-  | summary_revisions.prompt_version   | prompt_version = 'another.v9'              |
-  | summary_revisions.author_subject   | author_subject = 'someone-else'            |
-  | summary_revisions.created_at       | created_at = created_at + interval '1 day' |
-  | summary_revisions.restored_from_id | restored_from_id = 'xxxxxxxxxx1'           |
+  | part              | change  |
+  | identifier        | changed |
+  | summary           | changed |
+  | number            | changed |
+  | English text      | changed |
+  | French text       | changed |
+  | English source    | changed |
+  | French source     | changed |
+  | model             | changed |
+  | prompt version    | changed |
+  | author            | changed |
+  | creation time     | changed |
+  | restored revision | changed |
 
 @REQ-DOM-025
 Scenario Outline: A revision's approval may be set and cleared, and it may be marked deleted
   Given a submitted report with answers, a file, and a summary
-  When a statement sets <assignment> on a summary_revisions row
-  Then the write succeeds
-  And the row now reads differently
+  When a stored summary revision's <part> is <change>
+  Then the change is kept
+  And the summary revision now reads differently
 
 Examples:
-  | assignment                                                    |
-  | approved_at = NULL, approved_by_subject = NULL                |
-  | approved_at = now(), approved_by_subject = 'another-approver' |
-  | deleted = now()                                               |
+  | part          | change  |
+  | approval      | cleared |
+  | approval      | written |
+  | deletion time | written |
 
 @REQ-DOM-026
 Scenario: A revision's deletion time is written once
   Given a submitted report with answers, a file, and a summary
-  And a statement has set deleted = now() on a summary_revisions row
-  When a statement sets deleted = NULL on that row
-  Then Postgres refuses it, naming summary_revisions.deleted
-  And the row is as it was
+  And a stored summary revision's deletion time has been written
+  When it is cleared
+  Then the change is refused, naming that part
+  And the summary revision is as it was
 
 @REQ-DOM-027
-Scenario Outline: The database never deletes a report, an answer, a file, or a summary revision
+Scenario Outline: A report, an answer, an attachment, or a summary revision is never erased
   Given a submitted report with answers, a file, and a summary
-  When a statement deletes a <table> row
-  Then Postgres refuses it, saying <table> rows are never deleted
-  And the row is as it was
+  When a stored <record> is erased
+  Then the erasure is refused, saying that kind of record is never erased
+  And the <record> is as it was
 
 Examples:
-  | table             |
-  | reports           |
-  | report_answers    |
-  | report_files      |
-  | summary_revisions |
+  | record           |
+  | report           |
+  | answer           |
+  | attachment       |
+  | summary revision |
 
 @REQ-DOM-030
-Scenario Outline: The database never truncates a report, an answer, a file, or a summary revision
+Scenario Outline: Reports, answers, attachments, and summary revisions are never erased all at once
   Given a submitted report with answers, a file, and a summary
-  When a statement truncates <table>
-  Then Postgres refuses it, saying <table> rows are never deleted
-  And the row is as it was
+  When every stored <record> is erased at once
+  Then the erasure is refused, saying that kind of record is never erased
+  And the <record> is as it was
 
 Examples:
-  | table             |
-  | reports           |
-  | report_answers    |
-  | report_files      |
-  | summary_revisions |
+  | record           |
+  | report           |
+  | answer           |
+  | attachment       |
+  | summary revision |
 
 @REQ-DOM-028
-Scenario: A statement that leaves a locked column as it was is not a change
+Scenario: Writing a locked part's own value back is not a change
   Given a submitted report with answers, a file, and a summary
-  When a statement sets language = language, submitted_at = submitted_at, status = 'unpublished' on a reports row
-  Then the write succeeds
+  When a stored report's language and submission time are written back unchanged, with a new review state
+  Then the change is kept
 
 @REQ-DOM-029
-Scenario: A migration that must change a locked column disables the trigger inside its own transaction
+Scenario: A migration that must change a locked part lifts the guard inside its own transaction
   Given a submitted report with answers, a file, and a summary
-  When a migration disables the reports trigger, sets language = 'fr-CA', and enables it again in one transaction
-  Then the write succeeds
+  When a migration lifts the report's guard, changes its language to French, and restores the guard in one transaction
+  Then the change is kept
   And the report's language is French
-  And a later statement setting language = 'en-CA' on a reports row is refused, naming reports.language
+  And a later change to the report's language is refused, naming that part

@@ -108,7 +108,7 @@ public sealed class QuestionBankSteps
 		_question = child;
 	}
 
-	[Given(@"the consent_publish question exists")]
+	[Given(@"the publication consent question exists")]
 	public void GivenConsentExists()
 	{
 		_question = Question.CreateConsentPublish(
@@ -120,7 +120,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(Ordinary("were_you_injured", QuestionType.YesNo));
 	}
 
-	[Given(@"the consent_media question exists")]
+	[Given(@"the media consent question exists")]
 	public void GivenMediaConsentExists()
 	{
 		_question = Question.CreateConsentMedia(
@@ -290,7 +290,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(_question);
 	}
 
-	[Then(@"the dependency needs no required choice, because the condition is always ""answered yes""")]
+	[Then(@"the dependency needs no required choice: its condition is always ""answered yes""")]
 	public void ThenTheDependencyNeedsNoOption()
 	{
 		_question!.DependsOnChoiceId.ShouldBeNull();
@@ -505,10 +505,9 @@ public sealed class QuestionBankSteps
 	[Given(@"an Administrator authors a (.*) question")]
 	public void GivenAQuestionOfType(string type)
 	{
-		EnumCode.TryParse<QuestionType>(type, out var parsed).ShouldBeTrue();
-		_pendingType = parsed;
+		_pendingType = GlossaryNames.QuestionType(type);
 		// The submission scenarios build the same question through the API.
-		_scenario["questionType"] = type;
+		_scenario["questionType"] = EnumCode.Of(_pendingType);
 	}
 
 	[When(@"they supply bilingual choices with it")]
@@ -628,7 +627,7 @@ public sealed class QuestionBankSteps
 		_question.Deleted.ShouldBeNull();
 	}
 
-	[Then(@"the question is marked deleted rather than erased")]
+	[Then(@"the question is marked deleted, not erased")]
 	public void ThenItIsStampedDeleted()
 	{
 		_question!.Deleted.ShouldBe(Noon.AddHours(1));

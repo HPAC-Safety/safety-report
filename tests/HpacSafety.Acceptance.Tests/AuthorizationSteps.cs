@@ -39,7 +39,7 @@ public sealed class AuthorizationSteps
 	private MemberRole _role;
 	private readonly List<HttpResponseMessage> _reviews = [];
 
-	[Given(@"the API is not running in development")]
+	[Given(@"a deployment outside development")]
 	public async Task GivenProductionShapedHost()
 	{
 		var host = await BootedApi.ProductionShaped();
@@ -48,7 +48,7 @@ public sealed class AuthorizationSteps
 		_productionShaped = true;
 	}
 
-	[Given(@"the API is not running in development and no identity provider is configured")]
+	[Given(@"a deployment outside development with no identity provider configured")]
 	public async Task GivenProductionShapedHostWithNoAuthority()
 	{
 		var host = await BootedApi.ProductionShapedWithNoAuthority();
@@ -57,19 +57,19 @@ public sealed class AuthorizationSteps
 		_productionShaped = true;
 	}
 
-	[When(@"the health endpoint is requested")]
+	[When(@"the health check is requested")]
 	public async Task WhenHealthEndpointIsRequested()
 	{
 		_response = await _client!.GetAsync(Health);
 	}
 
-	[Then(@"the API answers 200")]
+	[Then(@"the health check is answered with success")]
 	public void ThenApiAnswers200()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
 	}
 
-	[When(@"a request carrying a bearer token reaches an authorization-protected endpoint")]
+	[When(@"a request carrying a bearer token asks for something that needs authorization")]
 	public async Task WhenBearerTokenReachesProtectedEndpoint()
 	{
 		// Any bearer token — not a real one. Nothing outside Development with
@@ -107,19 +107,19 @@ public sealed class AuthorizationSteps
 		_client = await BootedApi.SignedInAs(_role);
 	}
 
-	[When(@"the development token endpoint is called")]
+	[When(@"a development token is requested")]
 	public async Task WhenDevelopmentTokenEndpointIsCalled()
 	{
 		_response = await _client!.PostAsJsonAsync(DevelopmentToken, new { username = "admin", password = "admin" });
 	}
 
-	[When(@"it reaches an admin endpoint")]
+	[When(@"it asks for admin data")]
 	public async Task WhenItReachesAnAdminEndpoint()
 	{
 		_response = await _client!.GetAsync(Questions);
 	}
 
-	[When(@"the API processes the request")]
+	[When(@"the request is processed")]
 	public void WhenTheApiProcessesTheRequest()
 	{
 		// The Given already made the call; this step is the sentence's grammar.
@@ -270,7 +270,7 @@ public sealed class AuthorizationSteps
 		_reviews.Add(await _client.PutAsJsonAsync(Value(values[4], "/parent"), new { parentChoiceIds = new[] { ozone.Value } }));
 	}
 
-	[Then(@"the route does not exist")]
+	[Then(@"the request is not found")]
 	public void ThenRouteDoesNotExist()
 	{
 		_productionShaped.ShouldBeTrue();
@@ -280,13 +280,13 @@ public sealed class AuthorizationSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	[Then(@"the API refuses it before the handler runs")]
+	[Then(@"it is refused as unauthenticated before it is handled")]
 	public void ThenRefusedBeforeHandler()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 	}
 
-	[Then(@"the API refuses the operation regardless of what the UI would have shown")]
+	[Then(@"the operation is refused as forbidden, whatever the interface would have shown")]
 	public async Task ThenRejectedRegardlessOfUi()
 	{
 		// 403, not 401: they are signed in, and it is still not theirs.
@@ -296,14 +296,14 @@ public sealed class AuthorizationSteps
 		body.ShouldContain("insufficient-role");
 	}
 
-	[Then(@"^the API (accepts|allows|forbids|refuses) the attempt$")]
+	[Then(@"^that member's attempt is (allowed|refused as forbidden)$")]
 	public async Task ThenApiOutcome(string outcome)
 	{
 		if (_reviews.Count > 0)
 		{
 			foreach (var review in _reviews)
 			{
-				if (outcome == "allows")
+				if (outcome == "allowed")
 				{
 					review.IsSuccessStatusCode.ShouldBeTrue($"an {_role} should be able to review a type-ahead value, but the API answered {review.StatusCode}.");
 				}
@@ -316,7 +316,7 @@ public sealed class AuthorizationSteps
 			return;
 		}
 
-		if (outcome is "accepts" or "allows")
+		if (outcome == "allowed")
 		{
 			_response!.IsSuccessStatusCode.ShouldBeTrue(
 				$"a {_role} should be allowed, but the API answered {_response.StatusCode}: {await _response.Content.ReadAsStringAsync()}");

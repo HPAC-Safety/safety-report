@@ -77,7 +77,7 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		_texts = ["First synthetic string.", "Second synthetic string.", "Third synthetic string."];
 	}
 
-	[Given(@"^the model replies with (one translation|three translations|an empty translation|a sentence instead of the JSON)$")]
+	[Given(@"^the model replies with (one translation|three translations|an empty translation|a sentence and no translations)$")]
 	public void GivenTheModelReplies(string kind)
 	{
 		_reply = kind switch
@@ -197,7 +197,7 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		await Translate(provider, Locale.EnCa, Locale.FrCa);
 	}
 
-	[When(@"^the API or the Worker translates text$")]
+	[When(@"^text is translated on a request or by the Worker$")]
 	public async Task WhenTheApiOrTheWorkerTranslates()
 	{
 		// One registration serves both hosts, so one call shows what either sends.
@@ -286,7 +286,7 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		}
 	}
 
-	[Then(@"^translation is refused rather than echoed back$")]
+	[Then(@"^translation is refused, not echoed back$")]
 	public void ThenTranslationIsRefused()
 	{
 		_refusal.ShouldNotBeNull();
@@ -375,14 +375,14 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		body.RootElement.GetProperty("reasoning_effort").GetString().ShouldBe(effort);
 	}
 
-	[Then(@"^startup fails, naming the (Translation:Model|Translation:ReasoningEffort) setting$")]
+	[Then(@"^startup fails, naming the (model|reasoning effort) setting$")]
 	public void ThenStartupFails(string setting)
 	{
-		_startupFailure.ShouldNotBeNull().Message.ShouldContain(setting);
+		_startupFailure.ShouldNotBeNull().Message.ShouldContain(setting == "model" ? "Translation:Model" : "Translation:ReasoningEffort");
 		_transport.Bodies.ShouldBeEmpty();
 	}
 
-	[Then(@"^the request goes to Gemini's OpenAI-compatible endpoint$")]
+	[Then(@"^the request goes to Gemini's OpenAI-compatible service$")]
 	public void ThenTheRequestGoesToGemini()
 	{
 		_transport.Uri.ShouldNotBeNull().ToString()

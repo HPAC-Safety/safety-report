@@ -302,6 +302,9 @@ const MODELS = [
 ]
 
 /** One page asking the make and the model together, then publication consent. */
+/** A question type's wire code, by the glossary name a scenario uses. */
+const TYPE_CODES: Record<string, string> = { "single-select": "single_select", "multi-select": "multi_select", "type-ahead": "autocomplete" }
+
 function wingForm(makeType: string, modelType: string, { modelRequired = false, makes = ["Niviuk", "Ozone"] } = {}): StubQuestion[] {
 	return [
 		formQuestion({
@@ -409,7 +412,7 @@ async function answerMake(page: Page, make: string) {
 Given(
 	"a {word} {string} question's choices depend on a single-select {string} question offering {string} and {string}",
 	({ page }, childType: string, _child: string, _make: string, _first: string, _second: string) => {
-		forms.set(page, wingForm("single_select", childType))
+		forms.set(page, wingForm("single_select", TYPE_CODES[childType] ?? childType))
 	},
 )
 
@@ -622,7 +625,7 @@ When("a reporter leaves {string} unanswered and presses Next", async ({ page }, 
 	await page.getByRole("button", { name: "Next" }).click()
 })
 
-Then("the form moves on, because {string} cannot be answered until {string} is", async ({ page }, _child: string, _parent: string) => {
+Then("the form moves on past {string}, which cannot be answered until {string} is", async ({ page }, _child: string, _parent: string) => {
 	await expect(page.getByRole("radio", { name: "Yes" })).toBeVisible()
 	await expect(page.getByRole("combobox", { name: "Model" })).toHaveCount(0)
 })
@@ -830,7 +833,7 @@ Then("pressing Next moves on", async ({ page }) => {
 
 // ---- A reorder the API refuses (REQ-QB-205) ----
 
-When("they move a question whose choices depend on the question above it up, and the API refuses the new order", async ({ page }) => {
+When("they move a question whose choices depend on the question above it up, and the new order is refused", async ({ page }) => {
 	await stubQuestionBank(page, [
 		adminQuestion("make", "Make", "single_select", 0, MAKE),
 		adminQuestion("model", "Model", "autocomplete", 1, [adminChoice("mentor_7", "Mentor 7", "niviuk")], "make"),

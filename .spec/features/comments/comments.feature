@@ -8,14 +8,14 @@ Scenario: A member comments on a published report
   Given a report is published
   And the visitor is a member
   When the member posts a comment on it
-  Then the API answers 201 with the comment
+  Then the comment is created and returned to its author
   And the comment is listed on that report for every reader, signed in or not
 
 @REQ-COM-002
 Scenario: Commenting requires a member
   Given a report is published
   When a request without a member token posts a comment on it
-  Then the API answers 401
+  Then the comment is refused as unauthenticated
   And no comment is stored
 
 @REQ-COM-003
@@ -23,7 +23,7 @@ Scenario: A report no visitor can see cannot be commented on
   Given a report is not public
   And the visitor is a member
   When the member posts a comment on it
-  Then the API answers 404
+  Then the report is not found
   And no comment is stored
 
 @REQ-COM-004
@@ -31,7 +31,7 @@ Scenario Outline: A comment must have text, and at most 2000 characters
   Given a report is published
   And the visitor is a member
   When the member posts a comment whose text is <text>
-  Then the API answers 400
+  Then the comment is refused as invalid
   And no comment is stored
 
 Examples:
@@ -53,11 +53,11 @@ Scenario: Posting a comment never waits for, or calls, a translation provider
   And the visitor is a member
   And no translation provider is reachable
   When the member posts a comment on it
-  Then the API answers 201
+  Then the comment is created
   And one translation job for the comment is waiting for the Worker
 
 @REQ-COM-007
-Scenario: The API tells a reader which comments are theirs and never who wrote the others
+Scenario: A reader is told which comments are theirs, and never who wrote the others
   Given two members have each commented on a published report
   When the first member reads the report's comments
   Then only the first member's comment is marked as theirs
@@ -84,7 +84,7 @@ Scenario Outline: Nobody may change another member's comment
   Given a member commented on a published report
   And the visitor is another member
   When the other member tries to <action> the comment
-  Then the API answers 403
+  Then the attempt is refused as forbidden
   And the comment is unchanged
 
 Examples:
@@ -105,14 +105,14 @@ Scenario: A member who is not a reviewer cannot hide a comment
   Given a member commented on a published report
   And the visitor is another member
   When the other member tries to hide the comment
-  Then the API answers 403
+  Then the attempt is refused as forbidden
   And the comment is still listed
 
 @REQ-COM-013
 Scenario: Unpublishing a report hides its comments, and publishing it again brings them back
   Given a member commented on a published report
   When a reviewer unpublishes the report
-  Then the public API lists no comments for it and the report is not in the feed
+  Then a visitor sees no comments for it and the report is not in the feed
   And the comment is kept in the database
   When a reviewer publishes the report again
   Then the comment is listed again
@@ -136,7 +136,7 @@ Scenario: An anonymous visitor is invited to sign in to comment
   Given a published report has comments
   When an anonymous visitor opens it
   Then the comments are shown, each labelled "Member"
-  And instead of a comment box the page offers to sign in to comment
+  And the page offers to sign in to comment, with no comment box
   When the visitor signs in from there
   Then the visitor is returned to the report
 

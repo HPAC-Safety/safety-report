@@ -234,6 +234,11 @@ jobs:
             --logger trx \
             --results-directory ./artifacts/coverage
 
+      # tests/js/gherkin imports the pinned Gherkin parser that
+      # tools/gherkin/lint-scenarios.ts reads features with.
+      - name: npm ci, Gherkin check
+        run: npm --prefix tools/gherkin ci
+
       # The script passes the suite as an explicit file list, and writes the
       # lcov to ./artifacts/coverage/js/lcov.info for `coverage` to merge.
       - name: node --test
@@ -286,9 +291,10 @@ jobs:
 
   # Parses every .spec/features/**/*.feature file with the official @cucumber/gherkin
   # parser (the same parser cucumber-js uses), pinned in
-  # tools/gherkin/package.json. Syntax only — these are specification
-  # documents, not an executable suite, so there are no step definitions to run
-  # them against. See .spec/features/README.md.
+  # tools/gherkin/package.json, then lints each scenario's style against the
+  # parsed tree: steps describe behavior, never a status code, a storage name, a
+  # transport detail, or a reason (CONV-004). The scenarios run as tests in
+  # `test` and `e2e`, not here. See .spec/features/README.md.
   cucumber:
     runs-on: ubuntu-latest
     steps:
@@ -302,6 +308,9 @@ jobs:
 
       - name: Gherkin feature files parse
         run: node tools/gherkin/verify.ts
+
+      - name: Scenarios describe behavior, not implementation
+        run: node tools/gherkin/lint-scenarios.ts
 
   # Every tracked markdown file declares its title, description, and type
   # (ADR-0087). The Worker's runtime prompts are exempt - their bytes are the

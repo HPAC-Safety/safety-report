@@ -34,7 +34,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 	private bool[]? _concurrentResults;
 	private int _concurrentModelCalls;
 
-	[Given(@"a report has been submitted and its summarization outbox item is due")]
+	[Given(@"a report has been submitted and its summarization job is due")]
 	public async Task GivenAReportIsDue()
 	{
 		_db = await WorkerDatabase.NewMigratedContext();
@@ -117,7 +117,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		_summarizer!.CallCount.ShouldBe(1);
 	}
 
-	[Given(@"a summarization outbox item is pending")]
+	[Given(@"a summarization job is pending")]
 	public async Task GivenAPendingItem()
 	{
 		_db = await WorkerDatabase.NewMigratedContext();
@@ -186,7 +186,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		_report = report;
 	}
 
-	[Then(@"^report_content carries that answer's value as ""(true|false)""$")]
+	[Then(@"^the report content carries that answer's value as ""(true|false)""$")]
 	public void ThenReportContentCarriesTheBoolean(string value)
 	{
 		var field = _summarizer!.LastInput!.ReportContent.Single(candidate => candidate.QuestionKey == "was_injured");
@@ -222,7 +222,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		input.ShouldNotContain("officer:synthetic");
 	}
 
-	[Then(@"no outbox message names the private note or its revision")]
+	[Then(@"no Worker job names the private note or its revision")]
 	public async Task ThenNoOutboxMessageNamesTheNote()
 	{
 		var named = new[] { _note!.Id, _note.Current.Id };
@@ -273,7 +273,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		input.ShouldNotContain("private/");
 	}
 
-	[Then(@"no outbox message names the private attachment")]
+	[Then(@"no Worker job names the private attachment")]
 	public async Task ThenNoOutboxMessageNamesTheAttachment()
 	{
 		var id = _attachment!.Id;
@@ -283,20 +283,20 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 			.ShouldBe(0);
 	}
 
-	[When(@"the Worker claims the message and builds the model input DTO")]
+	[When(@"the Worker claims the job and builds the model input")]
 	public async Task WhenBuildsInputDto()
 	{
 		_summarizer = new FakeSummarizer(("en", "fr"));
 		await ClaimAndProcess(_db!, _summarizer);
 	}
 
-	[Then(@"report_content contains only non-private answers eligible to contribute facts")]
+	[Then(@"the report content contains only non-private answers eligible to contribute facts")]
 	public void ThenReportContentOnlyNonPrivate()
 	{
 		_summarizer!.LastInput!.ReportContent.Select(field => field.QuestionKey).ShouldBe(["narrative"]);
 	}
 
-	[Then(@"private_context contains only private answers, supplied to help recognize identifying details that recur in report content")]
+	[Then(@"the private context contains only private answers, supplied to help recognize identifying details that recur in report content")]
 	public void ThenPrivateContextOnlyPrivate()
 	{
 		_summarizer!.LastInput!.PrivateContext.Select(field => field.QuestionKey).ShouldBe(["pilot_name"]);
@@ -317,7 +317,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		keys.ShouldNotContain("photo");
 	}
 
-	[Then(@"the DTO contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames")]
+	[Then(@"the model input contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames")]
 	public void ThenNoOtherDataShape()
 	{
 		// SummarizationField carries exactly QuestionKey/Label/Value, plus the flag
@@ -376,7 +376,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		await ClaimAndProcess(_db!, _summarizer!);
 	}
 
-	[Then(@"one summary row is created whose revision 1 holds AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and its creation timestamp")]
+	[Then(@"one summary is created whose revision 1 holds the English and French texts, their shared model and prompt version, and its creation timestamp")]
 	public async Task ThenOneSummaryRowWithProvenance()
 	{
 		var summary = await _db!.Summaries.SingleAsync(s => s.ReportId == _report!.Id);
@@ -414,7 +414,7 @@ public sealed partial class SummarizationOutboxSteps : IAsyncDisposable
 		_now = _now.AddMinutes(1);
 	}
 
-	[When(@"the outbox retries the attempt within its bounded budget")]
+	[When(@"the Worker retries the attempt within its bounded budget")]
 	public async Task WhenRetried()
 	{
 		await ClaimAndProcess(_db!, _summarizer!, _now);

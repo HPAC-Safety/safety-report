@@ -41,7 +41,7 @@ public sealed class InterimIssuerSteps
 	private HttpResponseMessage? _response;
 	private TokenPayload? _issuedToken;
 
-	[Given(@"the API is not running in development and the temporary interim issuer is enabled")]
+	[Given(@"a deployment outside development with the temporary interim issuer enabled")]
 	public async Task GivenInterimIssuerEnabled()
 	{
 		// Four scripted responses: one successful members-site round trip for
@@ -55,7 +55,7 @@ public sealed class InterimIssuerSteps
 		_client = host.CreateClient();
 	}
 
-	[Given(@"the API is not running in development and the temporary interim issuer is disabled")]
+	[Given(@"a deployment outside development with the temporary interim issuer disabled")]
 	public async Task GivenInterimIssuerDisabled()
 	{
 		// The default: no flag, no Authority — production's own configuration.
@@ -74,7 +74,7 @@ public sealed class InterimIssuerSteps
 		_issuedToken = await _response.Content.ReadFromJsonAsync<TokenPayload>();
 	}
 
-	[Then(@"the API issues a token the API itself accepts")]
+	[Then(@"the member receives a token that later requests are accepted with")]
 	public async Task ThenTheApiIssuesATokenTheApiItselfAccepts()
 	{
 		_issuedToken.ShouldNotBeNull();
@@ -103,7 +103,7 @@ public sealed class InterimIssuerSteps
 		_response = await _client!.PostAsJsonAsync("/api/auth/token", new { username = "admin", password = "admin" });
 	}
 
-	[Then(@"the API refuses it")]
+	[Then(@"the sign-in is refused")]
 	public void ThenTheApiRefusesIt()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -123,7 +123,7 @@ public sealed class InterimIssuerSteps
 		_response = await _client!.GetAsync(new Uri("/api/auth/interim/jwks", UriKind.Relative));
 	}
 
-	[When(@"a token is requested from the token endpoint")]
+	[When(@"a token is requested from the interim issuer")]
 	public async Task WhenTokenIsRequestedFromTheTokenEndpoint()
 	{
 		EnsureOriginHeader();
@@ -143,7 +143,7 @@ public sealed class InterimIssuerSteps
 		}
 	}
 
-	[Then(@"the API answers 404")]
+	[Then(@"it is not found")]
 	public void ThenApiAnswers404()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.NotFound);

@@ -50,14 +50,14 @@ public sealed class YesNoLanguageSteps
 
 	// --- REQ-QB-121 ---
 
-	[Given(@"^a reporter writing in (English|French) answers (consent_publish|consent_media) (true|false)$")]
+	[Given(@"^a reporter writing in (English|French) answers (publication consent|media consent) (true|false)$")]
 	public void GivenAConsentAnswer(string language,
 									string consent,
 									bool answer)
 	{
 		_report = new Report(LocaleOf(language), Noon);
 		_parentAnswer = answer;
-		_parent = consent == QuestionKey.ConsentMedia
+		_parent = consent == "media consent"
 			? Question.CreateConsentMedia("May we show your files?", "Pouvons-nous montrer vos fichiers ?", Noon)
 			: Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Noon);
 	}
@@ -68,11 +68,11 @@ public sealed class YesNoLanguageSteps
 		_report!.Answer(_parent!, _parentAnswer!.Value, Noon);
 	}
 
-	[Then(@"^the report records (consent_publish|consent_media) as (given|refused)$")]
+	[Then(@"^(publication consent|media consent) is (given|refused) on the report$")]
 	public void ThenTheReportRecordsConsent(string consent,
 											string recorded)
 	{
-		var projected = consent == QuestionKey.ConsentMedia ? _report!.ConsentMedia : _report!.ConsentPublish;
+		var projected = consent == "media consent" ? _report!.ConsentMedia : _report!.ConsentPublish;
 		projected.ShouldBe(recorded == "given");
 	}
 

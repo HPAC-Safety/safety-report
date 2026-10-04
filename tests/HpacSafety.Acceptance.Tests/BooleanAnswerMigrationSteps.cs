@@ -36,10 +36,11 @@ public sealed class BooleanAnswerMigrationSteps
 	private string ConnectionString =>
 		_connectionString ?? throw new InvalidOperationException("No database has been created for this scenario.");
 
-	[Given(@"^a (yes_no|checkbox) answer was stored as the word ""(\w+)"" before yes\/no answers were booleans$")]
-	public async Task GivenAWordAnswer(string type,
+	[Given(@"^a (yes\/no|checkbox) answer was stored as the word ""(\w+)"" before yes\/no answers were stored as true or false$")]
+	public async Task GivenAWordAnswer(string named,
 									   string word)
 	{
+		var type = GlossaryNames.QuestionTypeCode(named);
 		_connectionString = await WorkerDatabase.NewEmptyDatabase();
 		await MigrateTo(PriorMigration);
 
@@ -93,7 +94,7 @@ public sealed class BooleanAnswerMigrationSteps
 		}
 	}
 
-	[Then(@"^that answer's boolean is (true|false)$")]
+	[Then(@"^that answer reads (true|false)$")]
 	public async Task ThenThatAnswersBooleanIs(bool expected)
 	{
 		_migrationFailure.ShouldBeNull();

@@ -14,8 +14,10 @@ date: 2026-10-03
   with the word [`.spec/glossary.md`](../glossary.md) gives it, never a
   synonym its **Banned in scenarios** column lists.
 - Quote what the user literally sees — an interface string, a page title, a
-  value — in `"double quotes"`, and an identifier in `` `code` ``. The lint
-  skips both, and every `<placeholder>`.
+  value — in `"double quotes"`. In an area README, an identifier goes in
+  `` `code` ``; in a scenario an identifier does not belong at all
+  ([CONV-004](CONV-004-scenarios-describe-behavior-not-implementation.md)).
+  The lint skips quotes, code spans, and every `<placeholder>`.
 - A new concept, or a word that keeps being misused, is a glossary change:
   add the term or the banned synonym in the same pull request as the
   scenarios that need it. An exemption is a whole area, named in the row's

@@ -325,7 +325,7 @@ When("the reporter presses that file's Remove control", async ({ page }) => {
 	await page.getByRole("button", { name: "Remove launch-site.png" }).click()
 })
 
-Then("the browser asks the API to delete that upload", async ({ page }) => {
+Then("the browser asks to delete that upload", async ({ page }) => {
 	const stub = stubFor(page)
 	await expect.poll(() => stub.deleted).toEqual([stub.issued[0]])
 })
@@ -361,7 +361,7 @@ Then("an inline, localized message states the limit", async ({ page }) => {
 
 // --- REQ-SUB-050: a refused upload ---
 
-Given("the API refuses an uploaded file", async ({ page }) => {
+Given("an uploaded file is refused", async ({ page }) => {
 	const stub = await stubUploads(page)
 	await reachAttachmentsPage(page)
 	stub.refuseNext = "unaccepted_media_type"
@@ -402,14 +402,14 @@ Then("that file's row shows a localized message stating the limit for each kind"
 	).toBeVisible()
 })
 
-Then("nothing is sent to the API or to storage for it", ({ page }) => {
+Then("nothing is sent to the server or to storage for it", ({ page }) => {
 	expect(stubFor(page).requests).toBe(0)
 	expect(stubFor(page).puts).toHaveLength(0)
 })
 
 // --- REQ-SUB-076: a file refused at submission ---
 
-Given("the API refuses a submission because some of its uploads failed validation", async ({ page }) => {
+Given("a submission is refused for some uploads that failed validation", async ({ page }) => {
 	const stub = await stubUploads(page)
 	await reachAttachmentsPage(page)
 	await page.getByLabel("Photos or videos").setInputFiles([photo("kept.png"), sized("mislabelled.mp4", "video/mp4", 4096)])
@@ -433,7 +433,7 @@ Then("each refused file's row shows a localized reason matching its refusal", as
 
 // --- REQ-SUB-051: expired uploads ---
 
-Given("the API refuses a submission because some of its uploads expired", async ({ page }) => {
+Given("a submission is refused for some uploads that expired", async ({ page }) => {
 	const stub = await stubUploads(page)
 	await reachAttachmentsPage(page)
 	await attach(page, "kept.png", "stale.png")
@@ -542,7 +542,7 @@ Then("the submission names each restored file by its upload ID", async ({ page }
 	expect(namedAttachments(stub)).toEqual([{ uploadId: stub.saved[0], fileName: "launch-site.png" }])
 })
 
-Then("the browser asks the API to delete each of those uploads", async ({ page }) => {
+Then("the browser asks to delete each of those uploads", async ({ page }) => {
 	const stub = stubFor(page)
 	await expect.poll(() => [...stub.deleted].sort()).toEqual([...stub.saved].sort())
 })

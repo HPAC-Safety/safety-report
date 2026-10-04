@@ -180,7 +180,8 @@ Common verification commands:
 ```bash
 dotnet build HpacSafety.slnx
 dotnet test HpacSafety.slnx
-node --test $(find tests/js -name '*.test.ts')
+node --test $(find tests/js -name '*.test.ts')   # tests/js/gherkin needs npm --prefix tools/gherkin ci
+node tools/gherkin/lint-scenarios.ts      # scenarios describe behavior, not implementation (CONV-004)
 node tools/spec/generate-traceability.ts
 npm --prefix src/web ci && npm --prefix src/web run build
 npm ci && npm --prefix src/web ci && npm --prefix tests/e2e ci && npm --prefix tools/gherkin ci && npm run lint   # ESLint, strict and type-checked, over src/web, tools, tests/js and tests/e2e (ADR-0188)

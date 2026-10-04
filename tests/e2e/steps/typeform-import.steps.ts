@@ -142,10 +142,17 @@ When("they import a Typeform draft whose key matches an existing question", asyn
 })
 
 Then(
-	"choosing to review it opens the existing question for editing instead of creating a new one",
+	"choosing to review it opens the existing question for editing, and creates no new one",
 	async ({ page }) => {
+		// A new question would be a POST to the question collection itself.
+		const created: string[] = []
+		page.on("request", (request) => {
+			if (request.method() === "POST" && new URL(request.url()).pathname === "/api/admin/questions") created.push(request.url())
+		})
+
 		await page.getByRole("button", { name: "Review", exact: true }).first().click()
 
 		await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible()
+		expect(created).toEqual([])
 	},
 )

@@ -66,9 +66,14 @@ roles and why each trusts only the artifact before it:
   it; quote interface copy and page titles. A renamed step renames its step
   definition's text in the same commit
   ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+- Steps say what a reader observes: an outcome phrase from the glossary, never
+  a status code, a table or column, a route, "the API", or a reason; the step
+  definition keeps the detail
+  ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
 - Run `node tools/spec/generate-traceability.ts`,
-  `node tools/spec/generate-spec-index.ts`, and
-  `node tools/spec/check-glossary.ts` before finishing.
+  `node tools/spec/generate-spec-index.ts`,
+  `node tools/spec/check-glossary.ts`, and
+  `node tools/gherkin/lint-scenarios.ts` before finishing.
 - Decision records: [`.spec/decisions/TEMPLATE.md`](../../.spec/decisions/TEMPLATE.md),
   immutable once accepted; conventions: `.spec/conventions/` ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
   `node tools/spec/check-records.ts` passes before finishing.
@@ -127,6 +132,9 @@ roles and why each trusts only the artifact before it:
 - Words: `node tools/spec/check-glossary.ts` passes; a banned synonym is a
   specification delta, never a matter of taste
   ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+- Declarative steps: `node tools/gherkin/lint-scenarios.ts` passes, and a
+  reworded step's definition still asserts what it asserted before
+  ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
 - Records: `node tools/spec/check-records.ts` and, with the pull request's
   base as `BASE_SHA`, `node tools/spec/check-adr-immutability.ts` both pass
   ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).

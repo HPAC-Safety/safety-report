@@ -44,7 +44,7 @@ Scenario: A list row carries the version a review command sends back
   When a reviewer lists reports
   Then each row carries the same version the report detail gives
   And publishing an unpublished report with its row's version succeeds without opening the report
-  And no ViewedRawReport entry is written for that report
+  And no raw-report-viewed audit entry is written for that report
 
 @REQ-MOD-129
 Scenario: The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one
@@ -93,7 +93,7 @@ Scenario: Only an Administrator's pending counts include answers awaiting transl
 @REQ-MOD-086
 Scenario: A User cannot read the pending counts
   When a User reads the pending counts
-  Then the API refuses the pending counts with 403
+  Then the pending counts are refused as forbidden
 
 @REQ-MOD-090
 Scenario: A report without publication consent never needs action
@@ -239,11 +239,11 @@ Scenario Outline: Only a reviewer may find a match inside private report content
   Then <result>
 
 Examples:
-  | who                  | result                                 |
-  | an anonymous visitor | the request is refused as unauthorized |
-  | a member             | the request is refused as forbidden    |
-  | a Safety Officer     | the report is found                    |
-  | an Administrator     | the report is found                    |
+  | who                  | result                                   |
+  | an anonymous visitor | the request is refused as unauthenticated |
+  | a member             | the request is refused as forbidden      |
+  | a Safety Officer     | the report is found                      |
+  | an Administrator     | the report is found                      |
 
 @REQ-MOD-139
 Scenario: The search query text is never logged
@@ -297,4 +297,4 @@ Scenario: Manage reports loads more automatically and offers the same hidden fal
   Then the older reports load without leaving Manage reports
   Given the next report page fails to load
   When the Safety Officer activates the "Load more" action
-  Then the list offers a visible "Retry" action instead of failing silently
+  Then the list offers a visible "Retry" action and does not fail silently

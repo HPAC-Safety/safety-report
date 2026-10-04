@@ -39,7 +39,7 @@ Scenario: An answer on a deleted report still forces a fork
   And a new question is created with a new identifier
 
 @REQ-QB-004
-Scenario: A retired question can never be brought back
+Scenario: A deleted question can never be brought back
   Given a question has been marked deleted
   When anything attempts to restore, revive, or revise it
   Then the attempt is refused
@@ -409,7 +409,7 @@ Scenario: A question key is normalized and cannot be reused
   And a key that reduces to nothing at all is refused
 
 @REQ-QB-062
-Scenario: Retiring a question keeps it and its history
+Scenario: Deleting a question keeps it and its history
   Given an active question nobody has answered
   When an Administrator deletes it
   Then the question is marked deleted rather than erased
@@ -440,7 +440,7 @@ Scenario: An Administrator corrects a reporter-added value
 
 @REQ-QB-076
 @ui
-Scenario: An Administrator authors a question from the question list
+Scenario: An Administrator authors a question from the Manage questions page
   Given an Administrator opens the manage-questions page
   When they add a paragraph-text question in both official languages
   Then the new question appears in the list with its type and version
@@ -478,7 +478,7 @@ Scenario: Questions are reordered from the keyboard
 
 @REQ-QB-081
 @ui
-Scenario: Editing an unanswered question from the question list shows its new version
+Scenario: Editing an unanswered question from the Manage questions page shows its new version
   Given an Administrator opens the manage-questions page
   And the first question has never been answered
   When they edit its English wording and save
@@ -581,7 +581,7 @@ Scenario: A new question's key is derived from its English wording and never reu
   When they save another question with the same English wording
   Then it receives a different key
   When they delete the first question and save a third with the same wording
-  Then the third question does not take the retired question's key
+  Then the third question does not take the deleted question's key
 
 @REQ-QB-093
 @ui

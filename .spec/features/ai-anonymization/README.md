@@ -99,7 +99,7 @@ generic phrase, never with an invented name and never with a word such as
 | Another person | the role the report supports — the instructor, the passenger, a witness, another pilot, the reporter | l'instructeur, le passager, un témoin, un autre pilote, le déclarant |
 | A person with no clear role | a person | une personne |
 | A launch site | the launch site | le site de décollage |
-| A landing zone | "the landing field" | "le champ d'atterrissage" |
+| A landing field | the landing field | le champ d'atterrissage |
 | Any other place | the location | le lieu |
 | An exact date | its month or season | son mois ou sa saison |
 | A time of day | kept as reported | conservée telle quelle |

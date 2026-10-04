@@ -377,7 +377,7 @@ refused future date gets `400` naming the question by its key, never the
 value, before anything is written. `GET /api/v1/questions/` carries each
 question's `allowFutureDates` so the form can apply the same rule.
 
-**On a desktop** (a fine pointer), the question is a text box that takes
+**On a desktop** (a fine pointer), the question is a text input that takes
 `yyyy-mm-dd` only, and says so to assistive technology even when the question
 has a placeholder of its own. Clicking or focusing it opens a calendar popover under it:
 
@@ -392,7 +392,7 @@ has a placeholder of its own. Clicking or focusing it opens a calendar popover u
 - month and weekday names follow the reader's language, and the week starts
   on Sunday in English and Monday in French. Every button and picker is
   labelled from the locale catalogues;
-- the popover is a labelled dialog, and the text box is the combobox that
+- the popover is a labelled dialog, and the question is the combobox that
   controls it: `role="combobox"`, `aria-haspopup="dialog"`, `aria-expanded`,
   and `aria-controls`, the WAI-ARIA 1.2 date-picker combobox pattern
   (`REQ-SUB-131`). A press on the popover's background does not take focus
@@ -452,7 +452,7 @@ or sent to the summarization model.
 ## Idempotency
 
 The first target version does not add a durable idempotency subsystem. If
-production data shows duplicate reports are material, an idempotency key
+production evidence shows duplicate reports are material, an idempotency key
 can be added as a focused change.
 
 ## Authentication, and what is not recorded

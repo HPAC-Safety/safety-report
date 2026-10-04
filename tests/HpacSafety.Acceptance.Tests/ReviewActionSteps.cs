@@ -497,7 +497,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 
 	// ── REQ-MOD-070: how each language was produced ─────────────────────────
 
-	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of a summary pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
+	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of the Worker's summary pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
 	public void GivenASituation(string situation)
 	{
 		_situation = situation;
@@ -515,7 +515,7 @@ public sealed partial class ReviewActionSteps(SeededReport seeded) : IDisposable
 		{
 			case "the Worker produced the pair":
 				break;
-			case "a reviewer edited only the English text of a summary pair":
+			case "a reviewer edited only the English text of the Worker's summary pair":
 				_sourcesReport.EditSummary("The pilot landed firmly.", _sourcesReport.Summary!.AiSummaryFr, "subject-officer", at);
 				break;
 			case "a reviewer edited the English text and accepted its French translation":

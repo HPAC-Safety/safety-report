@@ -59,7 +59,7 @@ public sealed class QuestionKeyEndpointSteps
 		await Save();
 	}
 
-	[Then(@"the third question does not take the retired question's key")]
+	[Then(@"the third question does not take the deleted question's key")]
 	public void ThenTheRetiredKeyIsNotReused()
 	{
 		Key(2).ShouldNotBe(Key(0));

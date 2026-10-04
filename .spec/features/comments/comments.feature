@@ -77,7 +77,7 @@ Scenario: An author's deleted comment disappears but is not erased
   Given a member commented on a published report
   When the member deletes the comment
   Then the comment is no longer listed and the report's comment count drops by one
-  And the comment and its revisions are deleted, not removed from the database
+  And the comment and its revisions are deleted, not erased
 
 @REQ-COM-010
 Scenario Outline: Nobody may change another member's comment

@@ -378,7 +378,7 @@ Scenario Outline: Each summary language records how it was produced
 Examples:
   | situation                                                                     | english   | french    |
   | the Worker produced the pair                                                  | generated | generated |
-  | a reviewer edited only the English text of a summary pair                     | human     | generated |
+  | a reviewer edited only the English text of the Worker's summary pair          | human     | generated |
   | a reviewer edited the English text and accepted its French translation        | human     | machine   |
   | a reviewer wrote both texts by hand after summarization failed                | human     | human     |
   | a reviewer wrote the French text by hand and accepted its English translation | machine   | human     |

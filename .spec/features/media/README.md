@@ -139,7 +139,7 @@ filed before it existed has no answer and shows no media.
 A published report also offers its validated documents (REQ-MED-037 to
 REQ-MED-042,
 [ADR-0119](../../decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
-`public_report_media` lists a live, unhidden document with no processing error
+`public_report_media` lists a document that is neither deleted nor hidden, with no processing error
 once the Worker has recorded it validated (`validated_at`), on a report whose
 `consent_documents` is yes. The report page lists its opaque id, the kind
 `document`, and a coarse format, nothing more.
@@ -241,7 +241,7 @@ for the full record.
 ## Private attachments (#507)
 
 A reviewer may add files to a report that are for
-staff only: a coroner's report, a police report, an investigation file
+staff only: a coroner's report, a police report, an investigation archive
 ([ADR-0135](../../decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 They are not the reporter's attachments, and none of the rules above about
 formats, sniffing, derivatives, consent, or publication applies to them.

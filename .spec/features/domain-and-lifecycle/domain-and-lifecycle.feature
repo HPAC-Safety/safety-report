@@ -100,7 +100,7 @@ Scenario: A report without publication consent is never summarized
 Scenario: Deletion removes a report from every normal path
   Given a report exists in any lifecycle state
   When a Safety Officer deletes it
-  Then one application transaction marks the report and all owned and dependent rows deleted at the same time: answers, summary, files, and report outbox items
+  Then one application transaction marks the report and all its owned and dependent rows deleted with one deletion time: answers, summary, files, and report outbox items
   And an immutable audit entry is recorded
   And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
   And public and normal admin queries hide the report immediately
@@ -114,8 +114,8 @@ Scenario: A question revision can be deleted only when unreferenced
   And once any answer references a revision, that revision is never deletable again
 
 @REQ-DOM-009
-Scenario: Deleting a question has no way back
-  Given a question is retired, either by an Administrator or by being replaced through an edit
+Scenario: Retiring a question is a deletion with no way back
+  Given a question is deleted by an Administrator, or retired by being replaced through an edit
   When the deletion is committed
   Then the question keeps its row, marked deleted
   And its revisions, choices, and every answer given to it are untouched
@@ -359,5 +359,5 @@ Scenario: A migration that must change a locked column disables the trigger insi
   Given a submitted report with answers, a file, and a summary
   When a migration disables the reports trigger, sets language = 'fr-CA', and enables it again in one transaction
   Then the write succeeds
-  And the report's language is fr-CA
+  And the report's language is French
   And a later statement setting language = 'en-CA' on a reports row is refused, naming reports.language

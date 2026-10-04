@@ -13,8 +13,8 @@ that doesn't fit Gherkin.
 
 ## The type-ahead question
 
-A type-ahead question looks like the form's other pickers: one box, whose
-list opens directly beneath it, as wide as the box and drawn in the form's
+A type-ahead question looks like the form's other pickers: one question, whose
+list opens directly beneath it, as wide as the question and drawn in the form's
 own surface, font, border, and focus ring. The form draws that list itself;
 the browser's own suggestion list (`<datalist>`) is not used, so it looks the
 same in every browser (`REQ-QB-159`,
@@ -75,13 +75,13 @@ as a place to type, not a picker to choose from
 ## The single-select and multi-select questions
 
 A single-select and a multi-select look and feel like the type-ahead: the
-same box style and list, drawn by the form, with the same rows, separators,
+same question style and list, drawn by the form, with the same rows, separators,
 and highlighted row. Unlike the type-ahead, each keeps a caret and shows its
 full list as soon as it opens — the threshold and hint above are the
 type-ahead's alone. Each keeps its own input type
 ([ADR-0150](../../decisions/ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md)).
 
-- **Single-select.** A box with a caret shows the chosen choice, or "Choose
+- **Single-select.** A question with a caret shows the chosen choice, or "Choose
   one". It is not the browser's `<select>` (`REQ-QB-208`). It follows the
   WAI-ARIA 1.2 select-only combobox pattern:
   - **Opening.** Clicking it, Enter, Space, the down arrow, or Alt and the

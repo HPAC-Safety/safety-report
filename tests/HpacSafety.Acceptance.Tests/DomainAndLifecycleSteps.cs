@@ -74,7 +74,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"one application transaction marks the report and all owned and dependent rows deleted at the same time: answers, summary, files, and report outbox items")]
+	[Then(@"one application transaction marks the report and all its owned and dependent rows deleted with one deletion time: answers, summary, files, and report outbox items")]
 	public async Task ThenOneTransactionStampsEveryOwnedRow()
 	{
 		var host = await BootedApi.Factory();
@@ -144,7 +144,7 @@ public sealed class DomainAndLifecycleSteps
 		await Task.CompletedTask;
 	}
 
-	[Given(@"a question is retired, either by an Administrator or by being replaced through an edit")]
+	[Given(@"a question is deleted by an Administrator, or retired by being replaced through an edit")]
 	public async Task GivenAQuestionIsRetired()
 	{
 		var client = await BootedApi.SignedInAs(MemberRole.Administrator);

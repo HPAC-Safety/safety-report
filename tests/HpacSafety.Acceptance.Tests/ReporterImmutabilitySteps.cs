@@ -134,7 +134,7 @@ public sealed class ReporterImmutabilitySteps
 		(await Fingerprint()).ShouldNotBe(_fingerprint);
 	}
 
-	[Then(@"the report's language is fr-CA")]
+	[Then(@"the report's language is French")]
 	public async Task ThenTheReportsLanguageIsFrCa()
 	{
 		(await Scalar("SELECT language FROM reports WHERE id = @id", _reportId)).ShouldBe("fr-CA");

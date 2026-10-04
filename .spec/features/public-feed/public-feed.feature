@@ -222,12 +222,12 @@ Scenario: Opening the public feed afresh starts at its top and loads its first p
 Scenario Outline: The public feed's "Load more" fallback becomes visible once reached
   Given the public feed has more published reports than fit on one page
   And a visitor has the feed open
-  When the visitor reaches the "Load more" action with the <key> key
+  When the visitor reaches the "Load more" action with <key>
   Then it becomes visible
 
 Examples:
-  | key |
-  | Tab |
+  | key         |
+  | the Tab key |
 
 @REQ-PUB-023
 @ui
@@ -241,13 +241,13 @@ Scenario: The public feed's "Load more" fallback is not visible until it is need
 Scenario Outline: Activating the public feed's "Load more" fallback loads the older reports and announces them
   Given the public feed has more published reports than fit on one page
   And a visitor has reached the feed's "Load more" action
-  When the visitor activates it with the <key> key
+  When the visitor activates it with <key>
   Then the older reports load
   And a screen reader is told how many more reports loaded
 
 Examples:
-  | key   |
-  | Enter |
+  | key           |
+  | the Enter key |
 
 @REQ-MOD-127
 @ui

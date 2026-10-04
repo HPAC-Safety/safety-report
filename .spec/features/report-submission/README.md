@@ -406,7 +406,7 @@ has a placeholder of its own. Clicking or focusing it opens a calendar popover u
   month (`REQ-SUB-104`), Enter chooses the focused day (`REQ-SUB-148`), and
   Escape closes it and returns focus to the question (`REQ-SUB-149`). Each of
   these is a Scenario Outline whose Examples name the key, one row per key;
-  the steps say only that the reporter uses it.
+  the steps say only that the reporter uses it, and the cell names it as "the Escape key".
 
 Typed text that is not a real `yyyy-mm-dd` date, or a future date where the
 question does not allow one, shows an inline message in the reader's language

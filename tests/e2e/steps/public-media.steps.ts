@@ -3,6 +3,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page, type Route } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
+import { keyPress } from "./keys"
 import { mediaConsentFormQuestions, stubCurrentQuestions } from "./report-form-fixture"
 import { present } from "./present"
 
@@ -622,17 +623,17 @@ Given(/^a visitor has the (first|second) image open in the lightbox$/, async ({ 
 	await expect(page.getByRole("img", { name: `Photo ${POSITION[which]} of 2` })).toBeVisible()
 })
 
-When("the visitor uses the {word} key", async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the visitor uses (the .+ key)$/, async ({ page }, key: string) => {
+	await page.keyboard.press(keyPress(key))
 })
 
 Then(/^the lightbox shows the (first|second) image$/, async ({ page }, which: string) => {
 	await expect(page.getByRole("img", { name: `Photo ${POSITION[which]} of 2` })).toBeVisible()
 })
 
-When("the visitor moves on through the lightbox several times with the {word} key", async ({ page }, key: string) => {
+When(/^the visitor moves on through the lightbox several times with (the .+ key)$/, async ({ page }, key: string) => {
 	for (let index = 0; index < 6; index += 1) {
-		await page.keyboard.press(key)
+		await page.keyboard.press(keyPress(key))
 	}
 })
 
@@ -640,8 +641,8 @@ Then("focus never leaves the lightbox while it is open", async ({ page }) => {
 	await expect(lightbox(page).locator(":focus")).toHaveCount(1)
 })
 
-When("the visitor closes the lightbox with the {word} key", async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the visitor closes the lightbox with (the .+ key)$/, async ({ page }, key: string) => {
+	await page.keyboard.press(keyPress(key))
 })
 
 Then("focus returns to the first image's thumbnail", async ({ page }) => {

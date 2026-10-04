@@ -1,6 +1,7 @@
 import { createBdd } from "playwright-bdd"
 import { expect, type Page } from "@playwright/test"
 import { signInAs, stubAuth, type Role } from "./auth"
+import { keyPress } from "./keys"
 
 const { Given, When, Then } = createBdd()
 
@@ -374,8 +375,8 @@ When("a keyboard visitor tabs to the {string} action", async ({ page }, name: st
 	await tabToButton(page, name)
 })
 
-When("the visitor reaches the {string} action with the {word} key", async ({ page }, name: string, key: string) => {
-	await tabToButton(page, name, key)
+When(/^the visitor reaches the "(.*)" action with (the .+ key)$/, async ({ page }, name: string, key: string) => {
+	await tabToButton(page, name, keyPress(key))
 })
 
 Then("it becomes visible", async ({ page }) => {
@@ -386,8 +387,8 @@ When("that visitor activates it", async ({ page }) => {
 	await page.keyboard.press("Enter")
 })
 
-When("the visitor activates it with the {word} key", async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the visitor activates it with (the .+ key)$/, async ({ page }, key: string) => {
+	await page.keyboard.press(keyPress(key))
 })
 
 Then("the older reports load", async ({ page }) => {

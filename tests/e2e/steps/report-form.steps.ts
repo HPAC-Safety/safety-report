@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Locator, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
+import { keyPresses } from "./keys"
 import {
 	choiceFormQuestions,
 	dateTimeFormQuestions,
@@ -651,9 +652,8 @@ Then("the picker stays open with both choices checked", async ({ page }) => {
 	await expect(page.getByRole("checkbox", { name: "Thermic" })).not.toBeChecked()
 })
 
-// A key named in an Examples cell (CONV-004): the step says which key, never how.
-When(/^the reporter uses the (\w+) key$/, async ({ page }, key: string) => {
-	await page.keyboard.press(key)
+When(/^the reporter uses (the .+ keys?(?: twice)?)$/, async ({ page }, keys: string) => {
+	for (const key of keyPresses(keys)) await page.keyboard.press(key)
 })
 
 Then("the picker closes, returns focus to itself, and names both choices", async ({ page }) => {
@@ -1344,20 +1344,6 @@ Then("{string} is checked, and the list stays open", async ({ page }, label: str
 	await expect(page.getByRole("checkbox", { name: label })).toBeChecked()
 	await expect(page.getByRole("main").locator('[id$="-options"]')).toBeVisible()
 })
-
-/*
- * Keys are named only in a scenario's Examples cells (#815): "the Enter key",
- * "the down arrow key twice", "the Alt and down arrow keys", "the m key".
- */
-const KEY_NAMES: Record<string, string> = { "down arrow": "ArrowDown", "up arrow": "ArrowUp", "Alt and down arrow": "Alt+ArrowDown" }
-
-/** The key presses an Examples cell names, in order. */
-function keyPresses(cell: string): string[] {
-	const named = /^the (.+?) keys?( twice)?$/.exec(cell)
-	if (!named) throw new Error(`Unknown keys: ${cell}`)
-	const key = KEY_NAMES[named[1]] ?? named[1]
-	return named[2] ? [key, key] : [key]
-}
 
 When(/^they use (.+) in the question$/, async ({ page }, keys: string) => {
 	for (const key of keyPresses(keys)) await page.keyboard.press(key)

@@ -369,38 +369,38 @@ Scenario: A reviewer reading the public report page is offered to hide a file
 Scenario Outline: The lightbox steps between its images by arrow key, and wraps at either end
   Given a published report shows two images
   And a visitor has the <from> image open in the lightbox
-  When the visitor uses the <key> key
+  When the visitor uses <key>
   Then the lightbox shows the <to> image
 
 Examples:
-  | from   | key        | to     |
-  | first  | ArrowRight | second |
-  | second | ArrowRight | first  |
-  | first  | ArrowLeft  | second |
+  | from   | key                 | to     |
+  | first  | the right arrow key | second |
+  | second | the right arrow key | first  |
+  | first  | the left arrow key  | second |
 
 @REQ-MED-067
 @ui
 Scenario Outline: The open lightbox keeps focus inside it
   Given a published report shows two images
   And a visitor has the first image open in the lightbox
-  When the visitor moves on through the lightbox several times with the <key> key
+  When the visitor moves on through the lightbox several times with <key>
   Then focus never leaves the lightbox while it is open
 
 Examples:
-  | key |
-  | Tab |
+  | key         |
+  | the Tab key |
 
 @REQ-MED-068
 @ui
 Scenario Outline: Closing the lightbox returns focus to the thumbnail that opened it
   Given a published report shows two images
   And a visitor has the first image open in the lightbox
-  When the visitor closes the lightbox with the <key> key
+  When the visitor closes the lightbox with <key>
   Then focus returns to the first image's thumbnail
 
 Examples:
-  | key    |
-  | Escape |
+  | key            |
+  | the Escape key |
 
 @REQ-MED-057
 @ui

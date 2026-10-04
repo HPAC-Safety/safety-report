@@ -493,7 +493,7 @@ Scenario: The holder's own reports sit at the top of the first page of the feed,
 Scenario: The holder's own reports are not repeated among the later pages of the feed
   Given the public feed has more published reports than fit on one page
   And a browser holds receipts for two of its own reports that are not published
-  And the visitor has View safety reports open
+  And the visitor has View safety reports open, showing their two own reports
   When the visitor loads the later pages of the feed
   Then the own reports are still listed once, above the first page, and not among the later pages
 

@@ -131,7 +131,7 @@ public sealed class PublicSearchSteps
 	}
 
 	[Given(@"a published report carrying a comment that is later deleted")]
-	public async Task GivenAnotherPublishedReportWithADeletedComment()
+	public async Task GivenAPublishedReportWithADeletedComment()
 	{
 		var reportId = await BootedReports.Seed(ReportStatus.Published, true);
 		_reportIdsByLabel["deleted-report"] = reportId;

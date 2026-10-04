@@ -301,7 +301,7 @@ holding only refused files has nothing to lose and does not warn (#658, #674;
 a general leave-warning for every form is issue #659, not built here). Any
 reviewer may download any added attachment, or remove one after confirming
 (REQ-MOD-115, REQ-MOD-117, REQ-MOD-173..177, REQ-MOD-180..181,
-REQ-MED-071..083). A note may refer to one on its own report only, and an edit
+REQ-MED-071..082). A note may refer to one on its own report only, and an edit
 that drops the reference keeps it in the note's history (REQ-MOD-114,
 REQ-MOD-116, REQ-MED-070).
 

@@ -94,7 +94,7 @@ When("the visitor opens View safety reports", async ({ page }) => {
 
 // --- REQ-PUB-031: the own reports are not repeated among the later pages ---
 
-Given("the visitor has View safety reports open", async ({ page }) => {
+Given("the visitor has View safety reports open, showing their two own reports", async ({ page }) => {
 	await page.goto("/reports")
 	await expect(page.getByRole("list", { name: "Your reports" }).getByRole("listitem")).toHaveCount(2)
 })

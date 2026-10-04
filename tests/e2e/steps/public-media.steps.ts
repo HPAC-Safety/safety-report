@@ -241,7 +241,7 @@ Given("a visitor is reading a published report that shows an image and a video",
 })
 
 Given(
-	"a visitor has the image of a published report that shows an image and a video open in the lightbox",
+	"a visitor has a published report's image open in the lightbox, with a video after it",
 	async ({ page }) => {
 		await stubReport(page, [IMAGE, VIDEO])
 		await page.goto(`/reports/${REPORT.id}`)
@@ -605,7 +605,7 @@ Then("the hidden {word} reads as hidden from the public and offers to show it", 
 	await expect(page.locator('[data-visibility="public"]')).toHaveCount(2)
 })
 
-// --- REQ-MED-056: the lightbox wraps, is keyboard-operable, and traps and returns focus ---
+// --- REQ-MED-056/067/068: the lightbox wraps by arrow key, keeps focus inside, and returns it ---
 
 Given("a published report shows two images", async ({ page }) => {
 	const first = { id: "imageaaaaa1", kind: "image", format: null }

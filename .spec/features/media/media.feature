@@ -331,7 +331,7 @@ Scenario: Activating a thumbnail opens the lightbox with a generic label
 @REQ-MED-065
 @ui
 Scenario: The lightbox moves on to a video, playable with its controls and audio
-  Given a visitor has the image of a published report that shows an image and a video open in the lightbox
+  Given a visitor has a published report's image open in the lightbox, with a video after it
   When the visitor moves to the next item in the lightbox
   Then the lightbox shows the video, playable with its controls and audio, labelled "Video 1 of 1"
 
@@ -758,11 +758,16 @@ Examples:
 
 @REQ-MED-075
 @ui
-Scenario: Several staged private attachments are added together, each with its own description
+Scenario Outline: Several staged private attachments are added together, each with its own description
   Given a Safety Officer is on the admin site and a pending report exists
-  And the Safety Officer has staged "site-photo.jpg" described as "Taken at the site" and "weather-log.pdf" described as "Environment Canada log" on that report
+  And the Safety Officer has <staged> "site-photo.jpg" described as "Taken at the site" and "weather-log.pdf" described as "Environment Canada log" on that report
   When the Safety Officer adds the staged private attachments
   Then the private attachments section lists "site-photo.jpg" and "weather-log.pdf", each with its own description
+
+Examples:
+  | staged                       |
+  | dropped                      |
+  | chosen, through the picker,  |
 
 @REQ-MOD-174
 @ui
@@ -874,11 +879,3 @@ Scenario: Leaving the report page with only refused private attachments staged d
   And the Safety Officer has dropped only a private attachment larger than the private cap on that report, its row refused
   When the Safety Officer reloads the report page
   Then the page reloads without warning, and the refused row is gone
-
-@REQ-MED-083
-@ui
-Scenario: A private attachment larger than the private cap is refused on its row
-  Given a Safety Officer is on the admin site and a pending report exists
-  And the Safety Officer has that report open
-  When the Safety Officer drops only a private attachment larger than the private cap
-  Then the too-large attachment's staged row states the private cap and cannot be added

@@ -9,7 +9,7 @@ const { Given, When, Then } = createBdd()
  * its staging area (issue #658: drop or choose several files, each uploads on
  * staging, its own description, "Add N attachments"), and a private note that
  * refers to an already-added attachment (REQ-MOD-115..117, REQ-MOD-173..177,
- * REQ-MOD-180..181, REQ-MED-071..083, ADR-0135).
+ * REQ-MOD-180..181, REQ-MED-071..082, ADR-0135).
  *
  * The private-attachment endpoints, and the storage URLs they hand out, are
  * stubbed at the network boundary and keep their files in memory, so what is
@@ -330,7 +330,7 @@ Given("the report carries the private attachment {string}", async ({ page }, fil
 	})
 })
 
-// --- Staging one file (REQ-MOD-115, REQ-MOD-117) ---
+// --- Staging one file (REQ-MOD-115, REQ-MOD-117, REQ-MED-071..074) ---
 
 When("the Safety Officer stages the private attachment {string}", async ({ page }, fileName: string) => {
 	await stage(page, fileName)
@@ -431,7 +431,7 @@ Then("the cancelled upload is erased", async ({ page }) => {
 	await expect.poll(() => present(erasedByPage.get(page)).length).toBe(1)
 })
 
-// --- Several files staged at once (REQ-MOD-173, REQ-MOD-174) ---
+// --- Several files staged at once (REQ-MOD-173, REQ-MOD-174, REQ-MED-075, REQ-MED-076) ---
 
 /** Builds a DataTransfer carrying synthetic files in the page, as a real drag would. */
 async function filesTransfer(page: Page, names: string[]) {
@@ -451,17 +451,22 @@ async function dropOnZone(page: Page, ...names: string[]) {
 When(
 	/^the Safety Officer (drops|chooses, through the picker,) the private attachments "([^"]+)" and "([^"]+)" at once$/,
 	async ({ page }, method: string, first: string, second: string) => {
-		if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
-		if (method === "drops") {
-			await dropOnZone(page, first, second)
-		} else {
-			await section(page).getByLabel("Add a private attachment").setInputFiles([
-				{ name: first, mimeType: "application/octet-stream", buffer: Buffer.from(`synthetic ${first}`) },
-				{ name: second, mimeType: "application/octet-stream", buffer: Buffer.from(`synthetic ${second}`) },
-			])
-		}
+		await stageTwo(page, method === "drops", first, second)
 	},
 )
+
+/** Stages two files at once, dropped on the zone or chosen through the picker. */
+async function stageTwo(page: Page, dropped: boolean, first: string, second: string) {
+	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+	if (dropped) {
+		await dropOnZone(page, first, second)
+	} else {
+		await section(page).getByLabel("Add a private attachment").setInputFiles([
+			{ name: first, mimeType: "application/octet-stream", buffer: Buffer.from(`synthetic ${first}`) },
+			{ name: second, mimeType: "application/octet-stream", buffer: Buffer.from(`synthetic ${second}`) },
+		])
+	}
+}
 
 async function expectBothFinishedUploading(page: Page) {
 	await expect(stagingList(page).getByLabel("Description (optional)")).toHaveCount(2)
@@ -472,17 +477,16 @@ Then("both staged attachments finish uploading independently, each with its own 
 	await expectBothFinishedUploading(page)
 })
 
-async function dropBoth(page: Page, first: string, second: string) {
+async function dropBoth(page: Page, first: string, second: string, dropped = true) {
 	await openThatReport(page)
-	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
-	await dropOnZone(page, first, second)
+	await stageTwo(page, dropped, first, second)
 	await expectBothFinishedUploading(page)
 }
 
 Given(
-	"the Safety Officer has staged {string} described as {string} and {string} described as {string} on that report",
-	async ({ page }, first: string, firstDescription: string, second: string, secondDescription: string) => {
-		await dropBoth(page, first, second)
+	/^the Safety Officer has (dropped|chosen, through the picker,) "([^"]+)" described as "([^"]+)" and "([^"]+)" described as "([^"]+)" on that report$/,
+	async ({ page }, staged: string, first: string, firstDescription: string, second: string, secondDescription: string) => {
+		await dropBoth(page, first, second, staged === "dropped")
 		await stagedRow(page, first).getByLabel("Description (optional)").fill(firstDescription)
 		await stagedRow(page, second).getByLabel("Description (optional)").fill(secondDescription)
 	},
@@ -596,7 +600,7 @@ Then("{string} becomes enabled", async ({ page }, buttonLabel: string) => {
 	await expect(section(page).getByRole("button", { name: buttonLabel })).toBeEnabled()
 })
 
-// --- Leaving with staged, un-added uploads warns (REQ-MOD-177), through the
+// --- Leaving with staged, un-added uploads warns (REQ-MOD-177, REQ-MED-079..081), through the
 // shared useUnsavedChangesGuard (issue 659) rather than this page's own
 // mechanism — see unsaved-changes.steps.ts for the beforeunload and
 // bilingual-dialog steps this scenario reuses. ---
@@ -649,10 +653,6 @@ When("the report finishes accepting the private attachment", ({ page }) => {
 })
 
 // --- Only refused files staged: no leave warning (REQ-MOD-181) ---
-
-When("the Safety Officer drops only a private attachment larger than the private cap", async ({ page }) => {
-	await dropWithOversized(page, false)
-})
 
 Given(
 	"the Safety Officer has dropped only a private attachment larger than the private cap on that report, its row refused",

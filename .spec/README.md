@@ -52,7 +52,7 @@ Each normative constraint carries a `CON-*` ID naming the claims that verify it.
 | [Data and persistence](data-and-persistence.md) | `CON-DP` | 16 | The canonical target records, naming, transactions, constraints, and query DTOs. |
 | [Interfaces and data flow](interfaces-and-data-flow.md) | `CON-IF` | 10 | The canonical HTTP surface, ports, and end-to-end flow of a report through the system. |
 | [Infrastructure and operations](infrastructure-and-operations.md) | `CON-INF` | 20 | The canonical minimal AWS topology, deployment, secrets, backups, and alerting. |
-| [Testing and quality](testing-and-quality.md) | `CON-TQ` | 10 | The canonical test strategy, required contract coverage, and quality gates. |
+| [Testing and quality](testing-and-quality.md) | `CON-TQ` | 12 | The canonical test strategy, required contract coverage, and quality gates. |
 
 ## Decisions
 
@@ -62,6 +62,7 @@ Architecture decision records, newest first. What an ADR is for:
 | ADR | Title | Status | Date |
 |---|---|---|---|
 | [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
+| [0195](decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md) | A built claim counts only when its scenario passed in the run | accepted | 2026-10-03 |
 | [0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md) | A split area keeps every claim ID, and a new claim takes the new area's prefix | accepted | 2026-10-03 |
 | [0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md) | The claims are generated as JSON, a graph fragment, and one slim matrix | superseded | 2026-10-03 |
 | [0192](decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md) | An accepted ADR is immutable, follows one MADR template, and process rules are conventions | accepted | 2026-10-03 |
@@ -309,3 +310,4 @@ first. What a convention is: [`conventions/README.md`](conventions/README.md).
 | Convention | Title | Status | Date |
 |---|---|---|---|
 | [CONV-002](conventions/CONV-002-an-area-past-800-lines-is-split-and-its-scenarios-keep-their-ids.md) | An area past about 800 lines is split, and its scenarios keep their IDs | accepted | 2026-10-03 |
+| [CONV-001](conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md) | A scenario counts only in its own area, and an ignored one names its open issue | accepted | 2026-10-03 |

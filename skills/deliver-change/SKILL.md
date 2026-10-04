@@ -200,6 +200,9 @@ stronger one:
   scenario, not the conversation.
 - The PR body names what changed upstream — scenario, page, boundary — because
   it becomes the squash commit message.
+- A scenario may merge ahead of its implementation, marked not built and
+  naming the open issue that will build it; that issue does not close while
+  the scenario is still unbuilt.
 - `@ignore` and superseded scenarios: see
   [`test-from-scenarios`](../test-from-scenarios/SKILL.md) "Scenarios".
 - Each area's specification page records what **not** to build. A change that
@@ -212,9 +215,13 @@ stronger one:
 
 ### Exemptions from scenario coverage
 
-- A behavior-changing pull request that touches no scenario fails the
-  project's coverage check. An exemption is only for a change that alters no
-  behavior, and cites the claims the change leaves standing.
+- A behavior-changing pull request that changes no scenario fails the
+  project's coverage check. The scenario must belong to an area the changed
+  code serves, and must change in what it says: a whitespace, comment, or
+  unrelated-area edit covers nothing.
+- An exemption is only for a change that alters no behavior, and cites the
+  claims the change leaves standing — claims of the areas the changed code
+  serves.
 - Pick the exemption category from the project's closed list, where the pull
   request template shows it. Never invent one.
 - Run the check locally, not only in CI. When the tool reads its inputs from

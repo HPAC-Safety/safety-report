@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process"
 import { defineConfig, devices } from "@playwright/test"
-import { defineBddConfig } from "playwright-bdd"
+import { cucumberReporter, defineBddConfig } from "playwright-bdd"
 
 // tests/e2e has no dependency on src/web's package.json (a separate npm
 // project, per the repo's per-tool-dir convention — see tools/gherkin), so
@@ -47,7 +47,12 @@ export default defineConfig({
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
-	reporter: "list",
+	// The Cucumber Messages stream is how a built @ui claim is judged: every
+	// scenario's pickle carries its claim tag, and
+	// tools/spec/check-claim-results.ts fails a built claim that did not pass
+	// (ADR-0195). ci.yml's e2e job uploads it; it lands under the repository's
+	// gitignored artifacts/ wherever the suite runs.
+	reporter: [["list"], cucumberReporter("message", { outputFile: "../../artifacts/claims/playwright-bdd.ndjson" })],
 	use: {
 		// Vite's preview server binds the "localhost" hostname, which
 		// resolves to the IPv6 loopback here and refuses IPv4 connections on

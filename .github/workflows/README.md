@@ -12,9 +12,9 @@ Each `run:` step is one command; its logic is a tested script under
 
 | Workflow | Responsibility |
 |---|---|
-| `ci.yml` | Build, tests, coverage, web, localization, skill/agent validation |
+| `ci.yml` | Build, tests, coverage and the claim gate (every built claim passed in its engine, ADR-0195), web, localization, skill/agent validation |
 | `linked-issue.yml` | Check each PR body: a closing issue reference (`linked-issue`), no agent session link (`no-session-link`), and screenshots or a reason for none on a rendered web change (`screenshots`) |
-| `feature-coverage.yml` | Require a scenario for a behavior change, or a citation of the claims it preserves |
+| `feature-coverage.yml` | Require a changed scenario in an area the changed code maps to for a behavior change, or a citation of claims of those areas it preserves; and an open issue for every `@ignore` scenario (CONV-001) |
 | `i18n-translate.yml` | Prepare French application-catalogue changes only, and report each run that calls the provider to open `verify:translation-run` issues (ADR-0103) |
 | `issue-traceability.yml` | Daily and on push to `main`: keep one drift issue open while `docs/issue-traceability.md` differs from what `tools/spec/generate-issue-traceability.ts` would write. Never gates a PR |
 | `traceability.yml` | Commit the regenerated `.spec/claims.json`, `.spec/traceability.md`, and `.spec/README.md` onto a same-repo PR's branch |

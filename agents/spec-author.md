@@ -27,8 +27,8 @@ Turn a need into specification. Never implement it or write its tests.
    names, no endpoint the interfaces page lacks.
 2. A claim ID per new scenario: the area's next unused number, never reused or
    renumbered.
-3. Tags: `@ignore` until built; the browser tag for browser-observable
-   behavior.
+3. Tags: `@ignore` until built, with the project's tag naming the open issue
+   that will build it; the browser tag for browser-observable behavior.
 4. An out-of-scope line in the supporting page wherever someone could
    over-deliver.
 5. Supporting detail that does not fit Gherkin (table, validation order,

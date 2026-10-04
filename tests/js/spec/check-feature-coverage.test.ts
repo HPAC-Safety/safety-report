@@ -2,30 +2,40 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-import { CATEGORIES, declaredClaims, judge, main, parseExemption, rejectExemption } from '../../../tools/spec/check-feature-coverage.ts'
+import { type Change, CATEGORIES, declaredClaims, judge, main, parseExemption, rejectExemption } from '../../../tools/spec/check-feature-coverage.ts'
 import { present } from '../helpers/present.ts'
 
 // The shape .spec/claims.json has, with a constraint and a decision that
 // mention a claim no scenario declares any more.
 const CLAIMS = JSON.stringify({
-	claims: [{ id: 'REQ-SUB-012' }, { id: 'REQ-SUB-013' }, { id: 'REQ-WLD-008' }],
+	claims: [
+		{ id: 'REQ-SUB-012', area: 'report-submission' },
+		{ id: 'REQ-SUB-013', area: 'report-submission' },
+		{ id: 'REQ-WLD-008', area: 'web-localization-and-design' },
+	],
 	constraints: [{ id: 'CON-SO-001', verifiedBy: ['REQ-SUB-013'] }],
 	decisions: [{ id: 'ADR-0001', claims: ['REQ-SUB-099'] }],
 })
 
 const KNOWN = declaredClaims(CLAIMS)
 
+// The areas a change under src/HpacSafety.Api/Reports/ maps to.
+const SUBMISSION: ReadonlySet<string> = new Set(['report-submission'])
+
+/** A change with nothing in it but what a test names; its code maps to report-submission. */
+const change = (fields: Partial<Change> & Pick<Change, 'changed'>): Change => ({ features: [], scenarios: [], areas: SUBMISSION, body: '', knownClaims: KNOWN, ...fields })
+
 const exempt = (category: string, reason: string, claims: string): string =>
 	`## Why\n\nCloses #1\n\nNo .feature scenario needed: ${category} — ${reason}\nClaims preserved: ${claims}\n`
 
 /** Runs `main` with console output captured, restoring it afterwards even on failure. */
-function runMain(input: { changed: string[]; features: string[]; body: string }): { code: number; output: { log: string[]; error: string[] } } {
+function runMain(input: { changed: string[]; features: string[]; body: string; scenarios?: Change['scenarios']; areas?: Change['areas'] }): { code: number; output: { log: string[]; error: string[] } } {
 	const output: { log: string[]; error: string[] } = { log: [], error: [] }
 	const original = { log: console.log, error: console.error }
 	console.log = (...args: unknown[]) => output.log.push(args.join(' '))
 	console.error = (...args: unknown[]) => output.error.push(args.join(' '))
 	try {
-		return { code: main({ claims: CLAIMS, ...input }), output }
+		return { code: main({ claims: CLAIMS, scenarios: [], areas: SUBMISSION, ...input }), output }
 	} finally {
 		console.log = original.log
 		console.error = original.error
@@ -34,7 +44,8 @@ function runMain(input: { changed: string[]; features: string[]; body: string })
 
 describe('declaredClaims', () => {
 	it('reads every claim .spec/claims.json declares, not every ID it mentions', () => {
-		assert.deepEqual([...KNOWN].sort(), ['REQ-SUB-012', 'REQ-SUB-013', 'REQ-WLD-008'])
+		assert.deepEqual([...KNOWN.keys()].sort(), ['REQ-SUB-012', 'REQ-SUB-013', 'REQ-WLD-008'])
+		assert.equal(KNOWN.get('REQ-WLD-008'), 'web-localization-and-design')
 	})
 })
 
@@ -82,7 +93,7 @@ describe('parseExemption', () => {
 
 		assert.equal(exemption.reason, 'lint configuration and type-level fixes only; every handler, guard, request and rendered element behaves and renders exactly as before.')
 		assert.deepEqual(exemption.claims, ['REQ-SUB-013', 'REQ-SUB-053', 'REQ-SUB-054', 'REQ-WLD-032'])
-		assert.deepEqual(rejectExemption(exemption, ['src/web/src/a.ts'], new Set(exemption.claims)), [])
+		assert.deepEqual(rejectExemption(exemption, ['src/web/src/a.ts'], new Map(exemption.claims.map((id) => [id, 'web-localization-and-design']))), [])
 	})
 
 	it('stops a wrapped reason at a blank line, a heading, a list item, or the next directive', () => {
@@ -184,24 +195,54 @@ describe('judge', () => {
 	const body = exempt('refactor', 'extracted the ingest loop, behavior unchanged', 'REQ-SUB-012')
 
 	it('passes a change that touched no behavior-bearing file', () => {
-		assert.equal(judge({ changed: [], features: [], body: '', knownClaims: KNOWN }).ok, true)
+		assert.equal(judge(change({ changed: [], features: [], body: '' })).ok, true)
 	})
 
-	it('passes a behavior change that changed a scenario too', () => {
-		const verdict = judge({ changed: ['src/a.cs'], features: ['.spec/features/media/media.feature'], body: '', knownClaims: KNOWN })
+	it('passes a behavior change that changed a scenario in an area its code maps to', () => {
+		const verdict = judge(change({ changed: ['src/a.cs'], features: ['.spec/features/report-submission/report-submission.feature'], scenarios: [{ id: 'REQ-SUB-012', area: 'report-submission' }] }))
 
 		assert.equal(verdict.ok, true)
+		assert.match(verdict.note, /REQ-SUB-012 \(report-submission\)/)
+	})
+
+	it('fails a behavior change whose only scenario change is in an unrelated area', () => {
+		const verdict = judge(change({ changed: ['src/a.cs'], features: ['.spec/features/media/media.feature'], scenarios: [{ id: 'REQ-MED-001', area: 'media' }] }))
+
+		assert.equal(verdict.ok, false)
+		assert.match(verdict.problems.join('\n'), /REQ-MED-001 \(media\) changed, but the changed code maps to report-submission/)
+	})
+
+	it('fails a behavior change whose feature-file edit changed no scenario text', () => {
+		const verdict = judge(change({ changed: ['src/a.cs'], features: ['.spec/features/report-submission/report-submission.feature'], scenarios: [] }))
+
+		assert.equal(verdict.ok, false)
+		assert.match(verdict.problems.join('\n'), /no scenario's text did \(only whitespace, comments, or feature or Rule descriptions\)/)
+	})
+
+	it('passes when one of several changed scenarios is in a related area', () => {
+		const scenarios = [
+			{ id: 'REQ-MED-001', area: 'media' },
+			{ id: 'REQ-SUB-013', area: 'report-submission' },
+		]
+		assert.equal(judge(change({ changed: ['src/a.cs'], features: ['x.feature'], scenarios })).ok, true)
+	})
+
+	it('fails an exemption citing a claim in an area none of the changed files maps to', () => {
+		const verdict = judge(change({ changed: ['src/a.cs'], body: exempt('refactor', 'extracted the ingest loop, behavior unchanged', 'REQ-SUB-012, REQ-WLD-008') }))
+
+		assert.equal(verdict.ok, false)
+		assert.match(verdict.problems.join('\n'), /REQ-WLD-008 belongs to web-localization-and-design, which none of the changed files maps to \(report-submission\)/)
 	})
 
 	it('fails a behavior change with no scenario and no exemption', () => {
-		const verdict = judge({ changed: ['src/a.cs'], features: [], body: '## What changed\n', knownClaims: KNOWN })
+		const verdict = judge(change({ changed: ['src/a.cs'], features: [], body: '## What changed\n' }))
 
 		assert.equal(verdict.ok, false)
 		assert.deepEqual(verdict.problems, [])
 	})
 
 	it('passes a behavior change whose exemption cites real claims', () => {
-		const verdict = judge({ changed: ['src/a.cs'], features: [], body, knownClaims: KNOWN })
+		const verdict = judge(change({ changed: ['src/a.cs'], features: [], body }))
 
 		assert.equal(verdict.ok, true)
 		assert.match(verdict.note, /preserving REQ-SUB-012/)
@@ -209,27 +250,27 @@ describe('judge', () => {
 
 	it('passes a manifest-only diff with no exemption line at all', () => {
 		const changed = ['src/HpacSafety.Api/HpacSafety.Api.csproj', 'Directory.Packages.props', 'src/web/package-lock.json', 'src/HpacSafety.Worker/Dockerfile']
-		const verdict = judge({ changed, features: [], body: '', knownClaims: KNOWN })
+		const verdict = judge(change({ changed, features: [], body: '' }))
 
 		assert.equal(verdict.ok, true)
 		assert.match(verdict.note, /Dependency manifests only/)
 	})
 
 	it('passes a single manifest-only diff with no exemption line', () => {
-		const verdict = judge({ changed: ['src/web/package-lock.json'], features: [], body: '', knownClaims: KNOWN })
+		const verdict = judge(change({ changed: ['src/web/package-lock.json'], features: [], body: '' }))
 
 		assert.equal(verdict.ok, true)
 		assert.match(verdict.note, /Dependency manifest only/)
 	})
 
 	it('still fails a mixed diff with no exemption', () => {
-		const verdict = judge({ changed: ['src/web/package-lock.json', 'src/a.cs'], features: [], body: '', knownClaims: KNOWN })
+		const verdict = judge(change({ changed: ['src/web/package-lock.json', 'src/a.cs'], features: [], body: '' }))
 
 		assert.equal(verdict.ok, false)
 	})
 
 	it('still requires a well-formed exemption for a mixed diff, unaffected by the manifest carve-out', () => {
-		const verdict = judge({ changed: ['src/web/package-lock.json', 'src/a.cs'], features: [], body, knownClaims: KNOWN })
+		const verdict = judge(change({ changed: ['src/web/package-lock.json', 'src/a.cs'], features: [], body }))
 
 		assert.equal(verdict.ok, true)
 		assert.match(verdict.note, /preserving REQ-SUB-012/)

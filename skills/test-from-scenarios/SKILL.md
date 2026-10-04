@@ -37,9 +37,15 @@ its tests must cover, and wins where they differ.
 ### `@ignore`
 
 - **`@ignore` means "not built yet", never "no longer true."**
+- A scenario may lead its code: it merges `@ignore`, naming the open issue
+  that will build it, and that issue does not close while the scenario is
+  still `@ignore`.
 - Implementing a scenario means writing its step definitions and removing
   `@ignore` in the same pull request. Never leave a scenario un-ignored and
   unimplemented.
+- **A built scenario counts only when it passes in a run.** One that fails,
+  is skipped at run time, or never runs — filtered out, or in a suite nobody
+  runs — is not covered, whatever its tags say.
 - **A decision that supersedes a scenario deletes it**, in the pull request
   that records the decision. Parking it behind `@ignore` leaves the repository
   stating something false — a feature file contradicting an accepted

@@ -74,7 +74,7 @@
 				"rule": { "type": ["string", "null"] },
 				"tags": { "type": "array", "items": { "type": "string", "pattern": "^@" } },
 				"engine": { "$ref": "#/$defs/engine" },
-				"status": { "enum": ["Covered", "Planned"] },
+				"status": { "enum": ["Built", "Planned"] },
 				"steps": {
 					"type": "array",
 					"items": {

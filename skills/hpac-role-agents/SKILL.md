@@ -30,7 +30,9 @@ roles and why each trusts only the artifact before it:
 - Specification-driven development, a superseded scenario deleted, and never
   editing a scenario to match the code:
   [ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md).
-- Browser tag: `@ui`. Not built yet: `@ignore`.
+- Browser tag: `@ui`. Not built yet: `@ignore @issue-<N>`, naming the open
+  issue that will build it
+  ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
 - Every example and fixture is synthetic: never real report content.
 - Model and effort, declared in each agent's frontmatter
   ([ADR-0182](../../.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)):
@@ -76,8 +78,10 @@ roles and why each trusts only the artifact before it:
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md).
 - Start from the claim's entry in
   [`.spec/claims.json`](../../.spec/claims.json): its steps with no `files` are
-  the definitions to write. Remove `@ignore` once the entry says
-  `"staleIgnore": true` and the scenario passes.
+  the definitions to write. Remove `@ignore` and its `@issue-<N>` once the
+  entry says `"staleIgnore": true` and the scenario passes; from then on CI
+  fails the claim unless it passes in every run
+  ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
 - Test code is C# or TypeScript.
 - Synthetic fixtures: people, locations, reports, attachments.
 - The required phrases in model output are the role phrases.

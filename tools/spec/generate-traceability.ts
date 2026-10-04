@@ -57,7 +57,7 @@ export interface ClaimRecord {
 	rule: string | null
 	tags: string[]
 	engine: 'playwright-bdd' | 'Reqnroll'
-	status: 'Planned' | 'Covered'
+	status: 'Planned' | 'Built'
 	steps: ClaimStep[]
 	stepFiles: string[]
 	/** `@ignore`, yet every step is already bound. */
@@ -182,8 +182,11 @@ export function render(data: Pick<ClaimsData, 'claims' | 'constraints'>): string
 		'> ([ADR-0193](decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).',
 		'> The same data with every step, binding, and citation is [`claims.json`](claims.json).',
 		'',
-		'A `Planned` claim is still `@ignore`. Reqnroll runs a claim without `@ui`;',
-		'playwright-bdd runs one with it.',
+		'A `Planned` claim is still `@ignore`; a `Built` one is not, and CI fails it',
+		'unless its scenario passes in the run. Each run\'s result per claim is in the',
+		'`coverage` job\'s summary, not here',
+		'([ADR-0195](decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).',
+		'Reqnroll runs a claim without `@ui`; playwright-bdd runs one with it.',
 		'',
 		'## Claims',
 		'',
@@ -277,7 +280,7 @@ export function build(root = ROOT): Build {
 	}
 
 	const gaps = resolution.claims
-		.filter((claim) => claim.status === 'Covered')
+		.filter((claim) => claim.status === 'Built')
 		.flatMap((claim) => claim.unbound.map((step) => ({ id: claim.id, file: claim.path, line: step.line, engine: claim.engine, step: `${step.keyword} ${step.text}` })))
 	return { data, json: serialize(data), matrix: render(data), problems, gaps, lines: new Map(resolution.claims.map((claim) => [claim.id, claim.line])) }
 }

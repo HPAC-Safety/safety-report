@@ -59,10 +59,12 @@ need (issue)
 
 ### The `feature-coverage` exemption
 
-A behavior change touching no scenario fails `feature-coverage`. An exemption
+A behavior change that changes no scenario in an area its code maps to fails
+`feature-coverage`; a whitespace or comment edit changes none. An exemption
 **cites the claims the change leaves standing** — a closed category, a real
-reason, and claim IDs that exist in the matrix
-([ADR-0090](.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)):
+reason, and claim IDs of the areas the changed files map to
+([ADR-0090](.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md),
+[CONV-001](.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)):
 
 ```
 No .feature scenario needed: refactor — extracted the ingest loop; the endpoint
@@ -122,6 +124,14 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
   The specification is the authority: a built claim with a step no definition
   matches fails `docs`
   ([ADR-0184](.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
+- **A built claim counts only when its scenario passed in the run.** The
+  required `coverage` job fails a claim not tagged `@ignore` whose scenario
+  failed, was skipped, or never ran in its engine
+  ([ADR-0195](.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
+- **A scenario may lead its code**, tagged `@ignore` with one `@issue-<N>`
+  naming the open issue that will build it; every behavior-bearing path maps
+  to a feature area in `.spec/area-paths.json`
+  ([CONV-001](.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
 
 ### Role agents
 

@@ -1,6 +1,6 @@
 ---
 title: A plan meets the critic and a change meets the adversary
-description: A plan is challenged by the critic, one pass and at most one recheck, before it is final; a change is attacked by the adversary at contract boundaries, after repeated test failures, and before any pull request or merge; the hook only reminds.
+description: A plan is challenged by the critic, one pass and at most one recheck, before it is final; a change is attacked by the adversary at contract boundaries, after repeated test failures, and before any pull request or merge; the hook only reminds; the auditor runs on demand, never per change, and only reports.
 type: convention
 status: accepted
 date: 2026-10-04
@@ -28,13 +28,19 @@ date: 2026-10-04
   - It is read-only and reports one line per finding:
     `path:line, severity, problem, fix`. The author fixes; the adversary never
     does.
+- **The auditor runs on demand, never per change.** It audits the whole
+  repository at rest for drift no single diff caught, is read-only, reports in
+  the adversary's finding format, and files nothing; the owner decides which
+  findings become issues
+  ([#853](https://github.com/HPAC-Safety/safety-report/issues/853)).
 - **The hook only reminds.** A `PreToolUse` hook on `ExitPlanMode` and on a
   Bash `gh issue create` adds a reminder to run the critic, and never blocks.
-  The adversary has no hook.
+  The adversary and the auditor have no hook.
 - Each agent owns its own artifact: the critic judges a plan before it is
   built, the adversary attacks a change for bugs, security, privacy leaks,
-  contract violations, and missing tests, and `spec-reviewer` judges the diff
-  after, against claims and ADRs. `backend`, `ux`, and `infrastructure`
+  contract violations, and missing tests, `spec-reviewer` judges the diff
+  after, against claims and ADRs, and `auditor` judges the whole repository
+  between changes. `backend`, `ux`, and `infrastructure`
   design and build, and still cite claims.
 
 ## Why

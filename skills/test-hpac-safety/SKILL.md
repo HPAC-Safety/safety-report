@@ -17,7 +17,8 @@ same section names.
   ([ADR-0188](../../.spec/decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md);
   [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md)). Browser journeys:
   Playwright.
-- Synthetic report and file fixtures only.
+- Test code is C# or TypeScript.
+- Synthetic fixtures only: people, locations, reports, and attachments.
 - Seeded rows: the consent questions and the seeded question bank
   ([lesson 0021](../../.spec/lessons/0021-a-consent-question-found-by-a-key-it-was-never-seeded-under.md)).
 - Integration tests use the supported PostgreSQL version through
@@ -95,6 +96,13 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   ([ADR-0193](../../.spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
 - A request-level claim binds through `BootedApi`
   ([lesson 0006](../../.spec/lessons/0006-an-internal-identifier-leaked-into-the-authoring-screen.md)).
+- Start from the claim's entry in `.spec/claims.json`: its steps with no
+  `files` are the definitions to write. Remove `@ignore` and its `@issue-<N>`
+  once the entry says `"staleIgnore": true` and the scenario passes; from then
+  on CI fails the claim unless it passes in every run
+  ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
+- A key comes from its Examples cell through `tests/e2e/steps/keys.ts`
+  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
 - Reqnroll steps are Cucumber Expressions:
   `(User|SafetyOfficer|Administrator)` matches nothing; use `{word}`.
 

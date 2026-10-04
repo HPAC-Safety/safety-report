@@ -11,6 +11,11 @@ names where they exist, and wins where they differ.
 
 ## Stack
 
+- Ownership: [`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md)
+  "Before implementing". Claims, the graph, and the never-log list follow that
+  skill; the exemption follows `AGENTS.md` "The `feature-coverage`
+  exemption"; copy follows
+  [`localize-hpac-app`](../localize-hpac-app/SKILL.md).
 - React and TypeScript, built with Vite
   ([ADR-0043](../../.spec/decisions/ADR-0043-react-typescript-vite-web-front-end.md)).
 - Tailwind v4 via `@tailwindcss/vite` is the only CSS build step.
@@ -163,6 +168,7 @@ names where they exist, and wins where they differ.
 
 ## Tests
 
+- Fixtures stay synthetic.
 - Every UI behavior change ships:
   - a `.feature` scenario in the same pull request (`AGENTS.md`
     "Specification-driven development") — a Playwright test alone does not
@@ -183,4 +189,6 @@ names where they exist, and wins where they differ.
 - pre-submit API or database writes other than attachment uploads;
 - resumable upload sessions;
 - third-party font or asset calls;
-- client access to private report data beyond authorized admin DTOs.
+- client access to private report data beyond authorized admin DTOs;
+- anything about a member in the browser beyond the receipt it keeps;
+- report content in analytics or logs.

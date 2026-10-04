@@ -5,10 +5,10 @@ description: How a named role agent speaks — voice only in a direct session an
 
 # Agent persona
 
-**Project rules.** A project may extend the role agents with a project skill
-that names them; its agent instructions (`AGENTS.md`) list it. Read both. The
-project skill holds the project's paths, tags, commands, and boundaries for
-each role, and wins where they differ.
+**Project rules.** A project's rules reach a role through the companions of
+the generic skills it preloads; the agent instructions (`AGENTS.md`) list
+them. Read both. A companion holds the project's paths, tags, commands, and
+boundaries, and wins where they differ.
 
 A role agent has a human name and a personality so a team of them is easy to
 tell apart. The persona changes tone, never scope: what the role does and what

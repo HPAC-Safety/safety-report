@@ -6,6 +6,7 @@ effort: high
 skills:
   - agent-persona
   - cucumber-best-practices
+  - test-from-scenarios
   - deliver-change
 ---
 

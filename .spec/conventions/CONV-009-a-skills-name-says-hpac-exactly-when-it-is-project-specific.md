@@ -1,6 +1,6 @@
 ---
 title: A skill's name says hpac exactly when it is project-specific
-description: A skill whose name has hpac is project-specific; a skill without it is fully generic and names nothing in this repository, and a tool selects the generic files by that rule instead of a hand-kept list.
+description: Agents and skills are generic by default and a role agent has no project skill of its own; a skill whose name has hpac is project-specific, a skill without it names nothing in this repository, and a tool selects the generic files by that rule instead of a hand-kept list.
 type: convention
 status: accepted
 date: 2026-10-04
@@ -14,12 +14,20 @@ date: 2026-10-04
   name contains `hpac` is project-specific. A skill without it is generic: it
   names no project, product, domain term, repository-unique path, tool this
   repository chose, or decision, lesson, convention, or claim number.
-- **A role agent is always generic.** Its repository detail lives in
-  `hpac-role-agents`.
+- **Generic by default.** An agent or skill is generic whenever its content
+  would serve another project; a skill is project-specific only when it
+  cannot transfer. The agents are expected to leave this repository.
+- **A role agent is always generic, and has no project skill of its own.**
+  This repository's detail reaches a role through the generic skills it
+  preloads: a preloaded generic skill with project rules has a companion that
+  names it, and `AGENTS.md` lists the pair.
+  A fact that belongs to no topic skill goes in `AGENTS.md`.
 - **A split** is a generic skill plus a project skill. The project skill names
-  the generic one it extends, keeps its section names, and holds only this
-  repository's rules. A rule that transfers to any project moves to the generic
-  half, never out of existence.
+  the generic one it extends, keeps its section names (a project skill that
+  also companions another generic skill holds that one's rules under one
+  section named in its header), and holds only this repository's rules. A rule
+  that transfers to any project moves to the generic half, never out of
+  existence.
 - **A project skill's name says what it is for**, with `hpac` in it:
   `hpac-domain-model` (renamed from `incident-domain-model`), and the
   existing `*-hpac-*` names.
@@ -46,6 +54,11 @@ let a new generic file go unchecked until someone remembered to list it, and a
 classification table in an ADR fell behind the files. A name the reader can see
 and a check that follows it need no list and no table
 ([#847](https://github.com/HPAC-Safety/safety-report/issues/847)).
+
+A per-role project skill tied every agent to this repository, though the owner
+means to move the agents out of it; their repository detail moved to the
+topic skills each role already reaches, and the per-role skill was removed
+([#853](https://github.com/HPAC-Safety/safety-report/issues/853)).
 
 This convention supersedes
 [ADR-0131](../decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md)

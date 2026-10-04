@@ -28,7 +28,7 @@ Assume the change is broken. Find the input, state, or caller that proves it.
 2. Security holes: injection, authorization gaps, unvalidated input at a
    boundary.
 3. Privacy leaks: user content, personal data, or credentials in logs or
-   output, and each boundary the project skill lists.
+   output, and each boundary its companion skill lists.
 4. Contract violations: a changed signature, schema, or promise a caller still
    relies on.
 5. Missing tests: behavior with no test that would fail if it broke, and a test

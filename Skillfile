@@ -9,7 +9,7 @@
 # and a role, and it constrains what its holder may do; its how lives in the
 # skills it preloads. Four are the steps of the specification-driven chain,
 # each trusting only the artifact from the step before it; ai-author maintains
-# these instruction files; critic and adversary add a lens (CONV-007, CONV-008).
+# these instruction files; critic, adversary, and auditor add a lens (CONV-007, CONV-008).
 #
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
 # upstream guidance only when it matches the repository. Local skills are
@@ -27,6 +27,7 @@ install  claude-code  local
 
 local  agent  agents/adversary.md
 local  agent  agents/ai-author.md
+local  agent  agents/auditor.md
 local  agent  agents/backend.md
 local  agent  agents/critic.md
 local  agent  agents/database-administrator.md
@@ -79,13 +80,12 @@ local  skill  test-from-scenarios  skills/test-from-scenarios/SKILL.md
 local  skill  write-agent-instructions  skills/write-agent-instructions/SKILL.md
 
 # Project skills. One that extends a generic skill names it and keeps its
-# section names; hpac-role-agents extends the ten role agents.
+# section names.
 local  skill  anonymize-hpac-reports  skills/anonymize-hpac-reports/SKILL.md
 local  skill  build-hpac-web-ui  skills/build-hpac-web-ui/SKILL.md
 local  skill  deliver-hpac-change  skills/deliver-hpac-change/SKILL.md
 local  skill  handle-hpac-media  skills/handle-hpac-media/SKILL.md
 local  skill  hpac-domain-model  skills/hpac-domain-model/SKILL.md
-local  skill  hpac-role-agents  skills/hpac-role-agents/SKILL.md
 local  skill  hpac-safety-conventions  skills/hpac-safety-conventions/SKILL.md
 local  skill  localize-hpac-app  skills/localize-hpac-app/SKILL.md
 local  skill  manage-hpac-infrastructure  skills/manage-hpac-infrastructure/SKILL.md

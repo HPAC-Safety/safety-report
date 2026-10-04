@@ -13,6 +13,12 @@ holds only what is specific to this repository, under the same section names.
 - Read
   [`Persistence/Migrations/README.md`](../../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md)
   first: the database, its four conventions, and the schema diagram.
+- The target schema:
+  [`.spec/data-and-persistence.md`](../../.spec/data-and-persistence.md). A
+  disposable database: the `postgres` service in `docker-compose.yml`, or the
+  PostgreSQL container the API and Infrastructure test suites start.
+- Tables hold personal and medical information, so an audit query returns
+  counts and shapes, never row content.
 - This pair is the one home for schema-change procedure and rules. The wider
   persistence contract is [`persist-hpac-data`](../persist-hpac-data/SKILL.md).
 

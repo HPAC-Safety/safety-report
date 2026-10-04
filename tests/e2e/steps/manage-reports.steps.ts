@@ -839,7 +839,7 @@ When("the Safety Officer chooses Write summary", async ({ page }) => {
 	await page.getByRole("button", { name: "Write summary" }).click()
 })
 
-When("the Safety Officer types the English text", async ({ page }) => {
+When("the Safety Officer writes the English text", async ({ page }) => {
 	await page.getByLabel("English summary").fill("The pilot landed in a field.")
 })
 

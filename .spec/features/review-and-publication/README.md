@@ -36,13 +36,13 @@ and takes an optional note that only reviewers see; **Publish** brings it back.
 **Edit summary** saves both texts together as a new revision, with the
 reviewer as its author, and is refused when neither language changed (REQ-MOD-194,
 REQ-MOD-205); the editor offers **Save summary** only once a language differs
-(REQ-MOD-207). What the save does to the report depends on its state
+(REQ-MOD-207, REQ-REV-002). What the save does to the report depends on its state
 ([ADR-0177](../../decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md)):
 
 | Status | A saved revision |
 |---|---|
 | Published | Approved by the person who saved it and public at once. The report stays Published and keeps its first publish date (REQ-MOD-195). |
-| Pending | A draft, not public. **Publish** approves the latest revision (REQ-MOD-198). |
+| Pending | A draft, not public. **Publish** approves the latest revision (REQ-MOD-198, REQ-REV-001). |
 | Unpublished (consented) | A draft, and the report returns to Pending (REQ-MOD-032). |
 
 A hand-written pair after a failed summarization is revision 1, authored by the
@@ -57,7 +57,7 @@ changing the current one (REQ-MOD-203). **Restore this version** asks for
 confirmation, then saves a **new** revision that copies the old one; the old one
 is untouched and versions only move forward. A Published report shows the
 restored text at once; any other report holds it as a draft (REQ-MOD-196,
-REQ-MOD-197, REQ-MOD-204). Restoring is audited as `RolledBackSummary`, and
+REQ-MOD-197, REQ-MOD-204, REQ-REV-003). Restoring is audited as `RolledBackSummary`, and
 neither it nor an edit records any text in the audit log (REQ-MOD-061). A
 reviewer may edit and restore; a User may not
 (REQ-MOD-201).
@@ -77,7 +77,8 @@ follow-ups, what an investigator said
 The report view has a **Private notes** section, newest note first. Each note
 shows its current text, who wrote that text (**You**, or the writer's opaque
 token subject), when, and whether it was edited. Any reviewer may add a note,
-edit any note, open a note's history, or remove a note after confirming.
+edit any note, open a note's history, or remove a note after confirming
+(REQ-MOD-106, REQ-REV-007, REQ-REV-008, REQ-REV-009).
 
 - A note is plain text of 1 to 4000 characters, shown exactly as typed. It
   may be added to any report that is not deleted, in any status, including a
@@ -125,7 +126,8 @@ to English** once the French text was changed, and both when both were. A
 language filled by an accepted translation does not count as changed, so it
 never offers to translate back. Translating never overwrites silently: it
 shows the current text beside the proposed one with their differences marked,
-and replaces it only when the reviewer accepts. The same buttons appear when a
+and replaces it only when the reviewer accepts (REQ-MOD-072, REQ-REV-005,
+REQ-REV-006). The same buttons appear when a
 pair is written by hand after summarization failed.
 
 Each saved language records how it was produced — `generated` by the Worker,

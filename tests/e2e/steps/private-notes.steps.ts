@@ -130,6 +130,12 @@ When("the Safety Officer adds the private note {string}", async ({ page }, text:
 	await section(page).getByRole("button", { name: "Add note" }).click()
 })
 
+Given("the Safety Officer has added the private note {string}", async ({ page }, text: string) => {
+	await section(page).getByLabel("Add a private note").fill(text)
+	await section(page).getByRole("button", { name: "Add note" }).click()
+	await expect(section(page).getByRole("list", { name: "Private notes on this report" }).getByRole("listitem").first()).toContainText(text)
+})
+
 Then("{string} is listed first, marked as theirs", async ({ page }, text: string) => {
 	const items = section(page).getByRole("list", { name: "Private notes on this report" }).getByRole("listitem")
 	await expect(items).toHaveCount(2)

@@ -110,17 +110,19 @@ async function reachLastPage(page: Page) {
 	await goNext(page) // attachments -> consent
 }
 
-Given("a reporter is filling out the form", async ({ page }) => {
+async function startFillingOutForm(page: Page) {
 	await openForm(page)
 	await goNext(page)
 	await fillNarrative(page, "A synthetic occurrence narrative.")
+}
+
+Given("a reporter is filling out the form", async ({ page }) => {
+	await startFillingOutForm(page)
 })
 
-// The leave dialog (REQ-SUB-154) is the one unsaved-changes.steps.ts asserts in full for REQ-SUB-122.
+// REQ-SUB-154 starts where REQ-SUB-122 ends: its leave dialog shown. REQ-SUB-122's Then checks that dialog's wording in full.
 Given("a reporter filling out the form has activated a header navigation link away from it", async ({ page }) => {
-	await openForm(page)
-	await goNext(page)
-	await fillNarrative(page, "A synthetic occurrence narrative.")
+	await startFillingOutForm(page)
 	await page.getByRole("banner").getByRole("link", { name: "View safety reports" }).click()
 	await expect(page.getByRole("dialog", { name: "Your report is saved" })).toBeVisible()
 })
@@ -433,10 +435,13 @@ Then("the control that was Next now reads Submit", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0)
 })
 
-Then("choosing it sends the one final submission request", async ({ page }) => {
+When("the reporter chooses Submit", async ({ page }) => {
 	await stubSubmission(page)
 	await answerYesNo(page, "May we publish a summary of this report?", "Yes")
 	await page.getByRole("button", { name: "Submit report" }).click()
+})
+
+Then("the one final submission request is sent", async () => {
 	await expect.poll(() => submittedRequests.length).toBeGreaterThan(0)
 })
 

@@ -231,7 +231,13 @@ Scenario: A conditional question joins the paging once its parent condition is m
 Scenario: The Next button becomes Submit on the final page
   Given a reporter has reached the last page of the form
   Then the control that was Next now reads Submit
-  And choosing it sends the one final submission request
+
+@REQ-SUB-155
+@ui
+Scenario: Submitting from the final page sends the one final submission request
+  Given a reporter has reached the last page of the form
+  When the reporter chooses Submit
+  Then the one final submission request is sent
 
 @REQ-SUB-034
 @ui
@@ -538,15 +544,15 @@ Examples:
 @ui
 Scenario Outline: Closing the calendar from the keyboard returns focus to the date question
   Given the current page shows a date question that <allows> future dates, on a desktop
-  And the date question's calendar has been opened <how>, and the keyboard focus is on today
+  And <opened>, and the keyboard focus is on today
   When the reporter uses the <key> key
   Then the calendar closes
   And focus is on the date question
 
 Examples:
-  | allows         | how                                                                        | key    |
-  | allows         | from the keyboard after a day was chosen from it                           | Escape |
-  | does not allow | from the keyboard after the pointer opened it and activated its background | Escape |
+  | allows         | opened                                                                                        | key    |
+  | allows         | the date question's calendar has been opened from the keyboard after a day was chosen from it | Escape |
+  | does not allow | the pointer has opened the date question's calendar and activated its background              | Escape |
 
 @REQ-SUB-111
 @ui
@@ -601,8 +607,9 @@ Scenario: Choosing a day in a month jumped to fills the question
 @ui
 Scenario Outline: On a touch device, a date question uses the device's own date picker
   Given the current page shows a date question that <allows> future dates, on a touch device
+  When the reporter opens the date question
   Then the date question is a native date input <limit>
-  And opening it on the touch device shows no calendar of the form's own
+  And no calendar of the form's own opens
 
 Examples:
   | allows         | limit                      |

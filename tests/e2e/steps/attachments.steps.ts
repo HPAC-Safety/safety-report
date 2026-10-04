@@ -272,7 +272,7 @@ Then("once the upload finishes the indicator is replaced by a Remove control", a
 	await expect(page.getByRole("progressbar")).toHaveCount(0)
 })
 
-// --- REQ-SUB-046 / 047: Next waits; Cancel aborts ---
+// --- REQ-SUB-046 / 153 / 047: Next waits, then is offered again; Cancel aborts ---
 
 Given("a file on the current page is still uploading", async ({ page }) => {
 	const stub = await stubUploads(page)

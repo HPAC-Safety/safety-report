@@ -14114,8 +14114,7 @@
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter has reached the last page of the form","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the control that was Next now reads Submit","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"choosing it sends the one final submission request","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the control that was Next now reads Submit","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/report-form.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
@@ -15823,8 +15822,9 @@
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the current page shows a date question that does not allow future dates, on a touch device","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter opens the date question","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the date question is a native date input whose latest date is today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"opening it on the touch device shows no calendar of the form's own","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no calendar of the form's own opens","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the current page shows a date question that allows future dates, on a touch device","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the date question is a native date input with no latest date","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false}
 			],
@@ -16834,7 +16834,7 @@
 				{"keyword":"Then","text":"the calendar closes","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"focus is on the date question","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the current page shows a date question that does not allow future dates, on a desktop","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"the date question's calendar has been opened from the keyboard after the pointer opened it and activated its background, and the keyboard focus is on today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"the pointer has opened the date question's calendar and activated its background, and the keyboard focus is on today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/date-answers.steps.ts","tests/e2e/steps/report-form.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
@@ -16954,6 +16954,29 @@
 				{"keyword":"Then","text":"the browser navigates to that page","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/report-form.steps.ts","tests/e2e/steps/submit-report.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-SUB-155",
+			"area": "report-submission",
+			"file": ".spec/features/report-submission/report-submission.feature",
+			"title": "Submitting from the final page sends the one final submission request",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter sends a report in one final request, each attachment having gone ahead of it straight to storage through a pre-signed upload link","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter has reached the last page of the form","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter chooses Submit","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the one final submission request is sent","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/report-form.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}

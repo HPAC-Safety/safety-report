@@ -291,15 +291,30 @@ const FOCUS_PATH: Partial<Record<string, string[]>> = {
 	"the same day of the previous month": ["ArrowDown", "PageUp"],
 }
 
-Given(/^the keyboard focus is on (.+)$/, async ({ page }, from: string) => {
-	const keys = FOCUS_PATH[from]
-	if (!keys) throw new Error(`No keyboard path to "${from}".`)
-	await tabInto(page)
-	await expect(calendar(page)).toBeVisible()
-	for (const key of keys) await page.keyboard.press(key)
-	if (from === "the date question") await expect(page.locator(DATE_FIELD)).toBeFocused()
-	else await expect(calendar(page).locator("button[data-day]:focus")).toHaveCount(1)
-})
+/** The day each FOCUS_PATH start names, the date question itself having none. */
+function startDay(from: string): Date | undefined {
+	const now = today()
+	if (from === "today") return now
+	if (from === "the day 1 day before today") return daysBefore(1)
+	if (from === "the day 8 days before today") return daysBefore(8)
+	if (from === "the same day of the previous month") {
+		const lastOfPrevious = new Date(now.getFullYear(), now.getMonth(), 0).getDate()
+		return new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), lastOfPrevious))
+	}
+	return undefined
+}
+
+Given(
+	/^the keyboard focus is on (the date question|today|the day 1 day before today|the day 8 days before today|the same day of the previous month)$/,
+	async ({ page }, from: string) => {
+		await tabInto(page)
+		await expect(calendar(page)).toBeVisible()
+		for (const key of FOCUS_PATH[from] ?? []) await page.keyboard.press(key)
+		const day = startDay(from)
+		if (day) await expectFocusOn(page, day)
+		else await expect(page.locator(DATE_FIELD)).toBeFocused()
+	},
+)
 
 /** ArrowDown from the date question opens its calendar on today, as a reporter reopens it. */
 async function reopenFromKeyboard(page: Page) {
@@ -309,9 +324,9 @@ async function reopenFromKeyboard(page: Page) {
 }
 
 Given(
-	/^the date question's calendar has been opened from the keyboard after (a day was chosen from it|the pointer opened it and activated its background), and the keyboard focus is on today$/,
+	/^(the date question's calendar has been opened from the keyboard after a day was chosen from it|the pointer has opened the date question's calendar and activated its background), and the keyboard focus is on today$/,
 	async ({ page }, before: string) => {
-		if (before === "a day was chosen from it") {
+		if (before.startsWith("the date question's calendar")) {
 			await tabInto(page)
 			await page.keyboard.press("ArrowDown")
 			await expectFocusOn(page, today())
@@ -552,8 +567,10 @@ Then(/^the date question is a native date input (whose latest date is today|with
 	else await expect(field).toHaveAttribute("max", iso(today()))
 })
 
-Then("opening it on the touch device shows no calendar of the form's own", async ({ page, $testInfo }) => {
-	const touch = active(page, $testInfo.testId)
-	await touch.locator(DATE_FIELD).tap()
-	await expect(touch.getByRole("dialog", { name: "Choose a date" })).toHaveCount(0)
+When("the reporter opens the date question", async ({ page, $testInfo }) => {
+	await active(page, $testInfo.testId).locator(DATE_FIELD).tap()
+})
+
+Then("no calendar of the form's own opens", async ({ page, $testInfo }) => {
+	await expect(active(page, $testInfo.testId).getByRole("dialog", { name: "Choose a date" })).toHaveCount(0)
 })

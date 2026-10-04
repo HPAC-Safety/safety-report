@@ -1163,26 +1163,20 @@ Then(
 	},
 )
 
-When(/^they open the question's list by (.+)$/, async ({ page }, opening: string) => {
+When(/^they open the question's list with (.+)$/, async ({ page }, opening: string) => {
 	const field = typeAheadField(page)
-	const keys: Record<string, string> = {
-		"pressing Alt and the down arrow": "Alt+ArrowDown",
-		"pressing the down arrow": "ArrowDown",
-		"pressing Enter": "Enter",
-		"pressing Space": "Space",
-	}
-	if (opening === "pressing the caret") {
+	if (opening === "the pointer on the caret") {
 		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0152).
 		const box = present(await field.boundingBox())
 		await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
-	} else if (opening === "clicking the question") await field.click()
-	else if (keys[opening]) {
-		await field.focus()
-		await page.keyboard.press(keys[opening])
-	} else {
-		const typed = /^typing "(.*)"$/.exec(opening)
-		if (!typed) throw new Error(`Unknown way to open the list: ${opening}`)
-		await field.pressSequentially(typed[1])
+	} else if (opening === "the pointer on the question") await field.click()
+	else {
+		const typed = /^the letters? "(.*)"$/.exec(opening)
+		if (typed) await field.pressSequentially(typed[1])
+		else {
+			await field.focus()
+			for (const key of keyPresses(opening)) await page.keyboard.press(key)
+		}
 	}
 })
 
@@ -1272,14 +1266,7 @@ Then("the question has focus", async ({ page }) => {
 })
 
 When("they pick {string} from the question's list", async ({ page }, label: string) => {
-	if (await isSingleSelect(page)) {
-		await pickChoice(page, "Which one applies?", label)
-		return
-	}
-	// A type-ahead lists its choices only once 3 or more characters are typed (ADR-0152).
-	await typeAheadField(page).pressSequentially(label)
-	await typeAheadList(page).getByRole("option", { name: label, exact: true }).click()
-	await expect(typeAheadField(page)).toHaveValue(label)
+	await pickChoice(page, "Which one applies?", label)
 })
 
 Then("the browser's saved report holds no answer to that question", async ({ page }) => {
@@ -1383,15 +1370,47 @@ async function activeChoice(page: Page): Promise<string | null> {
 	return (await page.locator(`[id="${id}"]`).textContent())?.trim() ?? null
 }
 
-Given(/^the question's active choice is (?:none|"(.*)")$/, async ({ page }, label: string | undefined) => {
-	if (label === undefined) {
-		expect(await activeChoice(page)).toBeNull()
-		return
-	}
-	// A single-select's list starts again from its first row; a type-ahead's moves down from none.
+/** Moves the active choice to `label` with the arrow keys: a single-select's list from its first row, a type-ahead's down from none. */
+async function moveActiveWithKeys(page: Page, label: string) {
 	if ((await activeChoice(page)) !== label && (await isSingleSelect(page))) await page.keyboard.press("Home")
 	for (let step = 0; step < 10 && (await activeChoice(page)) !== label; step++) await page.keyboard.press("ArrowDown")
-	expect(await activeChoice(page)).toBe(label)
+	await expect.poll(() => activeChoice(page)).toBe(label)
+}
+
+Given(/^the question's active choice is (?:none|"(.*)")$/, async ({ page }, label: string | undefined) => {
+	if (label === undefined) await expect.poll(() => activeChoice(page)).toBeNull()
+	else await moveActiveWithKeys(page, label)
+})
+
+Given(/^they make "(.*)" the question's active choice with (the keys|the pointer)$/, async ({ page }, label: string, reaching: string) => {
+	if (reaching === "the pointer") await typeAheadList(page).getByRole("option", { name: label, exact: true }).hover()
+	else await moveActiveWithKeys(page, label)
+	await expect.poll(() => activeChoice(page)).toBe(label)
+})
+
+/*
+ * A choice picked and the list closed: from the keyboard, by moving to it and
+ * taking it with Enter (a type-ahead's after typing its wording, a
+ * single-select's after opening with the down arrow); or with the pointer.
+ */
+Given(/^they have picked "(.*)" from the question's list with (the keyboard|the pointer)$/, async ({ page }, label: string, picking: string) => {
+	const field = typeAheadField(page)
+	const singleSelect = await isSingleSelect(page)
+	if (picking === "the pointer" && singleSelect) await pickChoice(page, "Which one applies?", label)
+	else {
+		if (singleSelect) {
+			await field.focus()
+			await page.keyboard.press("ArrowDown")
+		} else await field.pressSequentially(label)
+		if (picking === "the pointer") await typeAheadList(page).getByRole("option", { name: label, exact: true }).click()
+		else {
+			await moveActiveWithKeys(page, label)
+			await page.keyboard.press("Enter")
+		}
+	}
+	await expect(typeAheadList(page)).toBeHidden()
+	if (singleSelect) await expect(field).toHaveText(label)
+	else await expect(field).toHaveValue(label)
 })
 
 When("they open the question's list", async ({ page }) => {
@@ -1441,7 +1460,7 @@ Then("the list fits within the screen's width, and the page grows no wider than 
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
 })
 
-Then("the list reaches its last choice within itself, leaving the page where it is", async ({ page }) => {
+Then("the list reaches its last choice within itself", async ({ page }) => {
 	const list = typeAheadList(page)
 	const { scrollHeight, clientHeight, overflowY } = await list.evaluate((element) => ({
 		scrollHeight: element.scrollHeight,

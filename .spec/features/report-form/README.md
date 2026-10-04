@@ -128,6 +128,10 @@ one file and asked for the rest by email. This form takes several, so the
 question reads "Photos or videos" and asks for images, videos, or documents
 (`REQ-QB-104`).
 
+The form asks the media consent question only while a file is attached and
+publication consent is yes, and stops asking it once the file is removed or
+publication consent is withdrawn (`REQ-QB-113`, `REQ-RFM-020`).
+
 A database seeded before that change is corrected by a migration that follows
 the same rule as an Administrator's edit. An unanswered question gets a new
 revision (`REQ-QB-105`), and an answered one forks (`REQ-QB-106`). The

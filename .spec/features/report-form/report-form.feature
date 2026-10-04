@@ -132,14 +132,14 @@ Scenario: A type-ahead question is a control the form draws, with no caret
 Scenario Outline: A type-ahead's list opens with a hint before 3 characters, however it is opened
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   And a reporter using English opens that question
-  When they open the question's list by <opening>
+  When they open the question's list with <opening>
   Then the list opens directly beneath the question, as wide as it, offering only the hint to type 3 or more letters
 
 Examples:
   | opening                         |
-  | clicking the question           |
-  | pressing Alt and the down arrow |
-  | typing "o"                      |
+  | the pointer on the question     |
+  | the Alt and down arrow keys     |
+  | the letter "o"                  |
 
 @REQ-QB-229
 @ui
@@ -194,17 +194,17 @@ Scenario Outline: Reopening a type-ahead filters by what it already holds, howev
   And a reporter using English opens that question
   And they enter "<typed>" in the question
   And they dismiss the question's list
-  When they open the question's list by <opening>
+  When they open the question's list with <opening>
   Then <outcome>
 
 Examples:
   | typed | opening                         | outcome                                                                                      |
-  | Mou   | clicking the question           | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing Alt and the down arrow | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing the down arrow         | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mo    | clicking the question           | the list offers only the hint to type 3 or more letters                                      |
-  | Mo    | pressing Alt and the down arrow | the list offers only the hint to type 3 or more letters                                      |
-  | Mo    | pressing the down arrow         | the list offers only the hint to type 3 or more letters                                      |
+  | Mou   | the pointer on the question     | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | the Alt and down arrow keys     | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | the down arrow key              | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mo    | the pointer on the question     | the list offers only the hint to type 3 or more letters                                      |
+  | Mo    | the Alt and down arrow keys     | the list offers only the hint to type 3 or more letters                                      |
+  | Mo    | the down arrow key              | the list offers only the hint to type 3 or more letters                                      |
 
 @REQ-QB-160
 @ui
@@ -256,7 +256,7 @@ Examples:
 Scenario Outline: A type-ahead holding a choice reopens its list with a key
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   And a reporter using English opens that question
-  And they pick "Mount Fromme" from the question's list
+  And they have picked "Mount Fromme" from the question's list with the keyboard
   When they use <keys> in the question
   Then its list is open
 
@@ -269,15 +269,15 @@ Examples:
 Scenario Outline: Closing a type-ahead's list keeps the choice it holds
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   And a reporter using English opens that question
-  And they pick "Mount Fromme" from the question's list
-  And they open the question's list by <opening>
+  And they have picked "Mount Fromme" from the question's list with the keyboard
+  And they open the question's list with <opening>
   When they close the question's list with <closing>
   Then the list is closed and the question holds "Mount Fromme"
 
 Examples:
   | opening                         | closing                          |
-  | pressing Alt and the down arrow | the Escape key                   |
-  | clicking the question           | the pointer outside the question |
+  | the Alt and down arrow keys     | the Escape key                   |
+  | the pointer on the question     | the pointer outside the question |
 
 @REQ-QB-162
 @ui
@@ -305,14 +305,14 @@ Examples:
 Scenario Outline: A type-ahead's or single-select's long list fits a phone-width screen
   Given a <type> question offers 30 choices
   And a reporter using English opens that question on a phone-width screen
-  When they open the question's list by <opening>
+  When they open the question's list with <opening>
   Then the list fits within the screen's width, and the page grows no wider than the screen
-  And the list reaches its last choice within itself, leaving the page where it is
+  And the list reaches its last choice within itself
 
 Examples:
-  | type          | opening               |
-  | type-ahead    | typing "Launch site"  |
-  | single-select | pressing the caret    |
+  | type          | opening                    |
+  | type-ahead    | the letters "Launch site"  |
+  | single-select | the pointer on the caret   |
 
 @REQ-QB-231
 @ui
@@ -366,17 +366,17 @@ Scenario: A single-select question is a picker the form draws, not the browser's
 Scenario Outline: A single-select's list opens beneath it, drawn like a type-ahead's, however it is opened
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   And a reporter using English opens that question
-  When they open the question's list by <opening>
+  When they open the question's list with <opening>
   Then a list as wide as the question opens directly beneath it, offering "Choose one", "Cooper's", "Mount 7", "Woodside"
   And the list is drawn like a type-ahead's list
 
 Examples:
   | opening                         |
-  | clicking the question           |
-  | pressing Enter                  |
-  | pressing Space                  |
-  | pressing Alt and the down arrow |
-  | pressing the down arrow         |
+  | the pointer on the question     |
+  | the Enter key                   |
+  | the Space key                   |
+  | the Alt and down arrow keys     |
+  | the down arrow key              |
 
 @REQ-QB-267
 @ui
@@ -418,12 +418,12 @@ Examples:
 Scenario Outline: Opening a single-select's list with a key makes "Choose one" its active choice
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   And a reporter using English opens that question
-  When they open the question's list by <opening>
+  When they open the question's list with <opening>
   Then "Choose one" is the question's active choice
 
 Examples:
-  | opening                 |
-  | pressing the down arrow |
+  | opening            |
+  | the down arrow key |
 
 @REQ-RFM-013
 @ui
@@ -447,30 +447,31 @@ Examples:
 Scenario Outline: A single-select holding a choice reopens its list with that choice chosen and active
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   And a reporter using English opens that question
-  And they pick "Mount 7" from the question's list
+  And they have picked "Mount 7" from the question's list with the keyboard
   When they use <keys> in the question
   Then its list is open, with "Mount 7" chosen and active
 
 Examples:
-  | keys          |
-  | the Space key |
+  | keys                        |
+  | the Space key               |
+  | the Alt and down arrow keys |
 
 @REQ-RFM-015
 @ui
 Scenario Outline: Closing a single-select's list without picking keeps the choice it holds
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   And a reporter using English opens that question
-  And they pick "<held>" from the question's list
-  And they open the question's list by <opening>
-  And the question's active choice is "<active>"
+  And they have picked "<held>" from the question's list with <picking>
+  And they open the question's list with <opening>
+  And they make "<active>" the question's active choice with <reaching>
   When they close the question's list with <closing>
   Then the list is closed and the question holds "<held>"
 
 Examples:
-  | held     | opening               | active   | closing                          |
-  | Mount 7  | pressing Space        | Cooper's | the Escape key                   |
-  | Woodside | clicking the question | Cooper's | the pointer outside the question |
-  | Woodside | pressing Enter        | Woodside | the Tab key                      |
+  | held     | picking      | opening                     | active   | reaching    | closing                          |
+  | Mount 7  | the keyboard | the Space key               | Cooper's | the keys    | the Escape key                   |
+  | Woodside | the pointer  | the pointer on the question | Cooper's | the pointer | the pointer outside the question |
+  | Woodside | the pointer  | the Enter key               | Woodside | the keys    | the Tab key                      |
 
 @REQ-RFM-016
 @ui
@@ -588,7 +589,7 @@ Examples:
 Scenario Outline: The form stops asking for media consent once the file is removed or publication consent is withdrawn
   Given a reporter is filling in the form
   And they answer yes to publication consent and attach <file>
-  And they have reached the media consent question
+  And they have reached the media consent question and tried to submit without answering it
   When they remove the file, or answer no to publication consent
   Then the form no longer asks it, and submits no answer to it
 

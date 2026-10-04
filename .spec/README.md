@@ -27,7 +27,7 @@ the prefix shown after it
 
 | Area | Claims | Scenarios | Planned (`@ignore`) | Browser (`@ui`) | Supporting detail |
 |---|---|---|---|---|---|
-| [Admin report list and search](features/admin-report-search/admin-report-search.feature) | `REQ-ARS` (also `REQ-MOD`) | 32 | 0 | 13 | [README](features/admin-report-search/README.md) — Supporting detail for the admin report list: its rows, filters, search, paging, and quick actions. |
+| [Admin report list and search](features/admin-report-search/admin-report-search.feature) | `REQ-ARS` (also `REQ-MOD`) | 39 | 0 | 20 | [README](features/admin-report-search/README.md) — Supporting detail for the admin report list: its rows, filters, search, paging, and quick actions. |
 | [AI anonymization](features/ai-anonymization/ai-anonymization.feature) | `REQ-AI` | 28 | 0 | 0 | [README](features/ai-anonymization/README.md) — Supporting detail for the one-call bilingual summarization and anonymization scenarios. |
 | [Authentication and roles](features/authentication-and-roles/authentication-and-roles.feature) | `REQ-AUTH` (also `REQ-MOD`) | 45 | 0 | 18 | [README](features/authentication-and-roles/README.md) — Supporting detail for member authentication, the three roles, the Admin menu and its pending counts, and access control. |
 | [Choices and type-ahead values](features/choices-and-type-ahead/choices-and-type-ahead.feature) | `REQ-CTA` (also `REQ-MOD`, `REQ-QB`) | 56 | 0 | 33 | [README](features/choices-and-type-ahead/README.md) — Supporting detail for a question's choices: their identity, order and pinning, and the review of type-ahead values reporters add. |

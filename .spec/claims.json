@@ -677,6 +677,148 @@
 			"citedBy": {"decisions":["ADR-0180"],"lessons":[]}
 		},
 		{
+			"id": "REQ-ARS-001",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Unpublishing from the list updates the row in place",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer unpublishes the published row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the published row shows the \"Unpublished\" badge and offers Publish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the row action sent the version its row was listed with","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-002",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Keeping the report at the confirmation deletes nothing",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer keeps the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the pending row is still listed and nothing was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-003",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Confirming the deletion removes the row from the list",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer confirms","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the pending row is no longer listed and it was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-004",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "The search text survives a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has searched for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer reloads the page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the search box still reads \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-005",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Manage reports' \"Load more\" fallback becomes visible once reached",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer reaches the \"Load more\" action with the Tab key","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-006",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Activating Manage reports' \"Load more\" fallback loads the older reports in place",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the older reports load without leaving Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-ARS-007",
+			"area": "admin-report-search",
+			"file": ".spec/features/admin-report-search/admin-report-search.feature",
+			"title": "Manage reports offers a visible Retry action when its next page fails to load",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the next report page fails to load","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the list offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-COM-001",
 			"area": "comments",
 			"file": ".spec/features/comments/comments.feature",
@@ -3758,11 +3900,11 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report shows two images","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor has the first image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor uses the ArrowRight key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor uses the right arrow key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the lightbox shows the second image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor has the second image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the lightbox shows the first image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor uses the ArrowLeft key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"When","text":"the visitor uses the left arrow key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -5336,7 +5478,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses the \"Published\" filter","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"only published reports are listed","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the chosen filter stays in the address bar","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -6802,19 +6944,17 @@
 			"id": "REQ-MOD-121",
 			"area": "admin-report-search",
 			"file": ".spec/features/admin-report-search/admin-report-search.feature",
-			"title": "Publishing and unpublishing from the list updates the row in place",
+			"title": "Publishing from the list updates the row in place",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row shows the \"Published\" badge and offers Unpublish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer unpublishes the published row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the published row shows the \"Unpublished\" badge and offers Publish","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"each row action sent the version its row was listed with","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the row action sent the version its row was listed with","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6832,13 +6972,9 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses Delete on the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a confirmation asks whether to delete it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer keeps the report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the pending row is still listed and nothing was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer confirms","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the pending row is no longer listed and it was deleted","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"a confirmation asks whether to delete it","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6857,7 +6993,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"another reviewer has changed the pending report since the list was loaded","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer publishes the pending row","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a message says the report changed and offers to reload the list","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the pending row still shows the \"Pending\" badge","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -6958,21 +7094,14 @@
 			"id": "REQ-MOD-128",
 			"area": "admin-report-search",
 			"file": ".spec/features/admin-report-search/admin-report-search.feature",
-			"title": "Manage reports loads more automatically and offers the same hidden fallback and visible retry",
+			"title": "Manage reports' \"Load more\" fallback is not visible until it is needed",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a keyboard visitor tabs to the \"Load more\" action","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"that visitor activates it","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the older reports load without leaving Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"the next report page fails to load","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the list offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6990,7 +7119,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"reports exist in every workflow state","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a reviewer lists reports","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reviewer has listed reports","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reviewer lists reports after a cursor naming a report no longer in the report list","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that list starts with the same report the first page did","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false}
 			],
@@ -7092,8 +7221,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer searches for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has searched for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer clears the search box","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every report is listed newest first as before the search","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
@@ -7125,18 +7254,16 @@
 			"id": "REQ-MOD-136",
 			"area": "admin-report-search",
 			"file": ".spec/features/admin-report-search/admin-report-search.feature",
-			"title": "The search text lives in the address bar and survives a reload",
+			"title": "The search text lives in the address bar",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the address bar carries \"q=Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer reloads the page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the search box still reads \"Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the address bar carries \"q=Alex\"","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts"],
 			"staleIgnore": false,
@@ -7154,7 +7281,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and reports exist in several states","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer opens Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer searches for a word that matches nothing","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a message says no reports match that search","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no error is shown","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
@@ -12038,7 +12165,7 @@
 			"id": "REQ-QB-130",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "A reporter typing a removed type-ahead value names it without reviving it",
+			"title": "A reporter entering a removed type-ahead value names it without reviving it",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -12738,7 +12865,7 @@
 			"id": "REQ-QB-160",
 			"area": "report-form",
 			"file": ".spec/features/report-form/report-form.feature",
-			"title": "Typing into a type-ahead filters its list, ignoring case and accents",
+			"title": "Entering text in a type-ahead filters its list, ignoring case and accents",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -14289,7 +14416,7 @@
 			"id": "REQ-QB-233",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "Typing a merged-away wording offers the survivor, hinting the alias that matched",
+			"title": "Entering a merged-away wording offers the survivor, hinting the alias that matched",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -14312,7 +14439,7 @@
 			"id": "REQ-QB-234",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "A merged-away wording matches typing in the other language too",
+			"title": "A merged-away wording matches an entry in the other language too",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -18176,20 +18303,20 @@
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the current page shows a date question that allows future dates, on a desktop","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the date question","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowDown key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the down arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"today has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowLeft key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the left arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the day 1 day before today has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the day 1 day before today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowUp key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the up arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the day 8 days before today has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the day 8 days before today","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the ArrowRight key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the PageUp key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the right arrow key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter uses the Page Up key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the same day of the previous month has focus in the calendar","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the keyboard focus is on the same day of the previous month","files":["tests/e2e/steps/date-answers.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter uses the PageDown key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"When","text":"the reporter uses the Page Down key","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/date-answers.steps.ts","tests/e2e/steps/report-form.steps.ts","tests/e2e/steps/submit-report.steps.ts"],
 			"staleIgnore": false,

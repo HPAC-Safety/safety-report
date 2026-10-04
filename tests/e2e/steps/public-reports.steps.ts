@@ -371,20 +371,12 @@ Then("the {string} action is not visible", async ({ page }, name: string) => {
 	expect(box?.width ?? 0).toBeLessThanOrEqual(2)
 })
 
-When("a keyboard visitor tabs to the {string} action", async ({ page }, name: string) => {
-	await tabToButton(page, name)
-})
-
 When(/^the visitor reaches the "(.*)" action with (the .+ key)$/, async ({ page }, name: string, key: string) => {
 	await tabToButton(page, name, keyPress(key))
 })
 
 Then("it becomes visible", async ({ page }) => {
 	expect(await focusedWidth(page)).toBeGreaterThan(10)
-})
-
-When("that visitor activates it", async ({ page }) => {
-	await page.keyboard.press("Enter")
 })
 
 When(/^the visitor activates it with (the .+ key)$/, async ({ page }, key: string) => {

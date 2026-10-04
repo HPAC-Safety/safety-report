@@ -291,7 +291,7 @@ Scenario: Translation's model name picks its provider, apart from the summary's
   Given a Gemini key is configured
   And the Translation settings name gemini-3.5-pro as the model and low as the reasoning effort
   When text is translated
-  Then the request goes to Gemini's OpenAI-compatible endpoint
+  Then the request goes to Gemini's OpenAI-compatible service
   And translation asks for gemini-3.5-pro at low reasoning
   And no setting names a provider
 

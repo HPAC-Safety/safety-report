@@ -30,7 +30,7 @@ public sealed class SummarizationProviderSteps
 	/// <summary>Each REQ-AI-024 example row, and the words the prompt must use to state it.</summary>
 	private static readonly Dictionary<string, string[]> PromptRules = new(StringComparer.Ordinal)
 	{
-		["every statement must be supported by report_content, and nothing is invented"] =
+		["every statement must be supported by the report content, and nothing is invented"] =
 			["must be supported by `report_content`", "Do not invent, assume, or infer"],
 		["a pilot becomes exactly \"the pilot\" / \"le pilote\""] =
 			["| the pilot | le pilote |"],
@@ -48,7 +48,7 @@ public sealed class SummarizationProviderSteps
 			["\"redacted\"", "\"caviardé\"", "a placeholder", "an invented name"],
 		["every private marker is resolved and never appears literally"] =
 			["Resolve every marker", "must never appear in a summary"],
-		["the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object"] =
+		["the response is exactly the two-key English and French summary object"] =
 			["{\"ai_summary_en\":\"...\",\"ai_summary_fr\":\"...\"}", "no additional key"],
 		["each expected section is a \"## \" heading with its exact label, in form order"] =
 			["`## ` followed by the exact `label_en`", "exact `label_fr`", "Write no other heading of any kind", "in the order given"],
@@ -109,7 +109,7 @@ public sealed class SummarizationProviderSteps
 		_validations[0].Failure.ShouldBeNull();
 	}
 
-	[Then(@"a response with a Markdown fence around the JSON, commentary, an extra key, a null value, or only one language is rejected")]
+	[Then(@"a response with a Markdown fence around it, commentary, an extra key, a null value, or only one language is rejected")]
 	public void ThenEveryOtherShapeIsRejected()
 	{
 		foreach (var (response, failure) in _validations.Skip(1))
@@ -139,7 +139,7 @@ public sealed class SummarizationProviderSteps
 		_settings["AiChatClient:Model"].ShouldNotBeNull().ShouldStartWith("gemini-");
 	}
 
-	[Then(@"the call goes to Gemini's OpenAI-compatible endpoint")]
+	[Then(@"the call goes to Gemini's OpenAI-compatible service")]
 	public void ThenTheCallGoesToGemini()
 	{
 		_requestUri.ShouldNotBeNull().ToString()
@@ -160,7 +160,7 @@ public sealed class SummarizationProviderSteps
 		body.GetProperty("reasoning_effort").GetString().ShouldBe("medium");
 	}
 
-	[Then(@"the call asks the provider for a JSON object response")]
+	[Then(@"the call asks the provider to answer with one object")]
 	public void ThenTheCallAsksForJson()
 	{
 		SentBody().GetProperty("response_format").GetProperty("type").GetString().ShouldBe("json_object");

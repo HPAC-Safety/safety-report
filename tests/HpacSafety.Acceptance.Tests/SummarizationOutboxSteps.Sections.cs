@@ -123,7 +123,7 @@ public sealed partial class SummarizationOutboxSteps
 		]);
 	}
 
-	[Then(@"report_content lists the answers in display order")]
+	[Then(@"the report content lists the answers in display order")]
 	public void ThenReportContentIsInDisplayOrder()
 	{
 		_summarizer!.LastInput!.ReportContent.Select(field => field.QuestionKey).ShouldBe(["first_question", "middle_question", "late_question"]);
@@ -242,7 +242,7 @@ public sealed partial class SummarizationOutboxSteps
 		_realSummarizer = NewSummarizer(_mediator);
 	}
 
-	[When(@"the outbox retries the attempt until its budget is exhausted")]
+	[When(@"the Worker retries the attempt until its budget is exhausted")]
 	public async Task WhenTheOutboxRetriesUntilTheBudgetIsExhausted()
 	{
 		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)

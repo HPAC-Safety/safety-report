@@ -407,7 +407,7 @@ public sealed class TypeformImportEndpointSteps
 		_secondResponse = await _client.GetAsync(Export);
 	}
 
-	[Then(@"the API refuses both attempts")]
+	[Then(@"both attempts are refused as forbidden")]
 	public void ThenTheApiRejectsTheAttempt()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

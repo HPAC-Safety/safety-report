@@ -17,21 +17,21 @@ Scenario Outline: A picker or type-ahead's choices may depend on another picker 
 
 Examples:
   | parent        | child         | outcome  |
-  | single_select | autocomplete  | accepted |
-  | autocomplete  | autocomplete  | accepted |
-  | autocomplete  | single_select | accepted |
-  | single_select | single_select | accepted |
-  | multi_select  | autocomplete  | refused  |
-  | single_select | multi_select  | refused  |
-  | yes_no        | autocomplete  | refused  |
+  | single-select | type-ahead    | accepted |
+  | type-ahead    | type-ahead    | accepted |
+  | type-ahead    | single-select | accepted |
+  | single-select | single-select | accepted |
+  | multi-select  | type-ahead    | refused  |
+  | single-select | multi-select  | refused  |
+  | yes/no        | type-ahead    | refused  |
 
 @REQ-QB-180
 Scenario: A dependency is one level deep
   Given the "Model" question's choices depend on the "Make" question
   When an Administrator makes a third question's choices depend on "Model"
-  Then the dependency is refused, because "Model" already depends on another question
+  Then the dependency is refused, saying "Model" already depends on another question
   When an Administrator makes the "Make" question's choices depend on a third question
-  Then the dependency is refused, because other questions' choices already depend on "Make"
+  Then the dependency is refused, saying other questions' choices already depend on "Make"
 
 @REQ-QB-181
 Scenario: The parent comes before the child on the form
@@ -134,9 +134,9 @@ Scenario Outline: A dependent question offers only the choices linked to the par
 
 Examples:
   | child         | language |
-  | single_select | English  |
-  | autocomplete  | English  |
-  | autocomplete  | French   |
+  | single-select | English  |
+  | type-ahead    | English  |
+  | type-ahead    | French   |
 
 @REQ-QB-198
 @ui
@@ -170,7 +170,7 @@ Scenario: A saved report restores the parent and child answers together
 Scenario: A dependent child that cannot be answered yet does not hold the reporter back
   Given a required "Model" question's choices depend on an optional "Make" question
   When a reporter leaves "Make" unanswered and presses Next
-  Then the form moves on, because "Model" cannot be answered until "Make" is
+  Then the form moves on past "Model", which cannot be answered until "Make" is
   When they consent and send the report
   Then the report is sent with no answer to "Model"
 
@@ -186,7 +186,7 @@ Scenario: A picker child with nothing under the parent's answer says so and does
 @ui
 Scenario: The manage-questions page shows why a question cannot move above its parent
   Given an Administrator opens the manage-questions page
-  When they move a question whose choices depend on the question above it up, and the API refuses the new order
+  When they move a question whose choices depend on the question above it up, and the new order is refused
   Then the page shows the refusal, naming both questions
   And the list keeps its order
 
@@ -250,8 +250,8 @@ Scenario Outline: A parent choice is removed only while every child choice under
 
 Examples:
   | parent        | who                                            |
-  | single_select | an Administrator saving the question           |
-  | autocomplete  | a Safety Officer on the type-ahead review page |
+  | single-select | an Administrator saving the question           |
+  | type-ahead    | a Safety Officer on the type-ahead review page |
 
 @REQ-QB-215
 Scenario: Merging a parent value into one the child choice already names leaves one link
@@ -356,7 +356,7 @@ Scenario: The type-ahead review page shows every parent of a dependent value and
   And the page does not let them untick the last parent choice, and says why
 
 @REQ-QB-225
-Scenario: The migration folds each link into the join table and merges identical duplicates
+Scenario: The migration keeps each link as one of the choice's parents and merges identical duplicates
   Given a database one migration short, whose dependent "Certification:" question offers "EN-A" to "EN-D" twice each, one copy under "Paraglider" and one under "Hang Glider", and "EN-CCC" once, under "Paraglider"
   And reports answered "Certification:" with both copies of "EN-A"
   And a question is conditional on the "Hang Glider" copy of "EN-B"
@@ -366,7 +366,7 @@ Scenario: The migration folds each link into the join table and merges identical
   And "EN-CCC" is offered under "Paraglider" only
   And every answer still names the choice it named and reads the same wording
   And the conditional question's condition follows the surviving "EN-B"
-  And the old parent column is gone
+  And no choice keeps its old single parent link
 
 @REQ-QB-228
 Scenario: The migration merges a dependent type-ahead's identical duplicates into the oldest

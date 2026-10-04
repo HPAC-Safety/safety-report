@@ -46,16 +46,18 @@ public sealed class DependentChoiceSteps
 	// ---- REQ-QB-179: which types may take part ----
 
 	[Given(@"a {word} question, offering ""Niviuk"" and ""Ozone"" when its type has choices")]
-	public async Task GivenAParentOfType(string type)
+	public async Task GivenAParentOfType(string named)
 	{
+		var type = GlossaryNames.QuestionTypeCode(named);
 		_parentType = type;
 		var takesChoices = type is "single_select" or "multi_select" or "autocomplete";
 		await Create("Make", type, takesChoices ? [("Niviuk", null), ("Ozone", null)] : []);
 	}
 
 	[When(@"an Administrator makes a {word} question's choices depend on it, linking each choice to one of its choices")]
-	public async Task WhenAChildOfTypeDependsOnIt(string type)
+	public async Task WhenAChildOfTypeDependsOnIt(string named)
 	{
+		var type = GlossaryNames.QuestionTypeCode(named);
 		var make = await View("Make");
 		var first = make.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("id").GetString()).FirstOrDefault();
 		_response = await Post(Request("Model", type, [Option("Mentor 7", first)], _ids["Make"]));
@@ -152,7 +154,7 @@ public sealed class DependentChoiceSteps
 		_response = await Post(Request("Size", "autocomplete", [Option("Small", linked)], _ids[child]));
 	}
 
-	[Then(@"the dependency is refused, because {string} already depends on another question")]
+	[Then(@"the dependency is refused, saying {string} already depends on another question")]
 	public async Task ThenRefusedBecauseTheParentDepends(string parent)
 	{
 		var detail = await Refused();
@@ -169,7 +171,7 @@ public sealed class DependentChoiceSteps
 		_response = await Put(parent, RequestFrom(make, _ids["Wing"], Options(make, [.. Labels(make).Select(label => (label, wing))])));
 	}
 
-	[Then(@"the dependency is refused, because other questions' choices already depend on {string}")]
+	[Then(@"the dependency is refused, saying other questions' choices already depend on {string}")]
 	public async Task ThenRefusedBecauseTheChildIsAParent(string parent)
 	{
 		var detail = await Refused();

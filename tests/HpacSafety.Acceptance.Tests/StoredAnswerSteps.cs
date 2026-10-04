@@ -77,9 +77,10 @@ public sealed class StoredAnswerSteps
 
 	// --- REQ-QB-122: an answer names the choice it was given under ---
 
-	[Given(@"^a reporter answering in English is shown an? (single_select|multi_select|autocomplete) question whose choices are written in both official languages$")]
-	public async Task GivenAChoiceQuestion(string type)
+	[Given(@"^a reporter answering in English is shown an? (single-select|multi-select|type-ahead) question whose choices are written in both official languages$")]
+	public async Task GivenAChoiceQuestion(string named)
 	{
+		var type = GlossaryNames.QuestionTypeCode(named);
 		_admin = await BootedApi.SignedInAs(MemberRole.Administrator);
 
 		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, Colours));

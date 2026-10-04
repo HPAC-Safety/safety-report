@@ -5,7 +5,7 @@ English/French summary pair.
 
 @REQ-AI-001
 Scenario: Exactly one model call summarizes and anonymizes a report
-  Given a report has been submitted and its summarization outbox item is due
+  Given a report has been submitted and its summarization job is due
   When the Worker processes the summarization attempt
   Then the Worker makes exactly one call to the model
   And that call produces both the English and French summary texts
@@ -13,58 +13,58 @@ Scenario: Exactly one model call summarizes and anonymizes a report
 
 @REQ-AI-002
 Scenario: An exact private value in report content is deterministically marked before the model call
-  Given a private answer's value appears verbatim in a report_content answer
-  When the Worker builds the marked report_content
+  Given a private answer's value appears verbatim in an answer of the report content
+  When the Worker builds the marked report content
   Then that occurrence is replaced with a marker naming the private question it came from
   And the replacement happens before the model call, not as a separate call or stage
 
 @REQ-AI-003
 Scenario: A token from a multi-word private value is also marked
   Given a private answer's value is multiple words
-  And one of its words, at or above the minimum match length and not on the stopword list, appears alone in a report_content answer
-  When the Worker builds the marked report_content
+  And one of its words, at or above the minimum match length and not on the stopword list, appears alone in an answer of the report content
+  When the Worker builds the marked report content
   Then that occurrence is replaced with a marker naming the private question it came from
 
 @REQ-AI-004
 Scenario: A common short word is never marked as a false positive
-  Given a report_content answer contains a word that is below the minimum match length or on the stopword list
+  Given an answer of the report content contains a word that is below the minimum match length or on the stopword list
   And that word also appears as a token of a private answer's value
-  When the Worker builds the marked report_content
+  When the Worker builds the marked report content
   Then that word is left unmarked
 
 @REQ-AI-005
 Scenario: Overlapping candidate matches resolve longest match first
-  Given a report_content answer contains a private answer's whole multi-word value verbatim
-  When the Worker builds the marked report_content
+  Given an answer of the report content contains a private answer's whole multi-word value verbatim
+  When the Worker builds the marked report content
   Then the whole value is replaced with a single marker
   And its individual words are not separately marked inside that same span
 
 @REQ-AI-006
 Scenario: Matching is case-insensitive and whitespace-normalized
-  Given a private answer's value appears in a report_content answer with different casing or extra whitespace
-  When the Worker builds the marked report_content
+  Given a private answer's value appears in an answer of the report content with different casing or extra whitespace
+  When the Worker builds the marked report content
   Then that occurrence is still replaced with a marker
 
 @REQ-AI-007
-Scenario: private_context is still supplied alongside the marking pass
-  Given the Worker has built the marked report_content for a report
-  When the Worker builds the model input DTO
-  Then private_context still contains every private answer, unchanged
-  And the model receives both the marked report_content and the unmarked private_context
+Scenario: The private context is still supplied alongside the marking pass
+  Given the Worker has built the marked report content for a report
+  When the Worker builds the model input
+  Then the private context still contains every private answer, unchanged
+  And the model receives both the marked report content and the unmarked private context
 
 @REQ-AI-028
 Scenario: A private yes/no answer is never a marking candidate
   Given a private yes/no answer is true
-  And a report_content answer contains the word "true"
-  When the Worker builds the marked report_content
+  And an answer of the report content contains the word "true"
+  When the Worker builds the marked report content
   Then that word is left unmarked
-  And private_context still carries the yes/no answer as true
+  And the private context still carries the yes/no answer as true
 
 @REQ-AI-029
 Scenario Outline: A yes/no answer reaches the model as true or false, never as words
   Given a report written in <language> answers an ordinary yes/no question <answer>
-  When the Worker claims the message and builds the model input DTO
-  Then report_content carries that answer's value as "<answer>"
+  When the Worker claims the job and builds the model input
+  Then the report content carries that answer's value as "<answer>"
 
 Examples:
   | language | answer |
@@ -72,8 +72,8 @@ Examples:
   | French   | false  |
 
 @REQ-AI-008
-Scenario: Concurrent Worker instances cannot claim the same summarization outbox item twice
-  Given a summarization outbox item is pending
+Scenario: Concurrent Worker instances cannot claim the same summarization job twice
+  Given a summarization job is pending
   When two Worker instances attempt to claim it concurrently
   Then exactly one Worker claims the item
   And the other Worker finds no work and makes no model call
@@ -81,18 +81,18 @@ Scenario: Concurrent Worker instances cannot claim the same summarization outbox
 @REQ-AI-009
 Scenario: Only eligible, labeled answers reach the model
   Given a report has non-private answers and private answers
-  When the Worker claims the message and builds the model input DTO
-  Then report_content contains only non-private answers eligible to contribute facts
-  And private_context contains only private answers, supplied to help recognize identifying details that recur in report content
+  When the Worker claims the job and builds the model input
+  Then the report content contains only non-private answers eligible to contribute facts
+  And the private context contains only private answers, supplied to help recognize identifying details that recur in report content
   And skipped/null answers, both system consent answers, and file-upload answers are excluded from both arrays
-  And the DTO contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames
+  And the model input contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames
 
 @REQ-AI-011
-Scenario: The Worker accepts only the exact two-key JSON response
+Scenario: The Worker accepts only the exact two-key response
   Given the model returns a response for a summarization attempt
   When the Worker validates the response
   Then a response with exactly two nonblank string keys "ai_summary_en" and "ai_summary_fr", each a summary written as Markdown, is accepted
-  And a response with a Markdown fence around the JSON, commentary, an extra key, a null value, or only one language is rejected
+  And a response with a Markdown fence around it, commentary, an extra key, a null value, or only one language is rejected
 
 @REQ-AI-016
 Scenario: Documents never reach the model
@@ -105,14 +105,14 @@ Scenario: Documents never reach the model
 Scenario: A valid response is persisted as revision 1 of one pair-level summary
   Given the model returns a valid two-key response
   When the Worker persists it
-  Then one summary row is created whose revision 1 holds AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and its creation timestamp
+  Then one summary is created whose revision 1 holds the English and French texts, their shared model and prompt version, and its creation timestamp
   And revision 1 records no author and both languages as generated
   And no separate row is created per locale
 
 @REQ-AI-019
 Scenario: Retries repeat the single-call operation without adding stages
   Given a summarization attempt fails with a transient provider error or invalid output
-  When the outbox retries the attempt within its bounded budget
+  When the Worker retries the attempt within its bounded budget
   Then the retry repeats the single model call
   And no repair or audit call is added
 
@@ -135,7 +135,7 @@ Scenario: The Worker requests the configured model at the configured reasoning l
   Given the Worker is configured with a model and a reasoning level
   When the Worker makes the summarization call
   Then the call names the configured model and asks for the configured reasoning level
-  And the call asks the provider for a JSON object response
+  And the call asks the provider to answer with one object
   And the call leaves the sampling temperature at the provider's default
 
 @REQ-AI-023
@@ -156,7 +156,7 @@ Scenario: The summary's model name picks the provider
   Given the Worker is configured with a model and a reasoning level
   And the model's name starts with "gemini-"
   When the Worker makes the summarization call
-  Then the call goes to Gemini's OpenAI-compatible endpoint
+  Then the call goes to Gemini's OpenAI-compatible service
   And no setting names a provider
 
 @REQ-AI-024
@@ -167,7 +167,7 @@ Scenario Outline: The current prompt carries every anonymization and accuracy ru
 
 Examples:
   | rule                                                                                     |
-  | every statement must be supported by report_content, and nothing is invented             |
+  | every statement must be supported by the report content, and nothing is invented         |
   | a pilot becomes exactly "the pilot" / "le pilote"                                        |
   | any other person becomes the role the report supports, or "a person" / "une personne"    |
   | a place becomes a generic phrase such as "the launch site" or "the location" / "le lieu" |
@@ -176,7 +176,7 @@ Examples:
   | an aircraft make or model becomes its category                                           |
   | "redacted", "caviardé", placeholders, and invented names are never written               |
   | every private marker is resolved and never appears literally                             |
-  | the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object            |
+  | the response is exactly the two-key English and French summary object                    |
   | each expected section is a "## " heading with its exact label, in form order             |
   | other public facts are woven into the section they fit                                   |
   | each statement goes in the section whose question it best answers                        |
@@ -187,7 +187,7 @@ Examples:
 Scenario: The model is told to write one section per public paragraph question, blank ones included
   Given a consented report answered two public paragraph questions and one private paragraph question
   And one of the public paragraph questions was left blank
-  When the Worker claims the message and builds the model input DTO
+  When the Worker claims the job and builds the model input
   Then the expected sections name both public paragraph questions, the blank one included
   And the private paragraph question has no expected section
   And the expected sections are in the questions' display order
@@ -195,14 +195,14 @@ Scenario: The model is told to write one section per public paragraph question, 
 @REQ-AI-032
 Scenario: Answers reach the model in form order
   Given a consented report whose answers were recorded in a different order than their questions' display order
-  When the Worker claims the message and builds the model input DTO
-  Then report_content lists the answers in display order
+  When the Worker claims the job and builds the model input
+  Then the report content lists the answers in display order
 
 @REQ-AI-033
 Scenario: A section's headings are the label the reporter answered, in both languages, without a colon
   Given a consented report answered a public paragraph question whose label has since been reworded
   And the answered label was stored with a trailing colon
-  When the Worker claims the message and builds the model input DTO
+  When the Worker claims the job and builds the model input
   Then the expected section carries the English and French labels of the revision the reporter answered
   And neither label ends in a colon
 
@@ -234,7 +234,7 @@ Scenario: A report with no public paragraph question has a summary with no headi
 Scenario: A summary with the wrong headings is a failed attempt under the retry budget
   Given a consented report with a public paragraph question is due for summarization
   And the model answers every attempt with headings that do not match the expected sections
-  When the outbox retries the attempt until its budget is exhausted
+  When the Worker retries the attempt until its budget is exhausted
   Then each attempt fails and none saves a summary
   And the report becomes Summary failed
   And a human can author both summary texts manually and continue review

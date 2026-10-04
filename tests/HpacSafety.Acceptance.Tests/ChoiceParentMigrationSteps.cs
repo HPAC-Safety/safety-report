@@ -297,7 +297,7 @@ public sealed class ChoiceParentMigrationSteps
 		copy.Resolved.LabelEn.ShouldBe(wording);
 	}
 
-	[Then(@"the old parent column is gone")]
+	[Then(@"no choice keeps its old single parent link")]
 	public async Task ThenTheColumnIsGone()
 	{
 		(await Scalar(

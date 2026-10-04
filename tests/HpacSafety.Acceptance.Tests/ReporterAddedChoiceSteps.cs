@@ -47,8 +47,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	[Given(@"a published (.*) question offers several choices")]
 	public void GivenAPublishedQuestionOfType(string type)
 	{
-		EnumCode.TryParse(type, out QuestionType parsed).ShouldBeTrue();
-		_question = QuestionOfType(parsed);
+		_question = QuestionOfType(GlossaryNames.QuestionType(type));
 	}
 
 	[Given(@"a reporter has already added a site to a type-ahead question")]
@@ -89,11 +88,10 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_answer = new Report(Locale.EnCa, Noon).Answer(_question, true, Noon);
 	}
 
-	[Given(@"^an? (single_select|multi_select|autocomplete|single-select) question has been answered with one of its choices$")]
+	[Given(@"^an? (single-select|multi-select|type-ahead) question has been answered with one of its choices$")]
 	public void GivenAQuestionAnsweredWithAChoice(string type)
 	{
-		ArgumentNullException.ThrowIfNull(type);
-		GivenAnAnsweredQuestion(type.Replace('-', '_'));
+		GivenAnAnsweredQuestion(GlossaryNames.QuestionTypeCode(type));
 	}
 
 	[Given(@"it offers choices an Administrator wrote and a reporter-added value")]
@@ -464,11 +462,10 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 			_question.MergeValue(ValueReading(source).Id, ValueReading(target).Id, Reviewer, Noon.AddHours(2)));
 	}
 
-	[Given(@"^an? (autocomplete|single_select|multi_select) question has two choices$")]
+	[Given(@"^an? (type-ahead|single-select|multi-select) question has two choices$")]
 	public void GivenAQuestionWithTwoChoices(string type)
 	{
-		EnumCode.TryParse(type, out QuestionType parsed).ShouldBeTrue();
-		_question = QuestionOfType(parsed);
+		_question = QuestionOfType(GlossaryNames.QuestionType(type));
 	}
 
 	[When(@"^a Safety Officer tries to (merge it into the other|correct its wording) one of them$")]
@@ -556,7 +553,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 			QuestionDependencies.EnsureChoicesRemovable([_question, _dependent!], _question, ["hang_glider"]));
 	}
 
-	[Then(@"the existing choice is reused rather than duplicated")]
+	[Then(@"the existing choice is reused, not duplicated")]
 	public void ThenTheExistingChoiceIsReused()
 	{
 		_question.Choices.Count(choice => choice.Code == "mount_7").ShouldBe(1);
@@ -651,7 +648,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.OfferedChoiceLabelled("Cooper's", Locale.EnCa).ShouldBeNull();
 	}
 
-	[Then(@"the choice is retired rather than erased")]
+	[Then(@"the choice is retired, not erased")]
 	public void ThenTheChoiceIsRetired()
 	{
 		_question.AllChoices.Single(choice => choice.Code == "coopers").Deleted.ShouldNotBeNull();

@@ -105,8 +105,8 @@ Scenario: A document is validated but never transformed
 @REQ-MED-009
 Scenario: Each attachment fails and processes independently of the report
   Given a report has multiple attachments, one of which is slow or corrupt
-  When the Worker processes the report's outbox items
-  Then each file's processing is an independent outbox item
+  When the Worker processes the report's Worker jobs
+  Then each file's processing is an independent Worker job
   And the slow or corrupt file neither rolls back the valid report nor forces an additional AI call
 
 @REQ-MED-010
@@ -616,7 +616,7 @@ Scenario: No public or member read ever returns a private attachment, not even a
 @REQ-MOD-113
 Scenario: A private attachment never reaches the model
   Given a consented report carrying one private attachment is due for summarization
-  When the Worker claims the message and builds the model input DTO
+  When the Worker claims the job and builds the model input
   Then the model input carries nothing from the private attachment
   And no outbox message names the private attachment
 

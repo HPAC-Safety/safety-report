@@ -525,7 +525,7 @@ Scenario: No public or member read ever returns a private note, not even a count
 @REQ-MOD-105
 Scenario: A private note never reaches the model or a translation provider
   Given a consented report carrying one private note is due for summarization
-  When the Worker claims the message and builds the model input DTO
+  When the Worker claims the job and builds the model input
   Then the model input carries nothing from the private note
   And no outbox message names the private note or its revision
 

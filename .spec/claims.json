@@ -92,7 +92,7 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a report has been submitted and its summarization outbox item is due","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a report has been submitted and its summarization job is due","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker processes the summarization attempt","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the Worker makes exactly one call to the model","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that call produces both the English and French summary texts","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
@@ -113,8 +113,8 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a private answer's value appears verbatim in a report_content answer","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the marked report_content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a private answer's value appears verbatim in an answer of the report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the marked report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that occurrence is replaced with a marker naming the private question it came from","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the replacement happens before the model call, not as a separate call or stage","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
@@ -134,8 +134,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a private answer's value is multiple words","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"one of its words, at or above the minimum match length and not on the stopword list, appears alone in a report_content answer","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the marked report_content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"one of its words, at or above the minimum match length and not on the stopword list, appears alone in an answer of the report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the marked report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that occurrence is replaced with a marker naming the private question it came from","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],
@@ -153,9 +153,9 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a report_content answer contains a word that is below the minimum match length or on the stopword list","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"an answer of the report content contains a word that is below the minimum match length or on the stopword list","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"that word also appears as a token of a private answer's value","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the marked report_content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the marked report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that word is left unmarked","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],
@@ -173,8 +173,8 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a report_content answer contains a private answer's whole multi-word value verbatim","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the marked report_content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"an answer of the report content contains a private answer's whole multi-word value verbatim","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the marked report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the whole value is replaced with a single marker","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"its individual words are not separately marked inside that same span","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
@@ -193,8 +193,8 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a private answer's value appears in a report_content answer with different casing or extra whitespace","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the marked report_content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a private answer's value appears in an answer of the report content with different casing or extra whitespace","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the marked report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that occurrence is still replaced with a marker","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],
@@ -206,16 +206,16 @@
 			"id": "REQ-AI-007",
 			"area": "ai-anonymization",
 			"file": ".spec/features/ai-anonymization/ai-anonymization.feature",
-			"title": "private_context is still supplied alongside the marking pass",
+			"title": "The private context is still supplied alongside the marking pass",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the Worker has built the marked report_content for a report","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"private_context still contains every private answer, unchanged","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the model receives both the marked report_content and the unmarked private_context","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"the Worker has built the marked report content for a report","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the model input","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the private context still contains every private answer, unchanged","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the model receives both the marked report content and the unmarked private context","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],
 			"staleIgnore": false,
@@ -226,13 +226,13 @@
 			"id": "REQ-AI-008",
 			"area": "ai-anonymization",
 			"file": ".spec/features/ai-anonymization/ai-anonymization.feature",
-			"title": "Concurrent Worker instances cannot claim the same summarization outbox item twice",
+			"title": "Concurrent Worker instances cannot claim the same summarization job twice",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a summarization outbox item is pending","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a summarization job is pending","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"two Worker instances attempt to claim it concurrently","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"exactly one Worker claims the item","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the other Worker finds no work and makes no model call","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
@@ -253,11 +253,11 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report has non-private answers and private answers","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"report_content contains only non-private answers eligible to contribute facts","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"private_context contains only private answers, supplied to help recognize identifying details that recur in report content","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report content contains only non-private answers eligible to contribute facts","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the private context contains only private answers, supplied to help recognize identifying details that recur in report content","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"skipped/null answers, both system consent answers, and file-upload answers are excluded from both arrays","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the DTO contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the model input contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],
 			"staleIgnore": false,
@@ -268,7 +268,7 @@
 			"id": "REQ-AI-011",
 			"area": "ai-anonymization",
 			"file": ".spec/features/ai-anonymization/ai-anonymization.feature",
-			"title": "The Worker accepts only the exact two-key JSON response",
+			"title": "The Worker accepts only the exact two-key response",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -277,7 +277,7 @@
 				{"keyword":"Given","text":"the model returns a response for a summarization attempt","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker validates the response","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a response with exactly two nonblank string keys \"ai_summary_en\" and \"ai_summary_fr\", each a summary written as Markdown, is accepted","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"a response with a Markdown fence around the JSON, commentary, an extra key, a null value, or only one language is rejected","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"a response with a Markdown fence around it, commentary, an extra key, a null value, or only one language is rejected","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],
 			"staleIgnore": false,
@@ -316,7 +316,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the model returns a valid two-key response","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker persists it","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"one summary row is created whose revision 1 holds AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and its creation timestamp","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"one summary is created whose revision 1 holds the English and French texts, their shared model and prompt version, and its creation timestamp","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"revision 1 records no author and both languages as generated","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no separate row is created per locale","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
 			],
@@ -336,7 +336,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a summarization attempt fails with a transient provider error or invalid output","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the outbox retries the attempt within its bounded budget","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker retries the attempt within its bounded budget","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the retry repeats the single model call","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no repair or audit call is added","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
 			],
@@ -398,7 +398,7 @@
 				{"keyword":"Given","text":"the Worker is configured with a model and a reasoning level","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker makes the summarization call","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the call names the configured model and asks for the configured reasoning level","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the call asks the provider for a JSON object response","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the call asks the provider to answer with one object","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the call leaves the sampling temperature at the provider's default","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],
@@ -440,7 +440,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the prompt version the Worker currently sends","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the prompt is read","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it states the rule that every statement must be supported by report_content, and nothing is invented","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it states the rule that every statement must be supported by the report content, and nothing is invented","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that a pilot becomes exactly \"the pilot\" / \"le pilote\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that any other person becomes the role the report supports, or \"a person\" / \"une personne\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that a place becomes a generic phrase such as \"the launch site\" or \"the location\" / \"le lieu\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
@@ -449,7 +449,7 @@
 				{"keyword":"Then","text":"it states the rule that an aircraft make or model becomes its category","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that \"redacted\", \"caviardé\", placeholders, and invented names are never written","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that every private marker is resolved and never appears literally","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it states the rule that the response is exactly the two-key ai_summary_en / ai_summary_fr JSON object","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it states the rule that the response is exactly the two-key English and French summary object","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that each expected section is a \"## \" heading with its exact label, in form order","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that other public facts are woven into the section they fit","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it states the rule that each statement goes in the section whose question it best answers","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
@@ -493,10 +493,10 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a private yes/no answer is true","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a report_content answer contains the word \"true\"","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker builds the marked report_content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"an answer of the report content contains the word \"true\"","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker builds the marked report content","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"that word is left unmarked","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"private_context still carries the yes/no answer as true","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the private context still carries the yes/no answer as true","files":["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AiAnonymizationSteps.cs"],
 			"staleIgnore": false,
@@ -514,10 +514,10 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report written in English answers an ordinary yes/no question true","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"report_content carries that answer's value as \"true\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report content carries that answer's value as \"true\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a report written in French answers an ordinary yes/no question false","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"report_content carries that answer's value as \"false\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the report content carries that answer's value as \"false\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],
 			"staleIgnore": false,
@@ -537,7 +537,7 @@
 				{"keyword":"Given","text":"the Worker is configured with a model and a reasoning level","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the model's name starts with \"gemini-\"","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker makes the summarization call","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the call goes to Gemini's OpenAI-compatible endpoint","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the call goes to Gemini's OpenAI-compatible service","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no setting names a provider","files":["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/SummarizationProviderSteps.cs"],
@@ -557,7 +557,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a consented report answered two public paragraph questions and one private paragraph question","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"one of the public paragraph questions was left blank","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the expected sections name both public paragraph questions, the blank one included","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the private paragraph question has no expected section","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the expected sections are in the questions' display order","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false}
@@ -578,8 +578,8 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a consented report whose answers were recorded in a different order than their questions' display order","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"report_content lists the answers in display order","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false}
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report content lists the answers in display order","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs","tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],
 			"staleIgnore": false,
@@ -598,7 +598,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a consented report answered a public paragraph question whose label has since been reworded","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the answered label was stored with a trailing colon","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the expected section carries the English and French labels of the revision the reporter answered","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"neither label ends in a colon","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false}
 			],
@@ -666,7 +666,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a consented report with a public paragraph question is due for summarization","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the model answers every attempt with headings that do not match the expected sections","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the outbox retries the attempt until its budget is exhausted","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker retries the attempt until its budget is exhausted","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"each attempt fails and none saves a summary","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report becomes Summary failed","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.Sections.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a human can author both summary texts manually and continue review","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
@@ -1988,8 +1988,8 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a report has multiple attachments, one of which is slow or corrupt","files":["tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker processes the report's outbox items","files":["tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"each file's processing is an independent outbox item","files":["tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker processes the report's Worker jobs","files":["tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"each file's processing is an independent Worker job","files":["tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the slow or corrupt file neither rolls back the valid report nor forces an additional AI call","files":["tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],
@@ -5126,7 +5126,7 @@
 				{"keyword":"When","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"each value is listed under its question's heading, with the language it was typed in and how many answers name it","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they approve \"Mount 7\", correct \"coopers\" to \"Cooper's\", and remove \"Test site\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the API is asked to approve, correct, and remove exactly those values","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"exactly those values are sent to be approved, corrected, and removed","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page lists no value left to review","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/review-type-ahead-values.steps.ts"],
@@ -5297,7 +5297,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a consented report carrying one private note is due for summarization","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the model input carries nothing from the private note","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no outbox message names the private note or its revision","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
 			],
@@ -5492,7 +5492,7 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a consented report carrying one private attachment is due for summarization","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Worker claims the message and builds the model input DTO","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Worker claims the job and builds the model input","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the model input carries nothing from the private attachment","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no outbox message names the private attachment","files":["tests/HpacSafety.Acceptance.Tests/SummarizationOutboxSteps.cs"],"ambiguous":false}
 			],
@@ -6521,7 +6521,7 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer and flagged values under two type-ahead questions, returned by the API with the later question first","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer and flagged values under two type-ahead questions, which arrive with the later question first","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they open the review-type-ahead-values page","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the question headings read, top to bottom, \"Where did this happen?\" then \"Where did you launch?\"","files":["tests/e2e/steps/review-type-ahead-values.steps.ts"],"ambiguous":false}
 			],
@@ -8438,7 +8438,7 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter has already added a site to a type-ahead question","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"another reporter submits the same site name","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the existing choice is reused rather than duplicated","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the existing choice is reused, not duplicated","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"an Administrator's wording is never replaced by a reporter's","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],
@@ -9489,12 +9489,12 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a published autocomplete question offers several choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a published type-ahead question offers several choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter submits a value the question does not offer","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report is accepted and the question gains the value","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a published single_select question offers several choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a published single-select question offers several choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the submission is refused and the question is unchanged","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a published multi_select question offers several choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"a published multi-select question offers several choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],
 			"staleIgnore": false,
@@ -10039,13 +10039,13 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a reporter answering in English is shown a single_select question whose choices are written in both official languages","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter answering in English is shown a single-select question whose choices are written in both official languages","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the reporter chooses one of its choices and submits","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the stored answer references that choice by its identifier","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it stores no copy of the choice's wording","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the answer reads as the choice's English label, with its French label as the second language","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a reporter answering in English is shown a multi_select question whose choices are written in both official languages","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a reporter answering in English is shown a autocomplete question whose choices are written in both official languages","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"a reporter answering in English is shown a multi-select question whose choices are written in both official languages","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter answering in English is shown a type-ahead question whose choices are written in both official languages","files":["tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/StoredAnswerSteps.cs"],
 			"staleIgnore": false,
@@ -10138,14 +10138,14 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a single_select question has been answered with one of its choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a single-select question has been answered with one of its choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that choice is removed","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the form stops offering it","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the choice is retired rather than erased","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the choice is retired, not erased","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the earlier answer still names it and reads its wording","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the question keeps its identifier and its current revision","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a multi_select question has been answered with one of its choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a autocomplete question has been answered with one of its choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"a multi-select question has been answered with one of its choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a type-ahead question has been answered with one of its choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],
 			"staleIgnore": false,
@@ -10313,13 +10313,13 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a autocomplete question has two choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a type-ahead question has two choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer tries to merge it into the other one of them","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the merge or correction is accepted","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer tries to correct its wording one of them","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a single_select question has two choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a single-select question has two choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the merge or correction is refused","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a multi_select question has two choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"a multi-select question has two choices","files":["tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/ReporterAddedChoiceSteps.cs"],
 			"staleIgnore": false,
@@ -10454,7 +10454,7 @@
 			"id": "REQ-QB-139",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "An Administrator chooses to replace a picker choice rather than fix it",
+			"title": "An Administrator chooses to replace a picker choice, not fix it",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -10572,7 +10572,7 @@
 			"id": "REQ-QB-144",
 			"area": "choices-and-type-ahead",
 			"file": ".spec/features/choices-and-type-ahead/choices-and-type-ahead.feature",
-			"title": "The API sends each choice's pin, pinned-first choices first and pinned-last choices last",
+			"title": "Each choice is read with its pin, pinned-first choices first and pinned-last choices last",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -10604,13 +10604,13 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a single_select question offers \"Green Ridge\" / \"Crête Verte\", \"Stone Ridge\" / \"Crête de Pierre\", \"Silver Ridge\" / \"Crête d'Argent\", and \"Blue Ridge\" / \"Crête Bleue\", none pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a single-select question offers \"Green Ridge\" / \"Crête Verte\", \"Stone Ridge\" / \"Crête de Pierre\", \"Silver Ridge\" / \"Crête d'Argent\", and \"Blue Ridge\" / \"Crête Bleue\", none pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter using English opens that question","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"its choices are listed \"Blue Ridge\", \"Green Ridge\", \"Silver Ridge\", \"Stone Ridge\"","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter using French opens that question","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"its choices are listed \"Crête Bleue\", \"Crête d'Argent\", \"Crête de Pierre\", \"Crête Verte\"","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a multi_select question offers \"Green Ridge\" / \"Crête Verte\", \"Stone Ridge\" / \"Crête de Pierre\", \"Silver Ridge\" / \"Crête d'Argent\", and \"Blue Ridge\" / \"Crête Bleue\", none pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a autocomplete question offers \"Green Ridge\" / \"Crête Verte\", \"Stone Ridge\" / \"Crête de Pierre\", \"Silver Ridge\" / \"Crête d'Argent\", and \"Blue Ridge\" / \"Crête Bleue\", none pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a multi-select question offers \"Green Ridge\" / \"Crête Verte\", \"Stone Ridge\" / \"Crête de Pierre\", \"Silver Ridge\" / \"Crête d'Argent\", and \"Blue Ridge\" / \"Crête Bleue\", none pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a type-ahead question offers \"Green Ridge\" / \"Crête Verte\", \"Stone Ridge\" / \"Crête de Pierre\", \"Silver Ridge\" / \"Crête d'Argent\", and \"Blue Ridge\" / \"Crête Bleue\", none pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
@@ -10630,12 +10630,12 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a single_select question offers \"Southland\" and \"Northland\" pinned first, \"Otherland\" pinned last, and \"Westland\", \"Eastland\", and \"Midland\" not pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a single-select question offers \"Southland\" and \"Northland\" pinned first, \"Otherland\" pinned last, and \"Westland\", \"Eastland\", and \"Midland\" not pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter using English opens that question","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"its choices are listed \"Northland\", \"Southland\", \"Eastland\", \"Midland\", \"Westland\", \"Otherland\"","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"a separator is drawn after \"Southland\" and after \"Westland\"","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a multi_select question offers \"Southland\" and \"Northland\" pinned first, \"Otherland\" pinned last, and \"Westland\", \"Eastland\", and \"Midland\" not pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a autocomplete question offers \"Southland\" and \"Northland\" pinned first, \"Otherland\" pinned last, and \"Westland\", \"Eastland\", and \"Midland\" not pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a multi-select question offers \"Southland\" and \"Northland\" pinned first, \"Otherland\" pinned last, and \"Westland\", \"Eastland\", and \"Midland\" not pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a type-ahead question offers \"Southland\" and \"Northland\" pinned first, \"Otherland\" pinned last, and \"Westland\", \"Eastland\", and \"Midland\" not pinned","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
@@ -11426,15 +11426,15 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a single_select question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an Administrator makes a autocomplete question's choices depend on it, linking each choice to one of its choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a single-select question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator makes a type-ahead question's choices depend on it, linking each choice to one of its choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the dependency is accepted","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a autocomplete question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an Administrator makes a single_select question's choices depend on it, linking each choice to one of its choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a multi_select question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a type-ahead question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator makes a single-select question's choices depend on it, linking each choice to one of its choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a multi-select question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the dependency is refused","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an Administrator makes a multi_select question's choices depend on it, linking each choice to one of its choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a yes_no question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false}
+				{"keyword":"When","text":"an Administrator makes a multi-select question's choices depend on it, linking each choice to one of its choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a yes/no question, offering \"Niviuk\" and \"Ozone\" when its type has choices","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs","tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],
 			"staleIgnore": false,
@@ -11456,9 +11456,9 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the \"Model\" question's choices depend on the \"Make\" question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an Administrator makes a third question's choices depend on \"Model\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the dependency is refused, because \"Model\" already depends on another question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the dependency is refused, saying \"Model\" already depends on another question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an Administrator makes the \"Make\" question's choices depend on a third question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the dependency is refused, because other questions' choices already depend on \"Make\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the dependency is refused, saying other questions' choices already depend on \"Make\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs","tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],
 			"staleIgnore": false,
@@ -11723,13 +11723,13 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a single_select \"Model\" question's choices depend on a single-select \"Make\" question offering \"Niviuk\" and \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a single-select \"Model\" question's choices depend on a single-select \"Make\" question offering \"Niviuk\" and \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"\"Model\" offers \"Mentor 7\" and \"Ikuma\" linked to \"Niviuk\", and \"Rush 6\" linked to \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter using English opens the page asking both","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"\"Model\" is disabled, and says to answer \"Make\" first","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they answer \"Make\" with \"Niviuk\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"\"Model\" is enabled and offers only \"Ikuma\" and \"Mentor 7\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a autocomplete \"Model\" question's choices depend on a single-select \"Make\" question offering \"Niviuk\" and \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a type-ahead \"Model\" question's choices depend on a single-select \"Make\" question offering \"Niviuk\" and \"Ozone\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter using French opens the page asking both","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
@@ -11824,7 +11824,7 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a required \"Model\" question's choices depend on an optional \"Make\" question","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a reporter leaves \"Make\" unanswered and presses Next","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the form moves on, because \"Model\" cannot be answered until \"Make\" is","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the form moves on past \"Model\", which cannot be answered until \"Make\" is","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they consent and send the report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the report is sent with no answer to \"Model\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
@@ -11894,7 +11894,7 @@
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they move a question whose choices depend on the question above it up, and the API refuses the new order","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they move a question whose choices depend on the question above it up, and the new order is refused","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page shows the refusal, naming both questions","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the list keeps its order","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
@@ -12120,7 +12120,7 @@
 				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"the \"Model\" question's choices depend on a single_select \"Make\" question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the \"Model\" question's choices depend on a single-select \"Make\" question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"\"Other\" is offered under \"Niviuk\" and \"Ozone\", and \"Mentor 7\" under \"Niviuk\" only","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an Administrator saving the question removes \"Niviuk\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the removal is refused, naming \"Mentor 7\" and not \"Other\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
@@ -12130,7 +12130,7 @@
 				{"keyword":"Then","text":"saving \"Model\" again, as the editor sends it, succeeds and keeps the \"Niviuk\" links","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a reviewer offering \"Other\" under \"Ozone\" only succeeds and keeps its \"Niviuk\" link","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a reviewer offering \"Other\" under the removed \"Niviuk\" alone is refused, and \"Other\" stays under \"Ozone\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"the \"Model\" question's choices depend on a autocomplete \"Make\" question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the \"Model\" question's choices depend on a type-ahead \"Make\" question","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer on the type-ahead review page removes \"Niviuk\"","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"\"Mentor 7\" is also offered under \"Ozone\" and a Safety Officer on the type-ahead review page removes \"Niviuk\" again","files":["tests/HpacSafety.Acceptance.Tests/DependentChoiceSteps.cs"],"ambiguous":false}
 			],
@@ -12390,7 +12390,7 @@
 			"id": "REQ-QB-225",
 			"area": "dependent-choices",
 			"file": ".spec/features/dependent-choices/dependent-choices.feature",
-			"title": "The migration folds each link into the join table and merges identical duplicates",
+			"title": "The migration keeps each link as one of the choice's parents and merges identical duplicates",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -12408,7 +12408,7 @@
 				{"keyword":"Then","text":"\"EN-CCC\" is offered under \"Paraglider\" only","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"every answer still names the choice it named and reads the same wording","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the conditional question's condition follows the surviving \"EN-B\"","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the old parent column is gone","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"no choice keeps its old single parent link","files":["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ChoiceParentMigrationSteps.cs","tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],
 			"staleIgnore": false,
@@ -16627,7 +16627,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a multiple_choice field's choice ref appears in the English file but not the French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a \"multiple_choice\" field's choice ref appears in the English file but not the French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the pair is mapped","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a draft is still produced with that choice","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the choice's French label defaults to its English label","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
@@ -16649,24 +16649,24 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type short_text","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"short_text\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the pair is mapped","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it produces a draft of type short_text","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type long_text","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it produces a draft of type long_text","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type email","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it produces a draft of type short text","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"long_text\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it produces a draft of type paragraph","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"email\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces a draft of type email","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type phone_number","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"phone_number\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces a draft of type phone","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type date","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"date\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces a draft of type date","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type file_upload","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it produces a draft of type file_upload","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type yes_no","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it produces a draft of type yes_no","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type dropdown","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it produces a draft of type single_select","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform field of type statement","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"file_upload\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it produces a draft of type file upload","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"yes_no\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it produces a draft of type yes/no","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"dropdown\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it produces a draft of type single-select","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform field of type \"statement\"","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces a draft of type statement","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],
@@ -16685,7 +16685,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform multiple_choice field that does not allow multiple selection","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform \"multiple_choice\" field that does not allow multiple selection","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the pair is mapped","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces a single-select draft seeded from its choices","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false}
 			],
@@ -16705,7 +16705,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform multiple_choice field that allows multiple selection","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform \"multiple_choice\" field that allows multiple selection","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the pair is mapped","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces a multi-select draft seeded from its choices","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false}
 			],
@@ -16746,7 +16746,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a Typeform contact_info field containing name, phone, and email subfields","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Typeform \"contact_info\" field containing name, phone, and email subfields","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the pair is mapped","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it produces one group draft from the field's title","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"one draft per subfield, each grouped under it","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false}
@@ -16910,7 +16910,7 @@
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator opens the manage-questions page","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they import a Typeform draft whose key matches an existing question","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"choosing to review it opens the existing question for editing instead of creating a new one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"choosing to review it opens the existing question for editing, and creates no new one","files":["tests/e2e/steps/typeform-import.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-questions.steps.ts","tests/e2e/steps/typeform-import.steps.ts"],
 			"staleIgnore": false,
@@ -16991,7 +16991,7 @@
 				{"keyword":"Given","text":"an Administrator has an English Typeform export and a matching French one","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a member does not have the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"that member attempts to import or export","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API refuses both attempts","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"both attempts are refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/TypeformImportEndpointSteps.cs","tests/HpacSafety.Acceptance.Tests/TypeformImportSteps.cs"],
 			"staleIgnore": false,
@@ -17938,7 +17938,7 @@
 				{"keyword":"Given","text":"a Gemini key is configured","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the Translation settings name gemini-3.5-pro as the model and low as the reasoning effort","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"text is translated","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the request goes to Gemini's OpenAI-compatible endpoint","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the request goes to Gemini's OpenAI-compatible service","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"translation asks for gemini-3.5-pro at low reasoning","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no setting names a provider","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false}
 			],

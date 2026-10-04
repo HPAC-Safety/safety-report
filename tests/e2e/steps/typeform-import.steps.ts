@@ -142,7 +142,7 @@ When("they import a Typeform draft whose key matches an existing question", asyn
 })
 
 Then(
-	"choosing to review it opens the existing question for editing instead of creating a new one",
+	"choosing to review it opens the existing question for editing, and creates no new one",
 	async ({ page }) => {
 		await page.getByRole("button", { name: "Review", exact: true }).first().click()
 

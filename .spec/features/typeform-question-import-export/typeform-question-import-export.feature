@@ -24,7 +24,7 @@ Scenario: A field's ref appears in the English file but not the French one
 
 @REQ-TF-003
 Scenario: A choice's ref appears in the English file but not the French one
-  Given a multiple_choice field's choice ref appears in the English file but not the French one
+  Given a "multiple_choice" field's choice ref appears in the English file but not the French one
   When the pair is mapped
   Then a draft is still produced with that choice
   And the choice's French label defaults to its English label
@@ -32,31 +32,31 @@ Scenario: A choice's ref appears in the English file but not the French one
 
 @REQ-TF-004
 Scenario Outline: A Typeform field type maps to a question type
-  Given a Typeform field of type <typeform_type>
+  Given a Typeform field of type "<typeform type>"
   When the pair is mapped
-  Then it produces a draft of type <question_type>
+  Then it produces a draft of type <question type>
 
 Examples:
-  | typeform_type   | question_type |
-  | short_text      | short_text    |
-  | long_text       | long_text     |
-  | email           | email         |
-  | phone_number    | phone         |
-  | date            | date          |
-  | file_upload     | file_upload   |
-  | yes_no          | yes_no        |
-  | dropdown        | single_select |
-  | statement       | statement     |
+  | typeform type | question type |
+  | short_text    | short text    |
+  | long_text     | paragraph     |
+  | email         | email         |
+  | phone_number  | phone         |
+  | date          | date          |
+  | file_upload   | file upload   |
+  | yes_no        | yes/no        |
+  | dropdown      | single-select |
+  | statement     | statement     |
 
 @REQ-TF-005
 Scenario: A single-select multiple-choice field imports as single-select
-  Given a Typeform multiple_choice field that does not allow multiple selection
+  Given a Typeform "multiple_choice" field that does not allow multiple selection
   When the pair is mapped
   Then it produces a single-select draft seeded from its choices
 
 @REQ-TF-006
 Scenario: A multi-select multiple-choice field imports as multi-select
-  Given a Typeform multiple_choice field that allows multiple selection
+  Given a Typeform "multiple_choice" field that allows multiple selection
   When the pair is mapped
   Then it produces a multi-select draft seeded from its choices
 
@@ -69,7 +69,7 @@ Scenario: A group field flattens into a heading and its children
 
 @REQ-TF-009
 Scenario: A contact-info field flattens the same way a group does
-  Given a Typeform contact_info field containing name, phone, and email subfields
+  Given a Typeform "contact_info" field containing name, phone, and email subfields
   When the pair is mapped
   Then it produces one group draft from the field's title
   And one draft per subfield, each grouped under it
@@ -122,7 +122,7 @@ Scenario: The imported draft's key comes from the Typeform ref
 Scenario: Re-importing the same form updates in place
   Given an Administrator opens the manage-questions page
   When they import a Typeform draft whose key matches an existing question
-  Then choosing to review it opens the existing question for editing instead of creating a new one
+  Then choosing to review it opens the existing question for editing, and creates no new one
 
 @REQ-TF-018
 Scenario: Export produces a zip of two Typeform-shaped files
@@ -163,7 +163,7 @@ Scenario: A choice dependency survives an export and reimport
 Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role
   When that member attempts to import or export
-  Then the API refuses both attempts
+  Then both attempts are refused as forbidden
 
 @REQ-TF-024
 Scenario: Importing a question strips a trailing colon from its title

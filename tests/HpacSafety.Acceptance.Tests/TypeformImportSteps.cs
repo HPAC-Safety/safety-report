@@ -38,7 +38,7 @@ public sealed class TypeformImportSteps
 		_englishFields.Add(Field(_focusRef, "Only in English", "short_text"));
 	}
 
-	[Given(@"a multiple_choice field's choice ref appears in the English file but not the French one")]
+	[Given(@"a ""multiple_choice"" field's choice ref appears in the English file but not the French one")]
 	public void GivenAChoiceRefIsMissingFromFrench()
 	{
 		_focusRef = "choice-mismatch-field";
@@ -48,7 +48,7 @@ public sealed class TypeformImportSteps
 			ChoiceField(_focusRef, "Choisir", "multiple_choice", [new TypeformChoice("a", "a", "A (fr)")], false, false));
 	}
 
-	[Given(@"a Typeform field of type (.*)")]
+	[Given(@"a Typeform field of type ""(.*)""")]
 	public void GivenATypeformFieldOfType(string typeformType)
 	{
 		_focusRef = "typed-field";
@@ -65,7 +65,7 @@ public sealed class TypeformImportSteps
 		_frenchFields.Add(frenchField);
 	}
 
-	[Given(@"a Typeform multiple_choice field that does not allow multiple selection")]
+	[Given(@"a Typeform ""multiple_choice"" field that does not allow multiple selection")]
 	public void GivenASingleSelectMultipleChoiceField()
 	{
 		_focusRef = "single-choice-field";
@@ -74,7 +74,7 @@ public sealed class TypeformImportSteps
 		_frenchFields.Add(ChoiceField(_focusRef, "Choisir", "multiple_choice", choices, false, false));
 	}
 
-	[Given(@"a Typeform multiple_choice field that allows multiple selection$")]
+	[Given(@"a Typeform ""multiple_choice"" field that allows multiple selection$")]
 	public void GivenAMultiSelectMultipleChoiceField()
 	{
 		_focusRef = "multi-choice-field";
@@ -91,7 +91,7 @@ public sealed class TypeformImportSteps
 		_frenchFields.Add(GroupField(_focusRef, "Aéronef", "group", "make-child", "model-child", "Fabricant", "Modèle"));
 	}
 
-	[Given(@"a Typeform contact_info field containing name, phone, and email subfields")]
+	[Given(@"a Typeform ""contact_info"" field containing name, phone, and email subfields")]
 	public void GivenAContactInfoField()
 	{
 		_focusRef = "contact-field";
@@ -228,8 +228,7 @@ public sealed class TypeformImportSteps
 	[Then(@"it produces a draft of type (.*)")]
 	public void ThenItProducesADraftOfType(string questionType)
 	{
-		EnumCode.TryParse<QuestionType>(questionType, out var expected).ShouldBeTrue();
-		Draft().Type.ShouldBe(expected);
+		Draft().Type.ShouldBe(GlossaryNames.QuestionType(questionType));
 	}
 
 	[Then(@"it produces a single-select draft seeded from its choices")]

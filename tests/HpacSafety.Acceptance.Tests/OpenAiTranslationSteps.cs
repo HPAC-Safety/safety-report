@@ -382,7 +382,7 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		_transport.Bodies.ShouldBeEmpty();
 	}
 
-	[Then(@"^the request goes to Gemini's OpenAI-compatible endpoint$")]
+	[Then(@"^the request goes to Gemini's OpenAI-compatible service$")]
 	public void ThenTheRequestGoesToGemini()
 	{
 		_transport.Uri.ShouldNotBeNull().ToString()

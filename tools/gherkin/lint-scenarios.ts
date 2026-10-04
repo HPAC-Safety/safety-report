@@ -140,22 +140,36 @@ export function oneWhen(unit: Unit): Array<{ line: number; found: string }> {
 
 /**
  * How a browser is driven, which a step never says: pointer and keyboard
- * mechanics, key names, element roles and selectors, CSS, and pixel
- * sizes. Quoted interface copy is skipped, and Examples cells are not read, so
- * a per-key Scenario Outline names its keys in the table.
+ * mechanics, element roles and selectors, CSS, and pixel sizes. Quoted
+ * interface copy is skipped. An Examples cell a step reads is step text, so it
+ * is held to the same patterns: it names an input ("the Escape key", "the
+ * pointer outside the question"), never a verb ("pressing Escape").
  */
 const UI_MECHANICS: readonly RegExp[] = [
 	/\b(?:click|double-click|right-click|tap|hover|scroll|drag|press)(?:s|es|ed|ing)?\b/i,
 	/\bkey(?:stroke|press)s?\b/i,
 	/\btabs?\s+(?:to|through|past|into|out|away|back)\b|\btabb(?:ed|ing)\b/i,
 	/\bmouse\b/i,
-	/\b(?:Tab|Enter|Escape|Esc|Space(?:bar)?|Home|End|Shift|Backspace|Delete key|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown)\b/,
 	/\b(?:aria|data)-[a-z][\w-]*/i,
 	/\brole\s*=|\b(?:combobox|listbox|textbox|spinbutton|menuitem|tablist|tabpanel)(?:es|s)?\b/i,
-	/\b(?:selector|DOM|CSS|class name|z-index|viewport)s?\b/i,
+	// DOM, but not a claim ID that happens to carry it (REQ-DOM-007).
+	/(?<!-)\b(?:selector|DOM|CSS|class name|z-index|viewport)s?\b(?!-)/i,
 	/\b\d+\s*(?:pixels?|px)\b|\bpixels?\b/i,
-	/\btypes?\s*$|\btypes?\s+(?:into|in)\b|\btyp(?:es|ed|ing)\s+(?=\s)/,
+	// Typing as a verb ("types into", "the reporter types"), not the noun ("content type").
+	/^types?\b(?!-)|\b(?:visitor|member|reporter|reviewer|officer|administrator|they|who)\s+types?\b|\b(?:has|have|had)\s+typed\b|\btyping\b|\btypes?\s+into\b|\btypes\s+in\b/i,
 ]
+
+/**
+ * A key's name, which only an Examples cell carries ("the Enter key", "the
+ * down arrow key twice"): a step or a title reads it through a placeholder.
+ */
+const KEY_NAMES: readonly RegExp[] = [
+	/\b(?:Tab|Enter|Escape|Esc|Space(?:bar)?|Home|End|Shift|Backspace|Delete key|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown|(?:up|down|left|right) arrow)\b/,
+]
+
+const UI_MESSAGE = 'say what the actor does or sees, not how the browser is driven; a key name belongs only in an Examples cell, as a noun phrase ("the Escape key")'
+const UI_STEPS = wordRule('no-ui-mechanics', UI_MESSAGE, [...UI_MECHANICS, ...KEY_NAMES], { kinds: ['title', 'step'] })
+const UI_CELLS = wordRule('no-ui-mechanics', UI_MESSAGE, UI_MECHANICS, { kinds: ['example'] })
 
 export const RULES: readonly Rule[] = [
 	wordRule('no-http-status', 'say the outcome in the glossary\'s words ("is refused as forbidden"), not as a status code; the code is asserted in the step definition', [HTTP_STATUS]),
@@ -197,7 +211,7 @@ export const RULES: readonly Rule[] = [
 		message: `at most ${MAX_STEPS} steps in a scenario, its Background not counted; split it or move the setup into one Given`,
 		check: (unit) => (isBackground(unit) || unit.steps.length <= MAX_STEPS ? [] : [{ line: unit.line, found: `${unit.steps.length} steps` }]),
 	},
-	wordRule('no-ui-mechanics', 'say what the actor does or sees, not how the browser is driven; a key name belongs only in an Examples cell', UI_MECHANICS, { kinds: ['title', 'step'] }),
+	{ id: 'no-ui-mechanics', message: UI_MESSAGE, check: (unit) => [...UI_STEPS.check(unit), ...UI_CELLS.check(unit)] },
 ]
 
 /** The parsed feature of one file; a syntax error throws. */

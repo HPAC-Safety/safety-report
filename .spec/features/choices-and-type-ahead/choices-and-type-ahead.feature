@@ -129,7 +129,7 @@ Scenario: A type-ahead value is corrected in place for every answer that names i
   And the next reporter is offered "Cooper's"
 
 @REQ-QB-130
-Scenario: A reporter typing a removed type-ahead value names it without reviving it
+Scenario: A reporter entering a removed type-ahead value names it without reviving it
   Given a Safety Officer removed the type-ahead value "Test site"
   When a reporter submits "test site" for that question
   Then the reporter's answer names the removed value
@@ -188,7 +188,7 @@ Scenario: Reviewing a type-ahead value clears its flag
 
 @REQ-QB-233
 @ui
-Scenario: Typing a merged-away wording offers the survivor, hinting the alias that matched
+Scenario: Entering a merged-away wording offers the survivor, hinting the alias that matched
   Given a type-ahead question offers "Cooper's Hill", one merged from "Coopers"
   And a reporter using English opens that question
   When they enter "Coopers" in the question
@@ -196,7 +196,7 @@ Scenario: Typing a merged-away wording offers the survivor, hinting the alias th
 
 @REQ-QB-234
 @ui
-Scenario: A merged-away wording matches typing in the other language too
+Scenario: A merged-away wording matches an entry in the other language too
   Given a type-ahead question offers "Cooper's Hill" / "Colline Cooper", one merged from "Colline du Cooper"
   And a reporter using English opens that question
   When they enter "Colline du Cooper" in the question

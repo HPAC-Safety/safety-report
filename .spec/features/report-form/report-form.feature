@@ -208,7 +208,7 @@ Examples:
 
 @REQ-QB-160
 @ui
-Scenario Outline: Typing into a type-ahead filters its list, ignoring case and accents
+Scenario Outline: Entering text in a type-ahead filters its list, ignoring case and accents
   Given a type-ahead question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
   And a reporter using French opens that question
   When they enter "<typed>" in the question

@@ -601,6 +601,30 @@ jobs:
       - name: Add test counts
         run: node tools/coverage/append-test-counts.ts
 
+      # Uploaded before the comment is posted, so the comment can link to it
+      # (#838). Temporary: skips under act (nektos/act#6022). Remove
+      # `&& !env.ACT` when act ships the fix. ADR-0145.
+      - name: Upload the coverage report
+        id: coverage-report
+        if: always() && !env.ACT
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: |
+            ./artifacts/report/Cobertura.xml
+            ./artifacts/report/SummaryGithub.md
+            ./artifacts/report/*.html
+          if-no-files-found: warn
+
+      # The comment's totals say how much is covered; the HTML report says
+      # which lines are not. Appended to comment.md like the test counts, so
+      # one comment links to it (#838).
+      - name: Link the coverage report
+        if: always()
+        env:
+          REPORT_URL: ${{ steps.coverage-report.outputs.artifact-url }}
+        run: node tools/coverage/append-report-link.ts
+
       # Skipped on fork pull requests, whose token cannot write, and on a merge
       # group, which has no pull request to comment on. The job summary above
       # carries the same information, so nothing is lost - a failing gate is
@@ -628,17 +652,6 @@ jobs:
         if: always() && env.ACT
         run: node tools/coverage/print-ci-local-coverage.ts
 
-      # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
-      # act ships the fix. ADR-0145.
-      - uses: actions/upload-artifact@v7
-        if: always() && !env.ACT
-        with:
-          name: coverage-report
-          path: |
-            ./artifacts/report/Cobertura.xml
-            ./artifacts/report/SummaryGithub.md
-            ./artifacts/report/*.html
-          if-no-files-found: warn
 
   # Vite + @tailwindcss/vite, one package.json, one committed lockfile. See
   # ADR-0043 (supersedes ADR-0006's no-Node standalone-CLI build).

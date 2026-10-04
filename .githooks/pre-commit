@@ -23,13 +23,16 @@ BRANCH=$(git symbolic-ref --quiet --short HEAD || echo "")
 
 export STAGED BRANCH
 
-status=0
+status=0 ran=0
 for check in "$HOOK_DIR"/pre-commit.d/*.sh; do
 	[ -f "$check" ] || continue
+	ran=$((ran + 1))
 	if ! sh "$check"; then
 		echo "pre-commit: $(basename "$check") failed" >&2
 		status=1
 	fi
 done
 
+# No checks at all means a broken checkout, not a clean commit: fail closed.
+[ "$ran" -gt 0 ] || { echo "pre-commit: no checks found in $HOOK_DIR/pre-commit.d" >&2; exit 1; }
 exit "$status"

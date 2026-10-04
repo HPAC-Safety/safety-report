@@ -156,12 +156,29 @@ describe('the pre-commit runner', () => {
 
 	it('runs a check whether or not it is executable', () => {
 		stub('00-first.sh', 'echo 00 >> ran.txt')
+		stub('99-last.sh', 'echo 99 >> ran.txt')
 		chmodSync(join(root, '.githooks', 'pre-commit.d', '00-first.sh'), 0o644)
 
 		const result = runHook()
 
 		assert.equal(result.status, 0, result.stderr)
 		assert.deepEqual(read('ran.txt'), ['00', '99'])
+	})
+
+	it('fails closed, naming the directory, when it finds no check at all', () => {
+		const checks = join(root, '.githooks', 'pre-commit.d')
+		const aside = join(root, '.githooks', 'pre-commit.d.aside')
+		cpSync(checks, aside, { recursive: true })
+		rmSync(checks, { recursive: true, force: true })
+		try {
+			const result = runHook()
+
+			assert.equal(result.status, 1)
+			assert.match(result.stderr, /^pre-commit: no checks found in .*pre-commit\.d$/m)
+		} finally {
+			cpSync(aside, checks, { recursive: true })
+			rmSync(aside, { recursive: true, force: true })
+		}
 	})
 
 	it('is a runner: every check it runs is a file under pre-commit.d', () => {

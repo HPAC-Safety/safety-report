@@ -19,12 +19,8 @@ names and step numbers.
   answer in the issue, and in the specification where it changes behavior,
   before any code
   ([ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md)).
-- Sub-agent briefs: end with "if anything is ambiguous, stop and report the
-  question; do not guess".
-- Sequencing: two issues that edit the same EF migration, SQL view under
-  `Persistence/Sql/`, or table run in filing order: the second is filed as
-  blocked by the first, and is not picked up until the first has merged. Migration timestamps
-  and view definitions do not survive being rebased across each other.
+- Sequencing: an SQL view under `Persistence/Sql/` is a view, and an EF
+  migration a migration, for the sequencing rule.
 
 ### File a new issue
 
@@ -206,10 +202,6 @@ Rules:
   `node tools/spec/check-records.ts` checks what each kind owes, in pre-commit
   and `docs`. The rules: the table in
   [`.spec/lessons/README.md`](../../.spec/lessons/README.md#the-shape).
-- A process lesson updates the generic skill when its rule transfers to any
-  project, and this project's companion skill when the rule names this
-  repository's tools or paths. The lesson's `## Skill` section names the skill
-  it changed — once; no footer naming the generic skill too.
 - A product lesson's remedy is a claim and a scenario in `.spec/features`.
 - No index to update: `.spec/README.md` lists the lesson from its frontmatter
   `title`, `description` (shown as "What it cost us"), `issue`, `date`,
@@ -259,7 +251,7 @@ Rules:
   may carry the other keys Claude Code reads on an agent: `tools`,
   `disallowedTools`, `permissionMode`, `maxTurns`, `skills`, `memory`,
   `isolation`, `background`. Nothing else
-  ([ADR-0182](../../.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
+  ([CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 - The Worker's runtime prompts are exempt; their bytes are the model payload.
 - `node tools/docs/check-frontmatter.ts` is the authority; the pre-commit hook runs
   it over staged markdown.
@@ -396,10 +388,10 @@ Rules:
 
 ## Workflow steps
 
-- A `run:` is one command; logic goes in a script under `tools/<group>/` with
-  its test under `tests/js/<group>/`, and plain sequences become separate steps.
-  `tools/github/check-workflow-steps.ts` fails anything else in pre-commit and
-  `docs`. Add the script to the workflow's path filter
+- The script goes under `tools/<group>/` with its test under
+  `tests/js/<group>/`. `tools/github/check-workflow-steps.ts` fails a `run:`
+  that is more than one command in pre-commit and `docs`. Add the script to the
+  workflow's path filter
   ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
 
 ## Workflows that push
@@ -413,10 +405,8 @@ Rules:
 
 ## Required checks
 
-- A new CI job that can fail `main` joins the main ruleset's required status
-  checks in the pull request that adds it, and its workflow triggers on
-  `merge_group`. A check nobody requires holds nothing back
-  ([lesson 0042](../../.spec/lessons/0042-a-check-nobody-required-let-a-broken-bump-merge.md)).
+- Why a check nobody requires holds nothing back:
+  [lesson 0042](../../.spec/lessons/0042-a-check-nobody-required-let-a-broken-bump-merge.md).
 
 ## Concurrency and quotas
 

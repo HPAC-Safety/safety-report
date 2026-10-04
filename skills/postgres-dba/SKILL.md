@@ -29,6 +29,19 @@ name any conflict rather than silently choosing.
 - **Never put real personal data** in seeds, fixtures, examples, or logs.
 - **Show evidence.** Every design choice or audit finding cites the query,
   plan, or rule behind it.
+- **A missing rule is a question, not a guess.** Cardinality, optionality, and
+  retention come from the requirement served; ask when it does not say.
+
+## Deliver
+
+- **Design**: an ER diagram and the intended DDL; every key, type,
+  relationship, delete behavior, and index justified in one line.
+- **Audit**: findings by severity, each with evidence, fix, and migration risk
+  (see "Audit a schema").
+- **Migration**: the model change, the generated migration, and the completed
+  review checklist.
+- **Seed**: idempotent, synthetic, and classed as reference, development, or
+  test (see "Seed data").
 
 ## Read a schema
 

@@ -146,23 +146,27 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
 ### Role agents
 
 Declared under `agents/`, installed by `skillfile`. None is required; a
-contributor who never invokes one is unaffected.
+contributor who never invokes one is unaffected. Each has a human name, and its
+file says who it is, what it does, and what it leaves to others; how it works
+is in the generic skills it preloads
+([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 - The chain's four steps, each trusting only the artifact from the role before
   it
-  ([ADR-0197](.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)):
-  - **spec-author** — writes scenarios and what is out of scope;
-  - **test-writer** — turns a claim into a failing step definition;
+  ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)):
+  - **spec-author** (Jennifer) — writes scenarios and what is out of scope;
+  - **test-writer** (Kevin) — turns a claim into a failing step definition;
   - a builder designs and builds what the claims describe, and makes it pass:
-    **backend** (server side, scripts, CI), **ux** (web UI), or
-    **infrastructure** (cloud, network, deployment);
-  - **spec-reviewer** — judges a diff against those claims and the ADRs.
-- **ai-author** — maintains these instruction files
-  ([ADR-0121](.spec/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
-- **database-administrator** — designs, audits, and migrates the schema.
-- **critic** judges a plan before it is built; **adversary** attacks a change
-  for bugs, security, privacy leaks, contract violations, and missing tests;
-  **spec-reviewer** judges the diff after, against claims and ADRs
+    **backend** (Brad: server side, scripts, CI), **ux** (Tiffany: web UI), or
+    **infrastructure** (Dave: cloud, network, deployment);
+  - **spec-reviewer** (Jessica) — judges a diff against those claims and the
+    ADRs.
+- **ai-author** (Emily) — maintains these instruction files.
+- **database-administrator** (Jane) — designs, audits, and migrates the schema.
+- **critic** (Karen) judges a plan before it is built; **adversary** (Kyle)
+  attacks a change for bugs, security, privacy leaks, contract violations, and
+  missing tests; **spec-reviewer** judges the diff after, against claims and
+  ADRs
   ([#842](https://github.com/HPAC-Safety/safety-report/issues/842)).
   - Run the critic on a plan before it is final (before `ExitPlanMode` or
     `gh issue create`): one pass, at most one recheck, then the owner decides.
@@ -172,13 +176,12 @@ contributor who never invokes one is unaffected.
     ([CONV-007](.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
 - The ten agents are a full-stack team; each description opens with its team
   role. A new agent earns a file only when it reads, uses, runs, or refuses
-  something none of these does (ADR-0197).
+  something none of these does ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 - The ten agents are generic. This repository's paths, tags, commands, and
   privacy boundaries for each are in
   [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).
 - Each declares its model and effort in frontmatter; the assignment and its
-  reason are in `hpac-role-agents`
-  ([ADR-0182](.spec/decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
+  reason are in `hpac-role-agents` ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 ### Decisions and conventions
 
@@ -361,8 +364,9 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 `.claude/skills/` are generated.
 
 - A **generic** skill names nothing specific to this repository, so another
-  project can reuse it
-  ([ADR-0131](.spec/decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md)).
+  project can reuse it.
+- **A skill's name says `hpac` exactly when it is project-specific**
+  ([CONV-009](.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md)).
 - Where a row names two skills, read both: the generic one, then the project
   skill that extends it. The project skill wins where they differ.
 
@@ -372,17 +376,18 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 | Genuinely ambiguous product behavior | [`clarify-requirements`](skills/clarify-requirements/SKILL.md) | — |
 | Tests and fixtures | [`test-from-scenarios`](skills/test-from-scenarios/SKILL.md) | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
 | Summary privacy or runtime prompt | — | [`anonymize-hpac-reports`](skills/anonymize-hpac-reports/SKILL.md) |
-| Questions, reports, lifecycle, review, publication | — | [`incident-domain-model`](skills/incident-domain-model/SKILL.md) |
+| Questions, reports, lifecycle, review, publication | — | [`hpac-domain-model`](skills/hpac-domain-model/SKILL.md) |
 | Schema design, audit, data types, or query performance | [`postgres-dba`](skills/postgres-dba/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | EF Core model or query DTOs | [`design-ef-core-model`](skills/design-ef-core-model/SKILL.md) | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
 | Writing, applying, seeding, or squashing a migration | [`manage-ef-core-migrations`](skills/manage-ef-core-migrations/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | Attachments or private object storage | — | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
 | English/French behavior | — | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
-| React/TypeScript web UI and design system | — | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
-| AWS, Terraform, or deployment | — | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
+| React/TypeScript web UI and design system | [`design-web-ui`](skills/design-web-ui/SKILL.md) | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
+| AWS, Terraform, or deployment | [`design-cloud-infrastructure`](skills/design-cloud-infrastructure/SKILL.md) | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
 | Issues, docs, worktrees, PRs, or CI | [`deliver-change`](skills/deliver-change/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
-| Acting as a role agent | [`agents/`](agents/) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) |
-| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) "ai-author" |
+| Acting as a role agent | [`agents/`](agents/), [`agent-persona`](skills/agent-persona/SKILL.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) |
+| Reviewing a plan, a diff, or a working tree | [`review-work`](skills/review-work/SKILL.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) |
+| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md), [`write-agent-instructions`](skills/write-agent-instructions/SKILL.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) "ai-author (Emily)" |
 
 ## Runtime prompt
 

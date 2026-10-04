@@ -2,7 +2,7 @@
 title: A generic skill names no project, and a project skill extends it
 description: Skills and role agents whose practice transfers to other projects are written generically; the rules specific to this repository move into a small project skill that extends the generic one, and a tool keeps the generic files free of project terms.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-25
 decision-makers: Chase Florell
 keywords: agents, skills, AGENTS.md, ai-author, Skillfile, reuse, generic, instructions, ADR-0037, ADR-0086, ADR-0121
@@ -10,7 +10,8 @@ keywords: agents, skills, AGENTS.md, ai-author, Skillfile, reuse, generic, instr
 
 # ADR-0131 — A generic skill names no project, and a project skill extends it
 
-**Status:** Accepted. **Extends**
+**Status:** Superseded by
+[CONV-009](../conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md). **Extends**
 [ADR-0121](ADR-0121-a-fifth-role-maintains-the-agent-instructions.md) and
 [ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amended by
 [ADR-0139](ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md):

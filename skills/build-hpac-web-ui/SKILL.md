@@ -5,6 +5,10 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 # Build the HPAC web UI
 
+Extends [`design-web-ui`](../design-web-ui/SKILL.md); read that first. This
+skill holds only what is specific to this repository, under the same section
+names where they exist, and wins where they differ.
+
 ## Stack
 
 - React and TypeScript, built with Vite
@@ -13,17 +17,14 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 - **No inline JavaScript.** Every script is an external, type-checked `.ts`
   module under `src/web/src/`, loaded with `<script type="module" src="...">`
   ([ADR-0052](../../.spec/decisions/ADR-0052-no-inline-script-typescript-only.md)).
-- Design tokens, not raw colors. Dark mode redefines tokens rather than adding
-  `dark:` variants
+- Dark mode redefines tokens rather than adding `dark:` variants
   ([ADR-0024](../../.spec/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md)).
 - Self-hosted assets only.
 
 ## Accessibility and locale
 
-- Semantic HTML, visible focus, 44px touch targets, reduced-motion support,
-  WCAG AA contrast.
-- Every user-facing string and accessible label lives in the locale catalogues
-  (see [`localize-hpac-app`](../localize-hpac-app/SKILL.md)).
+- The locale catalogues and the strings in them:
+  [`localize-hpac-app`](../localize-hpac-app/SKILL.md).
 - Resolve locale: explicit choice, then browser, then English. Keep answers when
   switching language.
 

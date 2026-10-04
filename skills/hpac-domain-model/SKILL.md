@@ -1,5 +1,5 @@
 ---
-name: incident-domain-model
+name: hpac-domain-model
 description: The HPAC occurrence-reporting domain — report lifecycle states, the outbox pattern that triggers summarization, the one bilingual summary row per report, and which fields are sensitive. Use when working on entities, EF Core mappings, migrations, the worker, or any API endpoint.
 ---
 

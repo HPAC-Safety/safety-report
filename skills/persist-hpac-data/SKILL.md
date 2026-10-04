@@ -13,7 +13,7 @@ where they differ.
 - Schema changes, raw SQL, and how migrations are applied:
   [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md)
   ([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
-- Tables and sensitivity tiers: [`incident-domain-model`](../incident-domain-model/SKILL.md).
+- Tables and sensitivity tiers: [`hpac-domain-model`](../hpac-domain-model/SKILL.md).
 
 ## Records
 
@@ -31,7 +31,6 @@ where they differ.
 
 ## Queries
 
-- Query purpose-built DTOs holding exactly the fields a use case needs.
 - The summary DTO returns exact revision labels, answers, and privacy flags.
 - The public DTO never carries raw answers or an image or video original.
   `public_report_media` is the one file-shaped public read: opaque id, kind,
@@ -46,7 +45,6 @@ where they differ.
   `question_choices` and `question_choice_parents` have the column but no
   default filter, because their aggregate reads removed rows (ADR-0095,
   ADR-0151).
-- Cascade soft deletion explicitly, with one timestamp.
 - Reference checks for question deletion include answers beneath deleted
   reports.
 - Never physically delete records or add restore behavior (`AGENTS.md`

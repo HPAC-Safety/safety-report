@@ -10,7 +10,7 @@
 # - Links: every relative link in the staged files resolves (ADR-0183).
 # - The specification index, when anything under .spec/ is staged (ADR-0183).
 # - Generic instructions, when a skill or role agent is staged: a generic one
-#   names nothing specific to this repository (ADR-0131).
+#   names nothing specific to this repository (CONV-009).
 # - ADR numbers, when a decision record is staged (ADR-0091, lesson 0003).
 # - Record shape, when an ADR, lesson, or convention is staged (ADR-0192).
 
@@ -37,7 +37,7 @@ if echo "$STAGED_MARKDOWN" | grep -q '^\.spec/'; then
 fi
 
 # A generic skill or role agent names nothing specific to this repository, so
-# it can be reused elsewhere (ADR-0131).
+# it can be reused elsewhere (CONV-009).
 if echo "$STAGED_MARKDOWN" | grep -qE '^(skills|agents)/'; then
 	node tools/docs/check-generic-instructions.ts || status=1
 fi

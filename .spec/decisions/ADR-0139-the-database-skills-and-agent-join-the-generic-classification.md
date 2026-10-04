@@ -2,7 +2,7 @@
 title: The database skills and agent join the generic classification
 description: postgres-dba, design-ef-core-model, and the database-administrator agent are generic; persist-hpac-data becomes the project half of a split; the sixth role agent needs no decision beyond ADR-0086 and ADR-0121.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-26
 decision-makers: Chase Florell
 keywords: agents, skills, database-administrator, postgres-dba, design-ef-core-model, persist-hpac-data, manage-hpac-migrations, generic, ADR-0086, ADR-0121, ADR-0131
@@ -10,7 +10,8 @@ keywords: agents, skills, database-administrator, postgres-dba, design-ef-core-m
 
 # ADR-0139 — The database skills and agent join the generic classification
 
-**Status:** Accepted. **Amends**
+**Status:** Superseded by
+[CONV-009](../conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md). **Amends**
 [ADR-0131](ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md)'s
 classification table, which predates the files #498 added.
 

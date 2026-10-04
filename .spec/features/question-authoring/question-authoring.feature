@@ -61,10 +61,14 @@ Scenario: Publication consent revises in place even when answered
   And it is never marked deleted
 
 @REQ-QB-008
-Scenario: Editing a question copies the latest revision into a new one
+Scenario: Editing a question starts from a copy of its latest revision
   Given an Administrator requests to edit a question with an existing revision
   When the edit is prepared
   Then it starts from the latest revision, with every setting copied
+
+@REQ-QAU-001
+Scenario: Saving an edit validates both languages and adds a complete revision
+  Given an Administrator has prepared an edit of a question with an existing revision
   When the Administrator saves the edit
   Then both languages are validated, and a new complete revision is saved, the existing revision unchanged
 
@@ -140,6 +144,10 @@ Scenario: Whether a question needs translation is a revision setting
   Given a short-text question that does not need translation
   When an Administrator marks it as needing translation while nobody has answered it
   Then a new revision records that it needs translation
+
+@REQ-QAU-002
+Scenario: Changing whether an answered question needs translation replaces it
+  Given a short-text question an Administrator marked as needing translation while nobody had answered it
   When an Administrator changes it back after it has been answered
   Then the question is retired and replaced, so each answer keeps the setting it was given under
 
@@ -164,6 +172,10 @@ Scenario: Whether a date question allows future dates is a revision setting
   Given a date question that does not allow future dates
   When an Administrator allows future dates while nobody has answered it
   Then a new revision of the same question allows future dates, and the earlier revision still does not
+
+@REQ-QAU-003
+Scenario: Changing whether an answered date question allows future dates replaces it
+  Given a date question an Administrator allowed future dates on while nobody had answered it
   When a reporter answers it and an Administrator then disallows future dates
   Then the question is retired and replaced under the same key, and the answer keeps the revision that allowed future dates
 
@@ -248,6 +260,12 @@ Scenario: An Administrator writes instructional text as a title and a descriptio
   When they choose instructional text
   Then its wording is asked for as a title and a description in each language
   And each description takes several lines
+
+@REQ-QAU-008
+@ui
+Scenario: Changing instructional text to short text asks for a question and help text
+  Given an Administrator is authoring a new question
+  And they chose instructional text
   When they choose short text
   Then its wording is asked for as a question and help text in each language
 
@@ -350,8 +368,8 @@ Scenario: A question can be made conditional only on a yes/no or single-select q
 @REQ-QB-054
 Scenario: A single-select parent's dependency records the required choice
   Given a single-select question asking whether the pilot flies hang gliders or paragliders
-  When an Administrator makes a rating question depend on the "hang glider" choice
-  And an Administrator makes a different rating question depend on the "paraglider" choice
+  And an Administrator made a rating question depend on the "hang glider" choice
+  When an Administrator makes a different rating question depend on the "paraglider" choice
   Then each rating question's saved dependency names its own required choice
 
 @REQ-QB-055
@@ -426,10 +444,14 @@ Scenario: Publication consent can never be deleted or deactivated
 @REQ-QB-074
 @ui
 Scenario: An Administrator sees which choices reporters added
+  Given an Administrator opens a type-ahead question with a reporter-added value
+  Then each reporter-added value is marked as such
+
+@REQ-QAU-009
+@ui
+Scenario: The question list says how many reporter-added values wait for review
   Given an Administrator opens the manage-questions page
   Then a type-ahead question with reporter-added values says how many are waiting to be reviewed
-  When they open that question
-  Then each reporter-added value is marked as such
 
 @REQ-QB-075
 @ui
@@ -447,12 +469,18 @@ Scenario: An Administrator authors a question from the Manage questions page
 
 @REQ-QB-077
 @ui
-Scenario: The choices editor appears only for a type that takes choices
+Scenario: The choices editor appears for a type that takes choices
   Given an Administrator is authoring a new question
-  When they choose the type-ahead list type
+  When they make it a type-ahead question
   Then the page offers a choice editor
-  When they choose the single-line text type instead
-  Then the page offers neither
+
+@REQ-QAU-010
+@ui
+Scenario: The choices editor goes away for a type that takes no choices
+  Given an Administrator is authoring a new question
+  And they made it a type-ahead question
+  When they make it a single-line text question instead
+  Then the page offers no choice editor
 
 @REQ-QB-078
 @ui
@@ -462,16 +490,22 @@ Scenario: Only yes/no and single-select questions are offered as a condition
 
 @REQ-QB-079
 @ui
-Scenario: Naming a required choice appears only for a single-select condition
+Scenario: Naming a required choice appears for a single-select condition
   Given an Administrator is authoring a new question
-  When they choose a yes/no question as the condition
-  Then no required-choice control is offered
+  And they chose a yes/no question as the condition
   When they choose a single-select question as the condition instead
   Then a required-choice control offers that question's live choices
 
+@REQ-QAU-011
+@ui
+Scenario: A yes/no condition offers no required-choice control
+  Given an Administrator is authoring a new question
+  When they choose a yes/no question as the condition
+  Then no required-choice control is offered
+
 @REQ-QB-080
 @ui
-Scenario: Questions are reordered from the keyboard
+Scenario: An Administrator moves a question up the form's order
   Given an Administrator opens the manage-questions page
   When they move the second question up using its move-up control
   Then the two questions have swapped places in the list
@@ -491,28 +525,59 @@ Scenario: Editing an answered question warns that it will be replaced
   And the first question has been answered
   When they edit its English wording
   Then the page says that saving retires this question and creates a new one
+
+@REQ-QAU-012
+@ui
+Scenario: Saving an answered question's new wording leaves one question for its key
+  Given an Administrator opens the manage-questions page
+  And the first question has been answered
+  And they edited its English wording
   When they save
   Then the list shows one question for that key, with the new wording
 
 @REQ-QB-111
 @ui
-Scenario: The editor offers Auto-translate answer only for free text
+Scenario: The editor offers Auto-translate answer, checked, for a paragraph
   Given an Administrator is authoring a new question
   When they choose paragraph
   Then Auto-translate answer is offered and checked
+
+@REQ-QAU-013
+@ui
+Scenario: The editor offers Auto-translate answer, unchecked, for short text
+  Given an Administrator is authoring a new question
+  And they chose paragraph
   When they choose short text
   Then Auto-translate answer is offered and unchecked
+
+@REQ-QAU-014
+@ui
+Scenario: The editor does not offer Auto-translate answer for an email question
+  Given an Administrator is authoring a new question
+  And they chose paragraph and then short text
   When they choose email
   Then Auto-translate answer is not offered
 
 @REQ-QB-158
 @ui
-Scenario: The editor offers Allow future dates only for a date question, unchecked
+Scenario: The editor offers Allow future dates for a date question, unchecked
   Given an Administrator is authoring a new question
   When they choose date
   Then Allow future dates is offered and unchecked
+
+@REQ-QAU-015
+@ui
+Scenario: The editor does not offer Allow future dates for a time question
+  Given an Administrator is authoring a new question
+  And they chose date
   When they choose time
   Then Allow future dates is not offered
+
+@REQ-QAU-016
+@ui
+Scenario: A date question saved allowing future dates is sent that way
+  Given an Administrator is authoring a new question
+  And they chose date and then time
   When they choose date, check Allow future dates, write the question in both languages, and save
   Then the saved question is sent allowing future dates
 
@@ -543,10 +608,16 @@ Scenario: The editor carries an existing question's settings into the form
 @ui
 Scenario: Reviewing an imported Typeform draft prefills the editor
   Given an Administrator opens the manage-questions page
-  When they import a Typeform English and French export pair
-  Then the imported drafts are listed
+  And they imported a Typeform English and French export pair
   When they choose to review the first imported draft
   Then the editor is filled with that draft's type and both languages
+
+@REQ-QAU-017
+@ui
+Scenario: Importing a Typeform export pair lists the imported drafts
+  Given an Administrator opens the manage-questions page
+  When they import a Typeform English and French export pair
+  Then the imported drafts are listed
 
 @REQ-QB-089
 @ui
@@ -559,9 +630,16 @@ Scenario: An Administrator downloads the question bank as Typeform files
 @ui
 Scenario: An Administrator writes a question's choice by its wording alone
   Given an Administrator is authoring a new question
-  When they choose the type-ahead list type
-  And they add a choice
+  And they made it a type-ahead question
+  When they add a choice
   Then the choice asks only for its English and French wording
+
+@REQ-QAU-018
+@ui
+Scenario: A choice an Administrator writes is sent without a code
+  Given an Administrator is authoring a new question
+  And they made it a type-ahead question
+  And they added a choice
   When they save the question with that choice
   Then the choice is sent without a code
 
@@ -569,17 +647,33 @@ Scenario: An Administrator writes a question's choice by its wording alone
 Scenario: A choice an Administrator writes is recorded under a code derived from its English wording
   Given an Administrator saves a single-select question with the choices "King Eddy" and "Mara"
   Then the choices are recorded under the codes "king_eddy" and "mara"
+
+@REQ-QAU-004
+Scenario: A reworded choice keeps its code
+  Given an Administrator saves a single-select question with the choices "King Eddy" and "Mara"
   When they reword "King Eddy" to "King Edward" and save again
   Then that choice is still recorded under the code "king_eddy"
+
+@REQ-QAU-005
+Scenario: Two choices whose wording reduces to the same code are refused
+  Given an Administrator saves a single-select question with the choices "King Eddy" and "Mara"
   When they save choices whose English wording reads "Site A-1" and "Site A 1"
   Then the save is refused naming both wordings
 
 @REQ-QB-096
-Scenario: A new question's key is derived from its English wording and never reused
+Scenario: A new question's key is derived from its English wording
   Given an Administrator saves a new question without a key
   Then its key is derived from its English wording
+
+@REQ-QAU-006
+Scenario: A second question with the same wording receives a different key
+  Given an Administrator saves a new question without a key
   When they save another question with the same English wording
   Then it receives a different key
+
+@REQ-QAU-007
+Scenario: A deleted question's key is never reused
+  Given an Administrator saved two new questions with the same English wording and no key
   When they delete the first question and save a third with the same wording
   Then the third question does not take the deleted question's key
 
@@ -591,6 +685,12 @@ Scenario: Editing a question opens the editor in that question's place
   Then the editor takes the second question's place in the list
   And the editor's top edge lines up with that row's move-up control
   And every other question is still shown in its place
+
+@REQ-QAU-019
+@ui
+Scenario: Cancelling an edit shows the question in its place again
+  Given an Administrator opens the manage-questions page
+  And they opened the second question for editing
   When they cancel the edit
   Then the second question is shown in its place again
 
@@ -664,6 +764,12 @@ Scenario: The question editor refuses a label that ends in a colon
   When they write "Date:" as the English wording and "Date" as the French wording
   Then a message says the form adds the colon itself
   And Save stays disabled
+
+@REQ-QAU-020
+@ui
+Scenario: Removing the closing colon lets the question be saved
+  Given an Administrator is authoring a new question
+  And they wrote "Date:" as the English wording and "Date" as the French wording
   When they remove the colon
   Then the message goes away and Save is enabled
 

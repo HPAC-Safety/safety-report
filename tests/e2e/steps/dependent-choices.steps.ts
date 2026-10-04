@@ -126,17 +126,28 @@ async function tickParents(page: Page, row: number, labels: string[]) {
 	await page.keyboard.press("Escape")
 }
 
+async function editHarness(page: Page, make: string, site: string, conditions: string, model: string) {
+	await stubQuestionBank(page, [
+		adminQuestion("make", make, "single_select", 0, MAKE),
+		adminQuestion("site", site, "autocomplete", 1, [adminChoice("woodside", "Woodside")]),
+		adminQuestion("conditions", conditions, "multi_select", 2, [adminChoice("gusty", "Gusty")]),
+		adminQuestion("model", model, "autocomplete", 3, [adminChoice("mentor_7", "Mentor 7", "niviuk")], "make"),
+		adminQuestion("harness", "Harness", "autocomplete", 4, [adminChoice("lightness", "Lightness"), adminChoice("impress", "Impress")]),
+	])
+	await editQuestion(page, "Harness")
+}
+
 When(
 	"they edit a type-ahead question placed after a single-select {string}, a type-ahead {string}, a multi-select {string}, and a type-ahead {string} whose choices depend on {string}",
 	async ({ page }, make: string, site: string, conditions: string, model: string, _parent: string) => {
-		await stubQuestionBank(page, [
-			adminQuestion("make", make, "single_select", 0, MAKE),
-			adminQuestion("site", site, "autocomplete", 1, [adminChoice("woodside", "Woodside")]),
-			adminQuestion("conditions", conditions, "multi_select", 2, [adminChoice("gusty", "Gusty")]),
-			adminQuestion("model", model, "autocomplete", 3, [adminChoice("mentor_7", "Mentor 7", "niviuk")], "make"),
-			adminQuestion("harness", "Harness", "autocomplete", 4, [adminChoice("lightness", "Lightness"), adminChoice("impress", "Impress")]),
-		])
-		await editQuestion(page, "Harness")
+		await editHarness(page, make, site, conditions, model)
+	},
+)
+
+Given(
+	"they are editing a type-ahead question placed after a single-select {string}, a type-ahead {string}, a multi-select {string}, and a type-ahead {string} whose choices depend on {string}",
+	async ({ page }, make: string, site: string, conditions: string, model: string, _parent: string) => {
+		await editHarness(page, make, site, conditions, model)
 	},
 )
 
@@ -145,13 +156,21 @@ Then("its {string} control offers {string} and {string} only", async ({ page }, 
 	await expect(control.locator("option")).toHaveText(["No other question", first, second])
 })
 
-When("they pick {string}, link every choice, and save", async ({ page }, parent: string) => {
+async function pickParentLinkEveryChoiceAndSave(page: Page, parent: string) {
 	await page.getByLabel("Choices depend on the answer to").selectOption({ label: parent })
 	const rows = await page.getByTestId("question-choice-parent").count()
 	for (let row = 0; row < rows; row++) {
 		await tickParents(page, row, ["Niviuk"])
 	}
 	await page.getByRole("button", { name: "Save" }).click()
+}
+
+When("they pick {string}, link every choice, and save", async ({ page }, parent: string) => {
+	await pickParentLinkEveryChoiceAndSave(page, parent)
+})
+
+Given("they picked {string}, linked every choice, and saved", async ({ page }, parent: string) => {
+	await pickParentLinkEveryChoiceAndSave(page, parent)
 })
 
 Then("the save names {string} as the question its choices depend on", ({ page }, _parent: string) => {
@@ -172,23 +191,34 @@ Then("the save names no parent question and keeps every choice's link", ({ page 
 	expect(save.options.map((option) => option.parentChoiceIds)).toEqual([["niviuk"], ["niviuk"]])
 })
 
+async function makeModelDependOnMake(page: Page, last: string, first: string, second: string) {
+	await stubQuestionBank(page, [
+		adminQuestion("make", "Make", "single_select", 0, [
+			adminChoice("other", last, null, "last"),
+			adminChoice("ozone", first),
+			adminChoice("niviuk", second),
+		]),
+		adminQuestion("model", "Model", "autocomplete", 1, [adminChoice("mentor_7", "Mentor 7"), adminChoice("rush_6", "Rush 6")]),
+	])
+	await editQuestion(page, "Model")
+	await page.getByLabel("Choices depend on the answer to").selectOption({ label: "Make" })
+	await page.getByRole("button", { name: "Add a choice" }).click()
+	const rows = page.getByTestId("question-choice")
+	await rows.last().getByRole("textbox", { name: "Choice (English)" }).fill("Zeno 2")
+	await rows.last().getByRole("textbox", { name: "Choice (French)" }).fill("Zeno 2")
+}
+
 When(
 	"they make a type-ahead question's choices depend on a single-select question offering {string} pinned last, and {string} and {string} not pinned",
 	async ({ page }, last: string, first: string, second: string) => {
-		await stubQuestionBank(page, [
-			adminQuestion("make", "Make", "single_select", 0, [
-				adminChoice("other", last, null, "last"),
-				adminChoice("ozone", first),
-				adminChoice("niviuk", second),
-			]),
-			adminQuestion("model", "Model", "autocomplete", 1, [adminChoice("mentor_7", "Mentor 7"), adminChoice("rush_6", "Rush 6")]),
-		])
-		await editQuestion(page, "Model")
-		await page.getByLabel("Choices depend on the answer to").selectOption({ label: "Make" })
-		await page.getByRole("button", { name: "Add a choice" }).click()
-		const rows = page.getByTestId("question-choice")
-		await rows.last().getByRole("textbox", { name: "Choice (English)" }).fill("Zeno 2")
-		await rows.last().getByRole("textbox", { name: "Choice (French)" }).fill("Zeno 2")
+		await makeModelDependOnMake(page, last, first, second)
+	},
+)
+
+Given(
+	"they are making a type-ahead question's choices depend on a single-select question offering {string} pinned last, and {string} and {string} not pinned",
+	async ({ page }, last: string, first: string, second: string) => {
+		await makeModelDependOnMake(page, last, first, second)
 	},
 )
 
@@ -434,6 +464,10 @@ When("a reporter using {word} opens the page asking both", async ({ page }, lang
 	await openForm(page, present(forms.get(page)), language)
 })
 
+Given("a reporter using {word} opened the page asking both", async ({ page }, language: string) => {
+	await openForm(page, present(forms.get(page)), language)
+})
+
 Then("{string} is disabled, and says to answer {string} first", async ({ page }, _child: string, parent: string) => {
 	await expect(modelField(page)).toBeDisabled()
 	await expect(page.getByTestId("question-note")).toContainText(parent)
@@ -462,6 +496,10 @@ Given("a reporter answered {string} with {string} and picked {string} for {strin
 })
 
 When("they change {string} to {string}", async ({ page }, _parent: string, make: string) => {
+	await answerMake(page, make)
+})
+
+Given("the reporter changed {string} to {string}", async ({ page }, _parent: string, make: string) => {
 	await answerMake(page, make)
 })
 
@@ -499,7 +537,7 @@ Then("{string} is empty and offers only {string}", async ({ page }, _child: stri
 	await modelOffers(page, [only])
 })
 
-When("they type {string}, a value {string} does not offer, and change {string} to {string}", async ({ page }, typed: string, _child: string, _parent: string, make: string) => {
+When("they enter {string}, a value {string} does not offer, and change {string} to {string}", async ({ page }, typed: string, _child: string, _parent: string, make: string) => {
 	await modelField(page).fill(typed)
 	await page.keyboard.press("Tab")
 	await answerMake(page, make)
@@ -541,7 +579,12 @@ Given("the type-ahead {string} question's choices depend on the type-ahead {stri
 	await openForm(page, wingForm("autocomplete", "autocomplete"))
 })
 
-When("a reporter types {string}, a value {string} does not offer, for {string}", async ({ page }, typed: string, _parent: string, _again: string) => {
+When("a reporter enters {string}, a value {string} does not offer, for {string}", async ({ page }, typed: string, _parent: string, _again: string) => {
+	await answerMake(page, typed)
+	await page.keyboard.press("Tab")
+})
+
+Given("a reporter entered {string}, a value {string} does not offer, for {string}", async ({ page }, typed: string, _parent: string, _again: string) => {
 	await answerMake(page, typed)
 	await page.keyboard.press("Tab")
 })
@@ -554,7 +597,7 @@ Then("{string} is enabled and its list offers no choice", async ({ page }, _chil
 
 const sent = new WeakMap<Page, Request>()
 
-When("they type {string} for {string} and send the report", async ({ page }, typed: string, _child: string) => {
+When("they enter {string} for {string} and send the report", async ({ page }, typed: string, _child: string) => {
 	await modelField(page).fill(typed)
 	await page.keyboard.press("Tab")
 	await page.getByRole("button", { name: "Next" }).click()
@@ -621,7 +664,11 @@ Given("a required {string} question's choices depend on an optional {string} que
 	await openForm(page, wingForm("single_select", "autocomplete", { modelRequired: true }))
 })
 
-When("a reporter leaves {string} unanswered and presses Next", async ({ page }, _parent: string) => {
+When("a reporter leaves {string} unanswered and goes to the next page", async ({ page }, _parent: string) => {
+	await page.getByRole("button", { name: "Next" }).click()
+})
+
+Given("a reporter left {string} unanswered and went to the next page", async ({ page }, _parent: string) => {
 	await page.getByRole("button", { name: "Next" }).click()
 })
 
@@ -653,15 +700,6 @@ Then("{string} offers {string} and {string}", async ({ page }, _child: string, f
 	await modelOffers(page, [first, second])
 })
 
-When("they pick {string} and change {string} to {string}", async ({ page }, model: string, _parent: string, make: string) => {
-	const field = modelField(page)
-	await field.click()
-	await field.fill(model)
-	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model, exact: true }).click()
-	await expect(modelField(page)).toHaveValue(model)
-	await answerMake(page, make)
-})
-
 Then("{string} still holds {string} and offers {string} and {string}", async ({ page }, _child: string, model: string, first: string, second: string) => {
 	await expect(modelField(page)).toHaveValue(model)
 	await modelOffers(page, [first, second])
@@ -677,13 +715,21 @@ Then("{string} holds {string} and {string} holds {string}", async ({ page }, _pa
 	await expect(modelField(page)).toHaveValue(model)
 })
 
-When("a reporter answers {string} with {string} and types {string}, which is offered only under {string}", async ({ page }, _parent: string, make: string, typed: string, _other: string) => {
+async function answerMakeAndEnterModel(page: Page, make: string, typed: string) {
 	await answerMake(page, make)
 	await modelField(page).fill(typed)
 	await page.keyboard.press("Tab")
+}
+
+When("a reporter answers {string} with {string} and enters {string}, which is offered only under {string}", async ({ page }, _parent: string, make: string, typed: string, _other: string) => {
+	await answerMakeAndEnterModel(page, make, typed)
 })
 
-When("they press Next, consent, and send the report", async ({ page }) => {
+Given("a reporter answered {string} with {string} and entered {string}, which is offered only under {string}", async ({ page }, _parent: string, make: string, typed: string, _other: string) => {
+	await answerMakeAndEnterModel(page, make, typed)
+})
+
+When("they go to the next page, consent, and send the report", async ({ page }) => {
 	await page.getByRole("button", { name: "Next" }).click()
 	await page.getByRole("radio", { name: "Yes" }).click()
 	const request = page.waitForRequest((candidate) => candidate.url().includes("/api/v1/reports/") && candidate.method() === "POST")
@@ -771,7 +817,10 @@ Then("its {string} control lists {string}'s choices", async ({ page }, control: 
 })
 
 When("they also tick {string}", async ({ page }, parentChoice: string) => {
-	await valueParents(page).getByRole("checkbox", { name: parentChoice }).check()
+	const checkbox = valueParents(page).getByRole("checkbox", { name: parentChoice })
+	// The control's list is open when a scenario has just read it, and closed otherwise.
+	if (!(await checkbox.isVisible())) await valueParents(page).getByRole("combobox").click()
+	await checkbox.check()
 	await page.keyboard.press("Escape")
 	await page.getByRole("button", { name: "Change" }).click()
 })
@@ -826,7 +875,7 @@ Then("{string} is disabled, and says no choice is listed for that answer", async
 	await expect(page.getByTestId("question-note")).toContainText("No choice is listed for your answer to")
 })
 
-Then("pressing Next moves on", async ({ page }) => {
+Then("the reporter can go on to the next page", async ({ page }) => {
 	await page.getByRole("button", { name: "Next" }).click()
 	await expect(page.getByRole("radio", { name: "Yes" })).toBeVisible()
 })

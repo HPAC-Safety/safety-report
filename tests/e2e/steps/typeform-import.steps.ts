@@ -44,7 +44,7 @@ async function stubTypeformImport(page: Page, draft: typeof IMPORTED_DRAFT = IMP
 	})
 }
 
-When("they import a Typeform English and French export pair", async ({ page }) => {
+async function importExportPair(page: Page) {
 	await stubTypeformImport(page)
 
 	await page.getByRole("button", { name: "Import from Typeform" }).click()
@@ -72,6 +72,15 @@ When("they import a Typeform English and French export pair", async ({ page }) =
 	})
 
 	await page.getByRole("button", { name: "Import", exact: true }).click()
+}
+
+When("they import a Typeform English and French export pair", async ({ page }) => {
+	await importExportPair(page)
+})
+
+Given("they imported a Typeform English and French export pair", async ({ page }) => {
+	await importExportPair(page)
+	await expect(page.getByRole("button", { name: "Review", exact: true }).first()).toBeVisible()
 })
 
 Then("the imported drafts are listed", async ({ page }) => {

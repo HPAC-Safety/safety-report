@@ -119,6 +119,13 @@ public sealed class FutureDateSteps
 		(await StoredRevision(_revised.GetProperty("revisionId").GetString()!)).AllowFutureDates.ShouldBeTrue();
 	}
 
+	[Given(@"a date question an Administrator allowed future dates on while nobody had answered it")]
+	public async Task GivenADateQuestionAllowedWhileUnanswered()
+	{
+		await GivenADateQuestionThatDoesNotAllowFutureDates();
+		await WhenAllowedWhileUnanswered();
+	}
+
 	[When(@"a reporter answers it and an Administrator then disallows future dates")]
 	public async Task WhenAnsweredThenDisallowed()
 	{

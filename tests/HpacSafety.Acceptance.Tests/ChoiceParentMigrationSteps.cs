@@ -39,14 +39,30 @@ public sealed class ChoiceParentMigrationSteps
 	private string ConnectionString =>
 		_connectionString ?? throw new InvalidOperationException("No database has been created for this scenario.");
 
-	[Given(@"a database one migration short, whose dependent {string} question offers {string} to {string} twice each, one copy under {string} and one under {string}, and {string} once, under {string}")]
-	public async Task GivenTodaysCertificationDuplicates(string question,
-														 string first,
-														 string last,
-														 string firstParent,
-														 string secondParent,
-														 string once,
-														 string onceParent)
+	[Given(@"a database one migration short, whose dependent {string} question offers {string} to {string} twice each, one copy under {string} and one under {string}, and {string} once, under {string}, with reports answering both copies of {string} and a question conditional on the {string} copy of {string}")]
+	public async Task GivenTodaysCertificationDuplicatesAnsweredAndConditional(string question,
+																			  string first,
+																			  string last,
+																			  string firstParent,
+																			  string secondParent,
+																			  string once,
+																			  string onceParent,
+																			  string answered,
+																			  string conditionParent,
+																			  string condition)
+	{
+		await GivenTodaysCertificationDuplicates(question, first, last, firstParent, secondParent, once, onceParent);
+		await GivenReportsAnsweredBothCopies(question, answered);
+		await GivenAConditionOnACopy(conditionParent, condition);
+	}
+
+	private async Task GivenTodaysCertificationDuplicates(string question,
+														  string first,
+														  string last,
+														  string firstParent,
+														  string secondParent,
+														  string once,
+														  string onceParent)
 	{
 		first.ShouldBe("EN-A");
 		last.ShouldBe("EN-D");
@@ -79,9 +95,8 @@ public sealed class ChoiceParentMigrationSteps
 			""");
 	}
 
-	[Given(@"reports answered {string} with both copies of {string}")]
-	public async Task GivenReportsAnsweredBothCopies(string _,
-													 string __)
+	private async Task GivenReportsAnsweredBothCopies(string _,
+													  string __)
 	{
 		await Execute(
 			"""
@@ -95,9 +110,8 @@ public sealed class ChoiceParentMigrationSteps
 			""");
 	}
 
-	[Given(@"a question is conditional on the {string} copy of {string}")]
-	public async Task GivenAConditionOnACopy(string _,
-											 string __)
+	private async Task GivenAConditionOnACopy(string _,
+											  string __)
 	{
 		await Execute(
 			"""

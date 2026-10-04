@@ -142,6 +142,13 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 		_edited.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
 	}
 
+	[Given(@"an Administrator has prepared an edit of a question with an existing revision")]
+	public async Task GivenAPreparedEdit()
+	{
+		await GivenAQuestionWithAnExistingRevision();
+		await WhenTheApiPreparesTheEditDto();
+	}
+
 	[When(@"the edit is prepared")]
 	public async Task WhenTheApiPreparesTheEditDto()
 	{

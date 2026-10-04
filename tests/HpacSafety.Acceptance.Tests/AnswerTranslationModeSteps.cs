@@ -351,6 +351,13 @@ public sealed class AnswerTranslationModeSteps
 		_question.Revisions.Single(revision => revision.RevisionNumber == 1).IsTranslatable.ShouldBeFalse();
 	}
 
+	[Given(@"a short-text question an Administrator marked as needing translation while nobody had answered it")]
+	public void GivenAShortTextQuestionMarkedWhileUnanswered()
+	{
+		GivenAShortTextQuestionNotNeedingTranslation();
+		WhenMarkedWhileUnanswered();
+	}
+
 	[When(@"an Administrator changes it back after it has been answered")]
 	public void WhenChangedBackAfterAnswered()
 	{

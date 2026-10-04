@@ -270,6 +270,28 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenParentChoiceIdThatIsNotId_WhenRelinked_ThenRefusedAndNoLinkWritten()
+	{
+		// Given
+		var (_, value) = await TypeAheadWithReporterValue("Nowhere parent");
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{value}/parent", UriKind.Relative),
+			new { parentChoiceIds = new[] { "not-an-id" } });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("choices of the parent question");
+
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		(await database.ChoiceParentLinks.CountAsync(link => link.ChoiceId == value)).ShouldBe(0);
+	}
+
+	[Fact]
 	public async Task GivenAPickerOption_WhenReviewed_ThenRefused()
 	{
 		// Given — a picker option is an Administrator's to fix or replace (ADR-0128)

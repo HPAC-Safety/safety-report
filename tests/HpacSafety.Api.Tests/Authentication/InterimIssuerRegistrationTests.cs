@@ -116,6 +116,21 @@ public sealed class InterimIssuerRegistrationTests
 		issuer.ShouldBeNull();
 	}
 
+	[Fact]
+	public void GivenPemWhoseBodyIsNotKey_WhenKeyIsParsed_ThenFailsLoudlyWithoutEchoingKey()
+	{
+		// Given — a well-formed PEM envelope around bytes that are not an RSA key
+		const string notAKey = "-----BEGIN RSA PRIVATE KEY-----\nc2VjcmV0LW5vdC1hLWtleQ==\n-----END RSA PRIVATE KEY-----";
+
+		// When
+		var parsing = () => InterimIssuerSigningKey.FromPem(notAKey);
+
+		// Then
+		var exception = Should.Throw<InvalidOperationException>(parsing);
+		exception.Message.ShouldContain("SigningKeyPem");
+		exception.Message.ShouldNotContain("c2VjcmV0");
+	}
+
 	private static ServiceProvider Build(Dictionary<string, string?> settings,
 										 bool development = false)
 	{

@@ -123,6 +123,58 @@ describe('the coverage gate command', () => {
 		})
 	})
 
+	describe('given an ordinary change that drops only branch coverage', () => {
+		it('when it runs then the ratchet fails on branches and not on lines', () => {
+			// Given — lines hold at 95% and branches stay above the floor, so only the ratchet can object
+			const baseline = report('branch-mature', { lines: 4000, linesCovered: 3800, branches: 900, branchesCovered: 800 })
+			const current = report('branch-regressed', { lines: 4020, linesCovered: 3819, branches: 900, branchesCovered: 760 })
+
+			// When
+			const { code, output } = run([
+				'--report', current, '--baseline', baseline, '--min-line', '80', '--min-branch', '70',
+			])
+
+			// Then
+			assert.equal(code, 1)
+			assert.match(output, /Branch coverage dropped: 88\.89% on main, 84\.44% here/)
+			assert.doesNotMatch(output, /Line coverage dropped/)
+		})
+	})
+
+	describe('given a usable baseline and a baseline run id', () => {
+		it('when it runs then the summary names the main run', () => {
+			// Given
+			const baseline = report('noted-main', { lines: 400, linesCovered: 360, branches: 100, branchesCovered: 80 })
+			const current = report('noted-here', { lines: 400, linesCovered: 360, branches: 100, branchesCovered: 80 })
+
+			// When
+			const { code, output } = run([
+				'--report', current, '--baseline', baseline, '--baseline-run-id', '37229484144',
+				'--min-line', '80', '--min-branch', '70',
+			])
+
+			// Then
+			assert.equal(code, 0)
+			assert.match(output, /Baseline: main's run 37229484144\./)
+		})
+
+		it('when the run id is none then the summary carries no baseline note', () => {
+			// Given
+			const baseline = report('unnoted-main', { lines: 400, linesCovered: 360, branches: 100, branchesCovered: 80 })
+			const current = report('unnoted-here', { lines: 400, linesCovered: 360, branches: 100, branchesCovered: 80 })
+
+			// When
+			const { code, output } = run([
+				'--report', current, '--baseline', baseline, '--baseline-run-id', 'none',
+				'--min-line', '80', '--min-branch', '70',
+			])
+
+			// Then
+			assert.equal(code, 0)
+			assert.doesNotMatch(output, /Baseline: main's run/)
+		})
+	})
+
 	describe('given an unreadable baseline', () => {
 		it('when it runs then the ratchet is skipped and the floor still applies', () => {
 			// Given

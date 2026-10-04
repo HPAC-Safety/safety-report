@@ -667,6 +667,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 
 		return await database.AuditLog
 			.Where(entry => entry.TargetId == reportId && entry.Action != AuditAction.ViewedRawReport && entry.Action != AuditAction.DeletedReport)
+			.OrderBy(entry => entry.OccurredAt)
 			.Select(entry => entry.Action)
 			.ToListAsync();
 	}

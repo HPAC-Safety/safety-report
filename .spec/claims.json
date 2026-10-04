@@ -16769,7 +16769,17 @@
 				{"keyword":"Given","text":"a malformed submission has more upload IDs than the attachment limit","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a malformed submission has an unknown question revision","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a malformed submission has a deleted question revision","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"a malformed submission has no explicit answer to the publication consent revision","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"a malformed submission has no explicit answer to the publication consent revision","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has nothing at all","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has content that cannot be read as a submission","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a language the form does not offer","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has no answers","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a file answer that also carries a value or choices","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a choice answer that also names uploads","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a choice answer whose typed text is not text","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a choice answer that names choices and carries typed text","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a malformed choice identifier","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a malformed submission has a plain answer that names uploads","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,

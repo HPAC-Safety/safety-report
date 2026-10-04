@@ -50,6 +50,26 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 	[Theory]
 	[InlineData("not-an-id")]
 	[InlineData("AAAAAAAAAAA")]
+	public async Task GivenEditNamingUnknownAttachment_WhenSaving_ThenBadRequestAndTextUnchanged(string attachmentId)
+	{
+		// Given
+		var (notes, noteId, officer) = await Noted();
+
+		// When
+		using var response = await officer.PutAsJsonAsync(
+			$"{notes}/{noteId}", new { text = "Synthetic edit.", revision = 1, attachmentId });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var listed = await officer.GetFromJsonAsync<JsonElement>(notes);
+		listed[0].GetProperty("text").GetString().ShouldBe("Synthetic original.");
+		listed[0].GetProperty("revision").GetInt32().ShouldBe(1);
+		officer.Dispose();
+	}
+
+	[Theory]
+	[InlineData("not-an-id")]
+	[InlineData("AAAAAAAAAAA")]
 	public async Task GivenNoteThatIsNotThere_WhenEditingRemovingOrReadingHistory_ThenNotFound(string noteId)
 	{
 		// Given

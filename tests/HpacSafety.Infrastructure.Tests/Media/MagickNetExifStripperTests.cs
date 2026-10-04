@@ -111,6 +111,32 @@ public class MagickNetExifStripperTests
 	}
 
 	[Fact]
+	public async Task GivenWebPWithEXIF_WhenStripped_ThenDerivativeCarriesNoMetadata()
+	{
+		// Given
+		var original = ExifFixtures.WebPWithGpsExif();
+		using (var originalImage = new MagickImage(original))
+		{
+			originalImage.Format.ShouldBe(MagickFormat.WebP);
+			originalImage.GetExifProfile()!.GetValue(ExifTag.GPSLatitude).ShouldNotBeNull();
+		}
+
+		// When
+		using var source = new MemoryStream(original);
+		using var destination = new MemoryStream();
+		await _stripper.Strip(source, destination, MediaType.WebP, CancellationToken.None);
+
+		// Then
+		var derivative = destination.ToArray();
+		using var stripped = new MagickImage(derivative);
+		stripped.GetExifProfile().ShouldBeNull();
+		stripped.GetXmpProfile().ShouldBeNull();
+		stripped.GetIptcProfile().ShouldBeNull();
+		Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
+		Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CapturedAt);
+	}
+
+	[Fact]
 	public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsStillReadableImage()
 	{
 		// Given

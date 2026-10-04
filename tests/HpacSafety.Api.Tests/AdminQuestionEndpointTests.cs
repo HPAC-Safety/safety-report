@@ -659,6 +659,38 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		entry.Detail.ShouldBe("ungrouped");
 	}
 
+	[Fact]
+	public async Task GivenQuestionBetweenGroupAndChild_WhenGroupIsRetyped_ThenShiftedQuestionAuditedAsReordered()
+	{
+		// Given — group, then an unrelated question, then the group's child: retyping
+		// keeps the group's slot, the child follows it, and the unrelated question
+		// is pushed down one place (REQ-QB-052).
+		using var client = await SignedIn();
+		var groupKey = UniqueKey("aircraft");
+		var group = await Create(client, NoAnswerDraft(groupKey, "group"));
+		var groupId = group.GetProperty("id").GetString()!;
+		await Create(client, Draft(UniqueKey("between"), "short_text"));
+		await Create(client, Draft(UniqueKey("manufacturer"), "short_text") with { GroupedUnderQuestionId = groupId });
+		var reorderedBefore = await ReorderAuditCount();
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{groupId}", UriKind.Relative),
+			NoAnswerDraft(groupKey, "short_text"));
+
+		// Then
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+		(await ReorderAuditCount()).ShouldBe(reorderedBefore + 1);
+	}
+
+	private async Task<int> ReorderAuditCount()
+	{
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		return await database.AuditLog.CountAsync(entry =>
+			entry.Action == AuditAction.ReorderedQuestions && entry.Detail == "moved=1");
+	}
+
 	// ------------------------------------- multi-select reporter additions (ADR-0077) --
 
 	[Fact]

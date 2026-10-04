@@ -38,6 +38,19 @@ public class MagickNetMediaSnifferTests
 	}
 
 	[Fact]
+	public async Task GivenWebPBytes_WhenSniffed_ThenReportedAsWebP()
+	{
+		// Given
+		using var content = new MemoryStream(ExifFixtures.WebPWithGpsExif());
+
+		// When
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldBe(MediaType.WebP);
+	}
+
+	[Fact]
 	public async Task GivenHeicBytes_WhenTheyAreSniffed_ThenTheyAreReportedAsHeic()
 	{
 		// Given

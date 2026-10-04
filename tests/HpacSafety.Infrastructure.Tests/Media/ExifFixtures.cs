@@ -33,6 +33,16 @@ internal static class ExifFixtures
 		return image.ToByteArray();
 	}
 
+	/// <summary>A WebP carrying GPS coordinates, a camera make, and a capture timestamp.</summary>
+	public static byte[] WebPWithGpsExif()
+	{
+		using var image = new MagickImage(MagickColors.SkyBlue, 64, 64);
+		image.SetProfile(GpsProfile());
+		image.Format = MagickFormat.WebP;
+
+		return image.ToByteArray();
+	}
+
 	/// <summary>The committed HEIC fixture, carrying the same synthetic EXIF as the JPEG.</summary>
 	public static byte[] HeicWithGpsExif()
 	{
@@ -133,6 +143,29 @@ internal static class ExifFixtures
 		return buffered.ToArray();
 	}
 
+	/// <summary>
+	///     An OpenDocument-looking zip whose <c>mimetype</c> entry is not the first —
+	///     the ODF package rule the sniffer relies on to tell it from any other zip.
+	/// </summary>
+	public static byte[] OdtWithMimetypeNotFirst()
+	{
+		using var buffered = new MemoryStream();
+		using (var archive = new ZipArchive(buffered, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			var first = archive.CreateEntry("content.xml");
+			using (var firstWriter = new StreamWriter(first.Open()))
+			{
+				firstWriter.Write("<office:document-content/>");
+			}
+
+			var entry = archive.CreateEntry("mimetype", CompressionLevel.NoCompression);
+			using var writer = new StreamWriter(entry.Open());
+			writer.Write(MediaType.Odt.ContentType);
+		}
+
+		return buffered.ToArray();
+	}
+
 	/// <summary>A well-formed zip that is neither DOCX nor ODT — an ordinary archive.</summary>
 	public static byte[] PlainZip()
 	{
@@ -157,6 +190,15 @@ internal static class ExifFixtures
 	public static byte[] PlainText()
 	{
 		return "Line one\nLine two\r\nTab\there.\n"u8.ToArray();
+	}
+
+	/// <summary>
+	///     No NUL and no control character, but not UTF-8: a lone continuation byte and
+	///     a truncated-then-resumed sequence a strict decoder refuses.
+	/// </summary>
+	public static byte[] InvalidUtf8Text()
+	{
+		return [0x48, 0x69, 0x20, 0xC3, 0x28, 0x20, 0xFF, 0xFE, 0x0A];
 	}
 
 	/// <summary>Binary garbage that must never be mistaken for text — an embedded NUL byte.</summary>

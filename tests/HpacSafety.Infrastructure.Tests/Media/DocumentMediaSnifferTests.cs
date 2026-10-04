@@ -103,6 +103,20 @@ public class DocumentMediaSnifferTests
 	}
 
 	[Fact]
+	public async Task GivenZipWhoseMimetypeEntryIsNotFirst_WhenSniffed_ThenNotRecognisedAsOdt()
+	{
+		// Given
+		using var content = new MemoryStream(ExifFixtures.OdtWithMimetypeNotFirst());
+
+		// When
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldNotBe(MediaType.Odt);
+		sniffed.ShouldBeNull();
+	}
+
+	[Fact]
 	public async Task GivenMalformedZip_WhenSniffed_ThenUnrecognised()
 	{
 		// Given
@@ -135,6 +149,19 @@ public class DocumentMediaSnifferTests
 	{
 		// Given
 		using var content = new MemoryStream(ExifFixtures.BinaryGarbage());
+
+		// When
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldBeNull();
+	}
+
+	[Fact]
+	public async Task GivenInvalidUtf8Text_WhenSniffed_ThenNotClaimedAsText()
+	{
+		// Given
+		using var content = new MemoryStream(ExifFixtures.InvalidUtf8Text());
 
 		// When
 		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);

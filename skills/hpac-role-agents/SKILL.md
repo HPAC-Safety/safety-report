@@ -45,7 +45,7 @@ roles and why each trusts only the artifact before it:
   | test-writer | sonnet | medium | Build: binds a written scenario |
   | ai-author | sonnet | medium | Build: rewrites wording, never rules |
   | critic | opus | medium | Judgement: weighs a plan, one bounded pass; medium because the loop is capped and the findings are cited, not open-ended |
-  | adversary | fable | high | Judgement: hunts the hardest-to-see bugs and holes; the strongest model, read-only |
+  | adversary | opus | high | Judgement: hunts the hardest-to-see bugs and holes, read-only |
   | backend | sonnet | medium | Build: designs and builds the server side within settled claims |
   | ux | sonnet | medium | Build: designs and builds the web UI within settled claims |
   | infrastructure | opus | high | Judgement: cloud and network mistakes outlive the code and reach production |
@@ -56,9 +56,6 @@ roles and why each trusts only the artifact before it:
 - `skillfile install` copies each agent verbatim into `.claude/agents/`. An
   orchestrator spawns a role by its `name` and gets these settings, unless it
   overrides `model` for one call.
-- `fable` is a valid `model`
-  ([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)
-  amends ADR-0182).
 
 ## spec-author
 

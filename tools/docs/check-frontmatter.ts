@@ -61,7 +61,7 @@ const VENDOR_SHAPES: readonly VendorShape[] = [
 		// Claude Code's other agent keys; anything beyond these is refused.
 		optional: ['tools', 'disallowedTools', 'permissionMode', 'maxTurns', 'skills', 'memory', 'isolation', 'background'],
 		values: {
-			model: /^(sonnet|opus|haiku|fable|inherit|claude-[a-z0-9.-]+)$/,
+			model: /^(sonnet|opus|haiku|inherit|claude-[a-z0-9.-]+)$/,
 			effort: /^(low|medium|high|max|[1-9]\d*)$/,
 		},
 	},

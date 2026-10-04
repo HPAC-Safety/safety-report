@@ -14,7 +14,7 @@ keywords: agents, roles, implementer, backend, ux, adversary, critic, spec-revie
 [#842](https://github.com/HPAC-Safety/safety-report/issues/842). Supersedes
 [ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amends
 [ADR-0182](ADR-0182-a-role-agent-declares-its-model-and-effort.md)'s model
-values and assignment.
+assignment.
 
 ## Context
 
@@ -86,13 +86,11 @@ split into the agent it belongs to.
   violations, and missing tests.
 - The critic judges a plan before it is built; the spec-reviewer judges a diff
   after it is built.
-- **Models** (amends ADR-0182): `model` may also be `fable`. The assignment
-  gains two judgement roles that depart from its `opus` at `high` default:
-  - `critic` runs `opus` at `medium`: its loop is capped at one pass and one
-    recheck, and every finding cites its evidence, so it needs no open-ended
-    reasoning;
-  - `adversary` runs `fable` at `high`: the hardest-to-see bugs and holes
-    justify the strongest model, and it is read-only.
+- **Models** (amends ADR-0182's assignment):
+  - `critic` runs `opus` at `medium`, departing from the judgement roles'
+    `high`: its loop is capped at one pass and one recheck, and every finding
+    cites its evidence, so it needs no open-ended reasoning;
+  - `adversary` runs `opus` at `high`, the judgement default.
 
   `backend` and `ux` run `sonnet` at `medium`, as the implementer did: the
   claims bound their design. `infrastructure` runs `opus` at `high`, the

@@ -776,6 +776,12 @@ Then("the form asks the media consent question, and it must be answered to submi
 	expect(present(forms.get(page)).submissions).toHaveLength(0)
 })
 
+// REQ-RFM-020: the media consent page, reached as REQ-QB-113 reaches it, before the file is removed or consent withdrawn.
+Given("they have reached the media consent question", async ({ page }) => {
+	await next(page) // -> media consent, which now follows
+	await expect(consentGroup(page, "Photo, video, and document consent")).toBeVisible()
+})
+
 When("they remove the file, or answer no to publication consent", async ({ page }) => {
 	// Answering no: publication consent becomes the last page.
 	await page.getByRole("button", { name: "Back" }).click()

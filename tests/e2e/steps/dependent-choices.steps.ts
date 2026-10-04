@@ -505,11 +505,11 @@ Given("the reporter changed {string} to {string}", async ({ page }, _parent: str
 
 // ---- A dependent type-ahead's own hint and threshold (REQ-QB-231, ADR-0152) ----
 
-When("they open {string}'s list by clicking the question", async ({ page }, _child: string) => {
+When("they open {string}'s list", async ({ page }, _child: string) => {
 	await modelField(page).click()
 })
 
-When("they type {string} in {string}", async ({ page }, typed: string, _child: string) => {
+When("they enter {string} in {string}", async ({ page }, typed: string, _child: string) => {
 	// Cleared first: Playwright's fill() is a no-op when the field already
 	// holds the requested text, which a scenario retyping the same words
 	// after the parent's answer changes relies on firing again.

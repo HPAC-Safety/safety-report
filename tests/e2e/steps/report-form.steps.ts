@@ -1128,13 +1128,16 @@ Given("a {word} question offers {int} choices", async ({ page }, type: string, c
 	await openForm(page, choiceFormQuestions(choiceType(type), options))
 })
 
-When("a reporter using English opens that question on a screen {int} pixels wide", async ({ page }, width: number) => {
-	await page.setViewportSize({ width, height: 740 })
+/** A phone-width screen, as the area README states: 360 pixels wide (REQ-QB-163). */
+const PHONE_WIDTH = 360
+
+When("a reporter using English opens that question on a phone-width screen", async ({ page }) => {
+	await page.setViewportSize({ width: PHONE_WIDTH, height: 740 })
 	await goNext(page) // intro -> the question's page
 })
 
 Then(
-	"the question is a combobox with no caret, described by its help text, and no browser suggestion list",
+	"the question is drawn by the form, closed, with no caret, described by its help text, and no browser suggestion list",
 	async ({ page }) => {
 		const field = page.getByRole("combobox", { name: "Which one applies?" })
 		await expect(field).toBeVisible()
@@ -1222,26 +1225,16 @@ Then("the list offers only the hint to type 3 or more letters", async ({ page })
 	await expectHint(page)
 })
 
-When("they press Backspace", async ({ page }) => {
-	await page.keyboard.press("Backspace")
-})
-
 Then("the question holds {string}", async ({ page }, value: string) => {
 	await expect(typeAheadField(page)).toHaveValue(value)
 })
 
-When("they type {string} in the question", async ({ page }, typed: string) => {
+When("they enter {string} in the question", async ({ page }, typed: string) => {
 	await typeAheadField(page).pressSequentially(typed)
 })
 
 Then(/^its list offers only (".*")$/, async ({ page }, quoted: string) => {
 	await expect(typeAheadList(page).getByRole("option")).toHaveText(quotedList(quoted))
-})
-
-When("they type {string} in the question and press the down arrow twice", async ({ page }, typed: string) => {
-	await typeAheadField(page).pressSequentially(typed)
-	await page.keyboard.press("ArrowDown")
-	await page.keyboard.press("ArrowDown")
 })
 
 Then("{string} is the question's active choice", async ({ page }, label: string) => {
@@ -1261,22 +1254,6 @@ Then("its list is open, with {string} chosen and active", async ({ page }, label
 	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", present(await option.getAttribute("id")))
 })
 
-When("they press Home", async ({ page }) => {
-	await page.keyboard.press("Home")
-})
-
-When("they press End", async ({ page }) => {
-	await page.keyboard.press("End")
-})
-
-When("they press Space", async ({ page }) => {
-	await page.keyboard.press("Space")
-})
-
-When("they type {string}", async ({ page }, typed: string) => {
-	await page.keyboard.type(typed)
-})
-
 When("they point at {string}", async ({ page }, label: string) => {
 	// A multi-select's row is its checkbox's label; a single-select's is an option.
 	const multi = page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label })
@@ -1285,7 +1262,7 @@ When("they point at {string}", async ({ page }, label: string) => {
 })
 
 // REQ-QB-267/268: the pointer picks a row by a click; no row is ever focusable.
-When("they click {string} in the list", async ({ page }, label: string) => {
+When("they pick {string} from the list with the pointer", async ({ page }, label: string) => {
 	await typeAheadList(page).getByRole("option", { name: label, exact: true }).click()
 })
 
@@ -1295,7 +1272,14 @@ Then("the question has focus", async ({ page }) => {
 })
 
 When("they pick {string} from the question's list", async ({ page }, label: string) => {
-	await pickChoice(page, "Which one applies?", label)
+	if (await isSingleSelect(page)) {
+		await pickChoice(page, "Which one applies?", label)
+		return
+	}
+	// A type-ahead lists its choices only once 3 or more characters are typed (ADR-0152).
+	await typeAheadField(page).pressSequentially(label)
+	await typeAheadList(page).getByRole("option", { name: label, exact: true }).click()
+	await expect(typeAheadField(page)).toHaveValue(label)
 })
 
 Then("the browser's saved report holds no answer to that question", async ({ page }) => {
@@ -1305,7 +1289,7 @@ Then("the browser's saved report holds no answer to that question", async ({ pag
 })
 
 Then(
-	"the question is a combobox with a caret showing {string}, described by its help text, and no browser select",
+	"the question is drawn by the form, closed, with a caret showing {string}, described by its help text, and no browser select",
 	async ({ page }, placeholder: string) => {
 		const field = page.getByRole("combobox", { name: "Which one applies?" })
 		await expect(field).toBeVisible()
@@ -1339,11 +1323,14 @@ When("they open the multi-select's list", async ({ page }) => {
 	await page.getByRole("main").getByRole("combobox", { name: /Which one applies\?/ }).click()
 })
 
-Then("each choice is a row at least 44 pixels tall holding a checkbox", async ({ page }) => {
+/** Large enough to touch, as the area README states: at least 44 pixels tall (REQ-QB-211). */
+const TOUCH_TARGET = 44
+
+Then("each choice is a row large enough to touch, holding a checkbox", async ({ page }) => {
 	const rows = page.getByRole("main").locator('[id$="-options"] label')
 	await expect(rows).toHaveCount(6)
 	for (const row of await rows.all()) {
-		expect(present(await row.boundingBox()).height).toBeGreaterThanOrEqual(44)
+		expect(present(await row.boundingBox()).height).toBeGreaterThanOrEqual(TOUCH_TARGET)
 		await expect(row.getByRole("checkbox")).toHaveCount(1)
 		// The type-ahead's row inset (ChoiceList).
 		await expect(row).toHaveCSS("padding-left", "12px")
@@ -1354,7 +1341,7 @@ Then("the {string} row is highlighted as a type-ahead's active choice is", async
 	await expectHighlighted(page, page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label }))
 })
 
-When("they move to the {string} checkbox with the keyboard and press Space", async ({ page }, label: string) => {
+When(/^they move to the "(.*)" checkbox and check it with (.+)$/, async ({ page }, label: string, keys: string) => {
 	// Tab from the checkbox before it, so focus arrives by keyboard and shows.
 	const boxes = page.getByRole("main").getByRole("checkbox")
 	const labels = await boxes.evaluateAll((found) => found.map((entry) => entry.closest("label")?.textContent.trim() ?? ""))
@@ -1363,7 +1350,7 @@ When("they move to the {string} checkbox with the keyboard and press Space", asy
 	await expect(page.getByRole("checkbox", { name: label })).toBeFocused()
 	// Move the pointer off the list, so only keyboard focus can highlight a row.
 	await page.mouse.move(0, 0)
-	await page.keyboard.press("Space")
+	for (const key of keyPresses(keys)) await page.keyboard.press(key)
 })
 
 Then("{string} is checked, and the list stays open", async ({ page }, label: string) => {
@@ -1371,35 +1358,60 @@ Then("{string} is checked, and the list stays open", async ({ page }, label: str
 	await expect(page.getByRole("main").locator('[id$="-options"]')).toBeVisible()
 })
 
-When("they press Enter", async ({ page }) => {
-	await page.keyboard.press("Enter")
+/*
+ * Keys are named only in a scenario's Examples cells (#815): "the Enter key",
+ * "the down arrow key twice", "the Alt and down arrow keys", "the m key".
+ */
+const KEY_NAMES: Record<string, string> = { "down arrow": "ArrowDown", "up arrow": "ArrowUp", "Alt and down arrow": "Alt+ArrowDown" }
+
+/** The key presses an Examples cell names, in order. */
+function keyPresses(cell: string): string[] {
+	const named = /^the (.+?) keys?( twice)?$/.exec(cell)
+	if (!named) throw new Error(`Unknown keys: ${cell}`)
+	const key = KEY_NAMES[named[1]] ?? named[1]
+	return named[2] ? [key, key] : [key]
+}
+
+When(/^they use (.+) in the question$/, async ({ page }, keys: string) => {
+	for (const key of keyPresses(keys)) await page.keyboard.press(key)
 })
 
-When("they press Tab", async ({ page }) => {
-	await page.keyboard.press("Tab")
+/** The question's active choice: the option its field points at, or none. */
+async function activeChoice(page: Page): Promise<string | null> {
+	const id = await typeAheadField(page).getAttribute("aria-activedescendant")
+	if (!id) return null
+	return (await page.locator(`[id="${id}"]`).textContent())?.trim() ?? null
+}
+
+Given(/^the question's active choice is (none|"(.*)")$/, async ({ page }, _named: string, label: string | undefined) => {
+	if (label === undefined) {
+		expect(await activeChoice(page)).toBeNull()
+		return
+	}
+	// A single-select's list starts again from its first row; a type-ahead's moves down from none.
+	if ((await activeChoice(page)) !== label && (await isSingleSelect(page))) await page.keyboard.press("Home")
+	for (let step = 0; step < 10 && (await activeChoice(page)) !== label; step++) await page.keyboard.press("ArrowDown")
+	expect(await activeChoice(page)).toBe(label)
 })
 
-When("they press the up arrow", async ({ page }) => {
-	await page.keyboard.press("ArrowUp")
+When("they open the question's list", async ({ page }) => {
+	await typeAheadField(page).click()
+	await expect(typeAheadList(page)).toBeVisible()
 })
 
-When("they press the down arrow", async ({ page }) => {
-	await page.keyboard.press("ArrowDown")
-})
-
-When("they press Alt and the down arrow", async ({ page }) => {
-	await page.keyboard.press("Alt+ArrowDown")
-})
-
-When("they press Escape", async ({ page }) => {
+When("they dismiss the question's list", async ({ page }) => {
 	await page.keyboard.press("Escape")
 })
 
-When("they press outside the question", async ({ page }) => {
+When(/^they close the question's list with (.+)$/, async ({ page }, closing: string) => {
 	await expect(typeAheadList(page)).toBeVisible()
-	// The page's left margin: outside the field, its caret, its label, and its list.
-	const field = present(await typeAheadField(page).boundingBox())
-	await page.mouse.click(Math.max(1, field.x - 20), field.y + field.height / 2)
+	if (closing === "the pointer outside the question") {
+		// The page's left margin: outside the field, its caret, its label, and its list.
+		const field = present(await typeAheadField(page).boundingBox())
+		await page.mouse.click(Math.max(1, field.x - 20), field.y + field.height / 2)
+	} else {
+		for (const key of keyPresses(closing)) await page.keyboard.press(key)
+	}
 })
 
 Then("its list is open", async ({ page }) => {
@@ -1421,7 +1433,7 @@ Then("the list says no choice matches", async ({ page }) => {
 	await expect(page.getByRole("status").filter({ hasText: "No choice matches" })).toBeVisible()
 })
 
-Then("the list fits within the screen's width, and the page does not scroll sideways", async ({ page }) => {
+Then("the list fits within the screen's width, and the page grows no wider than the screen", async ({ page }) => {
 	const listBox = present(await typeAheadList(page).boundingBox())
 	const width = present(page.viewportSize()).width
 	expect(listBox.x).toBeGreaterThanOrEqual(0)
@@ -1429,7 +1441,7 @@ Then("the list fits within the screen's width, and the page does not scroll side
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
 })
 
-Then("the list scrolls within itself", async ({ page }) => {
+Then("the list reaches its last choice within itself, leaving the page where it is", async ({ page }) => {
 	const list = typeAheadList(page)
 	const { scrollHeight, clientHeight, overflowY } = await list.evaluate((element) => ({
 		scrollHeight: element.scrollHeight,

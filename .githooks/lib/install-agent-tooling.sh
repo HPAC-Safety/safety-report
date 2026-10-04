@@ -85,7 +85,7 @@ _prune_kind() {
 # of an agent (minus .md), or the directories of a skill.
 _installed_names() {
 	for _p in "$1"/*; do
-		[ -e "$_p" ] && [ ! -L "$_p" ] || continue
+		{ [ -e "$_p" ] && [ ! -L "$_p" ]; } || continue
 		_b=$(basename "$_p")
 		if [ "$2" = agent ]; then
 			[ -f "$_p" ] || continue

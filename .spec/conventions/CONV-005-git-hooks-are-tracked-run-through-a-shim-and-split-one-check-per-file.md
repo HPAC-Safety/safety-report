@@ -28,7 +28,8 @@ date: 2026-10-03
   - gates itself on the staged paths that wake it, reading `$STAGED` (the
     added, copied, modified, or renamed paths, one per line) or asking git
     for another `--diff-filter`;
-  - says so when a tool it needs is missing;
+  - says so when a tool it needs is missing, unless it is advisory without
+    it, in which case its header says it is skipped;
   - exits non-zero to fail.
 - `.githooks/pre-commit` stays a runner: it reads the staged files and the
   branch (`$BRANCH`, empty on a detached HEAD) once, runs every
@@ -48,7 +49,7 @@ date: 2026-10-03
 The owner asked whether to adopt Husky to keep the hooks maintainable, and
 decided against it in
 [#818](https://github.com/HPAC-Safety/safety-report/issues/818). The cost was
-the shape of a 255-line `pre-commit` holding a dozen checks, not how hooks are
+the shape of a ~270-line `pre-commit` holding a dozen checks, not how hooks are
 installed.
 
 Husky and lint-staged were considered and rejected:

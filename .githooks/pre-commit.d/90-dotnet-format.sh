@@ -5,6 +5,10 @@
 # drift never reaches a commit without touching files outside the diff.
 # Backstop: CI's "build" job, which re-verifies the whole solution with
 # --verify-no-changes.
+#
+# It runs even when an earlier check fails: a single script's `set -e` once let
+# a locale failure skip it (#207), and with no way to clear a pending
+# translation locally, `--no-verify` used to skip it too (ADR-0057).
 
 set -u
 

@@ -41,6 +41,8 @@ bound on how often it runs, belongs to that reviewer.
 - **Evidence is required**: the file, line, claim, or decision behind the
   finding, or the command output that proves it. A finding without evidence is
   an opinion; leave it out.
+- Evidence never quotes user content, personal data, or credentials; cite the
+  location, a count, or a shape.
 
 ## A clean pass is a result
 

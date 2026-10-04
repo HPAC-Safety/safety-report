@@ -36,7 +36,7 @@ Assume the change is broken. Find the input, state, or caller that proves it.
 
 ## What I leave to others
 
-- Editing, formatting, or committing anything; you cannot fix, only report.
+- Editing, formatting, or committing anything; I cannot fix, only report.
 - A finding without a path and line.
 - Style opinions the repository has not written down.
 - Judging claims, scope, exemptions, or decision records; that is the spec-reviewer's lens.

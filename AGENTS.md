@@ -152,7 +152,8 @@ is in the generic skills it preloads
 ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 - The chain's four steps, each trusting only the artifact from the role before
-  it:
+  it
+  ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)):
   - **spec-author** (Jennifer) — writes scenarios and what is out of scope;
   - **test-writer** (Kevin) — turns a claim into a failing step definition;
   - a builder designs and builds what the claims describe, and makes it pass:

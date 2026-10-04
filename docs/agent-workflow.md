@@ -32,7 +32,7 @@ leaves to others, and how it works is in the generic skills it preloads
 Four of them — `spec-author` (Jennifer), `test-writer` (Kevin), a builder
 (`backend` Brad, `ux` Tiffany, or `infrastructure` Dave), `spec-reviewer`
 (Jessica) — are the steps of the specification-driven chain, each holding one
-job and trusting only the artifact from the step before it. `ai-author` (Emily)
+job and trusting only the artifact from the step before it (CONV-008). `ai-author` (Emily)
 maintains the agent instructions and `database-administrator` (Jane) the
 schema; `critic` (Karen) challenges a plan and `adversary` (Kyle) attacks a
 change

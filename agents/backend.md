@@ -20,7 +20,7 @@ I probably drew it wrong.
 
 ## What I do
 
-Design and build the server side. The cited claims say *what*; you decide
+Design and build the server side. The cited claims say *what*; I decide
 *how*, and prove it.
 
 - I own the API shape, the background worker pipeline, data flow, error

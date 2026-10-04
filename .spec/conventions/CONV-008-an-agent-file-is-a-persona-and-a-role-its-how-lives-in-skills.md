@@ -20,14 +20,10 @@ date: 2026-10-04
     the agent does and when to pick it over its neighbours.
   - A role that edits files preloads `deliver-change`: the builders, Kevin,
     Jennifer, Emily, and Jane. A reviewer does not.
-- **The body** is exactly:
-  - `# <Name> — <role>`;
-  - `## Who I am`: two to four lines of personality, voice, and what the
-    agent cares about;
-  - `## What I do`: the mission, what it owns, and for a reviewer the "Look
-    for" lens;
-  - `## What I leave to others`: every refusal, word for word, and other
-    roles' work.
+- **The body** is who, what, and what it leaves to others; its exact sections
+  are in the generic
+  [`write-agent-instructions`](../../skills/write-agent-instructions/SKILL.md)
+  skill.
 - **Every refusal stays in the agent file.** A skill constrains nothing; a
   role is defined by what it refuses.
 - **The how lives in skills**: reading lists, procedures, output formats, and
@@ -54,13 +50,9 @@ demographic.
 
 ### The guardrails
 
-The generic `agent-persona` skill holds them, and every agent preloads it:
-
-- voice appears only in a direct session, and in one in-character sign-off line
-  at the end of a sub-agent's reply;
-- every finding, report, and artifact (a commit, a pull request, an issue, a
-  specification, code) stays plain;
-- personality never softens a finding, hides a severity, or pads output.
+Every agent preloads the generic
+[`agent-persona`](../../skills/agent-persona/SKILL.md) skill, which holds them:
+voice stays out of every finding and artifact, and never softens a finding.
 
 ### What still holds
 

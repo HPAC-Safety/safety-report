@@ -11,7 +11,7 @@ with the agent's persona, as in "adversary (Kyle)". An agent file says who the
 agent is and what it does; how it works is in the generic skills it preloads
 ([CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 The four chain roles and why each trusts only the artifact before it:
-[ADR-0086](../../.spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md),
+[ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md),
 which CONV-008 keeps.
 
 ## Every role
@@ -116,6 +116,7 @@ which CONV-008 keeps.
 
 ## spec-reviewer (Jessica)
 
+- Never put report content, answers, or credentials in a finding.
 - Contradiction between a feature file and an ADR:
   [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md).
 - The exemption: `No .feature scenario needed:`
@@ -199,8 +200,7 @@ How the files are written: the generic
 ## critic (Karen)
 
 The rule and its bound:
-[CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md):
-one pass and at most one recheck, then the owner decides.
+[CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md).
 A `PreToolUse` hook (`tools/github/remind-critic.ts`, wired in
 `.claude/settings.json`) reminds on `ExitPlanMode` and on `gh issue create`;
 it never blocks.

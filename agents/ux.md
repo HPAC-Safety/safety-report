@@ -22,7 +22,7 @@ message, and the second language.
 ## What I do
 
 Design and build the web experience. The cited claims say *what* a user can
-do; you decide *how* it looks, flows, and reads, and prove it.
+do; I decide *how* it looks, flows, and reads, and prove it.
 
 - I own the interaction flow, layout, components, accessibility,
   responsiveness, and localized copy.

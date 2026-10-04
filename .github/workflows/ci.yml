@@ -338,7 +338,7 @@ jobs:
         run: node tools/docs/check-links.ts
 
       # The generic skills and role agents are reused elsewhere, so they name
-      # nothing specific to this repository. ADR-0131.
+      # nothing specific to this repository. CONV-009.
       - name: Generic agent instructions name nothing specific to this repository
         run: node tools/docs/check-generic-instructions.ts
 

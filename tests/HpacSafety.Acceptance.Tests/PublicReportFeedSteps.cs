@@ -467,7 +467,10 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		var factory = await BootedApi.Factory();
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		// Every row, deleted ones included: a parallel scenario may soft-delete a
+		// report after the feed listed it, and its submission time never changes.
 		var rows = await database.Reports
+			.IgnoreQueryFilters()
 			.Select(report => new { report.Id, report.SubmittedAt })
 			.ToListAsync();
 		return rows.ToDictionary(row => row.Id.Value, row => row.SubmittedAt);

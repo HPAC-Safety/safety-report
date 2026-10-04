@@ -1081,7 +1081,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_logs.Lines.ShouldAllBe(line => !line.Contains(receipt, StringComparison.Ordinal));
 	}
 
-	[Then(@"no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it")]
+	[Then(@"no stored value of that report, its answers, or its outbox is the reporter's token subject or a hash of it")]
 	public async Task ThenNoStoredValueIsTheSubjectOrItsHash()
 	{
 		var stored = await StoredRowsOf((await SubmittedBody()).GetProperty("id").GetString()!);
@@ -1100,7 +1100,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		}
 	}
 
-	[Then(@"the stored receipt hash is not derived from the subject")]
+	[Then(@"the stored receipt hash is not derived from the token subject")]
 	public async Task ThenTheReceiptHashIsNotDerivedFromTheSubject()
 	{
 		var body = await SubmittedBody();

@@ -16583,8 +16583,8 @@
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter submits a valid report while signed in","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the submission is committed","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the stored receipt hash is not derived from the subject","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"no stored value of that report, its answers, or its outbox is the reporter's token subject or a hash of it","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the stored receipt hash is not derived from the token subject","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,
@@ -16605,7 +16605,7 @@
 				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report request is JSON that names each attachment by the upload ID the upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a signed-in member submits a valid report","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a member submits a valid report","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the API answers 202 with a receipt","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the browser keeps the report ID and the receipt in its own storage","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"no request address, query string, or navigation carries the receipt","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}

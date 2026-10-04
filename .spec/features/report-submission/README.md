@@ -471,7 +471,7 @@ not change what they are willing to write down.
 **The receipt is not an identity.** The `202` body also carries a receipt: at
 least 256 random bits from a cryptographically secure generator, base64url. The
 report stores only its SHA-256 hash, in a unique, nullable `receipt_hash`, and
-neither the receipt nor the member's subject is stored or logged
+neither the receipt nor the member's token subject is stored or logged
 ([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-SUB-133` to `REQ-SUB-135`). The browser keeps
 `{ reportId, receipt }` in `localStorage` (`REQ-SUB-136`), which is how it later
 sees its own unpublished report (see the public-feed area's README). It proves

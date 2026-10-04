@@ -1175,13 +1175,13 @@ Scenario: The report stores only the receipt's SHA-256 hash
 Scenario: The receipt links a report to a browser, never to a member
   Given a reporter submits a valid report while signed in
   When the submission is committed
-  Then no stored value of that report, its answers, or its outbox is the submitter's subject or a hash of it
-  And the stored receipt hash is not derived from the subject
+  Then no stored value of that report, its answers, or its outbox is the reporter's token subject or a hash of it
+  And the stored receipt hash is not derived from the token subject
 
 @REQ-SUB-136
 @ui
 Scenario: The browser keeps the receipt after the 202 and never puts it in an address
-  Given a signed-in member submits a valid report
+  Given a member submits a valid report
   When the API answers 202 with a receipt
   Then the browser keeps the report ID and the receipt in its own storage
   And no request address, query string, or navigation carries the receipt

@@ -242,7 +242,7 @@ Then("the receipt is sent in the request body and not in any address", ({ page }
 
 const addresses = new WeakMap<Page, string[]>()
 
-Given("a signed-in member submits a valid report", async ({ page }) => {
+Given("a member submits a valid report", async ({ page }) => {
 	const seen: string[] = []
 	addresses.set(page, seen)
 	page.on("request", (request) => seen.push(request.url()))

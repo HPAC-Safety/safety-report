@@ -259,6 +259,9 @@ Given(
 		await openThatReport(page)
 		await stage(page, fileName)
 		await expect(stagedRow(page, fileName).getByRole("progressbar")).toBeVisible()
+		// Storage holds the PUT open; wait until it has arrived, so a step that
+		// releases it has something to release.
+		await expect.poll(() => (pendingPutsByPage.get(page) ?? []).length).toBe(1)
 	},
 )
 

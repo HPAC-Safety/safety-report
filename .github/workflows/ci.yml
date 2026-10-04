@@ -146,7 +146,7 @@ jobs:
       # tools/dev/ci-local.sh is POSIX sh too (ADR-0145): it is the pre-pull-request
       # gate, so a bashism there stops every pull request before it opens.
       - name: shellcheck init-dev.sh, the hooks and their checks, and ci-local.sh
-        run: shellcheck -s sh init-dev.sh .githooks/pre-commit .githooks/pre-commit.d/*.sh .githooks/post-merge .githooks/post-rewrite .githooks/lib/*.sh tools/dev/ci-local.sh
+        run: shellcheck -s sh init-dev.sh .githooks/pre-commit .githooks/pre-commit.d/*.sh .githooks/post-merge .githooks/post-rewrite .githooks/lib/*.sh tools/dev/ci-local.sh tools/dev/sync-agent-tooling.sh
 
       - uses: actions/setup-dotnet@v6
         with:

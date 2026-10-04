@@ -24,7 +24,10 @@ agent_tooling_changed() {
 # True when the Skillfile declares an entry of kind $1 (agent or skill) that is
 # a directory: one that can deploy several names, so the listing is not the full
 # set of names to keep. An entry is a directory when its location is not a .md
-# file and its last segment is not its own name.
+# file and its last segment is not its own name. The listing does not say how
+# many names an entry deploys, so this is a heuristic: a multi-skill directory
+# entry given an explicit name equal to its last path segment is not detected.
+# Today's Skillfile has no directory entry.
 _has_directory_entry() {
 	skillfile list --json 2>/dev/null | awk -v kind="$1" '
 		/"name":/ { name = $2; gsub(/[",]/, "", name) }
@@ -76,6 +79,43 @@ _prune_kind() {
 		return 0
 	fi
 	_prune_installed "$2" "$_k" "$_listed"
+}
+
+# The names installed under $1 for kind $2, one per line: the regular .md files
+# of an agent (minus .md), or the directories of a skill.
+_installed_names() {
+	for _p in "$1"/*; do
+		[ -e "$_p" ] && [ ! -L "$_p" ] || continue
+		_b=$(basename "$_p")
+		if [ "$2" = agent ]; then
+			[ -f "$_p" ] || continue
+			case $_b in *.md) printf '%s\n' "${_b%.md}" ;; esac
+		else
+			[ -d "$_p" ] && printf '%s\n' "$_b"
+		fi
+	done
+	return 0
+}
+
+# True when the installed names equal the declared names, for both kinds, so a
+# missing and an extra entry both count as out of sync. A kind whose comparison
+# cannot be trusted (the listing failed or is empty, the Skillfile has a
+# directory entry, or its directory is a symlink) is reported in sync, the same
+# safety rules as the prune.
+agent_tooling_in_sync() {
+	command -v skillfile >/dev/null 2>&1 || return 0
+	for _sk in "agent .claude/agents" "skill .claude/skills"; do
+		_kind=${_sk%% *}
+		_where=${_sk#* }
+		_listed=$(skillfile list --names-only "--${_kind}s" 2>/dev/null) || continue
+		[ -n "$_listed" ] || continue
+		_has_directory_entry "$_kind" && continue
+		[ -L "$_where" ] && continue
+		_have=$(_installed_names "$_where" "$_kind" | sort)
+		_want=$(printf '%s\n' "$_listed" | sort)
+		[ "$_have" = "$_want" ] || return 1
+	done
+	return 0
 }
 
 # True on main, or on a detached HEAD at origin/main (a worktree on the tip).

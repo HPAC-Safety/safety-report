@@ -59,7 +59,11 @@ date: 2026-10-03
     include it in the next commit. A lock already changed is left alone;
   - a fast-forward rebase, `git worktree add`, `merge --squash`, and a
     hand-resolved conflicted merge fire only `post-checkout` or `post-commit`,
-    which graphify owns, so they do not run it. After one, run `./init-dev.sh`.
+    which graphify owns, so they do not run it. The session-start check
+    (`tools/dev/sync-agent-tooling.sh`, a `SessionStart` hook in
+    `.claude/settings.json`) catches what the git hooks can't see: it runs the
+    same install only when the installed names differ from the declared ones.
+    `./init-dev.sh` remains the manual fallback.
 - No hook manager: not Husky, lint-staged, lefthook, or the pre-commit
   framework.
 

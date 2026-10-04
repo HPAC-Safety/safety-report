@@ -25,7 +25,9 @@ never edit or commit those copies. The post-merge and post-rewrite hooks and
 any installed agent or skill the `Skillfile` no longer declares. Personal agents
 and skills go in `~/.claude`, not `.claude/`. A fast-forward rebase, `git
 worktree add`, `merge --squash`, and a hand-resolved conflicted merge fire no
-such hook: after one, run `./init-dev.sh`. Keep local skills concise and
+such hook; the `SessionStart` check (`tools/dev/sync-agent-tooling.sh`, wired in
+`.claude/settings.json`) catches what the git hooks can't see, and
+`./init-dev.sh` remains the manual fallback. Keep local skills concise and
 HPAC-specific. Search before adding generic guidance, and do not install a
 skill whose architecture conflicts with `.spec/features`.
 

@@ -3527,7 +3527,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/WorkerAttachmentSteps.cs"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":["ADR-0126"],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0126","ADR-0198"],"lessons":[]}
 		},
 		{
 			"id": "REQ-MED-025",
@@ -22884,10 +22884,10 @@
 			"id": "ADR-0049",
 			"file": ".spec/decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md",
 			"title": "Reqnroll executes the .feature files",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0011","ADR-0047"],
+			"decisions": ["ADR-0011","ADR-0047","ADR-0198"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -24474,6 +24474,17 @@
 			"decisions": ["ADR-0086","ADR-0121","ADR-0182"],
 			"supersedes": ["ADR-0086"],
 			"amends": ["ADR-0182"]
+		},
+		{
+			"id": "ADR-0198",
+			"file": ".spec/decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md",
+			"title": "The .NET tests run on xUnit v3, and Reqnroll executes the .feature files through Reqnroll.xUnit.v3",
+			"status": "accepted",
+			"claims": ["REQ-MED-024"],
+			"constraints": [],
+			"decisions": ["ADR-0013","ADR-0049","ADR-0053","ADR-0073","ADR-0185","ADR-0195"],
+			"supersedes": ["ADR-0049"],
+			"amends": []
 		}
 	],
 	"lessons": [

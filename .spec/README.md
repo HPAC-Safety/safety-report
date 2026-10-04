@@ -63,6 +63,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0198](decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md) | The .NET tests run on xUnit v3, and Reqnroll executes the .feature files through Reqnroll.xUnit.v3 | accepted | 2026-10-04 |
 | [0197](decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md) | Backend and ux replace the implementer, and the adversary takes privacy review | superseded | 2026-10-04 |
 | [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
 | [0195](decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md) | A built claim counts only when its scenario passed in the run | accepted | 2026-10-03 |
@@ -207,7 +208,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0052](decisions/ADR-0052-no-inline-script-typescript-only.md) | No inline JavaScript in HTML; every script is an external TypeScript module | accepted | 2026-09-19 |
 | [0051](decisions/ADR-0051-react-router-for-client-side-navigation.md) | React Router for client-side navigation | accepted | 2026-09-19 |
 | [0050](decisions/ADR-0050-ui-tag-for-scenarios-needing-playwright.md) | @ui tags the .feature scenarios that need a Playwright companion | partially-superseded | 2026-09-19 |
-| [0049](decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md) | Reqnroll executes the .feature files | accepted | 2026-09-19 |
+| [0049](decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md) | Reqnroll executes the .feature files | superseded | 2026-09-19 |
 | [0048](decisions/ADR-0048-one-website-admin-as-a-route.md) | One website again; the admin review queue is a route, not a separate site | partially-superseded | 2026-09-19 |
 | [0047](decisions/ADR-0047-feature-files-must-not-contradict-adrs.md) | A feature file may never contradict an accepted ADR | accepted | 2026-09-18 |
 | [0046](decisions/ADR-0046-mermaid-for-diagrams.md) | Diagrams in Markdown are Mermaid, not images | accepted | 2026-09-18 |

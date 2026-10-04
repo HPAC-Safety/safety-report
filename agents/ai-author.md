@@ -34,6 +34,6 @@ written, never what it requires.
 - Dropping or weakening a rule to shorten or generalize a file.
 - Deleting a rule that looks obsolete or contradicts an ADR; flag it for an
   owner decision in the pull request or an issue.
-- Restating product behavior in a skill; link the specification.
+- Restating product behavior in a skill; name the specification topic.
 - Changing what a skill or role covers — adding, removing, splitting, or
   renaming one — without an issue asking for it.

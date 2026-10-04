@@ -13,8 +13,7 @@ holds only what is specific to this repository, under the same section names.
 - Read
   [`Persistence/Migrations/README.md`](../../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md)
   first: the database, its four conventions, and the schema diagram.
-- The target schema:
-  [`.spec/data-and-persistence.md`](../../.spec/data-and-persistence.md). A
+- The target schema: the data-and-persistence constraint page. A
   disposable database: the `postgres` service in `docker-compose.yml`, or the
   PostgreSQL container the API and Infrastructure test suites start.
 - Tables hold personal and medical information, so an audit query returns
@@ -24,68 +23,65 @@ holds only what is specific to this repository, under the same section names.
 
 ## Rules
 
-The generic rules hold
-([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)),
-plus:
+The generic rules hold (the migrations, SQL files, and stored procedures
+decision), plus:
 
 1. **Past migrations keep their inline SQL.** The raw SQL inlined in
    `20260823001528_InitialSchema.cs` and
    `20260827013637_MigrateCanonicalDomainAndPersistence.cs` stays.
 2. **Nothing is physically deleted.** No `DELETE`, no `DROP TABLE` on a table
-   holding application data, no `ALTER` that loses a value
-   ([ADR-0040](../../.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
+   holding application data, no `ALTER` that loses a value (the canonical-domain migration decision).
    - Retirement is a `deleted timestamptz` stamp. Every new table gets that
      column and the default live-row filter — except `question_choices` and
      `question_choice_parents`, which skip the filter because their aggregate
-     reads removed rows (ADR-0095, ADR-0151).
+     reads removed rows (the question-owns-its-choices and shared-dependent-choice decisions).
    - A widening cast that loses nothing (`char(11)` → `varchar(256)`) is not
      destructive.
    - The carved exceptions (`AGENTS.md` invariant 8), each argued in its own
-     ADR:
+     decision:
      - the legacy per-language question tables and `report_aircraft`, dropped
        by `MigrateCanonicalDomainAndPersistence` after folding their data
        forward
-       ([ADR-0040](../../.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md));
+       (the canonical-domain migration decision);
      - `admin_users`, which never held data in a deployed environment
-       ([ADR-0065](../../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
+       (the no-user-records decision);
      - the shared-choice-list and per-revision option tables, dropped only
        after the same migration copies every choice onto its question
-       ([ADR-0095](../../.spec/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md));
+       (the question-owns-its-choices decision);
      - `pending_import_logic` rows, transient Typeform import notes with no
        `deleted` column, hard-deleted when an administrator resolves them
-       ([ADR-0077](../../.spec/decisions/ADR-0077-typeform-json-import-and-export.md)).
-     None generalizes; any other physical delete needs its own ADR.
+       (the Typeform import decision).
+     None generalizes; any other physical delete needs its own decision record.
 3. **Every key is a tiny id**, `char(11)`
-   ([ADR-0034](../../.spec/decisions/ADR-0034-tiny-ids.md)). Never `uuid` or
+   (the tiny-ids decision). Never `uuid` or
    `bigint identity`. Type the key as `TinyId`; `ConfigureConventions` handles
    the conversion.
 4. **Every enum column is a `varchar` of invariant codes with a `CHECK`
    constraint.** Adding a member drops and recreates the constraint; EF
    generates it once the constraint string in the entity configuration is
    updated.
-5. **No `DateTime`** — `DateOnly`, `TimeOnly`, `DateTimeOffset`
-   ([ADR-0035](../../.spec/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
+5. **No `DateTime`** — `DateOnly`, `TimeOnly`, `DateTimeOffset` (the banned-`DateTime` decision).
    `tests/BannedSymbols.txt` enforces it in the build.
 6. **Names are `snake_case`**, applied automatically. Hand-name a column only
    when it must differ.
 7. **Seed identifiers come from `SeedIds`**
-   ([ADR-0020](../../.spec/decisions/ADR-0020-seeding-by-migration.md)). Never
+   (the seeding-by-migration decision). Never
    real report content.
 8. **New raw SQL is a `.sql` file** under
    `src/HpacSafety.Infrastructure/Persistence/Sql/`, loaded by the migration,
    never a C# string literal. Views and stored procedures live there too.
    - A read query that applies a rule (a filter, a derived flag, a count)
      becomes a view, mapped read-only under `Persistence/Views/` with
-     `ToView` (ADR-0116). A pure projection stays LINQ.
+     `ToView` (the decision that a read rule lives in a view). A pure projection stays LINQ.
    - Existing inline SQL in past migrations is not rewritten.
 9. **Four tables refuse changes to locked columns, and every `DELETE`.**
    `reports`, `report_answers`, `report_files`, and `summary_revisions` carry
-   `BEFORE UPDATE OR DELETE` triggers (ADR-0178). A migration that must change a
+   `BEFORE UPDATE OR DELETE` triggers (the database-refuses-changes decision). A migration that must change a
    locked column:
    - disables the table's trigger inside its own transaction
      (`ALTER TABLE … DISABLE TRIGGER <table>_immutable`), makes the one change,
      and enables it again before the transaction ends;
-   - carries its own ADR argument for why a reporter's account or a saved
+   - carries its own decision record arguing for why a reporter's account or a saved
      revision may change. There is no session setting, role, or runtime flag
      that bypasses a trigger, and none may be added;
    - a new column on one of these tables is unguarded until it is added to that
@@ -125,16 +121,17 @@ plus:
   apply any that remain. Whichever starts first does the work, so "Worker
   before API" after a deploy is safe.
 - There is no `migrate` deploy job. Adding one reintroduces the ordering
-  dependency this replaced
-  ([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+  dependency this replaced (the migrations, SQL files, and stored procedures
+  decision).
 
 ## Squash to one baseline
 
 Not yet sanctioned here. Before squashing:
 
-- An ADR must supersede the generic rule 2 for this repository and say what
-  happens to rule 1 above and to the migrations that `AGENTS.md` invariant 8
-  and ADR-0040, ADR-0065, and ADR-0095 cite as carved exceptions — the
+- A decision record must supersede the generic rule 2 for this repository and
+  say what happens to rule 1 above and to the migrations that `AGENTS.md`
+  invariant 8 and the canonical-domain, no-user-records, and
+  question-owns-its-choices decisions cite as carved exceptions — the
   baseline never creates those tables, so it drops nothing.
 - Every deployed environment's database is recreated, or proven identical and
   given the baseline's history row.
@@ -157,9 +154,7 @@ the one baseline.
 
 - Run `dotnet test HpacSafety.slnx --filter "Category!=ui"`. API and
   Infrastructure suites boot a real PostgreSQL container.
-- The diagram is a Mermaid `erDiagram` with `snake_case` names
-  ([ADR-0046](../../.spec/decisions/ADR-0046-mermaid-for-diagrams.md)).
+- The diagram is a Mermaid `erDiagram` with `snake_case` names (the Mermaid-for-diagrams decision).
 - Update the migration table at the bottom of `Persistence/Migrations/README.md`,
   and its schema diagram when the shape changed.
-- Update [`.spec/data-and-persistence.md`](../../.spec/data-and-persistence.md)
-  when the logical record changed.
+- Update the data-and-persistence constraint page when the logical record changed.

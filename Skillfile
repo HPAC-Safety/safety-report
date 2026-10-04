@@ -65,7 +65,9 @@ github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-
 # Generic skills name nothing specific to this repository, so another project
 # can reuse them. A skill's name says hpac exactly when it is project-specific,
 # and tools/docs/check-generic-instructions.ts holds every other skill and
-# every agent to it (CONV-009).
+# every agent to it, and bars every agent and skill, `hpac` ones included,
+# from referencing a decision, lesson, convention, claim, or specification page
+# (CONV-009).
 local  skill  agent-persona  skills/agent-persona/SKILL.md
 local  skill  clarify-requirements  skills/clarify-requirements/SKILL.md
 local  skill  coding-conventions  skills/coding-conventions/SKILL.md

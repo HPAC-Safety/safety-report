@@ -15,7 +15,7 @@ authority is [`.spec/features/README.md`](../.spec/features/README.md).
 1. Run `./init-dev.sh` or `./init-dev.sh --check`.
 2. Read `AGENTS.md`, the affected `.spec/features` pages, and the focused issue.
 3. Load only the project skills relevant to the task.
-4. Work from current `main` on `issue-<number>/<short-description>`.
+4. Work in a worktree off fresh `origin/main`, on `issue-<number>/<short-description>`.
 
 Project-owned skill sources live under `skills/` and role agents under
 `agents/`. `skillfile install` generates tool-specific copies under `.claude/`;
@@ -36,7 +36,7 @@ generic: a skill is HPAC-specific only when its content cannot transfer
 skill whose architecture conflicts with `.spec/features`.
 
 A skill and an agent are not the same thing. A skill is knowledge, loaded when
-its topic is in play, and it constrains nothing. An agent is a persona and a
+its topic is in play; it never widens or narrows what a role may do. An agent is a persona and a
 role, and what makes it useful is what it refuses. Eleven are declared here, each
 with a human name; the file says who the agent is, what it does, and what it
 leaves to others, and how it works is in the generic skills it preloads

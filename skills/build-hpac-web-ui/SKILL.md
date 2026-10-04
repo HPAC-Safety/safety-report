@@ -16,14 +16,11 @@ names where they exist, and wins where they differ.
   skill; the exemption follows `AGENTS.md` "The `feature-coverage`
   exemption"; copy follows
   [`localize-hpac-app`](../localize-hpac-app/SKILL.md).
-- React and TypeScript, built with Vite
-  ([ADR-0043](../../.spec/decisions/ADR-0043-react-typescript-vite-web-front-end.md)).
+- React and TypeScript, built with Vite.
 - Tailwind v4 via `@tailwindcss/vite` is the only CSS build step.
 - **No inline JavaScript.** Every script is an external, type-checked `.ts`
-  module under `src/web/src/`, loaded with `<script type="module" src="...">`
-  ([ADR-0052](../../.spec/decisions/ADR-0052-no-inline-script-typescript-only.md)).
-- Dark mode redefines tokens rather than adding `dark:` variants
-  ([ADR-0024](../../.spec/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md)).
+  module under `src/web/src/`, loaded with `<script type="module" src="...">`.
+- Dark mode redefines tokens rather than adding `dark:` variants.
 - Self-hosted assets only.
 
 ## Accessibility and locale
@@ -36,19 +33,17 @@ names where they exist, and wins where they differ.
 ## The report form
 
 - Render the ordered current bilingual question-revision DTO.
-  - Honor each revision's authored required state (ADR-0061).
+  - Honor each revision's authored required state (administrators may require any question).
   - Publication consent is always required, and so is media consent when it is
-    asked (ADR-0117).
+    asked.
   - No consent has a selected default.
 - **Saved report**: answer values, revision IDs, and each finished upload's ID,
   name, and size, only in the same browser, for 15 days from the first save or
   until a successful submit. Never a file's bytes. Abandoning the saved report
-  deletes its uploads
-  ([ADR-0100](../../.spec/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+  deletes its uploads: an attachment is kept as long as the saved report.
 - **The only write before final submission is an attachment upload.**
-- **Uploads**
-  ([ADR-0096](../../.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-  [ADR-0126](../../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
+- **Uploads** (uploaded on attach, claimed at submission, straight to
+  quarantine by pre-signed `PUT`):
   - upload each file at once: mint it via `POST /api/v1/uploads` (declared
     type and size, never a filename), then `PUT` it to the returned URL, one
     request per file with its own `AbortController`;
@@ -59,7 +54,9 @@ names where they exist, and wins where they differ.
     refuses as expired or invalid on its own row, and keep everything else.
 
 ## Components: logic and markup
-([ADR-0188](../../.spec/decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md))
+
+A component's logic lives in `Foo.tsx`, its markup in `Foo.view.tsx`, and web
+logic is unit-tested (the component-split decision).
 
 - **`Foo.tsx` is logic.** It exports `useFoo(props)`, the view model (state,
   effects, refs, derived values, handlers, fetching), and `Foo`, which only
@@ -124,8 +121,8 @@ names where they exist, and wins where they differ.
   change behaviour or the DOM, disable that rule on that line with the reason:
   `// eslint-disable-next-line react-hooks/exhaustive-deps -- <why>`; a disable
   without `-- <why>` is an error. A name starting with `_` is unused on purpose.
-  The rules relaxed for a kind of file are listed in ADR-0188's strict-linting
-  amendment.
+  The rules relaxed for a kind of file are listed in the strict-linting
+  amendment to the component-split decision.
 
 ### Tests are never part of a release
 
@@ -142,20 +139,19 @@ names where they exist, and wins where they differ.
   markup: headings, paragraphs, bold, italic, lists, line breaks. Raw HTML shows
   as text, a link as its text, an image not at all. Use it for a summary and for
   a long-text answer with its translation; never `dangerouslySetInnerHTML`
-  (ADR-0180).
+  (summaries are Markdown, one section per public paragraph question).
 - **Never advertise it.** No Markdown editor, toolbar, preview, or hint; a
   textarea stays plain.
 - **The colon is the interface's.** A label is stored without one; show it with
   `labelWithColon` (`lib/questionPrompt.ts`): `Label:` in en-CA, `Label :` in
-  fr-CA, none after a statement, a group, or a label ending in `?` (ADR-0181).
+  fr-CA, none after a statement, a group, or a label ending in `?` (the label-colon decision).
 
 ## Admin and authentication
 
-- Public and admin are routes in one application, build, and container
-  ([ADR-0048](../../.spec/decisions/ADR-0048-one-website-admin-as-a-route.md)).
+- Public and admin are routes in one application, build, and container (one website, admin as a route).
 - **API authorization is the boundary**, not hidden markup. Every `/admin/*`
   route is wrapped in `AdminRouteGuard`: signed out redirects to `/login`, and
-  the wrong role gets a real 403 view (ADR-0092). The guard only decides what
+  the wrong role gets a real 403 view (the admin-route status-codes decision). The guard only decides what
   to render; the API still answers 401/403 on every request.
   - `User`: no Admin menu. `SafetyOfficer`: review options. `Administrator`:
     authoring too.
@@ -164,7 +160,7 @@ names where they exist, and wins where they differ.
 - Ask the API its authentication mode (`GET /api/auth/config`); never branch on
   a build flag. Where no provider is configured, the third-party sign-in button
   is hidden, not disabled
-  ([ADR-0066](../../.spec/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
+  (the development identity provider signs with a dev key).
 
 ## Tests
 
@@ -174,10 +170,8 @@ names where they exist, and wins where they differ.
     "Specification-driven development") — a Playwright test alone does not
     satisfy this;
   - a Playwright test. For a `@ui` scenario, its steps in `tests/e2e/steps/`
-    **are** that test, via `playwright-bdd`
-    ([ADR-0053](../../.spec/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md));
-  - a server-side test when it touches API behavior
-    ([ADR-0045](../../.spec/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
+    **are** that test, via `playwright-bdd`;
+  - a server-side test when it touches API behavior (UI changes require Playwright and server tests).
 - Logic you add or move is unit-tested as above; a unit test adds to the
   Playwright test and replaces neither.
 - Plain `.spec.ts` files outside `tests/e2e/steps/` are broad smoke coverage

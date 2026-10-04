@@ -172,7 +172,7 @@ is in the generic skills it preloads
   ([#842](https://github.com/HPAC-Safety/safety-report/issues/842),
   [#853](https://github.com/HPAC-Safety/safety-report/issues/853)).
   - Run the critic on a plan before it is final (before `ExitPlanMode` or
-    `gh issue create`): one pass, at most one recheck, then the owner decides.
+    `gh issue create`).
   - Run the adversary at a contract boundary, after repeated test failures, and
     before any pull request or merge.
   - A hook reminds about the critic and never blocks
@@ -368,6 +368,10 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 
 - A **generic** skill names nothing specific to this repository, so another
   project can reuse it.
+- **Skills and agents cite no record by link, path, or ID.** A skill's topic
+  words find the record through a graphify search ("graphify" below); this file
+  links the records it cites
+  ([CONV-009](.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md)).
 - **A skill's name says `hpac` exactly when it is project-specific**
   ([CONV-009](.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md)).
 - Where a row names two skills, read both: the generic one, then the project
@@ -456,12 +460,38 @@ Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |
 | Historical rationale | [`.spec/decisions/README.md`](.spec/decisions/README.md) |
 
+### Specification paths
+
+- [`.spec/glossary.md`](.spec/glossary.md): the glossary.
+- [`.spec/system-overview.md`](.spec/system-overview.md),
+  [`.spec/interfaces-and-data-flow.md`](.spec/interfaces-and-data-flow.md),
+  [`.spec/data-and-persistence.md`](.spec/data-and-persistence.md),
+  [`.spec/infrastructure-and-operations.md`](.spec/infrastructure-and-operations.md),
+  [`.spec/testing-and-quality.md`](.spec/testing-and-quality.md): constraint pages.
+- [`.spec/claims.json`](.spec/claims.json), `.spec/claims.schema.json`,
+  [`.spec/traceability.md`](.spec/traceability.md): the generated claims file,
+  its schema, and the matrix.
+- `.spec/area-paths.json`: code paths mapped to feature areas.
+- `.spec/features/<area>/README.md`: a feature area's supporting detail and
+  out-of-scope boundary.
+- [`.spec/decisions/`](.spec/decisions/README.md),
+  [`.spec/conventions/`](.spec/conventions/README.md),
+  [`.spec/lessons/`](.spec/lessons/README.md): records; the ADR template is
+  [`.spec/decisions/TEMPLATE.md`](.spec/decisions/TEMPLATE.md).
+
 ## graphify
 
 A knowledge graph lives at `graphify-out/`.
 
-- **Codebase questions**: when `graphify-out/graph.json` exists, run
-  `graphify query "<question>"` first. Use `graphify path "<A>" "<B>"` for
+- **Codebase questions and records**: when `graphify-out/graph.json` exists,
+  run `graphify query "<question>"` before grep. It also finds the decision,
+  lesson, convention, or claim behind a topic a skill names: lead with the
+  record's kind and the topic's distinctive words, as in
+  `graphify query "ADR read rule view"` (ADR-0116) or
+  `graphify query "ADR merge queue"` (ADR-0147). If no record node comes back,
+  search the generated index [`.spec/README.md`](.spec/README.md), which lists
+  every decision, lesson, and convention by title; for a claim, search the
+  scenario titles in [`.spec/traceability.md`](.spec/traceability.md). Use `graphify path "<A>" "<B>"` for
   relationships and `graphify explain "<concept>"` for one concept. They return
   a scoped subgraph, smaller than `GRAPH_REPORT.md` or raw grep output.
 - **Broad navigation**: use `graphify-out/wiki/index.md` when it exists.

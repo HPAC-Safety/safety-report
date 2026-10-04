@@ -14,8 +14,8 @@ differ.
 
 - The file, and every file that links to or restates it (`grep -rn` the
   rule's key phrase across the agent instructions, `skills/`, and `agents/`).
-- The project's record of what the always-loaded instructions own versus a
-  skill.
+- The project's rule for what the always-loaded instructions own (invariants
+  and routing) versus a skill (procedure).
 - `deliver-change` "Lessons": where a lesson's general rule lands.
 
 ## Style rules
@@ -25,16 +25,17 @@ The one home for how an instruction file is written; others link here.
 - **Direct.** Imperative. A one-line *why* only where the rule surprises.
 - **Bullets over prose.** Prose only for one idea that needs its reasoning.
 - **Headed sections.** One concept per `##`/`###`.
-- **No fluff.** No preamble, restatement, hedging, or origin story; link the
-  decision record or lesson.
-- **Say it once.** One home per rule; elsewhere links. The always-loaded
+- **No fluff.** No preamble, restatement, hedging, or origin story; name the
+  topic.
+- **Say it once.** One home per rule; elsewhere points to it. The always-loaded
   instructions: what every task needs (invariants, specification authority,
   delivery basics, skill table). A skill: its topic's detail. An agent: its
   role.
-- **Keep the reference.** A decision, lesson, or claim link stays beside its
-  rule — in the project skill when the rule is generic.
+- **Name the topic, never the record.** A skill or agent cites no decision,
+  lesson, convention, claim, or specification page by link, path, or ID; the
+  always-loaded instructions map topics to records.
 - **Keep stable handles.** Invariant numbers, skill section names, and
-  numbered steps are cited by code and lessons. Don't renumber or rename; if
+  numbered steps are cited by code, records, and other instructions. Don't renumber or rename; if
   one must change, update every citation in the same change.
 
 ## An agent file
@@ -61,8 +62,9 @@ The one home for how an instruction file is written; others link here.
   - `## What I do`: the mission, what I own, and for a reviewer the lens (its
     "Look for" list is the what);
   - `## What I leave to others`: every refusal, and other roles' work.
-- **A refusal stays in the agent file.** A skill constrains nothing; a role is
-  defined by what it refuses.
+- **A refusal stays in the agent file.** A skill may state the rules of its
+  subject but never widens or narrows what a role may do; a role is defined by
+  what it refuses.
 - **The how lives in skills**: reading lists, procedures, output formats, and
   git mechanics. The agent file says who and what.
 - **A persona never changes a rule.** Voice follows `agent-persona`.
@@ -82,12 +84,12 @@ tool, path, or decision moves to the project skill, never out of existence.
 ## How you edit
 
 1. **List before you cut**: every rule, constraint, command, path, and
-   decision, lesson, or claim reference.
-2. **Find duplicates** across the other instruction files; one home, links
+   topic a record supports.
+2. **Find duplicates** across the other instruction files; one home, a pointer
    elsewhere.
 3. **Rewrite** to the style rules.
-4. **Diff the checklist**: each item is in the file, its project skill, or one
-   link away. Put the result in the pull-request body.
+4. **Diff the checklist**: each item is in the file, its project skill, or the
+   always-loaded topic map. Put the result in the pull-request body.
 5. **Verify**: the frontmatter and generic-file checks pass; a skill's
    `description` triggers on the same work (tighten wording, never narrow
    scope); every relative link resolves; a new skill or agent has its manifest

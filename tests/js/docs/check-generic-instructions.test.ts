@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-import { checkText, genericFiles, main } from '../../../tools/docs/check-generic-instructions.ts'
+import { checkText, genericFiles, instructionFiles, main } from '../../../tools/docs/check-generic-instructions.ts'
 
 /** Runs `main` with console output silenced, restoring it afterwards even on failure. */
 function runMain(root: string, files?: readonly string[]) {
@@ -95,7 +95,7 @@ describe('main', () => {
 		const { code, errors } = runMain(tree({}), ['skills/gone/SKILL.md'])
 
 		assert.equal(code, 1)
-		assert.match(errors[0], /listed as generic but does not exist/)
+		assert.match(errors[0], /listed but does not exist/)
 	})
 
 	it('checks the real repository by default', () => {
@@ -161,5 +161,101 @@ describe('genericFiles', () => {
 		const root = tree({ 'skills/review-work/SKILL.md': '# R\nThis names HPAC.\n' })
 
 		assert.equal(runMain(root).code, 1)
+	})
+})
+
+describe('record references', () => {
+	for (const [line, why] of [
+		['see [the ADR](../../.spec/decisions/ADR-0001-x.md)', 'references a specification path'],
+		['read .spec/claims.json', 'references a specification path'],
+		['see adr-0001', 'references a decision record by number'],
+		['as Lesson 0003 found', 'references a lesson by number'],
+		['rule CONV-009', 'references a convention by number'],
+		['proven by REQ-SUB-012', 'references a claim by ID'],
+		['in docs/lessons/x.md', 'references a record directory'],
+	]) {
+		it(`refuses an hpac skill line that ${why}`, () => {
+			const problems = checkText('skills/hpac-x/SKILL.md', `# X\n${line}\n`)
+
+			assert.ok(problems.length >= 1, line)
+			assert.match(problems[0], new RegExp(`^skills/hpac-x/SKILL\\.md:2: ${why}`))
+		})
+	}
+
+	it('lets an hpac skill name the product, tools, and source paths', () => {
+		assert.deepEqual(checkText('skills/hpac-x/SKILL.md', 'Run node tools/spec/x.ts; edit src/HpacSafety.Worker; the pilot, the Worker.\n'), [])
+	})
+
+	it('still fails a generic skill that names the product', () => {
+		assert.equal(checkText('skills/review-work/SKILL.md', 'This names HPAC.\n').length, 1)
+	})
+
+	it('reports the same match once when both lists match', () => {
+		assert.equal(checkText('skills/review-work/SKILL.md', 'see ADR-0001 and .spec/x.md\n').length, 2)
+		assert.equal(checkText('skills/review-work/SKILL.md', 'see ADR-0001\n').length, 1)
+	})
+
+	it('scans hpac skills in main, and never scans AGENTS.md', () => {
+		const root = tree({ 'AGENTS.md': 'See ADR-0001 and .spec/x.\n', 'skills/hpac-x/SKILL.md': '# X\nSee ADR-0001.\n' })
+
+		assert.deepEqual(instructionFiles(root), ['skills/hpac-x/SKILL.md'])
+		const { code, errors } = runMain(root)
+		assert.equal(code, 1)
+		assert.equal(errors.length, 1)
+		assert.match(errors[0], /file=skills\/hpac-x\/SKILL\.md,line=2::references a decision record by number/)
+	})
+})
+
+describe('record reference variants', () => {
+	const hpac = 'skills/hpac-x/SKILL.md'
+
+	for (const line of [
+		'ADR 0147', 'ADR0147', 'ADR\u20110147', 'ADR\u20130147', 'ADR\u20100147', 'REQ\u2011SUB\u2011012', 'lesson  0003', 'lesson-0003',
+		'lesson #3', 'CONV009', 'conv 009', 'lessons/0003-x.md', '.spec', 'see claims.json', 'claims.schema.json', 'traceability.md', 'area-paths.json',
+	]) {
+		it(`refuses "${line}"`, () => {
+			assert.ok(checkText(hpac, `${line}\n`).length >= 1)
+			assert.ok(checkText('skills/review-work/SKILL.md', `${line}\n`).length >= 1)
+		})
+	}
+
+	it('lets a docs guide named like a specification page through, and refuses the page itself', () => {
+		assert.deepEqual(checkText(hpac, 'see docs/issue-traceability.md\n'), [])
+		assert.equal(checkText(hpac, 'see traceability.md\n').length, 1)
+		assert.ok(checkText(hpac, 'see .spec/traceability.md\n').length >= 1)
+	})
+
+	it('refuses a claim ID in lower case', () => {
+		assert.ok(checkText(hpac, 'see req-sub-012\n').length >= 1)
+	})
+
+	it('lets test files and plain prose through', () => {
+		for (const line of ['foo.spec.ts', 'foo.spec.tsx', 'foo.spec.js', 'foo.spec.mjs', 'foo.spec.cjs', 'foo.spec.jsx', 'a lesson 2 days old', 'lessons 2 and 3', 'the pros and con a 5 times']) {
+			assert.deepEqual(checkText(hpac, `${line}\n`), [], line)
+		}
+	})
+
+	it('catches a reference wrapped across a line, once, at its first line', () => {
+		for (const text of ['see lesson\n0003 here\n', 'see ADR-\n0001 here\n', 'REQ-SUB-\n012\n']) {
+			const problems = checkText(hpac, text)
+
+			assert.equal(problems.length, 1, text)
+			assert.match(problems[0], /^skills\/hpac-x\/SKILL\.md:1:/)
+		}
+	})
+
+	it('refuses a record reference in an agent and in a nested skill file', () => {
+		const root = tree({
+			'agents/a.md': '# A\nSee ADR-0001.\n',
+			'skills/hpac-x/SKILL.md': '# X\n',
+			'skills/hpac-x/agents/openai.yaml': 'description: see .spec/x\n',
+		})
+
+		const { code, errors } = runMain(root)
+
+		assert.equal(code, 1)
+		assert.equal(errors.length, 2)
+		assert.ok(errors.some((e) => e.includes('file=agents/a.md,line=2')))
+		assert.ok(errors.some((e) => e.includes('file=skills/hpac-x/agents/openai.yaml,line=1')))
 	})
 })

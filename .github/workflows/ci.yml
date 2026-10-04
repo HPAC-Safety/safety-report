@@ -340,8 +340,9 @@ jobs:
         run: node tools/docs/check-links.ts
 
       # The generic skills and role agents are reused elsewhere, so they name
-      # nothing specific to this repository. CONV-009.
-      - name: Generic agent instructions name nothing specific to this repository
+      # nothing specific to this repository, and no instruction file references
+      # a record. CONV-009.
+      - name: Instruction files name nothing specific to this repository and reference no record
         run: node tools/docs/check-generic-instructions.ts
 
       # A workflow step runs one command; its logic is a tested script under

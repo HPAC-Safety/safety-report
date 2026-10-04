@@ -12,20 +12,13 @@ date: 2026-10-04
 
 ### The file
 
-- **Frontmatter** keeps `name` (the role, never renamed: it routes),
-  `description`, `model`, `effort`, and where needed `tools` and `isolation`.
-  It adds `skills`, a list of **generic skills only**.
-  - The `description` opens with the team role, then the persona name in
-    parentheses: "The team's security engineer (Kyle). …". It then says what
-    the agent does and when to pick it over its neighbours.
-  - A role that edits files preloads `deliver-change`: the builders, Kevin,
-    Jennifer, Emily, and Jane. A reviewer does not.
-- **The body** is who, what, and what it leaves to others; its exact sections
-  are in the generic
+- **An agent file is a persona and a role**: who it is, what it does, and
+  what it leaves to others. Its frontmatter and body shape are in the generic
   [`write-agent-instructions`](../../skills/write-agent-instructions/SKILL.md)
-  skill.
-- **Every refusal stays in the agent file.** A skill constrains nothing; a
-  role is defined by what it refuses.
+  skill, "An agent file", which is their one home.
+- **Every refusal that defines a role stays in the agent file.** A skill may
+  state the rules of its subject, but it never widens or narrows what a role
+  may do.
 - **The how lives in skills**: reading lists, procedures, output formats, and
   git mechanics. A skill an agent preloads is generic, so the agent stays
   generic.
@@ -61,23 +54,20 @@ Every agent preloads the generic
 [`agent-persona`](../../skills/agent-persona/SKILL.md) skill, which holds them:
 voice stays out of every finding and artifact, and never softens a finding.
 
-### What still holds
+### Carried from the records this supersedes
 
-Not restated; each stays as its record or skill says.
-
-- The frontmatter keys an agent may carry, checked by
-  `tools/docs/check-frontmatter.ts`, and that each declares its model and
-  effort, now with the reason in the team table above
-  ([ADR-0182](../decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)).
-- ai-author's scope: it edits instruction files and their manifest entries,
-  never code, specification, or runtime prompts, and changes a rule's wording,
-  never the rule
-  ([ADR-0121](../decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md),
-  [ADR-0124](../decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md)).
-- The split of the retired implementer into `backend`, `ux`, and
-  `infrastructure`, the chain from spec-author through test-writer and a
-  builder to spec-reviewer, and the adversary taking the privacy review from the spec-reviewer
-  ([ADR-0197](../decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
+- **Model and effort**: each agent declares both in its frontmatter, the one
+  place the values live; the team table above gives each role's reason, and
+  `tools/docs/check-frontmatter.ts` checks the keys.
+- **ai-author's scope**: it edits `AGENTS.md`, the skills, the agent files,
+  and their `Skillfile` entries, and may mend a link a move broke. It never
+  edits code, tests, the specification, `docs/` pages, or runtime prompts,
+  and it changes a rule's wording, never the rule.
+- **The chain**: spec-author writes the scenario, test-writer binds it, a
+  builder (`backend`, `ux`, or `infrastructure`, which replaced the single
+  implementer) makes it pass, and spec-reviewer judges the diff against the
+  claims; each trusts only the artifact from the step before it.
+- **Privacy review is the adversary's**, not the spec-reviewer's.
 - When the critic, the adversary, and the auditor run:
   [CONV-007](CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md).
 
@@ -105,6 +95,7 @@ they are agent-workflow rules, which are conventions
 
 - `tools/docs/check-frontmatter.ts`: an agent's keys and values.
 - `tools/docs/check-generic-instructions.ts`: every agent and every generic
-  skill names nothing specific to this repository.
+  skill names nothing specific to this repository, and no agent or skill
+  references a record (CONV-009).
 - Nothing checks the body's three sections or the guardrails; the
   `ai-author` role and review hold them.

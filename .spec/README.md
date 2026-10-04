@@ -219,7 +219,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0040](decisions/ADR-0040-migrate-canonical-domain-and-persistence.md) | Migrate to the canonical domain and persistence model | partially-superseded | 2026-08-26 |
 | [0039](decisions/ADR-0039-path-gated-required-checks.md) | Path-gated required checks via job-level if:, never paths: | accepted | 2026-08-26 |
 | [0038](decisions/ADR-0038-question-privacy-and-llm-anonymization.md) | Question privacy partitions an LLM-only anonymization request | partially-superseded | 2026-08-22 |
-| [0037](decisions/ADR-0037-progressive-agent-instructions.md) | Progressive agent instructions | accepted | 2026-08-22 |
+| [0037](decisions/ADR-0037-progressive-agent-instructions.md) | Progressive agent instructions | superseded | 2026-08-22 |
 | [0035](decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md) | DateOnly, DateTimeOffset, TimeOnly; DateTime is banned | partially-superseded | 2026-08-22 |
 | [0034](decisions/ADR-0034-tiny-ids.md) | Every row is identified by an eleven-character tiny id | accepted | 2026-08-22 |
 | [0033](decisions/ADR-0033-third-party-libraries-behind-owned-abstractions.md) | Third-party libraries are used behind an abstraction we own | partially-superseded | 2026-08-22 |

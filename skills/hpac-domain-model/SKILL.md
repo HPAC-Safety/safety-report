@@ -24,7 +24,7 @@ stateDiagram-v2
 ```
 
 - Publishing approves the pair; there is no Approved or Rejected status
-  (ADR-0125).
+  (the report-is-pending-published-or-unpublished decision).
 - A no-consent report is Unpublished for good: every command except soft
   delete is refused.
 - Review commands live on `Report` — `Publish`, `Unpublish`, `EditSummary`,
@@ -42,8 +42,8 @@ stateDiagram-v2
 |---|---|
 | `questions` | Stable question identity: key, role, system flag, deleted state. |
 | `question_revisions` | Complete, immutable bilingual revisions: wording, type, required, private, translatable, active, display order, dependency, grouping. Answers reference a revision, never the question row. |
-| `question_choices` | A question's own editable choices, outside its revisions. Editing never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (ADR-0095). |
-| `question_choice_parents` | The parent choices a dependent question's choice is offered under, one stamped-not-erased row per pair (ADR-0151). |
+| `question_choices` | A question's own editable choices, outside its revisions. Editing never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (the choices-outside-revisions decision). |
+| `question_choice_parents` | The parent choices a dependent question's choice is offered under, one stamped-not-erased row per pair (the one-dependent-choice-under-several-parents decision). |
 | `reports` | The submission. Only consent projects onto typed columns (see "The consents"); every other answer is in `report_answers`. `language` is the locale the reporter wrote in. |
 | `report_answers` | One row per answered value (a multi-select writes one row per chosen value), each referencing the exact revision answered. |
 | `report_files` | Blob keys, an `AttachmentKind`, and the file-upload answer they belong to. |
@@ -53,14 +53,13 @@ stateDiagram-v2
 
 - **No user table.** Identity and role come from a validated bearer token per
   request and are never persisted
-  ([ADR-0065](../../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+  (the no-user-records decision).
   An approver or audit actor is an opaque `varchar(256)` subject with no
   foreign key. A report records nothing about the member who filed it.
 - Every table except `audit_log` and `pending_import_logic` (transient Typeform
-  import notes, hard-deleted, ADR-0077) has `Deleted timestamptz` and a
-  default live-row query filter (ADR-0040). `question_choices` and
-  `question_choice_parents` have the column but no filter (ADR-0095,
-  ADR-0151).
+  import notes, hard-deleted, the Typeform-import decision) has `Deleted timestamptz` and a
+  default live-row query filter (the decision to migrate to the canonical domain and persistence model). `question_choices` and
+  `question_choice_parents` have the column but no filter (the decisions that a question owns its choices outside its revisions and that one dependent choice may be offered under several parent choices).
 
 ## Language
 
@@ -68,12 +67,12 @@ stateDiagram-v2
   in. The summary is never a translation of them. Free text whose question is
   marked Auto-translate answer (long text by default) gets a second-language
   value beside the original, made by the Worker off the submission path
-  (ADR-0080, ADR-0112).
+  (the worker-translated-second-language and only-answers-that-need-it decisions).
 - `reports.language` is that locale. The Worker makes one model call in it and
   gets both official languages back — no separate translation step, row, or
   per-language approval.
 - `AiSummaryEn` and `AiSummaryFr` both come from that call, and are revision 1
-  of the summary. A summary is an append-only list of revisions (ADR-0177): an
+  of the summary. A summary is an append-only list of revisions (the append-only-summary-revisions decision): an
   edit or a rollback adds one, approval belongs to a revision, and on a
   Published report the saved revision is approved by its author and public at
   once.
@@ -106,25 +105,25 @@ Three tiers drive access control, logging, and what may reach a model:
 1. **Restricted** — reporter and pilot names, phone, email, member number, raw
    narrative, original uploaded media. Admin-only and never logged.
    - The one translation service it reaches is the Worker's answer translation
-     (the OpenAI-compatible translator, Gemini, a separate call outside the summary's one, ADR-0179; DeepL is kept dormant), for free
+     (the OpenAI-compatible translator, Gemini, a separate call outside the summary's one, the Gemini-translates-everything decision; DeepL is kept dormant), for free
      text marked Auto-translate answer, written exactly once and never by a
-     human (ADR-0112, ADR-0174).
+     human (the only-answers-that-need-it and written-once-by-the-Worker decisions).
    - The one original that can become public is a validated document on a
      published report under `consent_documents`, as a forced download
-     (ADR-0119).
+     (the documents-for-download decision).
 2. **Internal** — manufacturer, model, precise site. For HPAC's own trend
    analysis; never published.
 3. **Publishable** — the approved summary, publication timestamp, visible
-   member comments and their count (ADR-0114), each public image or video
-   derivative's opaque id and kind (ADR-0117), and each public document's
-   opaque id, kind `document`, and download format (ADR-0119).
+   member comments and their count (the members-may-comment decision), each public image or video
+   derivative's opaque id and kind (the photos-and-video decision), and each public document's
+   opaque id, kind `document`, and download format (the documents-for-download decision).
    - The public DTO is that allowlist and nothing else. No province, severity,
      or aircraft type is ever published: they are ordinary `report_answers`
      rows, not typed columns a public query could select by accident.
 
 - A field's tier belongs to the field, not the screen. Unsure? Restricted.
 - Encryption is AWS-managed at rest plus TLS; no application field cipher
-  (ADR-0019, superseded by ADR-0040).
+  (the application-side-encryption decision, since superseded by the decision to migrate to the canonical domain and persistence model).
 - Privacy is enforced by:
   - `Question.IsPrivate` controlling what reaches the model's
     `report_content`;
@@ -135,8 +134,8 @@ Three tiers drive access control, logging, and what may reach a model:
 
 - The two consent questions are the only answers a report reads by name. They
   project onto `reports.consent_publish` and `reports.consent_media`
-  (ADR-0117). The media-consent answer also sets `reports.consent_documents`,
-  but only when it answered the question's current wording (ADR-0119).
+  (the photos-and-video decision). The media-consent answer also sets `reports.consent_documents`,
+  but only when it answered the question's current wording (the documents-for-download decision).
 - Every other question — province, injury, date, aircraft, any role an
   administrator assigns — is an ordinary `report_answers` row. `Report` has no
   typed projection for them; the admin review DTO reads the exact asked
@@ -150,9 +149,8 @@ display text: the same row renders in English and French.
 
 ## Related
 
-- `.spec/data-and-persistence.md` — canonical target schema
-- `.spec/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md` — the
-  migration that reached it
+- The data-and-persistence constraint page — canonical target schema, and the
+  migrate-canonical-domain-and-persistence decision that reached it
 - `docs/form-spec.md` — source of the field set
 - `docs/data-handling.md` — retention, encryption, PIPEDA
 - `anonymize-hpac-reports` — what happens between `Submitted` and

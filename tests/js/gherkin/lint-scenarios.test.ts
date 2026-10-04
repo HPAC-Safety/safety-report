@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { RULES, lintScenarios, lintSource, main, parse, placeholders, stripQuotes, units, wordRule } from '../../../tools/gherkin/lint-scenarios.ts'
+import { MAX_STEPS, RULES, lintScenarios, lintSource, main, parse, placeholders, stripQuotes, units, wordRule } from '../../../tools/gherkin/lint-scenarios.ts'
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 
@@ -121,6 +121,70 @@ describe('no-locale-codes', () => {
 	it('fails a locale code in a step, and passes one in an Examples cell', () => {
 		const body = ['Scenario Outline: Codes', '  Given a report in fr-CA', '  Then its language is "<code>" and <other>', '', 'Examples:', '  | code  | other |', '  | en-CA | en-CA |'].join('\n')
 		assert.deepEqual(only('no-locale-codes', body), ['fr-CA'])
+	})
+})
+
+describe('one-when', () => {
+	it('passes one action, and a scenario with no action at all', () => {
+		assert.deepEqual(only('one-when', '  Given a report\n  And it is published\n  When a visitor opens it\n  And they read it\n  Then it shows'), ['And they read it (action 2)'])
+		assert.deepEqual(only('one-when', '  Given a report\n  Then it holds\n  And it shows'), [])
+	})
+
+	it('fails a second When, and an action after an outcome', () => {
+		assert.deepEqual(only('one-when', '  Given a report\n  When a reviewer opens it\n  When they publish it\n  Then it is published\n  When they unpublish it\n  Then it is unpublished'), [
+			'When they publish it (action 2)',
+			'When they unpublish it (after a Then)',
+		])
+	})
+
+	it('reads an And or But as the step before it, and ignores the Background', () => {
+		const body = ['Background:', '  Given a report', '  When a reviewer opens it', '  And they publish it', '', 'Scenario: One', '  Given a report', '  Then it holds', '  But it is not shown'].join('\n')
+		assert.deepEqual(only('one-when', body), [])
+	})
+})
+
+describe('max-steps', () => {
+	const steps = (count: number) => Array.from({ length: count }, (_, index) => `  ${index === 0 ? 'Given' : 'And'} step ${index + 1}`).join('\n')
+
+	it(`passes ${MAX_STEPS} steps and fails ${MAX_STEPS + 1}`, () => {
+		assert.deepEqual(only('max-steps', steps(MAX_STEPS)), [])
+		assert.deepEqual(only('max-steps', steps(MAX_STEPS + 1)), [`${MAX_STEPS + 1} steps`])
+	})
+
+	it('does not count the Background', () => {
+		const body = ['Background:', steps(MAX_STEPS), '', 'Scenario: One', steps(MAX_STEPS)].join('\n')
+		assert.deepEqual(only('max-steps', body), [])
+	})
+})
+
+describe('no-ui-mechanics', () => {
+	it('fails pointer and keystroke verbs, tabbing, roles, selectors, and pixels in a step or a title', () => {
+		const body = [
+			'Scenario: A visitor clicks through',
+			'  Given the visitor presses the button and tabs to the link',
+			'  When they hover over the combobox',
+			'  Then the data-theme attribute and the viewport are 44 pixels',
+		].join('\n')
+		assert.deepEqual(only('no-ui-mechanics', body), ['clicks', 'presses', 'tabs to', 'hover', 'combobox', 'data-theme', 'viewport', '44 pixels'])
+	})
+
+	it('fails a key name in a step, and passes it as a noun phrase in an Examples cell', () => {
+		const body = ['Scenario Outline: Keys', '  When the reporter uses Escape', '  And the reporter uses <key>', '  Then it closes', '', 'Examples:', '  | key                     |', '  | the Escape key          |', '  | the down arrow key twice |'].join('\n')
+		assert.deepEqual(only('no-ui-mechanics', body), ['Escape'])
+	})
+
+	it('fails a verb in an Examples cell a step reads, since the cell is step text', () => {
+		const body = ['Scenario Outline: Cells', '  When the reporter opens the list with <opening>', '  Then it opens', '', 'Examples:', '  | opening                 | unread         |', '  | pressing the Enter key  | clicking it    |', '  | the pointer on the list | typing into it |'].join('\n')
+		assert.deepEqual(only('no-ui-mechanics', body), ['pressing'])
+	})
+
+	it('fails typing as a verb, and passes the noun', () => {
+		assert.deepEqual(only('no-ui-mechanics', '  When the reporter types "x"\n  And types a note\n  And the visitor then types into the box\n  And they have typed "y"\n  Then typing shows it'), ['reporter types', 'types', 'types into', 'have typed', 'typing'])
+		assert.deepEqual(only('no-ui-mechanics', '  Given a document of content type "text/plain"\n  And a Typeform field of type "<t>"\n  And a type-ahead question\n  Then it produces a draft of type yes/no'), [])
+	})
+
+	it('allows the observable words focus and keyboard, and a claim ID naming DOM', () => {
+		assert.deepEqual(only('no-ui-mechanics', '  When a keyboard user moves on\n  Then focus returns to the button\n  And nothing changes (REQ-DOM-007)'), [])
 	})
 })
 

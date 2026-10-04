@@ -2,7 +2,7 @@
 title: Four roles are defined as repository agents
 description: Four roles — spec author, test writer, implementer, and reviewer — are declared as agents under agents/ and installed by skillfile.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: agents, skillfile, roles, spec author, test writer, implementer, reviewer
@@ -10,7 +10,9 @@ keywords: agents, skillfile, roles, spec author, test writer, implementer, revie
 
 # ADR-0086 — Four roles are defined as repository agents
 
-**Status:** Accepted. Extended by
+**Status:** Superseded by
+[ADR-0197](ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md).
+Extended by
 [ADR-0121](ADR-0121-a-fifth-role-maintains-the-agent-instructions.md), which
 adds a fifth role outside the specification chain. Extended by
 [ADR-0131](ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md),

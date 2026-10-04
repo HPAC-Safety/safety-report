@@ -23281,10 +23281,10 @@
 			"id": "ADR-0086",
 			"file": ".spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md",
 			"title": "Four roles are defined as repository agents",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0001","ADR-0037","ADR-0083","ADR-0084","ADR-0121","ADR-0131","ADR-0182"],
+			"decisions": ["ADR-0001","ADR-0037","ADR-0083","ADR-0084","ADR-0121","ADR-0131","ADR-0182","ADR-0197"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -24452,6 +24452,17 @@
 			"constraints": [],
 			"decisions": ["ADR-0067","ADR-0117","ADR-0119","ADR-0153","ADR-0177","ADR-0178"],
 			"supersedes": ["ADR-0067"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0197",
+			"file": ".spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md",
+			"title": "Backend and ux replace the implementer, and the adversary takes privacy review",
+			"status": "accepted",
+			"claims": [],
+			"constraints": [],
+			"decisions": ["ADR-0086","ADR-0121","ADR-0182"],
+			"supersedes": ["ADR-0086"],
 			"amends": []
 		}
 	],

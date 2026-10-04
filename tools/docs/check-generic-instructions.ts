@@ -16,12 +16,15 @@ import { isMain } from '../lib/actions.ts'
 const ROOT = process.cwd()
 
 export const GENERIC_FILES = [
+	'agents/adversary.md',
 	'agents/ai-author.md',
+	'agents/backend.md',
+	'agents/critic.md',
 	'agents/database-administrator.md',
-	'agents/implementer.md',
 	'agents/spec-author.md',
 	'agents/spec-reviewer.md',
 	'agents/test-writer.md',
+	'agents/ux.md',
 	'skills/clarify-requirements/SKILL.md',
 	'skills/coding-conventions/SKILL.md',
 	'skills/deliver-change/SKILL.md',

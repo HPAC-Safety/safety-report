@@ -8,7 +8,8 @@
 # A skill is knowledge, loaded when its topic is in play. An agent is a role,
 # and it constrains what its holder may do. Four are the steps of the
 # specification-driven chain, each trusting only the artifact from the step
-# before it (ADR-0086); ai-author maintains these instruction files (ADR-0121).
+# before it (ADR-0086); ai-author maintains these instruction files (ADR-0121);
+# backend and ux replace implementer (ADR-0197); critic and adversary add a lens (CONV-007).
 #
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
 # upstream guidance only when it matches the repository. Local skills are
@@ -24,12 +25,15 @@ install  claude-code  local
 # --- Agents ---
 # github  agent  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
 
+local  agent  agents/adversary.md
 local  agent  agents/ai-author.md
+local  agent  agents/backend.md
+local  agent  agents/critic.md
 local  agent  agents/database-administrator.md
-local  agent  agents/implementer.md
 local  agent  agents/spec-author.md
 local  agent  agents/spec-reviewer.md
 local  agent  agents/test-writer.md
+local  agent  agents/ux.md
 
 # --- Skills ---
 # github  skill  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]

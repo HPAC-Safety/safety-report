@@ -152,12 +152,24 @@ contributor who never invokes one is unaffected.
   ([ADR-0086](.spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)):
   - **spec-author** — writes scenarios and what is out of scope;
   - **test-writer** — turns a claim into a failing step definition;
-  - **implementer** — makes it pass against the cited claims and nothing else;
+  - **backend** or **ux** — makes it pass against the cited claims and nothing
+    else; `backend` owns everything but the web UI, `ux` the web UI
+    ([ADR-0197](.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md));
   - **spec-reviewer** — judges a diff against those claims and the ADRs.
 - **ai-author** — maintains these instruction files
   ([ADR-0121](.spec/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
 - **database-administrator** — designs, audits, and migrates the schema.
-- The six agents are generic. This repository's paths, tags, commands, and
+- **critic** judges a plan before it is built; **adversary** attacks a change
+  for bugs, security, privacy leaks, contract violations, and missing tests;
+  **spec-reviewer** judges the diff after, against claims and ADRs
+  ([#842](https://github.com/HPAC-Safety/safety-report/issues/842)).
+  - Run the critic on a plan before it is final (before `ExitPlanMode` or
+    `gh issue create`): one pass, at most one recheck, then the owner decides.
+  - Run the adversary at a contract boundary, after repeated test failures, and
+    before any pull request or merge.
+  - A hook reminds about the critic and never blocks
+    ([CONV-007](.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
+- The nine agents are generic. This repository's paths, tags, commands, and
   privacy boundaries for each are in
   [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).
 - Each declares its model and effort in frontmatter; the assignment and its

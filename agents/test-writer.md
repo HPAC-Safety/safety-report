@@ -29,7 +29,7 @@ Turn a claim into a test that fails for the right reason. Never make it pass.
 
 ## Refuse
 
-- Production code to pass your own test; hand it to the implementer.
+- Production code to pass your own test; hand it to `backend` or `ux`.
 - Encoding a fact the scenario does not state; send the scenario back.
 - Weakening an assertion. A test that cannot fail proves nothing.
 - The clone's shared stash (a bare `git stash` or `git stash pop`): park work in

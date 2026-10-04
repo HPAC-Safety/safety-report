@@ -15,7 +15,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     A reporter's browser sees its own report before it is published, through the
 ///     booted API and the <c>own_reports</c> / <c>own_report_media</c> views
-///     (REQ-PUB-001 to REQ-PUB-009, ADR-0196). The receipt is a credential, so every
+///     (REQ-PUB-001 to REQ-PUB-009, REQ-PUB-030, ADR-0196). The receipt is a credential, so every
 ///     request carries it in a body. Every report here is synthetic, and every
 ///     report is seeded straight through the domain's own transitions.
 /// </summary>

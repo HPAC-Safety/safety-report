@@ -111,7 +111,7 @@ model — the summary never sees one.
 ## Public media
 
 A published report's page shows its image and video derivatives (REQ-MED-025
-to REQ-MED-036,
+to REQ-MED-036, REQ-MED-063 to REQ-MED-068,
 [ADR-0117](../../decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
 One view, `public_report_media`, holds the whole rule: the report is in
 `public_reports`, its reporter answered yes to media consent, and the file is
@@ -139,7 +139,7 @@ filed before it existed has no answer and shows no media.
 ## Public documents
 
 A published report also offers its validated documents (REQ-MED-037 to
-REQ-MED-042,
+REQ-MED-042, REQ-MED-069,
 [ADR-0119](../../decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 `public_report_media` lists a document that is neither deleted nor hidden, with no processing error
 once the Worker has recorded it validated (`validated_at`), on a report whose
@@ -191,7 +191,9 @@ track, no caption control, and no text implying that captions exist.
   what happened. The video is the reporter's own, offered with their media
   consent, and adds to it.
 - The lightbox's own controls (Previous, Next, Close) and labels are text and
-  remain operable by keyboard and screen reader (`REQ-MED-056`).
+  remain operable by keyboard and screen reader (`REQ-MED-056`); focus stays
+  inside the open lightbox and returns to its thumbnail when it closes
+  (`REQ-MED-067`, `REQ-MED-068`).
 - The `<video>` in `AttachmentLightboxMedia.view.tsx` therefore disables
   `jsx-a11y/media-has-caption` on that line, with a reason naming this claim.
   If the position changes, this paragraph, the scenario, and that disable
@@ -298,8 +300,10 @@ added warns, on both a browser close/reload and an in-app navigation; a list
 holding only refused files has nothing to lose and does not warn (#658, #674;
 a general leave-warning for every form is issue #659, not built here). Any
 reviewer may download any added attachment, or remove one after confirming
-(REQ-MOD-115, REQ-MOD-117, REQ-MOD-173..177, REQ-MOD-180..181). A note may
-refer to one (REQ-MOD-116).
+(REQ-MOD-115, REQ-MOD-117, REQ-MOD-173..177, REQ-MOD-180..181,
+REQ-MED-071..082). A note may refer to one on its own report only, and an edit
+that drops the reference keeps it in the note's history (REQ-MOD-114,
+REQ-MOD-116, REQ-MED-070).
 
 - Any report that is not deleted, in any status, including a report without
   publication consent (REQ-MOD-108). Any file type, up to the configured cap;

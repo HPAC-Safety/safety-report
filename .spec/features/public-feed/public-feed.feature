@@ -10,18 +10,26 @@ Scenario: A published report carries only its approved summary and metadata
   And it never contains question keys, labels, answers, consent values, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-150
-Scenario: The feed's attachment count is the public count for a visitor and the full count for staff
+Scenario: The feed's attachment count is the public count for an anonymous visitor
   Given a published report has one public attachment and one attachment only staff may see
   When an anonymous visitor lists the feed
   Then the report's attachment count is 1
+
+@REQ-PUB-016
+Scenario: The feed's attachment count is the full count for a Safety Officer
+  Given a published report has one public attachment and one attachment only staff may see
   When a Safety Officer lists the feed
   Then the report's attachment count is 2
 
 @REQ-MOD-155
-Scenario: An ordinary member's token widens nothing; only a reviewer's does
+Scenario: An ordinary member's token widens nothing
   Given a published report has one public attachment and one attachment only staff may see
   When a member with the User role lists the feed
   Then the report's attachment count is 1
+
+@REQ-PUB-017
+Scenario: An Administrator's token widens the feed's attachment count to the full count
+  Given a published report has one public attachment and one attachment only staff may see
   When an Administrator lists the feed
   Then the report's attachment count is 2
 
@@ -35,10 +43,20 @@ Scenario: A Safety Officer sees every attachment on the public report page, each
 
 @REQ-MOD-164
 @ui
-Scenario Outline: A published report page offers a same-tab link to its report detail for a reviewer
+Scenario Outline: A published report page offers a link to its report detail for a reviewer
   Given <visitor> visits a published report's page
   Then the page offers a link to its report detail
-  When the visitor activates that link
+
+Examples:
+  | visitor            |
+  | an Administrator   |
+  | a Safety Officer   |
+
+@REQ-PUB-018
+@ui
+Scenario Outline: A reviewer's link from a published report page opens its report detail in the same tab
+  Given <visitor> visits a published report's page
+  When the visitor follows the page's link to its report detail
   Then the browser opens its report detail, in the same tab
 
 Examples:
@@ -92,10 +110,15 @@ Scenario: Each report in the public feed opens at its own address
 
 @REQ-MOD-080
 @ui
-Scenario: A report's address opens it directly and survives a reload
+Scenario: A report's address opens it directly
   Given a visitor has the address of a published report
   When the visitor opens that address directly
   Then the page shows that report's full summary
+
+@REQ-PUB-019
+@ui
+Scenario: A report's page survives a reload
+  Given a visitor has opened a published report's address directly
   When the page reloads
   Then the page still shows that report's full summary
 
@@ -125,27 +148,41 @@ Examples:
 
 @REQ-MOD-192
 @ui
-Scenario: The translation label follows the header's language toggle without a reload
+Scenario: The translation label goes when the visitor switches to the report's own language, without a reload
   Given a report written in French is published
-  And a visitor has its page open with the site in English
-  Then the page shows the muted label "Translated from French"
+  And a visitor has its page open with the site in English, showing the muted label "Translated from French"
   When the visitor switches the site's language
   Then the page shows no translation label
+
+@REQ-PUB-020
+@ui
+Scenario: The translation label returns when the visitor switches back to the other language, without a reload
+  Given a report written in French is published
+  And a visitor has its page open with the site in English, then switched to French
   When the visitor switches the site's language
   Then the page shows the muted label "Translated from French"
 
 @REQ-MOD-193
-Scenario Outline: A published report's own page carries the language it was written in, and the feed does not
+Scenario Outline: A published report's own page carries the language it was written in
   Given a report written in <written> has been published
   When a visitor reads the report
   Then the response's language is "<code>"
-  When the public feed is queried
-  Then no feed item carries a language
 
 Examples:
   | written | code  |
   | French  | fr-CA |
   | English | en-CA |
+
+@REQ-PUB-021
+Scenario Outline: The public feed carries no report's language
+  Given a report written in <written> has been published
+  When the public feed is queried
+  Then no feed item carries a language
+
+Examples:
+  | written |
+  | French  |
+  | English |
 
 @REQ-MOD-081
 @ui
@@ -157,40 +194,66 @@ Scenario: An address for a report that is not public shows not found
 
 @REQ-MOD-082
 @ui
-Scenario: The public feed loads more reports automatically, and going back restores them
+Scenario: The public feed loads more reports automatically
   Given the public feed has more published reports than fit on one page
-  When a visitor scrolls to the end of the list
+  When a visitor reaches the end of the list
   Then the older reports load without a page change or an address change
+
+@REQ-PUB-022
+@ui
+Scenario: Going back to the public feed restores the reports already loaded
+  Given the public feed has more published reports than fit on one page
+  And a visitor has reached the end of the list and the older reports have loaded
   When a visitor opens one of them and goes back
-  Then the same reports are still shown, at the same scroll position
+  Then the same reports are still shown, at the same place in the list
 
 @REQ-MOD-178
 @ui
 Scenario: Opening the public feed afresh starts at its top and loads its first page again
   Given the public feed has more published reports than fit on one page
   And the visitor's window is too short to show the whole feed
-  When a visitor scrolls to the end of the list
-  And the visitor follows the footer's link to the contact page, then the one back to View safety reports
+  And a visitor has reached the end of the list
+  When the visitor follows the footer's link to the contact page, then the one back to View safety reports
   Then the public feed asks for its first page again
   And the public feed is shown from its top
 
 @REQ-MOD-126
 @ui
-Scenario: The public feed's next page offers a keyboard-only fallback and announces itself
+Scenario Outline: The public feed's "Load more" fallback becomes visible once reached
+  Given the public feed has more published reports than fit on one page
+  And a visitor has the feed open
+  When the visitor reaches the "Load more" action with the <key> key
+  Then it becomes visible
+
+Examples:
+  | key |
+  | Tab |
+
+@REQ-PUB-023
+@ui
+Scenario: The public feed's "Load more" fallback is not visible until it is needed
   Given the public feed has more published reports than fit on one page
   When a visitor opens the feed
   Then the "Load more" action is not visible
-  When a keyboard visitor tabs to the "Load more" action
-  Then it becomes visible
-  When that visitor activates it
+
+@REQ-PUB-024
+@ui
+Scenario Outline: Activating the public feed's "Load more" fallback loads the older reports and announces them
+  Given the public feed has more published reports than fit on one page
+  And a visitor has reached the feed's "Load more" action
+  When the visitor activates it with the <key> key
   Then the older reports load
   And a screen reader is told how many more reports loaded
+
+Examples:
+  | key   |
+  | Enter |
 
 @REQ-MOD-127
 @ui
 Scenario: The public feed offers a visible Retry action when its next page fails to load
   Given the public feed's next page fails to load
-  When a visitor activates the "Load more" action without scrolling
+  When a visitor activates the "Load more" action before reaching the end of the list
   Then the feed offers a visible "Retry" action and does not fail silently
 
 @REQ-MOD-083
@@ -218,6 +281,10 @@ Scenario: Search is scoped to the visitor's current site language only
   Given a published report whose French summary mentions a word its English summary does not
   When a visitor searches that French-only word in English
   Then the report is not listed among the results
+
+@REQ-PUB-025
+Scenario: Search finds a French-only word in French
+  Given a published report whose French summary mentions a word its English summary does not
   When a visitor searches that French-only word in French
   Then the report is listed among the results
 
@@ -225,10 +292,22 @@ Scenario: Search is scoped to the visitor's current site language only
 Scenario Outline: The public search never widens by the member's role
   Given a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains
   And another report is not publishable, and its summary contains a further private-only word
-  When <who> searches for the public word
-  Then the report is listed among the results
   When <who> searches for each private-only word
   Then no report is listed among the results, for every one of those searches
+
+Examples:
+  | who                  |
+  | an anonymous visitor |
+  | a User               |
+  | a Safety Officer     |
+  | an Administrator     |
+
+@REQ-PUB-026
+Scenario Outline: The public search finds a public word for every role
+  Given a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains
+  And another report is not publishable, and its summary contains a further private-only word
+  When <who> searches for the public word
+  Then the report is listed among the results
 
 Examples:
   | who                  |
@@ -251,11 +330,14 @@ Examples:
   | deleted     |
 
 @REQ-MOD-145
-Scenario: A hidden or a deleted comment never matches
+Scenario: A hidden comment never matches
   Given a published report carrying a comment that is later hidden
-  And another published report carrying a comment that is later deleted
   When a visitor searches the hidden comment's distinctive word
   Then the report with the hidden comment is not listed among the results
+
+@REQ-PUB-027
+Scenario: A deleted comment never matches
+  Given a published report carrying a comment that is later deleted
   When a visitor searches the deleted comment's distinctive word
   Then the report with the deleted comment is not listed among the results
 
@@ -287,12 +369,24 @@ Scenario: An empty search box lists newest submitted first, unchanged
 @ui
 Scenario: The search box sits at the top of the public feed, and its query is bookmarkable
   Given the public feed has published reports
-  When a visitor opens View safety reports
-  And the visitor types a search term into the search box at the top of the page
+  And a visitor has View safety reports open
+  When the visitor searches for a term from the search box at the top of the page
   Then the address bar carries that search term as ?q=
   And only matching reports are listed
+
+@REQ-PUB-028
+@ui
+Scenario: A search on the public feed survives a reload
+  Given the public feed has published reports
+  And a visitor has searched the public feed for a term
   When the page reloads
   Then the search box still shows that search term, and only matching reports are listed
+
+@REQ-PUB-029
+@ui
+Scenario: Going back from a search on the public feed shows the full feed again
+  Given the public feed has published reports
+  And a visitor has searched the public feed for a term
   When the visitor goes back
   Then the search box is empty and the full feed is shown again
 
@@ -370,6 +464,10 @@ Scenario: The holder's attachments follow exactly the public rules
   When the reporter consented to media and to documents
   Then the entry and page count and list only the verified image and the validated document
   And the image is offered only as its verified derivative and the document only as a forced download
+
+@REQ-PUB-030
+Scenario: The holder's attachments are not counted or listed without media consent
+  Given John holds the receipt for a report with a verified image, a hidden image, an unverified image, and a validated document
   When the reporter did not consent to media
   Then no attachment is counted or listed
 
@@ -389,6 +487,13 @@ Scenario: The holder's own reports sit at the top of the first page of the feed,
   When the visitor opens View safety reports
   Then the two own reports are listed first, newest submitted first, each with its pill
   And the public feed follows them
+
+@REQ-PUB-031
+@ui
+Scenario: The holder's own reports are not repeated among the later pages of the feed
+  Given the public feed has more published reports than fit on one page
+  And a browser holds receipts for two of its own reports that are not published
+  And the visitor has View safety reports open, showing their two own reports
   When the visitor loads the later pages of the feed
   Then the own reports are still listed once, above the first page, and not among the later pages
 

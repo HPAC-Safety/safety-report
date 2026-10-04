@@ -38,8 +38,8 @@ Examples:
   | application/vnd.oasis.opendocument.text                                 | document |
 
 @REQ-MED-002
-Scenario: Declared content type must agree with detected content type
-  Given an attachment's declared content type differs from its detected, allowlisted type
+Scenario: A declared content type must agree with the one detected
+  Given an attachment's declared content type differs from the allowlisted one detected in its bytes
   When the attachment is validated
   Then the attachment is refused
   And the file extension and client filename are never trusted as the basis for acceptance
@@ -113,7 +113,7 @@ Scenario: Each attachment fails and processes independently of the report
 Scenario: A reviewer gets a short-lived inline URL only for successfully processed media
   Given an image or video attachment has finished processing successfully
   When a reviewer requests to view it
-  Then the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so a browser never guesses its content type
+  Then the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so its content type is never guessed by a browser
   And no proxy and no public link serves the file
 
 @REQ-MED-011
@@ -122,7 +122,7 @@ Scenario: A reviewer downloads a validated document as an unredacted original
   When a reviewer requests it
   Then the reviewer receives a short-lived URL to the private original
   And the download is named with the reporter's sanitized filename, or a server-minted name when there is none
-  And the URL forces a download, marked so a browser never guesses its content type
+  And the URL forces a download, marked so its content type is never guessed by a browser
   And no proxy and no public link serves the file
 
 @REQ-MED-012
@@ -274,8 +274,8 @@ Scenario: A visitor gets a short-lived inline link to a public file
   Given a published report shows a processed image
   When an anonymous visitor asks for the image's public link
   Then the visitor receives a pre-signed URL to the image's derivative that expires within fifteen minutes
-  And the URL serves the derivative inline, under the derivative's own image content type
-  And the response is marked so a browser never guesses its content type
+  And the URL serves the derivative inline, under the image content type of the derivative itself
+  And the response is marked so its content type is never guessed by a browser
   And the response names no file name, size, or storage key
 
 @REQ-MED-029
@@ -292,11 +292,15 @@ Examples:
   | an Administrator deletes the report     |
 
 @REQ-MED-030
-Scenario: A reviewer hides a file and shows it again, and both are audited
+Scenario: A reviewer hides a file, and the hiding is audited
   Given a published report shows a processed image
   When a Safety Officer hides the image
   Then the report lists no media
   And the audit log records who hid the image
+
+@REQ-MED-063
+Scenario: A reviewer shows a hidden file again, the showing is audited, and the file was kept in storage throughout
+  Given a published report shows a processed image that a Safety Officer has hidden
   When the Safety Officer shows the image again
   Then the report lists the image
   And the audit log records who showed the image
@@ -312,12 +316,22 @@ Scenario: A member who is not a reviewer cannot hide or show a file
 
 @REQ-MED-032
 @ui
-Scenario: The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label
+Scenario: The report page shows a thumbnail strip
   Given a published report shows an image and a video
   When a visitor opens the report
   Then the report page shows a thumbnail strip in place of stacked embeds
+
+@REQ-MED-064
+@ui
+Scenario: Activating a thumbnail opens the lightbox with a generic label
+  Given a visitor is reading a published report that shows an image and a video
   When the visitor activates the image's thumbnail
   Then the lightbox opens showing the image, labelled "Photo 1 of 1"
+
+@REQ-MED-065
+@ui
+Scenario: The lightbox moves on to a video, playable with its controls and audio
+  Given a visitor has a published report's image open in the lightbox, with a video after it
   When the visitor moves to the next item in the lightbox
   Then the lightbox shows the video, playable with its controls and audio, labelled "Video 1 of 1"
 
@@ -339,23 +353,54 @@ Scenario: Media that is no longer public is removed from the page
 @REQ-MED-035
 @ui
 Scenario: A reviewer hides a file from the public report page, still marked in the staff strip
-  Given a Safety Officer is on the admin site and a published report shows an image
-  When the Safety Officer opens the report
-  Then the image offers to hide it
+  Given a Safety Officer is reading a published report that shows an image
   When the Safety Officer hides the image and confirms
   Then the image now reads as hidden from the public and offers to show it, still on the report page
 
+@REQ-MED-066
+@ui
+Scenario: A reviewer reading the public report page is offered to hide a file
+  Given a Safety Officer is on the admin site and a published report shows an image
+  When the Safety Officer opens the report
+  Then the image offers to hide it
+
 @REQ-MED-056
 @ui
-Scenario: The lightbox wraps, is keyboard-operable, and traps and returns focus
+Scenario Outline: The lightbox steps between its images by arrow key, and wraps at either end
   Given a published report shows two images
-  When a visitor opens the first image in the lightbox
-  Then the Right arrow key moves to the second image
-  And the Right arrow key from the last image wraps to the first
-  And the Left arrow key from the first image wraps to the last
-  And Tab never moves focus outside the lightbox while it is open
-  When the visitor closes the lightbox with Escape
+  And a visitor has the <from> image open in the lightbox
+  When the visitor uses the <key> key
+  Then the lightbox shows the <to> image
+
+Examples:
+  | from   | key        | to     |
+  | first  | ArrowRight | second |
+  | second | ArrowRight | first  |
+  | first  | ArrowLeft  | second |
+
+@REQ-MED-067
+@ui
+Scenario Outline: The open lightbox keeps focus inside it
+  Given a published report shows two images
+  And a visitor has the first image open in the lightbox
+  When the visitor moves on through the lightbox several times with the <key> key
+  Then focus never leaves the lightbox while it is open
+
+Examples:
+  | key |
+  | Tab |
+
+@REQ-MED-068
+@ui
+Scenario Outline: Closing the lightbox returns focus to the thumbnail that opened it
+  Given a published report shows two images
+  And a visitor has the first image open in the lightbox
+  When the visitor closes the lightbox with the <key> key
   Then focus returns to the first image's thumbnail
+
+Examples:
+  | key    |
+  | Escape |
 
 @REQ-MED-057
 @ui
@@ -382,8 +427,8 @@ Scenario: A link not found on the only remaining lightbox item closes it
 @ui
 Scenario: A reporter's video in the lightbox carries no captions, and the lightbox does not suggest it might
   Given a published report shows a video
-  When a visitor opens the report
-  And the visitor activates the video's thumbnail
+  And a visitor has the report open
+  When the visitor activates the video's thumbnail
   Then the lightbox shows the video with the browser's own controls
   And the video offers no caption or subtitle track
   And the lightbox offers no caption control and no caption text of its own
@@ -440,16 +485,20 @@ Scenario: A visitor gets a short-lived forced download of a public document
   When an anonymous visitor asks for the document's public link
   Then the visitor receives a pre-signed URL to the document's unchanged original that expires within fifteen minutes
   And the URL forces a download under a name made from the file id and the format, never the reporter's file name
-  And the response is marked so a browser never guesses its content type
+  And the response is marked so its content type is never guessed by a browser
   And the response names no reporter file name or size
 
 @REQ-MED-040
-Scenario: A reviewer hides a document and shows it again, and both are audited
+Scenario: A reviewer hides a document, and the hiding is audited
   Given a published report offers a validated document
   When a Safety Officer hides the document
   Then the report lists no media
   And a visitor's request for the document's public link is not found
   And the audit log records who hid the document
+
+@REQ-MED-069
+Scenario: A reviewer shows a hidden document again
+  Given a published report offers a validated document that a Safety Officer has hidden
   When the Safety Officer shows the document again
   Then the report lists the document
 
@@ -482,7 +531,7 @@ Scenario: A published QuickTime video is served as an MP4
   Then the URL serves the derivative inline, as video/mp4
 
 @REQ-MED-046
-Scenario Outline: Staff mint a private upload for a file of any type
+Scenario Outline: Staff mint a private upload for a file of any content type, or of none
   Given a pending report that staff add private attachments to
   When a Safety Officer declares a <declared> file of <size> for that report's private attachments
   Then a pre-signed upload link is minted for a quarantine key named only by a new upload ID
@@ -625,23 +674,44 @@ Scenario: A private note may refer to a private attachment on its own report onl
   Given a report carrying one private attachment, and another report carrying one of its own
   When a Safety Officer adds a private note referring to the first report's private attachment
   Then the private note lists the private attachment it refers to, by identifier and file name
-  When an Administrator edits that private note to refer to no private attachment
-  Then the private note refers to none, and its history shows the first revision still referring to it
   And a private note referring to the other report's private attachment is refused as invalid and nothing is stored
   And a private note referring to a removed private attachment is refused as invalid
 
+@REQ-MED-070
+Scenario: Editing a private note away from its private attachment keeps the reference in its history
+  Given a report carrying one private attachment, and a private note referring to it
+  When an Administrator edits that private note to refer to no private attachment
+  Then the private note refers to none, and its history shows the first revision still referring to it
+
 @REQ-MOD-115
 @ui
-Scenario: A Safety Officer stages, describes, adds, downloads, and removes a private attachment on the report page
+Scenario: A Safety Officer stages a private attachment on the report page
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer stages the private attachment "coroner-report.zip"
+  And the Safety Officer has that report open
+  When the Safety Officer stages the private attachment "coroner-report.zip"
   Then the staged attachment "coroner-report.zip" finishes uploading and offers a description box
-  When the Safety Officer describes the staged attachment "coroner-report.zip" as "Received from the coroner"
-  And the Safety Officer adds the staged private attachments
+
+@REQ-MED-071
+@ui
+Scenario: A Safety Officer adds a described private attachment on the report page
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has staged the private attachment "coroner-report.zip" on that report and described it as "Received from the coroner"
+  When the Safety Officer adds the staged private attachments
   Then the private attachments section lists "coroner-report.zip" with its description, its adder, and when it was added
+
+@REQ-MED-072
+@ui
+Scenario: A Safety Officer downloads a private attachment from the report page
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has added the private attachment "coroner-report.zip" to that report
   When the Safety Officer downloads the private attachment "coroner-report.zip"
   Then the browser saves a file named "coroner-report.zip"
+
+@REQ-MED-073
+@ui
+Scenario: A Safety Officer removes a private attachment from the report page
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has added the private attachment "coroner-report.zip" to that report
   When the Safety Officer removes the private attachment "coroner-report.zip" and confirms
   Then the private attachments section lists no attachments
 
@@ -650,8 +720,8 @@ Scenario: A Safety Officer stages, describes, adds, downloads, and removes a pri
 Scenario: A private note refers to a private attachment on the report page
   Given a Safety Officer is on the admin site and a pending report exists
   And the report carries the private attachment "police-report.pdf"
-  When the Safety Officer opens that report
-  And the Safety Officer adds the private note "See the police report." referring to "police-report.pdf"
+  And the Safety Officer has that report open
+  When the Safety Officer adds the private note "See the police report." referring to "police-report.pdf"
   Then that private note shows that it refers to "police-report.pdf"
 
 @REQ-MOD-117
@@ -659,39 +729,59 @@ Scenario: A private note refers to a private attachment on the report page
 Scenario: A Safety Officer cancels a private attachment while it uploads
   Given a Safety Officer is on the admin site and a pending report exists
   And storage is slow to accept a private attachment
-  When the Safety Officer opens that report
-  And the Safety Officer stages the private attachment "investigation-archive.zip"
-  Then the staged attachment "investigation-archive.zip" shows its upload progress, offers to cancel it, and "Add 0 attachments" stays disabled
+  And the Safety Officer has staged the private attachment "investigation-archive.zip" on that report, still uploading
   When the Safety Officer cancels the staged upload "investigation-archive.zip"
   Then the staged attachment "investigation-archive.zip" is gone from the staging list
   And the cancelled upload is erased
+
+@REQ-MED-074
+@ui
+Scenario: A private attachment shows its progress and offers to cancel while it uploads
+  Given a Safety Officer is on the admin site and a pending report exists
+  And storage is slow to accept a private attachment
+  And the Safety Officer has that report open
+  When the Safety Officer stages the private attachment "investigation-archive.zip"
+  Then the staged attachment "investigation-archive.zip" shows its upload progress, offers to cancel it, and "Add 0 attachments" stays disabled
 
 @REQ-MOD-173
 @ui
 Scenario Outline: Several private attachments staged at once each upload independently
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer <method> the private attachments "site-photo.jpg" and "weather-log.pdf" at once
+  And the Safety Officer has that report open
+  When the Safety Officer <method> the private attachments "site-photo.jpg" and "weather-log.pdf" at once
   Then both staged attachments finish uploading independently, each with its own progress
-  When the Safety Officer describes the staged attachment "site-photo.jpg" as "Taken at the site"
-  And the Safety Officer describes the staged attachment "weather-log.pdf" as "Environment Canada log"
-  And the Safety Officer adds the staged private attachments
-  Then the private attachments section lists "site-photo.jpg" and "weather-log.pdf", each with its own description
 
 Examples:
   | method                       |
   | drops                        |
   | chooses, through the picker, |
 
+@REQ-MED-075
+@ui
+Scenario Outline: Several staged private attachments are added together, each with its own description
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has <staged> "site-photo.jpg" described as "Taken at the site" and "weather-log.pdf" described as "Environment Canada log" on that report
+  When the Safety Officer adds the staged private attachments
+  Then the private attachments section lists "site-photo.jpg" and "weather-log.pdf", each with its own description
+
+Examples:
+  | staged                       |
+  | dropped                      |
+  | chosen, through the picker,  |
+
 @REQ-MOD-174
 @ui
 Scenario: Removing a staged private attachment before it is added leaves the others staged
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer drops the private attachments "keep-me.pdf" and "drop-me.pdf" at once
-  Then both staged attachments finish uploading independently, each with its own progress
+  And the Safety Officer has dropped the private attachments "keep-me.pdf" and "drop-me.pdf" on that report at once, both finished uploading
   When the Safety Officer removes the staged attachment "drop-me.pdf"
   Then only "keep-me.pdf" remains in the staging list, and nothing erases the upload for "drop-me.pdf"
+
+@REQ-MED-076
+@ui
+Scenario: Adding after removing a staged private attachment adds only those left
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has dropped the private attachments "keep-me.pdf" and "drop-me.pdf" on that report at once, then removed the staged "drop-me.pdf"
   When the Safety Officer adds the staged private attachments
   Then the private attachments section lists "keep-me.pdf" only
 
@@ -699,10 +789,16 @@ Scenario: Removing a staged private attachment before it is added leaves the oth
 @ui
 Scenario: A too-large private attachment is refused on its own row while the others proceed
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once
+  And the Safety Officer has that report open
+  When the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once
   Then the too-large attachment's staged row states the private cap and cannot be added
   And the ordinary attachment finishes uploading and offers a description box
+
+@REQ-MED-077
+@ui
+Scenario: Adding beside a too-large private attachment adds only the ordinary one
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has dropped one ordinary private attachment and one larger than the private cap on that report at once, the ordinary one finished uploading
   When the Safety Officer adds the staged private attachments
   Then the private attachments section lists only the ordinary attachment
 
@@ -711,27 +807,51 @@ Scenario: A too-large private attachment is refused on its own row while the oth
 Scenario: "Add N attachments" is disabled until every staged private attachment has settled
   Given a Safety Officer is on the admin site and a pending report exists
   And storage is slow to accept a private attachment
-  When the Safety Officer opens that report
-  And the Safety Officer stages the private attachment "slow-upload.zip"
+  And the Safety Officer has that report open
+  When the Safety Officer stages the private attachment "slow-upload.zip"
   Then "Add 0 attachments" stays disabled while "slow-upload.zip" uploads
+
+@REQ-MED-078
+@ui
+Scenario: "Add N attachments" is enabled once every staged private attachment has settled
+  Given a Safety Officer is on the admin site and a pending report exists
+  And storage is slow to accept a private attachment
+  And the Safety Officer has staged the private attachment "slow-upload.zip" on that report, still uploading
   When storage finishes accepting the staged upload
   Then "Add 1 attachment" becomes enabled
 
 @REQ-MOD-177
 @ui
-Scenario: Leaving the report page with staged, un-added private attachments warns
+Scenario: Closing or reloading the report page with staged, un-added private attachments warns
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer stages the private attachment "unfinished.pdf"
-  Then the staged attachment "unfinished.pdf" finishes uploading and offers a description box
+  And the Safety Officer has staged the private attachment "unfinished.pdf" on that report, finished uploading
   When the Safety Officer tries to close or reload the tab
   Then the browser's own unload prompt appears, with no custom text
+
+@REQ-MED-079
+@ui
+Scenario: Following a link away from the report page with staged, un-added private attachments asks first
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has staged the private attachment "unfinished.pdf" on that report, finished uploading
   When the Safety Officer navigates away from the report through a link
   Then a bilingual dialog asks whether to leave, offering to stay
+
+@REQ-MED-080
+@ui
+Scenario: Choosing to stay keeps the report page with its staged private attachments
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has staged the private attachment "unfinished.pdf" on that report, finished uploading
+  And the Safety Officer is asked whether to leave after following a link away from the report
   When they keep the page
   Then the Safety Officer stays on the report page
-  When the Safety Officer navigates away from the report through a link
-  And they confirm leaving
+
+@REQ-MED-081
+@ui
+Scenario: Confirming leaving leaves the report page despite staged private attachments
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the Safety Officer has staged the private attachment "unfinished.pdf" on that report, finished uploading
+  And the Safety Officer is asked whether to leave after following a link away from the report
+  When they confirm leaving
   Then the Safety Officer leaves the report page
 
 @REQ-MOD-180
@@ -739,11 +859,16 @@ Scenario: Leaving the report page with staged, un-added private attachments warn
 Scenario: A staged private attachment cannot be removed or re-described while it is being added
   Given a Safety Officer is on the admin site and a pending report exists
   And the report is slow to accept a private attachment
-  When the Safety Officer opens that report
-  And the Safety Officer stages the private attachment "held.pdf"
-  Then the staged attachment "held.pdf" finishes uploading and offers a description box
+  And the Safety Officer has staged the private attachment "held.pdf" on that report, finished uploading
   When the Safety Officer adds the staged private attachments
   Then the staged attachment "held.pdf" can be neither removed nor re-described while it is added
+
+@REQ-MED-082
+@ui
+Scenario: A staged private attachment is listed once the report has accepted it
+  Given a Safety Officer is on the admin site and a pending report exists
+  And the report is slow to accept a private attachment
+  And the Safety Officer is adding the staged private attachment "held.pdf" to that report
   When the report finishes accepting the private attachment
   Then the private attachments section lists "held.pdf" only
 
@@ -751,8 +876,6 @@ Scenario: A staged private attachment cannot be removed or re-described while it
 @ui
 Scenario: Leaving the report page with only refused private attachments staged does not warn
   Given a Safety Officer is on the admin site and a pending report exists
-  When the Safety Officer opens that report
-  And the Safety Officer drops only a private attachment larger than the private cap
-  Then the too-large attachment's staged row states the private cap and cannot be added
+  And the Safety Officer has dropped only a private attachment larger than the private cap on that report, its row refused
   When the Safety Officer reloads the report page
   Then the page reloads without warning, and the refused row is gone

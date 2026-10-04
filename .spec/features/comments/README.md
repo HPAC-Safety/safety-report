@@ -40,7 +40,7 @@ toggle. As with a report's summary, there is no per-comment language control:
 - **Not translated yet:** the original, marked as awaiting translation, until
   the Worker supplies it.
 
-The sign-in invitation an anonymous visitor sees (`REQ-COM-016`) opens the
+The sign-in invitation an anonymous visitor sees (`REQ-COM-016`, `REQ-COM-023`) opens the
 member sign-in with `returnTo` set to the report. The sign-in page follows it only to a
 path on this site, and brings the member back to the report they were
 reading.
@@ -54,8 +54,8 @@ It counts characters against the 2000 limit.
 The API reads comments from the `public_report_comments` view and the count
 from `public_reports.comment_count`. Both count only comments that are neither
 deleted nor hidden, on reports a visitor can see. Unpublishing a report
-removes it and its comments from every public read. Publishing it again
-brings them back as they were.
+removes it and its comments from every public read (`REQ-COM-013`).
+Publishing it again brings them back as they were (`REQ-COM-022`).
 
 ## Out of scope
 

@@ -10,7 +10,7 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for a published report's photos, video, and documents
- * (REQ-MED-032..036, REQ-MED-041/042, ADR-0117, ADR-0119) and the form asking
+ * (REQ-MED-032..036, REQ-MED-041/042, REQ-MED-056..068, ADR-0117, ADR-0119) and the form asking
  * media consent (REQ-QB-113).
  *
  * The API and the storage links are stubbed at the network boundary, so each
@@ -229,6 +229,27 @@ When("a visitor opens the report", async ({ page }) => {
 	await page.goto(`/reports/${REPORT.id}`)
 })
 
+Given("a visitor has the report open", async ({ page }) => {
+	await page.goto(`/reports/${REPORT.id}`)
+	await expect(strip(page)).toBeVisible()
+})
+
+Given("a visitor is reading a published report that shows an image and a video", async ({ page }) => {
+	await stubReport(page, [IMAGE, VIDEO])
+	await page.goto(`/reports/${REPORT.id}`)
+	await expect(strip(page)).toBeVisible()
+})
+
+Given(
+	"a visitor has a published report's image open in the lightbox, with a video after it",
+	async ({ page }) => {
+		await stubReport(page, [IMAGE, VIDEO])
+		await page.goto(`/reports/${REPORT.id}`)
+		await thumbnail(page, "image").click()
+		await expect(page.getByRole("img", { name: "Photo 1 of 1" })).toBeVisible()
+	},
+)
+
 Then("the report page shows a thumbnail strip in place of stacked embeds", async ({ page }) => {
 	await expect(strip(page)).toBeVisible()
 	await expect(thumbnail(page, "image")).toBeVisible()
@@ -361,6 +382,13 @@ Given("a Safety Officer is on the admin site and a published report shows an ima
 
 // "the safety officer opens the report" is comments.steps.ts's step: it opens a
 // report page, and the stubs above answer for any report.
+
+Given("a Safety Officer is reading a published report that shows an image", async ({ page }) => {
+	await stubReport(page, [IMAGE], [{ id: IMAGE.id, kind: "image", format: null, state: "ready", visibility: "public" }])
+	await signInAs(page, "safety_officer")
+	await page.goto(`/reports/${REPORT.id}`)
+	await expect(thumbnail(page, "image")).toBeVisible()
+})
 
 Then("the image offers to hide it", async ({ page }) => {
 	await expect(thumbnail(page, "image")).toBeVisible()
@@ -577,7 +605,7 @@ Then("the hidden {word} reads as hidden from the public and offers to show it", 
 	await expect(page.locator('[data-visibility="public"]')).toHaveCount(2)
 })
 
-// --- REQ-MED-056: the lightbox wraps, is keyboard-operable, and traps and returns focus ---
+// --- REQ-MED-056/067/068: the lightbox wraps by arrow key, keeps focus inside, and returns it ---
 
 Given("a published report shows two images", async ({ page }) => {
 	const first = { id: "imageaaaaa1", kind: "image", format: null }
@@ -585,37 +613,35 @@ Given("a published report shows two images", async ({ page }) => {
 	await stubReport(page, [first, second])
 })
 
-When("a visitor opens the first image in the lightbox", async ({ page }) => {
+const POSITION: Record<string, number> = { first: 1, second: 2 }
+
+Given(/^a visitor has the (first|second) image open in the lightbox$/, async ({ page }, which: string) => {
 	await page.goto(`/reports/${REPORT.id}`)
-	await thumbnail(page, "image").click()
+	await strip(page).locator('[data-media="image"] button').nth(POSITION[which] - 1).click()
 	await expect(lightbox(page)).toBeVisible()
-	await expect(page.getByRole("img", { name: "Photo 1 of 2" })).toBeVisible()
+	await expect(page.getByRole("img", { name: `Photo ${POSITION[which]} of 2` })).toBeVisible()
 })
 
-Then("the Right arrow key moves to the second image", async ({ page }) => {
-	await page.keyboard.press("ArrowRight")
-	await expect(page.getByRole("img", { name: "Photo 2 of 2" })).toBeVisible()
+When("the visitor uses the {word} key", async ({ page }, key: string) => {
+	await page.keyboard.press(key)
 })
 
-Then("the Right arrow key from the last image wraps to the first", async ({ page }) => {
-	await page.keyboard.press("ArrowRight")
-	await expect(page.getByRole("img", { name: "Photo 1 of 2" })).toBeVisible()
+Then(/^the lightbox shows the (first|second) image$/, async ({ page }, which: string) => {
+	await expect(page.getByRole("img", { name: `Photo ${POSITION[which]} of 2` })).toBeVisible()
 })
 
-Then("the Left arrow key from the first image wraps to the last", async ({ page }) => {
-	await page.keyboard.press("ArrowLeft")
-	await expect(page.getByRole("img", { name: "Photo 2 of 2" })).toBeVisible()
-})
-
-Then("Tab never moves focus outside the lightbox while it is open", async ({ page }) => {
+When("the visitor moves on through the lightbox several times with the {word} key", async ({ page }, key: string) => {
 	for (let index = 0; index < 6; index += 1) {
-		await page.keyboard.press("Tab")
+		await page.keyboard.press(key)
 	}
+})
+
+Then("focus never leaves the lightbox while it is open", async ({ page }) => {
 	await expect(lightbox(page).locator(":focus")).toHaveCount(1)
 })
 
-When("the visitor closes the lightbox with Escape", async ({ page }) => {
-	await page.keyboard.press("Escape")
+When("the visitor closes the lightbox with the {word} key", async ({ page }, key: string) => {
+	await page.keyboard.press(key)
 })
 
 Then("focus returns to the first image's thumbnail", async ({ page }) => {

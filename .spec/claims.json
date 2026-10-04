@@ -933,7 +933,7 @@
 			"id": "REQ-COM-013",
 			"area": "comments",
 			"file": ".spec/features/comments/comments.feature",
-			"title": "Unpublishing a report hides its comments, and publishing it again brings them back",
+			"title": "Unpublishing a report hides its comments",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -942,9 +942,7 @@
 				{"keyword":"Given","text":"a member commented on a published report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reviewer unpublishes the report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a visitor sees no comments for it and the report is not in the feed","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment is kept in the database","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a reviewer publishes the report again","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment is listed again","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the comment is kept in the database","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
 			"staleIgnore": false,
@@ -1002,9 +1000,7 @@
 				{"keyword":"Given","text":"a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"an anonymous visitor opens it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the comments are shown, each labelled \"Member\"","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page offers to sign in to comment, with no comment box","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor signs in from there","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the visitor is returned to the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the page offers to sign in to comment, with no comment box","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
 			"staleIgnore": false,
@@ -1015,22 +1011,15 @@
 			"id": "REQ-COM-017",
 			"area": "comments",
 			"file": ".spec/features/comments/comments.feature",
-			"title": "A member posts, edits, and deletes their own comment",
+			"title": "A member posts a comment, labelled as their own",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a comment box is shown with a reminder not to name or identify people","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the member is reading a published report that has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment is listed, labelled \"You\"","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the member edits that comment","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment shows the new text, marked as edited","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the member deletes that comment and confirms","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment is no longer listed","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"no other member's comment offers to edit or delete it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the comment is listed, labelled \"You\"","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
 			"staleIgnore": false,
@@ -1050,11 +1039,9 @@
 				{"keyword":"Given","text":"a published report has a comment written in English and machine-translated into French","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor reads the report in French","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment shows its French text, with a small icon that says it was translated automatically","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment offers no control to show the original","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the comment shows its English text, with no translation icon","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the comment offers no control to show the original","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
 			],
-			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -1088,9 +1075,7 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"every comment offers to hide it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is reading a published report that has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer hides a comment and confirms","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that comment is no longer listed","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
 			],
@@ -1118,6 +1103,140 @@
 				{"keyword":"Then","text":"the browser navigates away and the unposted comment is gone","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-022",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "Publishing a report again brings its comments back",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a member commented on a published report that a reviewer has since unpublished","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a reviewer publishes the report again","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment is listed again","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-023",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "An anonymous visitor who signs in to comment returns to the report",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an anonymous visitor is reading a published report that has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor signs in through the report's invitation to comment","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the visitor is returned to the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-024",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "A member reading a published report is offered a comment box with a reminder not to identify anyone",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the visitor is a member and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the member opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a comment box is shown with a reminder not to name or identify people","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-025",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "A member edits their own comment",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the member is reading a published report that carries a comment of their own","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the member edits that comment","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment shows the new text, marked as edited","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-026",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "A member deletes their own comment",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the member is reading a published report that carries a comment of their own","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the member deletes that comment and confirms","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment is no longer listed","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no other member's comment offers to edit or delete it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-027",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "Switching the site's language shows a translated comment as it was written, with no translation icon",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor is reading, in French, a published report with a comment written in English and machine-translated into French","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment shows its English text, with no translation icon","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-COM-028",
+			"area": "comments",
+			"file": ".spec/features/comments/comments.feature",
+			"title": "A reviewer is offered to hide every comment on the report page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"every comment offers to hide it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -2245,7 +2364,7 @@
 			"id": "REQ-MED-002",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "Declared content type must agree with detected content type",
+			"title": "A declared content type must agree with the one detected",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -2253,7 +2372,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"an attachment's declared content type differs from its detected, allowlisted type","files":["tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"an attachment's declared content type differs from the allowlisted one detected in its bytes","files":["tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the attachment is validated","files":["tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the attachment is refused","files":["tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the file extension and client filename are never trusted as the basis for acceptance","files":["tests/HpacSafety.Acceptance.Tests/AttachmentUploadSteps.cs"],"ambiguous":false}
@@ -2416,7 +2535,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"an image or video attachment has finished processing successfully","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reviewer requests to view it","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so a browser never guesses its content type","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so its content type is never guessed by a browser","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no proxy and no public link serves the file","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs","tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],
@@ -2440,7 +2559,7 @@
 				{"keyword":"When","text":"a reviewer requests it","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the reviewer receives a short-lived URL to the private original","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the download is named with the reporter's sanitized filename, or a server-minted name when there is none","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the URL forces a download, marked so a browser never guesses its content type","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the URL forces a download, marked so its content type is never guessed by a browser","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no proxy and no public link serves the file","files":["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AttachmentAccessSteps.cs","tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],
@@ -2812,8 +2931,8 @@
 				{"keyword":"Given","text":"a published report shows a processed image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an anonymous visitor asks for the image's public link","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the visitor receives a pre-signed URL to the image's derivative that expires within fifteen minutes","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the URL serves the derivative inline, under the derivative's own image content type","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the response is marked so a browser never guesses its content type","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the URL serves the derivative inline, under the image content type of the derivative itself","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the response is marked so its content type is never guessed by a browser","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response names no file name, size, or storage key","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],
@@ -2849,7 +2968,7 @@
 			"id": "REQ-MED-030",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "A reviewer hides a file and shows it again, and both are audited",
+			"title": "A reviewer hides a file, and the hiding is audited",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -2860,11 +2979,7 @@
 				{"keyword":"Given","text":"a published report shows a processed image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer hides the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists no media","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the audit log records who hid the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer shows the image again","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report lists the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the audit log records who showed the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the file is kept in storage throughout","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the audit log records who hid the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],
 			"staleIgnore": false,
@@ -2898,7 +3013,7 @@
 			"id": "REQ-MED-032",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label",
+			"title": "The report page shows a thumbnail strip",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -2908,11 +3023,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report shows an image and a video","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor opens the report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the report page shows a thumbnail strip in place of stacked embeds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the image's thumbnail","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the lightbox opens showing the image, labelled \"Photo 1 of 1\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor moves to the next item in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the lightbox shows the video, playable with its controls and audio, labelled \"Video 1 of 1\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the report page shows a thumbnail strip in place of stacked embeds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -2974,13 +3085,11 @@
 			"steps": [
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report shows an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the image offers to hide it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is reading a published report that shows an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer hides the image and confirms","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the image now reads as hidden from the public and offers to show it, still on the report page","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
-			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -3072,7 +3181,7 @@
 				{"keyword":"When","text":"an anonymous visitor asks for the document's public link","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the visitor receives a pre-signed URL to the document's unchanged original that expires within fifteen minutes","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the URL forces a download under a name made from the file id and the format, never the reporter's file name","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the response is marked so a browser never guesses its content type","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the response is marked so its content type is never guessed by a browser","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response names no reporter file name or size","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],
@@ -3084,7 +3193,7 @@
 			"id": "REQ-MED-040",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "A reviewer hides a document and shows it again, and both are audited",
+			"title": "A reviewer hides a document, and the hiding is audited",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -3096,9 +3205,7 @@
 				{"keyword":"When","text":"a Safety Officer hides the document","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists no media","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a visitor's request for the document's public link is not found","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the audit log records who hid the document","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer shows the document again","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report lists the document","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the audit log records who hid the document","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],
 			"staleIgnore": false,
@@ -3218,7 +3325,7 @@
 			"id": "REQ-MED-046",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "Staff mint a private upload for a file of any type",
+			"title": "Staff mint a private upload for a file of any content type, or of none",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -3452,7 +3559,7 @@
 			"id": "REQ-MED-056",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "The lightbox wraps, is keyboard-operable, and traps and returns focus",
+			"title": "The lightbox steps between its images by arrow key, and wraps at either end",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -3461,13 +3568,12 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report shows two images","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor opens the first image in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Right arrow key moves to the second image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Right arrow key from the last image wraps to the first","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Left arrow key from the first image wraps to the last","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Tab never moves focus outside the lightbox while it is open","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor closes the lightbox with Escape","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"focus returns to the first image's thumbnail","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a visitor has the first image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor uses the ArrowRight key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the lightbox shows the second image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has the second image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the lightbox shows the first image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor uses the ArrowLeft key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -3594,7 +3700,7 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report shows a video","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor opens the report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has the report open","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the video's thumbnail","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the lightbox shows the video with the browser's own controls","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the video offers no caption or subtitle track","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
@@ -3604,6 +3710,448 @@
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":["ADR-0188"],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-063",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A reviewer shows a hidden file again, the showing is audited, and the file was kept in storage throughout",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report shows a processed image that a Safety Officer has hidden","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer shows the image again","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report lists the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the audit log records who showed the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the file is kept in storage throughout","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-064",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Activating a thumbnail opens the lightbox with a generic label",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor is reading a published report that shows an image and a video","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the image's thumbnail","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the lightbox opens showing the image, labelled \"Photo 1 of 1\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-065",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "The lightbox moves on to a video, playable with its controls and audio",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has a published report's image open in the lightbox, with a video after it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor moves to the next item in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the lightbox shows the video, playable with its controls and audio, labelled \"Video 1 of 1\"","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-066",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A reviewer reading the public report page is offered to hide a file",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a published report shows an image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer opens the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the image offers to hide it","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-067",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "The open lightbox keeps focus inside it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report shows two images","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has the first image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor moves on through the lightbox several times with the Tab key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"focus never leaves the lightbox while it is open","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-068",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Closing the lightbox returns focus to the thumbnail that opened it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report shows two images","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has the first image open in the lightbox","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor closes the lightbox with the Escape key","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"focus returns to the first image's thumbnail","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-069",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A reviewer shows a hidden document again",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report offers a validated document that a Safety Officer has hidden","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer shows the document again","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report lists the document","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-070",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Editing a private note away from its private attachment keeps the reference in its history",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a report carrying one private attachment, and a private note referring to it","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator edits that private note to refer to no private attachment","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the private note refers to none, and its history shows the first revision still referring to it","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs","tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-071",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A Safety Officer adds a described private attachment on the report page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"coroner-report.zip\" on that report and described it as \"Received from the coroner\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the private attachments section lists \"coroner-report.zip\" with its description, its adder, and when it was added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-072",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A Safety Officer downloads a private attachment from the report page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has added the private attachment \"coroner-report.zip\" to that report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer downloads the private attachment \"coroner-report.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser saves a file named \"coroner-report.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-073",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A Safety Officer removes a private attachment from the report page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has added the private attachment \"coroner-report.zip\" to that report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer removes the private attachment \"coroner-report.zip\" and confirms","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the private attachments section lists no attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-074",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A private attachment shows its progress and offers to cancel while it uploads",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"storage is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has that report open","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer stages the private attachment \"investigation-archive.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the staged attachment \"investigation-archive.zip\" shows its upload progress, offers to cancel it, and \"Add 0 attachments\" stays disabled","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-075",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Several staged private attachments are added together, each with its own description",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has dropped \"site-photo.jpg\" described as \"Taken at the site\" and \"weather-log.pdf\" described as \"Environment Canada log\" on that report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the private attachments section lists \"site-photo.jpg\" and \"weather-log.pdf\", each with its own description","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has chosen, through the picker, \"site-photo.jpg\" described as \"Taken at the site\" and \"weather-log.pdf\" described as \"Environment Canada log\" on that report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-076",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Adding after removing a staged private attachment adds only those left",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has dropped the private attachments \"keep-me.pdf\" and \"drop-me.pdf\" on that report at once, then removed the staged \"drop-me.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the private attachments section lists \"keep-me.pdf\" only","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-077",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Adding beside a too-large private attachment adds only the ordinary one",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has dropped one ordinary private attachment and one larger than the private cap on that report at once, the ordinary one finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the private attachments section lists only the ordinary attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-078",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "\"Add N attachments\" is enabled once every staged private attachment has settled",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"storage is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"slow-upload.zip\" on that report, still uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"storage finishes accepting the staged upload","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"\"Add 1 attachment\" becomes enabled","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-079",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Following a link away from the report page with staged, un-added private attachments asks first",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"unfinished.pdf\" on that report, finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer navigates away from the report through a link","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-080",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Choosing to stay keeps the report page with its staged private attachments",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"unfinished.pdf\" on that report, finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer is asked whether to leave after following a link away from the report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they keep the page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the Safety Officer stays on the report page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-081",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Confirming leaving leaves the report page despite staged private attachments",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"unfinished.pdf\" on that report, finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer is asked whether to leave after following a link away from the report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the Safety Officer leaves the report page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-082",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "A staged private attachment is listed once the report has accepted it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the report is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer is adding the staged private attachment \"held.pdf\" to that report","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the report finishes accepting the private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the private attachments section lists \"held.pdf\" only","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
 			"id": "REQ-MOD-001",
@@ -5178,7 +5726,7 @@
 			"id": "REQ-MOD-080",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "A report's address opens it directly and survives a reload",
+			"title": "A report's address opens it directly",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -5186,11 +5734,9 @@
 			"steps": [
 				{"keyword":"Given","text":"a visitor has the address of a published report","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor opens that address directly","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page shows that report's full summary","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page still shows that report's full summary","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the page shows that report's full summary","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
-			"stepFiles": ["tests/e2e/steps/member-login.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -5219,17 +5765,15 @@
 			"id": "REQ-MOD-082",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "The public feed loads more reports automatically, and going back restores them",
+			"title": "The public feed loads more reports automatically",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor scrolls to the end of the list","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the older reports load without a page change or an address change","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor opens one of them and goes back","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the same reports are still shown, at the same scroll position","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"When","text":"a visitor reaches the end of the list","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the older reports load without a page change or an address change","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -5921,8 +6465,6 @@
 				{"keyword":"Given","text":"a report carrying one private attachment, and another report carrying one of its own","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer adds a private note referring to the first report's private attachment","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the private note lists the private attachment it refers to, by identifier and file name","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an Administrator edits that private note to refer to no private attachment","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the private note refers to none, and its history shows the first revision still referring to it","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a private note referring to the other report's private attachment is refused as invalid and nothing is stored","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a private note referring to a removed private attachment is refused as invalid","files":["tests/HpacSafety.Acceptance.Tests/PrivateAttachmentSteps.cs"],"ambiguous":false}
 			],
@@ -5935,7 +6477,7 @@
 			"id": "REQ-MOD-115",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "A Safety Officer stages, describes, adds, downloads, and removes a private attachment on the report page",
+			"title": "A Safety Officer stages a private attachment on the report page",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -5944,16 +6486,9 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has that report open","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"coroner-report.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the staged attachment \"coroner-report.zip\" finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer describes the staged attachment \"coroner-report.zip\" as \"Received from the coroner\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private attachments section lists \"coroner-report.zip\" with its description, its adder, and when it was added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer downloads the private attachment \"coroner-report.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser saves a file named \"coroner-report.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer removes the private attachment \"coroner-report.zip\" and confirms","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private attachments section lists no attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the staged attachment \"coroner-report.zip\" finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -5974,7 +6509,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report carries the private attachment \"police-report.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has that report open","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer adds the private note \"See the police report.\" referring to \"police-report.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"that private note shows that it refers to \"police-report.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
@@ -5997,9 +6532,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"storage is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer stages the private attachment \"investigation-archive.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the staged attachment \"investigation-archive.zip\" shows its upload progress, offers to cancel it, and \"Add 0 attachments\" stays disabled","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"investigation-archive.zip\" on that report, still uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer cancels the staged upload \"investigation-archive.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the staged attachment \"investigation-archive.zip\" is gone from the staging list","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the cancelled upload is erased","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
@@ -6201,20 +6734,16 @@
 			"id": "REQ-MOD-126",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "The public feed's next page offers a keyboard-only fallback and announces itself",
+			"title": "The public feed's \"Load more\" fallback becomes visible once reached",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor opens the feed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a keyboard visitor tabs to the \"Load more\" action","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"that visitor activates it","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the older reports load","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a screen reader is told how many more reports loaded","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"a visitor has the feed open","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor reaches the \"Load more\" action with the Tab key","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"it becomes visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6232,7 +6761,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"the public feed's next page fails to load","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor activates the \"Load more\" action without scrolling","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor activates the \"Load more\" action before reaching the end of the list","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the feed offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
@@ -6543,9 +7072,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a published report whose French summary mentions a word its English summary does not","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor searches that French-only word in English","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report is not listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor searches that French-only word in French","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report is listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the report is not listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],
 			"staleIgnore": false,
@@ -6564,15 +7091,10 @@
 			"steps": [
 				{"keyword":"Given","text":"a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"another report is not publishable, and its summary contains a further private-only word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an anonymous visitor searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report is listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an anonymous visitor searches for each private-only word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no report is listed among the results, for every one of those searches","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a User searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a User searches for each private-only word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a Safety Officer searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer searches for each private-only word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an Administrator searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an Administrator searches for each private-only word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],
@@ -6606,18 +7128,15 @@
 			"id": "REQ-MOD-145",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "A hidden or a deleted comment never matches",
+			"title": "A hidden comment never matches",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a published report carrying a comment that is later hidden","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"another published report carrying a comment that is later deleted","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor searches the hidden comment's distinctive word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report with the hidden comment is not listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor searches the deleted comment's distinctive word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report with the deleted comment is not listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the report with the hidden comment is not listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],
 			"staleIgnore": false,
@@ -6694,16 +7213,12 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"the public feed has published reports","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor opens View safety reports","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor types a search term into the search box at the top of the page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has View safety reports open","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor searches for a term from the search box at the top of the page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the address bar carries that search term as ?q=","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"only matching reports are listed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the search box still shows that search term, and only matching reports are listed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor goes back","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the search box is empty and the full feed is shown again","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"only matching reports are listed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
-			"stepFiles": ["tests/e2e/steps/comments.steps.ts","tests/e2e/steps/member-login.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":["ADR-0157"],"lessons":[]}
@@ -6712,7 +7227,7 @@
 			"id": "REQ-MOD-150",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "The feed's attachment count is the public count for a visitor and the full count for staff",
+			"title": "The feed's attachment count is the public count for an anonymous visitor",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -6720,9 +7235,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a published report has one public attachment and one attachment only staff may see","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an anonymous visitor lists the feed","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report's attachment count is 1","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a Safety Officer lists the feed","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report's attachment count is 2","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the report's attachment count is 1","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
 			"staleIgnore": false,
@@ -6813,7 +7326,7 @@
 			"id": "REQ-MOD-155",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "An ordinary member's token widens nothing; only a reviewer's does",
+			"title": "An ordinary member's token widens nothing",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -6821,9 +7334,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a published report has one public attachment and one attachment only staff may see","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a member with the User role lists the feed","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report's attachment count is 1","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"an Administrator lists the feed","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the report's attachment count is 2","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the report's attachment count is 1","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
 			"staleIgnore": false,
@@ -7016,7 +7527,7 @@
 			"id": "REQ-MOD-164",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "A published report page offers a same-tab link to its report detail for a reviewer",
+			"title": "A published report page offers a link to its report detail for a reviewer",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -7024,8 +7535,6 @@
 			"steps": [
 				{"keyword":"Given","text":"an Administrator visits a published report's page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page offers a link to its report detail","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates that link","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser opens its report detail, in the same tab","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer visits a published report's page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
@@ -7239,13 +7748,9 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has that report open","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer drops the private attachments \"site-photo.jpg\" and \"weather-log.pdf\" at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"both staged attachments finish uploading independently, each with its own progress","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer describes the staged attachment \"site-photo.jpg\" as \"Taken at the site\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer describes the staged attachment \"weather-log.pdf\" as \"Environment Canada log\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private attachments section lists \"site-photo.jpg\" and \"weather-log.pdf\", each with its own description","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer chooses, through the picker, the private attachments \"site-photo.jpg\" and \"weather-log.pdf\" at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
@@ -7266,13 +7771,9 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer drops the private attachments \"keep-me.pdf\" and \"drop-me.pdf\" at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"both staged attachments finish uploading independently, each with its own progress","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has dropped the private attachments \"keep-me.pdf\" and \"drop-me.pdf\" on that report at once, both finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer removes the staged attachment \"drop-me.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"only \"keep-me.pdf\" remains in the staging list, and nothing erases the upload for \"drop-me.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private attachments section lists \"keep-me.pdf\" only","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"only \"keep-me.pdf\" remains in the staging list, and nothing erases the upload for \"drop-me.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -7292,12 +7793,10 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has that report open","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the too-large attachment's staged row states the private cap and cannot be added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the ordinary attachment finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private attachments section lists only the ordinary attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the ordinary attachment finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -7318,11 +7817,9 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"storage is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has that report open","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer stages the private attachment \"slow-upload.zip\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Add 0 attachments\" stays disabled while \"slow-upload.zip\" uploads","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"storage finishes accepting the staged upload","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Add 1 attachment\" becomes enabled","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"\"Add 0 attachments\" stays disabled while \"slow-upload.zip\" uploads","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -7333,7 +7830,7 @@
 			"id": "REQ-MOD-177",
 			"area": "media",
 			"file": ".spec/features/media/media.feature",
-			"title": "Leaving the report page with staged, un-added private attachments warns",
+			"title": "Closing or reloading the report page with staged, un-added private attachments warns",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
@@ -7342,17 +7839,9 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer stages the private attachment \"unfinished.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the staged attachment \"unfinished.pdf\" finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"unfinished.pdf\" on that report, finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer tries to close or reload the tab","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the browser's own unload prompt appears, with no custom text","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer navigates away from the report through a link","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a bilingual dialog asks whether to leave, offering to stay","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they keep the page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Safety Officer stays on the report page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"they confirm leaving","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Safety Officer leaves the report page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the browser's own unload prompt appears, with no custom text","files":["tests/e2e/steps/unsaved-changes.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts","tests/e2e/steps/unsaved-changes.steps.ts"],
 			"staleIgnore": false,
@@ -7371,7 +7860,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the visitor's window is too short to show the whole feed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor scrolls to the end of the list","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has reached the end of the list","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor follows the footer's link to the contact page, then the one back to View safety reports","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the public feed asks for its first page again","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the public feed is shown from its top","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
@@ -7414,13 +7903,9 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report is slow to accept a private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer stages the private attachment \"held.pdf\"","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the staged attachment \"held.pdf\" finishes uploading and offers a description box","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has staged the private attachment \"held.pdf\" on that report, finished uploading","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer adds the staged private attachments","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the staged attachment \"held.pdf\" can be neither removed nor re-described while it is added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the report finishes accepting the private attachment","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the private attachments section lists \"held.pdf\" only","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the staged attachment \"held.pdf\" can be neither removed nor re-described while it is added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/private-attachments.steps.ts","tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -7440,9 +7925,7 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and a pending report exists","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer opens that report","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the Safety Officer drops only a private attachment larger than the private cap","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the too-large attachment's staged row states the private cap and cannot be added","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has dropped only a private attachment larger than the private cap on that report, its row refused","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer reloads the report page","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page reloads without warning, and the refused row is gone","files":["tests/e2e/steps/private-attachments.steps.ts"],"ambiguous":false}
 			],
@@ -7586,15 +8069,14 @@
 			"id": "REQ-MOD-192",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "The translation label follows the header's language toggle without a reload",
+			"title": "The translation label goes when the visitor switches to the report's own language, without a reload",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report written in French is published","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a visitor has its page open with the site in English","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the page shows the muted label \"Translated from French\"","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has its page open with the site in English, showing the muted label \"Translated from French\"","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page shows no translation label","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
@@ -7607,7 +8089,7 @@
 			"id": "REQ-MOD-193",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "A published report's own page carries the language it was written in, and the feed does not",
+			"title": "A published report's own page carries the language it was written in",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7616,8 +8098,6 @@
 				{"keyword":"Given","text":"a report written in French has been published","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor reads the report","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response's language is \"fr-CA\"","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public feed is queried","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"no feed item carries a language","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a report written in English has been published","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response's language is \"en-CA\"","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
 			],
@@ -8165,9 +8645,7 @@
 				{"keyword":"Given","text":"John holds the receipt for a report with a verified image, a hidden image, an unverified image, and a validated document","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the reporter consented to media and to documents","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the entry and page count and list only the verified image and the validated document","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the image is offered only as its verified derivative and the document only as a forced download","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the reporter did not consent to media","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"no attachment is counted or listed","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the image is offered only as its verified derivative and the document only as a forced download","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
 			"staleIgnore": false,
@@ -8209,9 +8687,7 @@
 				{"keyword":"Given","text":"a browser holds receipts for two of its own reports that are not published","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor opens View safety reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the two own reports are listed first, newest submitted first, each with its pill","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the public feed follows them","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor loads the later pages of the feed","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the own reports are still listed once, above the first page, and not among the later pages","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the public feed follows them","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -8317,6 +8793,324 @@
 				{"keyword":"Then","text":"the lookup tells the browser to drop that receipt","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-016",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The feed's attachment count is the full count for a Safety Officer",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report has one public attachment and one attachment only staff may see","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a Safety Officer lists the feed","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report's attachment count is 2","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-017",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "An Administrator's token widens the feed's attachment count to the full count",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report has one public attachment and one attachment only staff may see","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator lists the feed","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report's attachment count is 2","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-018",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A reviewer's link from a published report page opens its report detail in the same tab",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator visits a published report's page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor follows the page's link to its report detail","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser opens its report detail, in the same tab","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer visits a published report's page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-019",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A report's page survives a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor has opened a published report's address directly","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page still shows that report's full summary","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-020",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The translation label returns when the visitor switches back to the other language, without a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a report written in French is published","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has its page open with the site in English, then switched to French","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor switches the site's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page shows the muted label \"Translated from French\"","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-021",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The public feed carries no report's language",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a report written in French has been published","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the public feed is queried","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no feed item carries a language","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a report written in English has been published","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-022",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Going back to the public feed restores the reports already loaded",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has reached the end of the list and the older reports have loaded","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor opens one of them and goes back","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the same reports are still shown, at the same place in the list","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-023",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The public feed's \"Load more\" fallback is not visible until it is needed",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor opens the feed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the \"Load more\" action is not visible","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-024",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Activating the public feed's \"Load more\" fallback loads the older reports and announces them",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has reached the feed's \"Load more\" action","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates it with the Enter key","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the older reports load","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"a screen reader is told how many more reports loaded","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-025",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Search finds a French-only word in French",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report whose French summary mentions a word its English summary does not","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor searches that French-only word in French","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-026",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The public search finds a public word for every role",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"another report is not publishable, and its summary contains a further private-only word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an anonymous visitor searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a User searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a Safety Officer searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator searches for the public word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-027",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A deleted comment never matches",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report carrying a comment that is later deleted","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor searches the deleted comment's distinctive word","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report with the deleted comment is not listed among the results","files":["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicSearchSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-028",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A search on the public feed survives a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has published reports","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has searched the public feed for a term","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the search box still shows that search term, and only matching reports are listed","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-029",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "Going back from a search on the public feed shows the full feed again",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has published reports","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor has searched the public feed for a term","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor goes back","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the search box is empty and the full feed is shown again","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-030",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder's attachments are not counted or listed without media consent",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"John holds the receipt for a report with a verified image, a hidden image, an unverified image, and a validated document","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter did not consent to media","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no attachment is counted or listed","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-031",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "The holder's own reports are not repeated among the later pages of the feed",
+			"rule": "A reporter's browser sees its own report before it is published",
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the public feed has more published reports than fit on one page","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a browser holds receipts for two of its own reports that are not published","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor has View safety reports open, showing their two own reports","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor loads the later pages of the feed","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the own reports are still listed once, above the first page, and not among the later pages","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}

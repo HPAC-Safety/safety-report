@@ -27,6 +27,14 @@ that report's own page — and never a timestamp. The API resolves that ID's
 submission time itself, server-side, to find where the next page starts;
 submission time never appears in a response and never travels in a cursor.
 
+The feed loads its next page by itself as the visitor reaches the end of the
+list, and going back to it restores what was loaded (REQ-MOD-082,
+REQ-PUB-022); opening it afresh starts again at its top (REQ-MOD-178). A
+"Load more" fallback is visually hidden, at most 2 pixels wide, until it is
+reached from the keyboard (REQ-PUB-023, REQ-MOD-126); activating it loads the
+next page and tells a screen reader how many reports loaded (REQ-PUB-024),
+and a page that fails to load offers "Retry" (REQ-MOD-127).
+
 A summary is Markdown with a section per paragraph question
 ([ADR-0180](../../decisions/ADR-0180-a-summary-is-markdown-with-one-section-per-public-paragraph-question.md)).
 The report's own page renders it (headings, paragraphs, bold, italic, lists, and
@@ -57,7 +65,8 @@ under the published date, "Translated from French" or "Translated from
 English" (French: "Traduit du français" or "Traduit de l'anglais"), shown only
 when the language the reporter wrote the report in differs from the site's
 current language. It follows the header's language toggle without a reload and
-is absent when the two match (#682, REQ-MOD-190 to REQ-MOD-193,
+is absent when the two match (#682, REQ-MOD-190 to REQ-MOD-193, REQ-PUB-020,
+REQ-PUB-021,
 [ADR-0176](../../decisions/ADR-0176-a-published-report-page-shows-the-language-it-was-written-in.md)).
 The owner accepted that publishing the reporter's language is a slight
 identifying hint in a small community. The language travels only on a report's
@@ -81,7 +90,8 @@ It reads only `public_reports` and `public_report_comments` — the same rule
 as everywhere else on this page: nothing not already public can be searched,
 because nothing not already public is in either view. The query lives in
 `?q=`, the same way the cursor lives in `?after=`: bookmarkable, shareable,
-and it survives the back button and a reload. Its cursor is the same
+and it survives the back button and a reload (REQ-MOD-149, REQ-PUB-028,
+REQ-PUB-029). Its cursor is the same
 report-ID-only cursor the plain feed uses, never a rank score.
 
 The engine is Postgres full-text search (language-appropriate stemming) plus
@@ -96,7 +106,7 @@ decided one is not justified at HPAC's report volume.
 A reporter's browser sees its own report on **View safety reports** and at
 `/reports/<id>` before a reviewer publishes it. Every other visitor, signed in or
 not, sees nothing until it is published
-([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-PUB-001` to `REQ-PUB-014`). The link is a browser receipt, never
+([ADR-0196](../../decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md), `REQ-PUB-001` to `REQ-PUB-014`, `REQ-PUB-030`, `REQ-PUB-031`). The link is a browser receipt, never
 member identity; the stored report holds only the hash of a random token
 (`REQ-SUB-133` to `REQ-SUB-136`).
 

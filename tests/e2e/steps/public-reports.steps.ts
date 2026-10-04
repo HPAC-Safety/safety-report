@@ -6,7 +6,8 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for the public feed and each report's own page
- * (REQ-MOD-079..082, REQ-MOD-190..192, REQ-WLD-019, issue no. 28, issue no. 682).
+ * (REQ-MOD-079..082, REQ-MOD-190..192, REQ-PUB-018..020, REQ-PUB-022..024,
+ * REQ-PUB-028..029, REQ-WLD-019, issue no. 28, issue no. 682).
  *
  * The public API is stubbed at the network boundary: what these assert is what
  * the browser shows and what the address bar says. The feed's order, its
@@ -142,6 +143,12 @@ When("the visitor opens that address directly", async ({ page }) => {
 	await page.goto(`/reports/${FIRST.id}`)
 })
 
+Given("a visitor has opened a published report's address directly", async ({ page }) => {
+	await stubFeed(page)
+	await page.goto(`/reports/${FIRST.id}`)
+	await expectFullSummary(page, FIRST)
+})
+
 When("a visitor opens the report address for that ID", async ({ page }) => {
 	await page.goto(`/reports/${HIDDEN_ID}`)
 })
@@ -186,9 +193,13 @@ Then("only that locale's text is shown, with no language control on the report i
 	await expect(page.getByRole("main").getByRole("button")).toHaveCount(0)
 })
 
-When("the visitor switches the site's language", async ({ page }) => {
-	// The header's one language toggle; its label is in whichever language is active.
+/** The header's one language toggle; its label is in whichever language is active. */
+async function switchSiteLanguage(page: Page) {
 	await page.getByRole("banner").getByRole("button", { name: /^(Switch to|Passer)/ }).click()
+}
+
+When("the visitor switches the site's language", async ({ page }) => {
+	await switchSiteLanguage(page)
 })
 
 Then("the report shows the other language's text", async ({ page }) => {
@@ -214,7 +225,8 @@ async function disableAutoLoad(page: Page) {
 	})
 }
 
-When("a visitor scrolls to the end of the list", async ({ page }) => {
+/** Opens the feed and scrolls the window to the bottom, as a visitor does. */
+async function reachEndOfList(page: Page) {
 	await page.goto("/reports")
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
 	// Scroll the window to the bottom, as a visitor does. A short synthetic list
@@ -222,6 +234,19 @@ When("a visitor scrolls to the end of the list", async ({ page }) => {
 	// sentinel; waiting on the sentinel itself would then wait out the whole
 	// test timeout for an element that never returns (issue no. 672).
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+}
+
+When("a visitor reaches the end of the list", async ({ page }) => {
+	await reachEndOfList(page)
+})
+
+Given("a visitor has reached the end of the list", async ({ page }) => {
+	await reachEndOfList(page)
+})
+
+Given("a visitor has reached the end of the list and the older reports have loaded", async ({ page }) => {
+	await reachEndOfList(page)
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
 })
 
 Then("the older reports load without a page change or an address change", async ({ page }) => {
@@ -236,7 +261,7 @@ When("a visitor opens one of them and goes back", async ({ page }) => {
 	await page.goBack()
 })
 
-Then("the same reports are still shown, at the same scroll position", async ({ page }) => {
+Then("the same reports are still shown, at the same place in the list", async ({ page }) => {
 	await expect(page).toHaveURL(/\/reports$/)
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
 	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
@@ -296,11 +321,11 @@ async function focusedWidth(page: Page): Promise<number> {
 }
 
 /**
- * Tabs to the named button, bounded rather than one fixed Tab count, since
- * the two lists' rows carry a different number of stops (Manage reports' row
- * actions) before reaching this same fallback control.
+ * Presses a key until the named button holds focus, bounded rather than one
+ * fixed count, since the two lists' rows carry a different number of stops
+ * (Manage reports' row actions) before reaching this same fallback control.
  */
-async function tabToButton(page: Page, name: string) {
+async function tabToButton(page: Page, name: string, key = "Tab") {
 	const target = page.getByRole("button", { name })
 	const isFocused = () => target.evaluate((element) => element === document.activeElement).catch(() => false)
 
@@ -309,18 +334,32 @@ async function tabToButton(page: Page, name: string) {
 	}
 
 	for (let tabs = 0; tabs < 50; tabs += 1) {
-		await page.keyboard.press("Tab")
+		await page.keyboard.press(key)
 		if (await isFocused()) {
 			return
 		}
 	}
-	throw new Error(`Could not reach the "${name}" action by tabbing.`)
+	throw new Error(`Could not reach the "${name}" action with the ${key} key.`)
 }
 
-When("a visitor opens the feed", async ({ page }) => {
+/** Opens the feed with its auto-load switched off, so only the fallback can load more. */
+async function openFeedWithoutAutoLoad(page: Page) {
 	await disableAutoLoad(page)
 	await page.goto("/reports")
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+}
+
+When("a visitor opens the feed", async ({ page }) => {
+	await openFeedWithoutAutoLoad(page)
+})
+
+Given("a visitor has the feed open", async ({ page }) => {
+	await openFeedWithoutAutoLoad(page)
+})
+
+Given("a visitor has reached the feed's {string} action", async ({ page }, name: string) => {
+	await openFeedWithoutAutoLoad(page)
+	await tabToButton(page, name)
 })
 
 Then("the {string} action is not visible", async ({ page }, name: string) => {
@@ -335,12 +374,20 @@ When("a keyboard visitor tabs to the {string} action", async ({ page }, name: st
 	await tabToButton(page, name)
 })
 
+When("the visitor reaches the {string} action with the {word} key", async ({ page }, name: string, key: string) => {
+	await tabToButton(page, name, key)
+})
+
 Then("it becomes visible", async ({ page }) => {
 	expect(await focusedWidth(page)).toBeGreaterThan(10)
 })
 
 When("that visitor activates it", async ({ page }) => {
 	await page.keyboard.press("Enter")
+})
+
+When("the visitor activates it with the {word} key", async ({ page }, key: string) => {
+	await page.keyboard.press(key)
 })
 
 Then("the older reports load", async ({ page }) => {
@@ -356,10 +403,8 @@ Given("the public feed's next page fails to load", async ({ page }) => {
 	await page.route(/\/api\/v1\/public\/reports\?after=/, (route) => route.fulfill({ status: 500, body: "" }))
 })
 
-When("a visitor activates the {string} action without scrolling", async ({ page }, name: string) => {
-	await disableAutoLoad(page)
-	await page.goto("/reports")
-	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+When("a visitor activates the {string} action before reaching the end of the list", async ({ page }, name: string) => {
+	await openFeedWithoutAutoLoad(page)
 	await tabToButton(page, name)
 	await page.keyboard.press("Enter")
 })
@@ -379,8 +424,21 @@ function searchBox(page: Page) {
 	return page.getByRole("searchbox", { name: "Search safety reports" })
 }
 
-When("the visitor types a search term into the search box at the top of the page", async ({ page }) => {
+Given("a visitor has View safety reports open", async ({ page }) => {
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+})
+
+When("the visitor searches for a term from the search box at the top of the page", async ({ page }) => {
 	await searchBox(page).fill(SEARCH_TERM)
+})
+
+Given("a visitor has searched the public feed for a term", async ({ page }) => {
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await searchBox(page).fill(SEARCH_TERM)
+	await expect(page).toHaveURL(new RegExp(`[?&]q=${SEARCH_TERM}(&|$)`))
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toHaveCount(0)
 })
 
 Then("the address bar carries that search term as ?q=", async ({ page }) => {
@@ -440,7 +498,7 @@ Then("the page offers a link to its report detail", async ({ page }) => {
 	await expect(adminLink(page)).toHaveAttribute("href", `/admin/reports/${FIRST.id}`)
 })
 
-When("the visitor activates that link", async ({ page }) => {
+When("the visitor follows the page's link to its report detail", async ({ page }) => {
 	await adminLink(page).click()
 })
 
@@ -487,9 +545,22 @@ When(/^a visitor opens its page with the site in (English|French)$/, async ({ pa
 	await openPageInSiteLanguage(page, shown)
 })
 
-Given(/^a visitor has its page open with the site in (English|French)$/, async ({ page }, shown: string) => {
-	await openPageInSiteLanguage(page, shown)
+Given(
+	/^a visitor has its page open with the site in (English|French), showing the muted label "(.+)"$/,
+	async ({ page }, shown: string, label: string) => {
+		await openPageInSiteLanguage(page, shown)
+		const line = page.locator("[data-translated-from]")
+		await expect(line).toBeVisible()
+		await expect(line).toHaveText(TRANSLATED_FROM[label])
+	},
+)
+
+Given("a visitor has its page open with the site in English, then switched to French", async ({ page }) => {
+	await openPageInSiteLanguage(page, "English")
+	await expect(page.locator("[data-translated-from]")).toBeVisible()
+	await switchSiteLanguage(page)
 	await expect(page.locator("[data-summary]")).toBeVisible()
+	await expect(page.locator("[data-translated-from]")).toHaveCount(0)
 })
 
 Then(/^the page shows the muted label "(.+)"$/, async ({ page }, label: string) => {

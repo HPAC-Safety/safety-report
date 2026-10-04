@@ -1,6 +1,17 @@
 {
+	"advisorModel": "opus",
 	"hooks": {
 		"PreToolUse": [
+			{
+				"matcher": "ExitPlanMode|Bash",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"$CLAUDE_PROJECT_DIR\"/tools/github/remind-critic.ts",
+						"timeout": 10
+					}
+				]
+			},
 			{
 				"matcher": "Bash",
 				"hooks": [

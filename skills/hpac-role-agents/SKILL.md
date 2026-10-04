@@ -1,6 +1,6 @@
 ---
 name: hpac-role-agents
-description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries for the six role agents — spec-author, test-writer, implementer, spec-reviewer, ai-author, database-administrator — which are generic. Use whenever acting as one of those roles in this repository.
+description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries for the ten role agents — spec-author, test-writer, spec-reviewer, ai-author, database-administrator, critic, adversary, backend, ux, infrastructure — which are generic. Use whenever acting as one of those roles in this repository.
 ---
 
 # HPAC Safety role agents
@@ -42,11 +42,15 @@ roles and why each trusts only the artifact before it:
   | spec-author | opus | high | Judgement: reads widely, decides what to build |
   | spec-reviewer | opus | high | Judgement: weighs a diff against claims and ADRs |
   | database-administrator | opus | high | Judgement: schema mistakes outlive the code |
-  | implementer | sonnet | medium | Build: executes claims already settled |
   | test-writer | sonnet | medium | Build: binds a written scenario |
   | ai-author | sonnet | medium | Build: rewrites wording, never rules |
+  | critic | opus | medium | Judgement: weighs a plan, one bounded pass; medium because the loop is capped and the findings are cited, not open-ended |
+  | adversary | opus | high | Judgement: hunts the hardest-to-see bugs and holes, read-only |
+  | backend | sonnet | medium | Build: designs and builds the server side within settled claims |
+  | ux | sonnet | medium | Build: designs and builds the web UI within settled claims |
+  | infrastructure | opus | high | Judgement: cloud and network mistakes outlive the code and reach production |
 
-- No role uses the clone's shared stash, above all the implementer and the
+- No role uses the clone's shared stash, above all the builders and the
   test-writer, who edit files. The rule is written only; nothing enforces it
   (`deliver-hpac-change` "Worktree and branch", #796).
 - `skillfile install` copies each agent verbatim into `.claude/agents/`. An
@@ -105,33 +109,10 @@ roles and why each trusts only the artifact before it:
 - Synthetic fixtures: people, locations, reports, attachments.
 - The required phrases in model output are the role phrases.
 
-## implementer
-
-- Code graph: `graphify query "<question>"`.
-- Conventions: [`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md),
-  plus the focused skill for the surface — persistence, media, localization,
-  domain model, web UI.
-- Privacy-sensitive surfaces that need a focused privacy or boundary test:
-  reports, questions, model input or output, attachments, authentication,
-  authorization, logging, deletion, review, and publication.
-- The exemption is `No .feature scenario needed:` and names the claims it
-  preserves
-  ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
-- The never-log list is `hpac-safety-conventions` "Privacy": DTO bodies,
-  answers, private context, prompts or responses, credentials or tokens, client
-  filenames, attachment URLs.
-- Conventions most often broken: `DateTime`, an assertion library other than
-  Shouldly, a hand-edited generated file.
-- Before finishing, `node tools/spec/generate-traceability.ts` exits 0: every
-  built claim's steps are bound.
-
 ## spec-reviewer
 
 - Contradiction between a feature file and an ADR:
   [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md).
-- Privacy boundaries: report content or credentials in logs, a document
-  reaching the model, a public DTO grown a field, a private-only fact in a
-  summary.
 - The exemption: `No .feature scenario needed:`
   ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
 - `.spec/claims.json` for the cited claims: each bound by the files the diff
@@ -206,3 +187,110 @@ Generic and project files:
   - `node tools/docs/check-links.ts` — every relative link resolves.
 - Stable handles here include `deliver-change` "Verify and publish" step
   numbers.
+
+## critic
+
+The rule and its bound:
+[CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md).
+A `PreToolUse` hook (`tools/github/remind-critic.ts`, wired in
+`.claude/settings.json`) reminds on `ExitPlanMode` and on `gh issue create`;
+it never blocks.
+
+- Read: [`.spec/features/README.md`](../../.spec/features/README.md) and the
+  affected area's README (its out-of-scope section), the `AGENTS.md` product
+  invariants and "Not built", the ADRs the plan touches
+  ([`.spec/README.md`](../../.spec/README.md)), and the lessons
+  ([`.spec/lessons/`](../../.spec/lessons/README.md)).
+- A plan that changes behavior without a scenario first conflicts with
+  [ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md).
+  A plan that adds a user table, allowlist, credential proxy, or outbound
+  email conflicts with "Not built".
+- Cite the claim ID, ADR number, or file for each finding.
+- Never put report content, answers, or credentials in a finding.
+
+## adversary
+
+Runs by convention only
+([CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
+
+- Contract boundaries here: the API's request and response DTOs, the public
+  views, the Worker's model input and output, the migrations and SQL views,
+  and the pre-signed URL and quarantine flow.
+- Privacy and security are this role's, not the spec-reviewer's. Boundaries to attack: report content or credentials in logs; a
+  public DTO grown a field; a private-only fact reaching a summary; a document
+  reaching the model; an attachment published without media consent; a
+  receipt or token stored in the clear; a physical deletion.
+- Missing tests: a privacy-sensitive surface (see backend) with no focused
+  boundary test.
+- Findings are synthetic-only: never copy real report content into one.
+- Test commands it may run: a filtered `dotnet test`, `CI=1 npm test` for e2e;
+  never against production data.
+
+## backend
+
+The back-end engineer: designs and builds the server side
+([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
+
+- Owns `src/HpacSafety.*` (Api, Core, Infrastructure, Worker) and their unit
+  and integration tests, `tools/` scripts, and the CI workflows. The web
+  UI under `src/web` is `ux`'s; `infra/` is `infrastructure`'s; the acceptance
+  step definitions are the test-writer's; the schema's design is the
+  database-administrator's.
+- Code graph: `graphify query "<question>"`.
+- Conventions: [`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md),
+  plus the focused skill for the surface:
+  [`persist-hpac-data`](../persist-hpac-data/SKILL.md),
+  [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md),
+  [`handle-hpac-media`](../handle-hpac-media/SKILL.md),
+  [`incident-domain-model`](../incident-domain-model/SKILL.md),
+  [`anonymize-hpac-reports`](../anonymize-hpac-reports/SKILL.md).
+- Privacy-sensitive surfaces that need a focused privacy or boundary test:
+  reports, questions, model input or output, attachments, authentication,
+  authorization, logging, deletion, review, and publication.
+- The exemption is `No .feature scenario needed:` and names the claims it
+  preserves
+  ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+- The never-log list is `hpac-safety-conventions` "Privacy": DTO bodies,
+  answers, private context, prompts or responses, credentials or tokens, client
+  filenames, attachment URLs.
+- Conventions most often broken: `DateTime`, an assertion library other than
+  Shouldly, a hand-edited generated file.
+- Before finishing, `node tools/spec/generate-traceability.ts` exits 0: every
+  built claim's steps are bound.
+- Work only in its own worktree off fresh `origin/main`
+  ([`deliver-change`](../deliver-change/SKILL.md) "Worktree and branch").
+
+## ux
+
+The UX designer and front-end engineer: designs and builds the web UI.
+
+- Owns `src/web` and its component tests; server code is `backend`'s, and the
+  e2e step definitions the test-writer's.
+- Follows the backend section's rules for
+  claims, the graph, the exemption, and the never-log list, and
+  [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md) and
+  [`localize-hpac-app`](../localize-hpac-app/SKILL.md).
+- Every UI change carries a Playwright test, and a server test for any
+  API-facing behavior
+  ([ADR-0045](../../.spec/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
+- Privacy boundaries: nothing about a member in the browser beyond the
+  receipt the browser keeps; no report content in analytics or logs; fixtures
+  stay synthetic.
+- Work only in its own worktree off fresh `origin/main`.
+
+## infrastructure
+
+The cloud and DevOps engineer: designs and builds what the system runs on
+([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
+
+- Owns `infra/` (Terraform) and the workflows that provision or deploy:
+  `terraform.yml`, `terraform-relock.yml`, `deploy-environment.yml`,
+  `release.yml`, `promote.yml`. `backend` keeps the other workflows.
+- Skill: [`manage-hpac-infrastructure`](../manage-hpac-infrastructure/SKILL.md);
+  constraints:
+  [`.spec/infrastructure-and-operations.md`](../../.spec/infrastructure-and-operations.md)
+  (`CON-INF-*`), and AGENTS.md invariant 8 (managed encryption, no
+  deletion).
+- The owner promotes to production.
+- Never put report content, a secret, or a state file in a report.
+- Work only in its own worktree off fresh `origin/main`.

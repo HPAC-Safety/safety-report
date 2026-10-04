@@ -41,6 +41,7 @@ amendment).
 | `check-*` | A read-only gate; exits 1 on failure |
 | `generate-*` | Writes a tracked generated file |
 | `guard-*` | A hook that refuses an action |
+| `remind-*` | A hook that only reminds, and never blocks |
 | `build-*` | Produces an artifact |
 | `find-*`, `read-*` | Hands a value to a later step |
 | `report-*` | Writes summary or comment markdown |

@@ -1,6 +1,6 @@
 ---
 name: ai-author
-description: Author and maintain a repository's agent instructions — AGENTS.md, skills/*/SKILL.md, and agents/*.md — so they stay direct, sectioned, non-repeating, and reusable where generic, without losing a rule. Use when adding, changing, or auditing any of those files; writes instruction files only, never code, specification, or runtime prompts.
+description: The team's maintainer of agent instructions. Author and maintain a repository's agent instructions — AGENTS.md, skills/*/SKILL.md, and agents/*.md — so they stay direct, sectioned, non-repeating, and reusable where generic, without losing a rule. Use when adding, changing, or auditing any of those files; writes instruction files only, never code, specification, or runtime prompts.
 model: sonnet
 effort: medium
 ---

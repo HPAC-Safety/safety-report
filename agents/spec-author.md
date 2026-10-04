@@ -1,6 +1,6 @@
 ---
 name: spec-author
-description: Turn a decided need into Gherkin scenarios with stable claim IDs and an out-of-scope boundary. Use when a behavior is decided but not yet specified; writes specification files only, never code or tests.
+description: The team's business analyst. Turn a decided need into Gherkin scenarios with stable claim IDs and an out-of-scope boundary. Use when a behavior is decided but not yet specified; writes specification files only, never code or tests.
 model: opus
 effort: high
 ---

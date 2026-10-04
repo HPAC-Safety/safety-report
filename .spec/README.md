@@ -63,6 +63,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0197](decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md) | Backend and ux replace the implementer, and the adversary takes privacy review | accepted | 2026-10-04 |
 | [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
 | [0195](decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md) | A built claim counts only when its scenario passed in the run | accepted | 2026-10-03 |
 | [0194](decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md) | A split area keeps every claim ID, and a new claim takes the new area's prefix | accepted | 2026-10-03 |
@@ -169,7 +170,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0089](decisions/ADR-0089-no-malware-scanning-for-attachments.md) | No malware scanning for attachments | accepted | 2026-09-22 |
 | [0088](decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md) | The generated matrix carries the specification into the graph | superseded | 2026-09-22 |
 | [0087](decisions/ADR-0087-every-markdown-file-declares-itself.md) | Every markdown file declares what it is | partially-superseded | 2026-09-22 |
-| [0086](decisions/ADR-0086-four-role-agents-defined-in-the-repository.md) | Four roles are defined as repository agents | accepted | 2026-09-22 |
+| [0086](decisions/ADR-0086-four-role-agents-defined-in-the-repository.md) | Four roles are defined as repository agents | superseded | 2026-09-22 |
 | [0085](decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md) | A lesson flows upstream into the specification | partially-superseded | 2026-09-22 |
 | [0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md) | A claim has a stable ID, and the traceability matrix is generated | superseded | 2026-09-22 |
 | [0083](decisions/ADR-0083-specification-driven-development.md) | Specification-driven development is how this repository works | partially-superseded | 2026-09-22 |
@@ -311,6 +312,7 @@ first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
 | Convention | Title | Status | Date |
 |---|---|---|---|
+| [CONV-007](conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md) | A plan meets the critic and a change meets the adversary | accepted | 2026-10-04 |
 | [CONV-006](conventions/CONV-006-a-scenario-holds-one-behavior.md) | A scenario holds one behavior | accepted | 2026-10-03 |
 | [CONV-005](conventions/CONV-005-git-hooks-are-tracked-run-through-a-shim-and-split-one-check-per-file.md) | Git hooks are tracked, run through a shim, and split one check per file | accepted | 2026-10-03 |
 | [CONV-004](conventions/CONV-004-scenarios-describe-behavior-not-implementation.md) | Scenarios describe behavior, not implementation | accepted | 2026-10-03 |

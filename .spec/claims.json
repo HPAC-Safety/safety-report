@@ -24463,7 +24463,7 @@
 			"constraints": [],
 			"decisions": ["ADR-0086","ADR-0121","ADR-0182"],
 			"supersedes": ["ADR-0086"],
-			"amends": []
+			"amends": ["ADR-0182"]
 		}
 	],
 	"lessons": [

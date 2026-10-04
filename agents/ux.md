@@ -20,7 +20,7 @@ Make a red test green in the web UI. The cited claims are the whole brief.
 
 ## Produce
 
-- The smallest change that passes the cited claims, with its browser test and
+- The smallest change that passes the cited claims, their browser test, and
   any server-facing test, in your own worktree and nowhere else.
 - Accessible, localized, responsive markup that follows the design system.
 - A report: the files changed and the test results.

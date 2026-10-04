@@ -148,13 +148,13 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
 Declared under `agents/`, installed by `skillfile`. None is required; a
 contributor who never invokes one is unaffected.
 
-- The chain's four, each trusting only the artifact from the role before it
-  ([ADR-0086](.spec/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)):
+- The chain's four steps, each trusting only the artifact from the role before
+  it
+  ([ADR-0197](.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)):
   - **spec-author** — writes scenarios and what is out of scope;
   - **test-writer** — turns a claim into a failing step definition;
   - **backend** or **ux** — makes it pass against the cited claims and nothing
-    else; `backend` owns everything but the web UI, `ux` the web UI
-    ([ADR-0197](.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md));
+    else; `backend` owns everything but the web UI, `ux` the web UI;
   - **spec-reviewer** — judges a diff against those claims and the ADRs.
 - **ai-author** — maintains these instruction files
   ([ADR-0121](.spec/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).

@@ -55,8 +55,9 @@ roles and why each trusts only the artifact before it:
 - `skillfile install` copies each agent verbatim into `.claude/agents/`. An
   orchestrator spawns a role by its `name` and gets these settings, unless it
   overrides `model` for one call.
-- `fable` is a valid `model`: `check-frontmatter` accepts it
-  ([CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
+- `fable` is a valid `model`
+  ([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)
+  amends ADR-0182).
 
 ## spec-author
 
@@ -232,9 +233,10 @@ Runs by convention only
 The chain role for everything but the web UI
 ([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
 
-- Owns `src/HpacSafety.*` (Api, Core, Infrastructure, Worker), the .NET
-  `tests/`, `tools/` scripts, `infra/`, and CI. The web UI under `src/web` is
-  `ux`'s; the schema's design is the database-administrator's.
+- Owns `src/HpacSafety.*` (Api, Core, Infrastructure, Worker), `tools/`
+  scripts, `infra/`, and CI. The web UI under `src/web` is `ux`'s; step
+  definitions and tests are the test-writer's; the schema's design is the
+  database-administrator's.
 - Code graph: `graphify query "<question>"`.
 - Conventions: [`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md),
   plus the focused skill for the surface:
@@ -262,8 +264,8 @@ The chain role for everything but the web UI
 
 ## ux
 
-- Owns `src/web` and the browser suite in `tests/e2e`; server code is
-  `backend`'s.
+- Owns `src/web`; server code is `backend`'s, and the e2e step definitions
+  the test-writer's.
 - The chain role for the web UI: follows the backend section's rules for
   claims, the graph, the exemption, and the never-log list, and
   [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md) and

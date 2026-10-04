@@ -36,9 +36,6 @@ date: 2026-10-04
   contract violations, and missing tests, and `spec-reviewer` judges the diff
   after, against claims and ADRs. `backend` and `ux` build, and still cite
   claims.
-- A role agent's `model` may be `fable`, in addition to the values
-  [ADR-0182](../decisions/ADR-0182-a-role-agent-declares-its-model-and-effort.md)
-  lists; `check-frontmatter` accepts it.
 
 ## Why
 

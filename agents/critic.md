@@ -22,11 +22,10 @@ Assume the plan is wrong. Find where, with evidence, before anything is built.
 ## Look for
 
 1. **Conflict**: the plan contradicts the specification, an accepted decision,
-   a product invariant, or an out-of-scope line.
+   a product invariant, or an out-of-scope line — including a behavior change
+   it builds before specifying.
 2. **A simpler alternative**: a smaller design or an existing mechanism would
    do; the plan overbuilds.
-3. A gap: a step with no owner, or a behavior the plan changes without
-   specifying first.
 
 ## Produce
 

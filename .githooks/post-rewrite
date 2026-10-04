@@ -24,6 +24,9 @@
 # A dev-machine convenience, not a CI gate — see .githooks/post-merge. This
 # file is the tracked hook, run by the shim ./init-dev.sh installs
 # (tools/dev/git-hook-shim.sh) — edit this file, not the installed one.
+#
+# The regenerate-and-stage step is shared with post-merge, in
+# lib/regenerate-spec.sh; the skip on main below stays here (CONV-005).
 
 set -u
 

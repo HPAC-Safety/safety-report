@@ -16,6 +16,9 @@
 # commits them too, and CI re-checks the whole tree in the "docs" job
 # (ADR-0101). This file is the tracked hook, run by the shim ./init-dev.sh
 # installs (tools/dev/git-hook-shim.sh) — edit this file, not the installed one.
+#
+# The regenerate-and-stage step is shared with post-rewrite, in
+# lib/regenerate-spec.sh; the skip on main below stays here (CONV-005).
 
 set -u
 

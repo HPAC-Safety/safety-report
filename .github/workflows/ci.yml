@@ -140,7 +140,7 @@ jobs:
       # The hook is POSIX sh for the same reason, and it grew real branching
       # when its two checks were made independent (#207) — a bashism or an
       # unguarded cd there breaks committing, not CI, so it is worth linting.
-      # Its checks live one per file under .githooks/pre-commit.d (CONV-004).
+      # Its checks live one per file under .githooks/pre-commit.d (CONV-005).
       # tools/dev/ci-local.sh is POSIX sh too (ADR-0145): it is the pre-pull-request
       # gate, so a bashism there stops every pull request before it opens.
       - name: shellcheck init-dev.sh, the pre-commit hook and its checks, and ci-local.sh

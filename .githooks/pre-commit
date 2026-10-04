@@ -2,7 +2,7 @@
 #
 # The pre-commit runner. Each check is its own file under pre-commit.d/,
 # NN-<check>.sh, run in lexical order with `sh`; each one gates itself on the
-# staged files it cares about and says what it guards (CONV-004). A new check
+# staged files it cares about and says what it guards (CONV-005). A new check
 # is a new file there, not a block here.
 #
 # Every check runs, and the commit is refused at the end if any failed: one

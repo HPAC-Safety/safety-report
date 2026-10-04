@@ -56,12 +56,11 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		var (notes, noteId, officer) = await Noted();
 
 		// When
-		using var response = await officer.PutAsJsonAsync(
-			$"{notes}/{noteId}", new { text = "Synthetic edit.", revision = 1, attachmentId });
+		using var response = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = "Synthetic edit.", revision = 1, attachmentId }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var listed = await officer.GetFromJsonAsync<JsonElement>(notes);
+		var listed = await officer.GetFromJsonAsync<JsonElement>(notes, cancellationToken: TestContext.Current.CancellationToken);
 		listed[0].GetProperty("text").GetString().ShouldBe("Synthetic original.");
 		listed[0].GetProperty("revision").GetInt32().ShouldBe(1);
 		officer.Dispose();

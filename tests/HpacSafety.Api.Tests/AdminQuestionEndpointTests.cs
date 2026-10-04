@@ -652,12 +652,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var reorderedBefore = await ReorderAuditCount();
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{groupId}", UriKind.Relative),
-			NoAnswerDraft(groupKey, "short_text"));
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), NoAnswerDraft(groupKey, "short_text"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 		(await ReorderAuditCount()).ShouldBe(reorderedBefore + 1);
 	}
 

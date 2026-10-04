@@ -183,8 +183,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -205,8 +205,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -225,8 +225,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await reporter.PostAsync(Submit, firstBody);
-		using var secondResponse = await reporter.PostAsync(Submit, secondBody);
+		using var firstResponse = await reporter.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await reporter.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -246,8 +246,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

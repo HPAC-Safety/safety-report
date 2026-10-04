@@ -273,18 +273,16 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{value}/parent", UriKind.Relative),
-			new { parentChoiceIds = new[] { "not-an-id" } });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/type-ahead-values/{value}/parent", UriKind.Relative), new { parentChoiceIds = new[] { "not-an-id" } }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("choices of the parent question");
 
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		(await database.ChoiceParentLinks.CountAsync(link => link.ChoiceId == value)).ShouldBe(0);
+		(await database.ChoiceParentLinks.CountAsync(link => link.ChoiceId == value, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(0);
 	}
 
 	[Fact]

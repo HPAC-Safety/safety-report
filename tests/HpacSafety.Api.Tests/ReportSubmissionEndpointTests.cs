@@ -565,15 +565,15 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await stubbornReporter.PostAsync(Submit, content);
+		using var response = await stubbornReporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then — the report committed; the lifecycle rule, not the request, removes the upload
-		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
-		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>(cancellationToken: TestContext.Current.CancellationToken);
 		await using (var scope = _factory.Services.CreateAsyncScope())
 		{
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-			(await database.ReportFiles.CountAsync(f => f.ReportId == TinyId.Parse(body!.Id))).ShouldBe(1);
+			(await database.ReportFiles.CountAsync(f => f.ReportId == TinyId.Parse(body!.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(1);
 		}
 
 		(await ObjectExists($"quarantine/{uploadId}")).ShouldBeTrue();

@@ -1,6 +1,6 @@
 ---
 title: The .NET tests run on xUnit v3, and Reqnroll executes the .feature files through Reqnroll.xUnit.v3
-description: Every .NET test project moves from the deprecated xunit 2.9.3 to xunit.v3.mtp-off 4.0.1 with VSTest kept, Reqnroll.xUnit.v3 is the adapter, a @ui scenario skips through xUnit v3's dynamic-skip token, and the run-alone collections are bound by hand.
+description: Every .NET test project moves from the deprecated xunit 2.9.3 to xunit.v3.mtp-off 4.0.1 with VSTest kept, Reqnroll.xUnit.v3 is the adapter, a @ui scenario skips by throwing `Xunit.Sdk.SkipException.ForSkip`, and the run-alone collections are bound by hand.
 type: adr
 status: accepted
 date: 2026-10-04
@@ -66,8 +66,8 @@ The suite relies on four things a framework move could break:
   skips the test but the formatter records its hook step as failed, which was
   tried and rejected. `Assert.Skip` does the same as `ForSkip` but is banned
   with `Xunit.Assert`; `SkipException` is not, so no suppression is needed.
-  This replaces the `SkipException` of `Xunit.SkippableFact` named in ADR-0195's
-  Consequences; the decision in ADR-0073 and ADR-0195 is unchanged.
+  ADR-0195's Consequences named the v2 mechanism; its decision and
+  ADR-0073's are unchanged.
   `UiScenarioHooksTests` pins it, and a run with the filter `Category=ui`
   reports every `@ui` scenario Skipped with `REQNROLL_FORMATTERS` set and unset,
   with no failed step in the Cucumber Messages file.
@@ -81,22 +81,20 @@ The suite relies on four things a framework move could break:
 
 ### What still holds from ADR-0049
 
-- Reqnroll executes the `.spec/features/**/*.feature` files in place, through a
-  `ReqnrollFeatureFile` item, with the code-behind in `obj/`.
-- `Reqnroll.Tools.MsBuild.Generation` is the feature-file compiler.
-- `tests/HpacSafety.Acceptance.Tests` runs in the same `dotnet test
-  HpacSafety.slnx` step; no separate CI job.
-- A scenario carries `@ignore @issue-<N>` until it is built, and the pull
-  request that builds it removes the tags
-  ([CONV-001](../conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
+- ADR-0049 "Decision": the in-place feature files, the generator package, and
+  the one `dotnet test HpacSafety.slnx` step.
+- ADR-0049 "Consequences": `tools/gherkin/verify.ts`'s syntax check stays
+  alongside Reqnroll, and the generated code-behind stays in `obj/`.
+- The `@ignore` rule is
+  [CONV-001](../conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md).
 
 ## Consequences
 
 - No `.feature` scenario changes; the diff touches no behavior-bearing path.
 - Tagging another feature `@xunit:collection(...)` needs its partial class in
   `XunitCollectionBindings.cs`; the guard test names the omission.
-- `UiScenarioHooksTests` and `XunitCollectionBindingTests` add one hand-written
-  test to the acceptance assembly.
+- `XunitCollectionBindingTests` adds one hand-written test to the acceptance
+  assembly.
 - Test order differs from v2, which surfaced two order-dependent tests: one read
   only the first page of the shared database's report list, and one read the
   audit log without an order. Both were made order-independent.

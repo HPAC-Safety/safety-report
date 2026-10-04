@@ -11,6 +11,11 @@ under the same section names where they exist, and wins where they differ.
 
 ## Target
 
+- Ownership: [`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md)
+  "Before implementing".
+- Constraints:
+  [`.spec/infrastructure-and-operations.md`](../../.spec/infrastructure-and-operations.md)
+  (`CON-INF-*`), and `AGENTS.md` invariant 8 (managed encryption, no deletion).
 - In `ca-central-1`: the API and the Worker as Lambda functions (ADR-0042,
   ADR-0123), RDS PostgreSQL, private S3 attachment storage, and one website,
   with admin as a route, served from a private S3 bucket through CloudFront,
@@ -151,6 +156,8 @@ Lessons from staging's first real release, #613 through #638
 
 - Alert on terminal summary failures and stuck or aged outbox work.
 - Keep logs content-free.
+- The owner promotes to production.
+- Never put report content, a secret, or a state file in a report.
 
 ## Remove
 

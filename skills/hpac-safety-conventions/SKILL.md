@@ -16,10 +16,27 @@ same section names.
 - Specification: [`.spec/features/README.md`](../../.spec/features/README.md).
 - Lessons: [`.spec/lessons/`](../../.spec/lessons/README.md).
 - Specify first: `AGENTS.md` "Specification-driven development".
+- Ownership, the one home: `backend` owns `src/HpacSafety.*` (Api, Core,
+  Infrastructure, Worker) with their unit and integration tests, the `tools/`
+  scripts, and the CI workflows except those `infrastructure` owns. `ux` owns
+  `src/web` and its component tests. `infrastructure` owns `infra/`
+  (Terraform) and the workflows that provision or deploy: `terraform.yml`,
+  `terraform-relock.yml`, `deploy-environment.yml`, `release.yml`,
+  `promote.yml`; the test-writer owns the acceptance step
+  definitions; the database-administrator owns the schema's design.
+- Focused skills for the surface:
+  [`persist-hpac-data`](../persist-hpac-data/SKILL.md),
+  [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md),
+  [`handle-hpac-media`](../handle-hpac-media/SKILL.md),
+  [`hpac-domain-model`](../hpac-domain-model/SKILL.md),
+  [`anonymize-hpac-reports`](../anonymize-hpac-reports/SKILL.md).
 
 ## Privacy
 
 - The boundaries: DTO, storage, model, logging, review, and publication.
+- Privacy-sensitive surfaces, each needing a focused privacy or boundary test:
+  reports, questions, model input or output, attachments, authentication,
+  authorization, logging, deletion, review, and publication.
 - **Never log**: DTO bodies, answers, private context, prompts or responses,
   credentials or tokens, client filenames, or attachment URLs.
 
@@ -72,3 +89,7 @@ same section names.
 ## Before finishing
 
 - The specification to update is `.spec/features`.
+- `node tools/spec/generate-traceability.ts` exits 0: every built claim's steps
+  are bound.
+- The conventions most often broken: `DateTime`, an assertion library other
+  than Shouldly, a hand-edited generated file.

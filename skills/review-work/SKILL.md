@@ -28,6 +28,10 @@ bound on how often it runs, belongs to that reviewer.
 - A plan: the specification, the accepted decision records, the product
   invariants, and the out-of-scope lines of each area it touches; the code
   graph or index, for what already exists.
+- A whole repository at rest: the specification, the decision records, the
+  lessons, the conventions, the docs, the instruction files, and the code they
+  describe. Run the project's own checks read-only and cite them. Report a
+  contradiction or a duplicate at both locations.
 - A diff judged against claims: the cited claim IDs with their scenarios, the
   accepted decisions they touch, the area's out-of-scope section, and the
   traceability matrix for what else the changed code is claimed to satisfy.

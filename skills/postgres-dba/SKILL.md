@@ -343,6 +343,9 @@ Then read the schema for what queries cannot see:
 - one-to-one splits with no reason; polymorphic `(type, id)` pairs;
 - naming inconsistency (plural/singular, `id` vs `<table>_id`, casing).
 
+When tables hold personal or sensitive data, an audit query returns counts and
+shapes, never row content.
+
 Report each finding as: **severity** (critical / high / medium / low),
 **evidence** (query and result), **why it matters**, **fix** (the exact DDL),
 and **migration risk** (lock, rewrite, backfill).

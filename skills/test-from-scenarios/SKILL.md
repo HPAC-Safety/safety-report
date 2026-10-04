@@ -34,6 +34,19 @@ its tests must cover, and wins where they differ.
   cannot show "the API rejects it regardless of the UI". Boot the host on first
   use, so a domain-only run pays nothing.
 
+### Shape
+
+- One behavior per scenario: at most one When, never after a Then, and no more
+  steps than the small cap the project sets. A later action is a new scenario with a new ID.
+- Steps say what a reader observes, in the glossary's words: never a status
+  code, a table or column, a route, a transport term, or a reason. The step
+  definition keeps the detail.
+- No click, press, typing, element role, selector, or pixel in a step; a key is a noun phrase
+  in an Examples cell.
+- A claim ID is stable: never reused or renumbered, not even when its scenario
+  moves to another area.
+- A renamed step renames its step definition's text in the same commit.
+
 ### `@ignore`
 
 - **`@ignore` means "not built yet", never "no longer true."**
@@ -58,6 +71,8 @@ its tests must cover, and wins where they differ.
   behind it — and the area's supporting page (tables, validation order, DTO
   shapes).
 - **One step definition per step**, in the runner the scenario's tags select.
+- **A Then's definition asserts and never acts.** A key comes from its Examples
+  cell, never from the step.
 - **A red test**: run it. It fails on the behavior, not on a missing binding or
   a typo.
 - **Write from the scenario, not the conversation.** A binding that needs a

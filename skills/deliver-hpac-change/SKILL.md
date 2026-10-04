@@ -1,13 +1,16 @@
 ---
 name: deliver-hpac-change
-description: HPAC Safety's tools, commands, labels, and paths for delivering a change — extends the generic deliver-change skill. Use when creating or editing issues, docs, worktrees, PRs, or checks in this repository.
+description: HPAC Safety's tools, commands, labels, and paths for delivering and reviewing a change — extends the generic deliver-change skill, and is the project companion of review-work ("Review") and write-agent-instructions ("Agent instructions"). Use when creating or editing issues, docs, worktrees, PRs, or checks in this repository.
 ---
 
 # Deliver an HPAC Safety change
 
 Extends [`deliver-change`](../deliver-change/SKILL.md); read that first. This
 skill holds only what is specific to this repository, under the same section
-names and step numbers.
+names and step numbers. It is also the project companion of
+[`review-work`](../review-work/SKILL.md), in "Review", and of
+[`write-agent-instructions`](../write-agent-instructions/SKILL.md), in "Agent
+instructions".
 
 ## Start
 
@@ -124,8 +127,26 @@ Rules:
 
 ### Scenarios
 
-- Specification-driven development:
+- Specification-driven development, a superseded scenario deleted, and never
+  editing a scenario to match the code:
   [ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md).
+- Browser tag: `@ui`. Every example and fixture is synthetic: never real report
+  content.
+- Claim IDs are `@REQ-<AREA>-<NNN>`, never reused or renumbered
+  ([ADR-0084](../../.spec/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+  A new claim's ID: `node tools/spec/claim-prefixes.ts --next <area>`, under the
+  `prefix:` in the area's README; a split-off scenario takes one the same way.
+  `REQ-QB` and `REQ-MOD` are retired: their claims keep their IDs in whichever
+  area holds them, and nothing new takes them
+  ([ADR-0194](../../.spec/decisions/ADR-0194-a-split-area-keeps-every-claim-id-and-a-new-claim-takes-the-new-areas-prefix.md)).
+- Quote interface copy and page titles; a renamed step renames its step
+  definition's text in the same commit
+  ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+- Before finishing a specification change, run
+  `node tools/spec/generate-traceability.ts`,
+  `node tools/spec/generate-spec-index.ts`,
+  `node tools/spec/check-glossary.ts`, `node tools/gherkin/lint-scenarios.ts`,
+  and `node tools/spec/check-records.ts`.
 - `@ignore` and superseded scenarios: also
   [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios". A leading
   scenario is `@ignore @issue-<N>`, and `feature-coverage` fails one whose
@@ -259,12 +280,120 @@ Rules:
 
 ### Agent instructions
 
-- The `ai-author` role is [`agents/ai-author.md`](../../agents/ai-author.md);
-  this repository's rules for it are in
-  [`hpac-role-agents`](../hpac-role-agents/SKILL.md).
+- The `ai-author` role is [`agents/ai-author.md`](../../agents/ai-author.md).
+  The role and its scope, with what still holds of ADR-0121 and
+  [ADR-0124](../../.spec/decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md):
+  [CONV-008](../../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md).
+  Generic and project files, and the naming rule:
+  [CONV-009](../../.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md).
+  How the files are written:
+  [`write-agent-instructions`](../write-agent-instructions/SKILL.md).
+- **Edits**: `AGENTS.md`, `skills/*/SKILL.md` (and a skill's `agents/*.yaml`),
+  `agents/*.md`, and their `Skillfile` entries.
+- **Never edits**:
+  - generated copies under `.claude/` — run `skillfile install` instead;
+  - the symlinks `CLAUDE.md`, `.github/copilot-instructions.md`,
+    `.cursor/rules/agents.mdc`;
+  - the Worker's runtime prompts under `src/HpacSafety.Worker/Prompts/`;
+  - product code, tests, anything under `.spec/`, or `docs/**` pages, except
+    to fix a link a move broke.
+- What `AGENTS.md` owns and what belongs in a skill:
+  [ADR-0037](../../.spec/decisions/ADR-0037-progressive-agent-instructions.md).
+  Product behavior lives in `.spec/features`
+  ([ADR-0085](../../.spec/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md));
+  where a lesson's general rule lands: "Lessons" above.
+- An agent's frontmatter keys: "Markdown" above. Its body is the three sections
+  CONV-008 names.
+- A role has no per-role project skill: project rules reach it through the
+  companions of the generic skills it preloads, which `AGENTS.md`'s skill table
+  lists (CONV-009).
+- Checks:
+  - `node tools/docs/check-frontmatter.ts` (rules: "Markdown" above);
+  - `node tools/docs/check-generic-instructions.ts` — every agent and every
+    skill whose directory has no `hpac` names nothing specific to this
+    repository. It selects the files by that rule, so there is no list to
+    update. The pre-commit hook and the `docs` CI job run it;
+  - `node tools/docs/check-links.ts` — every relative link resolves.
+- Stable handles here include `deliver-change` "Verify and publish" step
+  numbers.
 - Manifest and lock: update `Skillfile`, regenerate `Skillfile.lock`, and run
   `skillfile validate` and `skillfile install`. Generated copies live under
   `.claude/`.
+
+## Review
+
+Extends [`review-work`](../review-work/SKILL.md). Never put report content,
+answers, or credentials in a finding; cite a location, a count, or a shape.
+
+### spec-reviewer
+
+- A contradiction between a feature file and an ADR:
+  [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md).
+- The exemption, `No .feature scenario needed:`, names the claims it preserves
+  ([ADR-0090](../../.spec/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+- [`.spec/claims.json`](../../.spec/claims.json) for the cited claims: each is
+  bound by files the diff touches; the diff adds no entry to
+  `unusedStepDefinitions` or `ambiguousSteps` and no new `"staleIgnore": true`
+  ([ADR-0184](../../.spec/decisions/ADR-0184-a-generated-map-binds-every-claim-to-its-step-definitions.md)).
+- Words: `node tools/spec/check-glossary.ts` passes; a banned synonym is a
+  specification delta, never a matter of taste
+  ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+- Declarative steps: `node tools/gherkin/lint-scenarios.ts` passes, and a
+  reworded step's definition still asserts what it asserted before
+  ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
+- One behavior: every assertion of a split scenario survives in exactly one
+  scenario, the original ID stays with the main behavior, and no Then step
+  definition performs an action the scenario claims
+  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
+- Records: `node tools/spec/check-records.ts` and `node tools/spec/check-adr-immutability.ts`
+  with the pull request's base as `BASE_SHA` both pass; see "ADRs"
+  ([ADR-0192](../../.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
+
+### critic
+
+The rule and its bound:
+[CONV-007](../../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md).
+A `PreToolUse` hook (`tools/github/remind-critic.ts`, wired in
+`.claude/settings.json`) reminds on `ExitPlanMode` and on `gh issue create`; it
+never blocks.
+
+- A plan that changes behavior without a scenario first conflicts with
+  [ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md).
+  A plan that adds a user table, allowlist, credential proxy, or outbound email
+  conflicts with `AGENTS.md` "Not built".
+- Read the area README's out-of-scope section, the `AGENTS.md` product
+  invariants, the ADRs ([`.spec/README.md`](../../.spec/README.md)), and the
+  lessons ([`.spec/lessons/`](../../.spec/lessons/README.md)).
+
+### adversary
+
+Runs by convention only (CONV-007).
+
+- Contract boundaries here: the API's request and response DTOs, the public
+  views, the Worker's model input and output, the migrations and SQL views, and
+  the pre-signed URL and quarantine flow.
+- Privacy and security are this role's, not the spec-reviewer's. Boundaries to
+  attack: report content or credentials in logs; a public DTO grown a field; a
+  private-only fact reaching a summary; a document reaching the model; an
+  attachment published without media consent; a receipt or token stored in the
+  clear; a physical deletion.
+- Missing tests: a privacy-sensitive surface
+  ([`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md) "Privacy")
+  with no focused boundary test.
+- Test commands it may run: a filtered `dotnet test`, `CI=1 npm test` for e2e;
+  never against production data.
+
+### auditor
+
+Runs on demand, never per change (CONV-007). Read-only checks to cite, from
+`tools/spec/`, `tools/docs/`, and `tools/gherkin/`: `check-records`,
+`check-glossary`, `check-ignored-claims`, `check-area-paths`,
+`lint-scenarios`, `check-links`,
+`check-frontmatter`, `check-generic-instructions`, `check-inventories`, and
+the generators with `--check` (`generate-traceability.ts --check`,
+`generate-spec-index.ts --check`), which fail on a stale committed file and
+write nothing. Hold the code to the `AGENTS.md` product invariants and "Not
+built", and the area READMEs' out-of-scope sections.
 
 ## Verify and publish
 

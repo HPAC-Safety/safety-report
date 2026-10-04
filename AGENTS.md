@@ -166,22 +166,25 @@ is in the generic skills it preloads
 - **critic** (Karen) judges a plan before it is built; **adversary** (Kyle)
   attacks a change for bugs, security, privacy leaks, contract violations, and
   missing tests; **spec-reviewer** judges the diff after, against claims and
-  ADRs
-  ([#842](https://github.com/HPAC-Safety/safety-report/issues/842)).
+  ADRs; **auditor** (Ashley) audits the whole repository at rest and reports
+  drift no single diff caught; it runs on demand, never per change, and only
+  reports
+  ([#842](https://github.com/HPAC-Safety/safety-report/issues/842),
+  [#853](https://github.com/HPAC-Safety/safety-report/issues/853)).
   - Run the critic on a plan before it is final (before `ExitPlanMode` or
     `gh issue create`): one pass, at most one recheck, then the owner decides.
   - Run the adversary at a contract boundary, after repeated test failures, and
     before any pull request or merge.
   - A hook reminds about the critic and never blocks
     ([CONV-007](.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
-- The ten agents are a full-stack team; each description opens with its team
+- The eleven agents are a full-stack team; each description opens with its team
   role. A new agent earns a file only when it reads, uses, runs, or refuses
   something none of these does ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
-- The ten agents are generic. This repository's paths, tags, commands, and
-  privacy boundaries for each are in
-  [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).
-- Each declares its model and effort in frontmatter; the assignment and its
-  reason are in `hpac-role-agents` ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
+- The eleven agents are generic. Reach each role's repository rules through the
+  companions of the generic skills it preloads, in the table below.
+- Each declares its model and effort in frontmatter; the general rule is in
+  `write-agent-instructions` "An agent file", and each role's reason in the
+  CONV-008 team table ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 ### Decisions and conventions
 
@@ -385,9 +388,9 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 | React/TypeScript web UI and design system | [`design-web-ui`](skills/design-web-ui/SKILL.md) | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
 | AWS, Terraform, or deployment | [`design-cloud-infrastructure`](skills/design-cloud-infrastructure/SKILL.md) | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
 | Issues, docs, worktrees, PRs, or CI | [`deliver-change`](skills/deliver-change/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
-| Acting as a role agent | [`agents/`](agents/), [`agent-persona`](skills/agent-persona/SKILL.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) |
-| Reviewing a plan, a diff, or a working tree | [`review-work`](skills/review-work/SKILL.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) |
-| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md), [`write-agent-instructions`](skills/write-agent-instructions/SKILL.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) "ai-author (Emily)" |
+| Acting as a role agent | [`agents/`](agents/), [`agent-persona`](skills/agent-persona/SKILL.md) | — |
+| Reviewing a plan, a diff, a working tree, or the whole repository | [`review-work`](skills/review-work/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Review" |
+| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md), [`write-agent-instructions`](skills/write-agent-instructions/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Agent instructions" |
 
 ## Runtime prompt
 

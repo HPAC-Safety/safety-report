@@ -49,7 +49,8 @@ say *what*; you decide *how*, and prove it.
   - the code graph or index, before designing: the specification says *what*,
     the graph says what exists, and reinventing an unseen service is the
     commonest failure;
-  - the agent instructions and the project skill that extends the role agents;
+  - the agent instructions, and the project companions of the skills the role
+    preloads, which the agent instructions list;
   - these conventions and their companion, and the focused skill for each
     surface touched.
 - **Design before code**: the shape of the interface, the data flow, the

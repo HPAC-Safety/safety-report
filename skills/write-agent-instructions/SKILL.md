@@ -46,8 +46,14 @@ The one home for how an instruction file is written; others link here.
     the agent does and when to pick it over its neighbours.
   - `skills` lists generic skills only. A role that edits files preloads
     `deliver-change`; a reviewer does not.
-  - The agent declares its model and effort; the project skill says which and
-    why.
+  - The agent declares its model and effort in its frontmatter, the only
+    place the values live, matched to its work: a judgement role (specify,
+    review, audit, design what outlives the code) takes the stronger model and
+    more effort than a build role (bind a written scenario, rewrite wording,
+    build within settled claims); a bounded loop may take less effort.
+  - The install step copies each agent verbatim. An orchestrator spawns a
+    role by its `name` and gets these settings, unless it overrides `model` for
+    one call.
 - **Body**: exactly these, in this order.
   - `# <Name> — <role>`;
   - `## Who I am`: two to four lines of personality, voice, and what I care

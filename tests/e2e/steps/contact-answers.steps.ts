@@ -86,13 +86,17 @@ function sentValue(page: Page): unknown {
 	return body.answers.find((answer) => answer.questionRevisionId === "rev-contact")?.value
 }
 
-Given(/^the current page shows an optional (email|phone) question$/, async ({ page }, type: string) => {
+async function openContactForm(page: Page, type: string) {
 	await stubAuth(page)
 	await stubCurrentQuestions(page, contactForm(type))
 	await stubSubmission(page)
 	await signInAs(page, "user")
 	await page.goto("/report")
 	await expect(contactField(page)).toBeVisible()
+}
+
+Given(/^the current page shows an optional (email|phone) question$/, async ({ page }, type: string) => {
+	await openContactForm(page, type)
 })
 
 Then(
@@ -104,17 +108,21 @@ Then(
 	},
 )
 
-When("the reporter leaves it blank and presses Next", async ({ page }) => {
+When("the reporter leaves it blank and goes on", async ({ page }) => {
 	await expect(contactField(page)).toHaveValue("")
 	await page.getByRole("button", { name: "Next" }).click()
 })
 
-When("the reporter types {string} into it and presses Next", async ({ page }, typed: string) => {
+When("the reporter enters {string} and goes on", async ({ page }, typed: string) => {
 	await contactField(page).pressSequentially(typed)
 	await page.getByRole("button", { name: "Next" }).click()
 })
 
-When("the reporter types {string} into it", async ({ page }, typed: string) => {
+When("the reporter enters {string}", async ({ page }, typed: string) => {
+	await contactField(page).pressSequentially(typed)
+})
+
+Given("the reporter has entered {string}", async ({ page }, typed: string) => {
 	await contactField(page).pressSequentially(typed)
 })
 
@@ -153,11 +161,20 @@ Then("the phone question's placeholder is {string}", async ({ page }, placeholde
 	await expect(contactField(page)).toHaveAttribute("placeholder", placeholder)
 })
 
-When(/^the reporter chooses (.+) in its country picker$/, async ({ page }, country: string) => {
+async function chooseCountry(page: Page, country: string) {
 	const picker = page.locator(`${CONTACT}-country`)
 	// Each country is listed by flag, name, and calling code.
 	const option = picker.locator("option").filter({ hasText: new RegExp(` ${country} \\(\\+\\d+\\)$`) })
 	await picker.selectOption(await option.getAttribute("value"))
+}
+
+When(/^the reporter chooses (.+) in its country picker$/, async ({ page }, country: string) => {
+	await chooseCountry(page, country)
+})
+
+Given(/^the current page shows an optional phone question with (.+) chosen in its country picker$/, async ({ page }, country: string) => {
+	await openContactForm(page, "phone")
+	await chooseCountry(page, country)
 })
 
 Then("the phone question reads {string}", async ({ page }, masked: string) => {
@@ -173,7 +190,8 @@ Then("the phone answer is sent as {string}", ({ page }, e164: string) => {
 	expect(sentValue(page)).toBe(e164)
 })
 
-Then("the question is a combobox whose suggestion list is labelled {string}", async ({ page }, label: string) => {
+// The question is a combobox controlling a labelled listbox (REQ-SUB-092).
+Then("the question offers a suggestion list labelled {string}", async ({ page }, label: string) => {
 	const combobox = page.getByRole("combobox", { name: "How can we reach you?" })
 	await expect(combobox).toHaveAttribute("aria-expanded", "true")
 	const list = page.getByRole("listbox", { name: label })

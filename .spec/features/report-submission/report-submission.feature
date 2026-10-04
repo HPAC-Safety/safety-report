@@ -63,8 +63,7 @@ Examples:
 @ui
 Scenario: Continuing a saved report restores it where the reporter left off
   Given this browser holds an unexpired saved report
-  When the reporter returns to the form
-  And the reporter chooses to continue
+  When the reporter returns to the form and continues the saved report
   Then the form opens on the page the reporter was last on
   And the saved answers are restored
 
@@ -72,8 +71,7 @@ Scenario: Continuing a saved report restores it where the reporter left off
 @ui
 Scenario: Declining a saved report starts a fresh form
   Given this browser holds an unexpired saved report
-  When the reporter returns to the form
-  And the reporter declines to continue
+  When the reporter returns to the form and declines to continue
   Then the browser removes the saved report
   And the form opens at its introduction with no answers
 
@@ -88,8 +86,7 @@ Scenario: A reporter with no saved report is not asked
 @ui
 Scenario: Continuing a saved report leaves out an answer whose question revision is no longer current
   Given this browser holds an unexpired saved report, and an Administrator has since revised one of its answered questions
-  When the reporter returns to the form
-  And the reporter chooses to continue
+  When the reporter returns to the form and continues the saved report
   Then the saved answers to the other questions are restored
   And the revised question is empty
 
@@ -97,8 +94,7 @@ Scenario: Continuing a saved report leaves out an answer whose question revision
 @ui
 Scenario: The reporter is told once that saved answers were cleared
   Given this browser holds an unexpired saved report, and an Administrator has since revised one of its answered questions
-  When the reporter returns to the form
-  And the reporter chooses to continue
+  When the reporter returns to the form and continues the saved report
   Then one notice says the form changed since the report was saved, so some answers were cleared
   And no question is marked individually
 
@@ -106,8 +102,7 @@ Scenario: The reporter is told once that saved answers were cleared
 @ui
 Scenario: No notice appears when every saved answer is still current
   Given this browser holds an unexpired saved report whose every answer is still current
-  When the reporter returns to the form
-  And the reporter chooses to continue
+  When the reporter returns to the form and continues the saved report
   Then no notice says answers were cleared
 
 @REQ-SUB-127
@@ -123,18 +118,28 @@ Scenario: A saved report with no answer still current is replaced by a fresh for
 @ui
 Scenario: Each page of the form has its own address
   Given a reporter is on the form's introduction, at the form's own address
-  When the reporter presses Next
+  When the reporter goes on to the next page
   Then the address names the page now shown by its question key
-  When the reporter presses Back
+
+@REQ-SUB-137
+@ui
+Scenario: Going back to the introduction returns to the form's own address
+  Given a reporter has gone on from the form's introduction to the next page
+  When the reporter goes back a page
   Then the address is the form's own address
 
 @REQ-SUB-054
 @ui
-Scenario: The browser's Back and Forward buttons move between pages under the form's rules
-  Given a reporter has answered a required question and pressed Next
-  When the reporter presses the browser's Back button
+Scenario: The browser's Back button returns to the previous page of the form
+  Given a reporter has answered a required question and gone on to the next page
+  When the reporter goes back with the browser's Back button
   Then the required question's page shows and the address names it
-  When the reporter clears the answer and presses the browser's Forward button
+
+@REQ-SUB-138
+@ui
+Scenario: The browser's Forward button cannot skip a required question left unanswered
+  Given a reporter has answered a required question, gone on, and come back with the browser's Back button
+  When the reporter clears the answer and goes forward with the browser's Forward button
   Then the required question's page still shows
   And an inline, localized message explains that an answer is required
 
@@ -142,8 +147,7 @@ Scenario: The browser's Back and Forward buttons move between pages under the fo
 @ui
 Scenario: Continuing a saved report puts its page in the address
   Given this browser holds an unexpired saved report
-  When the reporter returns to the form
-  And the reporter chooses to continue
+  When the reporter returns to the form and continues the saved report
   Then the address names the page the reporter was last on
 
 @REQ-SUB-056
@@ -152,6 +156,11 @@ Scenario: A page address never answers the continue question for the reporter
   Given this browser holds an unexpired saved report
   When the reporter opens the address of a page other than the one saved
   Then a dialog asks whether to continue where they left off, with No and Yes buttons
+
+@REQ-SUB-139
+@ui
+Scenario: Declining to continue from a page address starts a fresh form at the form's own address
+  Given this browser holds an unexpired saved report, and the reporter has opened the address of a page other than the one saved
   When the reporter declines to continue
   Then the address is the form's own address
   And the form opens at its introduction with no answers
@@ -162,6 +171,11 @@ Scenario: A page address without a saved report opens the introduction
   Given this browser holds no saved report
   When the reporter opens the address of a later page of the form
   Then the form opens at its introduction, at the form's own address
+
+@REQ-SUB-140
+@ui
+Scenario: The address of a page the form does not have opens the introduction
+  Given this browser holds no saved report
   When the reporter opens the address of a page the form does not have
   Then the form opens at its introduction, at the form's own address
 
@@ -177,7 +191,7 @@ Scenario: The leading statement question renders as an introduction
 @ui
 Scenario: A reporter pages through questions one at a time
   Given the current form has more than one answer-producing question
-  When a reporter presses Next
+  When a reporter goes on to the next page
   Then exactly one question, or one group and its children, is shown per page
   And a Back control returns to the previous page without losing its answer
 
@@ -193,7 +207,7 @@ Scenario: A group question and its children page together
 @ui
 Scenario: A required question blocks Next until answered
   Given the current page shows a required, unanswered question
-  When a reporter presses Next
+  When a reporter goes on to the next page
   Then the page does not advance
   And an inline, localized message explains that an answer is required
 
@@ -203,7 +217,13 @@ Scenario: A conditional question is absent from paging until its parent conditio
   Given a question depends on a yes/no or single-select question
   When the parent's current answer does not meet the condition
   Then the dependent question's page is skipped entirely
-  When the reporter then answers the parent so the condition is met
+
+@REQ-SUB-141
+@ui
+Scenario: A conditional question joins the paging once its parent condition is met
+  Given a question depends on a yes/no or single-select question
+  And the parent's current answer does not meet the condition
+  When the reporter answers the parent so the condition is met
   Then the dependent question's page appears in the sequence
 
 @REQ-SUB-033
@@ -211,23 +231,48 @@ Scenario: A conditional question is absent from paging until its parent conditio
 Scenario: The Next button becomes Submit on the final page
   Given a reporter has reached the last page of the form
   Then the control that was Next now reads Submit
-  And pressing it sends the one final submission request
+
+@REQ-SUB-155
+@ui
+Scenario: Submitting from the final page sends the one final submission request
+  Given a reporter has reached the last page of the form
+  When the reporter chooses Submit
+  Then the one final submission request is sent
 
 @REQ-SUB-034
 @ui
 Scenario: A multi-select question is one closed picker, not a flat list
   Given the current page shows a multi-select question
   Then its choices are hidden behind one closed picker labelled by the question
+
+@REQ-SUB-142
+@ui
+Scenario: A multi-select picker stays open while the reporter checks choices
+  Given the current page shows a multi-select question
   When the reporter opens the picker and checks two choices
   Then the picker stays open with both choices checked
-  When the reporter presses Escape
+
+@REQ-SUB-143
+@ui
+Scenario Outline: Closing a multi-select picker from the keyboard returns focus to it and names the checked choices
+  Given the reporter has checked two choices in an open multi-select picker
+  When the reporter uses the <key> key
   Then the picker closes, returns focus to itself, and names both choices
+
+Examples:
+  | key    |
+  | Escape |
 
 @REQ-SUB-132
 @ui
-Scenario: A multi-select picker is a combobox that pops up a dialog of checkboxes
+Scenario: A closed multi-select picker tells assistive technology it opens a dialog
   Given the current page shows a multi-select question
-  Then its closed picker is a combobox labelled by the question, collapsed, with a dialog as its popup
+  Then assistive technology hears its closed picker as collapsed, labelled by the question, with a dialog as its popup
+
+@REQ-SUB-144
+@ui
+Scenario: An open multi-select picker controls a dialog of checkboxes
+  Given the current page shows a multi-select question
   When the reporter opens the picker
   Then the picker is expanded and controls a dialog labelled by the question, holding one checkbox for each choice
 
@@ -246,7 +291,7 @@ Examples:
 @ui
 Scenario Outline: An optional email or phone question may be left blank
   Given the current page shows an optional <type> question
-  When the reporter leaves it blank and presses Next
+  When the reporter leaves it blank and goes on
   Then the next page shows
   And the <type> answer is sent as null when the report is submitted
 
@@ -259,7 +304,7 @@ Examples:
 @ui
 Scenario: A malformed email address holds the reporter on its page
   Given the current page shows an optional email question
-  When the reporter types "chase.florell@example" into it and presses Next
+  When the reporter enters "chase.florell@example" and goes on
   Then the reporter stays on that page
   And an inline, localized message asks for an email address like name@example.com
 
@@ -267,7 +312,7 @@ Scenario: A malformed email address holds the reporter on its page
 @ui
 Scenario: A phone number that is not valid for its country holds the reporter on its page
   Given the current page shows an optional phone question
-  When the reporter types "5551234" into it and presses Next
+  When the reporter enters "5551234" and goes on
   Then the reporter stays on that page
   And an inline, localized message asks for a phone number valid for the chosen country
 
@@ -280,27 +325,37 @@ Scenario: The phone country picker starts on Canada
 
 @REQ-SUB-090
 @ui
-Scenario Outline: A phone number takes its chosen country's mask as it is typed
+Scenario Outline: Choosing a phone country shows its calling code and number format
   Given the current page shows an optional phone question
   When the reporter chooses <country> in its country picker
   Then its country picker shows "<shown>"
   And the phone question's placeholder is "<placeholder>"
-  When the reporter types "<digits>" into it
+
+Examples:
+  | country        | shown   | placeholder    |
+  | Canada         | 🇨🇦 +1  | (555) 555-5555 |
+  | United Kingdom | 🇬🇧 +44 | 5555 555555    |
+  | France         | 🇫🇷 +33 | 5 55 55 55 55  |
+
+@REQ-SUB-145
+@ui
+Scenario Outline: A phone number takes its chosen country's mask as it is entered
+  Given the current page shows an optional phone question with <country> chosen in its country picker
+  When the reporter enters "<digits>"
   Then the phone question reads "<masked>"
 
 Examples:
-  | country        | shown   | placeholder    | digits     | masked         |
-  | Canada         | 🇨🇦 +1  | (555) 555-5555 | 6045551234 | (604) 555-1234 |
-  | United Kingdom | 🇬🇧 +44 | 5555 555555    | 2079460018 | 20 7946 0018   |
-  | France         | 🇫🇷 +33 | 5 55 55 55 55  | 612345678  | 6 12 34 56 78  |
+  | country        | digits     | masked         |
+  | Canada         | 6045551234 | (604) 555-1234 |
+  | United Kingdom | 2079460018 | 20 7946 0018   |
+  | France         | 612345678  | 6 12 34 56 78  |
 
 @REQ-SUB-091
 @ui
 Scenario Outline: A phone answer is sent in E.164
-  Given the current page shows an optional phone question
-  When the reporter chooses <country> in its country picker
-  And the reporter types "<digits>" into it
-  And the reporter goes on to submit the report
+  Given the current page shows an optional phone question with <country> chosen in its country picker
+  And the reporter has entered "<digits>"
+  When the reporter goes on to submit the report
   Then the phone answer is sent as "<sent>"
 
 Examples:
@@ -312,8 +367,8 @@ Examples:
 @ui
 Scenario: Before "@" is typed, every suggested domain is offered for what has been typed
   Given the current page shows an optional email question
-  When the reporter types "chas" into it
-  Then the question is a combobox whose suggestion list is labelled "Suggested email addresses"
+  When the reporter enters "chas"
+  Then the question offers a suggestion list labelled "Suggested email addresses"
   And the suggestions below it are, in order:
     | chas@gmail.com   |
     | chas@yahoo.com   |
@@ -321,7 +376,13 @@ Scenario: Before "@" is typed, every suggested domain is offered for what has be
     | chas@outlook.com |
     | chas@icloud.com  |
     | chas@mail.com    |
-  When the reporter types "e" into it
+
+@REQ-SUB-146
+@ui
+Scenario: The email suggestions follow each further letter typed
+  Given the current page shows an optional email question
+  And the reporter has entered "chas"
+  When the reporter enters "e"
   Then the suggestions below it are, in order:
     | chase@gmail.com   |
     | chase@yahoo.com   |
@@ -334,7 +395,7 @@ Scenario: Before "@" is typed, every suggested domain is offered for what has be
 @ui
 Scenario: After "@", the suggestions narrow to the domains beginning with what follows it
   Given the current page shows an optional email question
-  When the reporter types "chase.florell@g" into it
+  When the reporter enters "chase.florell@g"
   Then the suggestions below it are, in order:
     | chase.florell@gmail.com |
 
@@ -342,8 +403,8 @@ Scenario: After "@", the suggestions narrow to the domains beginning with what f
 @ui
 Scenario Outline: Choosing a suggestion fills the question
   Given the current page shows an optional email question
-  When the reporter types "chase.florell@h" into it
-  And the reporter chooses "chase.florell@hotmail.com" <how>
+  And the reporter has entered "chase.florell@h"
+  When the reporter chooses "chase.florell@hotmail.com" <how>
   Then the email question reads "chase.florell@hotmail.com"
   And no suggestions are shown
 
@@ -356,32 +417,38 @@ Examples:
 @ui
 Scenario: An address at a domain outside the suggestions is accepted
   Given the current page shows an optional email question
-  When the reporter types "pilot@example.ca" into it and presses Next
+  When the reporter enters "pilot@example.ca" and goes on
   Then the next page shows
 
 @REQ-SUB-098
 @ui
-Scenario Outline: On a desktop, clicking or focusing a date question opens a one-month calendar under it
+Scenario Outline: On a desktop, reaching a date question opens a one-month calendar under it
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter <opens> the date question
+  When the reporter reaches the date question <how>
   Then a calendar labelled "Choose a date" opens under the question, showing today's month
   And today is marked in it
   And it has "Previous month" and "Next month" buttons
 
 Examples:
-  | opens     |
-  | clicks    |
-  | tabs into |
+  | how               |
+  | with the pointer  |
+  | from the keyboard |
 
 @REQ-SUB-099
 @ui
 Scenario: Choosing a day fills the question as yyyy-mm-dd and closes the calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter clicks the date question and chooses the 1st of today's month
+  When the reporter chooses the 1st of today's month in the date question's calendar
   Then the date question reads the 1st of today's month as yyyy-mm-dd
   And the calendar closes
   And the chosen day is announced in words
-  When the reporter clicks the date question and chooses the 1st of today's month again
+
+@REQ-SUB-147
+@ui
+Scenario: Choosing the same day again announces it again
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  And the reporter has chosen the 1st of today's month in the date question's calendar
+  When the reporter chooses the 1st of today's month in the date question's calendar again
   Then the announcement is cleared and the chosen day is announced again
 
 @REQ-SUB-112
@@ -395,7 +462,7 @@ Scenario: A date question with a placeholder of its own still names the yyyy-mm-
 @ui
 Scenario Outline: The calendar disables the days after today unless the question allows future dates
   Given the current page shows a date question that <allows> future dates, on a desktop
-  When the reporter clicks the date question
+  When the reporter opens the date question's calendar
   Then the calendar shows today's month
   And every day after today is <state>
 
@@ -408,7 +475,7 @@ Examples:
 @ui
 Scenario Outline: A typed date that is malformed, or in the future where not allowed, holds the reporter on its page
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter types "<typed>" into the date question and presses Next
+  When the reporter enters "<typed>" in the date question and goes on
   Then the reporter stays on the date page
   And an inline message says "<message>"
 
@@ -424,15 +491,14 @@ Examples:
 @ui
 Scenario: A date typed as yyyy-mm-dd is sent as typed
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter types "2024-02-29" into the date question and presses Next
-  And the reporter submits the report from the next page
+  When the reporter enters "2024-02-29" in the date question and submits the report from the next page
   Then the date answer is sent as "2024-02-29"
 
 @REQ-SUB-103
 @ui
 Scenario Outline: The calendar is in the reader's language
   Given the current page shows a date question in <language>, on a desktop
-  When the reporter clicks the date question
+  When the reporter opens the date question's calendar
   Then the calendar names today's month in <language>
   And its weekday headings start on <first day>
   And its buttons and pickers are labelled from the <language> catalogue
@@ -444,59 +510,96 @@ Examples:
 
 @REQ-SUB-104
 @ui
-Scenario: The calendar works from the keyboard
+Scenario Outline: The calendar moves its focused day from the keyboard
   Given the current page shows a date question that allows future dates, on a desktop
-  When the reporter tabs into the date question and presses ArrowDown
-  Then today has focus in the calendar
-  When the reporter presses ArrowLeft
-  Then the day 1 day before today has focus
-  When the reporter presses ArrowUp
-  Then the day 8 days before today has focus
-  When the reporter presses ArrowDown
-  Then the day 1 day before today has focus
-  When the reporter presses ArrowRight
-  Then today has focus in the calendar
-  When the reporter presses PageUp
-  Then the same day of the previous month has focus
-  When the reporter presses PageDown
-  Then today has focus in the calendar
-  When the reporter presses Enter
+  And the keyboard focus is on <from>
+  When the reporter uses the <key> key
+  Then <to> has focus in the calendar
+
+Examples:
+  | from                               | key        | to                                 |
+  | the date question                  | ArrowDown  | today                              |
+  | today                              | ArrowLeft  | the day 1 day before today         |
+  | the day 1 day before today         | ArrowUp    | the day 8 days before today        |
+  | the day 8 days before today        | ArrowDown  | the day 1 day before today         |
+  | the day 1 day before today         | ArrowRight | today                              |
+  | today                              | PageUp     | the same day of the previous month |
+  | the same day of the previous month | PageDown   | today                              |
+
+@REQ-SUB-148
+@ui
+Scenario Outline: Choosing the focused day from the keyboard fills the question and closes the calendar
+  Given the current page shows a date question that allows future dates, on a desktop
+  And the keyboard focus is on today
+  When the reporter uses the <key> key
   Then the date question reads today as yyyy-mm-dd
   And the calendar closes
   And focus is on the date question
-  When the reporter presses ArrowDown and then Escape
+
+Examples:
+  | key   |
+  | Enter |
+
+@REQ-SUB-149
+@ui
+Scenario Outline: Closing the calendar from the keyboard returns focus to the date question
+  Given the current page shows a date question that <allows> future dates, on a desktop
+  And <opened>, and the keyboard focus is on today
+  When the reporter uses the <key> key
   Then the calendar closes
   And focus is on the date question
+
+Examples:
+  | allows         | opened                                                                                        | key    |
+  | allows         | the date question's calendar has been opened from the keyboard after a day was chosen from it | Escape |
+  | does not allow | the pointer has opened the date question's calendar and activated its background              | Escape |
 
 @REQ-SUB-111
 @ui
-Scenario: Tabbing past a date question skips its calendar
+Scenario Outline: Leaving a date question from the keyboard skips its calendar
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter tabs into the date question
-  Then a calendar labelled "Choose a date" opens under the question, showing today's month
-  When the reporter presses Tab
+  And the reporter has reached the date question from the keyboard
+  When the reporter uses the <key> key
   Then focus skips the calendar to the Next button, and the calendar closes
+
+Examples:
+  | key |
+  | Tab |
 
 @REQ-SUB-131
 @ui
-Scenario: A desktop date question is a combobox that controls its calendar dialog, and a press on the calendar's background keeps focus
+Scenario: A closed desktop date question tells assistive technology it opens a calendar dialog
   Given the current page shows a date question that does not allow future dates, on a desktop
-  Then the date question is a collapsed combobox with a dialog as its popup
-  When the reporter clicks the date question
+  Then assistive technology hears the date question as collapsed, with a dialog as its popup
+
+@REQ-SUB-150
+@ui
+Scenario: An open desktop date question controls its calendar dialog
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter opens the date question's calendar
   Then the date question is expanded and controls the dialog labelled "Choose a date"
-  When the reporter presses the calendar's background
+
+@REQ-SUB-151
+@ui
+Scenario: Activating the calendar's background keeps it open and keeps focus on the date question
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  And the reporter has opened the date question's calendar
+  When the reporter activates the calendar's background with the pointer
   Then the calendar stays open and focus is on the date question
-  When the reporter presses ArrowDown and then Escape
-  Then the calendar closes
-  And focus is on the date question
 
 @REQ-SUB-105
 @ui
 Scenario: The reporter jumps to a month and year a few years back
   Given the current page shows a date question that does not allow future dates, on a desktop
-  When the reporter clicks the date question
-  And the reporter chooses March in the calendar's month picker and 2023 in its year picker
+  And the reporter has opened the date question's calendar
+  When the reporter chooses March in the calendar's month picker and 2023 in its year picker
   Then the calendar shows March 2023
+
+@REQ-SUB-152
+@ui
+Scenario: Choosing a day in a month jumped to fills the question
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  And the reporter has opened the date question's calendar at March 2023
   When the reporter chooses the 14th
   Then the date question reads "2023-03-14"
 
@@ -504,8 +607,9 @@ Scenario: The reporter jumps to a month and year a few years back
 @ui
 Scenario Outline: On a touch device, a date question uses the device's own date picker
   Given the current page shows a date question that <allows> future dates, on a touch device
+  When the reporter opens the date question
   Then the date question is a native date input <limit>
-  And tapping it opens no calendar of the form's own
+  And no calendar of the form's own opens
 
 Examples:
   | allows         | limit                      |
@@ -516,7 +620,7 @@ Examples:
 @ui
 Scenario: On a touch device, a future date the device's picker lets through still holds the reporter on its page
   Given the current page shows a date question that does not allow future dates, on a touch device
-  When the device's picker sets the date question to "9999-12-31" and the reporter presses Next
+  When the device's picker sets the date question to "9999-12-31" and the reporter goes on
   Then the reporter stays on the date page
   And an inline message says "Choose a date that is not in the future."
 
@@ -964,6 +1068,11 @@ Scenario: Attaching a file uploads it at once with an activity indicator
 Scenario: Next and Submit wait for every upload to finish
   Given a file on the current page is still uploading
   Then the Next or Submit control is disabled
+
+@REQ-SUB-153
+@ui
+Scenario: Next and Submit are offered again once the upload finishes
+  Given a file on the current page is still uploading
   When the upload finishes
   Then the Next or Submit control is enabled again
 
@@ -971,7 +1080,7 @@ Scenario: Next and Submit wait for every upload to finish
 @ui
 Scenario: A reporter may cancel an upload in progress
   Given a file on the current page is still uploading
-  When the reporter presses that file's Cancel control
+  When the reporter cancels that file's upload
   Then the upload request is aborted
   And the file is removed from the list
 
@@ -979,7 +1088,7 @@ Scenario: A reporter may cancel an upload in progress
 @ui
 Scenario: A reporter may remove an uploaded file
   Given a file on the current page has finished uploading
-  When the reporter presses that file's Remove control
+  When the reporter removes that file
   Then the browser asks to delete that upload
   And the file is removed from the list and is not named by the submission
 
@@ -1033,8 +1142,7 @@ Scenario: Continuing a saved report restores its uploaded files
 @ui
 Scenario: Starting over erases the saved report's uploads
   Given this browser holds a saved report naming uploaded files
-  When the reporter returns to the form
-  And the reporter declines to continue
+  When the reporter returns to the form and declines to continue
   Then the browser asks to delete each of those uploads
   And the browser removes the saved report
 
@@ -1051,7 +1159,7 @@ Scenario: A reporter may discard the report in progress
 @ui
 Scenario: Discarding a report asks for confirmation first
   Given the reporter has uploaded files and the browser holds a saved report
-  When the reporter presses Discard report and then keeps the report
+  When the reporter starts to discard the report and then keeps it
   Then no upload is deleted
   And the saved report and its answers are kept
 
@@ -1121,10 +1229,15 @@ Scenario: A successful submission nudges the Worker
 
 @REQ-SUB-122
 @ui
-Scenario: Leaving the report form for another page while it holds unsubmitted answers says the report is saved, and is confirmed first
+Scenario: Leaving the report form for another page while it holds unsubmitted answers says the report is saved
   Given a reporter is filling out the form
   When the reporter activates a header navigation link away from the form
   Then a bilingual dialog says the report is saved in this browser until the day its 15 days end, offering to keep working
+
+@REQ-SUB-154
+@ui
+Scenario: Confirming the leave dialog goes on to the page the reporter chose
+  Given a reporter filling out the form has activated a header navigation link away from it
   When the reporter confirms leaving
   Then the browser navigates to that page
 

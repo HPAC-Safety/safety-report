@@ -272,7 +272,7 @@ Then("once the upload finishes the indicator is replaced by a Remove control", a
 	await expect(page.getByRole("progressbar")).toHaveCount(0)
 })
 
-// --- REQ-SUB-046 / 047: Next waits; Cancel aborts ---
+// --- REQ-SUB-046 / 153 / 047: Next waits, then is offered again; Cancel aborts ---
 
 Given("a file on the current page is still uploading", async ({ page }) => {
 	const stub = await stubUploads(page)
@@ -299,7 +299,7 @@ Then("the Next or Submit control is enabled again", async ({ page }) => {
 	await expect(nextOrSubmit(page)).toBeEnabled()
 })
 
-When("the reporter presses that file's Cancel control", async ({ page }) => {
+When("the reporter cancels that file's upload", async ({ page }) => {
 	await page.getByRole("button", { name: "Cancel uploading launch-site.png" }).click()
 })
 
@@ -321,7 +321,7 @@ Given("a file on the current page has finished uploading", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Remove launch-site.png" })).toBeVisible()
 })
 
-When("the reporter presses that file's Remove control", async ({ page }) => {
+When("the reporter removes that file", async ({ page }) => {
 	await page.getByRole("button", { name: "Remove launch-site.png" }).click()
 })
 
@@ -522,7 +522,7 @@ When("the reporter discards the report and confirms", async ({ page }) => {
 	await expect(discardDialog(page)).toHaveCount(0)
 })
 
-When("the reporter presses Discard report and then keeps the report", async ({ page }) => {
+When("the reporter starts to discard the report and then keeps it", async ({ page }) => {
 	await page.getByRole("button", { name: "Discard report" }).click()
 	await expect(discardDialog(page).getByRole("button", { name: "No, keep it" })).toBeFocused()
 	await discardDialog(page).getByRole("button", { name: "No, keep it" }).click()

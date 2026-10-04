@@ -193,19 +193,51 @@ Given(
 
 // -------------------------------------------------------------------- When --
 
-When(/^the reporter (clicks|tabs into) the date question$/, async ({ page }, how: string) => {
-	if (how === "clicks") await page.locator(DATE_FIELD).click()
+When(/^the reporter reaches the date question (with the pointer|from the keyboard)$/, async ({ page }, how: string) => {
+	if (how === "with the pointer") await page.locator(DATE_FIELD).click()
 	else await tabInto(page)
 })
 
-When("the reporter clicks the date question and chooses the 1st of today's month", async ({ page }) => {
+Given("the reporter has reached the date question from the keyboard", async ({ page }) => {
+	await tabInto(page)
+	await expect(calendar(page)).toBeVisible()
+})
+
+When("the reporter opens the date question's calendar", async ({ page }) => {
+	await page.locator(DATE_FIELD).click()
+})
+
+Given("the reporter has opened the date question's calendar", async ({ page }) => {
+	await page.locator(DATE_FIELD).click()
+	await expect(calendar(page)).toBeVisible()
+})
+
+Given(/^the reporter has opened the date question's calendar at (\w+) (\d{4})$/, async ({ page }, month: string, year: string) => {
+	await page.locator(DATE_FIELD).click()
+	await calendar(page).getByRole("combobox", { name: "Month" }).selectOption({ label: month })
+	await calendar(page).getByRole("combobox", { name: "Year" }).selectOption(year)
+	await expect(calendar(page).getByRole("grid", { name: `${month} ${year}` })).toBeVisible()
+})
+
+async function chooseFirstOfMonth(page: Page) {
 	await page.locator(DATE_FIELD).click()
 	const first = today()
 	first.setDate(1)
 	await dayButton(page, first).click()
+}
+
+When("the reporter chooses the 1st of today's month in the date question's calendar", async ({ page }) => {
+	await chooseFirstOfMonth(page)
 })
 
-When("the reporter clicks the date question and chooses the 1st of today's month again", async ({ page }) => {
+Given("the reporter has chosen the 1st of today's month in the date question's calendar", async ({ page }) => {
+	await chooseFirstOfMonth(page)
+	await expect(calendar(page)).toBeHidden()
+	// The first announcement lands before the next step watches for the second.
+	await expect(page.locator(DATE_FIELD).locator("xpath=following-sibling::*[@role='status']")).toHaveText(/^Selected: /)
+})
+
+When("the reporter chooses the 1st of today's month in the date question's calendar again", async ({ page }) => {
 	// Every text the status region holds from here on, in order, so a clear
 	// before the second announcement shows up.
 	await page.evaluate((selector) => {
@@ -215,20 +247,22 @@ When("the reporter clicks the date question and chooses the 1st of today's month
 		;(window as unknown as { seenAnnouncements: string[] }).seenAnnouncements = seen
 		new MutationObserver(() => seen.push(status.textContent)).observe(status, { childList: true, characterData: true, subtree: true })
 	}, DATE_FIELD)
-	await page.locator(DATE_FIELD).click()
-	const first = today()
-	first.setDate(1)
-	await dayButton(page, first).click()
+	await chooseFirstOfMonth(page)
 })
 
-When("the reporter types {string} into the date question and presses Next", async ({ page }, typed: string) => {
+async function enterDateAndGoOn(page: Page, typed: string) {
 	const field = page.locator(DATE_FIELD)
 	await field.click()
 	await field.pressSequentially(typed)
 	await page.getByRole("button", { name: "Next", exact: true }).click()
+}
+
+When("the reporter enters {string} in the date question and goes on", async ({ page }, typed: string) => {
+	await enterDateAndGoOn(page, typed)
 })
 
-When("the reporter submits the report from the next page", async ({ page }) => {
+When("the reporter enters {string} in the date question and submits the report from the next page", async ({ page }, typed: string) => {
+	await enterDateAndGoOn(page, typed)
 	const consent = page.getByRole("group", { name: "May we publish a summary of this report?" })
 	await consent.getByRole("radio", { name: "Yes" }).click()
 	const request = page.waitForRequest((candidate) => candidate.url().includes("/api/v1/reports/") && candidate.method() === "POST")
@@ -236,35 +270,82 @@ When("the reporter submits the report from the next page", async ({ page }) => {
 	sent.set(page, await request)
 })
 
-When("the reporter presses the calendar's background", async ({ page }) => {
+async function activateCalendarBackground(page: Page) {
 	// The calendar's own padding, clear of every control inside it.
 	await calendar(page).click({ position: { x: 4, y: 4 } })
+}
+
+When("the reporter activates the calendar's background with the pointer", async ({ page }) => {
+	await activateCalendarBackground(page)
 })
 
-When("the reporter tabs into the date question and presses ArrowDown", async ({ page }) => {
-	await tabInto(page)
-	await expect(calendar(page)).toBeVisible()
+/**
+ * The keys that bring the keyboard focus to each day the calendar's keys
+ * start from (REQ-SUB-104), from the date question reached by Tab.
+ */
+const FOCUS_PATH: Partial<Record<string, string[]>> = {
+	"the date question": [],
+	today: ["ArrowDown"],
+	"the day 1 day before today": ["ArrowDown", "ArrowLeft"],
+	"the day 8 days before today": ["ArrowDown", "ArrowLeft", "ArrowUp"],
+	"the same day of the previous month": ["ArrowDown", "PageUp"],
+}
+
+/** The day each FOCUS_PATH start names, the date question itself having none. */
+function startDay(from: string): Date | undefined {
+	const now = today()
+	if (from === "today") return now
+	if (from === "the day 1 day before today") return daysBefore(1)
+	if (from === "the day 8 days before today") return daysBefore(8)
+	if (from === "the same day of the previous month") {
+		const lastOfPrevious = new Date(now.getFullYear(), now.getMonth(), 0).getDate()
+		return new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), lastOfPrevious))
+	}
+	return undefined
+}
+
+Given(
+	/^the keyboard focus is on (the date question|today|the day 1 day before today|the day 8 days before today|the same day of the previous month)$/,
+	async ({ page }, from: string) => {
+		await tabInto(page)
+		await expect(calendar(page)).toBeVisible()
+		for (const key of FOCUS_PATH[from] ?? []) await page.keyboard.press(key)
+		const day = startDay(from)
+		if (day) await expectFocusOn(page, day)
+		else await expect(page.locator(DATE_FIELD)).toBeFocused()
+	},
+)
+
+/** ArrowDown from the date question opens its calendar on today, as a reporter reopens it. */
+async function reopenFromKeyboard(page: Page) {
 	await page.keyboard.press("ArrowDown")
-})
+	await expect(calendar(page)).toBeVisible()
+	await expectFocusOn(page, today())
+}
 
-When(/^the reporter presses (ArrowLeft|ArrowRight|ArrowUp|ArrowDown|PageUp|PageDown|Enter)$/, async ({ page }, key: string) => {
-	await page.keyboard.press(key)
-})
-
-When("the reporter presses Tab", async ({ page }) => {
-	await page.keyboard.press("Tab")
-})
+Given(
+	/^(the date question's calendar has been opened from the keyboard after a day was chosen from it|the pointer has opened the date question's calendar and activated its background), and the keyboard focus is on today$/,
+	async ({ page }, before: string) => {
+		if (before.startsWith("the date question's calendar")) {
+			await tabInto(page)
+			await page.keyboard.press("ArrowDown")
+			await expectFocusOn(page, today())
+			await page.keyboard.press("Enter")
+			await expect(calendar(page)).toBeHidden()
+			await expect(page.locator(DATE_FIELD)).toBeFocused()
+		} else {
+			await page.locator(DATE_FIELD).click()
+			await activateCalendarBackground(page)
+			await expect(calendar(page)).toBeVisible()
+			await expect(page.locator(DATE_FIELD)).toBeFocused()
+		}
+		await reopenFromKeyboard(page)
+	},
+)
 
 Then("focus skips the calendar to the Next button, and the calendar closes", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Next", exact: true })).toBeFocused()
 	await expect(calendar(page)).toBeHidden()
-})
-
-When("the reporter presses ArrowDown and then Escape", async ({ page }) => {
-	await page.keyboard.press("ArrowDown")
-	await expect(calendar(page)).toBeVisible()
-	await expectFocusOn(page, today())
-	await page.keyboard.press("Escape")
 })
 
 When(
@@ -280,7 +361,7 @@ When(/^the reporter chooses the (\d+)(?:st|nd|rd|th)$/, async ({ page }, day: st
 })
 
 When(
-	"the device's picker sets the date question to {string} and the reporter presses Next",
+	"the device's picker sets the date question to {string} and the reporter goes on",
 	async ({ page, $testInfo }, value: string) => {
 		const touch = active(page, $testInfo.testId)
 		await touch.locator(DATE_FIELD).fill(value)
@@ -327,7 +408,7 @@ function dateCombobox(page: Page) {
 	return page.getByRole("combobox", { name: /On what date did it happen\?|À quelle date est-ce arrivé\?/ })
 }
 
-Then("the date question is a collapsed combobox with a dialog as its popup", async ({ page }) => {
+Then("assistive technology hears the date question as collapsed, with a dialog as its popup", async ({ page }) => {
 	const field = dateCombobox(page)
 	await expect(field).toHaveAttribute("aria-haspopup", "dialog")
 	await expect(field).toHaveAttribute("aria-expanded", "false")
@@ -450,11 +531,11 @@ Then("today has focus in the calendar", async ({ page }) => {
 	await expectFocusOn(page, today())
 })
 
-Then(/^the day (\d+) days? before today has focus$/, async ({ page }, days: string) => {
+Then(/^the day (\d+) days? before today has focus in the calendar$/, async ({ page }, days: string) => {
 	await expectFocusOn(page, daysBefore(Number(days)))
 })
 
-Then("the same day of the previous month has focus", async ({ page }) => {
+Then("the same day of the previous month has focus in the calendar", async ({ page }) => {
 	const now = today()
 	const lastOfPrevious = new Date(now.getFullYear(), now.getMonth(), 0).getDate()
 	await expectFocusOn(page, new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), lastOfPrevious)))
@@ -486,8 +567,10 @@ Then(/^the date question is a native date input (whose latest date is today|with
 	else await expect(field).toHaveAttribute("max", iso(today()))
 })
 
-Then("tapping it opens no calendar of the form's own", async ({ page, $testInfo }) => {
-	const touch = active(page, $testInfo.testId)
-	await touch.locator(DATE_FIELD).tap()
-	await expect(touch.getByRole("dialog", { name: "Choose a date" })).toHaveCount(0)
+When("the reporter opens the date question", async ({ page, $testInfo }) => {
+	await active(page, $testInfo.testId).locator(DATE_FIELD).tap()
+})
+
+Then("no calendar of the form's own opens", async ({ page, $testInfo }) => {
+	await expect(active(page, $testInfo.testId).getByRole("dialog", { name: "Choose a date" })).toHaveCount(0)
 })

@@ -255,9 +255,14 @@ Given("a member submits a valid report", async ({ page }) => {
 	await page.goto("/report")
 
 	// Walk the pages to the last, which holds the one required question.
+	// Each check waits for the page to show Next or Submit: isVisible() alone
+	// does not wait, so it raced the page that was still rendering.
 	const submit = page.getByRole("button", { name: "Submit report" })
-	for (let step = 0; step < 12 && !(await submit.isVisible()); step++) {
-		await page.getByRole("button", { name: "Next" }).click()
+	const next = page.getByRole("button", { name: "Next" })
+	for (let step = 0; step < 12; step++) {
+		await expect(next.or(submit).first()).toBeVisible()
+		if (await submit.isVisible()) break
+		await next.click()
 	}
 	await page.getByRole("group", { name: /May we publish a summary of this report\?/ }).getByRole("radio", { name: "Yes" }).click()
 })

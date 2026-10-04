@@ -110,10 +110,21 @@ async function reachLastPage(page: Page) {
 	await goNext(page) // attachments -> consent
 }
 
-Given("a reporter is filling out the form", async ({ page }) => {
+async function startFillingOutForm(page: Page) {
 	await openForm(page)
 	await goNext(page)
 	await fillNarrative(page, "A synthetic occurrence narrative.")
+}
+
+Given("a reporter is filling out the form", async ({ page }) => {
+	await startFillingOutForm(page)
+})
+
+// REQ-SUB-154 starts where REQ-SUB-122 ends: its leave dialog shown. REQ-SUB-122's Then checks that dialog's wording in full.
+Given("a reporter filling out the form has activated a header navigation link away from it", async ({ page }) => {
+	await startFillingOutForm(page)
+	await page.getByRole("banner").getByRole("link", { name: "View safety reports" }).click()
+	await expect(page.getByRole("dialog", { name: "Your report is saved" })).toBeVisible()
 })
 
 Given("a reporter has entered answers in local browser storage", async ({ page }) => {
@@ -246,27 +257,41 @@ When("the final submission request succeeds", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Report submitted" })).toBeVisible()
 })
 
-When("the reporter returns to the form", async ({ page }) => {
+async function returnToForm(page: Page) {
 	await signInAs(page, "user")
 	await page.goto("/report")
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+}
+
+async function declineToContinue(page: Page) {
+	await resumeDialog(page).getByRole("button", { name: "No, start over" }).click()
+	await expect(resumeDialog(page)).toHaveCount(0)
+}
+
+When("the reporter returns to the form", async ({ page }) => {
+	await returnToForm(page)
 })
 
-When("the reporter chooses to continue", async ({ page }) => {
+When("the reporter returns to the form and continues the saved report", async ({ page }) => {
+	await returnToForm(page)
 	await resumeDialog(page).getByRole("button", { name: "Yes, continue" }).click()
 	await expect(resumeDialog(page)).toHaveCount(0)
 })
 
+When("the reporter returns to the form and declines to continue", async ({ page }) => {
+	await returnToForm(page)
+	await declineToContinue(page)
+})
+
 When("the reporter declines to continue", async ({ page }) => {
-	await resumeDialog(page).getByRole("button", { name: "No, start over" }).click()
-	await expect(resumeDialog(page)).toHaveCount(0)
+	await declineToContinue(page)
 })
 
 When("a reporter opens the report page", async ({ page }) => {
 	await openForm(page)
 })
 
-When("a reporter presses Next", async ({ page }) => {
+When("a reporter goes on to the next page", async ({ page }) => {
 	await goNext(page)
 })
 
@@ -281,7 +306,7 @@ When("the parent's current answer does not meet the condition", async ({ page })
 	await goNext(page)
 })
 
-When("the reporter then answers the parent so the condition is met", async ({ page }) => {
+When("the reporter answers the parent so the condition is met", async ({ page }) => {
 	await goBack(page) // aircraft group -> injured
 	await answerYesNo(page, "Was anyone injured?", "Yes")
 	await goNext(page)
@@ -410,10 +435,13 @@ Then("the control that was Next now reads Submit", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0)
 })
 
-Then("pressing it sends the one final submission request", async ({ page }) => {
+When("the reporter chooses Submit", async ({ page }) => {
 	await stubSubmission(page)
 	await answerYesNo(page, "May we publish a summary of this report?", "Yes")
 	await page.getByRole("button", { name: "Submit report" }).click()
+})
+
+Then("the one final submission request is sent", async () => {
 	await expect.poll(() => submittedRequests.length).toBeGreaterThan(0)
 })
 
@@ -577,7 +605,8 @@ Then("its choices are hidden behind one closed picker labelled by the question",
 	await expect(page.getByRole("checkbox")).toHaveCount(0)
 })
 
-Then("its closed picker is a combobox labelled by the question, collapsed, with a dialog as its popup", async ({ page }) => {
+// The picker's role, popup, and state are what assistive technology hears (REQ-SUB-132).
+Then("assistive technology hears its closed picker as collapsed, labelled by the question, with a dialog as its popup", async ({ page }) => {
 	const picker = page.getByRole("combobox", { name: /Which conditions applied\?/ })
 	await expect(picker).toHaveAttribute("aria-haspopup", "dialog")
 	await expect(picker).toHaveAttribute("aria-expanded", "false")
@@ -598,10 +627,21 @@ Then("the picker is expanded and controls a dialog labelled by the question, hol
 	for (const option of ["Gusty", "Thermic", "Turbulent"]) await expect(dialog.getByRole("checkbox", { name: option })).toBeVisible()
 })
 
-When("the reporter opens the picker and checks two choices", async ({ page }) => {
+async function checkTwoChoices(page: Page) {
 	await page.getByRole("combobox", { name: /Which conditions applied\?/ }).click()
 	await page.getByRole("checkbox", { name: "Gusty" }).check()
 	await page.getByRole("checkbox", { name: "Turbulent" }).check()
+}
+
+When("the reporter opens the picker and checks two choices", async ({ page }) => {
+	await checkTwoChoices(page)
+})
+
+Given("the reporter has checked two choices in an open multi-select picker", async ({ page }) => {
+	await openForm(page, multiSelectFormQuestions())
+	await goNext(page) // intro -> the multi-select page
+	await checkTwoChoices(page)
+	await expect(page.getByRole("combobox", { name: /Which conditions applied\?/ })).toHaveAttribute("aria-expanded", "true")
 })
 
 Then("the picker stays open with both choices checked", async ({ page }) => {
@@ -611,8 +651,9 @@ Then("the picker stays open with both choices checked", async ({ page }) => {
 	await expect(page.getByRole("checkbox", { name: "Thermic" })).not.toBeChecked()
 })
 
-When("the reporter presses Escape", async ({ page }) => {
-	await page.keyboard.press("Escape")
+// A key named in an Examples cell (CONV-004): the step says which key, never how.
+When(/^the reporter uses the (\w+) key$/, async ({ page }, key: string) => {
+	await page.keyboard.press(key)
 })
 
 Then("the picker closes, returns focus to itself, and names both choices", async ({ page }) => {
@@ -759,7 +800,7 @@ Given("a reporter is on the form's introduction, at the form's own address", asy
 	await expect(page).toHaveURL(reportAddress())
 })
 
-Given("a reporter has answered a required question and pressed Next", async ({ page }) => {
+async function answerRequiredAndGoOn(page: Page) {
 	const questions = defaultFormQuestions()
 	present(questions.find((question) => question.key === "narrative")).isRequired = true
 	await openForm(page, questions)
@@ -767,30 +808,62 @@ Given("a reporter has answered a required question and pressed Next", async ({ p
 	await fillNarrative(page, "A synthetic occurrence narrative.")
 	await goNext(page) // narrative -> was_injured
 	await expect(page).toHaveURL(reportAddress("was_injured"))
+}
+
+Given("a reporter has answered a required question and gone on to the next page", async ({ page }) => {
+	await answerRequiredAndGoOn(page)
 })
 
-When("the reporter presses Next", async ({ page }) => {
+Given("a reporter has answered a required question, gone on, and come back with the browser's Back button", async ({ page }) => {
+	await answerRequiredAndGoOn(page)
+	await page.goBack()
+	await expect(page).toHaveURL(reportAddress("narrative"))
+})
+
+Given("a reporter has gone on from the form's introduction to the next page", async ({ page }) => {
+	await openForm(page)
+	await expect(page).toHaveURL(reportAddress())
+	await goNext(page)
+	await expect(page).toHaveURL(reportAddress("narrative"))
+})
+
+When("the reporter goes on to the next page", async ({ page }) => {
 	await goNext(page)
 })
 
-When("the reporter presses Back", async ({ page }) => {
+When("the reporter goes back a page", async ({ page }) => {
 	await goBack(page)
 })
 
-When("the reporter presses the browser's Back button", async ({ page }) => {
+When("the reporter goes back with the browser's Back button", async ({ page }) => {
 	await page.goBack()
 })
 
-When("the reporter clears the answer and presses the browser's Forward button", async ({ page }) => {
+When("the reporter clears the answer and goes forward with the browser's Forward button", async ({ page }) => {
 	await fillNarrative(page, "")
 	await page.goForward()
 })
 
-When("the reporter opens the address of a page other than the one saved", async ({ page }) => {
+async function openOtherPageThanSaved(page: Page) {
 	await signInAs(page, "user")
 	await page.goto("/report/aircraft")
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+}
+
+When("the reporter opens the address of a page other than the one saved", async ({ page }) => {
+	await openOtherPageThanSaved(page)
 })
+
+Given(
+	"this browser holds an unexpired saved report, and the reporter has opened the address of a page other than the one saved",
+	async ({ page }) => {
+		await stubAuth(page)
+		await stubCurrentQuestions(page)
+		await writeSavedDraftToBrowser(page)
+		await openOtherPageThanSaved(page)
+		await expect(resumeDialog(page)).toBeVisible()
+	},
+)
 
 When("the reporter opens the address of a later page of the form", async ({ page }) => {
 	await signInAs(page, "user")
@@ -799,6 +872,7 @@ When("the reporter opens the address of a later page of the form", async ({ page
 })
 
 When("the reporter opens the address of a page the form does not have", async ({ page }) => {
+	await signInAs(page, "user")
 	await page.goto("/report/no_such_page")
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
 })

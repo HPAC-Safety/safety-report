@@ -106,10 +106,10 @@ type-ahead's alone. Each keeps its own input type
     behaves disabled, as a type-ahead does (`REQ-QB-197`).
   - **Small screens.** As the type-ahead's (`REQ-QB-163`).
 - **Multi-select.** The closed trigger is a combobox button
-  (`REQ-SUB-034`, `REQ-SUB-132`). Its open
+  (`REQ-SUB-034`, `REQ-SUB-132`, `REQ-SUB-144`). Its open
   list takes the type-ahead's rows and separators, a real checkbox on each
   row, and the type-ahead's highlight on the row pointed at or focused. It
-  stays open while several are checked (`REQ-QB-211`).
+  stays open while several are checked (`REQ-QB-211`, `REQ-SUB-142`).
 
 ## Correcting seeded wording
 

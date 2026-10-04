@@ -163,7 +163,7 @@ Every editable form calls the hook with its own `dirty` condition:
 
 | Form | Route | Scenarios |
 |---|---|---|
-| Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121, REQ-SUB-122, REQ-SUB-128..130 |
+| Report form | `/report/:stepKey?` | `report-submission.feature` REQ-SUB-121, REQ-SUB-122, REQ-SUB-128..130, REQ-SUB-154 |
 | Question editor | `/admin/questions` | REQ-QB-238, REQ-QB-239 |
 | Type-ahead value correction | `/admin/type-ahead-values` | REQ-MOD-186 |
 | Summary review editor | `/admin/reports/:reportId` | REQ-MOD-185 |

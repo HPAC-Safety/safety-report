@@ -704,8 +704,38 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 	[Then(@"the report is refused as invalid")]
 	public async Task ThenTheReportIsRefusedAsInvalid()
 	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest, await _response.Content.ReadAsStringAsync());
+		var body = await _response!.Content.ReadAsStringAsync();
+		_response.StatusCode.ShouldBe(HttpStatusCode.BadRequest, body);
+
+		// A scenario outline that names a malformed-submission problem also pins which
+		// refusal answered it, so two different checks cannot stand in for each other.
+		if (_problem is { } problem && RefusalDetails.TryGetValue(problem, out var expected))
+		{
+			using var document = JsonDocument.Parse(body);
+			document.RootElement.GetProperty("detail").GetString().ShouldBe(expected, problem);
+		}
 	}
+
+	private static readonly Dictionary<string, string> RefusalDetails = new()
+	{
+		["a duplicate question revision"] = "An answer named the same revision more than once.",
+		["a non-null value from the wrong answer shape"] = "This answer's shape does not carry choices or upload ids.",
+		["a malformed upload ID"] = "An answer named a malformed upload id.",
+		["the same upload ID named more than once"] = "An answer named the same upload more than once.",
+		["more upload IDs than the attachment limit"] = "Too many attachments.",
+		["an unknown question revision"] = "An answer named an invalid revision.",
+		["a deleted question revision"] = "An answer named an unknown or deleted revision.",
+		["nothing at all"] = "The submission must be one valid report.",
+		["content that cannot be read as a submission"] = "The submission must be one valid report.",
+		["a language the form does not offer"] = "The submission's language must be en-CA or fr-CA.",
+		["no answers"] = "The submission must answer at least the consent question.",
+		["a file answer that also carries a value or choices"] = "A file-upload answer carries upload ids, not a value or choices.",
+		["a choice answer that also names uploads"] = "A choice answer carries choices, not upload ids.",
+		["a choice answer whose typed text is not text"] = "A choice answer's typed text must be a string.",
+		["a choice answer that names choices and carries typed text"] = "A choice answer names its choices or carries typed text, not both.",
+		["a malformed choice identifier"] = "An answer named an invalid choice.",
+		["a plain answer that names uploads"] = "This answer's shape does not carry choices or upload ids.",
+	};
 
 	[Then(@"nothing is stored")]
 	public async Task ThenNothingIsStored()
@@ -1450,6 +1480,21 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		return new StringContent(JsonSerializer.Serialize(dto, JsonOptions), System.Text.Encoding.UTF8, "application/json");
 	}
 
+	private static StringContent RawJson(string body)
+	{
+		return new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+	}
+
+	/// <summary>Posts the consent answer plus one more answer entry.</summary>
+	private async Task<HttpResponseMessage> PostWithConsent(string consent, object other)
+	{
+		return await Post(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = consent, value = (bool?)true }, other },
+		});
+	}
+
 	private async Task<HttpResponseMessage> MalformedSubmissionFor(string problem)
 	{
 		var consent = _consentRevisionId!;
@@ -1520,6 +1565,49 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 			"the same upload ID named more than once" => await PostNaming(consent, [UploadId.New().Value, null]),
 			"more upload IDs than the attachment limit" => await PostNaming(
 				consent, [.. Enumerable.Range(0, 6).Select(_ => UploadId.New().Value)]),
+			"nothing at all" => await _reporter!.PostAsync(Submit, RawJson("null")),
+			"content that cannot be read as a submission" => await _reporter!.PostAsync(Submit, RawJson("{ not json")),
+			"a language the form does not offer" => await Post(new
+			{
+				language = "de-DE",
+				answers = new object[] { new { questionRevisionId = consent, value = (bool?)true } },
+			}),
+			"no answers" => await Post(new { language = "en-CA", answers = Array.Empty<object>() }),
+			"a file answer that also carries a value or choices" => await PostWithConsent(
+				consent, new { questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"), value = (string?)"x" }),
+			"a choice answer that also names uploads" => await PostWithConsent(
+				consent,
+				new
+				{
+					questionRevisionId = (string?)await RevisionIdFor(await CreateSelectQuestion()),
+					attachments = new[] { new { uploadId = UploadId.New().Value, fileName = "a.png" } },
+				}),
+			"a choice answer whose typed text is not text" => await PostWithConsent(
+				consent,
+				new { questionRevisionId = (string?)await RevisionIdFor(await CreateSelectQuestion()), value = (bool?)true }),
+			"a choice answer that names choices and carries typed text" => await PostWithConsent(
+				consent,
+				new
+				{
+					questionRevisionId = (string?)await ReporterChoiceSubmissionSteps.CreateTypeAhead(
+						_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator)),
+					value = (string?)"Somewhere else",
+					choices = new[] { TinyId.New().Value },
+				}),
+			"a malformed choice identifier" => await PostWithConsent(
+				consent,
+				new
+				{
+					questionRevisionId = (string?)await RevisionIdFor(await CreateSelectQuestion()),
+					choices = new[] { "not-a-tinyid" },
+				}),
+			"a plain answer that names uploads" => await PostWithConsent(
+				consent,
+				new
+				{
+					questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"),
+					attachments = new[] { new { uploadId = UploadId.New().Value, fileName = "a.png" } },
+				}),
 			_ => throw new NotSupportedException($"Unmapped malformed-DTO example: '{problem}'."),
 		};
 	}

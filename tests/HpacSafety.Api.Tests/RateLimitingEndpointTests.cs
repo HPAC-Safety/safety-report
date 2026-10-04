@@ -169,6 +169,91 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		secondResponse.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 	}
 
+	/// <summary>ADR-0159: CloudFront sends IPv6 viewers as <c>[addr]:port</c>.</summary>
+	[Fact]
+	public async Task GivenTwoDifferentBracketedIpv6ViewerAddresses_WhenBothSubmitOnceEach_ThenNeitherIsRejected()
+	{
+		// Given
+		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
+		using var first = await SignedInClient.As(limited, MemberRole.User);
+		using var second = await SignedInClient.As(limited, MemberRole.User);
+		first.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "[2001:db8::1]:443");
+		second.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "[2001:db8::2]:443");
+
+		// When
+		using var firstBody = new MultipartFormDataContent();
+		using var secondBody = new MultipartFormDataContent();
+		using var firstResponse = await first.PostAsync(Submit, firstBody);
+		using var secondResponse = await second.PostAsync(Submit, secondBody);
+
+		// Then
+		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		secondResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	/// <summary>The port is stripped, so one IPv6 viewer on two ports shares a window.</summary>
+	[Fact]
+	public async Task GivenOneBracketedIpv6ViewerOnTwoPorts_WhenBothSubmit_ThenSecondIsRejected()
+	{
+		// Given
+		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
+		using var first = await SignedInClient.As(limited, MemberRole.User);
+		using var second = await SignedInClient.As(limited, MemberRole.User);
+		first.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "[2001:db8::1]:443");
+		second.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "[2001:db8::1]:51000");
+
+		// When
+		using var firstBody = new MultipartFormDataContent();
+		using var secondBody = new MultipartFormDataContent();
+		using var firstResponse = await first.PostAsync(Submit, firstBody);
+		using var secondResponse = await second.PostAsync(Submit, secondBody);
+
+		// Then
+		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		secondResponse.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+	}
+
+	/// <summary>An address with no port is used whole as the partition key.</summary>
+	[Fact]
+	public async Task GivenViewerAddressWithoutPort_WhenSameAddressSubmitsTwice_ThenSecondIsRejected()
+	{
+		// Given
+		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
+		using var reporter = await SignedInClient.As(limited, MemberRole.User);
+		reporter.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "198.51.100.8");
+
+		// When
+		using var firstBody = new MultipartFormDataContent();
+		using var secondBody = new MultipartFormDataContent();
+		using var firstResponse = await reporter.PostAsync(Submit, firstBody);
+		using var secondResponse = await reporter.PostAsync(Submit, secondBody);
+
+		// Then
+		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		secondResponse.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+	}
+
+	[Fact]
+	public async Task GivenTwoDifferentViewerAddressesWithoutPort_WhenBothSubmitOnceEach_ThenNeitherIsRejected()
+	{
+		// Given
+		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
+		using var first = await SignedInClient.As(limited, MemberRole.User);
+		using var second = await SignedInClient.As(limited, MemberRole.User);
+		first.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "198.51.100.8");
+		second.DefaultRequestHeaders.Add("CloudFront-Viewer-Address", "198.51.100.9");
+
+		// When
+		using var firstBody = new MultipartFormDataContent();
+		using var secondBody = new MultipartFormDataContent();
+		using var firstResponse = await first.PostAsync(Submit, firstBody);
+		using var secondResponse = await second.PostAsync(Submit, secondBody);
+
+		// Then
+		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		secondResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
 	private WebApplicationFactory<Program> RateLimitedFactory(
 		int publicSubmissionPermitLimit = 100000,
 		int signInPermitLimit = 100000,

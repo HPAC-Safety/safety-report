@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -8,9 +9,12 @@ using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Testing;
 using ImageMagick;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -524,6 +528,62 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
+	[Fact]
+	public async Task GivenQuarantineThatCannotBeErased_WhenReportIsSubmitted_ThenReportAcceptedAndReleaseFailureLoggedWithoutIdentifiers()
+	{
+		// Given
+		var messages = new ConcurrentQueue<string>();
+		using var stubborn = _factory.WithWebHostBuilder(builder =>
+		{
+			builder.ConfigureLogging(logging => logging.AddProvider(new CapturingLoggerProvider(messages)));
+			builder.ConfigureTestServices(services =>
+			{
+				var original = services.Last(descriptor => descriptor.ServiceType == typeof(IBlobStore));
+				services.Remove(original);
+				services.AddSingleton<IBlobStore>(provider =>
+					new UnerasableBlobStore((IBlobStore)original.ImplementationFactory!(provider)));
+			});
+		});
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
+		var uploadId = await UploadPng(reporter);
+		using var stubbornReporter = await SignedInClient.As(stubborn, MemberRole.User);
+
+		using var content = ReportPart(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = true },
+				new
+				{
+					questionRevisionId = revisionId,
+					attachments = new[] { new { uploadId, fileName = "launch.png" } },
+				},
+			},
+		});
+
+		// When
+		using var response = await stubbornReporter.PostAsync(Submit, content);
+
+		// Then — the report committed; the lifecycle rule, not the request, removes the upload
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			(await database.ReportFiles.CountAsync(f => f.ReportId == TinyId.Parse(body!.Id))).ShouldBe(1);
+		}
+
+		(await ObjectExists($"quarantine/{uploadId}")).ShouldBeTrue();
+		var logged = messages.Where(message => message.Contains("could not be removed from quarantine", StringComparison.Ordinal)).ToList();
+		logged.ShouldHaveSingleItem();
+		logged[0].ShouldNotContain(uploadId);
+		logged[0].ShouldContain(nameof(Amazon.S3.AmazonS3Exception));
+	}
+
 	private static async Task<string> UploadPng(HttpClient reporter)
 	{
 		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
@@ -659,5 +719,90 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 
 		return key;
+	}
+
+	/// <summary>Keeps every message the host logs, so a test can prove what was and was not logged.</summary>
+	private sealed class CapturingLoggerProvider(ConcurrentQueue<string> messages) : ILoggerProvider
+	{
+		public ILogger CreateLogger(string categoryName)
+		{
+			return new CapturingLogger(messages);
+		}
+
+		public void Dispose()
+		{
+		}
+
+		private sealed class CapturingLogger(ConcurrentQueue<string> messages) : ILogger
+		{
+			public IDisposable? BeginScope<TState>(TState state)
+				where TState : notnull
+			{
+				return null;
+			}
+
+			public bool IsEnabled(LogLevel logLevel)
+			{
+				return true;
+			}
+
+			public void Log<TState>(LogLevel logLevel,
+									EventId eventId,
+									TState state,
+									Exception? exception,
+									Func<TState, Exception?, string> formatter)
+			{
+				messages.Enqueue(formatter(state, exception));
+			}
+		}
+	}
+
+	/// <summary>A store whose quarantine erase always fails, as a flaky storage call would.</summary>
+	private sealed class UnerasableBlobStore(IBlobStore inner) : IBlobStore
+	{
+		public Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+		{
+			return inner.CreateReadUrl(key, downloadFileName, lifetime, cancellationToken);
+		}
+
+		public Task<Uri> CreateInlineReadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+		{
+			return inner.CreateInlineReadUrl(key, contentType, lifetime, cancellationToken);
+		}
+
+		public Task<Uri> CreateUploadUrl(BlobKey key, string contentType, long byteSize, TimeSpan lifetime, CancellationToken cancellationToken)
+		{
+			return inner.CreateUploadUrl(key, contentType, byteSize, lifetime, cancellationToken);
+		}
+
+		public Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)
+		{
+			return inner.OpenRead(key, cancellationToken);
+		}
+
+		public Task<Stream> OpenReadRange(BlobKey key, long offset, long length, CancellationToken cancellationToken)
+		{
+			return inner.OpenReadRange(key, offset, length, cancellationToken);
+		}
+
+		public Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+		{
+			return inner.Write(key, content, contentType, cancellationToken);
+		}
+
+		public Task<StoredBlob?> Describe(BlobKey key, CancellationToken cancellationToken)
+		{
+			return inner.Describe(key, cancellationToken);
+		}
+
+		public Task Copy(BlobKey source, BlobKey destination, CancellationToken cancellationToken)
+		{
+			return inner.Copy(source, destination, cancellationToken);
+		}
+
+		public Task Delete(BlobKey key, CancellationToken cancellationToken)
+		{
+			throw new Amazon.S3.AmazonS3Exception("Synthetic: storage is unavailable.");
+		}
 	}
 }

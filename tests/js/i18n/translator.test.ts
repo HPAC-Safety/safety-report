@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
@@ -606,6 +606,105 @@ describe('the dormant DeepL adapter (ADR-0179)', () => {
 
 			// Then
 			assert.match(translator.name, /^gemini:/)
+		})
+	})
+})
+
+describe('the providers over the network (fetch stubbed)', () => {
+	const KEY = 'sk-test-secret-key'
+	const BODY = 'internal-detail-from-provider: the string "Submit" was rejected'
+
+	afterEach(() => {
+		mock.restoreAll()
+	})
+
+	const stubFetch = (response: Response) => mock.method(globalThis, 'fetch', () => Promise.resolve(response))
+
+	describe('given Gemini answers with translations', () => {
+		it('when it translates then the reply is parsed by position and the key is sent as a bearer token', async () => {
+			// Given
+			const fetchStub = stubFetch(
+				Response.json({ choices: [{ message: { content: reply('Soumettre', 'Annuler') } }] }),
+			)
+			const translator = createTranslator({ apiKey: KEY })
+
+			// When
+			const out = await translator.translate(two, locales)
+
+			// Then
+			assert.equal(out.get('form.submit'), 'Soumettre')
+			assert.equal(out.get('form.cancel'), 'Annuler')
+			const [url, init] = fetchStub.mock.calls[0].arguments as [string, RequestInit]
+			assert.equal(url, translator.endpoint)
+			assert.equal(init.method, 'POST')
+			assert.equal((init.headers as Record<string, string>).authorization, `Bearer ${KEY}`)
+		})
+	})
+
+	describe('given Gemini answers with a payload holding no choices', () => {
+		it('when it translates then it fails as an unreadable reply', async () => {
+			// Given
+			stubFetch(Response.json({}))
+			const translator = createTranslator({ apiKey: KEY })
+
+			// When / Then
+			await assert.rejects(() => translator.translate(two, locales), /The translation model did not return JSON\./)
+		})
+	})
+
+	describe('given Gemini answers with an error status', () => {
+		it('when it translates then the error names the status and never the body or the key', async () => {
+			// Given
+			stubFetch(new Response(BODY, { status: 429, statusText: 'Too Many Requests' }))
+			const translator = createTranslator({ apiKey: KEY })
+
+			// When
+			const failure = await translator.translate(two, locales).then(
+				() => assert.fail('expected a rejection'),
+				(error: unknown) => error as Error,
+			)
+
+			// Then
+			assert.match(failure.message, /429 Too Many Requests/)
+			assert.ok(!failure.message.includes(BODY), 'the response body leaked into the error')
+			assert.ok(!failure.message.includes('internal-detail'), 'the response body leaked into the error')
+			assert.ok(!failure.message.includes(KEY), 'the API key leaked into the error')
+		})
+	})
+
+	describe('given DeepL answers with translations', () => {
+		it('when it translates then the reply is parsed and the key is sent in the DeepL header', async () => {
+			// Given
+			const fetchStub = stubFetch(Response.json({ translations: [{ text: 'Soumettre' }, { text: 'Annuler' }] }))
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: `${KEY}:fx` })
+
+			// When
+			const out = await translator.translate(two, locales)
+
+			// Then
+			assert.equal(out.get('form.submit'), 'Soumettre')
+			assert.equal(out.get('form.cancel'), 'Annuler')
+			const [, init] = fetchStub.mock.calls[0].arguments as [string, RequestInit]
+			assert.equal((init.headers as Record<string, string>).authorization, `DeepL-Auth-Key ${KEY}:fx`)
+		})
+	})
+
+	describe('given DeepL answers with an error status', () => {
+		it('when it translates then the error names the status and never the body or the key', async () => {
+			// Given
+			stubFetch(new Response(BODY, { status: 456, statusText: 'Quota Exceeded' }))
+			const translator = createTranslator({ provider: 'deepl', deeplApiKey: `${KEY}:fx` })
+
+			// When
+			const failure = await translator.translate(two, locales).then(
+				() => assert.fail('expected a rejection'),
+				(error: unknown) => error as Error,
+			)
+
+			// Then
+			assert.match(failure.message, /456 Quota Exceeded/)
+			assert.ok(!failure.message.includes(BODY), 'the response body leaked into the error')
+			assert.ok(!failure.message.includes(KEY), 'the API key leaked into the error')
 		})
 	})
 })

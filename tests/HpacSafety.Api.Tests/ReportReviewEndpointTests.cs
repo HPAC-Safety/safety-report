@@ -329,6 +329,23 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenCursorThatDecodesButIsNotId_WhenListed_ThenListRestartsFromTop()
+	{
+		// Given — valid base64url, valid UTF-8, but not an 11-character report ID
+		await Seed();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var first = await Page(client, null, null);
+		var notAnId = Base64Url.EncodeToString(Encoding.UTF8.GetBytes("12345"));
+
+		// When
+		var restarted = await Page(client, null, notAnId);
+
+		// Then
+		restarted.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString())
+			.ShouldBe(first.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()));
+	}
+
+	[Fact]
 	public async Task GivenAnUnknownFilter_WhenListed_ThenProblemNamesTheKnownFilters()
 	{
 		// Given

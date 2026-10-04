@@ -95,6 +95,30 @@ public sealed class DatabaseConnectionStringResolverTests
 	}
 
 	[Fact]
+	public async Task GivenSecretThatIsNotJson_WhenResolved_ThenFailsLoudlyNamingSecretButNotContent()
+	{
+		// Given
+		var configuration = Build(new Dictionary<string, string?>
+		{
+			["HpacSafety:Database:Host"] = "db.internal.example",
+			["HpacSafety:Database:Port"] = "5432",
+			["HpacSafety:Database:Name"] = "hpacsafety",
+			["HpacSafety:Database:MasterSecretArn"] = "arn:aws:secretsmanager:ca-central-1:111111111111:secret:rds-master",
+		});
+
+		var reader = new StubSecretReader("username=hpacsafety;password=hunter2-not-json");
+
+		// When
+		var resolving = () => DatabaseConnectionStringResolver.ResolveAsync(configuration, reader);
+
+		// Then
+		var exception = await Should.ThrowAsync<InvalidOperationException>(resolving);
+		exception.Message.ShouldContain("rds-master");
+		exception.Message.ShouldNotContain("hunter2");
+		exception.InnerException.ShouldBeAssignableTo<System.Text.Json.JsonException>();
+	}
+
+	[Fact]
 	public async Task GivenASecretMissingItsPassword_WhenResolved_ThenItFailsLoudly()
 	{
 		// Given — a username with no password is still not the expected shape.

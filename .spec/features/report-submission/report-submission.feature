@@ -790,6 +790,16 @@ Examples:
   | an unknown question revision                        |
   | a deleted question revision                         |
   | no explicit answer to the publication consent revision |
+  | nothing at all |
+  | content that cannot be read as a submission |
+  | a language the form does not offer |
+  | no answers |
+  | a file answer that also carries a value or choices |
+  | a choice answer that also names uploads |
+  | a choice answer whose typed text is not text |
+  | a choice answer that names choices and carries typed text |
+  | a malformed choice identifier |
+  | a plain answer that names uploads |
 
 @REQ-SUB-096
 Scenario Outline: A well-formed email or phone answer is stored as written

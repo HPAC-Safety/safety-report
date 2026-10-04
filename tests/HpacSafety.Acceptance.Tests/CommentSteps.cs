@@ -218,7 +218,7 @@ public sealed class CommentSteps
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the API answers 201 with the comment")]
+	[Then(@"the comment is created and returned to its author")]
 	public async Task ThenCreatedWithTheComment()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -235,10 +235,10 @@ public sealed class CommentSteps
 		(await Listed((await BootedApi.Factory()).CreateClient())).ShouldContain(_commentId);
 	}
 
-	[Then(@"^the API answers (201|400|401|403|404)$")]
-	public void ThenTheApiAnswers(int status)
+	[Then(@"^the (?:comment|report|attempt) is (created|refused as unauthenticated|refused as forbidden|not found|refused as invalid)$")]
+	public void ThenTheOutcomeIs(string outcome)
 	{
-		((int)_response!.StatusCode).ShouldBe(status);
+		_response!.StatusCode.ShouldBe(Outcomes.Status(outcome));
 	}
 
 	[Then(@"no comment is stored")]
@@ -382,7 +382,7 @@ public sealed class CommentSteps
 		(await Listed((await BootedApi.Factory()).CreateClient())).ShouldContain(_commentId);
 	}
 
-	[Then(@"the public API lists no comments for it and the report is not in the feed")]
+	[Then(@"a visitor sees no comments for it and the report is not in the feed")]
 	public async Task ThenNothingPublic()
 	{
 		using var client = (await BootedApi.Factory()).CreateClient();

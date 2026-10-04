@@ -227,7 +227,7 @@ Then("the page offers no comments", async ({ page }) => {
 	await expect(page.getByRole("textbox")).toHaveCount(0)
 })
 
-Then("the receipt is sent in the request body and not in any address", ({ page }) => {
+Then("the receipt is sent inside the request and never in any address", ({ page }) => {
 	const asked = lookups.get(page) ?? []
 	expect(asked.length).toBeGreaterThan(0)
 

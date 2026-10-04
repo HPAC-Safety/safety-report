@@ -237,7 +237,7 @@ Scenario: Processing never holds a whole attachment in memory
 Scenario: A published report lists its verified images and video when media was consented to
   Given a published report whose reporter consented to publication and to sharing media
   And the report has a processed image and a video with a verified derivative
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists both files in the order they were attached
   And each file carries only its opaque id and whether it is an image or a video
 
@@ -246,7 +246,7 @@ Scenario Outline: A file that is neither a verified derivative nor a validated d
   Given a published report whose reporter consented to publication and to sharing media
   And the report has <file>
   When a visitor asks for that file's public link
-  Then the API returns 404
+  Then the report is not found
   And the report lists no media
 
 Examples:
@@ -260,7 +260,7 @@ Examples:
 @REQ-MED-027
 Scenario Outline: Media is public only when the reporter consented to sharing it
   Given a published report with a processed image whose media consent is <consent>
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists no media
   And a visitor asking for the image's public link gets 404
 
@@ -416,7 +416,7 @@ Scenario: The admin report page shows whether each file is public
 Scenario: A published report lists its validated documents when media consent names documents
   Given a published report whose reporter consented to publication and to sharing media under wording that names documents
   And the report has a validated PDF document and a processed image
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists both files in the order they were attached
   And the document carries only its opaque id, the kind document, and the format pdf
 
@@ -424,7 +424,7 @@ Scenario: A published report lists its validated documents when media consent na
 Scenario Outline: A document is public only when its media consent named documents
   Given a published report with a processed image and a validated document
   And the reporter answered media consent <consent>
-  When the public API returns the report
+  When a visitor reads the report
   Then the report lists <listed>
   And a visitor asking for the document's public link gets 404
 

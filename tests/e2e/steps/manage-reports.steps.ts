@@ -1190,6 +1190,6 @@ Then("the older reports load without leaving Manage reports", async ({ page }) =
 	await expect(page).toHaveURL(/\/admin\/reports$/)
 })
 
-Then("the list offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
+Then("the list offers a visible {string} action and does not fail silently", async ({ page }, name: string) => {
 	await expect(page.getByRole("button", { name })).toBeVisible()
 })

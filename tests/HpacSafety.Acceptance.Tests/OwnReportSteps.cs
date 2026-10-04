@@ -165,7 +165,7 @@ public sealed class OwnReportSteps
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the feed does not list it and the page answers 404")]
+	[Then(@"the feed does not list it and the page is not found")]
 	public async Task ThenTheFeedDoesNotListIt()
 	{
 		(await FeedIds()).ShouldNotContain(_reportId);
@@ -361,7 +361,7 @@ public sealed class OwnReportSteps
 		link.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow.Add(BlobUrlLifetime.Maximum));
 	}
 
-	[Then(@"the same requests without his receipt answer 404")]
+	[Then(@"the same requests without his receipt are not found")]
 	public async Task ThenTheSameRequestsWithoutHisReceiptAnswer404()
 	{
 		foreach (var receipt in new[] { string.Empty, BrowserReceipt.New().Receipt })

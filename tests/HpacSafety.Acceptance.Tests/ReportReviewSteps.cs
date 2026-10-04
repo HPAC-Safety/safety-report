@@ -298,7 +298,7 @@ public sealed class ReportReviewSteps
 		published.GetProperty("status").GetString().ShouldBe("published");
 	}
 
-	[Then(@"no ViewedRawReport entry is written for that report")]
+	[Then(@"no raw-report-viewed audit entry is written for that report")]
 	public async Task ThenNoViewedRawReportEntryIsWritten()
 	{
 		var factory = await BootedApi.Factory();

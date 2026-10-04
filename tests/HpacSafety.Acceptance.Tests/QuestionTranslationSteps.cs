@@ -57,7 +57,7 @@ public sealed class QuestionTranslationSteps
 		_available = _translator.IsConfigured;
 	}
 
-	[Then(@"the request goes to the application's own API rather than to a provider from the browser")]
+	[Then(@"the browser sends the request to the application's own server, never to a provider")]
 	public void ThenTheRequestGoesToOurOwnApi()
 	{
 		// The browser calls POST /api/admin/translate; nothing in the web
@@ -96,7 +96,7 @@ public sealed class QuestionTranslationSteps
 			.ShouldNotContain(name => name.Contains("Save", StringComparison.Ordinal));
 	}
 
-	[Then(@"the reviewer-gated translate endpoint is the only API code that calls a translator")]
+	[Then(@"the reviewer-only translate request is the only server code that calls a translator")]
 	public void ThenNoReportContentIsTranslated()
 	{
 		// One caller, and it is the authoring endpoint. If a second appears,

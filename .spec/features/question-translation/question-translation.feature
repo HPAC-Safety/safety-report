@@ -10,12 +10,12 @@ Background:
   And at most one live question exists for a question key
 
 @REQ-QB-066
-Scenario: A translation draft comes from the API and is saved only by a person
+Scenario: A translation draft comes from the server and is saved only by a person
   Given an Administrator is authoring a question in one official language
   When they ask for the other language to be translated
-  Then the request goes to the application's own API rather than to a provider from the browser
+  Then the browser sends the request to the application's own server, never to a provider
   And the translated text is returned as a draft that is not saved anywhere
-  And the reviewer-gated translate endpoint is the only API code that calls a translator
+  And the reviewer-only translate request is the only server code that calls a translator
   And no domain code a reporter's submission runs calls a translator
 
 @REQ-QB-067

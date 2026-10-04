@@ -689,7 +689,7 @@
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 201 with the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment is created and returned to its author","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is listed on that report for every reader, signed in or not","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
@@ -709,7 +709,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a request without a member token posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 401","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment is refused as unauthenticated","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no comment is stored","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
@@ -730,7 +730,7 @@
 				{"keyword":"Given","text":"a report is not public","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 404","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is not found","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no comment is stored","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
@@ -751,7 +751,7 @@
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment whose text is empty","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 400","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment is refused as invalid","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no comment is stored","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment whose text is only whitespace","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment whose text is 2001 characters long","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
@@ -795,7 +795,7 @@
 				{"keyword":"Given","text":"the visitor is a member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"no translation provider is reachable","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the member posts a comment on it","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 201","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the comment is created","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"one translation job for the comment is waiting for the Worker","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
@@ -807,7 +807,7 @@
 			"id": "REQ-COM-007",
 			"area": "comments",
 			"file": ".spec/features/comments/comments.feature",
-			"title": "The API tells a reader which comments are theirs and never who wrote the others",
+			"title": "A reader is told which comments are theirs, and never who wrote the others",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -878,7 +878,7 @@
 				{"keyword":"Given","text":"a member commented on a published report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the visitor is another member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the other member tries to edit the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 403","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the attempt is refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is unchanged","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the other member tries to delete the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
@@ -921,7 +921,7 @@
 				{"keyword":"Given","text":"a member commented on a published report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the visitor is another member","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the other member tries to hide the comment","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API answers 403","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the attempt is refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is still listed","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],
@@ -941,7 +941,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a member commented on a published report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reviewer unpublishes the report","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the public API lists no comments for it and the report is not in the feed","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"a visitor sees no comments for it and the report is not in the feed","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is kept in the database","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a reviewer publishes the report again","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the comment is listed again","files":["tests/HpacSafety.Acceptance.Tests/CommentSteps.cs"],"ambiguous":false}
@@ -1002,7 +1002,7 @@
 				{"keyword":"Given","text":"a published report has comments","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"an anonymous visitor opens it","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the comments are shown, each labelled \"Member\"","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"instead of a comment box the page offers to sign in to comment","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page offers to sign in to comment, with no comment box","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor signs in from there","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the visitor is returned to the report","files":["tests/e2e/steps/comments.steps.ts"],"ambiguous":false}
 			],
@@ -2333,7 +2333,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report whose reporter consented to publication and to sharing media","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report has a processed image and a video with a verified derivative","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API returns the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor reads the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists both files in the order they were attached","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"each file carries only its opaque id and whether it is an image or a video","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
 			],
@@ -2357,7 +2357,7 @@
 				{"keyword":"Given","text":"a published report whose reporter consented to publication and to sharing media","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report has a document the Worker has not validated yet","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor asks for that file's public link","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API returns 404","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is not found","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists no media","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report has a document whose validation failed","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report has a video retained without a derivative","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
@@ -2382,7 +2382,7 @@
 				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report with a processed image whose media consent is no","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API returns the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor reads the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists no media","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a visitor asking for the image's public link gets 404","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report with a processed image whose media consent is unanswered","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
@@ -2616,7 +2616,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report whose reporter consented to publication and to sharing media under wording that names documents","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report has a validated PDF document and a processed image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API returns the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor reads the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists both files in the order they were attached","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the document carries only its opaque id, the kind document, and the format pdf","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false}
 			],
@@ -2639,7 +2639,7 @@
 				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/HpacSafety.Acceptance.Tests/MediaValidationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a published report with a processed image and a validated document","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the reporter answered media consent yes, to wording that named only images and video","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API returns the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor reads the report","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the report lists only the image","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a visitor asking for the document's public link gets 404","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the reporter answered media consent no","files":["tests/HpacSafety.Acceptance.Tests/PublicMediaSteps.cs"],"ambiguous":false},
@@ -3892,15 +3892,15 @@
 			"id": "REQ-MOD-036",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "The public DTO exposes only the approved summary and its metadata",
+			"title": "A published report carries only its approved summary and metadata",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report is published","files":["tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API returns it","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor reads it","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the response contains only the opaque report ID, the English and French summary texts, the publication timestamp, the number of visible comments, the viewer-scoped attachment count, the language the report was written in, each public file's opaque id, kind, and — for a document only — coarse format, and the staff attachment list, null for this anonymous viewer","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it never contains question keys, labels, answers, consent values, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs","tests/HpacSafety.Acceptance.Tests/ReviewActionSteps.cs"],
@@ -3935,15 +3935,15 @@
 			"id": "REQ-MOD-038",
 			"area": "public-feed",
 			"file": ".spec/features/public-feed/public-feed.feature",
-			"title": "An unknown or non-public report id returns 404",
+			"title": "An unknown or non-public report id is not found",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report id is unknown, deleted, pending, unpublished, or not consented","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API is asked for that report","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API returns 404","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor asks for that report","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report is not found","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"non-public ids are indistinguishable from unknown ids","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
@@ -4761,7 +4761,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the public feed has published reports","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor opens View safety reports and selects one","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the address bar shows /reports/ followed by that report's ID","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the address bar shows \"/reports/\" followed by that report's ID","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page shows that report's full summary in the visitor's language","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
@@ -4800,8 +4800,8 @@
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a report ID the public API answers with 404","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"a visitor opens /reports/ followed by that ID","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a report ID that is not found","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor opens the report address for that ID","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page says the report was not found","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"it says nothing about whether such a report exists","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
@@ -4902,7 +4902,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"When","text":"a User reads the pending counts","files":["tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the API refuses the pending counts with 403","files":["tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the pending counts are refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PendingCountSteps.cs"],
 			"staleIgnore": false,
@@ -5644,7 +5644,7 @@
 				{"keyword":"When","text":"a reviewer lists reports","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"each row carries the same version the report detail gives","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"publishing an unpublished report with its row's version succeeds without opening the report","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"no ViewedRawReport entry is written for that report","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"no raw-report-viewed audit entry is written for that report","files":["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportReviewSteps.cs"],
 			"staleIgnore": false,
@@ -5828,7 +5828,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the public feed's next page fails to load","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"a visitor activates the \"Load more\" action without scrolling","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the feed offers a visible \"Retry\" action instead of failing silently","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the feed offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/public-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -5853,7 +5853,7 @@
 				{"keyword":"Then","text":"the older reports load without leaving Manage reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the next report page fails to load","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the list offers a visible \"Retry\" action instead of failing silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the list offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/manage-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
 			"staleIgnore": false,
@@ -6057,7 +6057,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a report carries a distinct word only in its private answer, its private note, and its staff-only attachment name","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"an anonymous visitor searches for that word","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the request is refused as unauthorized","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the request is refused as unauthenticated","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a member searches for that word","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the request is refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a Safety Officer searches for that word","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
@@ -6354,7 +6354,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a published report has a public image and a hidden image","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a Safety Officer asks the public API for that report","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a Safety Officer reads that report's public page","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response carries a staff attachment for each file, with its state and public visibility","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the hidden file's visibility reads \"hidden\"","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the public file's visibility reads \"public\"","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
@@ -7209,7 +7209,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a report written in French has been published","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the public API returns the report","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a visitor reads the report","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response's language is \"fr-CA\"","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the public feed is queried","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no feed item carries a language","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
@@ -7618,7 +7618,7 @@
 				{"keyword":"Given","text":"John has submitted a report that is not published","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"Cheryl, signed in or not, holds no receipt for it","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"Cheryl lists the public feed and asks for that report's page","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the feed does not list it and the page answers 404","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the feed does not list it and the page is not found","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"asking with a receipt that is not John's shows nothing either","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
@@ -7783,7 +7783,7 @@
 				{"keyword":"When","text":"John asks for that report's page and for the image's link with his receipt","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the page carries its summary, submitted date, language, and image","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the link is a pre-signed URL that lives at most 15 minutes","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the same requests without his receipt answer 404","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the same requests without his receipt are not found","files":["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs"],
 			"staleIgnore": false,
@@ -7889,7 +7889,7 @@
 				{"keyword":"When","text":"the visitor opens that report's address","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page shows the report with its pill, its submitted date, and its summary labelled as a draft","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the page offers no comments","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the receipt is sent in the request body and not in any address","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the receipt is sent inside the request and never in any address","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts"],
 			"staleIgnore": false,
@@ -8918,7 +8918,7 @@
 			"id": "REQ-QB-066",
 			"area": "question-translation",
 			"file": ".spec/features/question-translation/question-translation.feature",
-			"title": "A translation draft comes from the API and is saved only by a person",
+			"title": "A translation draft comes from the server and is saved only by a person",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -8929,9 +8929,9 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"an Administrator is authoring a question in one official language","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"they ask for the other language to be translated","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the request goes to the application's own API rather than to a provider from the browser","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the browser sends the request to the application's own server, never to a provider","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the translated text is returned as a draft that is not saved anywhere","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the reviewer-gated translate endpoint is the only API code that calls a translator","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the reviewer-only translate request is the only server code that calls a translator","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no domain code a reporter's submission runs calls a translator","files":["tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs","tests/HpacSafety.Acceptance.Tests/QuestionTranslationSteps.cs"],

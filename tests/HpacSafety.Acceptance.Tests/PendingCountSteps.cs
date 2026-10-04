@@ -133,7 +133,7 @@ public sealed class PendingCountSteps
 		return total;
 	}
 
-	[Then(@"the API refuses the pending counts with 403")]
+	[Then(@"the pending counts are refused as forbidden")]
 	public void ThenRefused()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

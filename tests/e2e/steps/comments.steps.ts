@@ -221,7 +221,7 @@ Then('the comments are shown, each labelled "Member"', async ({ page }) => {
 	}
 })
 
-Then("instead of a comment box the page offers to sign in to comment", async ({ page }) => {
+Then("the page offers to sign in to comment, with no comment box", async ({ page }) => {
 	await expect(page.getByRole("link", { name: "Sign in to comment" })).toBeVisible()
 	await expect(page.getByLabel("Add a comment")).toHaveCount(0)
 })

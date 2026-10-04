@@ -182,7 +182,7 @@ public sealed class PublicMediaSteps
 
 	// ── When ────────────────────────────────────────────────────────────────
 
-	[When(@"the public API returns the report")]
+	[When(@"a visitor reads the report")]
 	public void WhenThePublicApiReturnsTheReport()
 	{
 		// Read in each Then step, so every assertion sees the current state.
@@ -349,7 +349,7 @@ public sealed class PublicMediaSteps
 		entry.ActorSubject.ShouldBe(file.HiddenBySubject);
 	}
 
-	[Then(@"the API returns 404")]
+	[Then(@"the report is not found")]
 	[Then(@"a visitor asking for the image's public link gets 404")]
 	public async Task ThenTheLinkIs404()
 	{

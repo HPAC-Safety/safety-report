@@ -142,6 +142,11 @@ Rules:
   `node tools/spec/check-glossary.ts` fails a banned synonym in the `docs`
   job, which `tools/dev/ci-local.sh` runs. No git hook runs it
   ([CONV-003](../../.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+- Steps describe behavior: `node tools/gherkin/lint-scenarios.ts` fails a
+  status code, a storage identifier, a transport term ("the API" included), a
+  reason, or a locale code in a step, in the `cucumber` job, which
+  `tools/dev/ci-local.sh` runs. No git hook runs it
+  ([CONV-004](../../.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
 - An area past about 800 lines is split, not grouped with `Rule:` blocks, and
   its scenarios keep their IDs: the procedure, and the next ID with
   `node tools/spec/claim-prefixes.ts --next <area>`, are

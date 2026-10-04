@@ -89,6 +89,8 @@ A stream MP4 cannot hold is a remux that fails, never a reason to transcode.
 A video that cannot be remuxed into a verified derivative is retained rather
 than refused (REQ-MED-015,
 [ADR-0094](../../decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
+It is not marked as a processing failure either, because nothing failed that
+should cost the reporter their footage.
 The same now holds for a still-processing or failed **image** (REQ-MED-013,
 REQ-MED-053, widening ADR-0094 — #427): either way the reviewer strip marks
 the tile Processing or Failed, and `GET

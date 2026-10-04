@@ -19,18 +19,20 @@ date: 2026-10-03
   is refused as forbidden", not "the API answers 403". The step definition
   still asserts the code.
 - **No storage identifier** (`no-storage-identifiers`): no snake_case or
-  camelCase/PascalCase name, no `Postgres`, `SQL`, `column`, `join table`,
-  `trigger`, or `enum`, no `outbox`, `DTO`, `JSON`, or `boolean`. Name the
-  thing as the reader knows it: "a stored answer's words", "a Worker job",
-  "the publication consent question", "yes or no".
+  camelCase/PascalCase name, no configuration key (`Translation:Model`), no
+  `Postgres`, `SQL`, `column`, `join table`, database `trigger`, or `enum`, no
+  `outbox`, `DTO`, `JSON`, or `boolean`. Name the thing as the reader knows
+  it: "a stored answer's words", "a Worker job", "the publication consent
+  question", "a type-ahead question", "true or false".
 - **No transport term** (`no-transport-terms`): no HTTP verb, `HTTP`,
-  endpoint, route or URL, request or response body, query string, or HTTP
-  header, and never "the API" (J3). The subject is the request, the page, or
-  the actor: "the submission is refused as invalid".
+  endpoint, route or path (`/report`), URL, request or response body, query
+  string, or HTTP header, and never "the API" (J3). The subject is the
+  request, the record, the page, or the actor: "the report is refused as
+  invalid", "the comment is created". The site's header is not an HTTP header.
 - **No rationale** (`no-rationale`): no "because", "instead of", "rather
-  than", "so that", "in order to", or a causal ", since" in a step or a
-  title. A contrast is an assertion: "shows a sign-out action and no sign-in
-  action". The reason goes in the area README or an ADR.
+  than", "so that", "in order to", or a causal ", since" in a title, a step,
+  or a cell a step reads. A contrast is an assertion: "shows a sign-out action
+  and no member sign-in action". The reason goes in the area README or an ADR.
 - **No locale code in a step** (`no-locale-codes`, J16): steps say English
   and French; `en-CA` and `fr-CA` appear only in Examples cells.
 - What the rules read: the Feature, Rule, Background, and Scenario names,
@@ -43,7 +45,9 @@ date: 2026-10-03
   what it asserted before, its claim ID stays, and the renamed text binds
   nowhere else, as
   [CONV-003](CONV-003-scenarios-and-area-readmes-use-the-glossary.md) asks
-  of a rename.
+  of a rename. In the Reqnroll suite, `Outcomes.Status` gives the status an
+  outcome phrase stands for, and `GlossaryNames.QuestionType` the type a
+  glossary name ("type-ahead") stands for.
 
 ## Why
 

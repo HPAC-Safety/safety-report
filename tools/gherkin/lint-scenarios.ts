@@ -130,13 +130,14 @@ export const RULES: readonly Rule[] = [
 		/\bheader\s+[A-Z][\w-]*-[\w-]+/,
 		/\bX-[A-Z][\w-]+/,
 		/\bhttps?:\/\/\S+/i,
-		/(?<![\w.-])\/(?:api|admin|reports?)\b[\w\-{}/.<>]*/,
+		// A route or path: /report, /api/v1/reports. A slash inside a word (yes/no) is not one.
+		/(?<![\w.:/<-])\/[a-z][\w\-{}/.<>]*/,
 	]),
-	wordRule('no-rationale', 'say what happens, not why; the reason belongs in the area README', [/\b(?:because|instead of|rather than|so that|in order to)\b/i, /,\s*since\b/i], { kinds: ['title', 'step'] }),
+	wordRule('no-rationale', 'say what happens, not why; the reason belongs in the area README', [/\b(?:because|instead of|rather than|so that|in order to)\b/i, /,\s*since\b/i]),
 	wordRule('no-locale-codes', 'say English or French; a locale code belongs only in an Examples cell', [/\b(?:en|fr)-CA\b/], { kinds: ['title', 'step'] }),
 ]
 
-/** The parsed feature of one file, or the parse error. */
+/** The parsed feature of one file; a syntax error throws. */
 export function parse(source: string): Feature | undefined {
 	const parser = new Parser(new AstBuilder(IdGenerator.uuid()), new GherkinClassicTokenMatcher())
 	return parser.parse(source).feature
@@ -146,7 +147,7 @@ export function parse(source: string): Feature | undefined {
  * The placeholders a scenario's title and steps read, `<name>`, each mapped to
  * whether every use of it sits inside "double quotes".
  */
-export function placeholders(scenario: Pick<Scenario, 'name' | 'steps'>): Map<string, boolean> {
+export function placeholders(scenario: { name: string; steps: ReadonlyArray<{ text: string }> }): Map<string, boolean> {
 	const read = new Map<string, boolean>()
 	for (const text of [scenario.name, ...scenario.steps.map((step) => step.text)]) {
 		const quoted = new Set([...text.matchAll(/"[^"]*"|“[^”]*”/g)].flatMap((match) => [...match[0].matchAll(/<([^>]+)>/g)].map((inner) => inner[1])))
@@ -211,21 +212,26 @@ export function lintSource(area: string, file: string, source: string, rules: re
 	return violations.sort((a, b) => a.line - b.line || a.rule.localeCompare(b.rule))
 }
 
-/** Every violation in every area's feature file under `root`. */
+/** Every violation in every area's feature file under `root`; a file that does not parse is one violation. */
 export function lintScenarios(root = ROOT, rules: readonly Rule[] = RULES): Violation[] {
 	const features = join(root, FEATURES)
 	const violations: Violation[] = []
 	for (const area of readdirSync(features).sort()) {
 		if (!statSync(join(features, area)).isDirectory()) continue
 		const file = `${FEATURES}/${area}/${area}.feature`
-		if (existsSync(join(root, file))) violations.push(...lintSource(area, file, readFileSync(join(root, file), 'utf8'), rules))
+		if (!existsSync(join(root, file))) continue
+		try {
+			violations.push(...lintSource(area, file, readFileSync(join(root, file), 'utf8'), rules))
+		} catch (error) {
+			violations.push({ rule: 'parse', file, scenario: 0, line: 0, found: '', message: `does not parse: ${(error as Error).message.split('\n')[0]}` })
+		}
 	}
 	return violations
 }
 
 export function main(root = ROOT, log: (line: string) => void = console.log): number {
 	const violations = lintScenarios(root)
-	for (const { rule, file, line, found, message } of violations) log(`::error file=${file},line=${line}::${rule}: "${found}": ${message}`)
+	for (const { rule, file, line, found, message } of violations) log(`::error file=${file},line=${line}::${rule}: ${found === '' ? '' : `"${found}": `}${message}`)
 	if (violations.length > 0) {
 		const counts = RULES.map((rule) => `${rule.id} ${violations.filter((violation) => violation.rule === rule.id).length}`).join(', ')
 		log(`${violations.length} scenario lint violation(s): ${counts}.`)

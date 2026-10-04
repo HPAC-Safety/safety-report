@@ -60,6 +60,9 @@ need (issue)
    as [`.spec/glossary.md`](.spec/glossary.md) does; `check-glossary` fails a
    banned synonym
    ([CONV-003](.spec/conventions/CONV-003-scenarios-and-area-readmes-use-the-glossary.md)).
+6. **Steps describe behavior, not implementation.** No status code, storage
+   name, transport term, or reason in a step; `lint-scenarios` fails one
+   ([CONV-004](.spec/conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
 
 ### The `feature-coverage` exemption
 

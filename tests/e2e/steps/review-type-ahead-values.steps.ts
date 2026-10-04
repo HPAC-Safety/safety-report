@@ -297,7 +297,7 @@ Given("a Safety Officer and twenty flagged values under one type-ahead question"
 	await reviewPage(page, twentyValues())
 })
 
-When(/^they scroll to "([^"]+)"$/, async ({ page }, wording: string) => {
+When(/^they bring "([^"]+)" into view$/, async ({ page }, wording: string) => {
 	await valueRow(page, wording).scrollIntoViewIfNeeded()
 	scrollBefore.set(page, await page.evaluate(() => window.scrollY))
 })
@@ -338,7 +338,7 @@ Then("the page never shows the loading text", async ({ page }) => {
 	await expect(page.getByText("Loading values…")).toHaveCount(0)
 })
 
-Then("the scroll position is unchanged", async ({ page }) => {
+Then("the page stays where the reviewer left it", async ({ page }) => {
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollBefore.get(page))
 })
 
@@ -456,15 +456,9 @@ When(/^they edit its English wording to "([^"]+)"$/, async ({ page }, wording: s
 	await theValueRow(page).getByLabel("English wording").fill(wording)
 })
 
-When(
-	/^they begin correcting "([^"]+)", edit its English wording to "([^"]+)", and press Translate$/,
-	async ({ page }, original: string, edited: string) => {
-		correcting.set(page, original)
-		await valueRow(page, original).getByRole("button", { name: "Correct" }).click()
-		await theValueRow(page).getByLabel("English wording").fill(edited)
-		await translateButton(theValueRow(page)).click()
-	},
-)
+When("they translate that value's wording", async ({ page }) => {
+	await translateButton(theValueRow(page)).click()
+})
 
 When("they edit that value's English wording again", async ({ page }) => {
 	await theValueRow(page).getByLabel("English wording").fill("Cooper's Hill")
@@ -492,7 +486,7 @@ Then("that value's French wording is filled with the translation and remains edi
 	await expect(french).toHaveValue("Cooper's")
 })
 
-Then("nothing is saved until they press Save correction", async ({ page }) => {
+Then("nothing is saved until they save the correction", async ({ page }) => {
 	expect(reviews.get(page)?.length ?? 0).toBe(0)
 
 	await theValueRow(page).getByRole("button", { name: "Save correction" }).click()
@@ -511,11 +505,6 @@ When("they flip that value's direction switch to French to English", async ({ pa
 
 When(/^they write its French wording as "([^"]+)"$/, async ({ page }, wording: string) => {
 	await theValueRow(page).getByLabel("French wording").fill(wording)
-})
-
-When(/^they write its French wording as "([^"]+)" and press Translate$/, async ({ page }, wording: string) => {
-	await theValueRow(page).getByLabel("French wording").fill(wording)
-	await translateButton(theValueRow(page)).click()
 })
 
 Then("that value's English wording is filled with the translation", async ({ page }) => {

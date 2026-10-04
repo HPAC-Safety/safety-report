@@ -122,68 +122,96 @@ Scenario: A yes or no stored as anything but the four words stops the conversion
 
 @REQ-QB-159
 @ui
-Scenario Outline: A type-ahead question is a control the form draws, with no caret, and opens with a hint before 3 characters
+Scenario: A type-ahead question is a control the form draws, with no caret
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  Then the question is a combobox with no caret, described by its help text, and no browser suggestion list
-  When they open the question's list by <opening>
+  Then the question is drawn by the form, closed, with no caret, described by its help text, and no browser suggestion list
+
+@REQ-RFM-001
+@ui
+Scenario Outline: A type-ahead's list opens with a hint before 3 characters, however it is opened
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  When they open the question's list with <opening>
   Then the list opens directly beneath the question, as wide as it, offering only the hint to type 3 or more letters
 
 Examples:
   | opening                         |
-  | clicking the question           |
-  | pressing Alt and the down arrow |
-  | typing "o"                      |
+  | the pointer on the question     |
+  | the Alt and down arrow keys     |
+  | the letter "o"                  |
 
 @REQ-QB-229
 @ui
-Scenario: Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint
+Scenario: A third character in a type-ahead reveals its matching choices
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
-  And they type "Mo" in the question
-  Then the list offers only the hint to type 3 or more letters
-  When they type "u" in the question
+  And a reporter using English opens that question
+  And they enter "Mo" in the question
+  When they enter "u" in the question
   Then a list as wide as the question opens directly beneath it, offering "Mount 7"
-  When they press Backspace
+
+@REQ-RFM-002
+@ui
+Scenario: Fewer than 3 characters in a type-ahead offer only the hint
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  When they enter "Mo" in the question
   Then the list offers only the hint to type 3 or more letters
+
+@REQ-RFM-003
+@ui
+Scenario Outline: Taking a type-ahead back below 3 characters brings its hint back
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  And they enter "Mou" in the question
+  When they use <keys> in the question
+  Then the list offers only the hint to type 3 or more letters
+
+Examples:
+  | keys              |
+  | the Backspace key |
 
 @REQ-QB-230
 @ui
-Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
+Scenario Outline: Below 3 characters, no key picks a type-ahead choice
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
-  And they type "Mo" in the question
-  And they press the down arrow
-  And they press the up arrow
-  And they press Enter
+  And a reporter using English opens that question
+  And they enter "Mo" in the question
+  When they use <keys> in the question
   Then the list offers only the hint to type 3 or more letters
   And the question holds "Mo"
+
+Examples:
+  | keys               |
+  | the down arrow key |
+  | the up arrow key   |
+  | the Enter key      |
 
 @REQ-QB-232
 @ui
 Scenario Outline: Reopening a type-ahead filters by what it already holds, however it is reopened
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
-  When a reporter using English opens that question
-  And they type "<typed>" in the question
-  And they press Escape
-  When they open the question's list by <opening>
+  And a reporter using English opens that question
+  And they enter "<typed>" in the question
+  And they dismiss the question's list
+  When they open the question's list with <opening>
   Then <outcome>
 
 Examples:
   | typed | opening                         | outcome                                                                                      |
-  | Mou   | clicking the question           | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing Alt and the down arrow | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mou   | pressing the down arrow         | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
-  | Mo    | clicking the question           | the list offers only the hint to type 3 or more letters                                      |
-  | Mo    | pressing Alt and the down arrow | the list offers only the hint to type 3 or more letters                                      |
-  | Mo    | pressing the down arrow         | the list offers only the hint to type 3 or more letters                                      |
+  | Mou   | the pointer on the question     | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | the Alt and down arrow keys     | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | the down arrow key              | a list as wide as the question opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mo    | the pointer on the question     | the list offers only the hint to type 3 or more letters                                      |
+  | Mo    | the Alt and down arrow keys     | the list offers only the hint to type 3 or more letters                                      |
+  | Mo    | the down arrow key              | the list offers only the hint to type 3 or more letters                                      |
 
 @REQ-QB-160
 @ui
 Scenario Outline: Typing into a type-ahead filters its list, ignoring case and accents
   Given a type-ahead question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
-  When a reporter using French opens that question
-  And they type "<typed>" in the question
+  And a reporter using French opens that question
+  When they enter "<typed>" in the question
   Then its list offers only <offered>
 
 Examples:
@@ -195,95 +223,168 @@ Examples:
 
 @REQ-QB-161
 @ui
-Scenario: A reporter picks a type-ahead choice from the keyboard
+Scenario Outline: A reporter picks a type-ahead choice from the keyboard
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
-  When a reporter using English opens that question
-  And they type "Mou" in the question and press the down arrow twice
-  Then "Mount Fromme" is the question's active choice
-  When they press the up arrow
-  Then "Mount 7" is the question's active choice
-  When they press the down arrow
-  Then "Mount Fromme" is the question's active choice
-  When they press Enter
+  And a reporter using English opens that question
+  And they enter "Mou" in the question
+  And the question's active choice is "Mount Fromme"
+  When they use <keys> in the question
   Then the list is closed and the question holds "Mount Fromme"
-  When they press Alt and the down arrow
+
+Examples:
+  | keys          |
+  | the Enter key |
+
+@REQ-RFM-004
+@ui
+Scenario Outline: The arrow keys move a type-ahead's active choice
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
+  And a reporter using English opens that question
+  And they enter "Mou" in the question
+  And the question's active choice is <start>
+  When they use <keys> in the question
+  Then <active> is the question's active choice
+
+Examples:
+  | start          | keys                     | active         |
+  | none           | the down arrow key twice | "Mount Fromme" |
+  | "Mount Fromme" | the up arrow key         | "Mount 7"      |
+  | "Mount 7"      | the down arrow key       | "Mount Fromme" |
+
+@REQ-RFM-005
+@ui
+Scenario Outline: A type-ahead holding a choice reopens its list with a key
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
+  And a reporter using English opens that question
+  And they have picked "Mount Fromme" from the question's list with the keyboard
+  When they use <keys> in the question
   Then its list is open
-  When they press Escape
+
+Examples:
+  | keys                        |
+  | the Alt and down arrow keys |
+
+@REQ-RFM-006
+@ui
+Scenario Outline: Closing a type-ahead's list keeps the choice it holds
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
+  And a reporter using English opens that question
+  And they have picked "Mount Fromme" from the question's list with the keyboard
+  And they open the question's list with <opening>
+  When they close the question's list with <closing>
   Then the list is closed and the question holds "Mount Fromme"
-  When they open the question's list by clicking the question
-  And they press outside the question
-  Then the list is closed and the question holds "Mount Fromme"
+
+Examples:
+  | opening                         | closing                          |
+  | the Alt and down arrow keys     | the Escape key                   |
+  | the pointer on the question     | the pointer outside the question |
 
 @REQ-QB-162
 @ui
-Scenario: A reporter types a type-ahead value its list does not offer
+Scenario: A reporter enters a type-ahead value its list does not offer
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
-  And they type "A ridge nobody listed" in the question
+  And a reporter using English opens that question
+  When they enter "A ridge nobody listed" in the question
   Then the list says no choice matches
-  When they press Tab
+
+@REQ-RFM-007
+@ui
+Scenario Outline: Moving on from a type-ahead keeps a value its list does not offer
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  And they enter "A ridge nobody listed" in the question
+  When they use <keys> in the question
   Then the list is closed and the question holds "A ridge nobody listed"
+
+Examples:
+  | keys        |
+  | the Tab key |
 
 @REQ-QB-163
 @ui
-Scenario Outline: A type-ahead's or single-select's list fits a phone screen and scrolls when long
+Scenario Outline: A type-ahead's or single-select's long list fits a phone-width screen
   Given a <type> question offers 30 choices
-  When a reporter using English opens that question on a screen 360 pixels wide
-  And they open the question's list by <opening>
-  Then the list fits within the screen's width, and the page does not scroll sideways
-  And the list scrolls within itself
+  And a reporter using English opens that question on a phone-width screen
+  When they open the question's list with <opening>
+  Then the list fits within the screen's width, and the page grows no wider than the screen
+  And the list reaches its last choice within itself
 
 Examples:
-  | type          | opening               |
-  | type-ahead    | typing "Launch site"  |
-  | single-select | pressing the caret    |
+  | type          | opening                    |
+  | type-ahead    | the letters "Launch site"  |
+  | single-select | the pointer on the caret   |
 
 @REQ-QB-231
 @ui
-Scenario: A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do
+Scenario: A dependent type-ahead's list shows a hint below 3 characters, exactly as an independent one's does
   Given the type-ahead "Model" question's choices depend on the single-select "Make" question
-  When they answer "Make" with "Niviuk"
-  And they open "Model"'s list by clicking the question
+  And they answer "Make" with "Niviuk"
+  When they open "Model"'s list
   Then "Model"'s list offers only the hint to type 3 or more letters
-  When they type "Iku" in "Model"
+
+@REQ-RFM-008
+@ui
+Scenario: A dependent type-ahead's choices filter at 3 characters, exactly as an independent one's do
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And they answer "Make" with "Niviuk"
+  When they enter "Iku" in "Model"
   Then "Model"'s list offers only "Ikuma"
-  When they type "Rus" in "Model"
+
+@REQ-RFM-009
+@ui
+Scenario: A dependent type-ahead offers no choice when 3 characters match none under the parent's answer
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And they answer "Make" with "Niviuk"
+  And they enter "Iku" in "Model"
+  When they enter "Rus" in "Model"
   Then "Model"'s list offers no choice
 
 @REQ-QB-171
 @ui
 Scenario: A type-ahead choice picked from the list is sent as that choice, not matched by its wording
   Given a signed-in reporter answers a type-ahead question offering two choices both worded "Other"
-  When they pick the second "Other" from the list
-  Then the list is closed and the question holds "Other"
+  And they pick the second "Other" from the list
   When they consent on the next page and send the report
   Then the answer names the second "Other" choice's identifier and carries no typed text
 
+@REQ-RFM-010
+@ui
+Scenario: A type-ahead choice picked from the list shows its wording in the closed question
+  Given a signed-in reporter answers a type-ahead question offering two choices both worded "Other"
+  When they pick the second "Other" from the list
+  Then the list is closed and the question holds "Other"
+
 @REQ-QB-208
 @ui
-Scenario Outline: A single-select question is a picker the form draws, not the browser's select
+Scenario: A single-select question is a picker the form draws, not the browser's select
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  Then the question is a combobox with a caret showing "Choose one", described by its help text, and no browser select
-  When they open the question's list by <opening>
+  Then the question is drawn by the form, closed, with a caret showing "Choose one", described by its help text, and no browser select
+
+@REQ-RFM-011
+@ui
+Scenario Outline: A single-select's list opens beneath it, drawn like a type-ahead's, however it is opened
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  When they open the question's list with <opening>
   Then a list as wide as the question opens directly beneath it, offering "Choose one", "Cooper's", "Mount 7", "Woodside"
   And the list is drawn like a type-ahead's list
 
 Examples:
   | opening                         |
-  | clicking the question           |
-  | pressing Enter                  |
-  | pressing Space                  |
-  | pressing Alt and the down arrow |
-  | pressing the down arrow         |
+  | the pointer on the question     |
+  | the Enter key                   |
+  | the Space key                   |
+  | the Alt and down arrow keys     |
+  | the down arrow key              |
 
 @REQ-QB-267
 @ui
 Scenario: A reporter picks a type-ahead choice with the pointer, and no choice ever takes focus
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
-  And they type "Coo" in the question
-  And they click "Cooper's" in the list
+  And a reporter using English opens that question
+  And they enter "Coo" in the question
+  When they pick "Cooper's" from the list with the pointer
   Then the list is closed and the question holds "Cooper's"
   And the question has focus
 
@@ -291,71 +392,146 @@ Scenario: A reporter picks a type-ahead choice with the pointer, and no choice e
 @ui
 Scenario: A reporter picks a single-select choice with the pointer, and no choice ever takes focus
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
-  And they open the question's list by clicking the question
-  And they click "Cooper's" in the list
+  And a reporter using English opens that question
+  And they open the question's list
+  When they pick "Cooper's" from the list with the pointer
   Then the list is closed and the question holds "Cooper's"
   And the question has focus
 
 @REQ-QB-209
 @ui
-Scenario: A reporter picks a single-select choice from the keyboard and the pointer
+Scenario Outline: A reporter picks a single-select choice from the keyboard
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
-  And they open the question's list by pressing the down arrow
+  And a reporter using English opens that question
+  And they open the question's list
+  And the question's active choice is "<active>"
+  When they use <keys> in the question
+  Then the list is closed and the question holds "<active>"
+
+Examples:
+  | active   | keys          |
+  | Mount 7  | the Enter key |
+  | Woodside | the Space key |
+
+@REQ-RFM-012
+@ui
+Scenario Outline: Opening a single-select's list with a key makes "Choose one" its active choice
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  When they open the question's list with <opening>
   Then "Choose one" is the question's active choice
-  When they press the down arrow
-  Then "Cooper's" is the question's active choice
-  When they press End
-  Then "Woodside" is the question's active choice
-  When they press Home
-  Then "Choose one" is the question's active choice
-  When they type "m"
-  Then "Mount 7" is the question's active choice
-  When they press Enter
-  Then the list is closed and the question holds "Mount 7"
-  When they press Space
+
+Examples:
+  | opening            |
+  | the down arrow key |
+
+@REQ-RFM-013
+@ui
+Scenario Outline: Keys move a single-select's active choice
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  And they open the question's list
+  And the question's active choice is "<start>"
+  When they use <keys> in the question
+  Then "<active>" is the question's active choice
+
+Examples:
+  | start      | keys               | active     |
+  | Choose one | the down arrow key | Cooper's   |
+  | Cooper's   | the End key        | Woodside   |
+  | Woodside   | the Home key       | Choose one |
+  | Choose one | the m key          | Mount 7    |
+
+@REQ-RFM-014
+@ui
+Scenario Outline: A single-select holding a choice reopens its list with that choice chosen and active
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  And they have picked "Mount 7" from the question's list with the keyboard
+  When they use <keys> in the question
   Then its list is open, with "Mount 7" chosen and active
-  When they press the up arrow
-  And they press Escape
-  Then the list is closed and the question holds "Mount 7"
-  When they open the question's list by pressing Alt and the down arrow
-  And they press the down arrow
-  And they press Space
-  Then the list is closed and the question holds "Woodside"
-  When they open the question's list by clicking the question
-  And they point at "Cooper's"
+
+Examples:
+  | keys                        |
+  | the Space key               |
+  | the Alt and down arrow keys |
+
+@REQ-RFM-015
+@ui
+Scenario Outline: Closing a single-select's list without picking keeps the choice it holds
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  And they have picked "<held>" from the question's list with <picking>
+  And they open the question's list with <opening>
+  And they make "<active>" the question's active choice with <reaching>
+  When they close the question's list with <closing>
+  Then the list is closed and the question holds "<held>"
+
+Examples:
+  | held     | picking      | opening                     | active   | reaching    | closing                          |
+  | Mount 7  | the keyboard | the Space key               | Cooper's | the keys    | the Escape key                   |
+  | Woodside | the pointer  | the pointer on the question | Cooper's | the pointer | the pointer outside the question |
+  | Woodside | the pointer  | the Enter key               | Woodside | the keys    | the Tab key                      |
+
+@REQ-RFM-016
+@ui
+Scenario: Pointing at a single-select's choice makes it the active choice
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  And they pick "Woodside" from the question's list
+  And they open the question's list
+  When they point at "Cooper's"
   Then "Cooper's" is the question's active choice
-  When they press outside the question
-  Then the list is closed and the question holds "Woodside"
-  When they open the question's list by pressing Enter
-  And they press Tab
-  Then the list is closed and the question holds "Woodside"
 
 @REQ-QB-210
 @ui
 Scenario: A single-select answer can be cleared back to unanswered
   Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
-  When a reporter using English opens that question
+  And a reporter using English opens that question
   And they pick "Mount 7" from the question's list
-  Then the list is closed and the question holds "Mount 7"
   When they pick "Choose one" from the question's list
   Then the list is closed and the question holds "Choose one"
   And the browser's saved report holds no answer to that question
+
+@REQ-RFM-017
+@ui
+Scenario: A picked single-select choice shows in the closed question
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  And a reporter using English opens that question
+  When they pick "Mount 7" from the question's list
+  Then the list is closed and the question holds "Mount 7"
 
 @REQ-QB-211
 @ui
 Scenario: A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row
   Given a multi-select question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
-  When a reporter using English opens that question
-  And they open the multi-select's list
+  And a reporter using English opens that question
+  When they open the multi-select's list
   Then the list is drawn like a type-ahead's list
-  And each choice is a row at least 44 pixels tall holding a checkbox
+  And each choice is a row large enough to touch, holding a checkbox
+
+@REQ-RFM-018
+@ui
+Scenario: Pointing at a multi-select's row highlights it as a type-ahead's active choice is
+  Given a multi-select question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
+  And a reporter using English opens that question
+  And they open the multi-select's list
   When they point at "Brazil"
   Then the "Brazil" row is highlighted as a type-ahead's active choice is
-  When they move to the "France" checkbox with the keyboard and press Space
+
+@REQ-RFM-019
+@ui
+Scenario Outline: Checking a multi-select's choice with a key highlights its row and keeps the list open
+  Given a multi-select question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
+  And a reporter using English opens that question
+  And they open the multi-select's list
+  When they move to the "France" checkbox and check it with <keys>
   Then the "France" row is highlighted as a type-ahead's active choice is
   And "France" is checked, and the list stays open
+
+Examples:
+  | keys          |
+  | the Space key |
 
 @REQ-QB-104
 Scenario: A new installation asks for several attachments
@@ -402,6 +578,18 @@ Scenario Outline: The form asks for media consent only when there is a file to s
   Given a reporter is filling in the form
   When they answer yes to publication consent and attach <file>
   Then the form asks the media consent question, and it must be answered to submit
+
+Examples:
+  | file       |
+  | an image   |
+  | a document |
+
+@REQ-RFM-020
+@ui
+Scenario Outline: The form stops asking for media consent once the file is removed or publication consent is withdrawn
+  Given a reporter is filling in the form
+  And they answer yes to publication consent and attach <file>
+  And they have reached the media consent question and tried to submit without answering it
   When they remove the file, or answer no to publication consent
   Then the form no longer asks it, and submits no answer to it
 
@@ -524,8 +712,8 @@ Examples:
 @ui
 Scenario: Country is optional
   Given the form asks the Country question as the migrations seed it
-  When a reporter using English opens the Country question
-  And presses Next without choosing a country
+  And a reporter using English opens the Country question
+  When they go on without choosing a country
   Then the form moves on without asking Province
   And no message says an answer is required
 
@@ -533,9 +721,15 @@ Scenario: Country is optional
 @ui
 Scenario: Province is shown only when Country is Canada
   Given the form asks the Country question as the migrations seed it
-  When a reporter using English chooses "Canada" for Country and presses Next
+  When a reporter using English chooses "Canada" for Country and goes on
   Then the Province question is shown
-  When the reporter goes back and chooses "Mexico" for Country and presses Next
+
+@REQ-RFM-021
+@ui
+Scenario: Changing Country away from Canada no longer asks Province
+  Given the form asks the Country question as the migrations seed it
+  And a reporter using English chooses "Canada" for Country and goes on
+  When the reporter goes back and chooses "Mexico" for Country and goes on
   Then the form moves on without asking Province
 
 @REQ-QB-259

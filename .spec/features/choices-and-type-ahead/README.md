@@ -31,7 +31,7 @@ by default it is not pinned. The list shows three groups in turn — pinned
 first, not pinned, pinned last — each alphabetical, with a separator between
 groups. A value a reporter adds is not pinned and takes its alphabetical place
 at once. The editor re-sorts its choices when it opens, never while the
-Administrator is typing
+Administrator is typing (`REQ-QB-150`, `REQ-CTA-003`)
 ([ADR-0136](../../decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
 
 An answer names its choice by identifier and copies none of its wording; both
@@ -51,16 +51,21 @@ wording ([ADR-0128](../../decisions/ADR-0128-an-answer-names-its-choice-and-a-pi
   ([ADR-0132](../../decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
 - **Type-ahead values** are corrected in place for every answer that names
   them, removed by delete, and merged: merging B into A retires B, and
-  answers naming B read A without being rewritten. A value a reporter adds is
+  answers naming B read A without being rewritten, and a later answer typing
+  B names A (`REQ-QB-131`, `REQ-CTA-001`). A value a reporter adds is
   flagged for review, offered at once in the language it was typed, and given
   its other language by the Worker. A reviewer
-  reviews it ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+  reviews it on the type-ahead review page, which lists each flagged value
+  with its language and answer count and drafts a correction's other
+  language with Translate (`REQ-MOD-095`, `REQ-MOD-097`,
+  `REQ-MOD-166`–`REQ-MOD-172`, `REQ-CTA-004`–`REQ-CTA-008`)
+  ([ADR-0129](../../decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
   A merged value's wording is not only resolved at submission: the survivor
   carries it as an **alias**, so the form offers the survivor while a
   reporter is still typing it, with a hint naming the alias, in either
   language and following a chained merge with nothing for the client to
-  chase (`REQ-QB-233`–`REQ-QB-236`). The type-ahead review page lists each
-  value's aliases too, read-only — there is still no un-merge
+  chase (`REQ-QB-233`–`REQ-QB-236`, `REQ-CTA-002`). The type-ahead review
+  page lists each value's aliases too, read-only — there is still no un-merge
   (`REQ-QB-237`, ADR-0129 amendment).
 
 A single-select or multi-select question always keeps at least one live

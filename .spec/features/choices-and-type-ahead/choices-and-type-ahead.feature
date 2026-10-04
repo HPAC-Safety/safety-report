@@ -143,6 +143,10 @@ Scenario: Merging one type-ahead value into another leaves every answer untouche
   Then "Coopers" is removed and records that it was merged into "Cooper's"
   And the answers that named "Coopers" still name it, and read "Cooper's"
   And the form offers "Cooper's" only
+
+@REQ-CTA-001
+Scenario: A reporter submitting a merged-away wording names the value it was merged into
+  Given the type-ahead value "Coopers" was merged into "Cooper's"
   When a reporter later submits "coopers" for that question
   Then the new answer names "Cooper's"
 
@@ -186,35 +190,42 @@ Scenario: Reviewing a type-ahead value clears its flag
 @ui
 Scenario: Typing a merged-away wording offers the survivor, hinting the alias that matched
   Given a type-ahead question offers "Cooper's Hill", one merged from "Coopers"
-  When a reporter using English opens that question
-  And they type "Coopers" in the question
+  And a reporter using English opens that question
+  When they enter "Coopers" in the question
   Then the list offers "Cooper's Hill", hinting "also: Coopers"
 
 @REQ-QB-234
 @ui
 Scenario: A merged-away wording matches typing in the other language too
   Given a type-ahead question offers "Cooper's Hill" / "Colline Cooper", one merged from "Colline du Cooper"
-  When a reporter using English opens that question
-  And they type "Colline du Cooper" in the question
+  And a reporter using English opens that question
+  When they enter "Colline du Cooper" in the question
   Then the list offers "Cooper's Hill", hinting "also: Colline du Cooper"
 
 @REQ-QB-235
 @ui
 Scenario: A chained merge offers the final survivor, hinting the first wording
   Given a type-ahead question offers "Cooper's Hill", merged from "Cooper's", itself merged from "Coopers"
-  When a reporter using English opens that question
-  And they type "Coopers" in the question
+  And a reporter using English opens that question
+  When they enter "Coopers" in the question
   Then the list offers "Cooper's Hill", hinting "also: Coopers"
 
 @REQ-QB-236
 @ui
 Scenario: Under a dependent type-ahead, a merged-away wording offers the survivor only under its own parent choices
   Given the type-ahead "Model" question's choices depend on the single-select "Make" question, and its "Mentor 7" under "Niviuk" was merged from "Mentr 7"
-  When they answer "Make" with "Ozone"
-  And they type "Mentr 7" in "Model"
+  And they answer "Make" with "Ozone"
+  When they enter "Mentr 7" in "Model"
   Then "Model"'s list offers no choice
-  When they change "Make" to "Niviuk"
-  And they type "Mentr 7" in "Model"
+
+@REQ-CTA-002
+@ui
+Scenario: Under a dependent type-ahead, a merged-away wording offers the survivor once the parent's answer is the survivor's parent choice
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question, and its "Mentor 7" under "Niviuk" was merged from "Mentr 7"
+  And they answer "Make" with "Ozone"
+  And they enter "Mentr 7" in "Model"
+  And they change "Make" to "Niviuk"
+  When they enter "Mentr 7" in "Model"
   Then "Model"'s list offers "Mentor 7", hinting "also: Mentr 7"
 
 @REQ-QB-237
@@ -290,14 +301,20 @@ Scenario: Pinning a choice never revises or forks its question
 
 @REQ-QB-150
 @ui
-Scenario: An Administrator sets each choice's position, and the editor lists choices as the form does
+Scenario: An Administrator sets each choice's position, and the choices stay where they were while they edit
+  Given an Administrator opens the manage-questions page
+  And they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
+  When they reword "Hang glider" to "Speed wing" and set "Paraglider" to "Pin to top"
+  Then the choices stay where they were while the Administrator edits
+  And the save sends "Paraglider" pinned first, "Other" pinned last, and "Speed wing" not pinned
+
+@REQ-CTA-003
+@ui
+Scenario: The editor lists a question's choices as the form does, each offering its positions
   Given an Administrator opens the manage-questions page
   When they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
   Then the editor lists its choices "Hang glider", "Paraglider", "Other"
   And each choice offers the positions "Alphabetical", "Pin to top", and "Pin to bottom"
-  When they reword "Hang glider" to "Speed wing" and set "Paraglider" to "Pin to top"
-  Then the choices stay where they were while the Administrator edits
-  And the save sends "Paraglider" pinned first, "Other" pinned last, and "Speed wing" not pinned
 
 @REQ-QB-151
 @ui
@@ -334,11 +351,17 @@ Examples:
 @ui
 Scenario: A Safety Officer approves, corrects, and removes type-ahead values on the review page
   Given a Safety Officer and three type-ahead values flagged for review
-  When they open the review-type-ahead-values page
-  Then each value is listed under its question's heading, with the language it was typed in and how many answers name it
+  And they open the review-type-ahead-values page
   When they approve "Mount 7", correct "coopers" to "Cooper's", and remove "Test site"
   Then exactly those values are sent to be approved, corrected, and removed
   And the page lists no value left to review
+
+@REQ-CTA-004
+@ui
+Scenario: The review page lists each flagged value with the language it was typed in and its answer count
+  Given a Safety Officer and three type-ahead values flagged for review
+  When they open the review-type-ahead-values page
+  Then each value is listed under its question's heading, with the language it was typed in and how many answers name it
 
 @REQ-MOD-095
 @ui
@@ -346,6 +369,12 @@ Scenario: A Safety Officer reviews flagged type-ahead values on one page
   Given a Safety Officer and two type-ahead questions with values flagged for review
   When they open the review-type-ahead-values page
   Then every flagged value is listed under its question's heading, with its language and how many answers name it
+
+@REQ-CTA-005
+@ui
+Scenario: Merging a value on the review page takes it off the list and clears the flag of the value it joined
+  Given a Safety Officer and two type-ahead questions with values flagged for review
+  And they open the review-type-ahead-values page
   When they merge "Coopers" into "Cooper's"
   Then "Coopers" leaves the list
   And "Cooper's" is no longer flagged
@@ -371,13 +400,13 @@ Examples:
 
 @REQ-MOD-162
 @ui
-Scenario Outline: Approving, correcting, removing, merging, and relinking a value keeps the reviewer's scroll position, with no loading state
+Scenario Outline: Approving, correcting, removing, merging, and relinking a value keeps the reviewer's place on the page, with no loading state
   Given a Safety Officer and twenty flagged values under one type-ahead question
-  When they open the review-type-ahead-values page
-  And they scroll to "Site 15"
-  And they <action> "Site 15"
+  And they open the review-type-ahead-values page
+  And they bring "Site 15" into view
+  When they <action> "Site 15"
   Then the page never shows the loading text
-  And the scroll position is unchanged
+  And the page stays where the reviewer left it
 
 Examples:
   | action  |
@@ -391,8 +420,8 @@ Examples:
 @ui
 Scenario: A merged value leaves the type-ahead review page in place, and a merge target still awaiting review shows its updated answer count
   Given a Safety Officer and two flagged values of the same question, one also awaiting review in its own right
-  When they open the review-type-ahead-values page
-  And they merge "Coopers" into "Cooper's"
+  And they open the review-type-ahead-values page
+  When they merge "Coopers" into "Cooper's"
   Then "Coopers" leaves the list, and the rows around it stay where they are
   And "Cooper's" is still listed, showing 5 answers naming it
 
@@ -404,57 +433,88 @@ Scenario: A merged value leaves the type-ahead review page in place, and a merge
 @ui
 Scenario: A value written in both languages offers Translate only once its wording differs from what correction opened with
   Given a Safety Officer and three type-ahead values flagged for review
-  When they open the review-type-ahead-values page
+  And they open the review-type-ahead-values page
   And they begin correcting "coopers"
   And they write its French wording as "Coopers (fr)"
-  Then that value's Translate action is unavailable
   When they edit its English wording to "Cooper's"
   Then that value's Translate action becomes available
 
+@REQ-CTA-006
+@ui
+Scenario: A value's Translate stays unavailable while only its other language is written
+  Given a Safety Officer and three type-ahead values flagged for review
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  When they write its French wording as "Coopers (fr)"
+  Then that value's Translate action is unavailable
+
 @REQ-MOD-167
 @ui
-Scenario: A value's Translate is unavailable after it translates, until its source is edited again
+Scenario: A value's Translate is unavailable after it translates
   Given a Safety Officer and three type-ahead values flagged for review
-  When they open the review-type-ahead-values page
-  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they edit its English wording to "Cooper's"
+  When they translate that value's wording
   Then that value's Translate action is unavailable
+
+@REQ-CTA-007
+@ui
+Scenario: A translated value's Translate becomes available again once its source is edited
+  Given a Safety Officer and three type-ahead values flagged for review
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they edit its English wording to "Cooper's"
+  And they translate that value's wording
   When they edit that value's English wording again
   Then that value's Translate action becomes available
 
 @REQ-MOD-168
 @ui
-Scenario: Pressing Translate drafts the other language, still editable, and saves nothing by itself
+Scenario: Translating a value drafts the other language, still editable, and saves nothing by itself
   Given a Safety Officer and three type-ahead values flagged for review
-  When they open the review-type-ahead-values page
-  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they edit its English wording to "Cooper's"
+  When they translate that value's wording
   Then that value's French wording is filled with the translation and remains editable
-  And nothing is saved until they press Save correction
+  And nothing is saved until they save the correction
 
 @REQ-MOD-169
 @ui
 Scenario: The direction switch changes which language Translate reads from
   Given a Safety Officer and three type-ahead values flagged for review
-  When they open the review-type-ahead-values page
+  And they open the review-type-ahead-values page
   And they begin correcting "Test site"
-  Then that value's direction switch translates English to French
-  When they flip that value's direction switch to French to English
-  And they write its French wording as "Site d'essai" and press Translate
+  And they flip that value's direction switch to French to English
+  And they write its French wording as "Site d'essai"
+  When they translate that value's wording
   Then that value's English wording is filled with the translation
+
+@REQ-CTA-008
+@ui
+Scenario: Correcting a value starts with its direction switch translating English to French
+  Given a Safety Officer and three type-ahead values flagged for review
+  And they open the review-type-ahead-values page
+  When they begin correcting "Test site"
+  Then that value's direction switch translates English to French
 
 @REQ-MOD-170
 @ui
 Scenario: Translate is unavailable when the server has no translation provider
   Given a Safety Officer and three type-ahead values flagged for review, on a server with no translation provider
-  When they open the review-type-ahead-values page
-  And they begin correcting "coopers"
+  And they open the review-type-ahead-values page
+  When they begin correcting "coopers"
   Then that value's Translate action is unavailable and says why
 
 @REQ-MOD-171
 @ui
 Scenario: A failed translation says so on the value's row and drafts nothing
   Given a Safety Officer and three type-ahead values flagged for review, on a server whose translation fails
-  When they open the review-type-ahead-values page
-  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they edit its English wording to "Cooper's"
+  When they translate that value's wording
   Then that value's row says the translation failed
   And that value's French wording still reads ""
   And that value's Translate action becomes available
@@ -463,8 +523,10 @@ Scenario: A failed translation says so on the value's row and drafts nothing
 @ui
 Scenario: A translation overtaken by a direction flip is dropped, and Translate stops showing as working
   Given a Safety Officer and three type-ahead values flagged for review, on a server whose translation answers only when released
-  When they open the review-type-ahead-values page
-  And they begin correcting "coopers", edit its English wording to "Cooper's", and press Translate
+  And they open the review-type-ahead-values page
+  And they begin correcting "coopers"
+  And they edit its English wording to "Cooper's"
+  And they translate that value's wording
   And they flip that value's direction switch while the translation is still out
-  And the translation then answers
+  When the translation then answers
   Then its answer is dropped and Translate is no longer shown as working

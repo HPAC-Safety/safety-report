@@ -91,7 +91,7 @@ Then(/^its open list reads (.+)$/, async ({ page }, quoted: string) => {
 	expect(listed.slice(0, expected.length)).toEqual(expected)
 })
 
-When("presses Next without choosing a country", async ({ page }) => {
+When("they go on without choosing a country", async ({ page }) => {
 	await goNext(page)
 })
 
@@ -104,7 +104,7 @@ Then("no message says an answer is required", async ({ page }) => {
 	await expect(page.getByText("This question is required.")).toHaveCount(0)
 })
 
-When("a reporter using English chooses {string} for Country and presses Next", async ({ page }, choice: string) => {
+When("a reporter using English chooses {string} for Country and goes on", async ({ page }, choice: string) => {
 	await goNext(page) // intro -> the Country page
 	await pickChoice(page, "Country", choice)
 	await goNext(page)
@@ -114,7 +114,7 @@ Then("the Province question is shown", async ({ page }) => {
 	await expect(page.getByRole("combobox", { name: "Province" })).toBeVisible()
 })
 
-When("the reporter goes back and chooses {string} for Country and presses Next", async ({ page }, choice: string) => {
+When("the reporter goes back and chooses {string} for Country and goes on", async ({ page }, choice: string) => {
 	await page.getByRole("button", { name: "Back" }).click()
 	await pickChoice(page, "Country", choice)
 	await goNext(page)

@@ -24,17 +24,18 @@ as a place to type, not a picker to choose from
 ([ADR-0152](../../decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
 
 - **Opening.** Clicking the question, pressing Alt and the down arrow, or typing
-  opens the list.
+  opens the list (`REQ-RFM-001`).
 - **A hint below 3 characters.** Trimmed of spaces, fewer than 3 typed
   characters shows the open list with no choices, only a hint row: "Type 3 or
   more letters to see matching choices, or enter your own." No choice is
   active there, so the up and down arrows and Enter do nothing. Reaching 3
   characters replaces the hint with the matching choices; deleting back below
   3 brings the hint back. This is announced to assistive technology through a
-  polite live status (`REQ-QB-159`, `REQ-QB-229`, `REQ-QB-230`,
+  polite live status (`REQ-QB-159`, `REQ-QB-229`, `REQ-QB-230`, `REQ-RFM-001`,
+  `REQ-RFM-002`, `REQ-RFM-003`,
   [ADR-0152](../../decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
   A dependent type-ahead follows the same rule, on top of its own narrowing by
-  the parent's answer (`REQ-QB-231`, ADR-0146).
+  the parent's answer (`REQ-QB-231`, `REQ-RFM-008`, `REQ-RFM-009`, ADR-0146).
 - **Reopening filters by what the question holds** (`REQ-QB-232`, ADR-0152).
 - **Filtering.** At 3 or more characters, what the reporter typed narrows the
   list to the choices whose wording contains it anywhere, ignoring case and
@@ -54,12 +55,14 @@ as a place to type, not a picker to choose from
   move the highlighted choice through the list, and pointing at a choice
   highlights it. Enter takes the highlighted choice, Alt and the down arrow
   open the list without moving, and Escape or a press outside the question
-  closes it, keeping what the question holds (`REQ-QB-161`). Tab moves on and
-  closes it too (`REQ-QB-162`). The question follows the WAI-ARIA 1.2 combobox
+  closes it, keeping what the question holds (`REQ-QB-161`, `REQ-RFM-004`,
+  `REQ-RFM-005`, `REQ-RFM-006`). Tab moves on and closes it too
+  (`REQ-RFM-007`). The question follows the WAI-ARIA 1.2 combobox
   pattern, and keeps its label, help text, and error.
 - **A picked choice.** A choice taken from the list is sent as that choice,
   by its identifier, even where another choice carries the same wording
-  (`REQ-QB-171`). Text typed without picking is matched to a choice by its
+  (`REQ-QB-171`), and the closed question shows its wording (`REQ-RFM-010`).
+  Text typed without picking is matched to a choice by its
   wording, ignoring case, or else sent as typed.
 - **A value it does not offer.** The reporter may still type one, of any
   length. The list says nothing matches once 3 or more characters match no
@@ -69,8 +72,9 @@ as a place to type, not a picker to choose from
 - **One-language choices.** A choice a reporter added in one language is
   offered in that language, marked with it for assistive technology
   (`REQ-QB-103`).
-- **Small screens.** The list never makes the page scroll sideways, and a long
-  list scrolls within itself (`REQ-QB-163`).
+- **Small screens.** On a phone-width screen, 360 pixels wide, the list never
+  makes the page scroll sideways, and a long list scrolls within itself
+  (`REQ-QB-163`).
 
 ## The single-select and multi-select questions
 
@@ -82,19 +86,23 @@ type-ahead's alone. Each keeps its own input type
 ([ADR-0150](../../decisions/ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md)).
 
 - **Single-select.** A question with a caret shows the chosen choice, or "Choose
-  one". It is not the browser's `<select>` (`REQ-QB-208`). It follows the
+  one". It is not the browser's `<select>` (`REQ-QB-208`), and its list is
+  drawn like the type-ahead's (`REQ-RFM-011`). It follows the
   WAI-ARIA 1.2 select-only combobox pattern:
   - **Opening.** Clicking it, Enter, Space, the down arrow, or Alt and the
     down arrow opens the list directly beneath it, with the chosen choice
-    highlighted.
+    highlighted, or "Choose one" when none is chosen (`REQ-RFM-011`,
+    `REQ-RFM-012`, `REQ-RFM-014`).
   - **Moving.** The up and down arrows move the highlighted choice, Home and
     End jump to the ends, typing a character jumps to the next choice
-    starting with it, and pointing at a choice highlights it.
+    starting with it, and pointing at a choice highlights it (`REQ-RFM-013`,
+    `REQ-RFM-016`).
   - **Choosing.** Enter or Space takes the highlighted choice and closes the
     list. Escape, Tab, or a press outside closes it without changing the
-    answer (`REQ-QB-209`).
+    answer (`REQ-QB-209`, `REQ-RFM-015`).
   - **Clearing.** "Choose one" is the list's first row; choosing it leaves
-    the question unanswered (`REQ-QB-210`).
+    the question unanswered (`REQ-QB-210`); any other choice shows in the
+    closed question (`REQ-RFM-017`).
   - **The pointer** picks a choice by a click on its row (`REQ-QB-268`). The
     rows are `role="option"` and never take focus: the keyboard drives them
     from the question through `aria-activedescendant`, as in the type-ahead
@@ -108,8 +116,10 @@ type-ahead's alone. Each keeps its own input type
 - **Multi-select.** The closed trigger is a combobox button
   (`REQ-SUB-034`, `REQ-SUB-132`, `REQ-SUB-144`). Its open
   list takes the type-ahead's rows and separators, a real checkbox on each
-  row, and the type-ahead's highlight on the row pointed at or focused. It
-  stays open while several are checked (`REQ-QB-211`, `REQ-SUB-142`).
+  row, and the type-ahead's highlight on the row pointed at or focused. Each
+  row is large enough to touch: at least 44 pixels tall. It stays open while
+  several are checked (`REQ-QB-211`, `REQ-SUB-142`, `REQ-RFM-018`,
+  `REQ-RFM-019`).
 
 ## Correcting seeded wording
 
@@ -117,6 +127,10 @@ The seeded attachment question departs from Typeform on purpose. Typeform took
 one file and asked for the rest by email. This form takes several, so the
 question reads "Photos or videos" and asks for images, videos, or documents
 (`REQ-QB-104`).
+
+The form asks the media consent question only while a file is attached and
+publication consent is yes, and stops asking it once the file is removed or
+publication consent is withdrawn (`REQ-QB-113`, `REQ-RFM-020`).
 
 A database seeded before that change is corrected by a migration that follows
 the same rule as an Administrator's edit. An unanswered question gets a new
@@ -136,7 +150,7 @@ country (249), not the yes/no "Did the occurrence happen in Canada?" it was
   separator, then the other countries alphabetically in the reader's language
   (`REQ-QB-249`, `REQ-QB-256`). It is optional (`REQ-QB-257`).
 - Province is shown only when Country is Canada, and a reporter who leaves
-  Country blank is never asked Province (`REQ-QB-258`).
+  Country blank is never asked Province (`REQ-QB-258`, `REQ-RFM-021`).
 - A migration converts a database seeded before the change by the same rule as
   an Administrator's edit: an unanswered question gets a new revision
   (`REQ-QB-250`), and an answered one forks with its key kept (`REQ-QB-251`,

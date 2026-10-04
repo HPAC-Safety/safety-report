@@ -36,7 +36,8 @@ any banned synonym in a `.feature` file or a `.spec/features/<area>/README.md`
   regular expression, matching case as written unless its flags say `i`. A
   `\|` inside an item is a literal `|`.
 - **Exempt areas.** The areas, by directory name, where that row's bans do
-  not apply.
+  not apply. A narrower carve-out — one fixed phrase, such as "landing
+  field" — sits inside the pattern, and that row's definition says why.
 
 Identifier-shaped words — snake_case and PascalCase storage names, HTTP status
 codes, `API`, `DTO`, `outbox`, `JSON` — and interface mechanics are outside

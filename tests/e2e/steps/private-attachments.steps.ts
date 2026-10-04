@@ -9,7 +9,7 @@ const { Given, When, Then } = createBdd()
  * its staging area (issue #658: drop or choose several files, each uploads on
  * staging, its own description, "Add N attachments"), and a private note that
  * refers to an already-added attachment (REQ-MOD-115..117, REQ-MOD-173..177,
- * REQ-MOD-180..181, ADR-0135).
+ * REQ-MOD-180..181, REQ-MED-071..083, ADR-0135).
  *
  * The private-attachment endpoints, and the storage URLs they hand out, are
  * stubbed at the network boundary and keep their files in memory, so what is
@@ -197,6 +197,97 @@ function addAllButton(page: Page) {
 	return section(page).getByRole("button", { name: /^Add \d+ attachments?$/ })
 }
 
+/**
+ * Opens the pending report the review stub serves, as manage-reports.steps.ts's
+ * "the Safety Officer opens that report" does, for a Given that starts there.
+ */
+async function openThatReport(page: Page) {
+	await page.goto("/admin/reports/reviewaaaaa")
+	await expect(page.getByRole("heading", { level: 1, name: /^(Report|Signalement)$/ })).toBeVisible()
+	await expect(page.locator('[data-badge="status"]')).toBeVisible()
+}
+
+async function stage(page: Page, fileName: string) {
+	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+	await section(page).getByLabel("Add a private attachment").setInputFiles({
+		name: fileName,
+		mimeType: "application/zip",
+		buffer: Buffer.from(CONTENT),
+	})
+}
+
+async function expectFinishedUploading(page: Page, fileName: string) {
+	const row = stagedRow(page, fileName)
+	await expect(row.getByLabel("Description (optional)")).toBeVisible()
+	await expect(row.getByRole("progressbar")).toHaveCount(0)
+}
+
+Given("the Safety Officer has that report open", async ({ page }) => {
+	await openThatReport(page)
+})
+
+Given(
+	"the Safety Officer has staged the private attachment {string} on that report and described it as {string}",
+	async ({ page }, fileName: string, description: string) => {
+		await openThatReport(page)
+		await stage(page, fileName)
+		await expectFinishedUploading(page, fileName)
+		await stagedRow(page, fileName).getByLabel("Description (optional)").fill(description)
+	},
+)
+
+Given("the Safety Officer has added the private attachment {string} to that report", async ({ page }, fileName: string) => {
+	await stubAttachments(page, [
+		{
+			id: "attachmine1",
+			fileName,
+			contentType: "application/zip",
+			byteSize: CONTENT.length,
+			description: "Received from the coroner",
+			addedBy: ME,
+			addedAt: "2026-09-26T16:00:00Z",
+			isMine: true,
+		},
+	])
+	await openThatReport(page)
+	await expect(attachmentNamed(page, fileName)).toHaveCount(1)
+})
+
+Given(
+	"the Safety Officer has staged the private attachment {string} on that report, still uploading",
+	async ({ page }, fileName: string) => {
+		await openThatReport(page)
+		await stage(page, fileName)
+		await expect(stagedRow(page, fileName).getByRole("progressbar")).toBeVisible()
+	},
+)
+
+Given(
+	"the Safety Officer has staged the private attachment {string} on that report, finished uploading",
+	async ({ page }, fileName: string) => {
+		await openThatReport(page)
+		await stage(page, fileName)
+		await expectFinishedUploading(page, fileName)
+	},
+)
+
+Given("the Safety Officer is asked whether to leave after following a link away from the report", async ({ page }) => {
+	await page.getByRole("link", { name: "Back to reports" }).click()
+	await expect(page.getByRole("dialog", { name: "Leave without saving?" })).toBeVisible()
+})
+
+Given(
+	"the Safety Officer is adding the staged private attachment {string} to that report",
+	async ({ page }, fileName: string) => {
+		await openThatReport(page)
+		await stage(page, fileName)
+		await expectFinishedUploading(page, fileName)
+		await addAllButton(page).click()
+		// The report holds the request open until a step releases it.
+		await expect.poll(() => (pendingClaimsByPage.get(page) ?? []).length).toBe(1)
+	},
+)
+
 Given("the report carries the private attachment {string}", async ({ page }, fileName: string) => {
 	await stubAttachments(page, [
 		{
@@ -242,26 +333,12 @@ Given("the report carries the private attachment {string}", async ({ page }, fil
 // --- Staging one file (REQ-MOD-115, REQ-MOD-117) ---
 
 When("the Safety Officer stages the private attachment {string}", async ({ page }, fileName: string) => {
-	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
-	await section(page).getByLabel("Add a private attachment").setInputFiles({
-		name: fileName,
-		mimeType: "application/zip",
-		buffer: Buffer.from(CONTENT),
-	})
+	await stage(page, fileName)
 })
 
 Then("the staged attachment {string} finishes uploading and offers a description box", async ({ page }, fileName: string) => {
-	const row = stagedRow(page, fileName)
-	await expect(row.getByLabel("Description (optional)")).toBeVisible()
-	await expect(row.getByRole("progressbar")).toHaveCount(0)
+	await expectFinishedUploading(page, fileName)
 })
-
-When(
-	"the Safety Officer describes the staged attachment {string} as {string}",
-	async ({ page }, fileName: string, description: string) => {
-		await stagedRow(page, fileName).getByLabel("Description (optional)").fill(description)
-	},
-)
 
 When("the Safety Officer adds the staged private attachments", async ({ page }) => {
 	await addAllButton(page).click()
@@ -386,10 +463,46 @@ When(
 	},
 )
 
-Then("both staged attachments finish uploading independently, each with its own progress", async ({ page }) => {
+async function expectBothFinishedUploading(page: Page) {
 	await expect(stagingList(page).getByLabel("Description (optional)")).toHaveCount(2)
 	await expect(stagingList(page).getByRole("progressbar")).toHaveCount(0)
+}
+
+Then("both staged attachments finish uploading independently, each with its own progress", async ({ page }) => {
+	await expectBothFinishedUploading(page)
 })
+
+async function dropBoth(page: Page, first: string, second: string) {
+	await openThatReport(page)
+	if (!attachmentsByPage.has(page)) await stubAttachments(page, [])
+	await dropOnZone(page, first, second)
+	await expectBothFinishedUploading(page)
+}
+
+Given(
+	"the Safety Officer has staged {string} described as {string} and {string} described as {string} on that report",
+	async ({ page }, first: string, firstDescription: string, second: string, secondDescription: string) => {
+		await dropBoth(page, first, second)
+		await stagedRow(page, first).getByLabel("Description (optional)").fill(firstDescription)
+		await stagedRow(page, second).getByLabel("Description (optional)").fill(secondDescription)
+	},
+)
+
+Given(
+	"the Safety Officer has dropped the private attachments {string} and {string} on that report at once, both finished uploading",
+	async ({ page }, first: string, second: string) => {
+		await dropBoth(page, first, second)
+	},
+)
+
+Given(
+	"the Safety Officer has dropped the private attachments {string} and {string} on that report at once, then removed the staged {string}",
+	async ({ page }, first: string, second: string, removed: string) => {
+		await dropBoth(page, first, second)
+		await stagedRow(page, removed).getByRole("button", { name: `Remove ${removed}` }).click()
+		await expect(stagedRow(page, removed)).toHaveCount(0)
+	},
+)
 
 Then(
 	"the private attachments section lists {string} and {string}, each with its own description",
@@ -443,6 +556,15 @@ async function dropWithOversized(page: Page, withOrdinary: boolean) {
 When("the Safety Officer drops one ordinary private attachment and one larger than the private cap, at once", async ({ page }) => {
 	await dropWithOversized(page, true)
 })
+
+Given(
+	"the Safety Officer has dropped one ordinary private attachment and one larger than the private cap on that report at once, the ordinary one finished uploading",
+	async ({ page }) => {
+		await openThatReport(page)
+		await dropWithOversized(page, true)
+		await expect(stagedRow(page, "ordinary.pdf").getByLabel("Description (optional)")).toBeVisible()
+	},
+)
 
 Then("the too-large attachment's staged row states the private cap and cannot be added", async ({ page }) => {
 	const row = stagedRow(page, "oversized.zip")
@@ -531,6 +653,15 @@ When("the report finishes accepting the private attachment", ({ page }) => {
 When("the Safety Officer drops only a private attachment larger than the private cap", async ({ page }) => {
 	await dropWithOversized(page, false)
 })
+
+Given(
+	"the Safety Officer has dropped only a private attachment larger than the private cap on that report, its row refused",
+	async ({ page }) => {
+		await openThatReport(page)
+		await dropWithOversized(page, false)
+		await expect(stagedRow(page, "oversized.zip").getByRole("alert")).toContainText("larger than")
+	},
+)
 
 When("the Safety Officer reloads the report page", async ({ page }) => {
 	const dialogs: Dialog[] = []

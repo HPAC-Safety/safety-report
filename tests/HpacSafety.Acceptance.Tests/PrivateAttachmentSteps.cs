@@ -136,6 +136,13 @@ public sealed partial class PrivateAttachmentSteps
 		_reportId = first;
 	}
 
+	[Given(@"a report carrying one private attachment, and a private note referring to it")]
+	public async Task GivenAReportWithANoteReferringToItsAttachment()
+	{
+		await GivenAReportCarryingOneAttachment();
+		await WhenAnOfficerAddsANoteReferringToIt();
+	}
+
 	// ── When ────────────────────────────────────────────────────────────────
 
 	[When(@"^a Safety Officer declares an? (.+) file of (.+) for that report's private attachments$")]
@@ -765,7 +772,9 @@ public sealed partial class PrivateAttachmentSteps
 	[Then(@"a private note referring to the other report's private attachment is refused as invalid and nothing is stored")]
 	public async Task ThenAnotherReportsAttachmentIsRefused()
 	{
-		var before = (await ListedNotes()).Count;
+		var notes = await ListedNotes();
+		var before = notes.Count;
+		var revision = notes.Single(candidate => candidate.GetProperty("id").GetString() == _noteId).GetProperty("revision").GetInt32();
 
 		using var officer = Reviewer(_officer, "safety_officer");
 		using var added = await officer.PostAsJsonAsync(NotesUri(), new { text = "Synthetic: wrong report.", attachmentId = _otherAttachmentId });
@@ -773,7 +782,7 @@ public sealed partial class PrivateAttachmentSteps
 
 		using var edited = await officer.PutAsJsonAsync(
 			new Uri($"{NotesUri()}/{_noteId}", UriKind.Relative),
-			new { text = "Synthetic: wrong report.", revision = 2, attachmentId = _otherAttachmentId });
+			new { text = "Synthetic: wrong report.", revision, attachmentId = _otherAttachmentId });
 		edited.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
 		(await ListedNotes()).Count.ShouldBe(before);

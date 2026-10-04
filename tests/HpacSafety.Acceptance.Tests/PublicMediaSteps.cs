@@ -161,6 +161,20 @@ public sealed class PublicMediaSteps
 		(await Listed()).ShouldBe([_imageId]);
 	}
 
+	[Given(@"a published report shows a processed image that a Safety Officer has hidden")]
+	public async Task GivenAPublishedReportShowsAnImageASafetyOfficerHid()
+	{
+		await GivenAPublishedReportShowsAnImage();
+		await ChangeVisibility(_imageId, "hide");
+	}
+
+	[Given(@"a published report offers a validated document that a Safety Officer has hidden")]
+	public async Task GivenAPublishedReportOffersADocumentASafetyOfficerHid()
+	{
+		await GivenAPublishedReportOffersADocument();
+		await ChangeVisibility(_documentId, "hide");
+	}
+
 	[Given(@"a published report shows a processed QuickTime video")]
 	public async Task GivenAPublishedReportShowsAQuickTimeVideo()
 	{
@@ -386,7 +400,7 @@ public sealed class PublicMediaSteps
 		body.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow.Add(BlobUrlLifetime.Maximum));
 	}
 
-	[Then(@"the URL serves the derivative inline, under the derivative's own image content type")]
+	[Then(@"the URL serves the derivative inline, under the image content type of the derivative itself")]
 	public async Task ThenTheUrlServesTheDerivativeInline()
 	{
 		var body = await Link();
@@ -411,7 +425,7 @@ public sealed class PublicMediaSteps
 		served.Content.Headers.ContentDisposition?.DispositionType.ShouldBe("inline");
 	}
 
-	[Then(@"the response is marked so a browser never guesses its content type")]
+	[Then(@"the response is marked so its content type is never guessed by a browser")]
 	public void ThenTheResponseCarriesNosniff()
 	{
 		_linkResponse!.Headers.GetValues("X-Content-Type-Options").ShouldBe(["nosniff"]);

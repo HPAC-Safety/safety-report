@@ -112,7 +112,7 @@ public sealed class AttachmentAccessSteps
 		_body.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
 	}
 
-	[Then(@"the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so a browser never guesses its content type")]
+	[Then(@"the reviewer receives a short-lived link to the derivative, served inline and not as a forced download, marked so its content type is never guessed by a browser")]
 	public void ThenTheReviewerReceivesAShortLivedInlineUrl()
 	{
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -125,7 +125,7 @@ public sealed class AttachmentAccessSteps
 
 	// A document is never rendered by the browser: the URL forces a download and
 	// the response forbids sniffing its type (ADR-0089).
-	[Then(@"the URL forces a download, marked so a browser never guesses its content type")]
+	[Then(@"the URL forces a download, marked so its content type is never guessed by a browser")]
 	public void ThenTheUrlForcesADownloadWithNosniff()
 	{
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK);

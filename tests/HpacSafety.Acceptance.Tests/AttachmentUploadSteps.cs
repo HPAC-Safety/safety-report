@@ -267,9 +267,9 @@ public sealed class AttachmentUploadSteps
 		(await _response.Content.ReadAsStringAsync()).ShouldNotContain("uploadUrl");
 	}
 
-	// --- REQ-MED-002: declared content type must agree with detected content type ---
+	// --- REQ-MED-002: a declared content type must agree with the one detected ---
 
-	[Given(@"an attachment's declared content type differs from its detected, allowlisted type")]
+	[Given(@"an attachment's declared content type differs from the allowlisted one detected in its bytes")]
 	public async Task GivenADeclaredTypeThatDisagrees()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);

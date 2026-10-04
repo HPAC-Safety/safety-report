@@ -35,7 +35,7 @@ const E2E_PORT = process.env.E2E_PORT
 // definitions in ./steps; `npm test` runs `bddgen` before `playwright test`
 // so the generated specs exist when Playwright collects tests. Filtered to
 // `@ui and not @ignore`: an @ignore'd @ui scenario has no step definitions
-// yet, same convention ADR-0198 keeps for Reqnroll.
+// yet, same convention ADR-0049 uses for Reqnroll.
 const bddTestDir = defineBddConfig({
 	featuresRoot: "../../.spec/features",
 	features: "../../.spec/features/**/*.feature",

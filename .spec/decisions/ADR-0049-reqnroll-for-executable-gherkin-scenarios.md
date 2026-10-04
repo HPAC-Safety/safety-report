@@ -2,7 +2,7 @@
 title: Reqnroll executes the .feature files
 description: ".spec/features/*.feature files are the canonical specification (.spec/features/README.md) — Gherkin scenarios that describe target behavior."
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-19
 decision-makers: Chase Florell
 keywords: Reqnroll, Gherkin, feature files, acceptance tests, xUnit
@@ -10,7 +10,8 @@ keywords: Reqnroll, Gherkin, feature files, acceptance tests, xUnit
 
 # ADR-0049 — Reqnroll executes the `.feature` files
 
-**Status:** Accepted
+**Status:** Superseded by
+[ADR-0198](ADR-0198-the-dotnet-tests-run-on-xunit-v3.md)
 
 ## Context
 

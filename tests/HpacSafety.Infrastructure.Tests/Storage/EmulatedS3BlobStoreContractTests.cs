@@ -32,14 +32,14 @@ public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, I
 		_s3?.Dispose();
 	}
 
-	public override async Task InitializeAsync()
+	public override async ValueTask InitializeAsync()
 	{
 		await _server.StartAsync();
 		_s3 = await S3Emulator.CreateBucket(_server, BucketName);
 		await base.InitializeAsync();
 	}
 
-	public override async Task DisposeAsync()
+	public override async ValueTask DisposeAsync()
 	{
 		await base.DisposeAsync();
 		await _server.DisposeAsync();
@@ -117,7 +117,7 @@ public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, I
 		using var response = await Put(url, content, "application/pdf");
 
 		// Then
-		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 		(await Store.Describe(key, CancellationToken.None)).ShouldBe(new StoredBlob("application/pdf", content.Length));
 	}
 
@@ -154,7 +154,7 @@ public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, I
 		// Given
 		var key = BlobKey.ForUpload(UploadId.New());
 		var url = await Store.CreateUploadUrl(key, "application/pdf", 3, TimeSpan.FromSeconds(1), CancellationToken.None);
-		await Task.Delay(TimeSpan.FromSeconds(2.5));
+		await Task.Delay(TimeSpan.FromSeconds(2.5), TestContext.Current.CancellationToken);
 
 		// When
 		using var response = await Put(url, [1, 2, 3], "application/pdf");

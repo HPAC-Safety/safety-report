@@ -89,12 +89,12 @@
 		<PackageVersion Include="Npgsql" Version="10.0.3" />
 	</ItemGroup>
 	<ItemGroup Label="Reqnroll">
-		<!-- Executes the Gherkin scenarios under .spec/features/ as xUnit tests. See
-		     ADR-0049. Reqnroll.Tools.MsBuild.Generation is the actual
-		     feature-file-to-code-behind compiler; Reqnroll.xUnit only wires the
-		     generated tests into xUnit. -->
+		<!-- Executes the Gherkin scenarios under .spec/features/ as xUnit v3 tests.
+		     See ADR-0198. Reqnroll.Tools.MsBuild.Generation is the actual
+		     feature-file-to-code-behind compiler; Reqnroll.xUnit.v3 only wires the
+		     generated tests into xUnit v3. -->
 		<PackageVersion Include="Reqnroll.Tools.MsBuild.Generation" Version="3.3.4" />
-		<PackageVersion Include="Reqnroll.xUnit" Version="3.3.4" />
+		<PackageVersion Include="Reqnroll.xUnit.v3" Version="3.3.4" />
 	</ItemGroup>
 	<ItemGroup Label="Shouldly">
 		<!-- The assertion library for this repository. Not Assert.*, not FluentAssertions. -->
@@ -105,7 +105,9 @@
 		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
 	</ItemGroup>
 	<ItemGroup Label="xunit">
-		<PackageVersion Include="xunit" Version="2.9.3" />
+		<!-- xunit.v3.mtp-off keeps `dotnet test` on VSTest, so coverlet, the trx
+		     logger and tools/coverage/report-test-counts.ts stay as they are. -->
+		<PackageVersion Include="xunit.v3.mtp-off" Version="4.0.1" />
 		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
 	</ItemGroup>
 	<!--

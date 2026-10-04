@@ -39,7 +39,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
-			await connection.OpenAsync();
+			await connection.OpenAsync(TestContext.Current.CancellationToken);
 			await Execute(
 				connection,
 				"""
@@ -60,7 +60,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = new NpgsqlConnection(connectionString);
-		await reader.OpenAsync();
+		await reader.OpenAsync(TestContext.Current.CancellationToken);
 		var (labelEn, labelFr) = await ReadRevisionLabelsAsync(reader, "vvvvvvvvvvv");
 		labelEn.ShouldBe("Untranslated field");
 		labelFr.ShouldBe("Untranslated field");
@@ -78,7 +78,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
-			await connection.OpenAsync();
+			await connection.OpenAsync(TestContext.Current.CancellationToken);
 			await Execute(
 				connection,
 				"""
@@ -101,7 +101,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == TinyId.Parse("rrrrrrrrrrr"));
+		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == TinyId.Parse("rrrrrrrrrrr"), cancellationToken: TestContext.Current.CancellationToken);
 		summary.AiSummaryEn.ShouldBe("A pilot landed hard.");
 		summary.AiSummaryFr.ShouldBe("Un pilote a atterri durement.");
 		summary.IsApproved.ShouldBeTrue();
@@ -123,7 +123,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
-			await connection.OpenAsync();
+			await connection.OpenAsync(TestContext.Current.CancellationToken);
 			await Execute(
 				connection,
 				"""
@@ -146,7 +146,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == TinyId.Parse("rrrrrrrrrr2"));
+		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == TinyId.Parse("rrrrrrrrrr2"), cancellationToken: TestContext.Current.CancellationToken);
 		summary.AiSummaryEn.ShouldBe("A pilot landed hard.");
 		summary.AiSummaryFr.ShouldBe("Un pilote a atterri durement.");
 		summary.IsApproved.ShouldBeFalse();
@@ -171,7 +171,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
-			await connection.OpenAsync();
+			await connection.OpenAsync(TestContext.Current.CancellationToken);
 			await using var command = new NpgsqlCommand(
 				"""
 				INSERT INTO questions (id, key, is_system, role, is_private, display_order, section_key, is_active, created_at, deleted_at)
@@ -187,7 +187,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 				""",
 				connection);
 			command.Parameters.AddWithValue("value", ciphertext);
-			await command.ExecuteNonQueryAsync();
+			await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
 		}
 
 		// When
@@ -204,9 +204,9 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = new NpgsqlConnection(connectionString);
-		await reader.OpenAsync();
+		await reader.OpenAsync(TestContext.Current.CancellationToken);
 		await using var select = new NpgsqlCommand("SELECT value FROM report_answers WHERE id = 'answer_enc1'", reader);
-		var value = (string?)await select.ExecuteScalarAsync();
+		var value = (string?)await select.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 		value.ShouldBe(plaintext);
 	}
 
@@ -226,7 +226,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
-			await connection.OpenAsync();
+			await connection.OpenAsync(TestContext.Current.CancellationToken);
 			await Execute(
 				connection,
 				"""
@@ -247,7 +247,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == TinyId.Parse("rrrrrrrrrr4"));
+		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == TinyId.Parse("rrrrrrrrrr4"), cancellationToken: TestContext.Current.CancellationToken);
 		summary.AiSummaryEn.ShouldBe("A pilot landed hard.");
 		summary.AiSummaryFr.ShouldBe("A pilot landed hard.");
 		summary.IsApproved.ShouldBeFalse();

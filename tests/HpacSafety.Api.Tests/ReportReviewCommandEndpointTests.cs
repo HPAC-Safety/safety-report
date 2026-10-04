@@ -108,7 +108,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		await ProblemOf(response, HttpStatusCode.Conflict, "invalid-transition");
 		(await Audits(id)).ShouldBeEmpty();
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		detail.GetProperty("status").GetString().ShouldBe("unpublished");
 		detail.GetProperty("summary").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
@@ -121,14 +121,14 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportId = TinyId.Parse(id);
-		(await database.AuditLog.AnyAsync(e => e.TargetId == reportId && e.Action == AuditAction.DeletedReport)).ShouldBeTrue();
+		(await database.AuditLog.AnyAsync(e => e.TargetId == reportId && e.Action == AuditAction.DeletedReport, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeTrue();
 	}
 
 	[Fact]
@@ -137,7 +137,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var (id, version) = await Seed(ReportStatus.Published, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		var before = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var before = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
 		var detail = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé fermement." }));
@@ -151,7 +151,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		(await Audits(id)).ShouldBe([AuditAction.EditedSummary]);
 
 		using var visitor = _factory.CreateClient();
-		var published = await visitor.GetFromJsonAsync<JsonElement>(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative));
+		var published = await visitor.GetFromJsonAsync<JsonElement>(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		published.GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed firmly.");
 	}
 
@@ -179,7 +179,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		revisions[1].GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed.");
 
 		using var visitor = _factory.CreateClient();
-		using var notPublic = await visitor.GetAsync(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative));
+		using var notPublic = await visitor.GetAsync(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 		notPublic.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
@@ -195,7 +195,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		await ProblemOf(response, HttpStatusCode.BadRequest, "invalid-review");
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(1);
 		(await Audits(id)).ShouldBeEmpty();
 	}
@@ -243,7 +243,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		restored.GetProperty("status").GetString().ShouldBe("published");
 		restored.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.String);
 		using var visitor = _factory.CreateClient();
-		var published = await visitor.GetFromJsonAsync<JsonElement>(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative));
+		var published = await visitor.GetFromJsonAsync<JsonElement>(new Uri($"/api/v1/public/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		published.GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed.");
 	}
 
@@ -280,7 +280,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		var current = detail.GetProperty("summaryRevisions")[0].GetProperty("id").GetString()!;
 
 		// When / Then — the current revision is a 400; one that is not this summary's, or a malformed id, is a 404
@@ -331,7 +331,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 			// Then — never two revisions with the same sequence, never a 500
 			responses.Count(response => response.StatusCode == HttpStatusCode.OK).ShouldBe(1);
 			responses.Count(response => response.StatusCode == HttpStatusCode.Conflict).ShouldBe(7);
-			var detail = await clients[0].GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+			var detail = await clients[0].GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 			detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(2);
 			foreach (var response in responses)
 			{
@@ -361,7 +361,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		await ProblemOf(response, HttpStatusCode.Conflict, "stale-report");
-		var detail = await first.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var detail = await first.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		detail.GetProperty("summaryRevisions").GetArrayLength().ShouldBe(2);
 	}
 
@@ -452,7 +452,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportId = TinyId.Parse(id);
-		var entry = await database.AuditLog.SingleAsync(e => e.TargetId == reportId && e.Action == AuditAction.UnpublishedReport);
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetId == reportId && e.Action == AuditAction.UnpublishedReport, cancellationToken: TestContext.Current.CancellationToken);
 		(entry.Detail ?? string.Empty).ShouldNotContain(Note);
 	}
 
@@ -507,7 +507,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		await ProblemOf(response, HttpStatusCode.Conflict, "stale-report");
-		var detail = await first.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		var detail = await first.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		detail.GetProperty("summary").GetProperty("aiSummaryEn").GetString().ShouldBe("First.");
 	}
 
@@ -597,7 +597,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		(await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative))).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		(await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative), TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// When
 		using var response = await Send(client, id, "publish", new { version });

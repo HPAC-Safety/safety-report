@@ -264,7 +264,8 @@
 		{
 			"groupName": "xunit",
 			"matchPackageNames": [
-				"/^xunit/"
+				"/^xunit/",
+				"Reqnroll.xUnit.v3"
 			]
 		},
 		{

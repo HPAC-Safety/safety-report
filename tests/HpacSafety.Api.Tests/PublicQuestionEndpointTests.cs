@@ -31,7 +31,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(PublicQuestions);
+		using var response = await client.GetAsync(PublicQuestions, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -80,7 +80,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		var id = created.GetProperty("id").GetString();
 
 		// When
-		using var delete = await admin.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var delete = await admin.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 		delete.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// Then
@@ -99,7 +99,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var edit = Draft(key, "short_text") with { LabelEn = "Reworded question" };
-		using var revise = await admin.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit);
+		using var revise = await admin.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit, cancellationToken: TestContext.Current.CancellationToken);
 		revise.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
@@ -149,13 +149,10 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		using var response = retype
-			? await admin.PutAsJsonAsync(
-				new Uri($"/api/admin/questions/{groupId}", UriKind.Relative),
-				Draft(groupKey, "short_text") with { IsRequired = false, IsPrivate = false })
-			: await admin.DeleteAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative));
+			? await admin.PutAsJsonAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), Draft(groupKey, "short_text") with { IsRequired = false, IsPrivate = false }, cancellationToken: TestContext.Current.CancellationToken) : await admin.DeleteAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
-		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
 		var keys = (await ListPublic()).Select(candidate => candidate.GetProperty("key").GetString()).ToList();
 		var child = keys.IndexOf(childKey);

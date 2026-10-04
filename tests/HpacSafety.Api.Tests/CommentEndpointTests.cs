@@ -33,7 +33,7 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		using var member = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await member.PostAsJsonAsync($"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "de-DE" });
+		using var response = await member.PostAsJsonAsync($"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "de-DE" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -49,11 +49,11 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		var (reportId, commentId, member) = await Commented();
 
 		// When
-		using var response = await member.PutAsJsonAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", new { text, locale });
+		using var response = await member.PutAsJsonAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", new { text, locale }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var listed = await member.GetFromJsonAsync<JsonElement>($"/api/v1/public/reports/{reportId}/comments");
+		var listed = await member.GetFromJsonAsync<JsonElement>($"/api/v1/public/reports/{reportId}/comments", cancellationToken: TestContext.Current.CancellationToken);
 		listed[0].GetProperty("text").GetString().ShouldBe("Synthetic original.");
 		member.Dispose();
 	}
@@ -69,9 +69,9 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var edited = await member.PutAsJsonAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", new { text = "Synthetic.", locale = "en-CA" });
-		using var deleted = await member.DeleteAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}");
-		using var hidden = await officer.PostAsync($"/api/admin/comments/{commentId}/hide", null);
+		using var edited = await member.PutAsJsonAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", new { text = "Synthetic.", locale = "en-CA" }, cancellationToken: TestContext.Current.CancellationToken);
+		using var deleted = await member.DeleteAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", TestContext.Current.CancellationToken);
+		using var hidden = await officer.PostAsync($"/api/admin/comments/{commentId}/hide", null, TestContext.Current.CancellationToken);
 
 		// Then
 		edited.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -85,11 +85,11 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var (reportId, commentId, member) = await Commented();
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		(await officer.PostAsync($"/api/admin/comments/{commentId}/hide", null)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		(await officer.PostAsync($"/api/admin/comments/{commentId}/hide", null, TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// When
-		using var again = await officer.PostAsync($"/api/admin/comments/{commentId}/hide", null);
-		using var edited = await member.PutAsJsonAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", new { text = "Synthetic.", locale = "en-CA" });
+		using var again = await officer.PostAsync($"/api/admin/comments/{commentId}/hide", null, TestContext.Current.CancellationToken);
+		using var edited = await member.PutAsJsonAsync($"/api/v1/public/reports/{reportId}/comments/{commentId}", new { text = "Synthetic.", locale = "en-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		again.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -104,7 +104,7 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		using var visitor = _factory.CreateClient();
 
 		// When
-		using var response = await visitor.GetAsync($"/api/v1/public/reports/{TinyId.New()}/comments");
+		using var response = await visitor.GetAsync($"/api/v1/public/reports/{TinyId.New()}/comments", TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

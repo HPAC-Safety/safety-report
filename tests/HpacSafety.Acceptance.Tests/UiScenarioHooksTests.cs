@@ -1,6 +1,7 @@
 using System.Reflection;
 using Reqnroll;
 using Shouldly;
+using Xunit.v3;
 
 namespace HpacSafety.Acceptance.Tests;
 
@@ -31,6 +32,8 @@ public sealed class UiScenarioHooksTests
 	[Fact]
 	public void GivenUiScenario_WhenHookRuns_ThenItThrowsTheSkipThatSurvivesTheMessageFormatter()
 	{
-		Should.Throw<SkipException>(UiScenarioHooks.SkipUiScenario);
+		var thrown = Should.Throw<InvalidOperationException>(UiScenarioHooks.SkipUiScenario);
+
+		thrown.Message.ShouldStartWith(DynamicSkipToken.Value);
 	}
 }

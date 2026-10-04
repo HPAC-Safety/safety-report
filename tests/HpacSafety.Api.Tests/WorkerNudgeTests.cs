@@ -36,8 +36,7 @@ public sealed class WorkerNudgeTests(ApiPostgresFixture fixture)
 		using var member = await SignedInClient.As(nudged, MemberRole.User);
 
 		// When
-		using var response = await member.PostAsJsonAsync(
-			$"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "en-CA" });
+		using var response = await member.PostAsJsonAsync($"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "en-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -54,8 +53,7 @@ public sealed class WorkerNudgeTests(ApiPostgresFixture fixture)
 		using var member = await SignedInClient.As(nudged, MemberRole.User);
 
 		// When
-		using var response = await member.PostAsJsonAsync(
-			$"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "de-DE" });
+		using var response = await member.PostAsJsonAsync($"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "de-DE" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -71,8 +69,7 @@ public sealed class WorkerNudgeTests(ApiPostgresFixture fixture)
 		using var member = await SignedInClient.As(nudged, MemberRole.User);
 
 		// When
-		using var response = await member.PostAsJsonAsync(
-			$"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "en-CA" });
+		using var response = await member.PostAsJsonAsync($"/api/v1/public/reports/{reportId}/comments", new { text = "Synthetic.", locale = "en-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — a failed nudge never fails the request that queued the work.
 		response.StatusCode.ShouldBe(HttpStatusCode.Created);

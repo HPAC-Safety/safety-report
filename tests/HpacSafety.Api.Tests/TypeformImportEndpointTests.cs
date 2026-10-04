@@ -33,7 +33,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
+		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -46,7 +46,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(MemberRole.User);
 
 		// When
-		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
+		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -59,12 +59,12 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
+		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
-		var preview = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var preview = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var drafts = preview.GetProperty("drafts").EnumerateArray().ToList();
 		drafts.ShouldContain(draft => draft.GetProperty("key").GetString() == "name_ref");
 	}
@@ -80,7 +80,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		};
 
 		// When
-		using var response = await client.PostAsync(Import, content);
+		using var response = await client.PostAsync(Import, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -93,10 +93,10 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
+		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"), TestContext.Current.CancellationToken);
 
 		// Then
-		var preview = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var preview = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var rejected = preview.GetProperty("rejected").EnumerateArray().ToList();
 		rejected.ShouldContain(field => field.GetProperty("ref").GetString() == "unsupported-ref");
 	}
@@ -108,14 +108,14 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
+		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"), TestContext.Current.CancellationToken);
 
 		// Then
-		var preview = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var preview = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var noteIds = preview.GetProperty("pendingLogicNoteIds").EnumerateArray().Select(id => id.GetString()).ToList();
 		noteIds.ShouldHaveSingleItem();
 
-		var listed = await client.GetFromJsonAsync<JsonElement>(PendingLogic);
+		var listed = await client.GetFromJsonAsync<JsonElement>(PendingLogic, cancellationToken: TestContext.Current.CancellationToken);
 		listed.EnumerateArray().ShouldContain(note => note.GetProperty("id").GetString() == noteIds[0]);
 	}
 
@@ -124,17 +124,17 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		using var client = await SignedIn();
-		using var imported = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
-		var preview = await imported.Content.ReadFromJsonAsync<JsonElement>();
+		using var imported = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"), TestContext.Current.CancellationToken);
+		var preview = await imported.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var noteId = preview.GetProperty("pendingLogicNoteIds").EnumerateArray().First().GetString();
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/{noteId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/{noteId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-		var listed = await client.GetFromJsonAsync<JsonElement>(PendingLogic);
+		var listed = await client.GetFromJsonAsync<JsonElement>(PendingLogic, cancellationToken: TestContext.Current.CancellationToken);
 		listed.EnumerateArray().ShouldNotContain(note => note.GetProperty("id").GetString() == noteId);
 	}
 
@@ -145,7 +145,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/unknown00000", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/unknown00000", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -158,7 +158,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/AAAAAAAAAAA", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/AAAAAAAAAAA", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -171,12 +171,12 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsync(Import, Multipart("form-en.json", "form-fr.json"));
+		using var response = await client.PostAsync(Import, Multipart("form-en.json", "form-fr.json"), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
-		var preview = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var preview = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		preview.GetProperty("drafts").GetArrayLength().ShouldBeGreaterThan(0);
 	}
 
@@ -192,7 +192,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		};
 
 		// When
-		using var response = await client.PostAsync(Import, content);
+		using var response = await client.PostAsync(Import, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -210,7 +210,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		};
 
 		// When
-		using var response = await client.PostAsync(Import, content);
+		using var response = await client.PostAsync(Import, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

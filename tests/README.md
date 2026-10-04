@@ -21,7 +21,7 @@ Integration tests require Docker. Use deterministic model fakes and synthetic
 identities, reports, locations, and attachments; never commit real report data.
 
 `HpacSafety.Acceptance.Tests` runs the `.spec/features/**/*.feature` scenarios
-directly via Reqnroll ([ADR-0049](../.spec/decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)),
+directly via Reqnroll on xUnit v3 ([ADR-0198](../.spec/decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md)),
 as part of the same `dotnet test HpacSafety.slnx` run. A scenario carries
 `@ignore` until its behavior is implemented; implementing it means writing its
 step definitions and removing that tag in the same PR.

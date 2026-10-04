@@ -79,9 +79,9 @@ public sealed class ProcessAttachmentProcessorTests(WorkerPostgresFixture postgr
 		// Given
 		var (context, store, file) = await Claimed(Photo(), MediaType.Png);
 		await using var _ = context;
-		var report = await context.Reports.SingleAsync(candidate => candidate.Id == file.ReportId);
+		var report = await context.Reports.SingleAsync(candidate => candidate.Id == file.ReportId, cancellationToken: TestContext.Current.CancellationToken);
 		report.SoftDelete(At);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		await Process(context, store, file.Id);

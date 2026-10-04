@@ -36,7 +36,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/reports", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/admin/reports", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -52,7 +52,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
+		using var response = await client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -89,8 +89,10 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/reports", UriKind.Relative));
-		var body = await response.Content.ReadAsStringAsync();
+		// Every page: the shared database holds the other tests' reports too, so
+		// the seeded one is on the first page only when this test happens to run
+		// early.
+		var body = string.Concat((await List(client, null)).Select(item => item.GetRawText()));
 
 		// Then
 		body.ShouldContain(seeded["pending"]);
@@ -135,7 +137,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var listed = await List(client, null);
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded[name]}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded[name]}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		Item(listed, seeded[name]).GetProperty("version").GetString().ShouldBe(detail.GetProperty("version").GetString());
@@ -148,13 +150,11 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var seeded = await Seed();
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		var listedVersion = Item(await List(client, null), seeded["pending"]).GetProperty("version").GetString();
-		using var first = await client.PostAsJsonAsync(
-			new Uri($"/api/admin/reports/{seeded["pending"]}/publish", UriKind.Relative), new { version = listedVersion });
+		using var first = await client.PostAsJsonAsync(new Uri($"/api/admin/reports/{seeded["pending"]}/publish", UriKind.Relative), new { version = listedVersion }, cancellationToken: TestContext.Current.CancellationToken);
 		first.EnsureSuccessStatusCode();
 
 		// When
-		using var second = await client.PostAsJsonAsync(
-			new Uri($"/api/admin/reports/{seeded["pending"]}/unpublish", UriKind.Relative), new { version = listedVersion, note = "" });
+		using var second = await client.PostAsJsonAsync(new Uri($"/api/admin/reports/{seeded["pending"]}/unpublish", UriKind.Relative), new { version = listedVersion, note = "" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		second.StatusCode.ShouldBe(HttpStatusCode.Conflict);
@@ -168,7 +168,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(PendingCounts);
+		using var response = await client.GetAsync(PendingCounts, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -275,7 +275,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 				database.Reports.Add(report);
 				ids.Add(report.Id.Value);
 			}
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
@@ -352,11 +352,11 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/reports?filter=everything", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/admin/reports?filter=everything", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("needs-action");
 	}
 
@@ -368,7 +368,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["pending"]}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["pending"]}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		detail.GetProperty("status").GetString().ShouldBe("pending");
@@ -412,8 +412,8 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{seeded["pending"]}", UriKind.Relative));
-		var body = await response.Content.ReadAsStringAsync();
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{seeded["pending"]}", UriKind.Relative), TestContext.Current.CancellationToken);
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		body.ShouldNotContain(seeded["pending"] + "/original/");
@@ -430,7 +430,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["failed"]}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["failed"]}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		detail.GetProperty("summaryError").GetString().ShouldBe(Seeding.SummaryError);
@@ -445,7 +445,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["published"]}", UriKind.Relative));
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["published"]}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		var summary = detail.GetProperty("summary");
@@ -462,7 +462,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var reportId = TinyId.Parse(seeded["pending"]);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -470,7 +470,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.ViewedRawReport && e.TargetId == reportId)
-			.SingleAsync();
+			.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.TargetType.ShouldBe("Report");
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
@@ -486,7 +486,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{id ?? TinyId.New().Value}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{id ?? TinyId.New().Value}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -501,13 +501,13 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var reportId = TinyId.Parse(seeded["deleted"]);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		(await database.AuditLog.AnyAsync(e => e.Action == AuditAction.ViewedRawReport && e.TargetId == reportId))
+		(await database.AuditLog.AnyAsync(e => e.Action == AuditAction.ViewedRawReport && e.TargetId == reportId, cancellationToken: TestContext.Current.CancellationToken))
 			.ShouldBeFalse();
 	}
 

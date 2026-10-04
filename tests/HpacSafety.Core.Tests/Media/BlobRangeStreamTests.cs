@@ -32,7 +32,7 @@ public class BlobRangeStreamTests
 		var header = new byte[16];
 
 		// When
-		var read = await stream.ReadAsync(header);
+		var read = await stream.ReadAsync(header, TestContext.Current.CancellationToken);
 
 		// Then
 		read.ShouldBe(16);
@@ -50,7 +50,7 @@ public class BlobRangeStreamTests
 		var buffer = new byte[22];
 
 		// When — the way a zip reader finds its directory.
-		_ = await stream.ReadAsync(buffer.AsMemory(0, 4));
+		_ = await stream.ReadAsync(buffer.AsMemory(0, 4), TestContext.Current.CancellationToken);
 		stream.Seek(-22, SeekOrigin.End);
 		var read = stream.Read(buffer, 0, 22);
 
@@ -69,7 +69,7 @@ public class BlobRangeStreamTests
 		using var copy = new MemoryStream();
 
 		// When
-		await stream.CopyToAsync(copy);
+		await stream.CopyToAsync(copy, TestContext.Current.CancellationToken);
 
 		// Then
 		copy.ToArray().ShouldBe(content);
@@ -101,7 +101,7 @@ public class BlobRangeStreamTests
 		using var copy = new MemoryStream();
 
 		// When
-		await stream.CopyToAsync(copy);
+		await stream.CopyToAsync(copy, TestContext.Current.CancellationToken);
 
 		// Then
 		copy.ToArray().ShouldBe(content);

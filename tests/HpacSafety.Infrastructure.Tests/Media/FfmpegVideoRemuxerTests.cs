@@ -52,7 +52,7 @@ public sealed class FfmpegVideoRemuxerTests
 		// Given — an iPhone records QuickTime; the derivative must be MP4 (ADR-0122)
 		using var workspace = new Workspace();
 		var source = await workspace.SyntheticClip(container: "mov", ("location", "+49.2827-123.1207/"));
-		(await Brand(await File.ReadAllBytesAsync(source))).ShouldBe("qt  ");
+		(await Brand(await File.ReadAllBytesAsync(source, TestContext.Current.CancellationToken))).ShouldBe("qt  ");
 
 		// When
 		var remuxed = await Remux(source, MediaType.QuickTime);
@@ -93,7 +93,7 @@ public sealed class FfmpegVideoRemuxerTests
 
 		// Then
 		remuxed.ShouldNotBeNull();
-		remuxed.ShouldNotBe(await File.ReadAllBytesAsync(source));
+		remuxed.ShouldNotBe(await File.ReadAllBytesAsync(source, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]

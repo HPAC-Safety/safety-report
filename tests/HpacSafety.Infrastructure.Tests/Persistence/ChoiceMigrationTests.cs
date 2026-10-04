@@ -30,7 +30,7 @@ public sealed class ChoiceMigrationTests(PostgresFixture postgres)
 		long seededOptions;
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
-			await connection.OpenAsync();
+			await connection.OpenAsync(TestContext.Current.CancellationToken);
 			await Execute(
 				connection,
 				"""
@@ -72,7 +72,7 @@ public sealed class ChoiceMigrationTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = new NpgsqlConnection(connectionString);
-		await reader.OpenAsync();
+		await reader.OpenAsync(TestContext.Current.CancellationToken);
 
 		(await Rows(reader, "qselect0001")).ShouldBe(
 		[

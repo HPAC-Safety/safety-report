@@ -38,7 +38,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, role);
 
 		// When
-		using var response = await client.GetAsync(Awaiting);
+		using var response = await client.GetAsync(Awaiting, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(expected);
@@ -52,7 +52,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var body = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		var body = await client.GetFromJsonAsync<JsonElement>(Awaiting, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		var listed = body.GetProperty("values").EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == value.Value);
@@ -72,7 +72,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.PostAsync(new Uri($"/api/admin/type-ahead-values/{value}/approval", UriKind.Relative), null);
+		using var response = await client.PostAsync(new Uri($"/api/admin/type-ahead-values/{value}/approval", UriKind.Relative), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -90,15 +90,14 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{value}", UriKind.Relative), new { labelEn = "Cooper's", labelFr = "" });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/type-ahead-values/{value}", UriKind.Relative), new { labelEn = "Cooper's", labelFr = "" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var answers = await database.ReportAnswers.AsNoTracking().Include(answer => answer.Choice)
-			.Where(answer => answer.ChoiceId == value).ToListAsync();
+			.Where(answer => answer.ChoiceId == value).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 		answers.Count.ShouldBe(2);
 		answers.ShouldAllBe(answer => answer.Text == "Cooper's");
 		(await Audited(value, AuditAction.CorrectedTypeAheadValue)).ShouldBeTrue();
@@ -112,13 +111,13 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/type-ahead-values/{value}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/type-ahead-values/{value}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 		(await Stored(value)).Deleted.ShouldNotBeNull();
 		using var anonymous = _factory.CreateClient();
-		var form = await anonymous.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative));
+		var form = await anonymous.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 		form.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == question.Value)
 			.GetProperty("options").EnumerateArray()
 			.ShouldNotContain(option => option.GetProperty("id").GetString() == value.Value);
@@ -134,23 +133,22 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		await using (var scope = _factory.Services.CreateAsyncScope())
 		{
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-			var loaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question);
+			var loaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question, cancellationToken: TestContext.Current.CancellationToken);
 			var report = new Report(Locale.EnCa, At);
 			report.Answer(loaded, "Cooper's", At);
 			database.Reports.Add(report);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 			target = loaded.AllChoices.Single(choice => choice.LabelEn == "Cooper's").Id;
 		}
 
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting, cancellationToken: TestContext.Current.CancellationToken);
 		listed.GetProperty("values").EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == coopers.Value)
 			.GetProperty("mergeTargets").EnumerateArray().Select(entry => entry.GetProperty("id").GetString())
 			.ShouldBe([target.Value]);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{coopers}/merge", UriKind.Relative), new { intoId = target.Value });
+		using var response = await client.PostAsJsonAsync(new Uri($"/api/admin/type-ahead-values/{coopers}/merge", UriKind.Relative), new { intoId = target.Value }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -160,7 +158,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		await using var reader = _factory.Services.CreateAsyncScope();
 		var answers = await reader.ServiceProvider.GetRequiredService<HpacSafetyDbContext>().ReportAnswers.AsNoTracking()
 			.Include(answer => answer.Choice).ThenInclude(choice => choice!.MergedInto)
-			.Where(answer => answer.ChoiceId == coopers).ToListAsync();
+			.Where(answer => answer.ChoiceId == coopers).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 		answers.Count.ShouldBe(2);
 		answers.ShouldAllBe(answer => answer.Text == "Cooper's");
 	}
@@ -191,7 +189,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 			var mentorChoice = model.AddChoiceFromReporter("Mentor 7", Locale.EnCa, At.AddMinutes(1), niviuk);
 			model.MergeValue(mentr7.Id, mentorChoice.Id, "synthetic-safety-officer", At.AddMinutes(2));
 			database.Questions.Add(model);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 			question = model.Id;
 			mentor7 = mentorChoice.Id;
 		}
@@ -201,17 +199,17 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 			var model = await database.Questions
 				.Include(q => q.Revisions).Include(q => q.AllChoices).ThenInclude(choice => choice.ParentLinks)
-				.SingleAsync(q => q.Id == question);
+				.SingleAsync(q => q.Id == question, cancellationToken: TestContext.Current.CancellationToken);
 			var report = new Report(Locale.EnCa, At.AddMinutes(3));
 			report.Answer(model, model.CurrentRevision, "Mentr 7", At.AddMinutes(3), ozone);
 			database.Reports.Add(report);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — flagged again, offered under both parent choices now, and
 		// showing the merged-away wording as its alias.
@@ -230,21 +228,20 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		await using (var scope = _factory.Services.CreateAsyncScope())
 		{
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-			var loaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question);
+			var loaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question, cancellationToken: TestContext.Current.CancellationToken);
 			var report = new Report(Locale.EnCa, At);
 			report.Answer(loaded, "Cooper's", At);
 			database.Reports.Add(report);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 			target = loaded.AllChoices.Single(choice => choice.LabelEn == "Cooper's").Id;
 		}
 
 		using var reviewer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		await reviewer.PostAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{coopers}/merge", UriKind.Relative), new { intoId = target.Value });
+		await reviewer.PostAsJsonAsync(new Uri($"/api/admin/type-ahead-values/{coopers}/merge", UriKind.Relative), new { intoId = target.Value }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
 		using var anonymous = _factory.CreateClient();
-		var form = await anonymous.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative));
+		var form = await anonymous.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		var options = form.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == question.Value)
@@ -262,8 +259,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{value}/merge", UriKind.Relative), new { intoId = "nope" });
+		using var response = await client.PostAsJsonAsync(new Uri($"/api/admin/type-ahead-values/{value}/merge", UriKind.Relative), new { intoId = "nope" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -303,14 +299,14 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 				$"wing_{Guid.NewGuid():N}"[..20], QuestionType.SingleSelect, "Wing", "Aile", At, isActive: true,
 				options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
 			database.Questions.Add(question);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 			option = question.Choices.Single().Id;
 		}
 
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.PostAsync(new Uri($"/api/admin/type-ahead-values/{option}/approval", UriKind.Relative), null);
+		using var response = await client.PostAsync(new Uri($"/api/admin/type-ahead-values/{option}/approval", UriKind.Relative), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -323,8 +319,8 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var malformed = await client.DeleteAsync(new Uri("/api/admin/type-ahead-values/not-an-id", UriKind.Relative));
-		using var unknown = await client.DeleteAsync(new Uri($"/api/admin/type-ahead-values/{TinyId.New()}", UriKind.Relative));
+		using var malformed = await client.DeleteAsync(new Uri("/api/admin/type-ahead-values/not-an-id", UriKind.Relative), TestContext.Current.CancellationToken);
+		using var unknown = await client.DeleteAsync(new Uri($"/api/admin/type-ahead-values/{TinyId.New()}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		malformed.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -339,7 +335,7 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var counts = await client.GetFromJsonAsync<JsonElement>(Counts);
+		var counts = await client.GetFromJsonAsync<JsonElement>(Counts, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — the translation count stays an Administrator's alone (REQ-MOD-085)
 		counts.GetProperty("typeAheadValuesAwaitingReview").GetInt32().ShouldBeGreaterThan(0);

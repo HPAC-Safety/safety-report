@@ -39,8 +39,8 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var first = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
-		using var second = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+		using var first = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null, TestContext.Current.CancellationToken);
+		using var second = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null, TestContext.Current.CancellationToken);
 
 		// Then
 		first.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -56,7 +56,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		using var response = await officer.PostAsync(Action(reportId, fileIds[0], "show"), null);
+		using var response = await officer.PostAsync(Action(reportId, fileIds[0], "show"), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -71,7 +71,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+		using var response = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -84,7 +84,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await officer.PostAsync(Action(TinyId.New().Value, TinyId.New().Value, "hide"), null);
+		using var response = await officer.PostAsync(Action(TinyId.New().Value, TinyId.New().Value, "hide"), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -97,7 +97,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var anonymous = _factory.CreateClient();
 
 		// When
-		using var response = await anonymous.PostAsync(Action(TinyId.New().Value, TinyId.New().Value, "hide"), null);
+		using var response = await anonymous.PostAsync(Action(TinyId.New().Value, TinyId.New().Value, "hide"), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -115,7 +115,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var client = SignedInClient.Bearing(_factory, token);
 
 		// When
-		using var response = await client.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+		using var response = await client.PostAsync(Action(reportId, fileIds[0], "hide"), null, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -163,7 +163,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		var (reportId, fileIds) = await Seed(ReportStatus.Published, true, MediaType.Jpeg, MediaType.Pdf);
 		await Unprocessed(reportId);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		using var hid = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+		using var hid = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null, TestContext.Current.CancellationToken);
 
 		// When
 		var detail = await Detail(reportId);
@@ -201,7 +201,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		var (reportId, fileIds) = await Seed(ReportStatus.Published, true, MediaType.Pdf);
 		await Validate(fileIds[0]);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		using var hid = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
+		using var hid = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null, TestContext.Current.CancellationToken);
 		hid.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// When

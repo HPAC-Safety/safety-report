@@ -35,15 +35,16 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 	protected IBlobStore Store { get; private set; } = null!;
 
 	/// <inheritdoc />
-	public virtual async Task InitializeAsync()
+	public virtual async ValueTask InitializeAsync()
 	{
 		Store = await CreateStore();
 	}
 
 	/// <inheritdoc />
-	public virtual Task DisposeAsync()
+	public virtual ValueTask DisposeAsync()
 	{
-		return Task.CompletedTask;
+		GC.SuppressFinalize(this);
+		return ValueTask.CompletedTask;
 	}
 
 	/// <summary>Builds the store. Called once the environment it needs is up.</summary>
@@ -374,7 +375,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		// When
 		await using var range = await Store.OpenReadRange(Quarantined, 3, 4, CancellationToken.None);
 		using var buffer = new MemoryStream();
-		await range.CopyToAsync(buffer);
+		await range.CopyToAsync(buffer, TestContext.Current.CancellationToken);
 
 		// Then
 		buffer.ToArray().ShouldBe([3, 4, 5, 6]);

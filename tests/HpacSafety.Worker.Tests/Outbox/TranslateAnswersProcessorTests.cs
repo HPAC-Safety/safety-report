@@ -44,7 +44,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		var name = Question.Create("first_name", QuestionType.ShortText, "First name", "Prénom", At, isActive: true);
 		var email = Question.Create("email", QuestionType.Email, "Email", "Courriel", At, isActive: true);
 		context.Questions.AddRange(province, narrative, name, email);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var report = new Report(Locale.EnCa, At);
 		report.Answer(province, "Alberta", At);
@@ -52,7 +52,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		report.Answer(name, "Avery", At);
 		report.Answer(email, "avery@example.test", At);
 		context.Reports.Add(report);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var translator = new StubTranslator();
 		var processor = new TranslateAnswersProcessor(context, translator);
@@ -60,13 +60,13 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 
 		// When
 		await processor.Process(message, CancellationToken.None);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then — one call, carrying only the narrative
 		translator.Calls.ShouldHaveSingleItem().Texts.ShouldBe(["Wind picked up on final; the pilot walked away."]);
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var answers = await reader.ReportAnswers.Where(a => a.ReportId == report.Id).ToListAsync();
+		var answers = await reader.ReportAnswers.Where(a => a.ReportId == report.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		var narrativeAnswer = answers.Single(a => a.QuestionKey == "narrative");
 		narrativeAnswer.TranslatedValue.ShouldBe("[fr-CA] Wind picked up on final; the pilot walked away.");
@@ -92,12 +92,12 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var narrative = Narrative();
 		context.Questions.Add(narrative);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var report = new Report(Locale.EnCa, At);
 		report.Answer(narrative, value: null, At);
 		context.Reports.Add(report);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var translator = new StubTranslator();
 		var processor = new TranslateAnswersProcessor(context, translator);
@@ -105,13 +105,13 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 
 		// When
 		await processor.Process(message, CancellationToken.None);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		translator.Calls.ShouldBeEmpty();
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var answer = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id);
+		var answer = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		answer.Value.ShouldBeNull();
 		answer.TranslatedValue.ShouldBeNull();
 		answer.TranslationSource.ShouldBeNull();
@@ -125,13 +125,13 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var narrative = Narrative();
 		context.Questions.Add(narrative);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var report = new Report(Locale.EnCa, At);
 		var answer = report.Answer(narrative, "Already handled.", At);
 		answer.SupplyAutoTranslation("Déjà traité.");
 		context.Reports.Add(report);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var translator = new StubTranslator();
 		var processor = new TranslateAnswersProcessor(context, translator);
@@ -139,13 +139,13 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 
 		// When
 		await processor.Process(message, CancellationToken.None);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		translator.Calls.ShouldBeEmpty();
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var stored = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id);
+		var stored = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		stored.TranslatedValue.ShouldBe("Déjà traité.");
 		stored.TranslationSource.ShouldBe(TranslationSource.Auto);
 	}

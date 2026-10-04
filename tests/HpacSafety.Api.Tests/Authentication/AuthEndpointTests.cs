@@ -31,8 +31,8 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync(Token, new { username, password });
-		var token = await response.Content.ReadFromJsonAsync<TokenResponse>();
+		using var response = await client.PostAsJsonAsync(Token, new { username, password }, cancellationToken: TestContext.Current.CancellationToken);
+		var token = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -59,12 +59,12 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 					 ("", ""),
 				 })
 		{
-			using var response = await client.PostAsJsonAsync(Token, new { username, password });
+			using var response = await client.PostAsJsonAsync(Token, new { username, password }, cancellationToken: TestContext.Current.CancellationToken);
 			statuses.Add(response.StatusCode);
 
 			// Everything except traceId, which ASP.NET stamps per request and
 			// which says nothing about the credentials.
-			var problem = await response.Content.ReadFromJsonAsync<ProblemShape>();
+			var problem = await response.Content.ReadFromJsonAsync<ProblemShape>(cancellationToken: TestContext.Current.CancellationToken);
 			problems.Add($"{problem!.Type}|{problem.Title}|{problem.Detail}|{problem.Status}");
 		}
 
@@ -82,9 +82,8 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			Token, new { username = "wing-commander", password = "hunter2" });
-		var body = await response.Content.ReadAsStringAsync();
+		using var response = await client.PostAsJsonAsync(Token, new { username = "wing-commander", password = "hunter2" }, cancellationToken: TestContext.Current.CancellationToken);
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		body.ShouldNotContain("wing-commander");
@@ -98,8 +97,8 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(Config);
-		var config = await response.Content.ReadFromJsonAsync<AuthConfigResponse>();
+		using var response = await client.GetAsync(Config, TestContext.Current.CancellationToken);
+		var config = await response.Content.ReadFromJsonAsync<AuthConfigResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — this is how the browser knows to hide the button, instead of
 		// baking the environment into its bundle.
@@ -118,8 +117,8 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		using var client = configured.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(Config);
-		var config = await response.Content.ReadFromJsonAsync<AuthConfigResponse>();
+		using var response = await client.GetAsync(Config, TestContext.Current.CancellationToken);
+		var config = await response.Content.ReadFromJsonAsync<AuthConfigResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		config!.Mode.ShouldBe("provider");
@@ -145,7 +144,7 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		client.DefaultRequestHeaders.Add("X-Origin-Verify", "test-origin-secret");
 
 		// When
-		using var response = await client.PostAsJsonAsync(Token, new { username = "admin", password = "admin" });
+		using var response = await client.PostAsJsonAsync(Token, new { username = "admin", password = "admin" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — 404, not 401. There is no flag that turns this on in a
 		// deployed environment, because there is no code path that maps it.
@@ -159,7 +158,7 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(Config);
+		using var response = await client.GetAsync(Config, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);

@@ -16,8 +16,7 @@ public sealed class SecretArnResolverTests
 	{
 		// Given — the Development/test shape: no ARN at all.
 		// When
-		var value = await SecretArnResolver.ResolveAsync(
-			"a-plain-value", null, new NeverCalledSecretReader());
+		var value = await SecretArnResolver.ResolveAsync("a-plain-value", null, new NeverCalledSecretReader(), TestContext.Current.CancellationToken);
 
 		// Then
 		value.ShouldBe("a-plain-value");
@@ -27,8 +26,7 @@ public sealed class SecretArnResolverTests
 	public async Task GivenABlankSecretArn_WhenResolved_ThenThePlainValueIsUsed()
 	{
 		// Given / When — whitespace is not an ARN.
-		var value = await SecretArnResolver.ResolveAsync(
-			"a-plain-value", "   ", new NeverCalledSecretReader());
+		var value = await SecretArnResolver.ResolveAsync("a-plain-value", "   ", new NeverCalledSecretReader(), TestContext.Current.CancellationToken);
 
 		// Then
 		value.ShouldBe("a-plain-value");
@@ -42,8 +40,7 @@ public sealed class SecretArnResolverTests
 		var reader = new StubSecretReader("the-real-secret");
 
 		// When
-		var value = await SecretArnResolver.ResolveAsync(
-			null, "arn:aws:secretsmanager:ca-central-1:111111111111:secret:origin-secret", reader);
+		var value = await SecretArnResolver.ResolveAsync(null, "arn:aws:secretsmanager:ca-central-1:111111111111:secret:origin-secret", reader, TestContext.Current.CancellationToken);
 
 		// Then
 		value.ShouldBe("the-real-secret");

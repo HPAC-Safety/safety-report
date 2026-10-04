@@ -37,7 +37,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -51,7 +51,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then — signed in, and it is still not theirs
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -65,7 +65,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -74,14 +74,14 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		// Hidden from every normal, live-filtered query
-		(await database.Reports.AnyAsync(r => r.Id == reportId)).ShouldBeFalse();
-		(await database.ReportAnswers.AnyAsync(a => a.Id == answerId)).ShouldBeFalse();
-		(await database.OutboxMessages.AnyAsync(m => m.Id == outboxId)).ShouldBeFalse();
+		(await database.Reports.AnyAsync(r => r.Id == reportId, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeFalse();
+		(await database.ReportAnswers.AnyAsync(a => a.Id == answerId, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeFalse();
+		(await database.OutboxMessages.AnyAsync(m => m.Id == outboxId, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeFalse();
 
 		// One shared timestamp, past the filter
-		var report = await database.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == reportId);
-		var answer = await database.ReportAnswers.IgnoreQueryFilters().SingleAsync(a => a.Id == answerId);
-		var outboxMessage = await database.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.Id == outboxId);
+		var report = await database.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == reportId, cancellationToken: TestContext.Current.CancellationToken);
+		var answer = await database.ReportAnswers.IgnoreQueryFilters().SingleAsync(a => a.Id == answerId, cancellationToken: TestContext.Current.CancellationToken);
+		var outboxMessage = await database.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.Id == outboxId, cancellationToken: TestContext.Current.CancellationToken);
 		report.Deleted.ShouldNotBeNull();
 		answer.Deleted.ShouldBe(report.Deleted);
 		outboxMessage.Deleted.ShouldBe(report.Deleted);
@@ -95,7 +95,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// Then
@@ -103,7 +103,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.DeletedReport && e.TargetId == reportId)
-			.SingleAsync();
+			.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.TargetType.ShouldBe("Report");
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
@@ -120,7 +120,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = SignedInClient.Bearing(_factory, token);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -129,7 +129,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.DeletedReport && e.TargetId == reportId)
-			.SingleAsync();
+			.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.ActorSubject.ShouldBe("(unknown)");
 	}
@@ -155,7 +155,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{TinyId.New()}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{TinyId.New()}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -168,7 +168,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri("/api/admin/reports/not-a-tiny-id", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri("/api/admin/reports/not-a-tiny-id", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -181,10 +181,10 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		// too, the same as every other live-row read
 		var reportId = await SeedReport();
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

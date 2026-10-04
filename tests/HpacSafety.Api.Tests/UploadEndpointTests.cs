@@ -37,7 +37,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		using var response = await DirectUpload.Mint(reporter, "image/png", 1234);
 
 		// Then
-		var text = await response.Content.ReadAsStringAsync();
+		var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, text);
 		var upload = JsonSerializer.Deserialize<JsonElement>(text);
 		var uploadId = upload.GetProperty("uploadId").GetString()!;
@@ -68,7 +68,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		var uploadId = await DirectUpload.Send(reporter, png, "image/png");
 
 		// Then
-		var stored = await fixture.Storage.GetObjectMetadataAsync(ApiPostgresFixture.BucketName, $"quarantine/{uploadId}");
+		var stored = await fixture.Storage.GetObjectMetadataAsync(ApiPostgresFixture.BucketName, $"quarantine/{uploadId}", TestContext.Current.CancellationToken);
 		stored.Headers.ContentType.ShouldBe("image/png");
 		stored.ContentLength.ShouldBe(png.Length);
 		stored.Metadata.Keys.ShouldBeEmpty();
@@ -92,7 +92,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("reason").GetString().ShouldBe(reason);
 		problem.TryGetProperty("uploadUrl", out _).ShouldBeFalse();
 	}
@@ -111,7 +111,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		using var response = await DirectUpload.Mint(reporter, contentType, byteSize);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -157,7 +157,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		using var content = new StringContent(body, Encoding.UTF8, mediaType);
 
 		// When
-		using var response = await reporter.PostAsync(Uploads, content);
+		using var response = await reporter.PostAsync(Uploads, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -184,8 +184,8 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		var uploadId = await DirectUpload.Send(reporter, PngBytes(), "image/png");
 
 		// When
-		using var first = await reporter.DeleteAsync(new Uri($"/api/v1/uploads/{uploadId}", UriKind.Relative));
-		using var second = await reporter.DeleteAsync(new Uri($"/api/v1/uploads/{uploadId}", UriKind.Relative));
+		using var first = await reporter.DeleteAsync(new Uri($"/api/v1/uploads/{uploadId}", UriKind.Relative), TestContext.Current.CancellationToken);
+		using var second = await reporter.DeleteAsync(new Uri($"/api/v1/uploads/{uploadId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		first.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -194,7 +194,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		{
 			BucketName = ApiPostgresFixture.BucketName,
 			Prefix = $"quarantine/{uploadId}",
-		});
+		}, TestContext.Current.CancellationToken);
 		(versions.Versions ?? []).ShouldBeEmpty();
 	}
 
@@ -205,7 +205,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await reporter.DeleteAsync(new Uri("/api/v1/uploads/not-an-id", UriKind.Relative));
+		using var response = await reporter.DeleteAsync(new Uri("/api/v1/uploads/not-an-id", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -218,7 +218,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		using var anonymous = _factory.CreateClient();
 
 		// When
-		using var response = await anonymous.DeleteAsync(new Uri("/api/v1/uploads/kP3x9QmR2vT8wLb6nYc4Dg", UriKind.Relative));
+		using var response = await anonymous.DeleteAsync(new Uri("/api/v1/uploads/kP3x9QmR2vT8wLb6nYc4Dg", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);

@@ -26,7 +26,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, "payload", At);
 		context.OutboxMessages.Add(message);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var handled = false;
 
@@ -46,7 +46,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		handled.ShouldBeTrue();
 
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var stored = await reader.OutboxMessages.SingleAsync(m => m.Id == message.Id);
+		var stored = await reader.OutboxMessages.SingleAsync(m => m.Id == message.Id, cancellationToken: TestContext.Current.CancellationToken);
 		stored.IsProcessed.ShouldBeTrue();
 	}
 
@@ -57,7 +57,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		context.OutboxMessages.Add(new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "payload", At));
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
@@ -97,7 +97,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		var future = At.AddMinutes(5);
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, "payload", future);
 		context.OutboxMessages.Add(message);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
@@ -118,7 +118,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, "payload", At);
 		context.OutboxMessages.Add(message);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
@@ -131,7 +131,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		claimed.ShouldBeTrue();
 
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var stored = await reader.OutboxMessages.SingleAsync(m => m.Id == message.Id);
+		var stored = await reader.OutboxMessages.SingleAsync(m => m.Id == message.Id, cancellationToken: TestContext.Current.CancellationToken);
 		stored.IsProcessed.ShouldBeFalse();
 		stored.Attempts.ShouldBe(1);
 		stored.LastError.ShouldBe("The translation provider is unreachable.");

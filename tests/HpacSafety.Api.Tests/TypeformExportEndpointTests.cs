@@ -28,7 +28,7 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(Export);
+		using var response = await client.GetAsync(Export, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -41,7 +41,7 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(MemberRole.User);
 
 		// When
-		using var response = await client.GetAsync(Export);
+		using var response = await client.GetAsync(Export, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -56,13 +56,13 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		await Create(client, key);
 
 		// When
-		using var response = await client.GetAsync(Export);
+		using var response = await client.GetAsync(Export, TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 		response.Content.Headers.ContentType!.MediaType.ShouldBe("application/zip");
 
-		using var archive = new ZipArchive(await response.Content.ReadAsStreamAsync(), ZipArchiveMode.Read);
+		using var archive = new ZipArchive(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), ZipArchiveMode.Read);
 		archive.Entries.Select(entry => entry.Name).ShouldBe(["form-en.json", "form-fr.json"]);
 
 		var english = await ReadEntry(archive, "form-en.json");
@@ -82,8 +82,8 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		await Create(client, key);
 
 		// When
-		using var response = await client.GetAsync(Export);
-		using var archive = new ZipArchive(await response.Content.ReadAsStreamAsync(), ZipArchiveMode.Read);
+		using var response = await client.GetAsync(Export, TestContext.Current.CancellationToken);
+		using var archive = new ZipArchive(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), ZipArchiveMode.Read);
 		var english = await ReadEntry(archive, "form-en.json");
 
 		// Then

@@ -43,7 +43,7 @@ public sealed class UnconfiguredAuthorityEndpointTests(ApiPostgresFixture fixtur
 		using var client = OriginVerifiedClient(unconfigured);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -58,7 +58,7 @@ public sealed class UnconfiguredAuthorityEndpointTests(ApiPostgresFixture fixtur
 
 		// When — the path CloudFront forwards to this function, and the one
 		// the release's smoke test calls.
-		using var response = await client.GetAsync(new Uri("/api/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -74,7 +74,7 @@ public sealed class UnconfiguredAuthorityEndpointTests(ApiPostgresFixture fixtur
 		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "any-bearer-token-value");
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -88,7 +88,7 @@ public sealed class UnconfiguredAuthorityEndpointTests(ApiPostgresFixture fixtur
 		using var client = OriginVerifiedClient(unconfigured);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);

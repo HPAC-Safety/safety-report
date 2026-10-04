@@ -29,7 +29,7 @@ public sealed class OriginVerificationMiddlewareTests(ApiPostgresFixture fixture
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -43,7 +43,7 @@ public sealed class OriginVerificationMiddlewareTests(ApiPostgresFixture fixture
 		using var client = verified.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -58,7 +58,7 @@ public sealed class OriginVerificationMiddlewareTests(ApiPostgresFixture fixture
 		client.DefaultRequestHeaders.Add(HeaderName, "not-the-secret");
 
 		// When
-		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -73,7 +73,7 @@ public sealed class OriginVerificationMiddlewareTests(ApiPostgresFixture fixture
 		client.DefaultRequestHeaders.Add(HeaderName, Secret);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);

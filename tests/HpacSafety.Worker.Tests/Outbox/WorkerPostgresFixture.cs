@@ -16,15 +16,15 @@ public sealed class WorkerPostgresFixture : IAsyncLifetime
 	private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
 	/// <summary>Starts the container.</summary>
-	public Task InitializeAsync()
+	public async ValueTask InitializeAsync()
 	{
-		return _postgres.StartAsync();
+		await _postgres.StartAsync();
 	}
 
 	/// <summary>Stops and removes the container.</summary>
-	public Task DisposeAsync()
+	public ValueTask DisposeAsync()
 	{
-		return _postgres.DisposeAsync().AsTask();
+		return _postgres.DisposeAsync();
 	}
 
 	/// <summary>Creates an empty database, migrates it, and returns a connection string.</summary>

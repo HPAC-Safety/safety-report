@@ -129,9 +129,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 			dependsOnQuestionId = parentId,
 			dependsOnChoiceId = coopers,
 			options = Array.Empty<object>(),
-		});
-		createdChild.StatusCode.ShouldBe(HttpStatusCode.Created, await createdChild.Content.ReadAsStringAsync());
-		var childId = (await createdChild.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		}, cancellationToken: TestContext.Current.CancellationToken);
+		createdChild.StatusCode.ShouldBe(HttpStatusCode.Created, await createdChild.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var childId = (await createdChild.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).GetProperty("id").GetString();
 		await Answer(parentId, "Cooper's Hill");
 		var replacement = await SaveChoices(client, parentId, "Reworded after an answer",
 			new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" });
@@ -139,10 +139,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		var copy = replacement.GetProperty("options").EnumerateArray().Single().GetProperty("id").GetString();
 
 		// When — the parent the condition names is retired, so not among the live questions
-		var admin = (await client.GetFromJsonAsync<JsonElement>(Questions)).EnumerateArray()
+		var admin = (await client.GetFromJsonAsync<JsonElement>(Questions, cancellationToken: TestContext.Current.CancellationToken)).EnumerateArray()
 			.Single(question => question.GetProperty("id").GetString() == childId);
 		using var reader = _factory.CreateClient();
-		var shown = (await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative))).EnumerateArray()
+		var shown = (await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken)).EnumerateArray()
 			.Single(question => question.GetProperty("id").GetString() == childId);
 
 		// Then — the condition follows its parent through the fork (ADR-0132)
@@ -164,7 +164,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		await Answer(id, "Wind gradient on short final.");
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -184,7 +184,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		await Answer(id, "Thermal collapse over the ridge.", true);
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -202,7 +202,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -238,8 +238,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		await Revise(client, id, "Reworded once");
 
 		// When — the original is retired, and there is no undelete
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft("Reworded twice"));
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft("Reworded twice"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -256,7 +255,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = role is null ? _factory.CreateClient() : await SignedIn(role.Value);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/answers/awaiting-translation", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/admin/answers/awaiting-translation", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -271,9 +270,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		var answerId = await Answer(created.GetProperty("id").GetString()!, "It all happened quickly.");
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
-			new { value = "Tout s'est passé très vite." });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative), new { value = "Tout s'est passé très vite." }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -294,8 +291,8 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		(await database.AnswersAwaitingTranslation.AnyAsync(a => a.Id == TinyId.Parse(answerId))).ShouldBeFalse();
-		var stored = await database.ReportAnswers.Include(a => a.Choice).SingleAsync(a => a.Id == TinyId.Parse(answerId));
+		(await database.AnswersAwaitingTranslation.AnyAsync(a => a.Id == TinyId.Parse(answerId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeFalse();
+		var stored = await database.ReportAnswers.Include(a => a.Choice).SingleAsync(a => a.Id == TinyId.Parse(answerId), cancellationToken: TestContext.Current.CancellationToken);
 		stored.Value.ShouldBeNull();
 		stored.Text.ShouldBe("Cooper's Hill");
 		stored.DisplayedTranslation.ShouldBe("Colline Cooper");
@@ -319,7 +316,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		after.ShouldBe(before + 1);
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		(await database.AnswersAwaitingTranslation.AnyAsync(a => a.Id == TinyId.Parse(answerId))).ShouldBeTrue();
+		(await database.AnswersAwaitingTranslation.AnyAsync(a => a.Id == TinyId.Parse(answerId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeTrue();
 	}
 
 	/// <summary>

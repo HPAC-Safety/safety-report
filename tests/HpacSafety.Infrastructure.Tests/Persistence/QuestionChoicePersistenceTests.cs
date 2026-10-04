@@ -29,24 +29,24 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
 			context.Questions.Add(question);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// When — a reporter adds one, and an Administrator removes another, in place
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
 			var loaded = await context.Questions.Include(q => q.Revisions).Include(q => q.AllChoices)
-				.SingleAsync(q => q.Id == question.Id);
+				.SingleAsync(q => q.Id == question.Id, cancellationToken: TestContext.Current.CancellationToken);
 			loaded.AddChoiceFromReporter("Élévation", Locale.FrCa);
 			loaded.ReplaceChoices([new QuestionOptionInput("coopers", "Cooper's", "Cooper's"), new QuestionOptionInput("elevation", null, "Élévation")], At);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
 			var reloaded = await context.Questions.Include(q => q.Revisions).Include(q => q.AllChoices)
-				.SingleAsync(q => q.Id == question.Id);
+				.SingleAsync(q => q.Id == question.Id, cancellationToken: TestContext.Current.CancellationToken);
 
 			reloaded.Revisions.Count.ShouldBe(1);
 			reloaded.Choices.Select(choice => choice.Code).ShouldBe(["coopers", "elevation"], ignoreOrder: true);
@@ -70,7 +70,7 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		context.Questions.Add(question);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		var inserting = () => context.Database.ExecuteSqlAsync(
@@ -95,13 +95,13 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 		{
 			context.Questions.Add(question);
 			context.Reports.Add(report);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// When
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var withChoice = await reader.ReportAnswers.AsNoTracking().Include(a => a.Choice).SingleAsync(a => a.Id == answer.Id);
-		var withoutChoice = await reader.ReportAnswers.AsNoTracking().SingleAsync(a => a.Id == answer.Id);
+		var withChoice = await reader.ReportAnswers.AsNoTracking().Include(a => a.Choice).SingleAsync(a => a.Id == answer.Id, cancellationToken: TestContext.Current.CancellationToken);
+		var withoutChoice = await reader.ReportAnswers.AsNoTracking().SingleAsync(a => a.Id == answer.Id, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — read through its choice, or refused rather than shown as skipped
 		withChoice.Value.ShouldBeNull();

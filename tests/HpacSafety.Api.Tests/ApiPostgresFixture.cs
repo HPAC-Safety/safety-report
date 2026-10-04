@@ -40,7 +40,7 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 	public IAmazonS3 Storage { get; private set; } = null!;
 
 	/// <inheritdoc />
-	public async Task InitializeAsync()
+	public async ValueTask InitializeAsync()
 	{
 		await Task.WhenAll(_postgres.StartAsync(), _objects.StartAsync());
 		Storage = await S3Emulator.CreateBucket(_objects, BucketName);
@@ -72,7 +72,7 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 	}
 
 	/// <inheritdoc />
-	public async Task DisposeAsync()
+	public async ValueTask DisposeAsync()
 	{
 		await Factory.DisposeAsync();
 		Storage.Dispose();

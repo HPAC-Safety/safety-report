@@ -88,12 +88,12 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		{
 			writer.AuditLog.Add(new AuditLogEntry(
 				subject, AuditAction.ViewedRawReport, nameof(Report), targetId, DateTimeOffset.UtcNow));
-			await writer.SaveChangesAsync();
+			await writer.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// When
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var entry = await reader.AuditLog.SingleAsync();
+		var entry = await reader.AuditLog.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — longer than a tiny id, and stored verbatim rather than padded
 		// or truncated.
@@ -117,13 +117,13 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 			report.AttachSummary(summary);
 
 			writer.Reports.Add(report);
-			await writer.SaveChangesAsync();
+			await writer.SaveChangesAsync(TestContext.Current.CancellationToken);
 			reportId = report.Id;
 		}
 
 		// When
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var stored = await reader.Summaries.SingleAsync(summary => summary.ReportId == reportId);
+		var stored = await reader.Summaries.SingleAsync(summary => summary.ReportId == reportId, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		stored.ApprovedBySubject.ShouldBe(approver);

@@ -34,7 +34,7 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { });
+		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -48,7 +48,7 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		var receipts = Enumerable.Range(0, 51).Select(_ => new { reportId = TinyId.New().Value, receipt = BrowserReceipt.New().Receipt });
 
 		// When
-		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts });
+		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -68,11 +68,11 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		};
 
 		// When
-		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts });
+		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		body.GetProperty("items").GetArrayLength().ShouldBe(0);
 		body.GetProperty("settled").GetArrayLength().ShouldBeGreaterThan(0);
 	}
@@ -85,8 +85,8 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var lookup = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts = new[] { new { reportId = id, receipt } } });
-		using var page = await client.PostAsJsonAsync(new Uri($"{Own}/{id}", UriKind.Relative), new { receipt });
+		using var lookup = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts = new[] { new { reportId = id, receipt } } }, cancellationToken: TestContext.Current.CancellationToken);
+		using var page = await client.PostAsJsonAsync(new Uri($"{Own}/{id}", UriKind.Relative), new { receipt }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		lookup.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -103,8 +103,8 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var post = await client.PostAsync(new Uri($"{Own}/{id}?receipt={receipt}", UriKind.Relative), null);
-		using var get = await client.GetAsync(new Uri($"{Own}/{id}?receipt={receipt}", UriKind.Relative));
+		using var post = await client.PostAsync(new Uri($"{Own}/{id}?receipt={receipt}", UriKind.Relative), null, TestContext.Current.CancellationToken);
+		using var get = await client.GetAsync(new Uri($"{Own}/{id}?receipt={receipt}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		post.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -149,16 +149,16 @@ public class OwnReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts = new[] { new { reportId = id, receipt } } });
+		using var response = await client.PostAsJsonAsync(new Uri(Own, UriKind.Relative), new { receipts = new[] { new { reportId = id, receipt } } }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		body.GetProperty("items").GetArrayLength().ShouldBe(0);
 		body.GetProperty("settled").EnumerateArray().Select(item => item.GetString()).ShouldBe([id]);
 
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var report = await database.Reports.AsNoTracking().SingleAsync(candidate => candidate.Id == TinyId.Parse(id));
+		var report = await database.Reports.AsNoTracking().SingleAsync(candidate => candidate.Id == TinyId.Parse(id), cancellationToken: TestContext.Current.CancellationToken);
 		report.PublishedAt.ShouldBeNull();
 		report.FirstPublishedAt.ShouldNotBeNull();
 	}

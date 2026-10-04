@@ -39,7 +39,7 @@ public sealed class TranslateCommentProcessorTests(WorkerPostgresFixture postgre
 
 		// When
 		await new TranslateCommentProcessor(context, translator).Process(Message(comment.Current.Id), CancellationToken.None);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		var call = translator.Calls.ShouldHaveSingleItem();
@@ -48,7 +48,7 @@ public sealed class TranslateCommentProcessorTests(WorkerPostgresFixture postgre
 		call.Target.ShouldBe(Locale.EnCa);
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var revision = await reader.ReportCommentRevisions.SingleAsync(candidate => candidate.CommentId == comment.Id);
+		var revision = await reader.ReportCommentRevisions.SingleAsync(candidate => candidate.CommentId == comment.Id, cancellationToken: TestContext.Current.CancellationToken);
 		revision.Text.ShouldBe("Synthétique : bon rappel.");
 		revision.TranslatedText.ShouldNotBeNull();
 		revision.TranslationSource.ShouldBe(TranslationSource.Auto);
@@ -62,7 +62,7 @@ public sealed class TranslateCommentProcessorTests(WorkerPostgresFixture postgre
 		await using (var first = WorkerPostgresFixture.ContextFor(connectionString))
 		{
 			await new TranslateCommentProcessor(first, new StubTranslator()).Process(Message(comment.Current.Id), CancellationToken.None);
-			await first.SaveChangesAsync();
+			await first.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
@@ -82,9 +82,9 @@ public sealed class TranslateCommentProcessorTests(WorkerPostgresFixture postgre
 		var (connectionString, comment) = await Commented("Synthetic: deleted before translation.", Locale.EnCa);
 		await using (var author = WorkerPostgresFixture.ContextFor(connectionString))
 		{
-			var stored = await author.ReportComments.Include(candidate => candidate.Revisions).SingleAsync(candidate => candidate.Id == comment.Id);
+			var stored = await author.ReportComments.Include(candidate => candidate.Revisions).SingleAsync(candidate => candidate.Id == comment.Id, cancellationToken: TestContext.Current.CancellationToken);
 			stored.DeleteBy("member:author", At);
-			await author.SaveChangesAsync();
+			await author.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);

@@ -24,7 +24,7 @@ public class HealthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -37,7 +37,7 @@ public class HealthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		var body = await client.GetFromJsonAsync<JsonElement>(new Uri("/health", UriKind.Relative));
+		var body = await client.GetFromJsonAsync<JsonElement>(new Uri("/health", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		body.GetProperty("status").GetString().ShouldBe("ok");
@@ -50,7 +50,7 @@ public class HealthEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri("/no-such-endpoint", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/no-such-endpoint", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

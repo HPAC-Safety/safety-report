@@ -41,6 +41,36 @@ date: 2026-10-03
   installed: `post-merge` and `post-rewrite` share
   `lib/regenerate-spec.sh`, and each keeps its own skip-on-`main` (#802) and
   rewrite-type logic.
+- The agent-tooling install is the second thing a hook runs on `main`, beside
+  the graph merge; it runs before the skip-on-`main` branch. `post-merge` and
+  `post-rewrite` share `lib/install-agent-tooling.sh` with `init-dev.sh`:
+  - it wakes only when `git diff --name-only ORIG_HEAD HEAD` touches
+    `Skillfile`, `Skillfile.lock`, `agents/`, or `skills/`, and is silent when
+    `skillfile` is not on `PATH`;
+  - it runs `skillfile install`, then deletes each regular `.md` file under
+    `.claude/agents` and each directory under `.claude/skills` that
+    `skillfile list --names-only` does not name. It never follows a symlink,
+    leaves anything else there alone, and prunes nothing for a kind whose
+    Skillfile has a directory entry, which can deploy names the listing omits;
+  - it is allowed on `main` because its output under `.claude/` is gitignored
+    (#849), like the graph merge. `skillfile install` can rewrite the tracked
+    `Skillfile.lock`; when the lock was clean beforehand, the script restores
+    it on `main` (or a detached `HEAD` at `origin/main`) and elsewhere says to
+    include it in the next commit. A lock already changed is left alone;
+  - a fast-forward rebase, `git worktree add`, `merge --squash`, and a
+    hand-resolved conflicted merge fire only `post-checkout` or `post-commit`,
+    which graphify owns, so they do not run it. The session-start check
+    (`tools/dev/sync-agent-tooling.sh`, a `SessionStart` hook in
+    `.claude/settings.json`) catches what the git hooks can't see. It is in
+    sync when the installed names equal the declared ones and a content
+    fingerprint (`cksum` over `Skillfile`, `Skillfile.lock`, and every file
+    under `agents/` and `skills/`, working tree included) equals the stamp the
+    last successful install wrote, so an edited agent or a lock bump counts and
+    a missing stamp does not. Out of sync, it starts the same install detached,
+    under a mkdir lock stale after 10 minutes, and returns at once. The stamp,
+    the lock, and the log (`sync.log`) live in `.skillfile/cache/agent-tooling/`,
+    which is gitignored. It always exits 0. `./init-dev.sh` remains the manual
+    fallback.
 - No hook manager: not Husky, lint-staged, lefthook, or the pre-commit
   framework.
 
@@ -83,6 +113,9 @@ and keeps the "every check runs" rule in one place: a single script's
   hook and nothing under a check directory, and `init-dev.sh` installs it
   under the four hook names only.
 - `./init-dev.sh --check` reports any hook that is not the shim.
-- CI's `build` job shellchecks the runner and every check file.
+- CI's `build` job shellchecks the runner, every check file, `post-merge`,
+  `post-rewrite`, and `.githooks/lib/*.sh`.
+- `tests/js/dev/install-agent-tooling.test.ts`: the wake gate, the prune, and
+  the `Skillfile.lock` guard, with a fake `skillfile` on `PATH`.
 - Never setting `core.hooksPath` and adopting no hook manager are written,
   not checked.

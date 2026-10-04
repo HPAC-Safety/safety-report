@@ -1,6 +1,17 @@
 {
 	"advisorModel": "opus",
 	"hooks": {
+		"SessionStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh \"$CLAUDE_PROJECT_DIR\"/tools/dev/sync-agent-tooling.sh",
+						"timeout": 60
+					}
+				]
+			}
+		],
 		"PreToolUse": [
 			{
 				"matcher": "ExitPlanMode|Bash",

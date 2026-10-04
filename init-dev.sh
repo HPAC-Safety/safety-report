@@ -885,8 +885,8 @@ else
 
 	if ! have skillfile; then
 		note "skipped: skillfile is not installed"
-	elif skillfile install >/dev/null 2>&1; then
-		ok "skills installed into .claude/"
+	elif . ./.githooks/lib/install-agent-tooling.sh && install_agent_tooling init-dev; then
+		ok "skills installed into .claude/, retired ones pruned"
 	else
 		note "skillfile install failed — skills are optional; run it directly to see why"
 	fi

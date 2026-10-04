@@ -1447,9 +1447,9 @@
 			"steps": [
 				{"keyword":"Given","text":"a Worker job has reached the poison threshold and stopped retrying","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker is invoked with a requeue-poison payload","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the message's poison state is cleared and its attempt count resets","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the job's poison state is cleared and its attempt count resets","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it becomes claimable again immediately","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"only the requeued count and the message's own identifier are logged, never its payload","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"only the requeued count and the job's own identifier are logged, never its payload","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],
 			"staleIgnore": false,
@@ -1460,7 +1460,7 @@
 			"id": "REQ-DOM-017",
 			"area": "domain-and-lifecycle",
 			"file": ".spec/features/domain-and-lifecycle/domain-and-lifecycle.feature",
-			"title": "A poison-requeue payload naming a time window only requeues messages poisoned within it",
+			"title": "A poison-requeue payload naming a time window only requeues jobs poisoned within it",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -1468,8 +1468,8 @@
 			"steps": [
 				{"keyword":"Given","text":"one Worker job was poisoned before the given window and another was poisoned within it","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the Worker is invoked with a requeue-poison payload naming that window","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"only the message poisoned within the window is requeued","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the message poisoned before the window is left poisoned","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"only the job poisoned within the window is requeued","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the job poisoned before the window is left poisoned","files":["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/DomainAndLifecycleSteps.cs"],
 			"staleIgnore": false,
@@ -1495,8 +1495,8 @@
 				{"keyword":"When","text":"a stored answer's question revision is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a stored answer's question key is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a stored answer's privacy is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a stored answer's words is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a stored answer's words is cleared","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a stored answer's wording is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a stored answer's wording is cleared","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a stored answer's yes or no is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a stored answer's choice is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a stored answer's language is changed","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
@@ -3429,7 +3429,7 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a bearer token signed with a key the server does not trust","files":["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a bearer token signed with an untrusted key","files":["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"it is presented with a request that needs a member","files":["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the token is refused","files":["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it does not disclose why the token was refused","files":["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],"ambiguous":false}
@@ -3546,7 +3546,7 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the application is not running in development","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a deployment outside development","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a development token is requested","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the request is not found","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
 			],
@@ -6435,9 +6435,9 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the application is not running in development and no identity provider is configured","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a deployment outside development with no identity provider configured","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the health check is requested","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the health check succeeds","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the health check is answered with success","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a request carrying a bearer token asks for something that needs authorization","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it is refused as unauthenticated before it is handled","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
 			],
@@ -6456,9 +6456,9 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the application is not running in development and the temporary interim issuer is enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a member signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the member receives a token the server itself accepts","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member receives a token that later requests are accepted with","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"an allowlisted Administrator account's token carries the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a sign-in is attempted with the fixed development Administrator account","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the sign-in is refused","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
@@ -6478,7 +6478,7 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the application is not running in development and the temporary interim issuer is disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the interim issuer's discovery document is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the interim issuer's JWKS is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
@@ -6499,7 +6499,7 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"the application is not running in development and the temporary interim issuer is enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the interim issuer's JWKS is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the response carries only a public key, never a private key","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
@@ -13661,7 +13661,7 @@
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission passes every validation step","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the server commits the submission","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the submission is stored","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for each claimed upload, one summarization job, one answer-translation job, and one independent attachment-processing job per file","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
@@ -15161,7 +15161,7 @@
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"a submission contains choice answers and a value typed into a type-ahead","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the server commits the submission","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the submission is stored","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no translation provider is called","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"no choice answer stores a copy of either of its choice's labels","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"a new type-ahead value is queued for the Worker to translate, on the value itself","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
@@ -16096,7 +16096,7 @@
 			"id": "REQ-SUB-116",
 			"area": "report-submission",
 			"file": ".spec/features/report-submission/report-submission.feature",
-			"title": "A request that reached the server without CloudFront's origin secret is refused",
+			"title": "A request that arrives without CloudFront's origin secret is refused",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -16106,8 +16106,8 @@
 				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"the server requires CloudFront's origin secret","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a submission request arrives without that secret","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"origin verification is required","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a submission request arrives without CloudFront's origin secret","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"it is refused as forbidden, before authentication or anything else runs","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
@@ -16131,7 +16131,7 @@
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the per-IP submission rate limit is exhausted for one CloudFront viewer address","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a submission request arrives from a different CloudFront viewer address","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it is not refused","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"it is not refused as too frequent","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,
@@ -16152,7 +16152,7 @@
 				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Given","text":"the server records each nudge it sends the Worker, and a submission is ready to persist","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"each nudge to the Worker is recorded, and a submission is ready to persist","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the submission is answered","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the Worker is nudged once","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
@@ -17422,9 +17422,9 @@
 			"engine": "Reqnroll",
 			"status": "Built",
 			"steps": [
-				{"keyword":"Given","text":"a submission reaches the server","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the server independently validates it","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the server's validation is authoritative regardless of what the client allowed or displayed","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
+				{"keyword":"Given","text":"a submission arrives","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"it is validated independently of the client","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"that validation is authoritative regardless of what the client allowed or displayed","files":["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReportSubmissionEndpointSteps.cs"],
 			"staleIgnore": false,
@@ -17917,7 +17917,7 @@
 			"steps": [
 				{"keyword":"Given","text":"the summary call's Gemini key is configured","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Given","text":"no translation-only key exists","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the server or the Worker translates text","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"text is translated on a request or by the Worker","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the request is authorized with that key","files":["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/OpenAiTranslationSteps.cs"],

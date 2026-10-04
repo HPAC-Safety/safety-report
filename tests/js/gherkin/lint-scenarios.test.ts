@@ -90,7 +90,7 @@ describe('no-transport-terms', () => {
 			'  Then the request body and query string are empty',
 			'  And the response carries the header X-Content-Type-Options: nosniff',
 		].join('\n')
-		assert.deepEqual(only('no-transport-terms', body), ['API', 'POST', 'endpoint', '/api/v1/reports', 'request body', 'query string', 'header X-Content-Type-Options', 'X-Content-Type-Options'])
+		assert.deepEqual(only('no-transport-terms', body), ['API', 'api', 'POST', 'endpoint', '/api/v1/reports', 'request body', 'query string', 'header X-Content-Type-Options', 'X-Content-Type-Options'])
 	})
 
 	it('passes the site header, a slash inside a word, markup, and a quoted address', () => {
@@ -134,9 +134,9 @@ describe('what the rules read', () => {
 		)
 	})
 
-	it('reads a Background, but not a doc string, a data table, a comment, or a description', () => {
+	it('reads a Background, but not a doc string, a data table, or a comment', () => {
 		const body = [
-			'This description names the API.',
+			'',
 			'',
 			'Background:',
 			'  Given the API is up',
@@ -151,6 +151,17 @@ describe('what the rules read', () => {
 			'    """',
 		].join('\n')
 		assert.deepEqual(found(body), [['no-transport-terms', 'API']])
+	})
+
+	it('reads a description for transport terms and rationale only, each line where it sits', () => {
+		const source = ['Feature: Sample', 'The report_answers table is fine here,', 'but the API is not, because it is transport.', '', 'Scenario: One', '  Then it holds'].join('\n')
+		assert.deepEqual(
+			lintSource('sample', 'sample.feature', `${source}\n`).map(({ rule, line, found: text }) => [rule, line, text]),
+			[
+				['no-rationale', 3, 'because'],
+				['no-transport-terms', 3, 'API'],
+			],
+		)
 	})
 
 	it('maps each placeholder to whether every use of it is quoted', () => {
@@ -203,6 +214,20 @@ function tree(areas: Record<string, string>): string {
 }
 
 describe('lintScenarios and main', () => {
+	it('lints a feature file nested anywhere under the features, named by its directory', () => {
+		const root = tree({})
+		mkdirSync(join(root, '.spec', 'features', 'nested', 'deeper'), { recursive: true })
+		writeFileSync(join(root, '.spec', 'features', 'nested', 'deeper', 'extra.feature'), feature('  Then the API answers'))
+		assert.deepEqual(
+			lintScenarios(root).map(({ rule, file }) => [rule, file]),
+			[['no-transport-terms', '.spec/features/nested/deeper/extra.feature']],
+		)
+	})
+
+	it('finds nothing when there is no features directory', () => {
+		assert.deepEqual(lintScenarios(mkdtempSync(join(tmpdir(), 'lint-scenarios-'))), [])
+	})
+
 	it('lints every area, and reports a file that does not parse', () => {
 		const root = tree({ clean: feature('  Then the request is refused as forbidden'), leaky: feature('  Then the API answers 403'), broken: 'Not a feature at all\n' })
 		const violations = lintScenarios(root)

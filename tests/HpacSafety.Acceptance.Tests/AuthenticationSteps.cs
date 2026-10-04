@@ -40,7 +40,7 @@ public sealed class AuthenticationSteps
 	private ClaimsPrincipal? _principal;
 	private bool _refused;
 
-	[Given(@"a bearer token signed with a key the server does not trust")]
+	[Given(@"a bearer token signed with an untrusted key")]
 	public void GivenTokenSignedWithAnUnknownKey()
 	{
 		_token = Forge("an-entirely-different-signing-key-nobody-here-knows");

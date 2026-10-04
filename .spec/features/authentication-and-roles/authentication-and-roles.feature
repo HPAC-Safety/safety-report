@@ -131,7 +131,7 @@ Scenario: With nothing waiting, the Admin menu shows no count
 
 @REQ-MOD-013
 Scenario: A token signed by an unknown key is refused
-  Given a bearer token signed with a key the server does not trust
+  Given a bearer token signed with an untrusted key
   When it is presented with a request that needs a member
   Then the token is refused
   And it does not disclose why the token was refused
@@ -170,7 +170,7 @@ Scenario: A member's name, email, or any other claim is never read
 
 @REQ-MOD-019
 Scenario: Development sign-in does not exist outside development
-  Given the application is not running in development
+  Given a deployment outside development
   When a development token is requested
   Then the request is not found
 
@@ -215,24 +215,24 @@ Scenario: Every operation is authorized by the server, not just the interface
 
 @REQ-MOD-156
 Scenario: An environment with no identity provider configured still starts, answers public requests, and refuses every bearer token
-  Given the application is not running in development and no identity provider is configured
+  Given a deployment outside development with no identity provider configured
   When the health check is requested
-  Then the health check succeeds
+  Then the health check is answered with success
   When a request carrying a bearer token asks for something that needs authorization
   Then it is refused as unauthenticated before it is handled
 
 @REQ-MOD-157
 Scenario: With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist
-  Given the application is not running in development and the temporary interim issuer is enabled
+  Given a deployment outside development with the temporary interim issuer enabled
   When a member signs in with credentials the members site accepts
-  Then the member receives a token the server itself accepts
+  Then the member receives a token that later requests are accepted with
   And an allowlisted Administrator account's token carries the Administrator role
   When a sign-in is attempted with the fixed development Administrator account
   Then the sign-in is refused
 
 @REQ-MOD-158
 Scenario: With the temporary interim issuer disabled, none of its services exist
-  Given the application is not running in development and the temporary interim issuer is disabled
+  Given a deployment outside development with the temporary interim issuer disabled
   When the interim issuer's discovery document is requested
   Then it is not found
   When the interim issuer's JWKS is requested
@@ -242,7 +242,7 @@ Scenario: With the temporary interim issuer disabled, none of its services exist
 
 @REQ-MOD-159
 Scenario: The temporary interim issuer's JWKS publishes only a public key
-  Given the application is not running in development and the temporary interim issuer is enabled
+  Given a deployment outside development with the temporary interim issuer enabled
   When the interim issuer's JWKS is requested
   Then the response carries only a public key, never a private key
 

@@ -2,7 +2,7 @@
 Feature: Question authoring
 An Administrator authors the question bank: each question is stored as
 complete, immutable bilingual revisions. An edit to a question nobody has
-answered creates a new revision instead of patching an existing one. Once an
+answered creates a new revision and leaves the existing one unchanged. Once an
 answer exists, an edit retires the question and creates a new one in its
 place, so an old answer always correlates to the question as it was
 actually worded.

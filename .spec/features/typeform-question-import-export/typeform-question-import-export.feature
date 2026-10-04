@@ -1,6 +1,6 @@
 Feature: Typeform question import and export
 An Administrator brings the question bank in from a pair of Typeform JSON
-exports — one English, one French — instead of authoring every question by
+exports — one English, one French — without authoring every question by
 hand, and can export the current bank back to the same two-file shape. Import
 never saves a question by itself; it prefills the ordinary authoring screen,
 which an Administrator still reviews and saves one question at a time.

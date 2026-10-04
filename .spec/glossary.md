@@ -54,7 +54,7 @@ Interface mechanics are part of
 | **Member** | Anyone signed in with a valid token, whatever their role. A role already implies a valid token, so no role is written "signed-in", nor said to be "signed in" (J2). | `authenticated member`, `/\bsigned[- ]in (?=(?:Administrator\|Safety Officer\|User\|reviewer\|member)s?\b)/i`, `/\b(?:Administrator\|Safety Officer\|User\|[Mm]ember\|[Rr]eviewer)s? (?:is\|are) signed in\b/`, `caller`, `/\busers?\b(?![ -](?:records?\|tables?\|ids?\|aggregate\|facing))/` | — |
 | **User** | The lowest role: it files a report and comments, and nothing else. Always capitalised, and only as the role's name. | — | — |
 | **Reporter** | The member filing a report. Nothing stored records who they are. | `submitter` | — |
-| **Safety Officer** | The role that reviews reports, edits and approves summaries, and publishes. Always this spelling and case; the role claim's own value, `SafetyOfficer`, only in quotes or code. | `/\b[Ss]afety officers?\b/`, `/\bSafetyOfficers?\b/` | — |
+| **Safety Officer** | The role that reviews reports, edits and approves summaries, and publishes. Always this spelling and case; the role claim's own value, `SafetyOfficer`, only in quotes. | `/\b[Ss]afety officers?\b/`, `/\bSafetyOfficers?\b/` | — |
 | **Administrator** | The role that does everything a Safety Officer does, and also authors questions. Always capitalised. "Admin" names only a place: the admin site, an admin page, the Admin menu. | `/\badministrators?\b/`, `admins`, `/\b(?:an?\|the) admin(?=\s*(?:[.,;:!?)]\|$))/i` | — |
 | **Reviewer** | A Safety Officer or an Administrator: the two roles with review access, `Policies.Reviewer` (J1). | `authorized reviewer`, `authorised reviewer`, `/\bSafety Officers? or (?:an )?Administrators?\b/`, `/\bAdministrators? or (?:a )?Safety Officers?\b/` | — |
 | **Visitor** | Anyone using the public site, signed in or not. "The public" is not an actor; "visible to the public" stays (J11). | `/\b[Tt]he public (?=(?:can\|cannot\|can't\|never\|only\|sees?\|saw\|reads?\|requests?\|gets?)\b)/` | — |
@@ -119,7 +119,8 @@ Interface mechanics are part of
 | **Approve** | To mark a summary revision approved. Never the same as Publish. | — | — |
 | **Publish** | To make a report Published: consent given, not deleted, its current revision approved. **Unpublish** takes it back out. | — | — |
 | **Worker** | The background service that summarises, translates, and processes attachments. Always capitalised. | `/\bworkers?\b/` | — |
-| **Worker job** | One piece of work queued for the Worker — a summary, a translation, an attachment to process — kept until it succeeds or is poisoned. | — | — |
+| **Worker job** | One piece of work queued for the Worker — a summary, a translation, an attachment to process — kept until it succeeds or is poisoned. Stored as an outbox message ([ADR-0002](decisions/ADR-0002-transactional-outbox.md), CON-DP-008). | — | — |
+| **Server** | The part of the system that is not the browser: it validates, stores, and authorizes. A step names it only where the split between the browser and the server is the behavior; otherwise a step has no actor ("the submission is stored"). | — | — |
 | **The model** | The one summarisation model call. | — | — |
 | **Machine translation** | The translation port, never on the submission path; its provider is the **translation provider**. | — | — |
 
@@ -149,6 +150,8 @@ this lint; the step definition still asserts the code.
 
 | Term | Definition | Banned in scenarios | Exempt areas |
 |---|---|---|---|
+| **is allowed** | A member's role may do what the request asks, and it succeeded (2xx). | — | — |
+| **is answered with success** | The request succeeded (200 or 204). "Answered with <something>" names what came back, such as a translation. | — | — |
 | **is accepted** | The request was taken for later work (202). | — | — |
 | **is created** | The request created what it names (201). | — | — |
 | **is refused as unauthenticated** | No valid token (401). | — | — |

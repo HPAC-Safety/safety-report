@@ -160,16 +160,16 @@ Examples:
 Scenario: An operator requeues a poisoned Worker job
   Given a Worker job has reached the poison threshold and stopped retrying
   When the Worker is invoked with a requeue-poison payload
-  Then the message's poison state is cleared and its attempt count resets
+  Then the job's poison state is cleared and its attempt count resets
   And it becomes claimable again immediately
-  And only the requeued count and the message's own identifier are logged, never its payload
+  And only the requeued count and the job's own identifier are logged, never its payload
 
 @REQ-DOM-017
-Scenario: A poison-requeue payload naming a time window only requeues messages poisoned within it
+Scenario: A poison-requeue payload naming a time window only requeues jobs poisoned within it
   Given one Worker job was poisoned before the given window and another was poisoned within it
   When the Worker is invoked with a requeue-poison payload naming that window
-  Then only the message poisoned within the window is requeued
-  And the message poisoned before the window is left poisoned
+  Then only the job poisoned within the window is requeued
+  And the job poisoned before the window is left poisoned
 
 @REQ-DOM-018
 Scenario Outline: What a reporter answered cannot be changed once stored
@@ -186,8 +186,8 @@ Examples:
   | question revision | changed |
   | question key      | changed |
   | privacy           | changed |
-  | words             | changed |
-  | words             | cleared |
+  | wording           | changed |
+  | wording           | cleared |
   | yes or no         | changed |
   | choice            | changed |
   | language          | changed |

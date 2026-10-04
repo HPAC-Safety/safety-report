@@ -41,7 +41,7 @@ public sealed class InterimIssuerSteps
 	private HttpResponseMessage? _response;
 	private TokenPayload? _issuedToken;
 
-	[Given(@"the application is not running in development and the temporary interim issuer is enabled")]
+	[Given(@"a deployment outside development with the temporary interim issuer enabled")]
 	public async Task GivenInterimIssuerEnabled()
 	{
 		// Four scripted responses: one successful members-site round trip for
@@ -55,7 +55,7 @@ public sealed class InterimIssuerSteps
 		_client = host.CreateClient();
 	}
 
-	[Given(@"the application is not running in development and the temporary interim issuer is disabled")]
+	[Given(@"a deployment outside development with the temporary interim issuer disabled")]
 	public async Task GivenInterimIssuerDisabled()
 	{
 		// The default: no flag, no Authority — production's own configuration.
@@ -74,7 +74,7 @@ public sealed class InterimIssuerSteps
 		_issuedToken = await _response.Content.ReadFromJsonAsync<TokenPayload>();
 	}
 
-	[Then(@"the member receives a token the server itself accepts")]
+	[Then(@"the member receives a token that later requests are accepted with")]
 	public async Task ThenTheApiIssuesATokenTheApiItselfAccepts()
 	{
 		_issuedToken.ShouldNotBeNull();

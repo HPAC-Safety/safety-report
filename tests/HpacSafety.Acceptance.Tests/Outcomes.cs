@@ -9,10 +9,6 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 internal static class Outcomes
 {
-	/// <summary>Every outcome phrase, as a regular-expression alternation for a binding.</summary>
-	public const string Pattern =
-		"created|accepted|refused as unauthenticated|refused as forbidden|not found|refused as invalid|refused as out of date|refused as too frequent";
-
 	/// <summary>The status an outcome phrase stands for.</summary>
 	public static HttpStatusCode Status(string outcome)
 	{

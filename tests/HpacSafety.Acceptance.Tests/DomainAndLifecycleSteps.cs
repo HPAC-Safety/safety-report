@@ -415,7 +415,7 @@ public sealed class DomainAndLifecycleSteps
 			database, At.AddMinutes(1), from: null, to: null, logger, CancellationToken.None);
 	}
 
-	[Then(@"the message's poison state is cleared and its attempt count resets")]
+	[Then(@"the job's poison state is cleared and its attempt count resets")]
 	public async Task ThenPoisonStateIsCleared()
 	{
 		var host = await BootedApi.Factory();
@@ -438,7 +438,7 @@ public sealed class DomainAndLifecycleSteps
 		message.NextAttemptAt.ShouldBeLessThanOrEqualTo(At.AddMinutes(1));
 	}
 
-	[Then(@"only the requeued count and the message's own identifier are logged, never its payload")]
+	[Then(@"only the requeued count and the job's own identifier are logged, never its payload")]
 	public void ThenOnlyCountAndIdAreLogged()
 	{
 		// The shared booted host's database may carry poison rows other
@@ -489,7 +489,7 @@ public sealed class DomainAndLifecycleSteps
 			database, At, At.AddHours(-1), At, logger, CancellationToken.None);
 	}
 
-	[Then(@"only the message poisoned within the window is requeued")]
+	[Then(@"only the job poisoned within the window is requeued")]
 	public void ThenOnlyTheWithinWindowMessageIsRequeued()
 	{
 		// See ThenOnlyCountAndIdAreLogged: the shared host's database is not
@@ -500,7 +500,7 @@ public sealed class DomainAndLifecycleSteps
 		_requeueResult.RequeuedIds.ShouldNotContain(_requeuedMessageId.ToString());
 	}
 
-	[Then(@"the message poisoned before the window is left poisoned")]
+	[Then(@"the job poisoned before the window is left poisoned")]
 	public async Task ThenTheBeforeWindowMessageIsLeftPoisoned()
 	{
 		var host = await BootedApi.Factory();

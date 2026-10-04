@@ -7,18 +7,21 @@
 // steps, the number of steps) as easily as its words.
 //
 // What the word rules read, per scenario:
-//   title    the Feature, Rule, Background, and Scenario names;
-//   step     every step's text;
+//   title        the Feature, Rule, Background, and Scenario names;
+//   description  the free text under each of them, line by line, for the
+//                rules that name it (no-transport-terms, no-rationale);
+//   step         every step's text;
 //   example  each Examples body cell whose column a step or the title reads
 //            through its <placeholder>: the step says it, so it is step text.
-// Not read: tags, comments, descriptions, doc strings, a step's own data
-// table, and an Examples column no step reads.
+// Not read: tags, comments, doc strings, a step's own data table, and an
+// Examples column no step reads. Every .feature file under .spec/features is
+// linted, its area being the directory that holds it.
 //
 //   node tools/gherkin/lint-scenarios.ts
 //
 // The exit code is the contract.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import { IdGenerator, type Background, type Feature, type Scenario, type Step } from '@cucumber/messages'
 
@@ -28,7 +31,7 @@ import { isMain } from '../lib/actions.ts'
 const ROOT = process.cwd()
 
 /** Where a piece of text sits in a scenario. */
-export type Kind = 'title' | 'step' | 'example'
+export type Kind = 'title' | 'description' | 'step' | 'example'
 
 /** One piece of text a word rule reads. */
 export interface Text {
@@ -120,7 +123,7 @@ export const RULES: readonly Rule[] = [
 		/\bJSON\b/,
 	]),
 	wordRule('no-transport-terms', 'say what happened to the request, not how it travelled; "the API" is not a step\'s subject', [
-		/\bAPI\b/,
+		/\bAPI\b/i,
 		/\bHTTPS?\b/,
 		/\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/,
 		/\bend-?points?\b/i,
@@ -132,8 +135,8 @@ export const RULES: readonly Rule[] = [
 		/\bhttps?:\/\/\S+/i,
 		// A route or path: /report, /api/v1/reports. A slash inside a word (yes/no) is not one.
 		/(?<![\w.:/<-])\/[a-z][\w\-{}/.<>]*/,
-	]),
-	wordRule('no-rationale', 'say what happens, not why; the reason belongs in the area README', [/\b(?:because|instead of|rather than|so that|in order to)\b/i, /,\s*since\b/i]),
+	], { kinds: ['title', 'description', 'step', 'example'] }),
+	wordRule('no-rationale', 'say what happens, not why; the reason belongs in the area README', [/\b(?:because|instead of|rather than|so that|in order to)\b/i, /,\s*since\b/i], { kinds: ['title', 'description', 'step', 'example'] }),
 	wordRule('no-locale-codes', 'say English or French; a locale code belongs only in an Examples cell', [/\b(?:en|fr)-CA\b/], { kinds: ['title', 'step'] }),
 ]
 
@@ -156,9 +159,15 @@ export function placeholders(scenario: { name: string; steps: ReadonlyArray<{ te
 	return read
 }
 
+/** The free text under a keyword, one Text per line; it starts on the line after the keyword's. */
+function description(owner: { location: { line: number }; description: string }): Text[] {
+	if (owner.description.trim() === '') return []
+	return owner.description.split('\n').map((text, index) => ({ kind: 'description' as const, line: owner.location.line + 1 + index, text }))
+}
+
 /** One scenario or Background, with every text its rules read. */
 function unit(area: string, file: string, item: Scenario | Background, titles: readonly Text[]): Unit {
-	const texts: Text[] = [...titles, { kind: 'title', line: item.location.line, text: item.name }]
+	const texts: Text[] = [...titles, { kind: 'title', line: item.location.line, text: item.name }, ...description(item)]
 	for (const step of item.steps) texts.push({ kind: 'step', line: step.location.line, text: step.text })
 	if ('examples' in item) {
 		const read = placeholders(item)
@@ -178,23 +187,24 @@ function unit(area: string, file: string, item: Scenario | Background, titles: r
 /** Every scenario and Background of a feature, Rule blocks included. */
 export function units(area: string, file: string, feature: Feature): Unit[] {
 	const found: Unit[] = []
-	const featureTitle: Text = { kind: 'title', line: feature.location.line, text: feature.name }
+	const featureTitle: Text[] = [{ kind: 'title', line: feature.location.line, text: feature.name }, ...description(feature)]
 	for (const child of feature.children) {
-		if (child.background) found.push(unit(area, file, child.background, [featureTitle]))
-		if (child.scenario) found.push(unit(area, file, child.scenario, [featureTitle]))
+		if (child.background) found.push(unit(area, file, child.background, featureTitle))
+		if (child.scenario) found.push(unit(area, file, child.scenario, featureTitle))
 		if (child.rule) {
-			const ruleTitle: Text = { kind: 'title', line: child.rule.location.line, text: child.rule.name }
+			const ruleTitle: Text[] = [{ kind: 'title', line: child.rule.location.line, text: child.rule.name }, ...description(child.rule)]
 			for (const inner of child.rule.children) {
-				if (inner.background) found.push(unit(area, file, inner.background, [featureTitle, ruleTitle]))
-				if (inner.scenario) found.push(unit(area, file, inner.scenario, [featureTitle, ruleTitle]))
+				if (inner.background) found.push(unit(area, file, inner.background, [...featureTitle, ...ruleTitle]))
+				if (inner.scenario) found.push(unit(area, file, inner.scenario, [...featureTitle, ...ruleTitle]))
 			}
 		}
 	}
-	// The Feature and Rule names repeat into every unit; report each once.
+	// The Feature and Rule names and descriptions repeat into every unit; report each once.
+	const shared = (text: Text) => text.kind === 'title' || text.kind === 'description'
 	const seen = new Set<number>()
 	for (const item of found) {
-		item.texts = item.texts.filter((text) => text.kind !== 'title' || text.line === item.line || !seen.has(text.line))
-		for (const text of item.texts) if (text.kind === 'title') seen.add(text.line)
+		item.texts = item.texts.filter((text) => !shared(text) || !seen.has(text.line))
+		for (const text of item.texts) if (shared(text)) seen.add(text.line)
 	}
 	return found
 }
@@ -212,14 +222,23 @@ export function lintSource(area: string, file: string, source: string, rules: re
 	return violations.sort((a, b) => a.line - b.line || a.rule.localeCompare(b.rule))
 }
 
-/** Every violation in every area's feature file under `root`; a file that does not parse is one violation. */
+/** Every .feature file under `dir`, relative to `root`, sorted. */
+function featureFiles(root: string, dir: string): string[] {
+	return readdirSync(join(root, dir))
+		.sort()
+		.flatMap((entry) => {
+			const path = `${dir}/${entry}`
+			if (statSync(join(root, path)).isDirectory()) return featureFiles(root, path)
+			return path.endsWith('.feature') ? [path] : []
+		})
+}
+
+/** Every violation in every .feature file under `root`'s features; a file that does not parse is one violation. */
 export function lintScenarios(root = ROOT, rules: readonly Rule[] = RULES): Violation[] {
-	const features = join(root, FEATURES)
+	if (!existsSync(join(root, FEATURES))) return []
 	const violations: Violation[] = []
-	for (const area of readdirSync(features).sort()) {
-		if (!statSync(join(features, area)).isDirectory()) continue
-		const file = `${FEATURES}/${area}/${area}.feature`
-		if (!existsSync(join(root, file))) continue
+	for (const file of featureFiles(root, FEATURES)) {
+		const area = basename(dirname(file))
 		try {
 			violations.push(...lintSource(area, file, readFileSync(join(root, file), 'utf8'), rules))
 		} catch (error) {

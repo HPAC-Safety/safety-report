@@ -289,7 +289,7 @@ internal static class Guarded
 		[("answer", "question revision")] = new("report_answers", "question_revision_id", "question_revision_id = 'xxxxxxxxxx1'"),
 		[("answer", "question key")] = new("report_answers", "question_key", "question_key = 'another_key'"),
 		[("answer", "privacy")] = new("report_answers", "is_private", "is_private = NOT is_private"),
-		[("answer", "words")] = new("report_answers", "value", "value = 'A different account.'", "value = NULL"),
+		[("answer", "wording")] = new("report_answers", "value", "value = 'A different account.'", "value = NULL"),
 		[("answer", "yes or no")] = new("report_answers", "value_boolean", "value_boolean = true"),
 		[("answer", "choice")] = new("report_answers", "choice_id", "choice_id = 'xxxxxxxxxx1'"),
 		[("answer", "language")] = new("report_answers", "locale", "locale = 'fr-CA'"),

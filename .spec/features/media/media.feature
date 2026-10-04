@@ -1,7 +1,7 @@
 @xunit:collection(MeasuresAllocation)
 Feature: Attachments
 A reporter may attach images, videos, and documents to the finalized
-report. Every attachment is validated by content rather than by name, and
+report. Every attachment is validated by its content, never by its name, and
 only images/videos get a safe derivative. Image and video originals stay
 private. A published report shows its verified image and video derivatives
 when the reporter also consented to sharing media, and offers its validated

@@ -1,9 +1,9 @@
 Feature: Report submission
 A reporter's answers, revision IDs, and locale live only in the browser
-until one final submission request. Before that request, the API and database
+until one final submission request. Before that request, the server and database
 receive no unfinished report state. The one thing that reaches the server
 earlier is an attachment, sent straight into private quarantine through a
-pre-signed PUT the API mints as soon as it is attached, and validated and
+pre-signed upload link minted as soon as it is attached, and validated and
 claimed by that request (ADR-0096, ADR-0126). The browser's saved report
 names its finished uploads, so they are kept exactly as long as it is
 (ADR-0100).
@@ -608,7 +608,7 @@ Examples:
 @REQ-SUB-080
 Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead
-  When the server commits the submission
+  When the submission is stored
   Then no translation provider is called
   And no choice answer stores a copy of either of its choice's labels
   And a new type-ahead value is queued for the Worker to translate, on the value itself
@@ -781,7 +781,7 @@ Scenario: Reporter-visible errors never echo submitted content
 @REQ-SUB-013
 Scenario: A valid submission is persisted atomically
   Given a submission passes every validation step
-  When the server commits the submission
+  When the submission is stored
   Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for each claimed upload, one summarization job, one answer-translation job, and one independent attachment-processing job per file
 
 @REQ-SUB-014
@@ -1102,20 +1102,20 @@ Scenario: A file dropped outside the drop zone does nothing
   And no file is attached or uploaded
 
 @REQ-SUB-116
-Scenario: A request that reached the server without CloudFront's origin secret is refused
-  Given the server requires CloudFront's origin secret
-  When a submission request arrives without that secret
+Scenario: A request that arrives without CloudFront's origin secret is refused
+  Given origin verification is required
+  When a submission request arrives without CloudFront's origin secret
   Then it is refused as forbidden, before authentication or anything else runs
 
 @REQ-SUB-117
 Scenario: The rate limiter partitions by the CloudFront viewer address, not the shared connection
   Given the per-IP submission rate limit is exhausted for one CloudFront viewer address
   When a submission request arrives from a different CloudFront viewer address
-  Then it is not refused
+  Then it is not refused as too frequent
 
 @REQ-SUB-118
 Scenario: A successful submission nudges the Worker
-  Given the server records each nudge it sends the Worker, and a submission is ready to persist
+  Given each nudge to the Worker is recorded, and a submission is ready to persist
   When the submission is answered
   Then the Worker is nudged once
 

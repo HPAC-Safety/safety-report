@@ -197,7 +197,7 @@ public sealed class OpenAiTranslationSteps : IDisposable
 		await Translate(provider, Locale.EnCa, Locale.FrCa);
 	}
 
-	[When(@"^the server or the Worker translates text$")]
+	[When(@"^text is translated on a request or by the Worker$")]
 	public async Task WhenTheApiOrTheWorkerTranslates()
 	{
 		// One registration serves both hosts, so one call shows what either sends.

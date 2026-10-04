@@ -22,7 +22,7 @@ date: 2026-10-03
   camelCase/PascalCase name, no configuration key (`Translation:Model`), no
   `Postgres`, `SQL`, `column`, `join table`, database `trigger`, or `enum`, no
   `outbox`, `DTO`, `JSON`, or `boolean`. Name the thing as the reader knows
-  it: "a stored answer's words", "a Worker job", "the publication consent
+  it: "a stored answer's wording", "a Worker job", "the publication consent
   question", "a type-ahead question", "true or false".
 - **No transport term** (`no-transport-terms`): no HTTP verb, `HTTP`,
   endpoint, route or path (`/report`), URL, request or response body, query
@@ -33,11 +33,18 @@ date: 2026-10-03
   than", "so that", "in order to", or a causal ", since" in a title, a step,
   or a cell a step reads. A contrast is an assertion: "shows a sign-out action
   and no member sign-in action". The reason goes in the area README or an ADR.
+- **A wire value is quoted as data.** A literal the system sends or receives
+  — a refusal reason (`"too_large"`), a Typeform type (`"multiple_choice"`),
+  a model response key (`"ai_summary_en"`) — is quoted, like interface copy,
+  and the lint skips it. Quoting never hides a name the reader need not know:
+  a table, a column, or a setting is reworded, not quoted.
 - **No locale code in a step** (`no-locale-codes`, J16): steps say English
   and French; `en-CA` and `fr-CA` appear only in Examples cells.
-- What the rules read: the Feature, Rule, Background, and Scenario names,
-  every step, and each Examples cell a step or the title reads through its
-  `<placeholder>`. Quoted `"interface copy"` is skipped, and so is a cell
+- What the rules read, in every `.feature` file under `.spec/features`: the
+  Feature, Rule, Background, and Scenario names, every step, and each
+  Examples cell a step or the title reads through its `<placeholder>`. The
+  free-text descriptions under them are read for transport terms and
+  rationale only. Quoted `"interface copy"` is skipped, and so is a cell
   every step reads inside quotes; a `` `code span` `` is not, because an
   identifier in backticks is still an identifier. Product names and key
   names (`CloudFront`, `ArrowDown`) are not identifiers.

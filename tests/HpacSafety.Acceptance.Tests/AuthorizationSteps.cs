@@ -39,7 +39,7 @@ public sealed class AuthorizationSteps
 	private MemberRole _role;
 	private readonly List<HttpResponseMessage> _reviews = [];
 
-	[Given(@"the application is not running in development")]
+	[Given(@"a deployment outside development")]
 	public async Task GivenProductionShapedHost()
 	{
 		var host = await BootedApi.ProductionShaped();
@@ -48,7 +48,7 @@ public sealed class AuthorizationSteps
 		_productionShaped = true;
 	}
 
-	[Given(@"the application is not running in development and no identity provider is configured")]
+	[Given(@"a deployment outside development with no identity provider configured")]
 	public async Task GivenProductionShapedHostWithNoAuthority()
 	{
 		var host = await BootedApi.ProductionShapedWithNoAuthority();
@@ -63,7 +63,7 @@ public sealed class AuthorizationSteps
 		_response = await _client!.GetAsync(Health);
 	}
 
-	[Then(@"the health check succeeds")]
+	[Then(@"the health check is answered with success")]
 	public void ThenApiAnswers200()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);

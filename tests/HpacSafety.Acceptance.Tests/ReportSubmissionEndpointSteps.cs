@@ -322,7 +322,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
 	}
 
-	[When(@"the server commits the submission")]
+	[When(@"the submission is stored")]
 	public async Task WhenTheApiCommitsTheSubmission()
 	{
 		if (_typeAheadRevisionId is not null)
@@ -623,7 +623,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- REQ-WLD-018: client validation never replaces server validation ---
 
-	[Given(@"a submission reaches the server")]
+	[Given(@"a submission arrives")]
 	public async Task GivenASubmissionReachesTheApi()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
@@ -632,7 +632,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		_selectRevisionId = await RevisionIdFor(key);
 	}
 
-	[When(@"the server independently validates it")]
+	[When(@"it is validated independently of the client")]
 	public async Task WhenTheApiIndependentlyValidatesIt()
 	{
 		// Each of these is one the form would never send: it cannot offer a value
@@ -654,7 +654,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		})));
 	}
 
-	[Then(@"the server's validation is authoritative regardless of what the client allowed or displayed")]
+	[Then(@"that validation is authoritative regardless of what the client allowed or displayed")]
 	public void ThenTheApiValidationIsAuthoritative()
 	{
 		_refused.Count.ShouldBe(2);
@@ -855,7 +855,6 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThanOrEqualTo(2 * BlobRangeStream.DefaultWindowSize);
 		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThan(_refusedUploadSize);
 	}
-
 
 	[Then(@"the response lists exactly the upload IDs it could not find")]
 	public async Task ThenTheResponseListsExactlyTheMissingUploads()
@@ -1214,14 +1213,14 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	private HttpClient? _unverifiedClient;
 
-	[Given(@"the server requires CloudFront's origin secret")]
+	[Given(@"origin verification is required")]
 	public async Task GivenTheBootedApiRequiresCloudFrontsOriginSecretHeader()
 	{
 		var verified = await BootedApi.OriginVerified("acceptance-test-origin-secret");
 		_unverifiedClient = verified.CreateClient();
 	}
 
-	[When(@"a submission request arrives without that secret")]
+	[When(@"a submission request arrives without CloudFront's origin secret")]
 	public async Task WhenASubmissionRequestArrivesWithoutThatHeader()
 	{
 		_response = await _unverifiedClient!.PostAsync(Submit, ReportPart(new
@@ -1276,7 +1275,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 		});
 	}
 
-	[Then(@"it is not refused")]
+	[Then(@"it is not refused as too frequent")]
 	public void ThenTheApiDoesNotRejectIt()
 	{
 		_response!.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
@@ -1284,7 +1283,7 @@ public sealed class ReportSubmissionEndpointSteps : IDisposable
 
 	// --- A successful submission nudges the Worker (ADR-0123) ---
 
-	[Given(@"the server records each nudge it sends the Worker, and a submission is ready to persist")]
+	[Given(@"each nudge to the Worker is recorded, and a submission is ready to persist")]
 	public async Task GivenTheBootedApiRecordsNudgesAndASubmissionIsReadyToPersist()
 	{
 		var recording = await BootedApi.NudgeRecorded();

@@ -283,7 +283,7 @@ Examples:
 Scenario: Translation uses the same Gemini key as summaries
   Given the summary call's Gemini key is configured
   And no translation-only key exists
-  When the server or the Worker translates text
+  When text is translated on a request or by the Worker
   Then the request is authorized with that key
 
 @REQ-WLD-042
@@ -343,9 +343,9 @@ Scenario: The client shows inline validation before submission
 
 @REQ-WLD-018
 Scenario: Client validation never replaces server validation
-  Given a submission reaches the server
-  When the server independently validates it
-  Then the server's validation is authoritative regardless of what the client allowed or displayed
+  Given a submission arrives
+  When it is validated independently of the client
+  Then that validation is authoritative regardless of what the client allowed or displayed
 
 @REQ-WLD-019
 @ui

@@ -809,6 +809,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a Safety Officer is on the admin site and more reports exist than fit on one page","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the Safety Officer has loaded the older reports","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the next report page fails to load","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer activates the \"Load more\" action","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the list offers a visible \"Retry\" action and does not fail silently","files":["tests/e2e/steps/manage-reports.steps.ts"],"ambiguous":false}

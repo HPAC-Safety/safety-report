@@ -341,6 +341,7 @@ Scenario: Activating Manage reports' "Load more" fallback loads the older report
 @ui
 Scenario: Manage reports offers a visible Retry action when its next page fails to load
   Given a Safety Officer is on the admin site and more reports exist than fit on one page
+  And the Safety Officer has loaded the older reports
   And the next report page fails to load
   When the Safety Officer activates the "Load more" action
   Then the list offers a visible "Retry" action and does not fail silently

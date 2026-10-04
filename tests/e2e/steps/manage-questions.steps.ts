@@ -1165,7 +1165,7 @@ Then("the question is not saved yet", ({ page }) => {
 Then("the save sends that choice with its translated French wording", ({ page }) => {
 	const body = present(savedQuestions.get(page)) as { options: { labelEn: string; labelFr: string }[] }
 	expect(savedQuestionMethods.get(page)).toBe("POST")
-	expect(body.options.map(({ labelEn, labelFr }) => ({ labelEn, labelFr }))).toEqual([{ labelEn: "Niviuk", labelFr: "Niviuk" }])
+	expect(body.options.map(({ labelEn, labelFr }) => ({ labelEn, labelFr }))).toEqual([{ labelEn: "Niviuk", labelFr: "[fr-CA] Niviuk" }])
 })
 
 Then("the direction switch translates English to French", async ({ page }) => {

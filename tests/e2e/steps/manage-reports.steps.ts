@@ -1202,6 +1202,12 @@ When(/^the Safety Officer reaches the "(.*)" action with (the .+ key)$/, async (
 	await tabToButton(page, name, keyPress(key))
 })
 
+Given("the Safety Officer has loaded the older reports", async ({ page }) => {
+	await tabToButton(page, "Load more")
+	await page.keyboard.press("Enter")
+	await expect(row(page, "private-unpublished")).toBeVisible()
+})
+
 Then("the older reports load without leaving Manage reports", async ({ page }) => {
 	await expect(row(page, "private-unpublished")).toBeVisible()
 	await expect(page).toHaveURL(/\/admin\/reports$/)

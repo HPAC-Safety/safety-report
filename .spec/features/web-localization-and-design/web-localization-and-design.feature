@@ -457,10 +457,24 @@ Scenario: The form meets baseline accessibility requirements
   Given a reporter uses assistive technology to complete the form
   Then every control has a programmatic label and usable keyboard order
   And groups use fieldset/legend
-  And errors are linked to their questions and summarized
   And focus is visible and status updates use appropriate live regions
   And motion respects reduced-motion and touch targets/contrast are sufficient
-  And media previews are never required to complete a report
+
+@REQ-WLD-061
+@ui
+Scenario: Going on past an unanswered required question links its error to it and summarizes it
+  Given a reporter uses assistive technology to complete a form whose narrative question is required
+  And they have reached the narrative question
+  When they go on without answering it
+  Then errors are linked to their questions and summarized
+
+@REQ-WLD-062
+@ui
+Scenario: A report goes on past its attachments with no file attached
+  Given a reporter uses assistive technology to complete the form
+  And they have answered every page up to the attachments, attaching nothing
+  When the reporter goes on to the next page
+  Then media previews are never required to complete a report
 
 @REQ-WLD-024
 @ui

@@ -10,9 +10,9 @@ date: 2026-10-03
 
 ## Rule
 
-- **At most one action** (`one-when`, J14): one When, with the And or But
-  steps that continue it, and never an action after a Then. A scenario of
-  Givens and Thens only is allowed.
+- **One action step** (`one-when`, J14): a single When; an And or But after
+  it is a second action. Never an action after a Then. A scenario of Givens
+  and Thens only is allowed.
   - Several actions before the first Then: the earlier ones become Givens
     (`And …` under the Given), or merge into one When. The claim ID stays.
   - An action after a Then is a second behavior. It becomes its own scenario

@@ -199,8 +199,8 @@ Read them before touching the area.
    boolean, ISO 8601, E.164, or one string; only the two consent questions and
    four name roles are read by name; a label has no closing colon.
    Claims: `REQ-QB-001`–`006`, `REQ-QB-015`, `REQ-QB-019`, `REQ-QB-025`,
-   `REQ-QB-053`, `REQ-QB-054`, `REQ-QB-071`, `REQ-QB-097`, `REQ-QB-113`,
-   `REQ-QB-122`–`135`, `REQ-QB-140`, `REQ-QB-179`, `REQ-QB-180`,
+   `REQ-QB-053`, `REQ-QB-054`, `REQ-QB-071`, `REQ-QB-097`, `REQ-QB-113`, `REQ-RFM-020`, `REQ-RFM-022`,
+   `REQ-QB-122`–`135`, `REQ-CTA-001`, `REQ-QB-140`, `REQ-QB-179`, `REQ-QB-180`,
    `REQ-QB-184`, `REQ-QB-213`, `REQ-QB-214`, `REQ-QB-240`–`246`,
    `REQ-TF-024`, `REQ-SUB-071`, `REQ-SUB-096`, `REQ-SUB-097`, `REQ-SUB-119`,
    `REQ-MOD-124`, `CON-DP-004`, `CON-DP-013`.
@@ -256,7 +256,7 @@ Read them before touching the area.
    document unchanged as a forced download, each through a pre-signed URL of
    at most 15 minutes; a document is never sent to the model; no malware
    scan.
-   Claims: `REQ-MED-008`, `REQ-MED-025`–`030`, `REQ-MED-037`–`041`,
+   Claims: `REQ-MED-008`, `REQ-MED-025`–`030`, `REQ-MED-063`, `REQ-MED-037`–`041`, `REQ-MED-069`,
    `REQ-AI-016`, `CON-SO-003`.
    ADRs: [0089](.spec/decisions/ADR-0089-no-malware-scanning-for-attachments.md),
    [0117](.spec/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
@@ -265,7 +265,7 @@ Read them before touching the area.
    approval of the current bilingual pair; a summary is an append-only list of
    revisions, and the public reads the latest approved one through a SQL view.
    Claims: `REQ-DOM-003`, `REQ-DOM-005`, `REQ-DOM-024`, `REQ-DOM-025`,
-   `REQ-MOD-035`, `REQ-MOD-194`–`200`, `CON-SO-007`, `CON-DP-014`.
+   `REQ-MOD-035`, `REQ-MOD-194`–`200`, `REQ-REV-001`, `CON-SO-007`, `CON-DP-014`.
    ADRs: [0177](.spec/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md).
 7. **Identity is a validated JWT, and nothing is stored about members**: the
    API reads the subject and role claim (`User`, `SafetyOfficer`,
@@ -275,8 +275,8 @@ Read them before touching the area.
    browser sees its own unpublished report and no member is identified. The only exceptions are
    Development's members-site login and, temporarily, staging's interim
    issuer behind `InterimIssuer:Enabled`, which production never sets.
-   Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-SUB-019`–`021`,
-   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-PUB-001`–`015`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
+   Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-AUTH-009`–`011`, `REQ-SUB-019`–`021`,
+   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-PUB-001`–`015`, `REQ-PUB-030`, `REQ-PUB-031`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
    `CON-INF-004`.
    ADRs: [0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
    [0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
@@ -328,7 +328,7 @@ Read them before touching the area.
   comment revision; and CI's `locales/fr-CA.json`. `ITranslator` receives
   the strings and `locales/terms.json` only.
   Claims: `REQ-SUB-080`, `REQ-SUB-119`, `REQ-SUB-120`, `REQ-QB-066`,
-  `REQ-MOD-069`–`074`, `REQ-COM-005`, `REQ-COM-006`, `REQ-WLD-010`,
+  `REQ-MOD-069`–`074`, `REQ-REV-005`, `REQ-REV-006`, `REQ-COM-005`, `REQ-COM-006`, `REQ-WLD-010`,
   `REQ-WLD-028`, `REQ-WLD-033`–`044`, `REQ-AI-030`.
   ADRs: [0021](.spec/decisions/ADR-0021-ci-translation-opens-a-pull-request.md),
   [0057](.spec/decisions/ADR-0057-same-repo-pull-requests-translate-in-pr.md),

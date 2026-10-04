@@ -208,7 +208,13 @@ Scenario: A saved report restores the parent and child answers together
   Given a reporter answered "Make" with "Niviuk" and "Model" with "Mentor 7", and the browser saved the report
   When they come back and continue the saved report
   Then "Make" holds "Niviuk", and "Model" holds "Mentor 7" and offers only the "Niviuk" models
-  And a saved "Model" answer no longer linked to the saved "Make" answer is restored empty
+
+@REQ-DCH-020
+@ui
+Scenario: A saved child answer no longer linked to its saved parent answer is restored empty
+  Given a reporter answered "Make" with "Ozone" and "Model" with "Mentor 7", a choice not offered under "Ozone", and the browser saved the report
+  When they come back and continue the saved report
+  Then "Make" holds "Ozone", and "Model" is restored empty
 
 @REQ-QB-201
 @ui
@@ -394,7 +400,19 @@ Scenario Outline: Each choice of a dependent question picks the parent choices i
   Given an Administrator using <language> opens the manage-questions page
   When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
   Then every choice row, a new one included, has an "Offered under" multi-select listing "Niviuk", "Ozone", "Other"
-  And Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
+
+Examples:
+  | language |
+  | English  |
+  | French   |
+
+@REQ-DCH-021
+@ui
+Scenario Outline: Save is refused while a dependent question's choice is offered under nothing
+  Given an Administrator using <language> opens the manage-questions page
+  And they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
+  When they tick a parent choice for every choice but the new one
+  Then Save is refused while a choice is offered under nothing, naming that choice in <language>, with its multi-select marked invalid
 
 Examples:
   | language |

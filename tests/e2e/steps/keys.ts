@@ -1,6 +1,6 @@
 /*
  * A key is named only in a scenario's Examples cell, as a noun phrase the
- * step reads through its placeholder (CONV-004, #815): "the Enter key", "the
+ * step reads through its placeholder (CONV-006, #815): "the Enter key", "the
  * down arrow key twice", "the Alt and down arrow keys", "the m key". The step
  * says what the actor does with it ("uses <key>", "closes the lightbox with
  * <key>"); this turns the cell into the presses Playwright makes.

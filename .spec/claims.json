@@ -2286,6 +2286,53 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-DCH-020",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "A saved child answer no longer linked to its saved parent answer is restored empty",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a reporter answered \"Make\" with \"Ozone\" and \"Model\" with \"Mentor 7\", a choice not offered under \"Ozone\", and the browser saved the report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they come back and continue the saved report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"\"Make\" holds \"Ozone\", and \"Model\" is restored empty","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-DCH-021",
+			"area": "dependent-choices",
+			"file": ".spec/features/dependent-choices/dependent-choices.feature",
+			"title": "Save is refused while a dependent question's choice is offered under nothing",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the question bank stores each question as a stable, non-localized key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each revision has a monotonically increasing revision number for its key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator using English opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they make a type-ahead question's choices depend on a single-select question offering \"Other\" pinned last, and \"Ozone\" and \"Niviuk\" not pinned","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they tick a parent choice for every choice but the new one","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in English, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in French, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-DOM-001",
 			"area": "domain-and-lifecycle",
 			"file": ".spec/features/domain-and-lifecycle/domain-and-lifecycle.feature",
@@ -4807,6 +4854,30 @@
 				{"keyword":"Given","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the Safety Officer activates the image's tile","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the raw original downloads and the lightbox does not open","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-MED-084",
+			"area": "media",
+			"file": ".spec/features/media/media.feature",
+			"title": "Showing a hidden file on the public report marks it public in place",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"the maximum attachment count is configurable and defaults to five across all attachment kinds","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"each file is limited to 250 MB for a video and 25 MB for an image or a document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report has a public image and a hidden image","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer opens the report in the admin area","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer shows the hidden image on the public report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no file reads as hidden from the public, and both read as shown publicly","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a published report has a public document and a hidden document","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer shows the hidden document on the public report","files":["tests/e2e/steps/public-media.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/public-media.steps.ts"],
 			"staleIgnore": false,
@@ -13965,8 +14036,7 @@
 				{"keyword":"Given","text":"at most one live question exists for a question key","files":["tests/e2e/steps/manage-questions.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a reporter answered \"Make\" with \"Niviuk\" and \"Model\" with \"Mentor 7\", and the browser saved the report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they come back and continue the saved report","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"\"Make\" holds \"Niviuk\", and \"Model\" holds \"Mentor 7\" and offers only the \"Niviuk\" models","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"a saved \"Model\" answer no longer linked to the saved \"Make\" answer is restored empty","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"\"Make\" holds \"Niviuk\", and \"Model\" holds \"Mentor 7\" and offers only the \"Niviuk\" models","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -14436,9 +14506,7 @@
 				{"keyword":"Given","text":"an Administrator using English opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"they make a type-ahead question's choices depend on a single-select question offering \"Other\" pinned last, and \"Ozone\" and \"Niviuk\" not pinned","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every choice row, a new one included, has an \"Offered under\" multi-select listing \"Niviuk\", \"Ozone\", \"Other\"","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in English, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"Save is refused while a choice is offered under nothing, naming that choice in French, with its multi-select marked invalid","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
+				{"keyword":"Given","text":"an Administrator using French opens the manage-questions page","files":["tests/e2e/steps/dependent-choices.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/dependent-choices.steps.ts","tests/e2e/steps/manage-questions.steps.ts"],
 			"staleIgnore": false,
@@ -18328,7 +18396,7 @@
 				{"keyword":"Given","text":"both require a valid member bearer token","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the report names each attachment by the upload ID its upload returned","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"the bearer token is transport/security metadata, not persisted report content","files":["tests/e2e/steps/submit-report.steps.ts"],"ambiguous":false},
-				{"keyword":"Given","text":"a signed-in reporter picks a wing type, checks two conditions, and types a launch site the form does not offer","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a signed-in reporter picks a wing type, checks two conditions, and enters a launch site the form does not offer","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the reporter sends the report","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the wing type and both conditions are sent as their choices' identifiers","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the launch site is sent as the words typed","files":["tests/e2e/steps/choice-answers.steps.ts"],"ambiguous":false}
@@ -21061,10 +21129,8 @@
 				{"keyword":"Given","text":"a reporter uses assistive technology to complete the form","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"every control has a programmatic label and usable keyboard order","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"groups use fieldset/legend","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"errors are linked to their questions and summarized","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"focus is visible and status updates use appropriate live regions","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"motion respects reduced-motion and touch targets/contrast are sufficient","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"media previews are never required to complete a report","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"motion respects reduced-motion and touch targets/contrast are sufficient","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
@@ -21859,6 +21925,46 @@
 				{"keyword":"Given","text":"they choose to unpublish the report","files":["tests/e2e/steps/admin-site.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-site.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-061",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "Going on past an unanswered required question links its error to it and summarizes it",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter uses assistive technology to complete a form whose narrative question is required","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have reached the narrative question","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"they go on without answering it","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"errors are linked to their questions and summarized","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/report-form.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-WLD-062",
+			"area": "web-localization-and-design",
+			"file": ".spec/features/web-localization-and-design/web-localization-and-design.feature",
+			"title": "A report goes on past its attachments with no file attached",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a reporter uses assistive technology to complete the form","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"they have answered every page up to the attachments, attaching nothing","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the reporter goes on to the next page","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"media previews are never required to complete a report","files":["tests/e2e/steps/report-form.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/report-form.steps.ts"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}

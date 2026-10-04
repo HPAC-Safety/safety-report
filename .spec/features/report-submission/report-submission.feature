@@ -653,7 +653,7 @@ Examples:
 @REQ-SUB-083
 @ui
 Scenario: The form names each chosen choice by its identifier
-  Given a signed-in reporter picks a wing type, checks two conditions, and types a launch site the form does not offer
+  Given a signed-in reporter picks a wing type, checks two conditions, and enters a launch site the form does not offer
   When the reporter sends the report
   Then the wing type and both conditions are sent as their choices' identifiers
   And the launch site is sent as the words typed

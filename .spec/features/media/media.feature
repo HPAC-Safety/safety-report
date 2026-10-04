@@ -464,6 +464,19 @@ Scenario: The admin report page shows whether each file is public
   Then the public image reads as shown publicly and offers to hide it
   And the hidden image reads as hidden from the public and offers to show it
 
+@REQ-MED-084
+@ui
+Scenario Outline: Showing a hidden file on the public report marks it public in place
+  Given a published report has a public <kind> and a hidden <kind>
+  And a Safety Officer opens the report in the admin area
+  When the Safety Officer shows the hidden <kind> on the public report
+  Then no file reads as hidden from the public, and both read as shown publicly
+
+Examples:
+  | kind     |
+  | image    |
+  | document |
+
 @REQ-MED-037
 Scenario: A published report lists its validated documents when media consent names documents
   Given a published report whose reporter consented to publication and to sharing media under wording that names documents

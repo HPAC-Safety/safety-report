@@ -154,10 +154,10 @@ const UI_MECHANICS: readonly RegExp[] = [
 	/\b(?:aria|data)-[a-z][\w-]*/i,
 	/\brole\s*=|\b(?:combobox|listbox|textbox|spinbutton|menuitem|tablist|tabpanel)(?:es|s)?\b/i,
 	// DOM, but not a claim ID that happens to carry it (REQ-DOM-007).
-	/(?<!-)\b(?:selector|DOM|CSS|class name|z-index|viewport)s?\b(?!-)/i,
+	/\b(?:selector|DOM|CSS|class name|z-index|viewport)s?\b(?!-\d)/i,
 	/\b\d+\s*(?:pixels?|px)\b|\bpixels?\b/i,
 	// Typing as a verb ("types into", "the reporter types"), not the noun ("content type").
-	/^types?\b(?!-)|\b(?:visitor|member|reporter|reviewer|officer|administrator|they|who)\s+types?\b|\b(?:has|have|had)\s+typed\b|\btyping\b|\btypes?\s+into\b|\btypes\s+in\b/i,
+	/^types?\b(?!-)|\b(?:visitor|member|reporter|reviewer|officer|administrator|they|who)\s+types?\b|\b(?:has|have|had)\s+typed\b|\b(?:and|or|then)\s+types?\b(?!-|\s+of\b)|\btyping\b|\btypes?\s+into\b|\btypes\s+in\b/i,
 ]
 
 /**
@@ -204,7 +204,7 @@ export const RULES: readonly Rule[] = [
 	wordRule('no-locale-codes', 'say English or French; a locale code belongs only in an Examples cell', [/\b(?:en|fr)-CA\b/], { kinds: ['title', 'step'] }),
 	{
 		id: 'one-when',
-		message: 'one behavior per scenario: at most one action (a When and the And/But steps that continue it), never after a Then; split the rest into their own scenarios',
+		message: 'one behavior per scenario: one action step, a single When; an And or But after it is a second action, and no action may follow a Then; make earlier actions Givens or split the rest into their own scenarios',
 		check: oneWhen,
 	},
 	{

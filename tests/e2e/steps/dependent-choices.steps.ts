@@ -255,10 +255,16 @@ function french(key: string): string | undefined {
 	return typeof node === "string" ? node : undefined
 }
 
-Then("Save is refused while a choice is offered under nothing, naming that choice in {word}, with its multi-select marked invalid", async ({ page }, language: string) => {
+// The first two choices get a parent and the new one none; a reader using French then reads the page in French, every tick kept.
+When("they tick a parent choice for every choice but the new one", async ({ page }) => {
 	await tickParents(page, 0, ["Niviuk"])
 	await tickParents(page, 1, ["Ozone"])
-	await expect(page.getByRole("button", { name: "Save" })).toBeDisabled()
+	if (languages.get(page) === "French") await page.getByRole("button", { name: "Français" }).click()
+})
+
+Then("Save is refused while a choice is offered under nothing, naming that choice in {word}, with its multi-select marked invalid", async ({ page }, language: string) => {
+	const save = language === "French" ? (french("questions.save") ?? "Save") : "Save"
+	await expect(page.getByRole("button", { name: save, exact: true })).toBeDisabled()
 	// The row offered under nothing is marked invalid, and described by the refusal.
 	await expect(parentPicker(page, 2).getByRole("combobox")).toHaveAttribute("aria-invalid", "true")
 	await expect(parentPicker(page, 0).getByRole("combobox")).not.toHaveAttribute("aria-invalid", "true")
@@ -267,13 +273,11 @@ Then("Save is refused while a choice is offered under nothing, naming that choic
 	await expect(refusal).not.toContainText("Mentor 7")
 
 	if (language === "French") {
-		// The same refusal, in French, keeping every tick; then back to English.
-		await page.getByRole("button", { name: "Français" }).click()
+		// The same refusal, in French, keeping every tick.
 		const expected = french("questions.choice.unlinked")
 		await expect(refusal).not.toContainText("Tick at least one answer")
 		if (expected && !expected.startsWith("#")) await expect(refusal).toContainText(expected.split("{choices}")[0].trim())
 		await expect(refusal).toContainText("Zeno 2")
-		await page.getByRole("button", { name: /^Passer à/ }).click()
 	} else {
 		await expect(refusal).toContainText("Tick at least one answer each choice is offered under before saving: Zeno 2.")
 	}
@@ -649,15 +653,17 @@ Then("{string} holds {string}, and {string} holds {string} and offers only the {
 	await modelOffers(page, ["Ikuma", "Mentor 7"])
 })
 
-Then("a saved {string} answer no longer linked to the saved {string} answer is restored empty", async ({ browser }, _child: string, _parent: string) => {
-	const page = await browser.newPage()
-	forms.set(page, wingForm("single_select", "autocomplete"))
-	await savedDraft(page, "ozone", { id: "mentor_7", label: "Mentor 7" })
-	await openForm(page, present(forms.get(page)))
-	await page.getByRole("dialog", { name: "Continue where you left off?" }).getByRole("button", { name: "Yes, continue" }).click()
-	await expect(page.getByRole("combobox", { name: "Make" })).toHaveText("Ozone")
+Given(
+	"a reporter answered {string} with {string} and {string} with {string}, a choice not offered under {string}, and the browser saved the report",
+	async ({ page }, _parent: string, _make: string, _child: string, _model: string, _other: string) => {
+		forms.set(page, wingForm("single_select", "autocomplete"))
+		await savedDraft(page, "ozone", { id: "mentor_7", label: "Mentor 7" })
+	},
+)
+
+Then("{string} holds {string}, and {string} is restored empty", async ({ page }, _parent: string, make: string, _child: string) => {
+	await expect(page.getByRole("combobox", { name: "Make" })).toHaveText(make)
 	await expect(modelField(page)).toHaveValue("")
-	await page.close()
 })
 
 Given("a required {string} question's choices depend on an optional {string} question", async ({ page }, _child: string, _parent: string) => {

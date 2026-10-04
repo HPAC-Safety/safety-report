@@ -601,7 +601,15 @@ Then("the public {word} reads as shown publicly and offers to hide it", async ({
 Then("the hidden {word} reads as hidden from the public and offers to show it", async ({ page }, _kind: string) => {
 	const row = page.locator('[data-media]').filter({ has: page.locator('[data-visibility="hidden"]') })
 	await expect(row.locator('[data-visibility="hidden"]')).toHaveText("Hidden from the public")
+	await expect(row.getByRole("button", { name: "Show on the public report" })).toBeVisible()
+})
+
+When(/^the Safety Officer shows the hidden (image|document) on the public report$/, async ({ page }, _kind: string) => {
+	const row = page.locator('[data-media]').filter({ has: page.locator('[data-visibility="hidden"]') })
 	await row.getByRole("button", { name: "Show on the public report" }).click()
+})
+
+Then("no file reads as hidden from the public, and both read as shown publicly", async ({ page }) => {
 	await expect(page.locator('[data-visibility="hidden"]')).toHaveCount(0)
 	await expect(page.locator('[data-visibility="public"]')).toHaveCount(2)
 })

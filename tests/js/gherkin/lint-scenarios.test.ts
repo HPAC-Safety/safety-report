@@ -125,7 +125,7 @@ describe('no-locale-codes', () => {
 })
 
 describe('one-when', () => {
-	it('passes one action, and a scenario with no action at all', () => {
+	it('fails an And after the When as a second action, and passes a scenario with no action at all', () => {
 		assert.deepEqual(only('one-when', '  Given a report\n  And it is published\n  When a visitor opens it\n  And they read it\n  Then it shows'), ['And they read it (action 2)'])
 		assert.deepEqual(only('one-when', '  Given a report\n  Then it holds\n  And it shows'), [])
 	})
@@ -179,8 +179,8 @@ describe('no-ui-mechanics', () => {
 	})
 
 	it('fails typing as a verb, and passes the noun', () => {
-		assert.deepEqual(only('no-ui-mechanics', '  When the reporter types "x"\n  And types a note\n  And the visitor then types into the box\n  And they have typed "y"\n  Then typing shows it'), ['reporter types', 'types', 'types into', 'have typed', 'typing'])
-		assert.deepEqual(only('no-ui-mechanics', '  Given a document of content type "text/plain"\n  And a Typeform field of type "<t>"\n  And a type-ahead question\n  Then it produces a draft of type yes/no'), [])
+		assert.deepEqual(only('no-ui-mechanics', '  When the reporter types "x"\n  And types a note\n  And she checks it and types a reply\n  And the visitor then types a word\n  And the box is where she types into it\n  And they have typed "y"\n  Then typing shows it'), ['reporter types', 'types', 'and types', 'then types', 'types into', 'have typed', 'typing'])
+		assert.deepEqual(only('no-ui-mechanics', '  Given a document of content type "text/plain"\n  And a Typeform field of type "<t>"\n  And a type-ahead question\n  And its value and type of answer\n  Then it produces a draft of type yes/no'), [])
 	})
 
 	it('allows the observable words focus and keyboard, and a claim ID naming DOM', () => {

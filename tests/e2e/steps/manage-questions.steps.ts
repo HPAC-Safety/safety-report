@@ -1013,6 +1013,7 @@ Then("the choices stay where they were while the Administrator edits", async ({ 
 Then(
 	"the save sends {string} pinned first, {string} pinned last, and {string} not pinned",
 	({ page }, first: string, last: string, none: string) => {
+		expect(savedQuestionMethods.get(page)).toBe("PUT /api/admin/questions/ddddddddddd")
 		const body = present(savedQuestions.get(page)) as { options: { labelEn: string; pin?: string }[] }
 		const pins = Object.fromEntries(body.options.map((option) => [option.labelEn, option.pin]))
 		expect(pins).toEqual({ [first]: "first", [last]: "last", [none]: "none" })

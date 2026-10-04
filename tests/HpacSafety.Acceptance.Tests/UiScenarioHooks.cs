@@ -1,5 +1,5 @@
 using Reqnroll;
-using Xunit.v3;
+using Xunit.Sdk;
 
 namespace HpacSafety.Acceptance.Tests;
 
@@ -16,11 +16,13 @@ namespace HpacSafety.Acceptance.Tests;
 ///     a plain <c>dotnet test</c> used to report. Skipping is the mechanism; the
 ///     category filter in CI is a second line of defence — ADR-0073.
 ///     <para>
-///     The hook throws an exception whose message starts with xUnit v3's
-///     <see cref="DynamicSkipToken.Value" />, the contract for a dynamic skip, which
-///     the generated <c>[Fact]</c> reports as skipped. It does not call
-///     <c>Assert.Skip</c>, which does the same but is banned with the rest of
-///     <c>Xunit.Assert</c> (ADR-0013). <c>ITestRunner.SkipScenarioAsync</c>
+///     The hook throws <c>SkipException.ForSkip</c>, xUnit v3's dynamic skip, which the
+///     generated <c>[Fact]</c> reports as skipped and which Reqnroll's xUnit v3 plugin
+///     recognises, so the message formatter records the hook as skipped, not failed.
+///     A bare exception carrying <c>DynamicSkipToken.Value</c> skips the test too but
+///     is recorded as a failed hook step. It does not call <c>Assert.Skip</c>, which
+///     is banned with the rest of <c>Xunit.Assert</c> (ADR-0013).
+///     <c>ITestRunner.SkipScenarioAsync</c>
 ///     from a hook does too, but with Reqnroll's Cucumber Messages formatter on
 ///     (<c>REQNROLL_FORMATTERS</c>, which CI sets for the claim gate, ADR-0195) it
 ///     fails the test with "Stack empty" instead of skipping it.
@@ -32,7 +34,6 @@ public sealed class UiScenarioHooks
 	[BeforeScenario("ui")]
 	public static void SkipUiScenario()
 	{
-		throw new InvalidOperationException(
-			DynamicSkipToken.Value + "A @ui scenario executes through playwright-bdd, not Reqnroll (ADR-0053).");
+		throw SkipException.ForSkip("A @ui scenario executes through playwright-bdd, not Reqnroll (ADR-0053).");
 	}
 }

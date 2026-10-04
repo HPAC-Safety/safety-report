@@ -18,19 +18,13 @@ namespace HpacSafety.Infrastructure.Tests.Storage;
 ///     </para>
 /// </summary>
 [Trait("Category", "Integration")]
-public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, IDisposable
+public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests
 {
 	private const string BucketName = "hpac-safety-uploads";
 
 	private readonly HttpClient _http = new();
 	private readonly IContainer _server = S3Emulator.Build();
 	private AmazonS3Client _s3 = null!;
-
-	public void Dispose()
-	{
-		_http.Dispose();
-		_s3?.Dispose();
-	}
 
 	public override async ValueTask InitializeAsync()
 	{
@@ -41,6 +35,8 @@ public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, I
 
 	public override async ValueTask DisposeAsync()
 	{
+		_http.Dispose();
+		_s3?.Dispose();
 		await base.DisposeAsync();
 		await _server.DisposeAsync();
 	}

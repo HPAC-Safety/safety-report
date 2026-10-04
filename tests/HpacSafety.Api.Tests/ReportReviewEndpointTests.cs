@@ -92,7 +92,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		// Every page: the shared database holds the other tests' reports too, so
 		// the seeded one is on the first page only when this test happens to run
 		// early.
-		var body = string.Concat((await List(client, null)).Select(item => item.GetRawText()));
+		var body = string.Concat((await Pages(client, null)).Select(page => page.GetRawText()));
 
 		// Then
 		body.ShouldContain(seeded["pending"]);
@@ -521,17 +521,26 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 	private static async Task<List<JsonElement>> List(HttpClient client,
 													  string? filter)
 	{
-		var items = new List<JsonElement>();
+		var pages = await Pages(client, filter);
+
+		return pages.SelectMany(page => page.GetProperty("items").EnumerateArray()).ToList();
+	}
+
+	/// <summary>Every page of the list, whole, so a check can scan the full response.</summary>
+	private static async Task<List<JsonElement>> Pages(HttpClient client,
+													   string? filter)
+	{
+		var pages = new List<JsonElement>();
 		string? after = null;
 
 		do
 		{
 			var page = await Page(client, filter, after);
-			items.AddRange(page.GetProperty("items").EnumerateArray());
+			pages.Add(page);
 			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
 		} while (after is not null);
 
-		return items;
+		return pages;
 	}
 
 	private static async Task<JsonElement> Page(HttpClient client,

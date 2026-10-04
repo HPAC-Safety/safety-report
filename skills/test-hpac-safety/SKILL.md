@@ -60,8 +60,9 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   Reqnroll has no browser, so it never runs a `@ui` scenario (the playwright-bdd decision).
   - The acceptance suite skips `@ui` itself, through a
     `[BeforeScenario("ui")]` hook, wherever `dotnet test` runs. The hook throws
-    an exception whose message starts with `DynamicSkipToken.Value`, xUnit v3's
-    dynamic skip, since `Assert.Skip` is banned.
+    `[BeforeScenario("ui")]` hook, wherever `dotnet test` runs. The hook throws
+    `SkipException.ForSkip(...)` (`Xunit.Sdk`), xUnit v3's dynamic skip, since
+    `Assert.Skip` is banned.
     `.github/workflows/ci.yml`'s category filter is the backstop (the UI-scenario-is-skipped-by-Reqnroll-itself decision).
 - The booted host is `BootedApi`.
 

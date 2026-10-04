@@ -3,7 +3,7 @@
 // the official @cucumber/gherkin parser (the same parser cucumber-js uses).
 //
 // This checks syntax only, not step definitions. Scenarios execute as xUnit
-// tests via Reqnroll (tests/HpacSafety.Acceptance.Tests, ADR-0049) once their
+// tests via Reqnroll (tests/HpacSafety.Acceptance.Tests, ADR-0198) once their
 // step definitions exist; until then each carries an @ignore tag. See
 // .spec/features/README.md.
 import { readdirSync, readFileSync, statSync } from 'node:fs'

@@ -59,14 +59,18 @@ The suite relies on four things a framework move could break:
 - A fixture's `InitializeAsync` and `DisposeAsync` return `ValueTask`. A call
   that takes a `CancellationToken` passes `TestContext.Current.CancellationToken`
   (`xUnit1051`, an error; no blanket `NoWarn`).
-- The `@ui` hook throws an `InvalidOperationException` whose message starts with
-  `Xunit.v3.DynamicSkipToken.Value`, xUnit v3's contract for a dynamic skip,
-  which the generated `[Fact]` reports as skipped. `Assert.Skip` does the same
-  but is banned with `Xunit.Assert`, so no suppression of the ban is needed.
+- The `@ui` hook throws `Xunit.Sdk.SkipException.ForSkip(...)`, xUnit v3's
+  dynamic skip, which the generated `[Fact]` reports as skipped and which
+  Reqnroll's xUnit v3 plugin recognises, so the message formatter records the
+  hook as skipped. A plain exception carrying `DynamicSkipToken.Value` also
+  skips the test but the formatter records its hook step as failed, which was
+  tried and rejected. `Assert.Skip` does the same as `ForSkip` but is banned
+  with `Xunit.Assert`; `SkipException` is not, so no suppression is needed.
   This replaces the `SkipException` of `Xunit.SkippableFact` named in ADR-0195's
   Consequences; the decision in ADR-0073 and ADR-0195 is unchanged.
   `UiScenarioHooksTests` pins it, and a run with the filter `Category=ui`
-  reports every `@ui` scenario Skipped with `REQNROLL_FORMATTERS` set and unset.
+  reports every `@ui` scenario Skipped with `REQNROLL_FORMATTERS` set and unset,
+  with no failed step in the Cucumber Messages file.
 - Reqnroll.xUnit.v3 3.3.4 turns `@xunit:collection(Name)` into a `Category`
   trait and not into `[Collection("Name")]`, which `Reqnroll.xUnit` did. Without
   the attribute those features ran in parallel and failed the allocation

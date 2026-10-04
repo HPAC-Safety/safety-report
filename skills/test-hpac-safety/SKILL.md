@@ -14,13 +14,13 @@ same section names.
 - .NET: xUnit and Shouldly. JavaScript tools: `node:test`. Web logic
   (`src/web`): Vitest with Testing Library and jsdom, tests beside the code as
   `Foo.test.tsx`, held to 100% coverage
-  ([ADR-0188](../../.spec/decisions/ADR-0188-a-components-logic-lives-in-foo-tsx-and-its-markup-in-foo-view-tsx-and-web-logic-is-unit-tested.md);
+  (a component's logic lives in `Foo.tsx` and its markup in `Foo.view.tsx`;
   [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md)). Browser journeys:
   Playwright.
 - Test code is C# or TypeScript.
 - Synthetic fixtures only: people, locations, reports, and attachments.
-- Seeded rows: the consent questions and the seeded question bank
-  ([lesson 0021](../../.spec/lessons/0021-a-consent-question-found-by-a-key-it-was-never-seeded-under.md)).
+- Seeded rows: the consent questions and the seeded question bank; a test that finds a consent question by key seeds
+  that key.
 - Integration tests use the supported PostgreSQL version through
   Testcontainers.
 
@@ -28,7 +28,7 @@ same section names.
 
 Three PascalCase segments joined by single underscores, opening with `Given`,
 `When`, `Then`
-([ADR-0069](../../.spec/decisions/ADR-0069-scannable-given-when-then-test-names.md)):
+(the scannable-test-names decision):
 
 ```csharp
 // good
@@ -49,12 +49,12 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 ### Which runner
 
 - **Untagged** scenarios run as xUnit tests via Reqnroll in
-  `tests/HpacSafety.Acceptance.Tests` (ADR-0049).
+  `tests/HpacSafety.Acceptance.Tests` (the Reqnroll-acceptance decision).
 - **`@ui`** scenarios run through `playwright-bdd` in `tests/e2e/steps`.
-  Reqnroll has no browser, so it never runs a `@ui` scenario (ADR-0053).
+  Reqnroll has no browser, so it never runs a `@ui` scenario (the playwright-bdd decision).
   - The acceptance suite skips `@ui` itself, through a
     `[BeforeScenario("ui")]` hook, wherever `dotnet test` runs.
-    `.github/workflows/ci.yml`'s category filter is the backstop (ADR-0073).
+    `.github/workflows/ci.yml`'s category filter is the backstop (the UI-scenario-is-skipped-by-Reqnroll-itself decision).
 - The booted host is `BootedApi`.
 
 ### `@ignore`
@@ -62,12 +62,11 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 - Step definitions for a `@ui` scenario live in `tests/e2e/steps`.
 - A scenario that leads its code carries `@ignore @issue-<N>`, naming the open
   issue that will build it; the pull request that builds it removes both tags.
-  `feature-coverage` runs `node tools/spec/check-ignored-claims.ts`
-  ([CONV-001](../../.spec/conventions/CONV-001-a-scenario-counts-only-in-its-own-area-and-an-ignored-one-names-its-issue.md)).
+  `feature-coverage` runs `node tools/spec/check-ignored-claims.ts` (the
+  scenario-counts-only-in-its-own-area convention).
 - A built claim fails the `coverage` job unless every pickle of it passed in
-  its engine's run
-  ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
-  Both suites write Cucumber Messages under `artifacts/claims/`: Playwright on
+  its engine's run (the built-claim-counts-only-when-its-scenario-passed
+  decision). Both suites write Cucumber Messages under `artifacts/claims/`: Playwright on
   every run, Reqnroll when `REQNROLL_FORMATTERS` asks. To judge your own runs:
 
   ```sh
@@ -80,29 +79,27 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   ```
 
   A filtered run judges only what it ran, so judge a whole suite.
-- A superseded scenario left behind `@ignore` is the contradiction
-  [ADR-0047](../../.spec/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)
-  forbids.
+- A superseded scenario left behind `@ignore` is the contradiction the
+  feature-files-must-not-contradict-decisions rule forbids.
 
 ### Step definitions
 
-- Write from the scenario
-  ([ADR-0083](../../.spec/decisions/ADR-0083-specification-driven-development.md));
-  never encode a missing fact in C# or TypeScript.
+- Write from the scenario (specification-driven development); never encode a missing fact in C# or TypeScript.
 - Which file binds each step of a claim, and which steps nothing binds yet, is
-  in that claim's entry in [`.spec/claims.json`](../../.spec/claims.json);
+  in that claim's entry in the generated claims file;
   `node tools/spec/generate-traceability.ts` fails a built claim with an
-  unbound step
-  ([ADR-0193](../../.spec/decisions/ADR-0193-the-claims-are-generated-as-json-a-graph-fragment-and-one-slim-matrix.md)).
-- A request-level claim binds through `BootedApi`
-  ([lesson 0006](../../.spec/lessons/0006-an-internal-identifier-leaked-into-the-authoring-screen.md)).
-- Start from the claim's entry in `.spec/claims.json`: its steps with no
+  unbound step.
+- A claim proven only in the domain layer, or by a step that asserts nothing,
+  is not covered: bind a request-level claim through `BootedApi` and assert the
+  response (an internal identifier leaked into the authoring screen while a
+  hollow step reported it covered; a choice code nobody could supply and a
+  reporter choice nobody recorded).
+- Start from the claim's entry in the generated claims file: its steps with no
   `files` are the definitions to write. Remove `@ignore` and its `@issue-<N>`
   once the entry says `"staleIgnore": true` and the scenario passes; from then
-  on CI fails the claim unless it passes in every run
-  ([ADR-0195](../../.spec/decisions/ADR-0195-a-built-claim-counts-only-when-its-scenario-passed-in-the-run.md)).
-- A key comes from its Examples cell through `tests/e2e/steps/keys.ts`
-  ([CONV-006](../../.spec/conventions/CONV-006-a-scenario-holds-one-behavior.md)).
+  on CI fails the claim unless it passes in every run.
+- A key comes from its Examples cell through `tests/e2e/steps/keys.ts` (the
+  one-behavior-per-scenario convention).
 - Reqnroll steps are Cucumber Expressions:
   `(User|SafetyOfficer|Administrator)` matches nothing; use `{word}`.
 
@@ -116,15 +113,15 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 ## External providers
 
 - Example: a provider language code (the kept, dormant DeepL adapter's
-  `EN-CA`). Exercise French to English as well as English to French
-  ([lesson 0019](../../.spec/lessons/0019-a-language-code-the-provider-never-offered.md)).
+  `EN-CA`). Exercise French to English as well as English to French;
+  a code the provider never offered fails only in one direction.
 - Required phrases are the role phrases.
 
 ## Contracts to cover
 
 - **Questions**: complete revisions are immutable; latest-revision selection
   cannot resurrect an older active revision. The consents are always required
-  when asked; an administrator may require any other question (ADR-0061).
+  when asked; an administrator may require any other question (the administrators-may-require-any-question decision).
 - **Before submission**: unfinished answers and revision IDs stay in browser
   storage for 15 days; no report, reserved ID, or database state exists before
   final submission. An upload is minted with a PUT signed for its declared
@@ -143,17 +140,17 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   need; image and video derivatives remove metadata; documents are kept as unchanged originals and
   never reach AI. One is public only as a short-lived forced download under a
   server-minted name, when validated, unhidden, and `consent_documents` is true
-  (ADR-0119).
+  (the published-report-offers-documents decision).
 - **Publication**: consent, non-deletion, and an approved revision are all
   required; an edit on a report that is not live is an unapproved draft, and one
-  on a Published report is approved and public at once (ADR-0177); soft deletion
+  on a Published report is approved and public at once (the append-only-summary-revisions decision); soft deletion
   stops every flow.
 - **Logs**: credentials, report content, model payloads, client filenames, and
   URLs never enter logs or exceptions.
 
 ## Test containers
 
-- Why the local cache is suspect first:
-  [lesson 0014](../../.spec/lessons/0014-a-local-image-cache-hides-a-withdrawn-upstream.md).
-- The S3-compatible server is pinned once, in `tests/Shared/S3Emulator.cs`
-  ([ADR-0110](../../.spec/decisions/ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md)).
+- Suspect the local image cache first: it can hide an upstream image that was
+  withdrawn.
+- The S3-compatible server is pinned once, in `tests/Shared/S3Emulator.cs` (the
+  RustFS-replaces-MinIO decision).

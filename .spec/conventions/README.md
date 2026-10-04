@@ -35,7 +35,8 @@ Body:
 - `## Why` — the reason, with the issue, lesson, or ADR behind it;
 - `## Enforced by` (optional) — the tool, hook, or check that holds it.
 
-The skill that agents read for the rule links the convention; the convention
-holds the rule's reason. `node tools/spec/check-records.ts` checks the shape,
+The skill that agents read for the rule names its topic, never the convention
+itself (CONV-009); `AGENTS.md` links the convention, and the convention holds
+the rule's reason. `node tools/spec/check-records.ts` checks the shape,
 and the generated [specification index](../README.md#conventions) lists every
 convention.

@@ -8,8 +8,8 @@ description: Handle HPAC Safety attachment uploads, private storage, safe image/
 ## Upload
 
 Each file uploads alone, the moment it is attached, straight to storage
-([ADR-0096](../../.spec/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-[ADR-0126](../../.spec/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
+(the upload-on-attach, claimed-at-submission, and pre-signed-PUT-to-quarantine
+decisions):
 
 1. `POST /api/v1/uploads` takes the declared content type and exact byte size,
    never a filename.
@@ -40,18 +40,17 @@ The final `POST /api/v1/reports`:
 - carries each file's name. Sanitize it — last path segment; no control,
   quote, or reserved characters; at most 255 — and store it on the report file.
   Use it only as a reviewer's forced-download name, with the served type's
-  extension
-  ([ADR-0097](../../.spec/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
+  extension (a reviewer downloads an attachment under its sanitized original
+  name).
 
 The Worker's `ProcessAttachment` handler — one outbox message per file,
 idempotent, skipping deleted reports — sniffs the original and writes the
-derivative
-([ADR-0098](../../.spec/decisions/ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)).
+derivative (submission copies the original; the Worker makes the derivative).
 
 ## Storage
 
 - `S3BlobStore` is the only adapter: S3 through the task role in AWS, RustFS in
-  docker-compose for development (ADR-0110).
+  docker-compose for development (RustFS replaced MinIO as the development S3 server).
 - No filesystem adapter. A reporter's only pre-signed PUT is the one minted for
   their upload's quarantine key; no multipart or resumable upload.
 - The uploads bucket allows cross-origin `PUT` only from the site origins.
@@ -64,21 +63,21 @@ derivative
   - video: MP4, QuickTime;
   - documents: PDF, DOC, DOCX, RTF, MD, TXT, ODT.
 - Sniff the format and require declared and actual to agree.
-- No malware scanner (ADR-0089): sniffing and the format allowlist are the only
+- No malware scanner (the no-malware-scanning decision): sniffing and the format allowlist are the only
   gate.
 
 ## Images and video
 
 - Decode and re-encode images, and remux videos into MP4 (a stream copy, never
-  a transcode; ADR-0094, ADR-0122), to strip metadata. Reviewers see only verified derivatives.
+  a transcode, and always an MP4: the video-remux and video-derivative decisions), to strip metadata. Reviewers see only verified derivatives.
 - An image that cannot be stripped fails closed.
 - A video that cannot be remuxed is kept as a private original with no
   derivative, reachable only as a reviewer download
-  ([ADR-0094](../../.spec/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
+  (video is remuxed, not transcoded, and never refused).
 - A published report shows verified derivatives — never an original — when the
   reporter also consented to media. Served through a pre-signed GET of at most
   15 minutes, minted by `PublicMediaLink` and gated by the
-  `public_report_media` view. A reviewer may hide any file (ADR-0117).
+  `public_report_media` view. A reviewer may hide any file (the published-photos-and-video decision).
 
 ## Documents
 
@@ -86,7 +85,7 @@ derivative
   parse/extract it for AI.
 - Only a short-lived, forced download with active-content-safe headers: to a
   reviewer, or to anyone once `public_report_media` lists it, under a
-  server-minted name (ADR-0119).
+  server-minted name (the published-documents decision).
 - Never inline-rendered.
 
 ## Failure, deletion, logging

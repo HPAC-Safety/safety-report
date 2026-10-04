@@ -9,10 +9,10 @@ Extends [`design-ef-core-model`](../design-ef-core-model/SKILL.md) for how an
 entity, relationship, or query is mapped; read that first. This skill wins
 where they differ.
 
-- Target schema: [`.spec/data-and-persistence.md`](../../.spec/data-and-persistence.md).
+- Target schema: the data-and-persistence constraint page.
 - Schema changes, raw SQL, and how migrations are applied:
-  [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md)
-  ([ADR-0055](../../.spec/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+  [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md) (the
+  migrations, SQL files, and stored procedures decision).
 - Tables and sensitivity tiers: [`hpac-domain-model`](../hpac-domain-model/SKILL.md).
 
 ## Records
@@ -20,10 +20,10 @@ where they differ.
 - PostgreSQL is `snake_case`; C# is PascalCase.
 - Store complete immutable question revisions and revision-bound answers. Only
   consent projects onto the report: `consent_publish`, `consent_media`
-  (ADR-0117), and `consent_documents`, which is `consent_media` when it
-  answered the question's current wording (ADR-0119).
+  (the published-photos-and-video decision), and `consent_documents`, which is `consent_media` when it
+  answered the question's current wording (the published-documents decision).
 - One summary row per report: English/French text, shared generation
-  provenance (model, prompt version), a per-language source (ADR-0108), and
+  provenance (model, prompt version), a per-language source (the reviewer-may-machine-translate decision), and
   pair approval.
 - Save report, answers, file rows, and typed outbox messages in one
   transaction.
@@ -36,15 +36,14 @@ where they differ.
   `public_report_media` is the one file-shaped public read: opaque id, kind,
   and a document's download format. A published document's unchanged original
   is reachable only as a short-lived forced download through `PublicMediaLink`
-  (ADR-0117, ADR-0119).
+  (the published-photos-and-video and published-documents decisions).
 
 ## Soft deletion
 
 - `deleted timestamptz` and a default filter on every table except append-only
-  `audit_log` and hard-deleted `pending_import_logic` (ADR-0077).
+  `audit_log` and hard-deleted `pending_import_logic` (the Typeform import decision).
   `question_choices` and `question_choice_parents` have the column but no
-  default filter, because their aggregate reads removed rows (ADR-0095,
-  ADR-0151).
+  default filter, because their aggregate reads removed rows (the question-owns-its-choices and shared-dependent-choice decisions).
 - Reference checks for question deletion include answers beneath deleted
   reports.
 - Never physically delete records or add restore behavior (`AGENTS.md`

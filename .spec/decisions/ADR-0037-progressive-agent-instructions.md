@@ -2,7 +2,7 @@
 title: Progressive agent instructions
 description: Keep AGENTS.md as the always-loaded safety contract.
 type: adr
-status: accepted
+status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell
 keywords: agent instructions, skills, AGENTS.md
@@ -10,7 +10,9 @@ keywords: agent instructions, skills, AGENTS.md
 
 # ADR-0037 — Progressive agent instructions
 
-**Status:** Accepted and narrowed by issue #78. `.spec/features` is the product authority,
+**Status:** Superseded by
+[CONV-009](../conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md).
+Accepted and narrowed by issue #78. `.spec/features` is the product authority,
 and conflicting generic design/pattern skills were pruned.
 
 ## Context

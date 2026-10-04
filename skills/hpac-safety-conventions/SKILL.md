@@ -13,8 +13,8 @@ same section names.
 
 - Code graph: `graphify query` / `graphify explain` (see `AGENTS.md`
   "graphify").
-- Specification: [`.spec/features/README.md`](../../.spec/features/README.md).
-- Lessons: [`.spec/lessons/`](../../.spec/lessons/README.md).
+- Specification: the feature files' index, the canonical target design.
+- Lessons: the lessons index; read it on a design pass.
 - Specify first: `AGENTS.md` "Specification-driven development".
 - Ownership, the one home: `backend` owns `src/HpacSafety.*` (Api, Core,
   Infrastructure, Worker) with their unit and integration tests, the `tools/`
@@ -48,10 +48,10 @@ same section names.
   `<TargetFramework>`, the Worker's `Dockerfile` base image, and
   `renovate.json`'s `allowedVersions`. An upgrade changes all four in one pull
   request; `node tools/build/check-dotnet-major.ts` fails when they disagree
-  ([ADR-0120](../../.spec/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
+  (the .NET-major-moves-in-one-pull-request decision).
 - **No `Async` suffix** on a method this repository names — the return type
   says it is asynchronous
-  ([ADR-0093](../../.spec/decisions/ADR-0093-the-return-type-says-a-method-is-asynchronous.md)).
+  (the return-type-says-asynchronous decision).
   - Exception: a member implementing or overriding a contract we do not own
     keeps its given name — `DisposeAsync`, `InitializeAsync`,
     `BackgroundService.ExecuteAsync`, `SaveChangesAsync`, `Stream.ReadAsync`,
@@ -63,32 +63,31 @@ same section names.
 ## Tests, diagrams, copy
 
 - Shouldly for .NET assertions; C# tests named `GivenX_WhenY_ThenZ`
-  ([ADR-0069](../../.spec/decisions/ADR-0069-scannable-given-when-then-test-names.md)).
+  (the scannable test-names decision).
   Detail: [`test-hpac-safety`](../test-hpac-safety/SKILL.md).
-- Mermaid for every diagram
-  ([ADR-0046](../../.spec/decisions/ADR-0046-mermaid-for-diagrams.md)).
+- Mermaid for every diagram (the Mermaid-for-diagrams decision).
 - UI copy lives in locale catalogues. Database questions carry
   administrator-authored English and French text in each immutable revision.
 
 ## Generated files and guards
 
-- Why a rule lives where it runs:
-  [lesson 0001](../../.spec/lessons/0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md),
-  [ADR-0073](../../.spec/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md).
-- Why a generated file has no whole-tree total:
-  [lesson 0013](../../.spec/lessons/0013-a-generated-file-with-a-whole-tree-total-conflicts-with-every-branch.md),
-  [ADR-0106](../../.spec/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md).
+- A rule lives where it runs: a guard that lives only in CI is not a guard (the
+  lesson of that name; the decision that a UI scenario is skipped by Reqnroll
+  itself).
+- A generated file has no whole-tree total, because one conflicts with every
+  branch (the lesson of that name; the decision that every line of the matrix
+  derives from one source item).
 
 ## Tools
 
 - A script goes in its domain's folder under `tools/` and is named for what it
   does (`check-`, `generate-`, `guard-`, `build-`, `find-`/`read-`, `report-`);
   its test mirrors it under `tests/js/`. See [`tools/README.md`](../../tools/README.md)
-  ([ADR-0189](../../.spec/decisions/ADR-0189-a-workflow-step-runs-one-command-and-tools-is-grouped-by-domain.md)).
+  (a workflow step runs one command, and tools is grouped by domain).
 
 ## Before finishing
 
-- The specification to update is `.spec/features`.
+- The specification to update is the feature files.
 - `node tools/spec/generate-traceability.ts` exits 0: every built claim's steps
   are bound.
 - The conventions most often broken: `DateTime`, an assertion library other

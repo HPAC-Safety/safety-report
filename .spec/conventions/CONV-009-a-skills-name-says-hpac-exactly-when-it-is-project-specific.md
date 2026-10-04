@@ -1,6 +1,6 @@
 ---
 title: A skill's name says hpac exactly when it is project-specific
-description: Agents and skills are generic by default and a role agent has no project skill of its own; a skill whose name has hpac is project-specific, a skill without it names nothing in this repository, and a tool selects the generic files by that rule instead of a hand-kept list.
+description: Agents and skills are generic by default and a role agent has no project skill of its own; a skill whose name has hpac is project-specific, a skill without it names nothing in this repository, and a tool selects the generic files by that rule instead of a hand-kept list; no agent or skill file references a decision, lesson, convention, claim, or specification page — it names the topic, and a graphify search by keyword finds the record.
 type: convention
 status: accepted
 date: 2026-10-04
@@ -22,6 +22,14 @@ date: 2026-10-04
   preloads: a preloaded generic skill with project rules has a companion that
   names it, and `AGENTS.md` lists the pair.
   A fact that belongs to no topic skill goes in `AGENTS.md`.
+- **Name the topic, never the record.** No file under `agents/` or `skills/`,
+  generic or `hpac`, references a decision record, lesson, convention, claim,
+  or specification page: no link, no `.spec/` path of any kind, and no
+  `ADR-`, `CONV-`, `REQ-`, `CON-`, or lesson number. It names the topic in
+  words a search finds. `AGENTS.md` is exempt: it links the records it cites,
+  names the specification paths, and tells every agent to find a record by
+  keyword with graphify.
+  Paths to code and tools stay allowed in an `hpac` skill.
 - **A split** is a generic skill plus a project skill. The project skill names
   the generic one it extends, keeps its section names (a project skill that
   also companions another generic skill holds that one's rules under one
@@ -34,18 +42,20 @@ date: 2026-10-04
 - `AGENTS.md`'s skill table lists each generic skill beside the project skill
   that extends it.
 
-### What still holds
+### Carried from the records this supersedes
 
-Not restated; each stays as its record says.
-
-- The three kinds, generic, split, and repository-specific, with no rule
-  dropped when a file is made generic, and a split's project skill keeping its
-  generic skill's section names
-  ([ADR-0131](../decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md)).
+- **Three kinds of skill**: generic (transfers to any project), split (a
+  generic skill plus the project skill that extends it), and
+  repository-specific (its subject is this product). Making a file generic
+  drops no rule: a rule naming this repository moves to the project half.
 - `postgres-dba`, `design-ef-core-model`, and the `database-administrator`
-  agent as generic, with `persist-hpac-data` and `manage-hpac-migrations` as
-  their project halves
-  ([ADR-0139](../decisions/ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md)).
+  agent are generic; `persist-hpac-data` and `manage-hpac-migrations` are
+  their project halves.
+- **`AGENTS.md` is the always-loaded contract.** It owns the system's
+  identity and data sensitivity, the product invariants, the specification's
+  authority and the rule for a missing requirement, the line between agent
+  skills and runtime prompts, the routing table to skills, and the minimum
+  delivery contract. Every detailed procedure lives in a focused skill.
 
 ## Why
 
@@ -60,18 +70,31 @@ means to move the agents out of it; their repository detail moved to the
 topic skills each role already reaches, and the per-role skill was removed
 ([#853](https://github.com/HPAC-Safety/safety-report/issues/853)).
 
+The same move would leave every record link in a skill dangling, and the
+records stay here. So a skill names the topic, and the agent finds the record
+through `AGENTS.md` or a graphify search by keyword
+([#856](https://github.com/HPAC-Safety/safety-report/issues/856)).
+
 This convention supersedes
-[ADR-0131](../decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md)
+[ADR-0131](../decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md),
+[ADR-0139](../decisions/ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md),
 and
-[ADR-0139](../decisions/ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md):
+[ADR-0037](../decisions/ADR-0037-progressive-agent-instructions.md), whose
+routing table had named skills that no longer exist:
 they are agent-workflow rules, which are conventions
 ([ADR-0192](../decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
 The two ADRs name `incident-domain-model` as plain text and stay as written.
 
 ## Enforced by
 
-- `tools/docs/check-generic-instructions.ts` selects every `agents/*.md` and
-  every `skills/*/SKILL.md` whose directory has no `hpac`, and fails a line
-  that names this product, its domain, its paths, a decision, lesson,
-  convention, or claim number, or the Worker. A new generic skill is checked
-  with no list to update.
+- `tools/docs/check-generic-instructions.ts`, in pre-commit and the `docs` CI
+  job:
+  - every `agents/*.md` and every text file of a skill whose directory has no
+    `hpac` fails a line that names this product, its domain, a product role,
+    a tool or provider this repository chose, its paths, or the Worker;
+  - every agent and every skill text file, `hpac` included, fails a line that
+    references a record: a specification path or a generated specification
+    file's name, an `ADR`, `CONV`, `REQ`, or `CON` ID or a lesson number in any
+    spelling, even split across a line wrap, or an old `docs/decisions` or
+    `docs/lessons` path.
+  A new skill is checked with no list to update; `AGENTS.md` is not scanned.

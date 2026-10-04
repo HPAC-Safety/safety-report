@@ -819,6 +819,220 @@
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
+			"id": "REQ-AUTH-001",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A session from member credentials survives a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in with valid member credentials","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-002",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A session started from the member sign-in page persists across a reload",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-003",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "Signing out clears the member's session",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the header shows the member sign-in action again","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-004",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator's Admin menu offers every item",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"it opens with manage-reports, review-type-ahead-values, and manage-questions items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-005",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator's open Admin menu counts the reports waiting on their item",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"3 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the manage-reports item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the manage-questions item shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-006",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A Safety Officer's open Admin menu counts each kind of waiting work on its item",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"4 reports need action and 3 type-ahead values await review","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as a Safety Officer","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the manage-reports item shows a count of 4","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the review-type-ahead-values item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-007",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With nothing waiting, no item of the open Admin menu shows a count",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"0 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no item shows a count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-008",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An environment with no identity provider configured refuses every bearer token",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with no identity provider configured","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a request carrying a bearer token asks for something that needs authorization","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it is refused as unauthenticated before it is handled","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-009",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With the temporary interim issuer enabled, the fixed development accounts do not exist",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a sign-in is attempted with the fixed development Administrator account","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the sign-in is refused","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-010",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With the temporary interim issuer disabled, its JWKS does not exist",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the interim issuer's JWKS is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-011",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "With the temporary interim issuer disabled, it issues no token",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a token is requested from the interim issuer","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
 			"id": "REQ-COM-001",
 			"area": "comments",
 			"file": ".spec/features/comments/comments.feature",
@@ -4527,16 +4741,14 @@
 			"id": "REQ-MOD-003",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "Signing in with member credentials returns a session that survives a reload",
+			"title": "Signing in with member credentials returns a session",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in with valid member credentials","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -4587,18 +4799,14 @@
 			"id": "REQ-MOD-006",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "A member's signed-in session persists across a reload and clears on sign-out",
+			"title": "Signing in from the member sign-in page starts a session",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the page reloads","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header still shows the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the sign-out action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows the member sign-in action again","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows a sign-out action and no member sign-in action","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -4609,16 +4817,14 @@
 			"id": "REQ-MOD-007",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "An Administrator's Admin menu offers every item",
+			"title": "An Administrator's header shows an Admin menu",
 			"rule": null,
 			"tags": ["@ui"],
 			"engine": "playwright-bdd",
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the header shows an Admin menu and no other header nav change","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it opens with manage-reports, review-type-ahead-values, and manage-questions items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the header shows an Admin menu and no other header nav change","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -4674,7 +4880,7 @@
 			"status": "Built",
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in from the member sign-in page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the Manage reports item","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"the browser navigates to the manage-reports page","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the Manage questions item","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
@@ -6201,10 +6407,7 @@
 			"steps": [
 				{"keyword":"Given","text":"3 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Admin menu shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the manage-reports item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the manage-questions item shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the Admin menu shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -6223,9 +6426,7 @@
 			"steps": [
 				{"keyword":"Given","text":"0 reports need action","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Admin menu shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"no item shows a count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the Admin menu shows no count","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -6303,10 +6504,7 @@
 			"steps": [
 				{"keyword":"Given","text":"4 reports need action and 3 type-ahead values await review","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
 				{"keyword":"Given","text":"a visitor signs in as a Safety Officer","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the Admin menu shows a count of 7","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the manage-reports item shows a count of 4","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"the review-type-ahead-values item shows a count of 3","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"the Admin menu shows a count of 7","files":["tests/e2e/steps/admin-pending-counts.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/admin-pending-counts.steps.ts","tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -7657,7 +7855,7 @@
 			"id": "REQ-MOD-156",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "An environment with no identity provider configured still starts, answers public requests, and refuses every bearer token",
+			"title": "An environment with no identity provider configured still starts and answers public requests",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7665,9 +7863,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a deployment outside development with no identity provider configured","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the health check is requested","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the health check is answered with success","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a request carrying a bearer token asks for something that needs authorization","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it is refused as unauthenticated before it is handled","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the health check is answered with success","files":["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],
 			"staleIgnore": false,
@@ -7678,7 +7874,7 @@
 			"id": "REQ-MOD-157",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist",
+			"title": "With the temporary interim issuer enabled, a member signs in with their members-site credentials",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7687,9 +7883,7 @@
 				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a member signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"Then","text":"the member receives a token that later requests are accepted with","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"an allowlisted Administrator account's token carries the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a sign-in is attempted with the fixed development Administrator account","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the sign-in is refused","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"an allowlisted Administrator account's token carries the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
 			"staleIgnore": false,
@@ -7700,7 +7894,7 @@
 			"id": "REQ-MOD-158",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "With the temporary interim issuer disabled, none of its services exist",
+			"title": "With the temporary interim issuer disabled, its discovery document does not exist",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -7708,9 +7902,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer disabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"the interim issuer's discovery document is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"the interim issuer's JWKS is requested","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"When","text":"a token is requested from the interim issuer","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
 			"staleIgnore": false,

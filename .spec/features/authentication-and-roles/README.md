@@ -55,7 +55,7 @@ administration cannot work there
 The host logs one warning at startup and registers a bearer scheme with no
 authority, no signing keys, and an issuer no real token will ever carry, so
 every authorization-protected endpoint refuses every token with 401
-(REQ-MOD-156). A configured Authority keeps today's behavior exactly.
+(REQ-MOD-156, REQ-AUTH-008). A configured Authority keeps today's behavior exactly.
 
 **Staging is a temporary exception.** Behind
 `HpacSafety:Authentication:InterimIssuer:Enabled` — never set alongside an
@@ -71,7 +71,7 @@ Development; only a real members-site sign-in, checked against
 Validation is pinned in-process to this host's own key and issuer,
 `urn:hpac-safety:interim-issuer` — no metadata fetch, same as Development.
 With the flag off, none of these three routes exist (404, not 401)
-(REQ-MOD-157, REQ-MOD-158, REQ-MOD-159). Every part of this is deleted once a
+(REQ-MOD-157, REQ-AUTH-009, REQ-MOD-158, REQ-AUTH-010, REQ-AUTH-011, REQ-MOD-159). Every part of this is deleted once a
 real identity provider is chosen
 ([ADR-0172](../../decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
 
@@ -95,7 +95,9 @@ The Admin menu shows how much work is waiting, so a reviewer sees it without
 opening each page. **Manage reports** carries the number of reports the
 *Needs action* filter lists, and **Type-ahead values to review** carries the
 number awaiting review on the type-ahead review page. The closed **Admin** button carries the total of the
-counts the member can see. A count of zero shows no badge. The badge is a
+counts the member can see (REQ-MOD-087, REQ-MOD-093; each item's own count:
+REQ-AUTH-005, REQ-AUTH-006). A count of zero shows no badge (REQ-MOD-089,
+REQ-AUTH-007). The badge is a
 filled brand-red pill ([design system](../../../docs/design-system.md)).
 
 `GET /api/admin/counts` answers any reviewer, and carries no report content,

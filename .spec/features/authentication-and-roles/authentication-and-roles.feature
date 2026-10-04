@@ -20,9 +20,14 @@ Scenario: Where a third-party provider is configured, the sign-in page offers it
 
 @REQ-MOD-003
 @ui
-Scenario: Signing in with member credentials returns a session that survives a reload
+Scenario: Signing in with member credentials returns a session
   Given a visitor signs in with valid member credentials
   Then the header shows a sign-out action and no member sign-in action
+
+@REQ-AUTH-001
+@ui
+Scenario: A session from member credentials survives a reload
+  Given a visitor signs in with valid member credentials
   When the page reloads
   Then the header still shows the sign-out action
 
@@ -43,19 +48,34 @@ Scenario: Repeated sign-in attempts for one identity are rate limited
 
 @REQ-MOD-006
 @ui
-Scenario: A member's signed-in session persists across a reload and clears on sign-out
+Scenario: Signing in from the member sign-in page starts a session
   Given a visitor signs in from the member sign-in page
   Then the header shows a sign-out action and no member sign-in action
+
+@REQ-AUTH-002
+@ui
+Scenario: A session started from the member sign-in page persists across a reload
+  Given a visitor signs in from the member sign-in page
   When the page reloads
   Then the header still shows the sign-out action
+
+@REQ-AUTH-003
+@ui
+Scenario: Signing out clears the member's session
+  Given a visitor signs in from the member sign-in page
   When the visitor activates the sign-out action
   Then the header shows the member sign-in action again
 
 @REQ-MOD-007
 @ui
-Scenario: An Administrator's Admin menu offers every item
+Scenario: An Administrator's header shows an Admin menu
   Given a visitor signs in as an Administrator
   Then the header shows an Admin menu and no other header nav change
+
+@REQ-AUTH-004
+@ui
+Scenario: An Administrator's Admin menu offers every item
+  Given a visitor signs in as an Administrator
   When the visitor activates the Admin menu
   Then it opens with manage-reports, review-type-ahead-values, and manage-questions items
 
@@ -85,8 +105,8 @@ Scenario: An open Admin menu keeps every item on a single line
 @ui
 Scenario Outline: Activating an Admin menu item navigates to its page
   Given a visitor signs in from the member sign-in page
-  When the visitor activates the Admin menu
-  And the visitor activates the <item> item
+  And the visitor activates the Admin menu
+  When the visitor activates the <item> item
   Then the browser navigates to the <destination> page
 
 Examples:
@@ -106,6 +126,12 @@ Scenario: An Administrator's Admin menu shows how much work is waiting
   Given 3 reports need action
   And a visitor signs in as an Administrator
   Then the Admin menu shows a count of 3
+
+@REQ-AUTH-005
+@ui
+Scenario: An Administrator's open Admin menu counts the reports waiting on their item
+  Given 3 reports need action
+  And a visitor signs in as an Administrator
   When the visitor activates the Admin menu
   Then the manage-reports item shows a count of 3
   And the manage-questions item shows no count
@@ -116,6 +142,12 @@ Scenario: A Safety Officer's Admin menu counts reports and type-ahead values wai
   Given 4 reports need action and 3 type-ahead values await review
   And a visitor signs in as a Safety Officer
   Then the Admin menu shows a count of 7
+
+@REQ-AUTH-006
+@ui
+Scenario: A Safety Officer's open Admin menu counts each kind of waiting work on its item
+  Given 4 reports need action and 3 type-ahead values await review
+  And a visitor signs in as a Safety Officer
   When the visitor activates the Admin menu
   Then the manage-reports item shows a count of 4
   And the review-type-ahead-values item shows a count of 3
@@ -126,6 +158,12 @@ Scenario: With nothing waiting, the Admin menu shows no count
   Given 0 reports need action
   And a visitor signs in as an Administrator
   Then the Admin menu shows no count
+
+@REQ-AUTH-007
+@ui
+Scenario: With nothing waiting, no item of the open Admin menu shows a count
+  Given 0 reports need action
+  And a visitor signs in as an Administrator
   When the visitor activates the Admin menu
   Then no item shows a count
 
@@ -214,29 +252,45 @@ Scenario: Every operation is authorized by the server, not just the interface
   Then the operation is refused as forbidden, whatever the interface would have shown
 
 @REQ-MOD-156
-Scenario: An environment with no identity provider configured still starts, answers public requests, and refuses every bearer token
+Scenario: An environment with no identity provider configured still starts and answers public requests
   Given a deployment outside development with no identity provider configured
   When the health check is requested
   Then the health check is answered with success
+
+@REQ-AUTH-008
+Scenario: An environment with no identity provider configured refuses every bearer token
+  Given a deployment outside development with no identity provider configured
   When a request carrying a bearer token asks for something that needs authorization
   Then it is refused as unauthenticated before it is handled
 
 @REQ-MOD-157
-Scenario: With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist
+Scenario: With the temporary interim issuer enabled, a member signs in with their members-site credentials
   Given a deployment outside development with the temporary interim issuer enabled
   When a member signs in with credentials the members site accepts
   Then the member receives a token that later requests are accepted with
   And an allowlisted Administrator account's token carries the Administrator role
+
+@REQ-AUTH-009
+Scenario: With the temporary interim issuer enabled, the fixed development accounts do not exist
+  Given a deployment outside development with the temporary interim issuer enabled
   When a sign-in is attempted with the fixed development Administrator account
   Then the sign-in is refused
 
 @REQ-MOD-158
-Scenario: With the temporary interim issuer disabled, none of its services exist
+Scenario: With the temporary interim issuer disabled, its discovery document does not exist
   Given a deployment outside development with the temporary interim issuer disabled
   When the interim issuer's discovery document is requested
   Then it is not found
+
+@REQ-AUTH-010
+Scenario: With the temporary interim issuer disabled, its JWKS does not exist
+  Given a deployment outside development with the temporary interim issuer disabled
   When the interim issuer's JWKS is requested
   Then it is not found
+
+@REQ-AUTH-011
+Scenario: With the temporary interim issuer disabled, it issues no token
+  Given a deployment outside development with the temporary interim issuer disabled
   When a token is requested from the interim issuer
   Then it is not found
 

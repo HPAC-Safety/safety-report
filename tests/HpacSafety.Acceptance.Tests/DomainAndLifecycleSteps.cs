@@ -74,7 +74,7 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"one application transaction marks the report and all its owned and dependent rows deleted with one deletion time: answers, summary, files, and report outbox items")]
+	[Then(@"one application transaction marks the report and everything it owns deleted with one deletion time: answers, summary, attachments, and Worker jobs")]
 	public async Task ThenOneTransactionStampsEveryOwnedRow()
 	{
 		var host = await BootedApi.Factory();
@@ -383,7 +383,7 @@ public sealed class DomainAndLifecycleSteps
 	private TinyId _requeuedMessageId;
 	private TinyId _requeuedMessageId2;
 
-	[Given(@"an outbox message has reached the poison threshold and stopped retrying")]
+	[Given(@"a Worker job has reached the poison threshold and stopped retrying")]
 	public async Task GivenAPoisonedOutboxMessage()
 	{
 		var host = await BootedApi.Factory();
@@ -451,7 +451,7 @@ public sealed class DomainAndLifecycleSteps
 		_requeueResult.RequeuedIds.ShouldContain(_requeuedMessageId.ToString());
 	}
 
-	[Given(@"one outbox message was poisoned before the given window and another was poisoned within it")]
+	[Given(@"one Worker job was poisoned before the given window and another was poisoned within it")]
 	public async Task GivenMessagesPoisonedBeforeAndWithinAWindow()
 	{
 		var host = await BootedApi.Factory();

@@ -140,7 +140,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		seeded.Id = await BootedReports.Seed(ReportStatus.Published, true);
 	}
 
-	[Given(@"ConsentPublish is exactly true")]
+	[Given(@"the reporter's publication consent is exactly yes")]
 	[Given(@"both English and French summary texts are nonblank")]
 	[Given(@"the pair has a current human approval")]
 	[Given(@"the report is Published")]
@@ -156,7 +156,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		await Violate($"UPDATE summaries SET deleted = now() WHERE report_id = {seeded.Id}");
 	}
 
-	[Given(@"ConsentPublish is not exactly true")]
+	[Given(@"the publication consent is not exactly yes")]
 	public async Task GivenConsentIsNotExactlyTrue()
 	{
 		// A locked column: written the way a migration would (ADR-0178).

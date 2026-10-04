@@ -505,7 +505,7 @@ Scenario: A yes/no condition offers no required-choice control
 
 @REQ-QB-080
 @ui
-Scenario: An Administrator moves a question up the form's order
+Scenario: Questions are reordered from the keyboard
   Given an Administrator opens the manage-questions page
   When they move the second question up using its move-up control
   Then the two questions have swapped places in the list
@@ -656,11 +656,11 @@ Scenario: A reworded choice keeps its code
 
 @REQ-QAU-005
 Scenario: Two choices whose wording reduces to the same code are refused
-  Given an Administrator saves a single-select question with the choices "King Eddy" and "Mara"
+  Given an Administrator saved a single-select question with the choices "King Eddy" and "Mara", then reworded "King Eddy" to "King Edward"
   When they save choices whose English wording reads "Site A-1" and "Site A 1"
   Then the save is refused naming both wordings
 
-@REQ-QB-096
+@REQ-QAU-007
 Scenario: A new question's key is derived from its English wording
   Given an Administrator saves a new question without a key
   Then its key is derived from its English wording
@@ -671,7 +671,7 @@ Scenario: A second question with the same wording receives a different key
   When they save another question with the same English wording
   Then it receives a different key
 
-@REQ-QAU-007
+@REQ-QB-096
 Scenario: A deleted question's key is never reused
   Given an Administrator saved two new questions with the same English wording and no key
   When they delete the first question and save a third with the same wording

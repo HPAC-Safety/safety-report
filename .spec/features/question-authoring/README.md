@@ -128,8 +128,8 @@ to this area ([ADR-0083](../../decisions/ADR-0083-specification-driven-developme
   wording reduces to the same code are refused (`REQ-QAU-005`).
 - An Administrator authoring, seeing, or changing a question key. A new
   question's key is derived from its English wording and never reuses a key any
-  question holds, deleted and retired ones included (`REQ-QB-096`,
-  `REQ-QAU-006`, `REQ-QAU-007`). Only an imported
+  question holds, deleted and retired ones included (`REQ-QAU-007`,
+  `REQ-QAU-006`, `REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.
   Renaming an existing key is not built.
 - Formatting in a statement's description: no Markdown, rich text, or links.

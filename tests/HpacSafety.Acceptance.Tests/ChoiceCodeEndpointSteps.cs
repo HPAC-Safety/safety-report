@@ -40,6 +40,16 @@ public sealed class ChoiceCodeEndpointSteps
 		_questionId = _saved.GetProperty("id").GetString();
 	}
 
+	[Given(@"an Administrator saved a single-select question with the choices ""(.*)"" and ""(.*)"", then reworded ""(.*)"" to ""(.*)""")]
+	public async Task GivenASingleSelectQuestionIsSavedAndReworded(string first,
+																   string second,
+																   string before,
+																   string after)
+	{
+		await GivenASingleSelectQuestionIsSaved(first, second);
+		await WhenTheyReword(before, after);
+	}
+
 	[Then(@"the choices are recorded under the codes ""(.*)"" and ""(.*)""")]
 	public void ThenTheChoicesAreRecordedUnder(string first,
 											   string second)

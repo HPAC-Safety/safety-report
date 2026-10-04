@@ -19,6 +19,7 @@ export const GENERIC_FILES = [
 	'agents/adversary.md',
 	'agents/ai-author.md',
 	'agents/backend.md',
+	'agents/infrastructure.md',
 	'agents/critic.md',
 	'agents/database-administrator.md',
 	'agents/spec-author.md',

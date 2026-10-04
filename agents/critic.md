@@ -1,6 +1,6 @@
 ---
 name: critic
-description: Challenge a plan before it is final, assuming it is wrong. Use before a plan-mode plan is finalized or an issue or epic is filed; it judges a plan before it is built, where spec-reviewer judges a diff after it is built, adversary attacks the change, and backend and ux build. Read-only, one pass plus at most one recheck.
+description: The team's design reviewer. Challenge a plan before it is final, assuming it is wrong. Use before a plan-mode plan is finalized or an issue or epic is filed; it judges a plan before it is built, where spec-reviewer judges a diff after it is built, adversary attacks the change, and backend and ux build. Read-only, one pass plus at most one recheck.
 model: opus
 effort: medium
 tools: Read, Grep, Glob, Bash

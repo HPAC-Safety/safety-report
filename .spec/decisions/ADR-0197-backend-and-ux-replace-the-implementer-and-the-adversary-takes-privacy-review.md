@@ -33,8 +33,13 @@ split into the agent it belongs to.
 
 ## Considered options
 
-- **Keep the implementer beside backend and ux.** Rejected: three builders
-  with overlapping scope.
+- **Keep the implementer beside backend and ux.** Rejected: builders with
+  overlapping scope.
+- **Builders that only make a failing test pass.** Rejected: nobody would own
+  the design of an API, a screen, or a network, and it would be improvised.
+- **backend also owns infrastructure.** Rejected: the cloud and network need
+  different expertise and carry a different blast radius (production,
+  exposure, cost), as the schema does for the database-administrator.
 - **Leave privacy hunting in the spec-reviewer.** Rejected: it duplicates the
   adversary's security and correctness lens.
 - **Retire the implementer; split by domain; move privacy to the adversary** —
@@ -42,13 +47,24 @@ split into the agent it belongs to.
 
 ## Decision
 
-- The `implementer` agent is retired. `backend` owns everything that is not the
-  web UI (API, Worker, scripts, infrastructure, CI); `ux` owns the web UI; the
-  database-administrator keeps the schema. Each carries the chain contract: make
-  the failing test pass against the cited claims and nothing else, and never
-  write the specification.
-- The chain is spec-author → test-writer → backend | ux → spec-reviewer. Each
-  step still trusts only the artifact from the step before it.
+- The `implementer` agent is retired. Three builders replace it, and each
+  **designs and builds** its domain, not only makes a test green:
+  - `backend`: API shape, Worker pipeline, data flow, error handling, scripts,
+    and CI workflows;
+  - `ux`: interaction design, layout, components, accessibility, and localized
+    copy in the web UI;
+  - `infrastructure`: cloud, network, compute, storage, DNS, secrets, backups,
+    and deployment, as infrastructure code. The owner still applies to and
+    promotes production.
+
+  The database-administrator keeps the schema. Each builder owns the unit,
+  integration, or component tests of what it builds; the test-writer owns the
+  acceptance step definitions. Each still builds only what cited claims
+  describe, sends a design plan to the critic, records a significant choice as
+  an ADR, and never writes the specification.
+- The chain is spec-author → test-writer → backend | ux | infrastructure →
+  spec-reviewer. Each step still trusts only the artifact from the step before
+  it.
 - The spec-reviewer keeps claims, ADRs, scope, exemptions, and record rules.
   The adversary owns correctness bugs, security, privacy leaks, contract
   violations, and missing tests.
@@ -62,8 +78,9 @@ split into the agent it belongs to.
   - `adversary` runs `fable` at `high`: the hardest-to-see bugs and holes
     justify the strongest model, and it is read-only.
 
-  `backend` and `ux` are build roles, `sonnet` at `medium`, as the implementer
-  was.
+  `backend` and `ux` run `sonnet` at `medium`, as the implementer did: the
+  claims bound their design. `infrastructure` runs `opus` at `high`, the
+  judgement default: its mistakes outlive the code, as the schema's do.
 
 ## Consequences
 

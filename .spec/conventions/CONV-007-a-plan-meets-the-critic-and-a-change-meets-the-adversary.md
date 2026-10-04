@@ -34,8 +34,8 @@ date: 2026-10-04
 - Each agent owns its own artifact: the critic judges a plan before it is
   built, the adversary attacks a change for bugs, security, privacy leaks,
   contract violations, and missing tests, and `spec-reviewer` judges the diff
-  after, against claims and ADRs. `backend` and `ux` build, and still cite
-  claims.
+  after, against claims and ADRs. `backend`, `ux`, and `infrastructure`
+  design and build, and still cite claims.
 
 ## Why
 

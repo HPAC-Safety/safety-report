@@ -25,8 +25,9 @@ skill whose architecture conflicts with `.spec/features`.
 
 A skill and an agent are not the same thing. A skill is knowledge, loaded when
 its topic is in play, and it constrains nothing. An agent is a role, and what
-makes it useful is what it refuses. Nine are declared here. Four of them —
-`spec-author`, `test-writer`, `backend` or `ux`, `spec-reviewer` — are the steps
+makes it useful is what it refuses. Ten are declared here. Four of them —
+`spec-author`, `test-writer`, a builder (`backend`, `ux`, or `infrastructure`),
+`spec-reviewer` — are the steps
 of the specification-driven chain, each holding one job and trusting only the
 artifact from the step before it
 ([ADR-0197](../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md),

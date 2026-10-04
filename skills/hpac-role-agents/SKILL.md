@@ -1,6 +1,6 @@
 ---
 name: hpac-role-agents
-description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries for the nine role agents — spec-author, test-writer, spec-reviewer, ai-author, database-administrator, critic, adversary, backend, ux — which are generic. Use whenever acting as one of those roles in this repository.
+description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries for the ten role agents — spec-author, test-writer, spec-reviewer, ai-author, database-administrator, critic, adversary, backend, ux, infrastructure — which are generic. Use whenever acting as one of those roles in this repository.
 ---
 
 # HPAC Safety role agents
@@ -46,10 +46,11 @@ roles and why each trusts only the artifact before it:
   | ai-author | sonnet | medium | Build: rewrites wording, never rules |
   | critic | opus | medium | Judgement: weighs a plan, one bounded pass; medium because the loop is capped and the findings are cited, not open-ended |
   | adversary | fable | high | Judgement: hunts the hardest-to-see bugs and holes; the strongest model, read-only |
-  | backend | sonnet | medium | Build: executes claims already settled, everything but the web UI |
-  | ux | sonnet | medium | Build: executes claims already settled, web UI |
+  | backend | sonnet | medium | Build: designs and builds the server side within settled claims |
+  | ux | sonnet | medium | Build: designs and builds the web UI within settled claims |
+  | infrastructure | opus | high | Judgement: cloud and network mistakes outlive the code and reach production |
 
-- No role uses the clone's shared stash, above all backend, ux, and the
+- No role uses the clone's shared stash, above all the builders and the
   test-writer, who edit files. The rule is written only; nothing enforces it
   (`deliver-hpac-change` "Worktree and branch", #796).
 - `skillfile install` copies each agent verbatim into `.claude/agents/`. An
@@ -230,12 +231,13 @@ Runs by convention only
 
 ## backend
 
-The chain role for everything but the web UI
+The back-end engineer: designs and builds the server side
 ([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
 
-- Owns `src/HpacSafety.*` (Api, Core, Infrastructure, Worker), `tools/`
-  scripts, `infra/`, and CI. The web UI under `src/web` is `ux`'s; step
-  definitions and tests are the test-writer's; the schema's design is the
+- Owns `src/HpacSafety.*` (Api, Core, Infrastructure, Worker) and their unit
+  and integration tests, `tools/` scripts, and the CI workflows. The web
+  UI under `src/web` is `ux`'s; `infra/` is `infrastructure`'s; the acceptance
+  step definitions are the test-writer's; the schema's design is the
   database-administrator's.
 - Code graph: `graphify query "<question>"`.
 - Conventions: [`hpac-safety-conventions`](../hpac-safety-conventions/SKILL.md),
@@ -244,8 +246,7 @@ The chain role for everything but the web UI
   [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md),
   [`handle-hpac-media`](../handle-hpac-media/SKILL.md),
   [`incident-domain-model`](../incident-domain-model/SKILL.md),
-  [`anonymize-hpac-reports`](../anonymize-hpac-reports/SKILL.md),
-  [`manage-hpac-infrastructure`](../manage-hpac-infrastructure/SKILL.md).
+  [`anonymize-hpac-reports`](../anonymize-hpac-reports/SKILL.md).
 - Privacy-sensitive surfaces that need a focused privacy or boundary test:
   reports, questions, model input or output, attachments, authentication,
   authorization, logging, deletion, review, and publication.
@@ -264,9 +265,11 @@ The chain role for everything but the web UI
 
 ## ux
 
-- Owns `src/web`; server code is `backend`'s, and the e2e step definitions
-  the test-writer's.
-- The chain role for the web UI: follows the backend section's rules for
+The UX designer and front-end engineer: designs and builds the web UI.
+
+- Owns `src/web` and its component tests; server code is `backend`'s, and the
+  e2e step definitions the test-writer's.
+- Follows the backend section's rules for
   claims, the graph, the exemption, and the never-log list, and
   [`build-hpac-web-ui`](../build-hpac-web-ui/SKILL.md) and
   [`localize-hpac-app`](../localize-hpac-app/SKILL.md).
@@ -276,4 +279,21 @@ The chain role for everything but the web UI
 - Privacy boundaries: nothing about a member in the browser beyond the
   receipt the browser keeps; no report content in analytics or logs; fixtures
   stay synthetic.
+- Work only in its own worktree off fresh `origin/main`.
+
+## infrastructure
+
+The cloud and DevOps engineer: designs and builds what the system runs on
+([ADR-0197](../../.spec/decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md)).
+
+- Owns `infra/` (Terraform) and the workflows that provision or deploy:
+  `terraform.yml`, `terraform-relock.yml`, `deploy-environment.yml`,
+  `release.yml`, `promote.yml`. `backend` keeps the other workflows.
+- Skill: [`manage-hpac-infrastructure`](../manage-hpac-infrastructure/SKILL.md);
+  constraints:
+  [`.spec/infrastructure-and-operations.md`](../../.spec/infrastructure-and-operations.md)
+  (`CON-INF-*`), and AGENTS.md invariant 8 (managed encryption, no
+  deletion).
+- The owner promotes to production.
+- Never put report content, a secret, or a state file in a report.
 - Work only in its own worktree off fresh `origin/main`.

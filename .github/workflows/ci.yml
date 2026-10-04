@@ -141,10 +141,12 @@ jobs:
       # when its two checks were made independent (#207) — a bashism or an
       # unguarded cd there breaks committing, not CI, so it is worth linting.
       # Its checks live one per file under .githooks/pre-commit.d (CONV-005).
+      # post-merge, post-rewrite, and the scripts they source run after every pull
+      # and rebase, so they are linted too.
       # tools/dev/ci-local.sh is POSIX sh too (ADR-0145): it is the pre-pull-request
       # gate, so a bashism there stops every pull request before it opens.
-      - name: shellcheck init-dev.sh, the pre-commit hook and its checks, and ci-local.sh
-        run: shellcheck -s sh init-dev.sh .githooks/pre-commit .githooks/pre-commit.d/*.sh tools/dev/ci-local.sh
+      - name: shellcheck init-dev.sh, the hooks and their checks, and ci-local.sh
+        run: shellcheck -s sh init-dev.sh .githooks/pre-commit .githooks/pre-commit.d/*.sh .githooks/post-merge .githooks/post-rewrite .githooks/lib/*.sh tools/dev/ci-local.sh
 
       - uses: actions/setup-dotnet@v6
         with:

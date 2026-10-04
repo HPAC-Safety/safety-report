@@ -19,7 +19,11 @@ authority is [`.spec/features/README.md`](../.spec/features/README.md).
 
 Project-owned skill sources live under `skills/` and role agents under
 `agents/`. `skillfile install` generates tool-specific copies under `.claude/`;
-never edit or commit those copies. Keep local skills concise and
+never edit or commit those copies. The post-merge and post-rewrite hooks and
+`init-dev.sh` keep `.claude/` in step: after a change to `Skillfile`,
+`Skillfile.lock`, `agents/`, or `skills/` they run `skillfile install` and delete
+any installed agent or skill the `Skillfile` no longer declares. Personal agents
+and skills go in `~/.claude`, not `.claude/`. Keep local skills concise and
 HPAC-specific. Search before adding generic guidance, and do not install a
 skill whose architecture conflicts with `.spec/features`.
 
@@ -70,7 +74,7 @@ node's typed edges; where a code comment also cites the ID, name the node:
 
 | Output | Owning command |
 |---|---|
-| `.claude/skills/`, `.claude/agents/` | `skillfile install` |
+| `.claude/skills/`, `.claude/agents/` | `skillfile install`, then a prune of what the `Skillfile` no longer declares; run by the post-merge and post-rewrite hooks and `init-dev.sh` |
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/dev/extract-typeform.py` |
 | `docs/issue-traceability.md` | `node tools/spec/generate-issue-traceability.ts`, from GitHub; the drift issue `issue-traceability.yml` keeps asks for it (ADR-0191) |

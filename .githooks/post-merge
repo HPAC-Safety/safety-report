@@ -19,6 +19,8 @@
 #
 # The regenerate-and-stage step is shared with post-rewrite, in
 # lib/regenerate-spec.sh; the skip on main below stays here (CONV-005).
+# The agent-tooling install and prune, in lib/install-agent-tooling.sh, runs on
+# main too.
 
 set -u
 
@@ -28,6 +30,13 @@ cd "$REPO_ROOT" || exit 0
 
 # shellcheck source=.githooks/lib/regenerate-spec.sh
 . "$HOOK_DIR/lib/regenerate-spec.sh"
+# shellcheck source=.githooks/lib/install-agent-tooling.sh
+. "$HOOK_DIR/lib/install-agent-tooling.sh"
+
+# .claude/agents and .claude/skills are gitignored, so this runs on main too: it
+# installs what the Skillfile declares and prunes what it no longer does, and
+# restores a Skillfile.lock the install rewrote when on main.
+agent_tooling_changed && install_agent_tooling post-merge
 
 # The primary checkout's main only ever fast-forwards to origin/main, which
 # already carries the claims, matrix, and index CI regenerated and checked

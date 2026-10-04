@@ -41,6 +41,18 @@ date: 2026-10-03
   installed: `post-merge` and `post-rewrite` share
   `lib/regenerate-spec.sh`, and each keeps its own skip-on-`main` (#802) and
   rewrite-type logic.
+- The agent-tooling install is the second thing a hook runs on `main`, after
+  the graph merge. `post-merge` and `post-rewrite` share
+  `lib/install-agent-tooling.sh` with `init-dev.sh`:
+  - it wakes only when `git diff --name-only ORIG_HEAD HEAD` touches
+    `Skillfile`, `Skillfile.lock`, `agents/`, or `skills/`, and is silent when
+    `skillfile` is not on `PATH`;
+  - it runs `skillfile install`, then deletes every `.claude/agents/*.md` and
+    `.claude/skills/<dir>` that `skillfile list --names-only` does not name;
+  - it is allowed on `main` because its output under `.claude/` is gitignored
+    (#849), like the graph merge. `skillfile install` can rewrite the tracked
+    `Skillfile.lock`, so on `main` the script restores it, and elsewhere it
+    says to include it in the next commit.
 - No hook manager: not Husky, lint-staged, lefthook, or the pre-commit
   framework.
 
@@ -83,6 +95,9 @@ and keeps the "every check runs" rule in one place: a single script's
   hook and nothing under a check directory, and `init-dev.sh` installs it
   under the four hook names only.
 - `./init-dev.sh --check` reports any hook that is not the shim.
-- CI's `build` job shellchecks the runner and every check file.
+- CI's `build` job shellchecks the runner, every check file, `post-merge`,
+  `post-rewrite`, and `.githooks/lib/*.sh`.
+- `tests/js/dev/install-agent-tooling.test.ts`: the wake gate, the prune, and
+  the `Skillfile.lock` guard, with a fake `skillfile` on `PATH`.
 - Never setting `core.hooksPath` and adopting no hook manager are written,
   not checked.

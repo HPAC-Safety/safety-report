@@ -108,7 +108,7 @@ public sealed class AuditSteps
 		entry.Detail.ShouldBeNull();
 	}
 
-	[Then(@"the actor is recorded as the attempted identity rather than left blank")]
+	[Then(@"the actor is recorded as the attempted identity, not left blank")]
 	public async Task ThenActorIsAttemptedIdentity()
 	{
 		var entry = await Latest(AuditAction.SignedInFailed);
@@ -501,7 +501,7 @@ public sealed class AuditSteps
 
 	// --- REQ-MOD-091: sign-out is not an audited event ---
 
-	[Given(@"the API's mapped routes")]
+	[Given(@"every route the server answers")]
 	public async Task GivenTheMappedRoutes()
 	{
 		var host = await BootedApi.Factory();

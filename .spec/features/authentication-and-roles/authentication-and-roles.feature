@@ -1,6 +1,6 @@
 Feature: Authentication and roles
 Members present a signed token and get one of three roles from its claims.
-The API authorizes every operation, and audits sign-in and sensitive admin
+The server authorizes every operation, and audits sign-in and sensitive admin
 actions without report content.
 
 @REQ-MOD-001
@@ -14,7 +14,7 @@ Scenario: In development the sign-in page offers no third-party sign-in option
 @REQ-MOD-002
 @ui
 Scenario: Where a third-party provider is configured, the sign-in page offers it
-  Given the API reports that a third-party provider is configured
+  Given a third-party sign-in provider is configured
   When a visitor activates the member sign-in action
   Then the sign-in page also shows a third-party sign-in option
 
@@ -22,7 +22,7 @@ Scenario: Where a third-party provider is configured, the sign-in page offers it
 @ui
 Scenario: Signing in with member credentials returns a session that survives a reload
   Given a visitor signs in with valid member credentials
-  Then the header shows a sign-out action instead of the member sign-in action
+  Then the header shows a sign-out action and no member sign-in action
   When the page reloads
   Then the header still shows the sign-out action
 
@@ -38,14 +38,14 @@ Scenario: Bad credentials show one generic failure and no session
 Scenario: Repeated sign-in attempts for one identity are rate limited
   Given repeated sign-in attempts arrive for the same username
   When the sign-in rate limit for that identity is exceeded
-  Then the API refuses further attempts with 429 and a safe retry signal
+  Then further attempts are refused as too frequent, with a safe retry signal
   And the refusal does not reveal whether any attempted username or password was valid
 
 @REQ-MOD-006
 @ui
 Scenario: A member's signed-in session persists across a reload and clears on sign-out
   Given a visitor signs in from the member sign-in page
-  Then the header shows a sign-out action instead of the member sign-in action
+  Then the header shows a sign-out action and no member sign-in action
   When the page reloads
   Then the header still shows the sign-out action
   When the visitor activates the sign-out action
@@ -103,7 +103,7 @@ Scenario: The Admin menu is absent for an anonymous visitor
 @REQ-MOD-087
 @ui
 Scenario: An Administrator's Admin menu shows how much work is waiting
-  Given the API counts 3 reports needing action
+  Given 3 reports need action
   And a visitor signs in as an Administrator
   Then the Admin menu shows a count of 3
   When the visitor activates the Admin menu
@@ -113,7 +113,7 @@ Scenario: An Administrator's Admin menu shows how much work is waiting
 @REQ-MOD-093
 @ui
 Scenario: A Safety Officer's Admin menu counts reports and type-ahead values waiting
-  Given the API counts 4 reports needing action and 3 type-ahead values awaiting review
+  Given 4 reports need action and 3 type-ahead values await review
   And a visitor signs in as a Safety Officer
   Then the Admin menu shows a count of 7
   When the visitor activates the Admin menu
@@ -123,7 +123,7 @@ Scenario: A Safety Officer's Admin menu counts reports and type-ahead values wai
 @REQ-MOD-089
 @ui
 Scenario: With nothing waiting, the Admin menu shows no count
-  Given the API counts 0 reports needing action
+  Given 0 reports need action
   And a visitor signs in as an Administrator
   Then the Admin menu shows no count
   When the visitor activates the Admin menu
@@ -131,55 +131,55 @@ Scenario: With nothing waiting, the Admin menu shows no count
 
 @REQ-MOD-013
 Scenario: A token signed by an unknown key is refused
-  Given a bearer token signed with a key the API does not trust
-  When it is presented to any authenticated endpoint
-  Then the API refuses the request
+  Given a bearer token signed with a key the server does not trust
+  When it is presented with a request that needs a member
+  Then the token is refused
   And it does not disclose why the token was refused
 
 @REQ-MOD-014
 Scenario: A token whose signature has been altered is refused
   Given a validly issued bearer token whose signature segment has been changed
-  When it is presented to any authenticated endpoint
-  Then the API refuses the request
+  When it is presented with a request that needs a member
+  Then the token is refused
 
 @REQ-MOD-015
 Scenario: An expired token is refused
   Given a bearer token whose expiry has passed
-  When it is presented to any authenticated endpoint
-  Then the API refuses the request
+  When it is presented with a request that needs a member
+  Then the token is refused
 
 @REQ-MOD-016
 Scenario: A token for the wrong audience is refused
   Given a bearer token issued for a different audience
-  When it is presented to any authenticated endpoint
-  Then the API refuses the request
+  When it is presented with a request that needs a member
+  Then the token is refused
 
 @REQ-MOD-017
 Scenario: A token with no recognized role claim authenticates as User
   Given a validly signed bearer token carrying no recognized role claim
-  When it is presented to the API
+  When it is presented with a request
   Then the request is authenticated
   And the identity has the User role and no administrative capability
 
 @REQ-MOD-018
-Scenario: The API never reads a name, an email, or any other claim
+Scenario: A member's name, email, or any other claim is never read
   Given a validly signed bearer token carrying a name, an email, and a picture claim
-  When the API establishes the member's identity
+  When the member's identity is established
   Then it reads only the token subject and the role claim
   And no other claim reaches domain code, a log, or the database
 
 @REQ-MOD-019
-Scenario: The development token endpoint does not exist outside development
-  Given the API is not running in development
-  When the development token endpoint is called
-  Then the route does not exist
+Scenario: Development sign-in does not exist outside development
+  Given the application is not running in development
+  When a development token is requested
+  Then the request is not found
 
 @REQ-MOD-020
 Scenario Outline: A development sign-in verified against the members site resolves role from the email lists
-  Given the development token endpoint is available
+  Given development sign-in is available
   And "<email>" is <listed>
   When that email signs in with credentials the members site accepts
-  Then the API returns a signed development token with the <role> role
+  Then the member receives a signed development token with the <role> role
 
 Examples:
   | email                       | listed                                  | role           |
@@ -189,60 +189,60 @@ Examples:
 
 @REQ-MOD-021
 Scenario: Bad members-site credentials show the same generic failure as bad fixed-account credentials
-  Given the development token endpoint is available
+  Given development sign-in is available
   When a sign-in is attempted with credentials the members site does not accept
-  Then the API returns one generic invalid-credentials failure
+  Then the sign-in fails with one generic invalid-credentials failure
   And nothing distinguishes it from an unknown fixed development account
 
 @REQ-MOD-022
 Scenario: A members-site outage during a development sign-in is reported distinctly from bad credentials
-  Given the development token endpoint is available
+  Given development sign-in is available
   When the members site cannot be reached during a sign-in attempt
-  Then the API reports the members site as unavailable
+  Then the sign-in reports the members site as unavailable
   And it does not report invalid credentials
 
 @REQ-MOD-023
-Scenario: An unauthenticated request to an admin endpoint is refused before the handler
+Scenario: An unauthenticated request for admin data is refused before it is handled
   Given a request carries no bearer token
-  When it reaches an admin endpoint
-  Then the API refuses it before the handler runs
+  When it asks for admin data
+  Then it is refused as unauthenticated before it is handled
 
 @REQ-MOD-024
-Scenario: Every operation is authorized by the API, not just the UI
+Scenario: Every operation is authorized by the server, not just the interface
   Given a member without the required role calls an admin operation
-  When the API processes the request
-  Then the API refuses the operation regardless of what the UI would have shown
+  When the request is processed
+  Then the operation is refused as forbidden, whatever the interface would have shown
 
 @REQ-MOD-156
-Scenario: An environment with no identity provider configured still starts and serves its public endpoints, and refuses every bearer token
-  Given the API is not running in development and no identity provider is configured
-  When the health endpoint is requested
-  Then the API answers 200
-  When a request carrying a bearer token reaches an authorization-protected endpoint
-  Then the API refuses it before the handler runs
+Scenario: An environment with no identity provider configured still starts, answers public requests, and refuses every bearer token
+  Given the application is not running in development and no identity provider is configured
+  When the health check is requested
+  Then the health check succeeds
+  When a request carrying a bearer token asks for something that needs authorization
+  Then it is refused as unauthenticated before it is handled
 
 @REQ-MOD-157
 Scenario: With the temporary interim issuer enabled, a member signs in with their members-site credentials, and the fixed development accounts do not exist
-  Given the API is not running in development and the temporary interim issuer is enabled
+  Given the application is not running in development and the temporary interim issuer is enabled
   When a member signs in with credentials the members site accepts
-  Then the API issues a token the API itself accepts
+  Then the member receives a token the server itself accepts
   And an allowlisted Administrator account's token carries the Administrator role
   When a sign-in is attempted with the fixed development Administrator account
-  Then the API refuses it
+  Then the sign-in is refused
 
 @REQ-MOD-158
-Scenario: With the temporary interim issuer disabled, none of its endpoints exist
-  Given the API is not running in development and the temporary interim issuer is disabled
+Scenario: With the temporary interim issuer disabled, none of its services exist
+  Given the application is not running in development and the temporary interim issuer is disabled
   When the interim issuer's discovery document is requested
-  Then the API answers 404
+  Then it is not found
   When the interim issuer's JWKS is requested
-  Then the API answers 404
-  When a token is requested from the token endpoint
-  Then the API answers 404
+  Then it is not found
+  When a token is requested from the interim issuer
+  Then it is not found
 
 @REQ-MOD-159
 Scenario: The temporary interim issuer's JWKS publishes only a public key
-  Given the API is not running in development and the temporary interim issuer is enabled
+  Given the application is not running in development and the temporary interim issuer is enabled
   When the interim issuer's JWKS is requested
   Then the response carries only a public key, never a private key
 
@@ -250,70 +250,70 @@ Scenario: The temporary interim issuer's JWKS publishes only a public key
 Scenario Outline: A User may only submit a report
   Given a member has the User role
   When that member attempts to <capability>
-  Then the API <outcome> the attempt
+  Then that member's attempt is <outcome>
 
 Examples:
-  | capability                     | outcome |
-  | submit an occurrence report    | allows  |
-  | read the report list           | forbids |
-  | read a report's private detail | forbids |
-  | obtain an attachment link      | forbids |
-  | edit a report's summary        | forbids |
-  | publish a report               | forbids |
-  | unpublish a report             | forbids |
-  | delete a report                | forbids |
-  | create a question revision     | forbids |
-  | edit a question's choices      | forbids |
+  | capability                     | outcome              |
+  | submit an occurrence report    | allowed              |
+  | read the report list           | refused as forbidden |
+  | read a report's private detail | refused as forbidden |
+  | obtain an attachment link      | refused as forbidden |
+  | edit a report's summary        | refused as forbidden |
+  | publish a report               | refused as forbidden |
+  | unpublish a report             | refused as forbidden |
+  | delete a report                | refused as forbidden |
+  | create a question revision     | refused as forbidden |
+  | edit a question's choices      | refused as forbidden |
 
 @REQ-MOD-026
 Scenario Outline: A Safety Officer reviews and publishes but does not author questions
   Given a member has the Safety Officer role
   When that member attempts to <capability>
-  Then the API <outcome> the attempt
+  Then that member's attempt is <outcome>
 
 Examples:
-  | capability                     | outcome |
-  | submit an occurrence report    | allows  |
-  | read the report list           | allows  |
-  | read a report's private detail | allows  |
-  | obtain an attachment link      | allows  |
-  | edit a report's summary        | allows  |
-  | publish a report               | allows  |
-  | unpublish a report             | allows  |
-  | delete a report                | allows  |
-  | create a question revision     | forbids |
-  | edit a question's choices      | forbids |
+  | capability                     | outcome              |
+  | submit an occurrence report    | allowed              |
+  | read the report list           | allowed              |
+  | read a report's private detail | allowed              |
+  | obtain an attachment link      | allowed              |
+  | edit a report's summary        | allowed              |
+  | publish a report               | allowed              |
+  | unpublish a report             | allowed              |
+  | delete a report                | allowed              |
+  | create a question revision     | refused as forbidden |
+  | edit a question's choices      | refused as forbidden |
 
 @REQ-MOD-027
 Scenario Outline: An Administrator has every Safety Officer capability and authors questions
   Given a member has the Administrator role
   When that member attempts to <capability>
-  Then the API <outcome> the attempt
+  Then that member's attempt is <outcome>
 
 Examples:
-  | capability                     | outcome |
-  | submit an occurrence report    | allows  |
-  | read the report list           | allows  |
-  | read a report's private detail | allows  |
-  | obtain an attachment link      | allows  |
-  | edit a report's summary        | allows  |
-  | publish a report               | allows  |
-  | unpublish a report             | allows  |
-  | delete a report                | allows  |
-  | create a question revision     | allows  |
-  | edit a question's choices      | allows  |
+  | capability                     | outcome              |
+  | submit an occurrence report    | allowed              |
+  | read the report list           | allowed              |
+  | read a report's private detail | allowed              |
+  | obtain an attachment link      | allowed              |
+  | edit a report's summary        | allowed              |
+  | publish a report               | allowed              |
+  | unpublish a report             | allowed              |
+  | delete a report                | allowed              |
+  | create a question revision     | allowed              |
+  | edit a question's choices      | allowed              |
 
 @REQ-MOD-028
 Scenario Outline: Only an Administrator may author a question revision
   Given a member has the <role> role
   When that member attempts to create a question revision
-  Then the API <outcome> the attempt
+  Then that member's attempt is <outcome>
 
 Examples:
-  | role           | outcome |
-  | User           | refuses |
-  | Safety Officer | refuses |
-  | Administrator  | accepts |
+  | role           | outcome              |
+  | User           | refused as forbidden |
+  | Safety Officer | refused as forbidden |
+  | Administrator  | allowed              |
 
 @REQ-MOD-029
 Scenario: Sensitive admin actions are audited without report content
@@ -333,24 +333,24 @@ Scenario: An anonymous visitor who navigates to an admin route is sent to sign i
 
 @REQ-MOD-043
 @ui
-Scenario Outline: A member without the required role sees a real 403, not a 404 or the page content
+Scenario Outline: A member without the required role sees a forbidden page, not the not-found page or the page's content
   Given a visitor signs in as a <role>
-  When the visitor navigates directly to <route>, which their role cannot use
-  Then the page shows a forbidden (403) view in place of the route's content
+  When the visitor navigates directly to the <page> page, which their role cannot use
+  Then the page shows a forbidden view in place of that page's content
   And it is not the not-found page
-  And no request for that route's data is made, the Admin menu's pending counts aside
+  And no request for that page's data is made, the Admin menu's pending counts aside
 
 Examples:
-  | role           | route                      |
-  | User           | /admin/reports             |
-  | User           | /admin/questions           |
-  | Safety Officer | /admin/questions           |
+  | role           | page             |
+  | User           | manage-reports   |
+  | User           | manage-questions |
+  | Safety Officer | manage-questions |
 
 @REQ-MOD-184
 @ui
 Scenario: There is no admin page left to edit an answer's translation by hand
   Given a visitor signs in as an Administrator
-  When the visitor navigates directly to /admin/answer-translations
+  When the visitor navigates directly to the old answer-translations page
   Then the page shows the not-found view
 
 @REQ-MOD-044
@@ -366,7 +366,7 @@ Scenario: A failed sign-in attempt writes an audit row
   When the attempt is refused
   Then an audit entry records a sign-in-failed action and the time
   And it never records the attempted credentials
-  And the actor is recorded as the attempted identity rather than left blank
+  And the actor is recorded as the attempted identity, not left blank
 
 @REQ-MOD-046
 Scenario: A reviewer's attachment view writes its own audit row, distinct from a raw-report view
@@ -384,13 +384,13 @@ Scenario: A failed audit write blocks the action it would have recorded
 
 @REQ-MOD-048
 @ui
-Scenario: Signing out sends nothing to the API
+Scenario: Signing out sends nothing to the server
   Given a member activates the sign-out action
   When the client discards its token
-  Then no request reaches the API for that sign-out
+  Then no request reaches the server for that sign-out
 
 @REQ-MOD-091
 Scenario: Sign-out is not an audited event
-  Given the API's mapped routes
+  Given every route the server answers
   Then none of them signs a member out
   And no audit action records a sign-out

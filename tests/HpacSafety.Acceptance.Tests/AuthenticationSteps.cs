@@ -40,7 +40,7 @@ public sealed class AuthenticationSteps
 	private ClaimsPrincipal? _principal;
 	private bool _refused;
 
-	[Given(@"a bearer token signed with a key the API does not trust")]
+	[Given(@"a bearer token signed with a key the server does not trust")]
 	public void GivenTokenSignedWithAnUnknownKey()
 	{
 		_token = Forge("an-entirely-different-signing-key-nobody-here-knows");
@@ -85,9 +85,9 @@ public sealed class AuthenticationSteps
 		]);
 	}
 
-	[When(@"it is presented to any authenticated endpoint")]
-	[When(@"it is presented to the API")]
-	[When(@"the API establishes the member's identity")]
+	[When(@"it is presented with a request that needs a member")]
+	[When(@"it is presented with a request")]
+	[When(@"the member's identity is established")]
 	public void WhenItIsValidated()
 	{
 		var parameters = AuthenticationServiceCollectionExtensions.ValidationParametersFor(
@@ -105,7 +105,7 @@ public sealed class AuthenticationSteps
 		}
 	}
 
-	[Then(@"the API refuses the request")]
+	[Then(@"the token is refused")]
 	public void ThenRefused()
 	{
 		_refused.ShouldBeTrue();

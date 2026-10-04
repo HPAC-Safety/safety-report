@@ -322,13 +322,13 @@ Scenario: A multi-select answer on the report page is listed as the form lists i
 Scenario Outline: A reviewer reviews type-ahead values
   Given a member has the <role> role
   When that member approves, corrects, merges, relinks, or removes a reporter-added type-ahead value
-  Then the API <outcome> the attempt
+  Then that member's attempt is <outcome>
 
 Examples:
-  | role           | outcome  |
-  | User           | forbids  |
-  | Safety Officer | allows   |
-  | Administrator  | allows   |
+  | role           | outcome              |
+  | User           | refused as forbidden |
+  | Safety Officer | allowed              |
+  | Administrator  | allowed              |
 
 @REQ-MOD-097
 @ui

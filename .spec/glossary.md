@@ -40,9 +40,12 @@ any banned synonym in a `.feature` file or a `.spec/features/<area>/README.md`
   field" — sits inside the pattern, and that row's definition says why.
 
 Identifier-shaped words — snake_case and PascalCase storage names, HTTP status
-codes, `API`, `DTO`, `outbox`, `JSON` — and interface mechanics are outside
-this lint. Those are part of [#815](https://github.com/HPAC-Safety/safety-report/issues/815)'s
-later scenario-style rules.
+codes, `API`, `DTO`, `outbox`, `JSON` — are outside this lint:
+[`node tools/gherkin/lint-scenarios.ts`](../tools/gherkin/lint-scenarios.ts)
+refuses them in scenarios
+([CONV-004](conventions/CONV-004-scenarios-describe-behavior-not-implementation.md)).
+Interface mechanics are part of
+[#815](https://github.com/HPAC-Safety/safety-report/issues/815)'s later rules.
 
 ## People and roles
 
@@ -116,6 +119,7 @@ later scenario-style rules.
 | **Approve** | To mark a summary revision approved. Never the same as Publish. | — | — |
 | **Publish** | To make a report Published: consent given, not deleted, its current revision approved. **Unpublish** takes it back out. | — | — |
 | **Worker** | The background service that summarises, translates, and processes attachments. Always capitalised. | `/\bworkers?\b/` | — |
+| **Worker job** | One piece of work queued for the Worker — a summary, a translation, an attachment to process — kept until it succeeds or is poisoned. | — | — |
 | **The model** | The one summarisation model call. | — | — |
 | **Machine translation** | The translation port, never on the submission path; its provider is the **translation provider**. | — | — |
 
@@ -139,8 +143,9 @@ later scenario-style rules.
 
 ## Outcome phrases
 
-What a step says happened, instead of how a transport reports it. The status
-codes themselves are refused by a later #815 rule, not by this lint.
+What a step says happened, not how a transport reports it. The status codes
+themselves are refused by `lint-scenarios`'s `no-http-status` rule, not by
+this lint; the step definition still asserts the code.
 
 | Term | Definition | Banned in scenarios | Exempt areas |
 |---|---|---|---|
@@ -158,4 +163,5 @@ codes themselves are refused by a later #815 rule, not by this lint.
 ## Languages
 
 Steps say **English** and **French**; the locale codes `en-CA` and `fr-CA`
-appear only in Examples cells (J16). This is written, not checked.
+appear only in Examples cells (J16). `lint-scenarios`'s `no-locale-codes`
+rule refuses a code in a step or a title.

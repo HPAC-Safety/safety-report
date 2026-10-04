@@ -28,12 +28,12 @@ async function stubCounts(page: Page, reports: string, values: string) {
 }
 
 Given(
-	/^the API counts (\d+) reports needing action$/,
+	/^(\d+) reports need action$/,
 	async ({ page }, reports: string) => stubCounts(page, reports, "0"),
 )
 
 Given(
-	/^the API counts (\d+) reports needing action and (\d+) type-ahead values awaiting review$/,
+	/^(\d+) reports need action and (\d+) type-ahead values await review$/,
 	async ({ page }, reports: string, values: string) => stubCounts(page, reports, values),
 )
 

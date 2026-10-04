@@ -40,7 +40,7 @@ public sealed class MembersSiteLoginSteps
 	private HttpResponseMessage? _response;
 	private HttpClient? _client;
 
-	[Given(@"the development token endpoint is available")]
+	[Given(@"development sign-in is available")]
 	public void GivenDevelopmentTokenEndpointAvailable()
 	{
 		// A marker for readability — every When step below boots a
@@ -101,7 +101,7 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "member@example.test", password = "whatever" });
 	}
 
-	[Then(@"^the API returns a signed development token with the (User|Safety Officer|Administrator) role$")]
+	[Then(@"^the member receives a signed development token with the (User|Safety Officer|Administrator) role$")]
 	public async Task ThenTokenHasRole(string role)
 	{
 		_response!.EnsureSuccessStatusCode();
@@ -112,7 +112,7 @@ public sealed class MembersSiteLoginSteps
 		payload!.Role.ShouldBe(MemberRoles.CodeFor(expectedRole));
 	}
 
-	[Then(@"the API returns one generic invalid-credentials failure")]
+	[Then(@"the sign-in fails with one generic invalid-credentials failure")]
 	public void ThenGenericInvalidCredentialsFailure()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -126,7 +126,7 @@ public sealed class MembersSiteLoginSteps
 		body.ShouldNotContain("members");
 	}
 
-	[Then(@"the API reports the members site as unavailable")]
+	[Then(@"the sign-in reports the members site as unavailable")]
 	public void ThenMembersSiteReportedUnavailable()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadGateway);
@@ -160,7 +160,7 @@ public sealed class MembersSiteLoginSteps
 			"/api/auth/token", new { username = "user", password = "still-wrong" });
 	}
 
-	[Then(@"the API refuses further attempts with 429 and a safe retry signal")]
+	[Then(@"further attempts are refused as too frequent, with a safe retry signal")]
 	public void ThenTheApiRejectsFurtherAttemptsWith429AndASafeRetrySignal()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);

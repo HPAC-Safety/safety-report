@@ -10,12 +10,15 @@ date: 2026-10-04
 
 ## Rule
 
+The agents and the generic skills are imported from
+agent-team through the
+`Skillfile`; their genericity and frontmatter checks run in agent-team's CI.
+
 ### The file
 
 - **An agent file is a persona and a role**: who it is, what it does, and
   what it leaves to others. Its frontmatter and body shape are in the generic
-  [`write-agent-instructions`](../../skills/write-agent-instructions/SKILL.md)
-  skill, "An agent file", which is their one home.
+  `write-agent-instructions` skill, "An agent file", which is their one home.
 - **Every refusal that defines a role stays in the agent file.** A skill may
   state the rules of its subject, but it never widens or narrows what a role
   may do.
@@ -41,8 +44,7 @@ date: 2026-10-04
 
 The model and effort themselves live only in each agent's frontmatter; the
 general rule is in the generic
-[`write-agent-instructions`](../../skills/write-agent-instructions/SKILL.md)
-skill. This table is the roster: a new agent earns its row only when it reads,
+`write-agent-instructions` skill. This table is the roster: a new agent earns its row only when it reads,
 uses, runs, or refuses something no other does.
 
 Each persona gently ribs a familiar stereotype's behavior; none jokes about a
@@ -51,7 +53,7 @@ demographic.
 ### The guardrails
 
 Every agent preloads the generic
-[`agent-persona`](../../skills/agent-persona/SKILL.md) skill, which holds them:
+`agent-persona` skill, which holds them:
 voice stays out of every finding and artifact, and never softens a finding.
 
 ### Carried from the records this supersedes

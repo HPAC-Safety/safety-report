@@ -17,11 +17,11 @@ authority is [`.spec/features/README.md`](../.spec/features/README.md).
 3. Load only the project skills relevant to the task.
 4. Work in a worktree off fresh `origin/main`, on `issue-<number>/<short-description>`.
 
-Project-owned skill sources live under `skills/` and role agents under
-`agents/`. `skillfile install` generates tool-specific copies under `.claude/`;
+Project-owned skill sources live under `skills/`; the role agents and generic
+skills are imported from agent-team through the `Skillfile`. `skillfile install` generates tool-specific copies under `.claude/`;
 never edit or commit those copies. The post-merge and post-rewrite hooks and
 `init-dev.sh` keep `.claude/` in step: after a change to `Skillfile`,
-`Skillfile.lock`, `agents/`, or `skills/` they run `skillfile install` and delete
+`Skillfile.lock`, or `skills/` they run `skillfile install` and delete
 any installed agent or skill the `Skillfile` no longer declares. Personal agents
 and skills go in `~/.claude`, not `.claude/`. A fast-forward rebase, `git
 worktree add`, `merge --squash`, and a hand-resolved conflicted merge fire no
@@ -99,5 +99,5 @@ revision is manually authored in English and French.
 
 Run relevant tests and validation, inspect the diff, push the branch, and open a
 PR containing `Closes #<number>`. Keep working until required checks are green.
-See [`deliver-change`](../skills/deliver-change/SKILL.md) and
+See the `deliver-change` skill and
 [`deliver-hpac-change`](../skills/deliver-hpac-change/SKILL.md).

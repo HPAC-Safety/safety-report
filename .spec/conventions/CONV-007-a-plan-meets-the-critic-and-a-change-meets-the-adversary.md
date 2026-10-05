@@ -26,7 +26,7 @@ date: 2026-10-04
   - after repeated test failures;
   - before any pull request or merge.
   - It is read-only and reports in the shared reviewer format of the generic
-    [`review-work`](../../skills/review-work/SKILL.md) skill. The author
+    `review-work` skill. The author
     fixes; the adversary never does.
 - **The auditor runs on demand, never per change.** It audits the whole
   repository at rest for drift no single diff caught, is read-only, reports in

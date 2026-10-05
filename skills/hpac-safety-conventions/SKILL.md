@@ -5,7 +5,7 @@ description: Repository-wide HPAC Safety conventions — .NET, dates, privacy lo
 
 # HPAC Safety conventions
 
-Extends [`coding-conventions`](../coding-conventions/SKILL.md); read that
+Extends the `coding-conventions` skill; read that
 first. This skill holds only what is specific to this repository, under the
 same section names.
 

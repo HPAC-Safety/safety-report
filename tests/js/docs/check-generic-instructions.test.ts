@@ -99,7 +99,7 @@ describe('main', () => {
 	})
 
 	it('checks the real repository by default', () => {
-		assert.ok(genericFiles(process.cwd()).length > 0)
+		assert.ok(instructionFiles(process.cwd()).length > 0)
 		assert.equal(runMain(process.cwd()).code, 0)
 	})
 })

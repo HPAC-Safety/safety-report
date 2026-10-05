@@ -53,7 +53,7 @@ in `~/.claude/settings.json` for every project.
 6. Address review and CI until every required check is green; squash merge only.
 
 Do not add `Co-Authored-By` trailers or a `CODEOWNERS` file. See
-[`skills/deliver-change/SKILL.md`](skills/deliver-change/SKILL.md) and
+the `deliver-change` skill and
 [`skills/deliver-hpac-change/SKILL.md`](skills/deliver-hpac-change/SKILL.md) for
 the repository delivery contract.
 

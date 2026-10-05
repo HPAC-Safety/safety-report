@@ -1,6 +1,6 @@
 ---
 name: deliver-hpac-change
-description: HPAC Safety's tools, commands, labels, and paths for delivering and reviewing a change — extends the generic deliver-change skill, and is the project companion of review-work ("Review") and write-agent-instructions ("Agent instructions"). Use when creating or editing issues, docs, worktrees, PRs, or checks in this repository.
+description: HPAC Safety's tools, commands, labels, and paths for delivering and reviewing a change — extends the generic deliver-change skill, and is the project companion of spec-driven-development ("Specification-driven development"), review-work ("Review"), and write-agent-instructions ("Agent instructions"). Use when creating or editing issues, docs, worktrees, PRs, or checks in this repository.
 ---
 
 # Deliver an HPAC Safety change
@@ -8,6 +8,7 @@ description: HPAC Safety's tools, commands, labels, and paths for delivering and
 Extends the `deliver-change` skill; read that first. This
 skill holds only what is specific to this repository, under the same section
 names and step numbers. It is also the project companion of
+the `spec-driven-development` skill, in "Specification-driven development", of
 the `review-work` skill, in "Review", and of
 the `write-agent-instructions` skill, in "Agent
 instructions".
@@ -73,122 +74,10 @@ instructions".
 
 ## Document
 
-### Specification directory
+### Specification
 
-Everything the specification chain reads lives in the specification directory
-(the specification-directory decision):
-
-- per area, its `.feature` file and its `README.md`;
-- the five constraint pages, listed in `tools/spec/spec-paths.ts`;
-- the decisions, lessons, and conventions;
-- three generated files, never edited by hand:
-  - the generated claims file, the canonical data — every claim with its steps
-    and the step-definition files that bind them, every constraint, and what
-    each decision and lesson cites — conforming to its schema, and the
-    traceability matrix, one row per claim — both
-    `node tools/spec/generate-traceability.ts` (the claim-to-step-definition
-    map and generated-claims decisions);
-  - the specification index, of every area, constraint page, decision, and
-    lesson — `node tools/spec/generate-spec-index.ts`.
-
-Rules:
-
-- A page goes in the specification directory when the chain reads it —
-  scenarios, constraint IDs, a decision, a lesson, a convention. A page that
-  explains how goes in `docs/`.
-- A new path the tools read is added to `tools/spec/spec-paths.ts`, not written
-  into a tool; `tests/js/spec/spec-paths.test.ts` ties the hooks and workflows to
-  it.
-- All three regenerate in post-merge and post-rewrite, in `traceability.yml`
-  on a same-repo pull request (also when only a step file changed), and in
-  `tools/dev/ci-local.sh`. The `docs` job fails any one stale. A stale
-  specification index in pre-commit: run `node tools/spec/generate-spec-index.ts` and stage it.
-- `node tools/spec/generate-traceability.ts` fails a built claim (not `@ignore`) with a step no
-  step definition in its engine matches. The specification wins: fix the step
-  definition, or the scenario only when it said the wrong thing. Stale
-  `@ignore` claims, ambiguous steps, and unused step definitions are recorded
-  in the generated claims file, not failed.
-- The tool reads only the step-definition forms in use: `[Given(@"…")]` on one
-  line in a `[Binding]` class scoped, if at all, by `[Scope(Feature = "…")]`;
-  `Given("…")` or `Given(/…/)` from `createBdd()`; Cucumber parameters
-  `{string}`, `{word}`, `{int}`, `{}`. Anything else fails it by name — teach
-  the tool first.
-- `node tools/docs/check-links.ts` fails a relative link or `#anchor` that does not
-  resolve: pre-commit checks staged markdown, and the whole tree when a file is
-  deleted or renamed; `docs` checks everything. Fix the link — never move a
-  file without its references.
-- A file added under the old decisions, lessons, or features locations in
-  `docs/` or at the root fails `check-frontmatter.ts`: rebase, then move it
-  into the specification directory.
-- After pulling this layout into an older clone: `rm .gitattributes && git
-  checkout -- .gitattributes`, then `./init-dev.sh`, which installs the hooks
-  and registers the `merge=ours` driver.
-
-### Scenarios
-
-- Specification-driven development: a superseded scenario is deleted, and a
-  scenario is never edited to match the code.
-- Browser tag: `@ui`. Every example and fixture is synthetic: never real report
-  content.
-- Claim IDs are the scenario's `@REQ-<AREA>-<NNN>` tag, never reused
-  or renumbered (the stable-claim-IDs decision).
-  A new claim's ID: `node tools/spec/claim-prefixes.ts --next <area>`, under the
-  `prefix:` in the area's README; a split-off scenario takes one the same way.
-  The `REQ-QB` and `REQ-MOD` prefixes are retired: their claims keep
-  their IDs in whichever area holds them, and nothing new takes them (the
-  split-area-keeps-its-claim-IDs decision).
-- Quote interface copy and page titles; a renamed step renames its step
-  definition's text in the same commit (the glossary-words convention).
-- Before finishing a specification change, run
-  `node tools/spec/generate-traceability.ts`,
-  `node tools/spec/generate-spec-index.ts`,
-  `node tools/spec/check-glossary.ts`, `node tools/gherkin/lint-scenarios.ts`,
-  and `node tools/spec/check-records.ts`.
-- `@ignore` and superseded scenarios: also
-  [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios". A leading
-  scenario is `@ignore @issue-<N>`, and `feature-coverage` fails one whose
-  issue is closed — on every pull request, until it is fixed — or a pull
-  request that closes it while it is still `@ignore`. Specification first is
-  two issues: the spec pull request adds the `@ignore @issue-<N>` scenario and
-  closes its own specification issue; the code pull request later builds it
-  and closes N (the scenario-counts-only-in-its-own-area convention).
-- A built claim fails the `coverage` job unless its scenario passed in its
-  engine's run; the job summary lists every claim's result (the
-  built-claim-counts-only-when-passed decision).
-- Each area's README records what **not** to build.
-- Scenarios and area READMEs use the words of the glossary;
-  `node tools/spec/check-glossary.ts` fails a banned synonym in the `docs`
-  job, which `tools/dev/ci-local.sh` runs. No git hook runs it.
-- Steps describe behavior: `node tools/gherkin/lint-scenarios.ts` fails a
-  status code, a storage identifier, a transport term ("the API" included), a
-  reason, or a locale code in a step, in the `cucumber` job, which
-  `tools/dev/ci-local.sh` runs. No git hook runs it
-  (the behavior-not-implementation convention). The same lint holds a scenario
-  to one behavior: at most one When, at most 8 steps, and no browser
-  mechanics, a key named only in an Examples cell (the
-  one-behavior-per-scenario convention).
-- An area past about 800 lines is split, not grouped with `Rule:` blocks, and
-  its scenarios keep their IDs: the procedure, and the next ID with
-  `node tools/spec/claim-prefixes.ts --next <area>`, are in the
-  area-split convention.
-
-### The `feature-coverage` exemption
-
-- Rules: `AGENTS.md` "The `feature-coverage` exemption" (the
-  exemption-cites-the-claims-it-preserves decision).
-- Relevance (the scenario-counts-only-in-its-own-area convention): the
-  area-paths map maps every behavior-bearing path to its feature areas; a step definition takes the
-  areas of the claims it binds. A changed scenario counts only in one of the
-  changed files' areas, and so does each cited claim. A new file under `src/`
-  joins the map in the same pull request; `node tools/spec/check-area-paths.ts`
-  fails the `docs` job otherwise.
-- The closed category list is in `.github/pull_request_template.md`
-  ("Specification delta"); a test keeps the template's list equal to the
-  tool's (the lesson on a closed list kept where the author never looks).
-- Run the check locally with the body: "Verify and publish" step 1 runs it;
-  alone, `tools/dev/ci-local.sh --body pr-body.md --job feature-coverage`.
-- Renovate writes its own `dependency` exemption for `src/web` bumps from
-  `renovate.json` (the Renovate-cites-preserved-claims decision).
+Everything the specification chain reads, and its checks, are under
+"Specification-driven development" below.
 
 ### Inventories
 
@@ -203,43 +92,6 @@ Rules:
   runs `node tools/spec/generate-issue-traceability.ts` in a pull request that
   closes it (the issue-traceability-drift and no-hand-written-status-page
   decisions).
-
-### Lessons
-
-- Lessons live in the lessons directory of the specification, with its README
-  (the lesson-flows-upstream and immutable-ADR decisions).
-- Frontmatter `kind:` is `product`, `process`, or `incident`;
-  `node tools/spec/check-records.ts` checks what each kind owes, in pre-commit
-  and `docs`. The rules: the table in the lessons README's "The shape".
-- A product lesson's remedy is a claim and a scenario in the feature files.
-- No index to update: the specification index lists the lesson from its frontmatter
-  `title`, `description` (shown as "What it cost us"), `issue`, `date`,
-  `status` (`accepted` or `superseded`), and `kind`, and its remedy from the
-  claim IDs under `## Scenario` and the backticked skill names under
-  `## Skill`.
-
-### ADRs
-
-- The rules: the accepted-ADR-is-immutable decision. Lifecycle, template,
-  checks, and the missing numbers: the decisions README.
-- Template: copy the decisions directory's template. Since the accepted-ADR-is-immutable decision, a
-  record has exactly its sections, in its order.
-- Conventions: a new process, tooling, or agent-workflow rule is a numbered
-  convention file, named with the next unused number and a kebab slug (see the
-  conventions README). A number is never reused. The process ADRs before the accepted-ADR-is-immutable decision stay among the decisions.
-- The upstream `documentation-and-adrs` skill's ADR template and lifecycle do
-  not apply here; this section and the accepted-ADR-is-immutable decision do.
-- Three checks run in pre-commit and the `docs` job; what each fails is in the
-  decisions README's "Checks":
-  - `node tools/spec/adr-numbers.ts` — numbering and status agreement (the
-    ADR-number-is-verified and specification-directory decisions);
-  - `node tools/spec/check-records.ts` — the template and status line;
-  - `node tools/spec/check-adr-immutability.ts` — a pull request changes an
-    ADR on its base only in its status. CI passes `BASE_SHA`; pre-commit runs
-    it with `--staged`.
-- Superseding an older ADR: change its `status:` and its status line in the
-  same pull request, and nothing else in it.
-- The root README is [`README.md`](../../README.md).
 
 ### Markdown
 
@@ -285,7 +137,7 @@ Rules:
 - What `AGENTS.md` owns and what belongs in a skill: the always-loaded-contract
   rule (`AGENTS.md` owns invariants and routing, skills own procedure). Product behavior lives in the
   feature files (the lesson-flows-upstream decision);
-  where a lesson's general rule lands: "Lessons" above.
+  where a lesson's general rule lands: "Specification-driven development" "Lessons".
 - An agent's frontmatter keys: "Markdown" above. Its body is the three sections
   the agent-file convention names.
 - A role has no per-role project skill: project rules reach it through the
@@ -307,6 +159,197 @@ Rules:
   `skillfile validate` and `skillfile install`. Generated copies live under
   `.claude/`.
 
+## Specification-driven development
+
+Extends the `spec-driven-development` skill; read that first. This section
+holds what differs here: the repository's own tools under `tools/spec/`,
+`tools/docs/`, and `tools/gherkin/` own the specification directory (the
+tools-own-the-specification-directory convention). It applies to every role
+that reads the generic skill, `spec-author` and `spec-reviewer` included.
+
+### The generator
+
+The generic skill's `$SDD` (`scripts/sdd.ts`) is not used here.
+
+- Never run `init`, `new`, or `generate` without `--check`: it would overwrite
+  the generated files in a shape that lacks the step-definition bindings.
+- `check`, `generate --check`, and `coverage` are not gates: they fail
+  hundreds of times on this tree, and the repository's own checks are the gate.
+- Where the generic skill says a command, run the tool:
+
+| Generic | Here |
+|---|---|
+| `next-claim <area>` | `node tools/spec/claim-prefixes.ts --next <area>`; it reads this checkout only, not remote branches, so rebase onto fresh `origin/main` first and expect a race with another open branch |
+| `next-adr` | `node tools/spec/adr-numbers.ts --next` |
+| `new adr` | copy the decisions directory's template, then the number above |
+| `new lesson`, `new convention`, `new feature`, `new page` | written by hand from the README or template in its directory; this lifts "never hand-write a record the generator can produce". A lesson or convention takes the next unused number in its directory, chosen after rebasing onto fresh `origin/main`; no tool reserves it, so it can race |
+| `generate` | `node tools/spec/generate-traceability.ts` and `node tools/spec/generate-spec-index.ts` |
+| `generate --check` | the same two, each with `--check` |
+| `check` | under `tools/spec/`: `check-records`, `check-glossary`, `check-area-paths`, `adr-numbers`, and `check-adr-immutability` (with `BASE_SHA=<base>` or `--staged`; bare, it compares nothing and passes); under `tools/gherkin/`: `lint-scenarios`; under `tools/docs/`: `check-frontmatter`, `check-links` |
+| `coverage` | `tools/dev/ci-local.sh --body pr-body.md --job feature-coverage`, which runs `tools/spec/check-feature-coverage-diff.ts` and `tools/spec/check-ignored-claims.ts` as CI does |
+
+- The generic "regenerate before every commit that touches the specification"
+  is replaced by "Generated files" below.
+
+### Layout
+
+Everything the specification chain reads lives in the specification directory
+(the specification-directory decision): per area, its `.feature` file and its
+`README.md`; the five constraint pages listed in `tools/spec/spec-paths.ts`;
+the decisions, lessons, and conventions; and the three generated files.
+
+- A new path the tools read is added to `tools/spec/spec-paths.ts`, not written
+  into a tool; `tests/js/spec/spec-paths.test.ts` ties the hooks and workflows to
+  it.
+- A file added under the old decisions, lessons, or features locations in
+  `docs/` or at the root fails `check-frontmatter.ts`: rebase, then move it
+  into the specification directory.
+- After pulling this layout into an older clone: `rm .gitattributes && git
+  checkout -- .gitattributes`, then `./init-dev.sh`, which installs the hooks
+  and registers the `merge=ours` driver.
+
+### Generated files
+
+Never edited by hand:
+
+- the generated claims file, the canonical data — every claim with its steps
+  and the step-definition files that bind them, every constraint, and what
+  each decision and lesson cites — conforming to its schema, and the
+  traceability matrix, one row per claim: both
+  `node tools/spec/generate-traceability.ts` (the claim-to-step-definition
+  map and generated-claims decisions);
+- the specification index, of every area, constraint page, decision, and
+  lesson: `node tools/spec/generate-spec-index.ts`.
+
+All three regenerate in post-merge and post-rewrite, in `traceability.yml` on
+a same-repo pull request (also when only a step file changed), and in
+`tools/dev/ci-local.sh`. The `docs` job fails any one stale. A stale
+specification index in pre-commit: run `node tools/spec/generate-spec-index.ts`
+and stage it. Run both generators before finishing a specification change.
+
+- `node tools/spec/generate-traceability.ts` fails a built claim (not `@ignore`)
+  with a step no step definition in its engine matches. The specification
+  wins: fix the step definition, or the scenario only when it said the wrong
+  thing. Stale `@ignore` claims, ambiguous steps, and unused step definitions
+  are recorded in the generated claims file, not failed.
+- The tool reads only the step-definition forms in use: `[Given(@"…")]` on one
+  line in a `[Binding]` class scoped, if at all, by `[Scope(Feature = "…")]`;
+  `Given("…")` or `Given(/…/)` from `createBdd()`; Cucumber parameters
+  `{string}`, `{word}`, `{int}`, `{}`. Anything else fails it by name — teach
+  the tool first.
+
+### Identifiers
+
+- A new claim's ID: `node tools/spec/claim-prefixes.ts --next <area>`, under
+  the `prefix:` in the area's README; a split-off scenario takes one the same
+  way.
+- Retired prefixes live in `RETIRED_PREFIXES` in `tools/spec/claim-prefixes.ts`;
+  an area README carries no `keeps:` frontmatter. The `REQ-QB` and `REQ-MOD`
+  prefixes are retired: their claims keep their IDs in whichever area holds
+  them, and nothing new takes them (the split-area-keeps-its-claim-IDs
+  decision).
+
+### Feature areas
+
+- A scenario is never edited to match the code. Every example and fixture is
+  synthetic: never real report content.
+- Quote interface copy and page titles; a renamed step renames its step
+  definition's text in the same commit (the glossary-words convention).
+- `@ignore` and superseded scenarios: also
+  [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios". A leading
+  scenario is `@ignore @issue-<N>`, and `feature-coverage` fails one whose
+  issue is closed — on every pull request, until it is fixed — or a pull
+  request that closes it while it is still `@ignore`. Specification first is
+  two issues: the spec pull request adds the `@ignore @issue-<N>` scenario and
+  closes its own specification issue; the code pull request later builds it
+  and closes N (the scenario-counts-only-in-its-own-area convention).
+- A built claim fails the `coverage` job unless its scenario passed in its
+  engine's run; the job summary lists every claim's result (the
+  built-claim-counts-only-when-passed decision).
+- `node tools/spec/check-glossary.ts` fails a banned synonym in the `docs`
+  job, which `tools/dev/ci-local.sh` runs. No git hook runs it.
+- `node tools/gherkin/lint-scenarios.ts` fails a status code, a storage
+  identifier, a transport term ("the API" included), a reason, or a locale
+  code in a step, and a scenario that breaks the one-behavior limits, in the
+  `cucumber` job, which `tools/dev/ci-local.sh` runs. No git hook runs it (the
+  behavior-not-implementation and one-behavior-per-scenario conventions).
+- Splitting an area past about 800 lines: the procedure, and the next ID with
+  `node tools/spec/claim-prefixes.ts --next <area>`, are in the area-split
+  convention.
+- `node tools/spec/check-area-paths.ts` fails the `docs` job on a new file
+  under `src/` the area-paths map lacks; see "Coverage and exemptions".
+
+### Decisions
+
+- The rules: the accepted-ADR-is-immutable decision. Lifecycle, template,
+  checks, and the missing numbers: the decisions README. A record has exactly
+  the template's sections, in its order.
+- Conventions: a new process, tooling, or agent-workflow rule is a numbered
+  convention file, named with the next unused number and a kebab slug (see the
+  conventions README). The process ADRs before the accepted-ADR-is-immutable
+  decision stay among the decisions.
+- The upstream `documentation-and-adrs` skill's ADR template and lifecycle do
+  not apply here; this section and the accepted-ADR-is-immutable decision do.
+- Three checks run in pre-commit and the `docs` job; what each fails is in the
+  decisions README's "Checks":
+  - `node tools/spec/adr-numbers.ts` — numbering and status agreement (the
+    ADR-number-is-verified and specification-directory decisions);
+  - `node tools/spec/check-records.ts` — the template and status line;
+  - `node tools/spec/check-adr-immutability.ts` — a pull request changes an
+    ADR on its base only in its status. CI passes `BASE_SHA`; pre-commit runs
+    it with `--staged`.
+- Superseding an older ADR: change its `status:` and its status line in the
+  same pull request, and nothing else in it.
+- The root README is [`README.md`](../../README.md).
+
+### Lessons
+
+- Lessons live in the lessons directory of the specification, with its README
+  (the lesson-flows-upstream and immutable-ADR decisions).
+- Frontmatter `kind:` is `product`, `process`, or `incident`;
+  `node tools/spec/check-records.ts` checks what each kind owes, in pre-commit
+  and `docs`. The rules: the table in the lessons README's "The shape".
+- A product lesson's remedy is a claim and a scenario in the feature files.
+- A process lesson updates the generic skill when its rule transfers to any
+  project (upstream, in agent-team), and the project skill when the rule names
+  this repository's tools or paths. `## Skill` names the one skill it changed,
+  once.
+- No index to update: the specification index lists the lesson from its frontmatter
+  `title`, `description` (shown as "What it cost us"), `issue`, `date`,
+  `status` (`accepted` or `superseded`), and `kind`, and its remedy from the
+  claim IDs under `## Scenario` and the backticked skill names under
+  `## Skill`.
+
+### Coverage and exemptions
+
+- Rules: `AGENTS.md` "The `feature-coverage` exemption" (the
+  exemption-cites-the-claims-it-preserves decision).
+- Relevance (the scenario-counts-only-in-its-own-area convention): the
+  area-paths map maps every behavior-bearing path to its feature areas; a
+  changed step-definition file takes the areas of the claims it binds. A
+  changed scenario counts only in one of the changed files' areas, and so does
+  each cited claim. A new file under `src/` joins the map in the same pull
+  request; `node tools/spec/check-area-paths.ts` fails the `docs` job
+  otherwise.
+- A manifest-only diff passes with no citation: `DEPENDENCY_MANIFESTS` in
+  `tools/spec/check-feature-coverage.ts` lists them.
+- The closed category list is in `.github/pull_request_template.md`
+  ("Specification delta"); a test keeps the template's list equal to the
+  tool's (the lesson on a closed list kept where the author never looks).
+- Run the check locally with the body: "Verify and publish" step 1 runs it;
+  alone, `tools/dev/ci-local.sh --body pr-body.md --job feature-coverage`.
+- Renovate writes its own `dependency` exemption for `src/web` bumps from
+  `renovate.json` (the Renovate-cites-preserved-claims decision).
+
+### Checks
+
+- `node tools/docs/check-links.ts` fails a relative link or `#anchor` that does not
+  resolve: pre-commit checks staged markdown, and the whole tree when a file is
+  deleted or renamed; `docs` checks everything. Fix the link — never move a
+  file without its references.
+- Before finishing a specification change run both generators, then
+  `check-glossary`, `lint-scenarios`, and `check-records`.
+
 ## Review
 
 Extends the `review-work` skill. Never put report content,
@@ -318,6 +361,9 @@ answers, or credentials in a finding; cite a location, a count, or a shape.
   feature-files-must-not-contradict-ADRs decision).
 - The exemption, `No .feature scenario needed:`, names the claims it preserves
   (the exemption-cites-the-claims-it-preserves decision).
+- The generic skill's check, generated-file comparison, and coverage
+  judgement are the tools in "Specification-driven development" "The
+  generator"; run those first.
 - The generated claims file, for the cited claims: each is
   bound by files the diff touches; the diff adds no entry to
   `unusedStepDefinitions` or `ambiguousSteps` and no new `"staleIgnore": true` (the claim-to-step-definition map decision).
@@ -332,7 +378,7 @@ answers, or credentials in a finding; cite a location, a count, or a shape.
   definition performs an action the scenario claims (the
   one-behavior-per-scenario convention).
 - Records: `node tools/spec/check-records.ts` and `node tools/spec/check-adr-immutability.ts`
-  with the pull request's base as `BASE_SHA` both pass; see "ADRs" (the
+  with the pull request's base as `BASE_SHA` both pass; see "Specification-driven development" "Decisions" (the
   immutable-ADR decision).
 
 ### critic

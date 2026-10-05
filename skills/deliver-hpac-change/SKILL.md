@@ -5,11 +5,11 @@ description: HPAC Safety's tools, commands, labels, and paths for delivering and
 
 # Deliver an HPAC Safety change
 
-Extends [`deliver-change`](../deliver-change/SKILL.md); read that first. This
+Extends the `deliver-change` skill; read that first. This
 skill holds only what is specific to this repository, under the same section
 names and step numbers. It is also the project companion of
-[`review-work`](../review-work/SKILL.md), in "Review", and of
-[`write-agent-instructions`](../write-agent-instructions/SKILL.md), in "Agent
+the `review-work` skill, in "Review", and of
+the `write-agent-instructions` skill, in "Agent
 instructions".
 
 ## Start
@@ -18,7 +18,7 @@ instructions".
 
 - Asking: put the question to the owner directly; for genuinely ambiguous
   product behavior also read
-  [`clarify-requirements`](../clarify-requirements/SKILL.md). Record the
+  the `clarify-requirements` skill. Record the
   answer in the issue, and in the specification where it changes behavior,
   before any code (the specification-driven-development decision).
 - Sequencing: an SQL view under `Persistence/Sql/` is a view, and an EF
@@ -253,7 +253,7 @@ Rules:
   - `spec`: `area`.
 - A `skills/*/SKILL.md` carries exactly `name` and `description` instead; its
   type comes from its path.
-- An `agents/*.md` carries `name`, `description`, `model`, and `effort`, and
+- An agent file (in agent-team) carries `name`, `description`, `model`, and `effort`, and
   may carry the other keys Claude Code reads on an agent: `tools`,
   `disallowedTools`, `permissionMode`, `maxTurns`, `skills`, `memory`,
   `isolation`, `background`. Nothing else (the agent-file persona-and-role
@@ -265,14 +265,15 @@ Rules:
 
 ### Agent instructions
 
-- The `ai-author` role is [`agents/ai-author.md`](../../agents/ai-author.md).
+- The `ai-author` role is the `ai-author` agent, imported from agent-team.
   The role and its scope, with what still holds of the ai-author role
   decisions: the agent-file persona-and-role convention. Generic and project
   files, and the naming rule: the skill-name-says-hpac convention.
   How the files are written:
-  [`write-agent-instructions`](../write-agent-instructions/SKILL.md).
+  the `write-agent-instructions` skill.
 - **Edits**: `AGENTS.md`, `skills/*/SKILL.md` (and a skill's `agents/*.yaml`),
-  `agents/*.md`, and their `Skillfile` entries.
+  and their `Skillfile` entries. The role agents and generic skills are edited
+  in agent-team, then their pin is bumped here.
 - **Never edits**:
   - generated copies under `.claude/` — run `skillfile install` instead;
   - the symlinks `CLAUDE.md`, `.github/copilot-instructions.md`,
@@ -308,7 +309,7 @@ Rules:
 
 ## Review
 
-Extends [`review-work`](../review-work/SKILL.md). Never put report content,
+Extends the `review-work` skill. Never put report content,
 answers, or credentials in a finding; cite a location, a count, or a shape.
 
 ### spec-reviewer

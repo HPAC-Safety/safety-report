@@ -68,7 +68,7 @@ A component's logic and its markup are separate files, side by side.
 
 ### Why every component, including markup-only ones
 
-[`coding-conventions`](../../skills/coding-conventions/SKILL.md) says a seam
+[`coding-conventions`](../../Skillfile) says a seam
 earns its pattern and a pattern never earns its seam. A markup-only component has
 no logic to separate, so by that rule a split there earns nothing. The owner
 chose uniformity over that economy, and this ADR records the choice rather than

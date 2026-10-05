@@ -5,7 +5,7 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 
 # Persist HPAC Safety data
 
-Extends [`design-ef-core-model`](../design-ef-core-model/SKILL.md) for how an
+Extends the `design-ef-core-model` skill for how an
 entity, relationship, or query is mapped; read that first. This skill wins
 where they differ.
 

@@ -45,7 +45,7 @@ its tests are its guard.
 
 ## Skill
 
-[`deliver-change`](../../skills/deliver-change/SKILL.md) step 6 now says: the
+`deliver-change` step 6 now says: the
 before shot comes from a build of `origin/main`; state a page cannot capture is
 captured at OS level; shots wait for entry animations; light and dark when the
 issue asks; a change with nothing visible says why.

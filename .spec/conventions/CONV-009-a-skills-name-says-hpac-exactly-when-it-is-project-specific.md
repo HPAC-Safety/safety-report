@@ -10,6 +10,9 @@ date: 2026-10-04
 
 ## Rule
 
+Only the `hpac-*` skills live under `skills/` here; the generic ones are
+imported from agent-team (CONV-008), whose CI runs their genericity check.
+
 - **The name is the classification.** A skill under `skills/` whose directory
   name contains `hpac` is project-specific. A skill without it is generic: it
   names no project, product, domain term, repository-unique path, tool this
@@ -87,6 +90,8 @@ The two ADRs name `incident-domain-model` as plain text and stay as written.
 
 ## Enforced by
 
+- The imported agents and generic skills: agent-team's CI runs the same check
+  over them. Here, the local files only:
 - `tools/docs/check-generic-instructions.ts`, in pre-commit and the `docs` CI
   job:
   - every `agents/*.md` and every text file of a skill whose directory has no

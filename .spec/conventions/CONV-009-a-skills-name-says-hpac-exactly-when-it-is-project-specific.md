@@ -1,6 +1,6 @@
 ---
 title: A skill's name says hpac exactly when it is project-specific
-description: Agents and skills are generic by default and a role agent has no project skill of its own; a skill whose name has hpac is project-specific, a skill without it names nothing in this repository, and a tool selects the generic files by that rule instead of a hand-kept list; no agent or skill file references a decision, lesson, convention, claim, or specification page — it names the topic, and a graphify search by keyword finds the record.
+description: Agents and skills are generic by default and a role agent has no project skill of its own; every skill kept here is project-specific and has hpac in its name, a generic skill belongs in agent-team, and a check fails a skill here without hpac in its name; no agent or skill file references a decision, lesson, convention, claim, or specification page — it names the topic, and a graphify search by keyword finds the record.
 type: convention
 status: accepted
 date: 2026-10-04
@@ -11,19 +11,26 @@ date: 2026-10-04
 ## Rule
 
 - **The name is the classification.** A skill under `skills/` whose directory
-  name contains `hpac` is project-specific. A skill without it is generic: it
-  names no project, product, domain term, repository-unique path, tool this
-  repository chose, or decision, lesson, convention, or claim number.
+  name contains `hpac` is project-specific; every skill kept here is. A skill
+  without it is generic, belongs in agent-team, and fails the check below.
+  A generic skill names no project, product, domain term, repository-unique
+  path, tool this repository chose, or decision, lesson, convention, or claim
+  number.
 - **Generic by default.** An agent or skill is generic whenever its content
   would serve another project; a skill is project-specific only when it
-  cannot transfer. The agents are expected to leave this repository.
+  cannot transfer. The agents and generic skills have left this repository:
+  they live in [agent-team](https://github.com/ChaseFlorell/agent-team), installed globally, optional, and pinned by
+  nothing here, because Claude Code resolves personal skills over project
+  skills but project agents over personal ones, so a pin plus a global install
+  skews versions. A change to one is a pull request there; each user re-runs
+  its `skillfile install`.
 - **A role agent is always generic, and has no project skill of its own.**
   This repository's detail reaches a role through the generic skills it
   preloads: a preloaded generic skill with project rules has a companion that
   names it, and `AGENTS.md` lists the pair.
   A fact that belongs to no topic skill goes in `AGENTS.md`.
-- **Name the topic, never the record.** No file under `agents/` or `skills/`,
-  generic or `hpac`, references a decision record, lesson, convention, claim,
+- **Name the topic, never the record.** No agent or skill file, generic (in
+  agent-team) or `hpac` (here), references a decision record, lesson, convention, claim,
   or specification page: no link, no `.spec/` path of any kind, and no
   `ADR-`, `CONV-`, `REQ-`, `CON-`, or lesson number. It names the topic in
   words a search finds. `AGENTS.md` is exempt: it links the records it cites,
@@ -87,12 +94,14 @@ The two ADRs name `incident-domain-model` as plain text and stay as written.
 
 ## Enforced by
 
+- **agent-team's CI** holds the genericity guard for the moved agents and
+  generic skills: a line that names a project, its domain, a role, a tool or
+  provider it chose, its paths, or its worker fails.
 - `tools/docs/check-generic-instructions.ts`, in pre-commit and the `docs` CI
-  job:
-  - every `agents/*.md` and every text file of a skill whose directory has no
-    `hpac` fails a line that names this product, its domain, a product role,
-    a tool or provider this repository chose, its paths, or the Worker;
-  - every agent and every skill text file, `hpac` included, fails a line that
+  job, over `skills/` here:
+  - a `skills/<name>` directory without `hpac` in its name fails: a generic
+    skill belongs in agent-team;
+  - every `hpac` skill text file fails a line that
     references a record: a specification path or a generated specification
     file's name, an `ADR`, `CONV`, `REQ`, or `CON` ID or a lesson number in any
     spelling, even split across a line wrap, or an old `docs/decisions` or

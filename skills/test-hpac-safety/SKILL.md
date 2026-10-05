@@ -5,7 +5,7 @@ description: Test HPAC Safety privacy, immutable questions, uploads and submissi
 
 # Test HPAC Safety
 
-Extends [`test-from-scenarios`](../test-from-scenarios/SKILL.md); read that
+Extends [`test-from-scenarios`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/test-from-scenarios/SKILL.md); read that
 first. This skill holds only what is specific to this repository, under the
 same section names.
 

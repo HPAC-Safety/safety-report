@@ -47,7 +47,7 @@ None. This is a process lesson, and no scenario can prove it.
 
 ## Skill
 
-[`deliver-change`](../../skills/deliver-change/SKILL.md) "Verify and publish"
+[`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) "Verify and publish"
 step 1 now says: run the project's local CI runner with the draft pull request
 body, which runs the pull request's workflows rather than a copy of them.
 [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md) step 1

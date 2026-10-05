@@ -250,7 +250,7 @@ fi
 # re-install, and each worktree runs its own branch's hooks (#796). Resolved
 # with `git rev-parse --git-path hooks` rather than a hardcoded `.git/hooks`
 # because this repository is worked in primarily through git worktrees (see
-# skills/deliver-change/SKILL.md), where `.git` is a file, not a directory, and
+# the deliver-change skill from agent-team), where `.git` is a file, not a directory, and
 # hooks live in the shared main-checkout gitdir instead. Idempotent by content
 # comparison, so a second run only touches a hook file when the shim changed
 # (which also replaces a full copy installed before the shim existed).
@@ -614,7 +614,7 @@ fi
 
 # ----------------------------------------------------------------- skillfile --
 #
-# Optional, and only for agent tooling: it materialises skills/ and agents/ into
+# Optional, and only for agent tooling: it materialises skills/ into
 # .claude/, which is gitignored. A contributor who does not use an AI agent does
 # not need it, so a failure here is a note rather than a failure.
 

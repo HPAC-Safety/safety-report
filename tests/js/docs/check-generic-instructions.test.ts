@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-import { checkText, genericFiles, instructionFiles, main } from '../../../tools/docs/check-generic-instructions.ts'
+import { checkSkillName, checkText, instructionFiles, main, skillNames } from '../../../tools/docs/check-generic-instructions.ts'
 
 /** Runs `main` with console output silenced, restoring it afterwards even on failure. */
 function runMain(root: string, files?: readonly string[]) {
@@ -32,63 +32,25 @@ function tree(files: Record<string, string>): string {
 }
 
 describe('checkText', () => {
-	it('passes a file that names nothing specific to the repository', () => {
-		assert.deepEqual(checkText('skills/x/SKILL.md', '# Deliver a change\n\nRebase before every commit.\n'), [])
-	})
-
-	for (const [line, why] of [
-		['Deliver an HPAC Safety change', 'names the product'],
-		['the pilot becomes a role', 'names the product domain'],
-		['a SafetyOfficer reviews it', 'names a product role'],
-		['run graphify query first', 'names a tool or provider this repository chose'],
-		['see ADR-0083', 'cites a decision record by number'],
-		['as lesson 0004 found', 'cites a lesson by number'],
-		['proven by REQ-SUB-012', 'cites a claim by ID'],
-		['the rule in CONV-007', 'cites a convention by number'],
-		['the Worker runs it', "names this product's background service"],
-		['The Worker runs it', "names this product's background service"],
-		['send it to the reporter', 'names a product role'],
-		['file an occurrence report', 'names the product domain'],
-		['run node tools/spec/generate-traceability.ts', 'names a path in this repository'],
-	]) {
-		it(`refuses a line that ${why}`, () => {
-			const problems = checkText('agents/a.md', `# A\n${line}\n`)
-
-			assert.equal(problems.length, 1)
-			assert.match(problems[0], new RegExp(`^agents/a\\.md:2: ${why}`))
-		})
-	}
-
-	it('lets a plain worker through, because only the capitalized service names this product', () => {
-		assert.equal(checkText('agents/a.md', 'The background worker retries; a web worker is not the Worker.\n').length, 1)
-		assert.deepEqual(checkText('agents/a.md', 'A background worker retries.\n'), [])
-	})
-
-	it('does not mistake a generic word for a claim or a path', () => {
-		assert.deepEqual(checkText('agents/a.md', 'Use the project tools and the source tree; a requirement stands.\n'), [])
-	})
-
-	it('lets generic uses of words the product also uses through', () => {
-		for (const line of ['Configure the test reporter.', 'Remove each occurrence of the string.', 'Code lives in src/.', 'Put step files under features/steps.']) {
-			assert.deepEqual(checkText('agents/a.md', `${line}\n`), [], line)
-		}
+	it('passes a file that references no record', () => {
+		assert.deepEqual(checkText('skills/hpac-x/SKILL.md', '# Deliver a change\n\nRebase before every commit.\n'), [])
 	})
 })
 
 describe('main', () => {
 	it('passes when every listed file is clean', () => {
-		const root = tree({ 'agents/a.md': '# A\nGeneric.\n' })
+		const root = tree({ 'skills/hpac-x/SKILL.md': '# A\nPlain.\n' })
 
-		assert.equal(runMain(root, ['agents/a.md']).code, 0)
+		assert.equal(runMain(root, ['skills/hpac-x/SKILL.md']).code, 0)
 	})
 
-	it('fails and annotates the line when a listed file names the repository', () => {
-		const root = tree({ 'agents/a.md': '# A\nRead ADR-0001.\n' })
+	it('fails and annotates the line when a listed file references a record', () => {
+		const root = tree({ 'skills/hpac-x/SKILL.md': '# A\nRead ADR-0001.\n' })
 
-		const { code, errors } = runMain(root, ['agents/a.md'])
+		const { code, errors } = runMain(root, ['skills/hpac-x/SKILL.md'])
 
 		assert.equal(code, 1)
-		assert.match(errors[0], /^::error file=agents\/a\.md,line=2::cites a decision record by number/)
+		assert.match(errors[0], /^::error file=skills\/hpac-x\/SKILL\.md,line=2::references a decision record by number/)
 	})
 
 	it('fails when a listed file no longer exists, so a rename updates the list', () => {
@@ -99,68 +61,31 @@ describe('main', () => {
 	})
 
 	it('checks the real repository by default', () => {
-		assert.ok(genericFiles(process.cwd()).length > 0)
+		assert.ok(instructionFiles(process.cwd()).length > 0)
 		assert.equal(runMain(process.cwd()).code, 0)
 	})
 })
 
-describe('genericFiles', () => {
-	it('selects every agent and every text file of each skill whose directory has no hpac, in any case', () => {
+describe('instructionFiles', () => {
+	it('selects every text file of every skill, and nothing else', () => {
 		const root = tree({
 			'agents/a.md': '# A\n',
-			'agents/B.MD': '# B\n',
-			'agents/nested/c.md': '# C\n',
-			'agents/notes.txt': 'not an agent\n',
-			'skills/review-work/SKILL.md': '# R\n',
-			'skills/review-work/references/format.md': '# F\n',
-			'skills/review-work/agents/openai.yaml': 'name: r\n',
-			'skills/review-work/logo.png': 'binary',
-			'skills/deliver-hpac-change/SKILL.md': '# D\n',
-			'skills/HPAC-upper/SKILL.md': '# U\n',
-			'skills/hpac-domain-model/SKILL.md': '# H\n',
+			'skills/hpac-x/SKILL.md': '# S\n',
+			'skills/hpac-x/references/format.md': '# F\n',
+			'skills/hpac-x/agents/openai.yaml': 'name: r\n',
+			'skills/hpac-x/logo.png': 'binary',
 		})
 
-		assert.deepEqual(genericFiles(root), [
-			'agents/B.MD',
-			'agents/a.md',
-			'agents/nested/c.md',
-			'skills/review-work/SKILL.md',
-			'skills/review-work/agents/openai.yaml',
-			'skills/review-work/references/format.md',
-		])
+		assert.deepEqual(instructionFiles(root), ['skills/hpac-x/SKILL.md', 'skills/hpac-x/agents/openai.yaml', 'skills/hpac-x/references/format.md'])
 	})
 
-	it('fails a project term in a generic skill\'s supporting file', () => {
-		const root = tree({ 'skills/review-work/SKILL.md': '# R\n', 'skills/review-work/references/x.md': 'See ADR-0001.\n' })
+	it('fails a record reference in a skill\'s supporting file', () => {
+		const root = tree({ 'skills/hpac-x/SKILL.md': '# R\n', 'skills/hpac-x/references/x.md': 'See ADR-0001.\n' })
 
 		const { code, errors } = runMain(root)
 
 		assert.equal(code, 1)
-		assert.match(errors[0], /file=skills\/review-work\/references\/x\.md,line=1/)
-	})
-
-	it('fails a generic skill directory without a file named exactly SKILL.md', () => {
-		const root = tree({ 'skills/misnamed/skill.md': '# M\n' })
-
-		const { code, errors } = runMain(root)
-
-		assert.equal(code, 1)
-		assert.match(errors[0], /skills\/misnamed\/SKILL\.md.*needs a file named exactly SKILL\.md/)
-	})
-
-	it('picks up a new generic skill with no list to update', () => {
-		const root = tree({ 'skills/brand-new/SKILL.md': '# New\nSee ADR-0001.\n' })
-
-		const { code, errors } = runMain(root)
-
-		assert.equal(code, 1)
-		assert.match(errors[0], /file=skills\/brand-new\/SKILL\.md,line=2::cites a decision record by number/)
-	})
-
-	it('fails a project term planted in a generic skill', () => {
-		const root = tree({ 'skills/review-work/SKILL.md': '# R\nThis names HPAC.\n' })
-
-		assert.equal(runMain(root).code, 1)
+		assert.match(errors[0], /file=skills\/hpac-x\/references\/x\.md,line=1/)
 	})
 })
 
@@ -174,7 +99,7 @@ describe('record references', () => {
 		['proven by REQ-SUB-012', 'references a claim by ID'],
 		['in docs/lessons/x.md', 'references a record directory'],
 	]) {
-		it(`refuses an hpac skill line that ${why}`, () => {
+		it(`refuses a skill line that ${why}`, () => {
 			const problems = checkText('skills/hpac-x/SKILL.md', `# X\n${line}\n`)
 
 			assert.ok(problems.length >= 1, line)
@@ -184,15 +109,6 @@ describe('record references', () => {
 
 	it('lets an hpac skill name the product, tools, and source paths', () => {
 		assert.deepEqual(checkText('skills/hpac-x/SKILL.md', 'Run node tools/spec/x.ts; edit src/HpacSafety.Worker; the pilot, the Worker.\n'), [])
-	})
-
-	it('still fails a generic skill that names the product', () => {
-		assert.equal(checkText('skills/review-work/SKILL.md', 'This names HPAC.\n').length, 1)
-	})
-
-	it('reports the same match once when both lists match', () => {
-		assert.equal(checkText('skills/review-work/SKILL.md', 'see ADR-0001 and .spec/x.md\n').length, 2)
-		assert.equal(checkText('skills/review-work/SKILL.md', 'see ADR-0001\n').length, 1)
 	})
 
 	it('scans hpac skills in main, and never scans AGENTS.md', () => {
@@ -215,7 +131,6 @@ describe('record reference variants', () => {
 	]) {
 		it(`refuses "${line}"`, () => {
 			assert.ok(checkText(hpac, `${line}\n`).length >= 1)
-			assert.ok(checkText('skills/review-work/SKILL.md', `${line}\n`).length >= 1)
 		})
 	}
 
@@ -244,9 +159,8 @@ describe('record reference variants', () => {
 		}
 	})
 
-	it('refuses a record reference in an agent and in a nested skill file', () => {
+	it('refuses a record reference in a nested skill file', () => {
 		const root = tree({
-			'agents/a.md': '# A\nSee ADR-0001.\n',
 			'skills/hpac-x/SKILL.md': '# X\n',
 			'skills/hpac-x/agents/openai.yaml': 'description: see .spec/x\n',
 		})
@@ -254,8 +168,39 @@ describe('record reference variants', () => {
 		const { code, errors } = runMain(root)
 
 		assert.equal(code, 1)
-		assert.equal(errors.length, 2)
-		assert.ok(errors.some((e) => e.includes('file=agents/a.md,line=2')))
+		assert.equal(errors.length, 1)
 		assert.ok(errors.some((e) => e.includes('file=skills/hpac-x/agents/openai.yaml,line=1')))
+	})
+})
+
+describe('skill names', () => {
+	it('passes a name that says hpac, anywhere in it', () => {
+		for (const name of ['hpac-domain-model', 'test-hpac-safety', 'anonymize-hpac-reports']) assert.deepEqual(checkSkillName(name), [], name)
+	})
+
+	it('refuses a generic name, and a name that only contains the letters', () => {
+		for (const name of ['coding-conventions', 'chpac', 'hpacs']) {
+			const problems = checkSkillName(name)
+
+			assert.equal(problems.length, 1, name)
+			assert.match(problems[0], /skills\/.+: a skill here is project-specific, so its name says hpac; a generic skill belongs in agent-team/)
+		}
+	})
+
+	it('fails main on a generic skill directory, even when its files are clean', () => {
+		const root = tree({ 'skills/coding-conventions/SKILL.md': '# C\n', 'skills/hpac-x/SKILL.md': '# X\n' })
+
+		const { code, errors } = runMain(root)
+
+		assert.equal(code, 1)
+		assert.equal(errors.length, 1)
+		assert.match(errors[0], /file=skills\/coding-conventions,line=1::skills\/coding-conventions: a skill here is project-specific/)
+	})
+
+	it('lists only directories, so a stray file is not a skill', () => {
+		const root = tree({ 'skills/README.md': '# R\n', 'skills/hpac-x/SKILL.md': '# X\n' })
+
+		assert.deepEqual(skillNames(root), ['hpac-x'])
+		assert.equal(runMain(root).code, 0)
 	})
 })

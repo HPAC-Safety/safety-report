@@ -42,7 +42,7 @@ None. This is a process lesson, and no scenario can prove it.
 
 ## Skill
 
-[`deliver-change`](../../skills/deliver-change/SKILL.md) gains "Concurrency
+[`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) gains "Concurrency
 and quotas":
 
 - serialise only the job that needs it, never a whole workflow that also

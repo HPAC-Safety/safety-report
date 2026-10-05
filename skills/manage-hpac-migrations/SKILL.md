@@ -5,9 +5,9 @@ description: HPAC Safety's migration conventions, paths, and commands — extend
 
 # Manage an HPAC Safety migration
 
-Extends [`manage-ef-core-migrations`](../manage-ef-core-migrations/SKILL.md);
+Extends [`manage-ef-core-migrations`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/manage-ef-core-migrations/SKILL.md);
 read that first. Its schema conventions (keys, types, enums, deletion) also
-extend [`postgres-dba`](../postgres-dba/SKILL.md) and win over it. This skill
+extend [`postgres-dba`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/postgres-dba/SKILL.md) and win over it. This skill
 holds only what is specific to this repository, under the same section names.
 
 - Read

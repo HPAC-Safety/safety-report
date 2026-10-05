@@ -100,8 +100,8 @@ describe('the session-start agent-tooling check', () => {
 		copyFileSync(join(REPO, 'tools/dev/sync-agent-tooling.sh'), join(root, 'tools/dev/sync-agent-tooling.sh'))
 		writeFileSync(join(root, 'Skillfile'), 'install claude-code local\n')
 		writeFileSync(join(root, 'Skillfile.lock'), 'locked\n')
-		mkdirSync(join(root, 'agents'))
-		writeFileSync(join(root, 'agents/backend.md'), 'backend\n')
+		mkdirSync(join(root, 'skills/x'), { recursive: true })
+		writeFileSync(join(root, 'skills/x/SKILL.md'), 'skill\n')
 		spawnSync('git', ['init', '-q', '-b', 'work'], { cwd: root, env })
 	})
 
@@ -145,6 +145,32 @@ describe('the session-start agent-tooling check', () => {
 		assert.ok(existsSync(join(root, '.claude/agents/backend.md')))
 	})
 
+	it('installs and prunes every agent copy when the Skillfile declares only skills', () => {
+		declare([], ['coding-conventions'])
+		installed('.claude/agents/backend.md', '.claude/skills/coding-conventions/SKILL.md')
+		stamp()
+
+		const result = run()
+		settle()
+
+		assert.match(result.stdout, /out of step with the Skillfile/)
+		assert.ok(installCalled())
+		assert.ok(!existsSync(join(root, '.claude/agents/backend.md')))
+		assert.ok(existsSync(join(root, '.claude/skills/coding-conventions/SKILL.md')))
+	})
+
+	it('stays silent when the Skillfile declares only skills and no agent is installed', () => {
+		declare([], ['coding-conventions'])
+		installed('.claude/skills/coding-conventions/SKILL.md')
+		stamp()
+
+		const result = run()
+		settle()
+
+		assert.equal(result.stdout, '')
+		assert.ok(!installCalled())
+	})
+
 	it('installs and prunes when an installed skill is no longer declared', () => {
 		inSyncCheckout()
 		installed('.claude/skills/retired/SKILL.md')
@@ -156,9 +182,9 @@ describe('the session-start agent-tooling check', () => {
 		assert.ok(!existsSync(join(root, '.claude/skills/retired')))
 	})
 
-	it('installs when an agent file was edited and no name changed', () => {
+	it('installs when a skill file was edited and no name changed', () => {
 		inSyncCheckout()
-		writeFileSync(join(root, 'agents/backend.md'), 'edited\n')
+		writeFileSync(join(root, 'skills/x/SKILL.md'), 'edited\n')
 
 		run()
 		settle()
@@ -189,7 +215,7 @@ describe('the session-start agent-tooling check', () => {
 
 	it('is in sync again after the install it started', () => {
 		inSyncCheckout()
-		writeFileSync(join(root, 'agents/backend.md'), 'edited\n')
+		writeFileSync(join(root, 'skills/x/SKILL.md'), 'edited\n')
 		run()
 		settle()
 		rmSync(join(fake, 'calls.txt'))

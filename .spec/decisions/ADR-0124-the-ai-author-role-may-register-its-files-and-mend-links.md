@@ -2,7 +2,7 @@
 title: The ai-author role may register its files and mend links
 description: The instruction-file maintainer may also edit a skill's agents/*.yaml and the Skillfile entries for the files it owns, and fix a link in any page that its own move broke.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-25
 decision-makers: Chase Florell
 keywords: agents, ai-author, skills, Skillfile, instructions, ADR-0121
@@ -10,7 +10,8 @@ keywords: agents, ai-author, skills, Skillfile, instructions, ADR-0121
 
 # ADR-0124 — The ai-author role may register its files and mend links
 
-**Status:** Accepted. **Amends**
+**Status:** Superseded by
+[ADR-0199](ADR-0199-the-role-agents-and-generic-skills-live-in-agent-team-and-nothing-is-pinned-here.md). **Amends**
 [ADR-0121](ADR-0121-a-fifth-role-maintains-the-agent-instructions.md), which
 said the role edits `AGENTS.md`, `skills/*/SKILL.md`, and `agents/*.md` "and
 nothing else".

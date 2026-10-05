@@ -1,41 +1,22 @@
-# HPAC safety-report — focused coding-agent skills and role agents.
+# HPAC safety-report — focused coding-agent skills.
 #
-# Skills and agents are managed declaratively so every contributor and agent
-# gets the same setup from `skillfile install`. Installed copies land in
-# `.claude/` and are gitignored; `Skillfile.lock` reproduces upstream sources
-# exactly.
+# Skills are managed declaratively so every contributor and agent gets the same
+# setup from `skillfile install`. Installed copies land in `.claude/` and are
+# gitignored; `Skillfile.lock` reproduces upstream sources exactly.
 #
-# A skill is knowledge, loaded when its topic is in play. An agent is a persona
-# and a role, and it constrains what its holder may do; its how lives in the
-# skills it preloads. Four are the steps of the specification-driven chain,
-# each trusting only the artifact from the step before it; ai-author maintains
-# these instruction files; critic, adversary, and auditor add a lens (CONV-007, CONV-008).
+# The role agents and the generic skills they preload live in
+# https://github.com/ChaseFlorell/agent-team, which a contributor installs
+# globally. This repository pins none of them; the `hpac-*` project skills below
+# extend them.
 #
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
-# upstream guidance only when it matches the repository. Local skills are
-# generic where the practice transfers, with a project skill holding the
-# HPAC-specific knowledge and repository-specific contracts. `.spec/features` is the
+# upstream guidance only when it matches the repository. `.spec/features` is the
 # product-design authority.
 #
 # Docs: https://github.com/eljulians/skillfile
 
 # install  <platform>  <scope>
 install  claude-code  local
-
-# --- Agents ---
-# github  agent  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
-
-local  agent  agents/adversary.md
-local  agent  agents/ai-author.md
-local  agent  agents/auditor.md
-local  agent  agents/backend.md
-local  agent  agents/critic.md
-local  agent  agents/database-administrator.md
-local  agent  agents/infrastructure.md
-local  agent  agents/spec-author.md
-local  agent  agents/spec-reviewer.md
-local  agent  agents/test-writer.md
-local  agent  agents/ux.md
 
 # --- Skills ---
 # github  skill  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
@@ -51,36 +32,15 @@ github  skill  github/awesome-copilot  skills/csharp-async
 # Red, green, tidy. Write the test before the code.
 github  skill  obra/superpowers  skills/test-driven-development
 
-# Declarative Gherkin scenario design and anti-patterns; framework-agnostic —
-# .spec/features/*.feature has no step definitions, so only the authoring guidance
-# applies, not the execution-framework parts of this skill.
-github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-best-practices
-
 # --- authored in this repo (source of truth lives under skills/) ---
 # The anonymization skill tells coding agents what contract to preserve. The
 # actual runtime prompt lives with the Worker and is sent to the model when a
 # report arrives.
 # Names are explicit: every source file is called SKILL.md, so without a name
 # they would all infer the same one and overwrite each other on install.
-# Generic skills name nothing specific to this repository, so another project
-# can reuse them. A skill's name says hpac exactly when it is project-specific,
-# and tools/docs/check-generic-instructions.ts holds every other skill and
-# every agent to it, and bars every agent and skill, `hpac` ones included,
-# from referencing a decision, lesson, convention, claim, or specification page
-# (CONV-009).
-local  skill  agent-persona  skills/agent-persona/SKILL.md
-local  skill  clarify-requirements  skills/clarify-requirements/SKILL.md
-local  skill  coding-conventions  skills/coding-conventions/SKILL.md
-local  skill  deliver-change  skills/deliver-change/SKILL.md
-local  skill  design-cloud-infrastructure  skills/design-cloud-infrastructure/SKILL.md
-local  skill  design-ef-core-model  skills/design-ef-core-model/SKILL.md
-local  skill  design-web-ui  skills/design-web-ui/SKILL.md
-local  skill  manage-ef-core-migrations  skills/manage-ef-core-migrations/SKILL.md
-local  skill  postgres-dba  skills/postgres-dba/SKILL.md
-local  skill  review-work  skills/review-work/SKILL.md
-local  skill  test-from-scenarios  skills/test-from-scenarios/SKILL.md
-local  skill  write-agent-instructions  skills/write-agent-instructions/SKILL.md
-
+# tools/docs/check-generic-instructions.ts bars every skill from referencing a
+# decision, lesson, convention, claim, or specification page.
+#
 # Project skills. One that extends a generic skill names it and keeps its
 # section names.
 local  skill  anonymize-hpac-reports  skills/anonymize-hpac-reports/SKILL.md

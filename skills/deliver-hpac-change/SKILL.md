@@ -5,11 +5,11 @@ description: HPAC Safety's tools, commands, labels, and paths for delivering and
 
 # Deliver an HPAC Safety change
 
-Extends [`deliver-change`](../deliver-change/SKILL.md); read that first. This
+Extends [`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md); read that first. This
 skill holds only what is specific to this repository, under the same section
 names and step numbers. It is also the project companion of
-[`review-work`](../review-work/SKILL.md), in "Review", and of
-[`write-agent-instructions`](../write-agent-instructions/SKILL.md), in "Agent
+[`review-work`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/review-work/SKILL.md), in "Review", and of
+[`write-agent-instructions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/write-agent-instructions/SKILL.md), in "Agent
 instructions".
 
 ## Start
@@ -18,7 +18,7 @@ instructions".
 
 - Asking: put the question to the owner directly; for genuinely ambiguous
   product behavior also read
-  [`clarify-requirements`](../clarify-requirements/SKILL.md). Record the
+  [`clarify-requirements`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/clarify-requirements/SKILL.md). Record the
   answer in the issue, and in the specification where it changes behavior,
   before any code (the specification-driven-development decision).
 - Sequencing: an SQL view under `Persistence/Sql/` is a view, and an EF
@@ -253,11 +253,6 @@ Rules:
   - `spec`: `area`.
 - A `skills/*/SKILL.md` carries exactly `name` and `description` instead; its
   type comes from its path.
-- An `agents/*.md` carries `name`, `description`, `model`, and `effort`, and
-  may carry the other keys Claude Code reads on an agent: `tools`,
-  `disallowedTools`, `permissionMode`, `maxTurns`, `skills`, `memory`,
-  `isolation`, `background`. Nothing else (the agent-file persona-and-role
-  convention).
 - The Worker's runtime prompts are exempt; their bytes are the model payload.
 - `node tools/docs/check-frontmatter.ts` is the authority; the pre-commit hook runs
   it over staged markdown.
@@ -265,14 +260,15 @@ Rules:
 
 ### Agent instructions
 
-- The `ai-author` role is [`agents/ai-author.md`](../../agents/ai-author.md).
+- The `ai-author` role is [`agents/ai-author.md`](https://github.com/ChaseFlorell/agent-team/blob/main/agents/ai-author.md).
   The role and its scope, with what still holds of the ai-author role
   decisions: the agent-file persona-and-role convention. Generic and project
   files, and the naming rule: the skill-name-says-hpac convention.
   How the files are written:
-  [`write-agent-instructions`](../write-agent-instructions/SKILL.md).
-- **Edits**: `AGENTS.md`, `skills/*/SKILL.md` (and a skill's `agents/*.yaml`),
-  `agents/*.md`, and their `Skillfile` entries.
+  [`write-agent-instructions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/write-agent-instructions/SKILL.md).
+- **Edits here**: `AGENTS.md`, the `hpac-*` `skills/*/SKILL.md` files, and their
+  `Skillfile` entries. The role agents and generic skills live in agent-team:
+  a change to one is a pull request there.
 - **Never edits**:
   - generated copies under `.claude/` — run `skillfile install` instead;
   - the symlinks `CLAUDE.md`, `.github/copilot-instructions.md`,
@@ -285,20 +281,17 @@ Rules:
   rule (`AGENTS.md` owns invariants and routing, skills own procedure). Product behavior lives in the
   feature files (the lesson-flows-upstream decision);
   where a lesson's general rule lands: "Lessons" above.
-- An agent's frontmatter keys: "Markdown" above. Its body is the three sections
-  the agent-file convention names.
+- An agent's frontmatter keys and body: agent-team, which holds every agent
+  file and checks them.
 - A role has no per-role project skill: project rules reach it through the
   companions of the generic skills it preloads, which `AGENTS.md`'s skill table
   lists (the skill-name-says-hpac convention).
 - Checks:
   - `node tools/docs/check-frontmatter.ts` (rules: "Markdown" above);
-  - `node tools/docs/check-generic-instructions.ts` — every agent and every
-    skill whose directory has no `hpac` names nothing specific to this
-    repository. It selects the files by that rule, so there is no list to
-    update. It also fails a decision, lesson, convention, claim, or
-    specification reference in every agent and skill, `hpac` ones included
-    (paths to code and tools are fine). The pre-commit hook and the `docs` CI
-    job run it;
+  - `node tools/docs/check-generic-instructions.ts` — every skill here names
+    no decision, lesson, convention, claim, or specification reference (paths
+    to code and tools are fine). The pre-commit hook and the `docs` CI job run
+    it. The generic-skill guard runs in agent-team's CI;
   - `node tools/docs/check-links.ts` — every relative link resolves.
 - Stable handles here include `deliver-change` "Verify and publish" step
   numbers.
@@ -308,7 +301,7 @@ Rules:
 
 ## Review
 
-Extends [`review-work`](../review-work/SKILL.md). Never put report content,
+Extends [`review-work`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/review-work/SKILL.md). Never put report content,
 answers, or credentials in a finding; cite a location, a count, or a shape.
 
 ### spec-reviewer

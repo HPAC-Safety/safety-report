@@ -18,7 +18,7 @@
 # non-ASCII path is not wrapped in quotes, which would hide it from the match.
 agent_tooling_changed() {
 	_changed=$(git -c core.quotePath=false diff --name-only ORIG_HEAD HEAD 2>/dev/null) || return 0
-	printf '%s\n' "$_changed" | grep -Eq '^(Skillfile$|Skillfile\.lock$|agents/|skills/)'
+	printf '%s\n' "$_changed" | grep -Eq '^(Skillfile$|Skillfile\.lock$|skills/)'
 }
 
 # True when the Skillfile declares an entry of kind $1 (agent or skill) that is
@@ -69,11 +69,12 @@ _prune_installed() {
 }
 
 # Prune one kind ("agent" or "skill") under $2, unless the listing cannot be
-# trusted: it failed, is empty, or the Skillfile has a directory entry.
+# trusted: it failed or the Skillfile has a directory entry. An empty listing that
+# succeeded is trusted: it means nothing of that kind is declared, so every
+# installed one is stale (a skills-only Skillfile retires every agent copy).
 _prune_kind() {
 	_k=$1
 	_listed=$(skillfile list --names-only "--${_k}s" 2>/dev/null) || return 0
-	[ -n "$_listed" ] || return 0
 	if _has_directory_entry "$_k"; then
 		echo "agent tooling: not pruning ${_k}s: the Skillfile has a directory entry, which can deploy names it does not list."
 		return 0
@@ -86,14 +87,14 @@ _prune_kind() {
 AGENT_TOOLING_STATE_DIR=.skillfile/cache/agent-tooling
 
 # A checksum over the sorted list and contents of everything skillfile installs
-# from: Skillfile, Skillfile.lock, and every file under agents/ and skills/. The
+# from: Skillfile, Skillfile.lock, and every file under skills/. The
 # working tree counts, so an uncommitted edit changes it.
 _content_fingerprint() {
 	{
 		for _f in Skillfile Skillfile.lock; do
 			[ -f "$_f" ] && printf '%s\n' "$_f"
 		done
-		find agents skills -type f 2>/dev/null
+		find skills -type f 2>/dev/null
 	} | LC_ALL=C sort | while IFS= read -r _f; do
 		printf '%s\n' "$_f"
 		cat -- "$_f"
@@ -135,8 +136,9 @@ _installed_names() {
 # installed names equal the declared names (so a missing and an extra entry both
 # count as out of sync), and the content fingerprint equals the stamp the last
 # install wrote (so an edited agent or skill, or a Skillfile.lock bump, counts;
-# a missing stamp is out of sync). A kind whose names cannot be compared (the
-# listing failed or is empty, the Skillfile has a directory entry, or its
+# a missing stamp is out of sync). A kind with nothing declared is compared like
+# any other, so a stale installed copy is out of sync. A kind whose names cannot
+# be compared (the listing failed, the Skillfile has a directory entry, or its
 # directory is a symlink) is skipped, the same safety rules as the prune.
 agent_tooling_in_sync() {
 	command -v skillfile >/dev/null 2>&1 || return 0
@@ -144,7 +146,6 @@ agent_tooling_in_sync() {
 		_kind=${_sk%% *}
 		_where=${_sk#* }
 		_listed=$(skillfile list --names-only "--${_kind}s" 2>/dev/null) || continue
-		[ -n "$_listed" ] || continue
 		_has_directory_entry "$_kind" && continue
 		[ -L "$_where" ] && continue
 		_have=$(_installed_names "$_where" "$_kind" "$_listed" | sort)

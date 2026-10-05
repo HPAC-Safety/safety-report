@@ -63,6 +63,7 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0199](decisions/ADR-0199-the-role-agents-and-generic-skills-live-in-agent-team-and-nothing-is-pinned-here.md) | The role agents and generic skills live in agent-team, and nothing is pinned here | accepted | 2026-10-04 |
 | [0198](decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md) | The .NET tests run on xUnit v3, and Reqnroll executes the .feature files through Reqnroll.xUnit.v3 | accepted | 2026-10-04 |
 | [0197](decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md) | Backend and ux replace the implementer, and the adversary takes privacy review | superseded | 2026-10-04 |
 | [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
@@ -133,7 +134,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0127](decisions/ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md) | A yes or no answer is stored in the reporter's language | superseded | 2026-09-25 |
 | [0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md) | An attachment uploads straight to quarantine by pre-signed PUT | partially-superseded | 2026-09-25 |
 | [0125](decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md) | A report is pending, published, or unpublished | accepted | 2026-09-25 |
-| [0124](decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md) | The ai-author role may register its files and mend links | accepted | 2026-09-25 |
+| [0124](decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md) | The ai-author role may register its files and mend links | superseded | 2026-09-25 |
 | [0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md) | The Worker runs on Lambda and the website on S3 and CloudFront | accepted | 2026-09-25 |
 | [0122](decisions/ADR-0122-a-video-derivative-is-always-an-mp4.md) | A video's derivative is always an MP4 | accepted | 2026-09-24 |
 | [0121](decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md) | A fifth role maintains the agent instructions | superseded | 2026-09-24 |
@@ -253,7 +254,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0004](decisions/ADR-0004-human-review-required.md) | Mandatory human review before publication | accepted | 2026-08-22 |
 | [0003](decisions/ADR-0003-anonymization-pipeline.md) | Five-stage anonymization, deterministic first | superseded | 2026-08-22 |
 | [0002](decisions/ADR-0002-transactional-outbox.md) | Transactional outbox for AI processing | accepted | 2026-08-22 |
-| [0001](decisions/ADR-0001-repository-and-agent-configuration.md) | Agent-agnostic configuration via AGENTS.md and skillfile | accepted | 2026-08-22 |
+| [0001](decisions/ADR-0001-repository-and-agent-configuration.md) | Agent-agnostic configuration via AGENTS.md and skillfile | superseded | 2026-08-22 |
 
 ## Lessons
 

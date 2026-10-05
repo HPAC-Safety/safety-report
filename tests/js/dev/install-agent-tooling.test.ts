@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -34,6 +34,7 @@ install)
 	[ -n "\${FAKE_REWRITES_LOCK-}" ] && echo rewritten > Skillfile.lock
 	exit 0 ;;
 list)
+	[ -n "\${FAKE_LIST_FAILS-}" ] && exit 1
 	[ "$2" = --json ] && { cat "$FAKE_DIR/list.json"; exit 0; }
 	case "$3" in
 	--agents) cat "$FAKE_DIR/agents.txt" ;;
@@ -97,7 +98,7 @@ describe('the agent-tooling install and prune', () => {
 		git(root, 'update-ref', 'ORIG_HEAD', orig)
 	}
 
-	for (const file of ['Skillfile', 'Skillfile.lock', 'agents/backend.md', 'skills/x/SKILL.md']) {
+	for (const file of ['Skillfile', 'Skillfile.lock', 'skills/x/SKILL.md']) {
 		it(`wakes when ${file} changed`, () => {
 			commitChange(file)
 			assert.equal(run('agent_tooling_changed').status, 0)
@@ -138,14 +139,30 @@ describe('the agent-tooling install and prune', () => {
 		assert.ok(existsSync(join(root, 'agents/old.md')))
 	})
 
-	it('prunes nothing when skillfile lists nothing', () => {
-		declare([], [])
-		installed('.claude/agents/backend.md', '.claude/skills/coding-conventions/SKILL.md')
+	it('prunes every agent copy when the Skillfile declares only skills', () => {
+		declare([], ['coding-conventions'])
+		installed('.claude/agents/backend.md', '.claude/agents/ux.md', '.claude/agents/notes.txt', '.claude/skills/coding-conventions/SKILL.md')
+		symlinkSync(join(fake, 'mine.md'), join(root, '.claude/agents/mine.md'))
 
-		run('install_agent_tooling test')
+		const result = run('install_agent_tooling test')
 
-		assert.ok(existsSync(join(root, '.claude/agents/backend.md')))
+		assert.equal(result.status, 0)
+		assert.ok(!existsSync(join(root, '.claude/agents/backend.md')))
+		assert.ok(!existsSync(join(root, '.claude/agents/ux.md')))
+		assert.ok(existsSync(join(root, '.claude/agents/notes.txt')), 'a non-.md file is not skillfile\'s')
+		assert.ok(lstatSync(join(root, '.claude/agents/mine.md')).isSymbolicLink(), 'a symlink is never followed or removed')
 		assert.ok(existsSync(join(root, '.claude/skills/coding-conventions/SKILL.md')))
+	})
+
+	it('prunes nothing when the listing fails', () => {
+		declare(['backend'], ['coding-conventions'])
+		installed('.claude/agents/implementer.md', '.claude/skills/retired/SKILL.md')
+
+		const result = run('install_agent_tooling test', { FAKE_LIST_FAILS: '1' })
+
+		assert.equal(result.status, 0)
+		assert.ok(existsSync(join(root, '.claude/agents/implementer.md')))
+		assert.ok(existsSync(join(root, '.claude/skills/retired/SKILL.md')))
 	})
 
 	it('prunes nothing when the install fails, and returns failure', () => {
@@ -237,7 +254,7 @@ describe('the agent-tooling install and prune', () => {
 	})
 
 	it('wakes for a non-ASCII path git would otherwise quote', () => {
-		commitChange('agents/é.md')
+		commitChange('skills/é/SKILL.md')
 		assert.equal(run('agent_tooling_changed').status, 0)
 	})
 

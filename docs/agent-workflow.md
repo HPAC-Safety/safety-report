@@ -17,13 +17,19 @@ authority is [`.spec/features/README.md`](../.spec/features/README.md).
 3. Load only the project skills relevant to the task.
 4. Work in a worktree off fresh `origin/main`, on `issue-<number>/<short-description>`.
 
-Project-owned skill sources live under `skills/` and role agents under
-`agents/`. `skillfile install` generates tool-specific copies under `.claude/`;
+Project-owned skill sources (`hpac-*`) live under `skills/`. The role agents
+and generic skills live in [agent-team](https://github.com/ChaseFlorell/agent-team); install them
+globally by cloning it and running `skillfile install` there (optional, into
+`~/.claude`). This repository pins nothing from it: Claude Code resolves
+personal skills over project skills but project agents over personal ones, so a
+project pin plus a global install would skew versions. A change to a moved file
+is a pull request to agent-team; each user re-runs its `skillfile install`.
+`skillfile install` here generates tool-specific copies under `.claude/`;
 never edit or commit those copies. The post-merge and post-rewrite hooks and
 `init-dev.sh` keep `.claude/` in step: after a change to `Skillfile`,
-`Skillfile.lock`, `agents/`, or `skills/` they run `skillfile install` and delete
+`Skillfile.lock`, or `skills/` they run `skillfile install` and delete
 any installed agent or skill the `Skillfile` no longer declares. Personal agents
-and skills go in `~/.claude`, not `.claude/`. A fast-forward rebase, `git
+and skills, the agent-team install included, go in `~/.claude`, not `.claude/`. A fast-forward rebase, `git
 worktree add`, `merge --squash`, and a hand-resolved conflicted merge fire no
 such hook; the `SessionStart` check (`tools/dev/sync-agent-tooling.sh`, wired in
 `.claude/settings.json`) catches what the git hooks can't see, and an edit to an
@@ -37,7 +43,7 @@ skill whose architecture conflicts with `.spec/features`.
 
 A skill and an agent are not the same thing. A skill is knowledge, loaded when
 its topic is in play; it never widens or narrows what a role may do. An agent is a persona and a
-role, and what makes it useful is what it refuses. Eleven are declared here, each
+role, and what makes it useful is what it refuses. Eleven are declared in agent-team, each
 with a human name; the file says who the agent is, what it does, and what it
 leaves to others, and how it works is in the generic skills it preloads
 ([CONV-008](../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
@@ -82,7 +88,7 @@ node's typed edges; where a code comment also cites the ID, name the node:
 
 | Output | Owning command |
 |---|---|
-| `.claude/skills/`, `.claude/agents/` | `skillfile install`, then a prune of what the `Skillfile` no longer declares; run by the post-merge and post-rewrite hooks and `init-dev.sh` |
+| `.claude/skills/`, `.claude/agents/` | `skillfile install`, then a prune of what the `Skillfile` no longer declares, which includes any stale `.claude/agents/*.md` when the `Skillfile` declares no agents; run by the post-merge and post-rewrite hooks and `init-dev.sh` |
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/dev/extract-typeform.py` |
 | `docs/issue-traceability.md` | `node tools/spec/generate-issue-traceability.ts`, from GitHub; the drift issue `issue-traceability.yml` keeps asks for it (ADR-0191) |
@@ -99,5 +105,5 @@ revision is manually authored in English and French.
 
 Run relevant tests and validation, inspect the diff, push the branch, and open a
 PR containing `Closes #<number>`. Keep working until required checks are green.
-See [`deliver-change`](../skills/deliver-change/SKILL.md) and
+See [`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) and
 [`deliver-hpac-change`](../skills/deliver-hpac-change/SKILL.md).

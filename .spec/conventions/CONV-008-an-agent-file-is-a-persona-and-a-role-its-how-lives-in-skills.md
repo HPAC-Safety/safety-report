@@ -10,11 +10,26 @@ date: 2026-10-04
 
 ## Rule
 
+### Where the team lives
+
+- **The eleven agents and the generic skills they preload live in
+  [agent-team](https://github.com/ChaseFlorell/agent-team)**, not here (same layout:
+  `agents/<name>.md`, `skills/<name>/SKILL.md`). A user installs them
+  globally: clone it and run its `skillfile install`, into `~/.claude`. They
+  are optional.
+- **This repository pins nothing from agent-team.** Claude Code resolves
+  personal skills over project skills but project agents over personal ones, so
+  a project pin plus a global install would skew versions.
+- **A change to a moved file is a pull request to agent-team**; each user then
+  re-runs its `skillfile install`. This repository's `hpac-*` skills are the
+  generic skills' companions and stay here.
+- The rules below describe the files as they live in agent-team.
+
 ### The file
 
 - **An agent file is a persona and a role**: who it is, what it does, and
   what it leaves to others. Its frontmatter and body shape are in the generic
-  [`write-agent-instructions`](../../skills/write-agent-instructions/SKILL.md)
+  [`write-agent-instructions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/write-agent-instructions/SKILL.md)
   skill, "An agent file", which is their one home.
 - **Every refusal that defines a role stays in the agent file.** A skill may
   state the rules of its subject, but it never widens or narrows what a role
@@ -41,7 +56,7 @@ date: 2026-10-04
 
 The model and effort themselves live only in each agent's frontmatter; the
 general rule is in the generic
-[`write-agent-instructions`](../../skills/write-agent-instructions/SKILL.md)
+[`write-agent-instructions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/write-agent-instructions/SKILL.md)
 skill. This table is the roster: a new agent earns its row only when it reads,
 uses, runs, or refuses something no other does.
 
@@ -51,7 +66,7 @@ demographic.
 ### The guardrails
 
 Every agent preloads the generic
-[`agent-persona`](../../skills/agent-persona/SKILL.md) skill, which holds them:
+[`agent-persona`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/agent-persona/SKILL.md) skill, which holds them:
 voice stays out of every finding and artifact, and never softens a finding.
 
 ### Carried from the records this supersedes
@@ -59,8 +74,9 @@ voice stays out of every finding and artifact, and never softens a finding.
 - **Model and effort**: each agent declares both in its frontmatter, the one
   place the values live; the team table above gives each role's reason, and
   `tools/docs/check-frontmatter.ts` checks the keys.
-- **ai-author's scope**: it edits `AGENTS.md`, the skills, the agent files,
-  and their `Skillfile` entries, and may mend a link a move broke. It never
+- **ai-author's scope**: in agent-team it edits the agent files and generic
+  skills; here it edits `AGENTS.md`, the `hpac-*` skills, and their `Skillfile`
+  entries, and registers its files and mends links only for files here. It never
   edits code, tests, the specification, `docs/` pages, or runtime prompts,
   and it changes a rule's wording, never the rule.
 - **The chain**: spec-author writes the scenario, test-writer binds it, a
@@ -94,8 +110,7 @@ they are agent-workflow rules, which are conventions
 ## Enforced by
 
 - `tools/docs/check-frontmatter.ts`: an agent's keys and values.
-- `tools/docs/check-generic-instructions.ts`: every agent and every generic
-  skill names nothing specific to this repository, and no agent or skill
-  references a record (CONV-009).
+- agent-team's CI: every agent and every generic skill names nothing specific
+  to a project (CONV-009). This repository keeps no copy of that guard.
 - Nothing checks the body's three sections or the guardrails; the
   `ai-author` role and review hold them.

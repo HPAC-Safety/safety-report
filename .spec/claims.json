@@ -22389,10 +22389,10 @@
 			"id": "ADR-0001",
 			"file": ".spec/decisions/ADR-0001-repository-and-agent-configuration.md",
 			"title": "Agent-agnostic configuration via AGENTS.md and skillfile",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": [],
+			"decisions": ["ADR-0199"],
 			"supersedes": [],
 			"amends": []
 		},
@@ -23709,10 +23709,10 @@
 			"id": "ADR-0124",
 			"file": ".spec/decisions/ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md",
 			"title": "The ai-author role may register its files and mend links",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0086","ADR-0121"],
+			"decisions": ["ADR-0086","ADR-0121","ADR-0199"],
 			"supersedes": [],
 			"amends": ["ADR-0121"]
 		},
@@ -24484,6 +24484,17 @@
 			"constraints": [],
 			"decisions": ["ADR-0013","ADR-0049","ADR-0053","ADR-0073","ADR-0185","ADR-0195"],
 			"supersedes": ["ADR-0049"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0199",
+			"file": ".spec/decisions/ADR-0199-the-role-agents-and-generic-skills-live-in-agent-team-and-nothing-is-pinned-here.md",
+			"title": "The role agents and generic skills live in agent-team, and nothing is pinned here",
+			"status": "accepted",
+			"claims": [],
+			"constraints": [],
+			"decisions": ["ADR-0001","ADR-0086","ADR-0121","ADR-0124"],
+			"supersedes": ["ADR-0001","ADR-0124"],
 			"amends": []
 		}
 	],

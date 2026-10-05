@@ -9,7 +9,7 @@ type: instructions
 Instructions for any coding agent in this repository. `CLAUDE.md`,
 `.github/copilot-instructions.md`, and `.cursor/rules/agents.mdc` are symlinks
 to this file; edit only this file, following
-[`ai-author`](agents/ai-author.md).
+[`ai-author`](https://github.com/ChaseFlorell/agent-team/blob/main/agents/ai-author.md).
 
 The system receives real aviation occurrence reports holding personal and
 medical information. Keep it small, and treat every data boundary as
@@ -100,7 +100,7 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
 ### Missing requirements
 
 - Do not improvise the missing half of a requirement. Ask — see
-  [`clarify-requirements`](skills/clarify-requirements/SKILL.md).
+  [`clarify-requirements`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/clarify-requirements/SKILL.md).
 - Write the answer back as a scenario or an out-of-scope line.
 
 ### Claim IDs and the matrix
@@ -145,10 +145,17 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
 
 ### Role agents
 
-Declared under `agents/`, installed by `skillfile`. None is required; a
-contributor who never invokes one is unaffected. Each has a human name, and its
-file says who it is, what it does, and what it leaves to others; how it works
-is in the generic skills it preloads
+The team lives in [agent-team](https://github.com/ChaseFlorell/agent-team), not here: the eleven
+role agents and their generic skills. A contributor who wants it clones that
+repository and runs its `skillfile install`, which installs into `~/.claude`.
+This repository pins nothing from it, so a project pin never skews a global
+install. None is required; a contributor who never invokes one is unaffected.
+A change to an agent or generic skill is a pull request to agent-team; each
+user re-runs its `skillfile install`. The `hpac-*` skills here are the generic
+skills' companions
+([ADR-0199](.spec/decisions/ADR-0199-the-role-agents-and-generic-skills-live-in-agent-team-and-nothing-is-pinned-here.md)).
+Each agent has a human name, and its file says who it is, what it does, and
+what it leaves to others; how it works is in the generic skills it preloads
 ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 
 - The chain's four steps, each trusting only the artifact from the role before
@@ -195,7 +202,7 @@ is in the generic skills it preloads
 - A new process, tooling, or agent-workflow rule is a convention under
   [`.spec/conventions/`](.spec/conventions/README.md), not an ADR. Interface
   detail is a scenario.
-- Details: [`deliver-change`](skills/deliver-change/SKILL.md) "ADRs".
+- Details: [`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) "ADRs".
 
 ### Lessons
 
@@ -205,7 +212,7 @@ is in the generic skills it preloads
   Its `kind` — product, process, or incident — decides what it owes
   ([ADR-0192](.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
   What it contains and which skill it updates:
-  [`deliver-change`](skills/deliver-change/SKILL.md) "Lessons".
+  [`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) "Lessons".
 - Read lessons on a design pass, alongside `.spec/features` and the ADRs.
 
 ## Product invariants
@@ -363,12 +370,14 @@ Read them before touching the area.
 
 ## Focused skills
 
-Read only the skills the task needs. Sources live under `skills/`; copies under
-`.claude/skills/` are generated.
+Read only the skills the task needs. Project skills (`hpac-*`, and the
+`*-hpac-*` names) live under `skills/`; copies under `.claude/skills/` are
+generated.
 
-- A **generic** skill names nothing specific to this repository, so another
-  project can reuse it.
-- **Skills and agents cite no record by link, path, or ID.** A skill's topic
+- A **generic** skill names nothing specific to this repository. It lives in
+  [agent-team](https://github.com/ChaseFlorell/agent-team), installed globally and optional; the links
+  below go there. Install it from there, never by a pin here.
+- **`hpac-*` skills cite no record by link, path, or ID.** A skill's topic
   words find the record through a graphify search ("graphify" below); this file
   links the records it cites
   ([CONV-009](.spec/conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md)).
@@ -379,22 +388,22 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 
 | Work | Generic | Project |
 |---|---|---|
-| Any repository change | [`coding-conventions`](skills/coding-conventions/SKILL.md) | [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md) |
-| Genuinely ambiguous product behavior | [`clarify-requirements`](skills/clarify-requirements/SKILL.md) | — |
-| Tests and fixtures | [`test-from-scenarios`](skills/test-from-scenarios/SKILL.md) | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
+| Any repository change | [`coding-conventions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/coding-conventions/SKILL.md) | [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md) |
+| Genuinely ambiguous product behavior | [`clarify-requirements`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/clarify-requirements/SKILL.md) | — |
+| Tests and fixtures | [`test-from-scenarios`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/test-from-scenarios/SKILL.md) | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
 | Summary privacy or runtime prompt | — | [`anonymize-hpac-reports`](skills/anonymize-hpac-reports/SKILL.md) |
 | Questions, reports, lifecycle, review, publication | — | [`hpac-domain-model`](skills/hpac-domain-model/SKILL.md) |
-| Schema design, audit, data types, or query performance | [`postgres-dba`](skills/postgres-dba/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
-| EF Core model or query DTOs | [`design-ef-core-model`](skills/design-ef-core-model/SKILL.md) | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
-| Writing, applying, seeding, or squashing a migration | [`manage-ef-core-migrations`](skills/manage-ef-core-migrations/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
+| Schema design, audit, data types, or query performance | [`postgres-dba`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/postgres-dba/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
+| EF Core model or query DTOs | [`design-ef-core-model`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/design-ef-core-model/SKILL.md) | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
+| Writing, applying, seeding, or squashing a migration | [`manage-ef-core-migrations`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/manage-ef-core-migrations/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | Attachments or private object storage | — | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
 | English/French behavior | — | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
-| React/TypeScript web UI and design system | [`design-web-ui`](skills/design-web-ui/SKILL.md) | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
-| AWS, Terraform, or deployment | [`design-cloud-infrastructure`](skills/design-cloud-infrastructure/SKILL.md) | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
-| Issues, docs, worktrees, PRs, or CI | [`deliver-change`](skills/deliver-change/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
-| Acting as a role agent | [`agents/`](agents/), [`agent-persona`](skills/agent-persona/SKILL.md) | — |
-| Reviewing a plan, a diff, a working tree, or the whole repository | [`review-work`](skills/review-work/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Review" |
-| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md), [`write-agent-instructions`](skills/write-agent-instructions/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Agent instructions" |
+| React/TypeScript web UI and design system | [`design-web-ui`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/design-web-ui/SKILL.md) | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
+| AWS, Terraform, or deployment | [`design-cloud-infrastructure`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/design-cloud-infrastructure/SKILL.md) | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
+| Issues, docs, worktrees, PRs, or CI | [`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
+| Acting as a role agent | [`agents/`](https://github.com/ChaseFlorell/agent-team/tree/main/agents), [`agent-persona`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/agent-persona/SKILL.md) | — |
+| Reviewing a plan, a diff, a working tree, or the whole repository | [`review-work`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/review-work/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Review" |
+| Agent instructions, skills, or role agents | [`ai-author`](https://github.com/ChaseFlorell/agent-team/blob/main/agents/ai-author.md), [`write-agent-instructions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/write-agent-instructions/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Agent instructions" |
 
 ## Runtime prompt
 
@@ -408,7 +417,7 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 
 ## Delivery
 
-Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
+Follow [`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) and
 [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md). The minimum:
 
 - Every change starts from an issue and reaches `main` through a pull request.
@@ -445,7 +454,7 @@ Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
   `deliver-hpac-change` "Markdown"
   ([ADR-0087](.spec/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
 - Code conventions (naming, dates, tests, diagrams, .NET version): see
-  [`coding-conventions`](skills/coding-conventions/SKILL.md) and
+  [`coding-conventions`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/coding-conventions/SKILL.md) and
   [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md).
 
 ## Where to look

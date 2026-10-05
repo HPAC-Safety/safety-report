@@ -341,10 +341,9 @@ jobs:
       - name: Every relative link resolves
         run: node tools/docs/check-links.ts
 
-      # The generic skills and role agents are reused elsewhere, so they name
-      # nothing specific to this repository, and no instruction file references
-      # a record. CONV-009.
-      - name: Instruction files name nothing specific to this repository and reference no record
+      # No skill references a record. CONV-009. The generic skills and role
+      # agents live in ChaseFlorell/agent-team, whose CI guards their genericity.
+      - name: Skills reference no record
         run: node tools/docs/check-generic-instructions.ts
 
       # A workflow step runs one command; its logic is a tested script under

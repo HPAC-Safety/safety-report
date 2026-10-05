@@ -5,7 +5,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 # Build the HPAC web UI
 
-Extends [`design-web-ui`](../design-web-ui/SKILL.md); read that first. This
+Extends [`design-web-ui`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/design-web-ui/SKILL.md); read that first. This
 skill holds only what is specific to this repository, under the same section
 names where they exist, and wins where they differ.
 

@@ -2,7 +2,7 @@
 title: Agent-agnostic configuration via AGENTS.md and skillfile
 description: AGENTS.md at the repository root is the single canonical instruction file.
 type: adr
-status: accepted
+status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell
 keywords: agents, AGENTS.md, repository configuration, coding-agent instructions
@@ -10,7 +10,8 @@ keywords: agents, AGENTS.md, repository configuration, coding-agent instructions
 
 # ADR-0001 — Agent-agnostic configuration via AGENTS.md and skillfile
 
-**Status:** Accepted for agent configuration. `.spec/features` is now the product-design
+**Status:** Accepted for agent configuration. Superseded by
+[ADR-0199](ADR-0199-the-role-agents-and-generic-skills-live-in-agent-team-and-nothing-is-pinned-here.md). `.spec/features` is now the product-design
 authority; `AGENTS.md` routes contributors to it.
 
 ## Context

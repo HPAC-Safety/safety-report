@@ -46,25 +46,10 @@ export interface VendorShape {
 	match: (path: string) => boolean
 	kind: string
 	keys: readonly string[]
-	optional?: readonly string[]
-	values?: Readonly<Record<string, RegExp>>
 }
 
 const VENDOR_SHAPES: readonly VendorShape[] = [
 	{ match: (path) => path.startsWith('skills/') && path.endsWith('/SKILL.md'), kind: 'skill', keys: ['name', 'description'] },
-	{
-		match: (path) => path.startsWith('agents/') && path.endsWith('.md'),
-		kind: 'agent',
-		// An orchestrator reads which model and effort a role was designed for
-		// from the role itself (ADR-0182).
-		keys: ['name', 'description', 'model', 'effort'],
-		// Claude Code's other agent keys; anything beyond these is refused.
-		optional: ['tools', 'disallowedTools', 'permissionMode', 'maxTurns', 'skills', 'memory', 'isolation', 'background'],
-		values: {
-			model: /^(sonnet|opus|haiku|inherit|claude-[a-z0-9.-]+)$/,
-			effort: /^(low|medium|high|max|[1-9]\d*)$/,
-		},
-	},
 ]
 
 // Where the path, not the author, decides the `type`.
@@ -173,24 +158,10 @@ export function checkFile(path: string, text: string): string[] {
 	const { vendor, type: assignedType } = expectationFor(path)
 
 	if (vendor) {
-		require(vendor.keys, `${vendor.kind === 'agent' ? 'an' : 'a'} ${vendor.kind} carries ${vendor.keys.map((key) => `"${key}"`).join(', ')}, the shape its loader expects (ADR-0087, ADR-0182)`)
+		require(vendor.keys, `a ${vendor.kind} carries ${vendor.keys.map((key) => `"${key}"`).join(', ')}, the shape its loader expects (ADR-0087)`)
 		const declaredType = value('type')
 		if (declaredType) {
 			problems.push(`${path}: a ${vendor.kind} does not carry "type" — its kind comes from its path, and an unrecognized key would be a private extension to somebody else's format (ADR-0087)`)
-		}
-		if (vendor.optional) {
-			const allowed = new Set([...vendor.keys, ...vendor.optional])
-			for (const entry of entries) {
-				if (entry.key !== 'type' && !allowed.has(entry.key)) {
-					problems.push(`${path}: "${entry.key}" is not a key an ${vendor.kind} carries — use ${[...allowed].map((key) => `"${key}"`).join(', ')} (ADR-0182)`)
-				}
-			}
-		}
-		for (const [key, pattern] of Object.entries(vendor.values ?? {})) {
-			const found = value(key)
-			if (found && found.value !== '' && !pattern.test(found.value)) {
-				problems.push(`${path}: "${key}: ${found.value}" is not a value its loader accepts (${pattern}) (ADR-0182)`)
-			}
 		}
 		return problems
 	}

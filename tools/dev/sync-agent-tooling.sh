@@ -7,8 +7,8 @@
 # which changes no name.
 #
 # In sync means two things: the installed names equal what `skillfile list`
-# declares, and a content fingerprint of Skillfile, Skillfile.lock, agents/, and
-# skills/ equals the stamp the last install wrote. When either differs it starts
+# declares, and a content fingerprint of Skillfile, Skillfile.lock, and skills/
+# equals the stamp the last install wrote. When either differs it starts
 # the shared install and prune (lib/install-agent-tooling.sh) detached, because
 # `skillfile install` may fetch from the network and a session-start hook has a
 # timeout. The job's log and a mkdir lock, stale after 10 minutes, live in

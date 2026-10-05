@@ -5,7 +5,7 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 
 # Manage HPAC Safety infrastructure
 
-Extends [`design-cloud-infrastructure`](../design-cloud-infrastructure/SKILL.md);
+Extends [`design-cloud-infrastructure`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/design-cloud-infrastructure/SKILL.md);
 read that first. This skill holds only what is specific to this repository,
 under the same section names where they exist, and wins where they differ.
 

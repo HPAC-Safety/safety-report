@@ -19,6 +19,18 @@ cd safety-report
 ./init-dev.sh
 ```
 
+Optional: the role agents and generic skills live in
+[agent-team](https://github.com/ChaseFlorell/agent-team), not here. Install them once for every project:
+
+```bash
+git clone git@github.com:ChaseFlorell/agent-team.git
+cd agent-team
+skillfile install
+```
+
+Re-run `skillfile install` there after pulling. This repository pins none of
+it; a change to an agent or generic skill is a pull request to agent-team.
+
 Use `./init-dev.sh --check` to inspect prerequisites without installing. Windows
 contributors run the script from Git Bash.
 
@@ -53,7 +65,7 @@ in `~/.claude/settings.json` for every project.
 6. Address review and CI until every required check is green; squash merge only.
 
 Do not add `Co-Authored-By` trailers or a `CODEOWNERS` file. See
-[`skills/deliver-change/SKILL.md`](skills/deliver-change/SKILL.md) and
+[`deliver-change`](https://github.com/ChaseFlorell/agent-team/blob/main/skills/deliver-change/SKILL.md) and
 [`skills/deliver-hpac-change/SKILL.md`](skills/deliver-hpac-change/SKILL.md) for
 the repository delivery contract.
 

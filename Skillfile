@@ -41,7 +41,7 @@ github  agent  ux  ChaseFlorell/agent-team  agents/ux.md
 # github  skill  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
 
 # General documentation and ADR practice; local delivery rules are stricter, and
-# its ADR template and lifecycle give way to ADR-0192 (deliver-hpac-change "ADRs").
+# its ADR template and lifecycle give way to ADR-0192 (deliver-hpac-change "Specification-driven development" "Decisions").
 github  skill  addyosmani/agent-skills  skills/documentation-and-adrs
 
 # Focused language and test workflow guidance. Repository-local skills override
@@ -78,6 +78,7 @@ github  skill  design-web-ui  ChaseFlorell/agent-team  skills/design-web-ui
 github  skill  manage-ef-core-migrations  ChaseFlorell/agent-team  skills/manage-ef-core-migrations
 github  skill  postgres-dba  ChaseFlorell/agent-team  skills/postgres-dba
 github  skill  review-work  ChaseFlorell/agent-team  skills/review-work
+github  skill  spec-driven-development  ChaseFlorell/agent-team  skills/spec-driven-development
 github  skill  test-from-scenarios  ChaseFlorell/agent-team  skills/test-from-scenarios
 github  skill  write-agent-instructions  ChaseFlorell/agent-team  skills/write-agent-instructions
 

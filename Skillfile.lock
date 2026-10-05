@@ -1,59 +1,59 @@
 {
   "github/agent/adversary": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/adversary.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/adversary.md"
   },
   "github/agent/ai-author": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/ai-author.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/ai-author.md"
   },
   "github/agent/auditor": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/auditor.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/auditor.md"
   },
   "github/agent/backend": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/backend.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/backend.md"
   },
   "github/agent/critic": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/critic.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/critic.md"
   },
   "github/agent/database-administrator": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/database-administrator.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/database-administrator.md"
   },
   "github/agent/infrastructure": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/infrastructure.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/infrastructure.md"
   },
   "github/agent/spec-author": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/spec-author.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/spec-author.md"
   },
   "github/agent/spec-reviewer": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/spec-reviewer.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/spec-reviewer.md"
   },
   "github/agent/test-writer": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/test-writer.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/test-writer.md"
   },
   "github/agent/ux": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/ad0caf63199d8e56fe35f899cf341193076e9bc7/agents/ux.md"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://raw.githubusercontent.com/ChaseFlorell/agent-team/bcd32be0f18dced405ba7c3f5dae6403862ad6ce/agents/ux.md"
   },
   "github/skill/agent-persona": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/agent-persona?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/agent-persona?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/clarify-requirements": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/clarify-requirements?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/clarify-requirements?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/coding-conventions": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/coding-conventions?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/coding-conventions?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/csharp-async": {
     "sha": "83561bd7d8a46fcda0581aedabdf8eac7cb196b6",
@@ -64,47 +64,51 @@
     "raw_url": "https://api.github.com/repos/thebushidocollective/han/contents/plugins/tools/cucumber/skills/cucumber-best-practices?ref=4b9bddd353079ebd937a9d822c81674945acbf1b"
   },
   "github/skill/deliver-change": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/deliver-change?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/deliver-change?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/design-cloud-infrastructure": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/design-cloud-infrastructure?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/design-cloud-infrastructure?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/design-ef-core-model": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/design-ef-core-model?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/design-ef-core-model?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/design-web-ui": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/design-web-ui?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/design-web-ui?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/documentation-and-adrs": {
     "sha": "5a5ea45e806f82273549fd85e60adb95d55f510d",
     "raw_url": "https://api.github.com/repos/addyosmani/agent-skills/contents/skills/documentation-and-adrs?ref=5a5ea45e806f82273549fd85e60adb95d55f510d"
   },
   "github/skill/manage-ef-core-migrations": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/manage-ef-core-migrations?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/manage-ef-core-migrations?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/postgres-dba": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/postgres-dba?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/postgres-dba?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/review-work": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/review-work?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/review-work?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
+  },
+  "github/skill/spec-driven-development": {
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/spec-driven-development?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/test-driven-development": {
     "sha": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
     "raw_url": "https://api.github.com/repos/obra/superpowers/contents/skills/test-driven-development?ref=b36e0829c6d0140e93cfef2ca599b1b07d4a7797"
   },
   "github/skill/test-from-scenarios": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/test-from-scenarios?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/test-from-scenarios?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   },
   "github/skill/write-agent-instructions": {
-    "sha": "ad0caf63199d8e56fe35f899cf341193076e9bc7",
-    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/write-agent-instructions?ref=ad0caf63199d8e56fe35f899cf341193076e9bc7"
+    "sha": "bcd32be0f18dced405ba7c3f5dae6403862ad6ce",
+    "raw_url": "https://api.github.com/repos/ChaseFlorell/agent-team/contents/skills/write-agent-instructions?ref=bcd32be0f18dced405ba7c3f5dae6403862ad6ce"
   }
 }

@@ -44,6 +44,11 @@ need (issue)
   → code                src/**
 ```
 
+This repository's own tools own the specification directory; the generic
+generator's writing commands never run here; `deliver-hpac-change`
+"Specification-driven development" "The generator" maps each to its tool
+([CONV-011](.spec/conventions/CONV-011-the-repositorys-own-tools-own-the-specification-directory.md)).
+
 ### Rules (not discretionary)
 
 1. **Specify before implementing.** Author or amend the scenario first, in the
@@ -195,7 +200,8 @@ is in the generic skills it preloads
 - A new process, tooling, or agent-workflow rule is a convention under
   [`.spec/conventions/`](.spec/conventions/README.md), not an ADR. Interface
   detail is a scenario.
-- Details: the `deliver-change` skill "ADRs".
+- Details: the `spec-driven-development` skill "Decisions" and the companion
+  `deliver-hpac-change` "Specification-driven development" "Decisions".
 
 ### Lessons
 
@@ -205,7 +211,8 @@ is in the generic skills it preloads
   Its `kind` — product, process, or incident — decides what it owes
   ([ADR-0192](.spec/decisions/ADR-0192-an-accepted-adr-is-immutable-and-process-rules-are-conventions.md)).
   What it contains and which skill it updates:
-  the `deliver-change` skill "Lessons".
+  the `spec-driven-development` skill "Lessons" and `deliver-hpac-change`
+  "Specification-driven development" "Lessons".
 - Read lessons on a design pass, alongside `.spec/features` and the ADRs.
 
 ## Product invariants
@@ -392,6 +399,7 @@ under `.claude/` is generated.
 | English/French behavior | — | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
 | React/TypeScript web UI and design system | `design-web-ui` | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
 | AWS, Terraform, or deployment | `design-cloud-infrastructure` | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
+| Specification chain: scenarios, claims, records, generated files, coverage | `spec-driven-development` | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Specification-driven development" |
 | Issues, docs, worktrees, PRs, or CI | `deliver-change` | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
 | Acting as a role agent | the role agents, `agent-persona` | — |
 | Reviewing a plan, a diff, a working tree, or the whole repository | `review-work` | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Review" |

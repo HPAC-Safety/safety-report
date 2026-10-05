@@ -313,6 +313,7 @@ first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
 | Convention | Title | Status | Date |
 |---|---|---|---|
+| [CONV-011](conventions/CONV-011-the-repositorys-own-tools-own-the-specification-directory.md) | The repository's own tools own the specification directory | accepted | 2026-10-05 |
 | [CONV-010](conventions/CONV-010-every-acceptance-run-filters-out-ui-scenarios-and-a-hook-skips-any-that-slip-through.md) | Every acceptance run filters out @ui scenarios, and a hook skips any that slip through | accepted | 2026-10-04 |
 | [CONV-009](conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md) | A skill's name says hpac exactly when it is project-specific | accepted | 2026-10-04 |
 | [CONV-008](conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md) | An agent file is a persona and a role; its how lives in skills | accepted | 2026-10-04 |

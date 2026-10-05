@@ -30,10 +30,11 @@ A scenario tagged `@ui` is the exception: its step definitions are TypeScript
 in [`e2e/steps`](e2e/steps) and it executes under `npm --prefix tests/e2e test`, which runs `bddgen` before
 `playwright test`, never
 here ([ADR-0053](../.spec/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
-The acceptance suite skips every `@ui` scenario itself, so the bare
-`dotnet test HpacSafety.slnx` above is the whole command — no category filter
-is needed to get a true result
-([ADR-0073](../.spec/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
+The acceptance project's settings file filters every `@ui` scenario out of a
+default run, as CI does, and a hook skips any that slip through, so the bare
+`dotnet test HpacSafety.slnx` above is the whole command: no category filter
+is needed, and nothing is reported as skipped
+([CONV-010](../.spec/conventions/CONV-010-every-acceptance-run-filters-out-ui-scenarios-and-a-hook-skips-any-that-slip-through.md)).
 
 Target tests protect complete immutable questions, consent-only required
 behavior, final multipart mapping and atomicity, rate limiting, one

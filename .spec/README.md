@@ -184,7 +184,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0076](decisions/ADR-0076-statement-and-group-question-types.md) | Statement and Group are question types again, and a Group has children | accepted | 2026-09-21 |
 | [0075](decisions/ADR-0075-tabs-over-spaces-for-indentation.md) | Tabs, not spaces, for indentation | accepted | 2026-09-22 |
 | [0074](decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md) | A conditional question's parent may be yes/no or single-select, naming a required option | accepted | 2026-09-21 |
-| [0073](decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md) | A @ui scenario is skipped by Reqnroll itself, not by a CI filter | accepted | 2026-09-21 |
+| [0073](decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md) | A @ui scenario is skipped by Reqnroll itself, not by a CI filter | superseded | 2026-09-21 |
 | [0072](decisions/ADR-0072-every-answer-is-stored-as-a-string.md) | Every answer is stored as a string, in the reporter's language | partially-superseded | 2026-09-21 |
 | [0071](decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md) | A question that has been answered forks instead of revising | accepted | 2026-09-21 |
 | [0070](decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md) | A hand-edited French value is a recorded correction | accepted | 2026-09-21 |
@@ -313,6 +313,7 @@ first. What a convention is: [`conventions/README.md`](conventions/README.md).
 
 | Convention | Title | Status | Date |
 |---|---|---|---|
+| [CONV-010](conventions/CONV-010-every-acceptance-run-filters-out-ui-scenarios-and-a-hook-skips-any-that-slip-through.md) | Every acceptance run filters out @ui scenarios, and a hook skips any that slip through | accepted | 2026-10-04 |
 | [CONV-009](conventions/CONV-009-a-skills-name-says-hpac-exactly-when-it-is-project-specific.md) | A skill's name says hpac exactly when it is project-specific | accepted | 2026-10-04 |
 | [CONV-008](conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md) | An agent file is a persona and a role; its how lives in skills | accepted | 2026-10-04 |
 | [CONV-007](conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md) | A plan meets the critic and a change meets the adversary | accepted | 2026-10-04 |

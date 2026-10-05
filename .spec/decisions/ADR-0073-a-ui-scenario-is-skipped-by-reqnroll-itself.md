@@ -2,7 +2,7 @@
 title: "A @ui scenario is skipped by Reqnroll itself, not by a CI filter"
 description: "The acceptance suite skips a @ui scenario itself."
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: Reqnroll, Playwright, playwright-bdd, hooks, tags, CI, developer experience
@@ -10,8 +10,10 @@ keywords: Reqnroll, Playwright, playwright-bdd, hooks, tags, CI, developer exper
 
 # ADR-0073 — A `@ui` scenario is skipped by Reqnroll itself, not by a CI filter
 
-**Status:** Accepted, amends the mechanism in
+**Status:** Superseded. amends the mechanism in
 [ADR-0053](ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)
+Superseded by
+[CONV-010](../conventions/CONV-010-every-acceptance-run-filters-out-ui-scenarios-and-a-hook-skips-any-that-slip-through.md).
 
 ## Context
 

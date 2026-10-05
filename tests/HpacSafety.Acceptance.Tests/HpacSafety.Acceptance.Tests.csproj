@@ -49,6 +49,8 @@
              item below), so their generated code-behind goes to obj/ rather than
              next to the physical file - keeps .spec/features/ free of generated output. -->
         <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
+        <!-- Local runs filter out @ui scenarios as CI does; see the file. -->
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)/acceptance.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
 </Project>

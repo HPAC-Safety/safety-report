@@ -13,8 +13,10 @@ namespace HpacSafety.Acceptance.Tests;
 ///     <c>[Fact]</c> for every scenario in them, including the ones whose
 ///     step definitions are TypeScript. Without this hook such a scenario runs here
 ///     and fails for want of a C# binding it is never meant to have, which is what
-///     a plain <c>dotnet test</c> used to report. Skipping is the mechanism; the
-///     category filter in CI is a second line of defence — ADR-0073.
+///     a plain <c>dotnet test</c> used to report. The <c>Category!=ui</c> filter is
+///     the mechanism, in CI's <c>--filter</c> and in the project's
+///     <c>acceptance.runsettings</c>; this hook is the backstop for a run whose
+///     settings replace that file — CONV-010.
 ///     <para>
 ///     The hook throws <c>SkipException.ForSkip</c>, xUnit v3's dynamic skip, which the
 ///     generated <c>[Fact]</c> reports as skipped and which Reqnroll's xUnit v3 plugin

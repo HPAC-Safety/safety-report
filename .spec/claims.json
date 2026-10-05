@@ -23148,7 +23148,7 @@
 			"id": "ADR-0073",
 			"file": ".spec/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md",
 			"title": "A @ui scenario is skipped by Reqnroll itself, not by a CI filter",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
 			"decisions": ["ADR-0045","ADR-0047","ADR-0049","ADR-0050","ADR-0053"],

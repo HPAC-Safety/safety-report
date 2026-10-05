@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Local defaults for this suite, read by dotnet test, Visual Studio, and Rider
+	through RunSettingsFilePath in the project file.
+
+	A @ui scenario executes through playwright-bdd in tests/e2e (ADR-0053), but
+	Reqnroll still generates a test for it here, which UiScenarioHooks skips. CI
+	filters them out with Category!=ui; this filter does the same locally, so a
+	local run reports what CI reports instead of hundreds of skipped tests. The
+	hook stays as the backstop when another settings file replaces this one.
+-->
+<RunSettings>
+	<RunConfiguration>
+		<TestCaseFilter>Category!=ui</TestCaseFilter>
+	</RunConfiguration>
+</RunSettings>

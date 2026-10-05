@@ -195,14 +195,16 @@ jobs:
         run: ./init-dev.sh --check
 
       # @ui-tagged scenarios execute via playwright-bdd (tests/e2e), not
-      # Reqnroll — see ADR-0053. The acceptance suite skips them itself, by a
-      # hook that throws xUnit v3's SkipException.ForSkip, which skips cleanly with the
-      # Cucumber Messages formatter below on or off, so a bare `dotnet test`
-      # is already correct (ADR-0073, ADR-0195); this filter is a
-      # second line of defence, keeping the job green even if that hook
-      # regresses. Reqnroll's xUnit generator emits a `[Trait("Category", tag)]`
-      # per Gherkin tag, which is what this filters on. UiScenarioHooksTests is
-      # what actually catches a removed hook, since this filter would hide it.
+      # Reqnroll — see ADR-0053. This filter is the mechanism (CONV-010). The
+      # acceptance project's acceptance.runsettings carries the same filter for
+      # local and IDE runs, but `--settings coverlet.runsettings` replaces that
+      # file here, so CI needs its own. A hook that throws xUnit v3's
+      # SkipException.ForSkip is the backstop for any @ui scenario that gets
+      # through, and it skips cleanly with the Cucumber Messages formatter below
+      # on or off (ADR-0195). Reqnroll's xUnit generator emits a
+      # `[Trait("Category", tag)]` per Gherkin tag, which is what this filters
+      # on. UiScenarioHooksTests catches a removed hook or settings filter,
+      # since this filter would hide either one.
       # Video derivatives are produced by remuxing through ffmpeg (ADR-0094).
       # Installed explicitly rather than relying on the runner image happening
       # to carry it: FfmpegVideoRemuxerTests generates its fixtures with it and

@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Xml.Linq;
 using Reqnroll;
 using Shouldly;
 using Xunit.Sdk;
@@ -9,11 +10,11 @@ namespace HpacSafety.Acceptance.Tests;
 ///     Guards the <c>@ui</c> skip itself.
 /// </summary>
 /// <remarks>
-///     CI still runs this suite with <c>--filter "Category!=ui"</c>, so a removed
-///     or mis-scoped hook would go unnoticed there and only surface as a wall of
-///     pending-step failures on a developer's machine — exactly the state ADR-0073
-///     was written to end. This asserts the hook is present and scoped to the tag,
-///     which the category filter cannot hide.
+///     Every default run filters <c>@ui</c> scenarios out (CONV-010): CI by its
+///     <c>--filter</c>, a local or IDE run by the project's settings file. So a
+///     removed or mis-scoped hook, the backstop for a run whose settings replace
+///     that file, would show up nowhere. These assert the hook is present and
+///     scoped to the tag, and that the settings file still filters.
 /// </remarks>
 public sealed class UiScenarioHooksTests
 {
@@ -33,5 +34,42 @@ public sealed class UiScenarioHooksTests
 	public void GivenUiScenario_WhenHookRuns_ThenItThrowsTheSkipThatSurvivesTheMessageFormatter()
 	{
 		Should.Throw<SkipException>(UiScenarioHooks.SkipUiScenario);
+	}
+
+	/// <summary>
+	///     CONV-010: the project's own settings file is what keeps a default local or
+	///     IDE run from reporting every <c>@ui</c> scenario as skipped. CI passes its
+	///     own <c>--settings</c> and never reads it, so only this test notices if the
+	///     property or the filter is removed.
+	/// </summary>
+	[Fact]
+	public void GivenAcceptanceProject_WhenItsDefaultSettingsAreRead_ThenTheyFilterOutUiScenarios()
+	{
+		var project = Path.Combine(RepositoryRoot(), "tests", "HpacSafety.Acceptance.Tests");
+
+		var settingsPath = XDocument.Load(Path.Combine(project, "HpacSafety.Acceptance.Tests.csproj"))
+			.Descendants("RunSettingsFilePath")
+			.Select(element => element.Value)
+			.SingleOrDefault();
+		settingsPath.ShouldBe("$(MSBuildProjectDirectory)/acceptance.runsettings");
+
+		XDocument.Load(Path.Combine(project, "acceptance.runsettings"))
+			.Descendants("RunConfiguration")
+			.Elements("TestCaseFilter")
+			.Select(element => element.Value.Trim())
+			.SingleOrDefault()
+			.ShouldBe("Category!=ui");
+	}
+
+	private static string RepositoryRoot()
+	{
+		var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "AGENTS.md")))
+		{
+			directory = directory.Parent;
+		}
+
+		return directory?.FullName ?? throw new DirectoryNotFoundException("Could not find the repository root.");
 	}
 }

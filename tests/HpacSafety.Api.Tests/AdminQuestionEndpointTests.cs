@@ -34,7 +34,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(Questions);
+		using var response = await client.GetAsync(Questions, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -48,12 +48,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var key = UniqueKey("wind_direction");
 
 		// When
-		using var created = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"));
+		using var created = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		created.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-		var question = await created.Content.ReadFromJsonAsync<JsonElement>();
+		var question = await created.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		question.GetProperty("key").GetString().ShouldBe(key);
 		question.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
 		question.GetProperty("id").GetString()!.Length.ShouldBe(11);
@@ -70,12 +70,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var edit = Draft(key, "short_text") with { LabelEn = "Reworded question", IsRequired = true };
-		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit);
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-		var revised = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var revised = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		revised.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
 		revised.GetProperty("labelEn").GetString().ShouldBe("Reworded question");
 		revised.GetProperty("isRequired").GetBoolean().ShouldBeTrue();
@@ -95,12 +95,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 		};
 
-		using var response = await client.PostAsJsonAsync(Questions, child);
+		using var response = await client.PostAsJsonAsync(Questions, child, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("yes/no");
 	}
 
@@ -169,12 +169,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 			DependsOnChoiceId = ChoiceIdOf(another, "hang_glider"),
 		};
-		using var response = await client.PostAsJsonAsync(Questions, child);
+		using var response = await client.PostAsJsonAsync(Questions, child, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("does not currently offer");
 	}
 
@@ -190,7 +190,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 		};
-		using var response = await client.PostAsJsonAsync(Questions, child);
+		using var response = await client.PostAsJsonAsync(Questions, child, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -203,7 +203,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/option-sets", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri("/api/admin/option-sets", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -228,13 +228,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{parentId}", UriKind.Relative),
-			parentDraft with { Options = [new Option("hang_glider", "Hang glider", "Deltaplane")] });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{parentId}", UriKind.Relative), parentDraft with { Options = [new Option("hang_glider", "Hang glider", "Deltaplane")] }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await response.Content.ReadAsStringAsync()).ShouldContain("Wing rating");
+		(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldContain("Wing rating");
 	}
 
 	[Fact]
@@ -257,31 +255,27 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var childId = child.GetProperty("id").GetString()!;
 
 		// When — the option is replaced, not fixed (ADR-0128)
-		using var replaced = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{parentId}", UriKind.Relative),
-			parentDraft with
-			{
-				Options = [new Option("hang_glider", "Hang glider", "Deltaplane"), new Option("paraglider", "Paraglider (solo)", "Parapente (solo)", Replace: true)],
-			});
-		replaced.StatusCode.ShouldBe(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
-		var afterReplace = await replaced.Content.ReadFromJsonAsync<JsonElement>();
+		using var replaced = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{parentId}", UriKind.Relative), parentDraft with
+		{
+			Options = [new Option("hang_glider", "Hang glider", "Deltaplane"), new Option("paraglider", "Paraglider (solo)", "Parapente (solo)", Replace: true)],
+		}, cancellationToken: TestContext.Current.CancellationToken);
+		replaced.StatusCode.ShouldBe(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var afterReplace = await replaced.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — the screen shows the condition on the replacement
 		var shown = (await List(client)).Single(question => question.GetProperty("id").GetString() == childId);
 		shown.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(afterReplace, "paraglider_solo"));
 		using var reader = _factory.CreateClient();
-		(await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative))).EnumerateArray()
+		(await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken)).EnumerateArray()
 			.Single(question => question.GetProperty("id").GetString() == childId)
 			.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(afterReplace, "paraglider_solo"));
 
 		// When — the condition is saved back as the screen shows it
-		using var resaved = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{childId}", UriKind.Relative),
-			childDraft with { DependsOnChoiceId = ChoiceIdOf(afterReplace, "paraglider_solo") });
+		using var resaved = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{childId}", UriKind.Relative), childDraft with { DependsOnChoiceId = ChoiceIdOf(afterReplace, "paraglider_solo") }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — nothing about the question changed, so nothing is revised
-		resaved.StatusCode.ShouldBe(HttpStatusCode.OK, await resaved.Content.ReadAsStringAsync());
-		(await resaved.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("revisionNumber").GetInt32().ShouldBe(1);
+		resaved.StatusCode.ShouldBe(HttpStatusCode.OK, await resaved.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		(await resaved.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).GetProperty("revisionNumber").GetInt32().ShouldBe(1);
 	}
 
 	[Fact]
@@ -296,7 +290,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 			DependsOnChoiceId = "not-a-choice-id",
-		});
+		}, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -316,13 +310,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var child = await Create(client, draft);
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{child.GetProperty("id").GetString()}", UriKind.Relative),
-			draft with { DependsOnChoiceId = ChoiceIdOf(parent, "paraglider") });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{child.GetProperty("id").GetString()}", UriKind.Relative), draft with { DependsOnChoiceId = ChoiceIdOf(parent, "paraglider") }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — a different condition is a new revision
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		saved.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(parent, "paraglider"));
 		saved.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
 	}
@@ -336,13 +328,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var created = await Create(client, draft);
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{created.GetProperty("id").GetString()}", UriKind.Relative),
-			draft with { Options = [new Option("mount_7", "Mount Seven", "Mont Sept", Replace: true)] });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{created.GetProperty("id").GetString()}", UriKind.Relative), draft with { Options = [new Option("mount_7", "Mount Seven", "Mont Sept", Replace: true)] }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await response.Content.ReadAsStringAsync()).ShouldContain("corrected in place");
+		(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldContain("corrected in place");
 	}
 
 	[Fact]
@@ -357,9 +347,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var created = await Create(client, draft);
 
 		// When — a replacement must be a new option, not one the question has
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{created.GetProperty("id").GetString()}", UriKind.Relative),
-			draft with { Options = [new Option("hang_glider", "Paraglider", "Parapente", Replace: true), new Option("paraglider", "Paraglider", "Parapente")] });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{created.GetProperty("id").GetString()}", UriKind.Relative), draft with { Options = [new Option("hang_glider", "Paraglider", "Parapente", Replace: true), new Option("paraglider", "Paraglider", "Parapente")] }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -378,13 +366,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
-			draft with { Options = [new Option("woodside", "Woodside Hill", "Colline Woodside"), new Option(null, "Mara", "Mara")] });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), draft with { Options = [new Option("woodside", "Woodside Hill", "Colline Woodside"), new Option(null, "Mara", "Mara")] }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		saved.GetProperty("id").GetString().ShouldBe(id);
 		saved.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
 		saved.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())
@@ -404,13 +390,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var id = created.GetProperty("id").GetString()!;
 
 		// When — a client that sends no list at all says nothing about the choices
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
-			new { type = "single_select", labelEn = "Reworded", labelFr = "Reformulé", isRequired = false, isPrivate = true, isActive = true });
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), new { type = "single_select", labelEn = "Reworded", labelFr = "Reformulé", isRequired = false, isPrivate = true, isActive = true }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		saved.GetProperty("options").EnumerateArray().Single().GetProperty("code").GetString().ShouldBe("coopers");
 	}
 
@@ -421,12 +405,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("aircraft"), "single_select"));
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("aircraft"), "single_select"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("needs at least one choice");
 	}
 
@@ -437,10 +421,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("site"), "autocomplete"));
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("site"), "autocomplete"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -458,22 +442,20 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var id = consent.GetProperty("id").GetString();
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
-			new
-			{
-				type = "yes_no",
-				labelEn = consent.GetProperty("labelEn").GetString(),
-				labelFr = consent.GetProperty("labelFr").GetString(),
-				isRequired = true,
-				isPrivate = false,
-				isActive = true,
-			});
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), new
+		{
+			type = "yes_no",
+			labelEn = consent.GetProperty("labelEn").GetString(),
+			labelFr = consent.GetProperty("labelFr").GetString(),
+			isRequired = true,
+			isPrivate = false,
+			isActive = true,
+		}, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("always private");
 	}
 
@@ -507,13 +489,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			Questions, NoAnswerDraft(UniqueKey("intro"), "statement") with { IsRequired = true });
+		using var response = await client.PostAsJsonAsync(Questions, NoAnswerDraft(UniqueKey("intro"), "statement") with { IsRequired = true }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("cannot be marked required or private");
 	}
 
@@ -524,13 +505,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			Questions, NoAnswerDraft(UniqueKey("aircraft"), "group") with { IsPrivate = true });
+		using var response = await client.PostAsJsonAsync(Questions, NoAnswerDraft(UniqueKey("aircraft"), "group") with { IsPrivate = true }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("cannot be marked required or private");
 	}
 
@@ -546,12 +526,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 		};
-		using var response = await client.PostAsJsonAsync(Questions, child);
+		using var response = await client.PostAsJsonAsync(Questions, child, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("collects no answer and cannot be made conditional");
 	}
 
@@ -583,12 +563,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			GroupedUnderQuestionId = notAGroup.GetProperty("id").GetString(),
 		};
-		using var response = await client.PostAsJsonAsync(Questions, child);
+		using var response = await client.PostAsJsonAsync(Questions, child, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("group question");
 	}
 
@@ -605,13 +585,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			GroupedUnderQuestionId = outer.GetProperty("id").GetString(),
 		};
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{inner.GetProperty("id").GetString()}", UriKind.Relative), edit);
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{inner.GetProperty("id").GetString()}", UriKind.Relative), edit, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("detail").GetString()!.ShouldContain("cannot itself be grouped");
 	}
 
@@ -625,8 +604,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var edit = NoAnswerDraft(UniqueKey("aircraft"), "group") with { GroupedUnderQuestionId = groupId };
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), edit);
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), edit, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -643,19 +621,19 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var childId = child.GetProperty("id").GetString()!;
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-		var listed = await client.GetFromJsonAsync<JsonElement>(Questions);
+		var listed = await client.GetFromJsonAsync<JsonElement>(Questions, cancellationToken: TestContext.Current.CancellationToken);
 		var ungrouped = listed.EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == childId);
 		ungrouped.GetProperty("groupedUnderQuestionId").ValueKind.ShouldBe(JsonValueKind.Null);
 
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog.SingleAsync(e =>
-			e.Action == AuditAction.RevisedQuestion && e.TargetId == TinyId.Parse(childId));
+			e.Action == AuditAction.RevisedQuestion && e.TargetId == TinyId.Parse(childId), cancellationToken: TestContext.Current.CancellationToken);
 		entry.Detail.ShouldBe("ungrouped");
 	}
 
@@ -674,12 +652,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var reorderedBefore = await ReorderAuditCount();
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{groupId}", UriKind.Relative),
-			NoAnswerDraft(groupKey, "short_text"));
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), NoAnswerDraft(groupKey, "short_text"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 		(await ReorderAuditCount()).ShouldBe(reorderedBefore + 1);
 	}
 
@@ -714,13 +690,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var arranged = new List<string> { secondId, firstId };
 		arranged.AddRange(others);
 
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/admin/questions/order", UriKind.Relative), new Reorder(arranged));
+		using var response = await client.PostAsJsonAsync(new Uri("/api/admin/questions/order", UriKind.Relative), new Reorder(arranged), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-		var reordered = (await response.Content.ReadFromJsonAsync<JsonElement>()).EnumerateArray().ToList();
+		var reordered = (await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).EnumerateArray().ToList();
 		reordered[0].GetProperty("id").GetString().ShouldBe(secondId);
 		reordered[1].GetProperty("id").GetString().ShouldBe(firstId);
 		reordered[0].GetProperty("revisionNumber").GetInt32().ShouldBe(2);
@@ -741,7 +716,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -760,13 +735,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var questionId = created.GetProperty("id").GetString()!;
 		var oldRevisionId = created.GetProperty("revisionId").GetString()!;
 
-		await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
-			Draft(key, "short_text") with { LabelEn = "Reworded" });
+		await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{questionId}", UriKind.Relative), Draft(key, "short_text") with { LabelEn = "Reworded" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.DeleteAsync(
-			new Uri($"/api/admin/questions/{questionId}/revisions/{oldRevisionId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{questionId}/revisions/{oldRevisionId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -787,8 +759,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var revisionId = created.GetProperty("revisionId").GetString()!;
 
 		// When
-		using var response = await client.DeleteAsync(
-			new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -804,20 +775,17 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var questionId = created.GetProperty("id").GetString()!;
 		var oldRevisionId = created.GetProperty("revisionId").GetString()!;
 
-		await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
-			Draft(key, "short_text") with { LabelEn = "Reworded" });
+		await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{questionId}", UriKind.Relative), Draft(key, "short_text") with { LabelEn = "Reworded" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.DeleteAsync(
-			new Uri($"/api/admin/questions/{questionId}/revisions/{oldRevisionId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{questionId}/revisions/{oldRevisionId}", UriKind.Relative), TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// Then
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog.SingleAsync(e =>
-			e.Action == AuditAction.DeletedQuestionRevision && e.TargetId == TinyId.Parse(oldRevisionId));
+			e.Action == AuditAction.DeletedQuestionRevision && e.TargetId == TinyId.Parse(oldRevisionId), cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
 		entry.Detail.ShouldBeNull();
@@ -835,8 +803,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var member = await SignedIn(MemberRole.User);
 
 		// When
-		using var response = await member.DeleteAsync(
-			new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative));
+		using var response = await member.DeleteAsync(new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -853,8 +820,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var questionId = created.GetProperty("id").GetString()!;
 
 		// When
-		using var response = await client.DeleteAsync(
-			new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -872,7 +838,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When — B's revision named under A's question id
 		using var response = await client.DeleteAsync(new Uri(
 			$"/api/admin/questions/{questionA.GetProperty("id").GetString()}/revisions/{revisionOfB}",
-			UriKind.Relative));
+			UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -885,7 +851,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("odd"), "telepathy"));
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("odd"), "telepathy"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -927,8 +893,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var wording = $"Landing field {Guid.NewGuid():N}";
 		var retired = await Create(client, Draft(null, "short_text") with { LabelEn = wording });
-		using var deleted = await client.DeleteAsync(
-			new Uri($"/api/admin/questions/{retired.GetProperty("id").GetString()}", UriKind.Relative));
+		using var deleted = await client.DeleteAsync(new Uri($"/api/admin/questions/{retired.GetProperty("id").GetString()}", UriKind.Relative), TestContext.Current.CancellationToken);
 		deleted.EnsureSuccessStatusCode();
 
 		// When
@@ -945,12 +910,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var key = UniqueKey("retired");
 		var retired = await Create(client, Draft(key, "short_text"));
-		using var deleted = await client.DeleteAsync(
-			new Uri($"/api/admin/questions/{retired.GetProperty("id").GetString()}", UriKind.Relative));
+		using var deleted = await client.DeleteAsync(new Uri($"/api/admin/questions/{retired.GetProperty("id").GetString()}", UriKind.Relative), TestContext.Current.CancellationToken);
 		deleted.EnsureSuccessStatusCode();
 
 		// When
-		using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"));
+		using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -965,7 +929,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		await Create(client, Draft(key, "short_text"));
 
 		// When
-		using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"));
+		using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -982,7 +946,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var edit = Draft(key, "yes_no") with { DependsOnQuestionId = id };
-		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit);
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -997,8 +961,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(UniqueKey("absent"), "short_text"));
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(UniqueKey("absent"), "short_text"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -1013,7 +976,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -1029,8 +992,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(key, "telepathy"));
+		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(key, "telepathy"), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -1051,7 +1013,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// When
 		var id = consent.GetProperty("id").GetString();
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -1064,8 +1026,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/admin/questions/order", UriKind.Relative), new Reorder(["AAAAAAAAAAA"]));
+		using var response = await client.PostAsJsonAsync(new Uri("/api/admin/questions/order", UriKind.Relative), new Reorder(["AAAAAAAAAAA"]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -1079,9 +1040,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var created = await Create(client, Draft(UniqueKey("only_one"), "short_text"));
 
 		// When — a partial arrangement would leave every omitted question adrift
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/admin/questions/order", UriKind.Relative),
-			new Reorder([created.GetProperty("id").GetString()!]));
+		using var response = await client.PostAsJsonAsync(new Uri("/api/admin/questions/order", UriKind.Relative), new Reorder([created.GetProperty("id").GetString()!]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -1115,16 +1074,14 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var revised = await client.PutAsJsonAsync(
-			new Uri($"{Questions}/{question.GetProperty("id").GetString()}", UriKind.Relative),
-			Draft(null, "single_select") with
-			{
-				Options = [new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")],
-			});
+		using var revised = await client.PutAsJsonAsync(new Uri($"{Questions}/{question.GetProperty("id").GetString()}", UriKind.Relative), Draft(null, "single_select") with
+		{
+			Options = [new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")],
+		}, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		revised.StatusCode.ShouldBe(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync());
-		Codes(await revised.Content.ReadFromJsonAsync<JsonElement>()).ShouldBe(["king_eddy", "mara"]);
+		revised.StatusCode.ShouldBe(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		Codes(await revised.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(["king_eddy", "mara"]);
 	}
 
 	[Fact]
@@ -1137,11 +1094,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("launch_site"), "single_select") with
 		{
 			Options = [new Option(null, "Site A-1", "Site A-1"), new Option(null, "Site A 1", "Site A 1")],
-		});
+		}, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var detail = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString() ?? "";
+		var detail = (await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).GetProperty("detail").GetString() ?? "";
 		detail.ShouldContain("'Site A-1'");
 		detail.ShouldContain("'Site A 1'");
 	}

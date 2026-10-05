@@ -56,10 +56,8 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		using var client = OriginVerifiedClient(host);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/auth/token", UriKind.Relative),
-			new { username = "administrator@example.test", password = "correct-password" });
-		var token = await response.Content.ReadFromJsonAsync<TokenResponse>();
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "administrator@example.test", password = "correct-password" }, cancellationToken: TestContext.Current.CancellationToken);
+		var token = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -80,10 +78,8 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		using var client = OriginVerifiedClient(host);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/auth/token", UriKind.Relative),
-			new { username = "nobody-special@example.test", password = "correct-password" });
-		var token = await response.Content.ReadFromJsonAsync<TokenResponse>();
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "nobody-special@example.test", password = "correct-password" }, cancellationToken: TestContext.Current.CancellationToken);
+		var token = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -102,8 +98,7 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		using var client = OriginVerifiedClient(host);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/auth/token", UriKind.Relative), new { username = "admin", password = "admin" });
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "admin", password = "admin" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -119,15 +114,13 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 			safetyOfficerEmails: ["officer@example.test"]);
 		using var client = OriginVerifiedClient(host);
 
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/auth/token", UriKind.Relative),
-			new { username = "officer@example.test", password = "correct-password" });
-		var token = await response.Content.ReadFromJsonAsync<TokenResponse>();
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "officer@example.test", password = "correct-password" }, cancellationToken: TestContext.Current.CancellationToken);
+		var token = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
 
 		// When — any endpoint requiring only membership.
-		using var me = await client.GetAsync(new Uri("/api/auth/me", UriKind.Relative));
+		using var me = await client.GetAsync(new Uri("/api/auth/me", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		me.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -141,9 +134,8 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		using var client = OriginVerifiedClient(host);
 
 		// When
-		using var response = await client.GetAsync(
-			new Uri("/api/auth/interim/.well-known/openid-configuration", UriKind.Relative));
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		using var response = await client.GetAsync(new Uri("/api/auth/interim/.well-known/openid-configuration", UriKind.Relative), TestContext.Current.CancellationToken);
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -161,8 +153,8 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		using var client = OriginVerifiedClient(host);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/auth/interim/jwks", UriKind.Relative));
-		var body = await response.Content.ReadAsStringAsync();
+		using var response = await client.GetAsync(new Uri("/api/auth/interim/jwks", UriKind.Relative), TestContext.Current.CancellationToken);
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -184,11 +176,9 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		using var client = OriginVerifiedClient(disabled);
 
 		// When
-		using var discovery = await client.GetAsync(
-			new Uri("/api/auth/interim/.well-known/openid-configuration", UriKind.Relative));
-		using var jwks = await client.GetAsync(new Uri("/api/auth/interim/jwks", UriKind.Relative));
-		using var token = await client.PostAsJsonAsync(
-			new Uri("/api/auth/token", UriKind.Relative), new { username = "admin", password = "admin" });
+		using var discovery = await client.GetAsync(new Uri("/api/auth/interim/.well-known/openid-configuration", UriKind.Relative), TestContext.Current.CancellationToken);
+		using var jwks = await client.GetAsync(new Uri("/api/auth/interim/jwks", UriKind.Relative), TestContext.Current.CancellationToken);
+		using var token = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "admin", password = "admin" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — 404, not 401: there is no code path that maps any of these
 		// without the flag.

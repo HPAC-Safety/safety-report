@@ -43,7 +43,7 @@ public sealed class PoisonRequeueTests(WorkerPostgresFixture postgres)
 			message.IsPoisoned.ShouldBeTrue();
 			messageId = message.Id;
 			seed.OutboxMessages.Add(message);
-			await seed.SaveChangesAsync();
+			await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		var logger = new FakeLogger<PoisonRequeueTests>();
@@ -57,7 +57,7 @@ public sealed class PoisonRequeueTests(WorkerPostgresFixture postgres)
 		result.RequeuedIds.ShouldBe([messageId.ToString()]);
 
 		await using var check = WorkerPostgresFixture.ContextFor(connectionString);
-		var requeued = await check.OutboxMessages.SingleAsync(m => m.Id == messageId);
+		var requeued = await check.OutboxMessages.SingleAsync(m => m.Id == messageId, cancellationToken: TestContext.Current.CancellationToken);
 		requeued.IsPoisoned.ShouldBeFalse();
 		requeued.Attempts.ShouldBe(0);
 		requeued.NextAttemptAt.ShouldBe(poisonedAt.AddMinutes(5));
@@ -87,7 +87,7 @@ public sealed class PoisonRequeueTests(WorkerPostgresFixture postgres)
 			}
 
 			seed.OutboxMessages.AddRange(before, within);
-			await seed.SaveChangesAsync();
+			await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		var logger = new FakeLogger<PoisonRequeueTests>();
@@ -101,8 +101,8 @@ public sealed class PoisonRequeueTests(WorkerPostgresFixture postgres)
 		result.RequeuedIds.ShouldBe([within.Id.ToString()]);
 
 		await using var check = WorkerPostgresFixture.ContextFor(connectionString);
-		(await check.OutboxMessages.SingleAsync(m => m.Id == before.Id)).IsPoisoned.ShouldBeTrue();
-		(await check.OutboxMessages.SingleAsync(m => m.Id == within.Id)).IsPoisoned.ShouldBeFalse();
+		(await check.OutboxMessages.SingleAsync(m => m.Id == before.Id, cancellationToken: TestContext.Current.CancellationToken)).IsPoisoned.ShouldBeTrue();
+		(await check.OutboxMessages.SingleAsync(m => m.Id == within.Id, cancellationToken: TestContext.Current.CancellationToken)).IsPoisoned.ShouldBeFalse();
 	}
 
 	[Fact]

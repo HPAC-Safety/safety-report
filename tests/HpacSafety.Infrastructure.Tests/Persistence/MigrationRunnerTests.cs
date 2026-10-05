@@ -24,12 +24,12 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
 
 		// When
 		await Task.WhenAll(
-			first.EnsureMigrated(NullLogger.Instance),
-			second.EnsureMigrated(NullLogger.Instance));
+			first.EnsureMigrated(NullLogger.Instance, TestContext.Current.CancellationToken),
+			second.EnsureMigrated(NullLogger.Instance, TestContext.Current.CancellationToken));
 
 		// Then
 		await using var verify = PostgresFixture.ContextFor(connectionString);
-		var pending = await verify.Database.GetPendingMigrationsAsync();
+		var pending = await verify.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
 		pending.ShouldBeEmpty();
 	}
 
@@ -43,6 +43,6 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
 		// When / Then — a second application on top of a fully migrated schema
 		// must not throw, which is the case a Worker restart after the API has
 		// already migrated exercises.
-		await Should.NotThrowAsync(() => context.EnsureMigrated(NullLogger.Instance));
+		await Should.NotThrowAsync(() => context.EnsureMigrated(NullLogger.Instance, TestContext.Current.CancellationToken));
 	}
 }

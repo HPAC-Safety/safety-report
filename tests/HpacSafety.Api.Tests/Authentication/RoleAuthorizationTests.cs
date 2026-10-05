@@ -29,7 +29,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, role);
 
 		// When
-		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
+		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then — 403, not 401: they are signed in, and it is still not theirs.
 		questions.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -42,7 +42,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
+		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		questions.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -57,18 +57,16 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, role);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/admin/questions", UriKind.Relative),
-			new
-			{
-				key = $"forbidden_{Guid.NewGuid():n}"[..24],
-				type = "short_text",
-				labelEn = "Forbidden",
-				labelFr = "Interdit",
-				isPrivate = true,
-				isRequired = false,
-				isActive = true,
-			});
+		using var response = await client.PostAsJsonAsync(new Uri("/api/admin/questions", UriKind.Relative), new
+		{
+			key = $"forbidden_{Guid.NewGuid():n}"[..24],
+			type = "short_text",
+			labelEn = "Forbidden",
+			labelFr = "Interdit",
+			isPrivate = true,
+			isRequired = false,
+			isActive = true,
+		}, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — the write is refused before anything is persisted.
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -82,9 +80,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/admin/translate", UriKind.Relative),
-			new { texts = new[] { "A short question." }, from = "en-CA", to = "fr-CA" });
+		using var response = await client.PostAsJsonAsync(new Uri("/api/admin/translate", UriKind.Relative), new { texts = new[] { "A short question." }, from = "en-CA", to = "fr-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -99,9 +95,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, role);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			new Uri("/api/admin/translate", UriKind.Relative),
-			new { texts = new[] { "The pilot landed." }, from = "en-CA", to = "fr-CA" });
+		using var response = await client.PostAsJsonAsync(new Uri("/api/admin/translate", UriKind.Relative), new { texts = new[] { "The pilot landed." }, from = "en-CA", to = "fr-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — allowed past authorization; whether a provider is configured is
 		// a separate answer (503), never a 401 or 403
@@ -115,7 +109,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var user = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await user.GetAsync(new Uri("/api/auth/me", UriKind.Relative));
+		using var response = await user.GetAsync(new Uri("/api/auth/me", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -128,8 +122,8 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
-		var body = await response.Content.ReadAsStringAsync();
+		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative), TestContext.Current.CancellationToken);
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then — a stable machine code the web application can branch on, and
 		// nothing about which role would have been enough.

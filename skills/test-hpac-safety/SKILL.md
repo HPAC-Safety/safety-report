@@ -48,12 +48,20 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 
 ### Which runner
 
-- **Untagged** scenarios run as xUnit tests via Reqnroll in
+- **Untagged** scenarios run as xUnit v3 tests via `Reqnroll.xUnit.v3` in
   `tests/HpacSafety.Acceptance.Tests` (the Reqnroll-acceptance decision).
+  - Reqnroll.xUnit.v3 does not turn `@xunit:collection(Name)` into
+    `[Collection("Name")]`. `XunitCollectionBindings.cs` adds it to each tagged
+    feature's generated partial class, and `XunitCollectionBindingTests` fails
+    when one is missing. Tag another feature, add its partial.
+  - A call that takes a `CancellationToken` passes
+    `TestContext.Current.CancellationToken` (`xUnit1051`).
 - **`@ui`** scenarios run through `playwright-bdd` in `tests/e2e/steps`.
   Reqnroll has no browser, so it never runs a `@ui` scenario (the playwright-bdd decision).
   - The acceptance suite skips `@ui` itself, through a
-    `[BeforeScenario("ui")]` hook, wherever `dotnet test` runs.
+    `[BeforeScenario("ui")]` hook, wherever `dotnet test` runs. The hook throws
+    `SkipException.ForSkip(...)` (`Xunit.Sdk`), xUnit v3's dynamic skip, since
+    `Assert.Skip` is banned.
     `.github/workflows/ci.yml`'s category filter is the backstop (the UI-scenario-is-skipped-by-Reqnroll-itself decision).
 - The booted host is `BootedApi`.
 

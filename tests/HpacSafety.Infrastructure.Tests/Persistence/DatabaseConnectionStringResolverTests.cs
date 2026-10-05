@@ -23,7 +23,7 @@ public sealed class DatabaseConnectionStringResolverTests
 		});
 
 		// When
-		var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(configuration, new NeverCalledSecretReader());
+		var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(configuration, new NeverCalledSecretReader(), TestContext.Current.CancellationToken);
 
 		// Then
 		connectionString.ShouldBe("Host=localhost;Database=hpac_safety");
@@ -58,7 +58,7 @@ public sealed class DatabaseConnectionStringResolverTests
 		var reader = new StubSecretReader("""{"username":"hpacsafety","password":"s3cr3t!"}""");
 
 		// When
-		var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(configuration, reader);
+		var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(configuration, reader, TestContext.Current.CancellationToken);
 
 		// Then
 		reader.RequestedSecretId.ShouldBe("arn:aws:secretsmanager:ca-central-1:111111111111:secret:rds-master");
@@ -160,7 +160,7 @@ public sealed class DatabaseConnectionStringResolverTests
 		var configuration = Build(settings);
 
 		// When
-		var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(configuration, new NeverCalledSecretReader());
+		var connectionString = await DatabaseConnectionStringResolver.ResolveAsync(configuration, new NeverCalledSecretReader(), TestContext.Current.CancellationToken);
 
 		// Then
 		connectionString.ShouldBe("Host=localhost;Database=hpac_safety");

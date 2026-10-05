@@ -31,7 +31,7 @@ public sealed class FutureDatesMigrationTests(PostgresFixture postgres)
 		}
 
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 		var before = await Revisions(connection, "type = 'date'");
 		before.ShouldNotBeEmpty();
 		var everyRevisionBefore = await Count(connection, "SELECT count(*) FROM question_revisions");
@@ -56,7 +56,7 @@ public sealed class FutureDatesMigrationTests(PostgresFixture postgres)
 		// Given
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 
 		// When
 		await using var command = new NpgsqlCommand(

@@ -41,7 +41,7 @@ public sealed class TranslateChoiceProcessorTests(WorkerPostgresFixture postgres
 		await using (var context = WorkerPostgresFixture.ContextFor(connectionString))
 		{
 			await new TranslateChoiceProcessor(context, translator).Process(Message(question, choice), CancellationToken.None);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then
@@ -50,7 +50,7 @@ public sealed class TranslateChoiceProcessorTests(WorkerPostgresFixture postgres
 		(call.Source, call.Target).ShouldBe((Locale.FrCa, Locale.EnCa));
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var stored = await reader.QuestionChoices.SingleAsync(candidate => candidate.Id == choice);
+		var stored = await reader.QuestionChoices.SingleAsync(candidate => candidate.Id == choice, cancellationToken: TestContext.Current.CancellationToken);
 		stored.LabelEn.ShouldBe("[en-CA] Élévation Sainte-Anne");
 		stored.LabelEnSource.ShouldBe(LabelSource.Auto);
 		stored.LabelFr.ShouldBe("Élévation Sainte-Anne");
@@ -70,13 +70,13 @@ public sealed class TranslateChoiceProcessorTests(WorkerPostgresFixture postgres
 		await using (var context = WorkerPostgresFixture.ContextFor(connectionString))
 		{
 			await new TranslateChoiceProcessor(context, translator).Process(Message(question, choice), CancellationToken.None);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then
 		(translator.Calls.ShouldHaveSingleItem().Source, translator.Calls[0].Target).ShouldBe((Locale.EnCa, Locale.FrCa));
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var stored = await reader.QuestionChoices.SingleAsync(candidate => candidate.Id == choice);
+		var stored = await reader.QuestionChoices.SingleAsync(candidate => candidate.Id == choice, cancellationToken: TestContext.Current.CancellationToken);
 		stored.LabelFr.ShouldBe("[fr-CA] Mount 7");
 		stored.LabelFrSource.ShouldBe(LabelSource.Auto);
 	}
@@ -91,9 +91,9 @@ public sealed class TranslateChoiceProcessorTests(WorkerPostgresFixture postgres
 		await using (var context = WorkerPostgresFixture.ContextFor(connectionString))
 		{
 			var loaded = await context.Questions.Include(q => q.Revisions).Include(q => q.AllChoices)
-				.SingleAsync(q => q.Id == question);
+				.SingleAsync(q => q.Id == question, cancellationToken: TestContext.Current.CancellationToken);
 			loaded.ReplaceChoices([new QuestionOptionInput(loaded.AllChoices.Single().Code, "Mount 7", "Mont 7")], At);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		var translator = new StubTranslator();
@@ -102,13 +102,13 @@ public sealed class TranslateChoiceProcessorTests(WorkerPostgresFixture postgres
 		await using (var context = WorkerPostgresFixture.ContextFor(connectionString))
 		{
 			await new TranslateChoiceProcessor(context, translator).Process(Message(question, choice), CancellationToken.None);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then
 		translator.Calls.ShouldBeEmpty();
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var stored = await reader.QuestionChoices.SingleAsync(candidate => candidate.Id == choice);
+		var stored = await reader.QuestionChoices.SingleAsync(candidate => candidate.Id == choice, cancellationToken: TestContext.Current.CancellationToken);
 		stored.LabelFr.ShouldBe("Mont 7");
 		stored.LabelFrSource.ShouldBe(LabelSource.Human);
 	}

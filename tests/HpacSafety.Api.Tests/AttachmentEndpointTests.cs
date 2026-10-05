@@ -37,10 +37,10 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(role);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -51,7 +51,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reporter = await SignedInAsync(MemberRole.User);
 
 		// When
-		using var response = await reporter.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reporter.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -65,7 +65,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var anonymous = _factory.CreateClient();
 
 		// When
-		using var response = await anonymous.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await anonymous.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -78,7 +78,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(TinyId.New().Value, TinyId.New().Value));
+		using var response = await reviewer.GetAsync(ViewUrl(TinyId.New().Value, TinyId.New().Value), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -92,7 +92,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -106,7 +106,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -120,7 +120,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, "not-a-tiny-id"));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, "not-a-tiny-id"), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -134,7 +134,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl("not-a-tiny-id", attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl("not-a-tiny-id", attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -153,7 +153,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var client = SignedInClient.Bearing(_factory, token);
 
 		// When
-		using var response = await client.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await client.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -180,7 +180,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(DownloadUrl(TinyId.New().Value, TinyId.New().Value));
+		using var response = await reviewer.GetAsync(DownloadUrl(TinyId.New().Value, TinyId.New().Value), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -194,7 +194,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -208,11 +208,11 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-		var body = await response.Content.ReadFromJsonAsync<AttachmentLinkPayload>();
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var body = await response.Content.ReadFromJsonAsync<AttachmentLinkPayload>(cancellationToken: TestContext.Current.CancellationToken);
 		body!.FileName.ShouldBe($"{attachmentId}.pdf");
 	}
 
@@ -226,7 +226,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -240,7 +240,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -256,10 +256,10 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -270,10 +270,10 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -286,7 +286,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -299,7 +299,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(OriginalUrl(TinyId.New().Value, TinyId.New().Value));
+		using var response = await reviewer.GetAsync(OriginalUrl(TinyId.New().Value, TinyId.New().Value), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -313,7 +313,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -327,7 +327,7 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reporter = await SignedInAsync(MemberRole.User);
 
 		// When
-		using var response = await reporter.GetAsync(OriginalUrl(reportId, attachmentId));
+		using var response = await reporter.GetAsync(OriginalUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -344,13 +344,13 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(OriginalUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId));
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId), cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.Action.ShouldBe(AuditAction.DownloadedOriginalMedia);
 	}
@@ -363,13 +363,13 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId));
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId), cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.Action.ShouldBe(AuditAction.ViewedAttachment);
 		entry.ActorSubject.ShouldEndWith("officer");
@@ -388,13 +388,13 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId));
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, attachmentId), TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var count = await database.AuditLog.CountAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId));
+		var count = await database.AuditLog.CountAsync(e => e.TargetType == "ReportFile" && e.TargetId == TinyId.Parse(attachmentId), cancellationToken: TestContext.Current.CancellationToken);
 		count.ShouldBe(1);
 	}
 

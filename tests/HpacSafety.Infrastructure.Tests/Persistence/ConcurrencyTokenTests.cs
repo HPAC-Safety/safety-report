@@ -85,7 +85,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 		// When
 		ConcurrencyToken.Expect(context, report, before).ShouldBeTrue();
 		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", "subject-officer", At);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		ConcurrencyToken.Of(context, report).ShouldNotBe(before);
@@ -105,7 +105,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 		{
 			var theirs = await Load(second, id);
 			theirs.EditSummary("Second reviewer.", "Second réviseur.", "subject-officer", At);
-			await second.SaveChangesAsync();
+			await second.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// When — the save itself refuses an approval of a revision that is no
@@ -133,7 +133,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 		var secondView = await Load(second, id);
 
 		firstView.EditSummary("First reviewer.", "Premier réviseur.", "subject-officer", At);
-		await first.SaveChangesAsync();
+		await first.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		secondView.EditSummary("Second reviewer.", "Second réviseur.", "subject-officer", At);

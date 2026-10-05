@@ -25,7 +25,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 
 		// When — every primary key and every column that references one.
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 		await using var command = new NpgsqlCommand(
 			"""
 			SELECT table_name || '.' || column_name || ' ' || data_type || '(' || COALESCE(character_maximum_length, 0) || ')'
@@ -35,10 +35,10 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 			ORDER BY 1
 			""",
 			connection);
-		await using var reader = await command.ExecuteReaderAsync();
+		await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
 
 		var columns = new List<string>();
-		while (await reader.ReadAsync())
+		while (await reader.ReadAsync(TestContext.Current.CancellationToken))
 		{
 			columns.Add(reader.GetString(0));
 		}
@@ -56,13 +56,13 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var report = new Report(Locale.EnCa, At);
 		context.Reports.Add(report);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When — read as raw text, with no converter in the way.
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 		await using var command = new NpgsqlCommand("SELECT id FROM reports", connection);
-		var stored = (string?)await command.ExecuteScalarAsync();
+		var stored = (string?)await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		stored.ShouldNotBeNull();
@@ -81,7 +81,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var first = new Report(Locale.EnCa, At);
 		context.Reports.Add(first);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// A second context, because the first one is still tracking `first` and
 		// would reject the duplicate before the database ever saw it.
@@ -90,11 +90,11 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		colliding.Reports.Add(second).Property("Id").CurrentValue = first.Id;
 
 		// When
-		await colliding.SaveChangesAsync();
+		await colliding.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then — two reports, two identifiers, no overwritten report.
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var ids = await reader.Reports.Select(report => report.Id).ToListAsync();
+		var ids = await reader.Reports.Select(report => report.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 		ids.Count.ShouldBe(2);
 		ids.Distinct().Count().ShouldBe(2);
 		ids.ShouldContain(first.Id);
@@ -109,25 +109,25 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var first = new Report(Locale.EnCa, At);
 		context.Reports.Add(first);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		await using var colliding = PostgresFixture.ContextFor(connectionString);
 		var second = new Report(Locale.FrCa, At);
 
 		// When
-		await using (var transaction = await colliding.Database.BeginTransactionAsync())
+		await using (var transaction = await colliding.Database.BeginTransactionAsync(TestContext.Current.CancellationToken))
 		{
 			colliding.Reports.Add(second).Property("Id").CurrentValue = first.Id;
 			colliding.OutboxMessages.Add(new OutboxMessage(first.Id, OutboxMessageType.SummarizeReport, "{}", At));
 
-			await colliding.SaveChangesAsync();
-			await transaction.CommitAsync();
+			await colliding.SaveChangesAsync(TestContext.Current.CancellationToken);
+			await transaction.CommitAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then — the retry rolled back to a savepoint, not to the transaction.
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		(await reader.Reports.CountAsync()).ShouldBe(2);
-		(await reader.OutboxMessages.CountAsync()).ShouldBe(1);
+		(await reader.Reports.CountAsync(cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(2);
+		(await reader.OutboxMessages.CountAsync(cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(1);
 	}
 
 	[Fact]
@@ -141,7 +141,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var first = new Report(Locale.EnCa, At);
 		context.Reports.Add(first);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		await using var colliding = PostgresFixture.ContextFor(connectionString);
 		var second = new Report(Locale.FrCa, At);
@@ -149,14 +149,14 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		colliding.OutboxMessages.Add(new OutboxMessage(first.Id, OutboxMessageType.SummarizeReport, "{}", At));
 
 		// When
-		await colliding.SaveChangesAsync();
+		await colliding.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var message = await reader.OutboxMessages.SingleAsync();
+		var message = await reader.OutboxMessages.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 		message.AggregateId.ShouldBe(second.Id);
 		message.AggregateId.ShouldNotBe(first.Id);
-		(await reader.Reports.AnyAsync(report => report.Id == message.AggregateId)).ShouldBeTrue();
+		(await reader.Reports.AnyAsync(report => report.Id == message.AggregateId, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeTrue();
 	}
 
 	[Fact]
@@ -173,7 +173,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		var report = new Report(Locale.EnCa, At);
 		context.Reports.Add(report);
 		context.Summaries.Add(Summary.Generate(report.Id, "One.", "Un.", "model", "v1", At));
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		await using var colliding = PostgresFixture.ContextFor(connectionString);
 		colliding.Summaries.Add(Summary.Generate(report.Id, "Two.", "Deux.", "model", "v1", At));

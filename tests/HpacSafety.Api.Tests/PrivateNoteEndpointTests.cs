@@ -37,11 +37,11 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		var (notes, noteId, officer) = await Noted();
 
 		// When
-		using var response = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text, revision });
+		using var response = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text, revision }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var listed = await officer.GetFromJsonAsync<JsonElement>(notes);
+		var listed = await officer.GetFromJsonAsync<JsonElement>(notes, cancellationToken: TestContext.Current.CancellationToken);
 		listed[0].GetProperty("text").GetString().ShouldBe("Synthetic original.");
 		listed[0].GetProperty("revision").GetInt32().ShouldBe(1);
 		officer.Dispose();
@@ -56,12 +56,11 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		var (notes, noteId, officer) = await Noted();
 
 		// When
-		using var response = await officer.PutAsJsonAsync(
-			$"{notes}/{noteId}", new { text = "Synthetic edit.", revision = 1, attachmentId });
+		using var response = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = "Synthetic edit.", revision = 1, attachmentId }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var listed = await officer.GetFromJsonAsync<JsonElement>(notes);
+		var listed = await officer.GetFromJsonAsync<JsonElement>(notes, cancellationToken: TestContext.Current.CancellationToken);
 		listed[0].GetProperty("text").GetString().ShouldBe("Synthetic original.");
 		listed[0].GetProperty("revision").GetInt32().ShouldBe(1);
 		officer.Dispose();
@@ -76,9 +75,9 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		var (notes, _, officer) = await Noted();
 
 		// When
-		using var edited = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = "Synthetic.", revision = 1 });
-		using var removed = await officer.DeleteAsync($"{notes}/{noteId}");
-		using var history = await officer.GetAsync($"{notes}/{noteId}/revisions");
+		using var edited = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = "Synthetic.", revision = 1 }, cancellationToken: TestContext.Current.CancellationToken);
+		using var removed = await officer.DeleteAsync($"{notes}/{noteId}", TestContext.Current.CancellationToken);
+		using var history = await officer.GetAsync($"{notes}/{noteId}/revisions", TestContext.Current.CancellationToken);
 
 		// Then
 		edited.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -96,8 +95,8 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var listed = await officer.GetAsync($"/api/admin/reports/{reportId}/private-notes");
-		using var added = await officer.PostAsJsonAsync($"/api/admin/reports/{reportId}/private-notes", new { text = "Synthetic." });
+		using var listed = await officer.GetAsync($"/api/admin/reports/{reportId}/private-notes", TestContext.Current.CancellationToken);
+		using var added = await officer.PostAsJsonAsync($"/api/admin/reports/{reportId}/private-notes", new { text = "Synthetic." }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		listed.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -112,7 +111,7 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		var (otherNotes, _, _) = await Noted();
 
 		// When
-		using var edited = await officer.PutAsJsonAsync($"{otherNotes}/{noteId}", new { text = "Synthetic.", revision = 1 });
+		using var edited = await officer.PutAsJsonAsync($"{otherNotes}/{noteId}", new { text = "Synthetic.", revision = 1 }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		edited.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -136,7 +135,7 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var id = TinyId.Parse(noteId);
-		(await database.PrivateNoteRevisions.CountAsync(revision => revision.NoteId == id)).ShouldBe(2);
+		(await database.PrivateNoteRevisions.CountAsync(revision => revision.NoteId == id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(2);
 
 		foreach (var response in responses)
 		{

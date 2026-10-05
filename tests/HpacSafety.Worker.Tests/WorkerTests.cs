@@ -95,7 +95,7 @@ public class WorkerTests
 
 		// When
 		var stop = worker.StopAsync(CancellationToken.None);
-		var finished = await Task.WhenAny(stop, Task.Delay(TimeSpan.FromSeconds(5)));
+		var finished = await Task.WhenAny(stop, Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
 		// Then
 		finished.ShouldBe(stop);

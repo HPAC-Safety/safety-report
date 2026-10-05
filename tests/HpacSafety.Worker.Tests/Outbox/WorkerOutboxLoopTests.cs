@@ -35,13 +35,13 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 			var narrative = Question.Create(
 				"narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", At, isActive: true);
 			seed.Questions.Add(narrative);
-			await seed.SaveChangesAsync();
+			await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 			var report = new Report(Locale.EnCa, At);
 			report.Answer(narrative, "Wind picked up on final.", At);
 			seed.Reports.Add(report);
 			seed.OutboxMessages.Add(new OutboxMessage(report.Id, OutboxMessageType.TranslateAnswers, report.Id.Value, At));
-			await seed.SaveChangesAsync();
+			await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		var services = new ServiceCollection();
@@ -63,10 +63,10 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 			   && DateTimeOffset.UtcNow < deadline)
 		{
 			await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-			translated = await reader.ReportAnswers.Select(a => a.TranslatedValue).FirstOrDefaultAsync();
+			translated = await reader.ReportAnswers.Select(a => a.TranslatedValue).FirstOrDefaultAsync(cancellationToken: TestContext.Current.CancellationToken);
 			if (translated is null)
 			{
-				await Task.Delay(TimeSpan.FromMilliseconds(50));
+				await Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 			}
 		}
 
@@ -76,7 +76,7 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 		translated.ShouldBe("[fr-CA] Wind picked up on final.");
 
 		await using var final = WorkerPostgresFixture.ContextFor(connectionString);
-		var message = await final.OutboxMessages.SingleAsync();
+		var message = await final.OutboxMessages.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 		message.ProcessedAt.ShouldNotBeNull();
 	}
 
@@ -122,7 +122,7 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 		// When — outlive the 5-second idle interval without ever cancelling, so
 		// this Task.Delay returns normally instead of throwing.
 		await worker.StartAsync(CancellationToken.None);
-		await Task.Delay(TimeSpan.FromSeconds(6));
+		await Task.Delay(TimeSpan.FromSeconds(6), TestContext.Current.CancellationToken);
 		var stop = async () => await worker.StopAsync(CancellationToken.None);
 
 		// Then — the loop is still alive and stops cleanly afterward.

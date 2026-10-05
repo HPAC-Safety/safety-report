@@ -37,8 +37,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		using var secondBody = new MultipartFormDataContent();
 
 		// When
-		using var first = await reporter.PostAsync(Submit, firstBody);
-		using var second = await reporter.PostAsync(Submit, secondBody);
+		using var first = await reporter.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var second = await reporter.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then — the first consumes the one permit and fails validation as usual
 		// (a submission is JSON); the second never reaches the endpoint at all.
@@ -55,11 +55,11 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		using var reporter = await SignedInClient.As(limited, MemberRole.User);
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		await reporter.PostAsync(Submit, firstBody);
+		await reporter.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
 
 		// When
-		using var rejected = await reporter.PostAsync(Submit, secondBody);
-		var body = await rejected.Content.ReadAsStringAsync();
+		using var rejected = await reporter.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
+		var body = await rejected.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then — a generic, content-free rejection: no IP, no token, no answer.
 		body.ShouldNotContain("Bearer");
@@ -77,8 +77,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When — the same username twice; a wrong password still consumes the
 		// identity's permit, because partitioning happens before credentials are
 		// checked.
-		using var first = await client.PostAsJsonAsync(Token, new { username = "user", password = "wrong" });
-		using var second = await client.PostAsJsonAsync(Token, new { username = "user", password = "wrong" });
+		using var first = await client.PostAsJsonAsync(Token, new { username = "user", password = "wrong" }, cancellationToken: TestContext.Current.CancellationToken);
+		using var second = await client.PostAsJsonAsync(Token, new { username = "user", password = "wrong" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		first.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -93,10 +93,10 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// connection.
 		await using var limited = RateLimitedFactory(signInPermitLimit: 1);
 		using var client = limited.CreateClient();
-		await client.PostAsJsonAsync(Token, new { username = "user", password = "wrong" });
+		await client.PostAsJsonAsync(Token, new { username = "user", password = "wrong" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.PostAsJsonAsync(Token, new { username = "admin", password = "admin" });
+		using var response = await client.PostAsJsonAsync(Token, new { username = "admin", password = "admin" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -113,8 +113,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		using var secondBody = new ByteArrayContent([]);
 
 		// When
-		using var first = await reporter.PostAsync(Uploads, firstBody);
-		using var second = await reporter.PostAsync(Uploads, secondBody);
+		using var first = await reporter.PostAsync(Uploads, firstBody, TestContext.Current.CancellationToken);
+		using var second = await reporter.PostAsync(Uploads, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		first.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -140,8 +140,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then — both fail validation (a submission is JSON), neither is
 		// rate-limited, because each is its own partition.
@@ -161,8 +161,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await reporter.PostAsync(Submit, firstBody);
-		using var secondResponse = await reporter.PostAsync(Submit, secondBody);
+		using var firstResponse = await reporter.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await reporter.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -183,8 +183,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -205,8 +205,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -225,8 +225,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await reporter.PostAsync(Submit, firstBody);
-		using var secondResponse = await reporter.PostAsync(Submit, secondBody);
+		using var firstResponse = await reporter.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await reporter.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -246,8 +246,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
-		using var firstResponse = await first.PostAsync(Submit, firstBody);
-		using var secondResponse = await second.PostAsync(Submit, secondBody);
+		using var firstResponse = await first.PostAsync(Submit, firstBody, TestContext.Current.CancellationToken);
+		using var secondResponse = await second.PostAsync(Submit, secondBody, TestContext.Current.CancellationToken);
 
 		// Then
 		firstResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

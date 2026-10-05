@@ -43,9 +43,9 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		var root = $"/api/admin/reports/{reportId}/private-attachments";
 
 		// When
-		using var minted = await officer.PostAsJsonAsync($"{root}/uploads", new { contentType = "application/zip", byteSize = 10 });
-		using var added = await officer.PostAsJsonAsync(root, new { uploadId = UploadId.New().Value, fileName = "Synthetic.zip" });
-		using var listed = await officer.GetAsync(root);
+		using var minted = await officer.PostAsJsonAsync($"{root}/uploads", new { contentType = "application/zip", byteSize = 10 }, cancellationToken: TestContext.Current.CancellationToken);
+		using var added = await officer.PostAsJsonAsync(root, new { uploadId = UploadId.New().Value, fileName = "Synthetic.zip" }, cancellationToken: TestContext.Current.CancellationToken);
+		using var listed = await officer.GetAsync(root, TestContext.Current.CancellationToken);
 
 		// Then
 		new[] { minted.StatusCode, added.StatusCode, listed.StatusCode }.ShouldAllBe(status => status == HttpStatusCode.NotFound);
@@ -59,7 +59,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var minted = await officer.PostAsJsonAsync($"{root}/uploads", new { contentType = "application/zip" });
+		using var minted = await officer.PostAsJsonAsync($"{root}/uploads", new { contentType = "application/zip" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		minted.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -75,7 +75,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var added = await officer.PostAsJsonAsync(root, new { uploadId, fileName = "Synthetic.zip" });
+		using var added = await officer.PostAsJsonAsync(root, new { uploadId, fileName = "Synthetic.zip" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		added.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -93,7 +93,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var client = SignedInClient.Bearing(_factory, token);
 
 		// When
-		using var response = await client.GetAsync(root);
+		using var response = await client.GetAsync(root, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -123,8 +123,8 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var downloaded = await officer.GetAsync($"{root}/{attachmentId}/download");
-		using var removed = await officer.DeleteAsync($"{root}/{attachmentId}");
+		using var downloaded = await officer.GetAsync($"{root}/{attachmentId}/download", TestContext.Current.CancellationToken);
+		using var removed = await officer.DeleteAsync($"{root}/{attachmentId}", TestContext.Current.CancellationToken);
 
 		// Then
 		downloaded.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -140,7 +140,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var downloaded = await officer.GetAsync($"{otherRoot}/{attachmentId}/download");
+		using var downloaded = await officer.GetAsync($"{otherRoot}/{attachmentId}/download", TestContext.Current.CancellationToken);
 
 		// Then
 		downloaded.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -158,12 +158,12 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var loweredOfficer = await SignedInClient.As(lowered, MemberRole.SafetyOfficer);
 
 		// When
-		using var added = await loweredOfficer.PostAsJsonAsync(root, new { uploadId, fileName = "Synthetic.zip" });
+		using var added = await loweredOfficer.PostAsJsonAsync(root, new { uploadId, fileName = "Synthetic.zip" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		added.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await added.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("reason").GetString().ShouldBe("too_large");
-		(await officer.GetFromJsonAsync<JsonElement>(root)).GetArrayLength().ShouldBe(0);
+		(await added.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).GetProperty("reason").GetString().ShouldBe("too_large");
+		(await officer.GetFromJsonAsync<JsonElement>(root, cancellationToken: TestContext.Current.CancellationToken)).GetArrayLength().ShouldBe(0);
 	}
 
 	[Fact]
@@ -185,7 +185,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		// The row committed; the lifecycle rule, not the claim, removes the upload.
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		var listed = await officer.GetFromJsonAsync<JsonElement>(root);
+		var listed = await officer.GetFromJsonAsync<JsonElement>(root, cancellationToken: TestContext.Current.CancellationToken);
 		listed.EnumerateArray().Select(attachment => attachment.GetProperty("id").GetString()).ShouldBe([attachmentId]);
 	}
 
@@ -209,7 +209,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		answers.ShouldAllBe(status => status == HttpStatusCode.Created);
-		(await officer.GetFromJsonAsync<JsonElement>(root)).GetArrayLength().ShouldBe(16);
+		(await officer.GetFromJsonAsync<JsonElement>(root, cancellationToken: TestContext.Current.CancellationToken)).GetArrayLength().ShouldBe(16);
 	}
 
 	[Theory]
@@ -223,11 +223,11 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var added = await officer.PostAsJsonAsync(notes, new { text = "Synthetic.", attachmentId });
+		using var added = await officer.PostAsJsonAsync(notes, new { text = "Synthetic.", attachmentId }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		added.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await officer.GetFromJsonAsync<JsonElement>(notes)).GetArrayLength().ShouldBe(0);
+		(await officer.GetFromJsonAsync<JsonElement>(notes, cancellationToken: TestContext.Current.CancellationToken)).GetArrayLength().ShouldBe(0);
 	}
 
 	[Fact]
@@ -237,15 +237,15 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		var (root, attachmentId) = await Attached(_factory);
 		var notes = root.Replace("private-attachments", "private-notes", StringComparison.Ordinal);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		using var added = await officer.PostAsJsonAsync(notes, new { text = "Synthetic.", attachmentId });
-		var noteId = (await added.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		using var added = await officer.PostAsJsonAsync(notes, new { text = "Synthetic.", attachmentId }, cancellationToken: TestContext.Current.CancellationToken);
+		var noteId = (await added.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken)).GetProperty("id").GetString();
 
 		// When
-		using var edited = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = "Synthetic, edited.", revision = 1, attachmentId });
+		using var edited = await officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = "Synthetic, edited.", revision = 1, attachmentId }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		edited.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var note = await edited.Content.ReadFromJsonAsync<JsonElement>();
+		var note = await edited.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		note.GetProperty("attachment").GetProperty("id").GetString().ShouldBe(attachmentId);
 		note.GetProperty("attachment").GetProperty("fileName").GetString().ShouldBe("Synthetic.zip");
 	}

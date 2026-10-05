@@ -31,7 +31,7 @@ public sealed class SystemQuestionPrivacyMigrationTests(PostgresFixture postgres
 		}
 
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 		await Execute(connection, "UPDATE question_revisions SET is_private = FALSE WHERE is_system");
 		var before = await CurrentRevisions(connection);
 		before.ShouldNotBeEmpty();
@@ -61,7 +61,7 @@ public sealed class SystemQuestionPrivacyMigrationTests(PostgresFixture postgres
 		// Given — a database at current main
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 		var before = await CurrentRevisions(connection);
 
 		// When

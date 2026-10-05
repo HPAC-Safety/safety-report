@@ -328,10 +328,10 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		var (reportId, word) = await SeedPrivateOnly();
 		using var client = _factory.CreateClient();
 
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports?q={Uri.EscapeDataString(word)}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports?q={Uri.EscapeDataString(word)}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-		var body = await response.Content.ReadAsStringAsync();
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 		body.ShouldNotContain(reportId);
 		body.ShouldNotContain(word);
 	}
@@ -342,10 +342,10 @@ public class ReportSearchEndpointTests(ApiPostgresFixture fixture)
 		var (reportId, word) = await SeedPrivateOnly();
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
-		using var response = await client.GetAsync(new Uri($"/api/admin/reports?q={Uri.EscapeDataString(word)}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"/api/admin/reports?q={Uri.EscapeDataString(word)}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-		var body = await response.Content.ReadAsStringAsync();
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 		body.ShouldNotContain(reportId);
 		body.ShouldNotContain(word);
 	}

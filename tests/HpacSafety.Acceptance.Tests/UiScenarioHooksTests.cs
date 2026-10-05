@@ -1,6 +1,7 @@
 using System.Reflection;
 using Reqnroll;
 using Shouldly;
+using Xunit.Sdk;
 
 namespace HpacSafety.Acceptance.Tests;
 

@@ -97,7 +97,7 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 			report.AddFile("report/original/file", "image/jpeg", 1024, At);
 			report.AttachSummary(Summary.Generate(report.Id, "The pilot landed.", "Le pilote s'est posé.", "model", "prompt.v1", At));
 			context.Reports.Add(report);
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 			reportId = report.Id.Value;
 		}
 
@@ -109,9 +109,9 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 				.Include(report => report.Files)
 				.Include(report => report.Summary!)
 				.ThenInclude(summary => summary.Revisions)
-				.SingleAsync(report => report.Id == TinyId.Parse(reportId));
+				.SingleAsync(report => report.Id == TinyId.Parse(reportId), cancellationToken: TestContext.Current.CancellationToken);
 			report.SoftDelete(At.AddHours(1));
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then

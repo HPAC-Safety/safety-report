@@ -48,14 +48,14 @@ public class ChoicePinEndpointTests(ApiPostgresFixture fixture)
 			var report = new Report(Locale.EnCa, At);
 			report.Answer(question, "Mount 7", At);
 			database.Reports.Add(report);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 			added = question.AllChoices.Single(choice => choice.AddedByReporter).Id;
 		}
 
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		listed.GetProperty("values").EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == added.Value)
@@ -86,14 +86,14 @@ public class ChoicePinEndpointTests(ApiPostgresFixture fixture)
 			report.AnswerChoices(question, question.CurrentRevision, [.. question.Choices.Select(choice => choice.Id)], At);
 			report.Answer(narrative, "Windy launch", At);
 			database.Reports.Add(report);
-			await database.SaveChangesAsync();
+			await database.SaveChangesAsync(TestContext.Current.CancellationToken);
 			reportId = report.Id;
 		}
 
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var detail = await officer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+		var detail = await officer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		var answers = detail.GetProperty("answers").EnumerateArray().ToList();
@@ -112,18 +112,18 @@ public class ChoicePinEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		using var admin = await SignedInClient.As(_factory, MemberRole.Administrator);
 		var label = $"Which wing {Guid.NewGuid():N}?";
-		using var created = await admin.PostAsJsonAsync(AdminQuestions, Save(label, null));
+		using var created = await admin.PostAsJsonAsync(AdminQuestions, Save(label, null), cancellationToken: TestContext.Current.CancellationToken);
 		created.StatusCode.ShouldBe(HttpStatusCode.Created);
-		var saved = await created.Content.ReadFromJsonAsync<JsonElement>();
+		var saved = await created.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var id = saved.GetProperty("id").GetString();
 		var revision = saved.GetProperty("revisionId").GetString();
 
 		// When
-		using var response = await admin.PutAsJsonAsync(new Uri($"{AdminQuestions}/{id}", UriKind.Relative), Save(label, pin));
+		using var response = await admin.PutAsJsonAsync(new Uri($"{AdminQuestions}/{id}", UriKind.Relative), Save(label, pin), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-		var after = await response.Content.ReadFromJsonAsync<JsonElement>();
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var after = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		after.GetProperty("revisionId").GetString().ShouldBe(revision);
 		after.GetProperty("options").EnumerateArray()
 			.Single(option => option.GetProperty("code").GetString() == "other").GetProperty("pin").GetString().ShouldBe(pin);
@@ -134,7 +134,7 @@ public class ChoicePinEndpointTests(ApiPostgresFixture fixture)
 	{
 		using var admin = await SignedInClient.As(_factory, MemberRole.Administrator);
 
-		using var response = await admin.PostAsJsonAsync(AdminQuestions, Save($"Which wing {Guid.NewGuid():N}?", "middle"));
+		using var response = await admin.PostAsJsonAsync(AdminQuestions, Save($"Which wing {Guid.NewGuid():N}?", "middle"), cancellationToken: TestContext.Current.CancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}

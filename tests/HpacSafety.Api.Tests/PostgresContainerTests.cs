@@ -22,14 +22,14 @@ public sealed class PostgresContainerTests : IAsyncLifetime
 	// underneath the suite is a test failure nobody can reproduce.
 	private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
-	public Task InitializeAsync()
+	public async ValueTask InitializeAsync()
 	{
-		return _postgres.StartAsync();
+		await _postgres.StartAsync();
 	}
 
-	public Task DisposeAsync()
+	public ValueTask DisposeAsync()
 	{
-		return _postgres.DisposeAsync().AsTask();
+		return _postgres.DisposeAsync();
 	}
 
 	[Fact]
@@ -39,7 +39,7 @@ public sealed class PostgresContainerTests : IAsyncLifetime
 		await using var connection = new NpgsqlConnection(_postgres.GetConnectionString());
 
 		// When
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		connection.State.ShouldBe(ConnectionState.Open);
@@ -50,11 +50,11 @@ public sealed class PostgresContainerTests : IAsyncLifetime
 	{
 		// Given
 		await using var connection = new NpgsqlConnection(_postgres.GetConnectionString());
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 
 		// When
 		await using var command = new NpgsqlCommand("SHOW server_version;", connection);
-		var version = (string?)await command.ExecuteScalarAsync();
+		var version = (string?)await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		version.ShouldNotBeNull();

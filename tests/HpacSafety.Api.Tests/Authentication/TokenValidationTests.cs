@@ -34,8 +34,8 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		using var response = await client.GetAsync(Me);
-		var identity = await response.Content.ReadFromJsonAsync<MeResponse>();
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
+		var identity = await response.Content.ReadFromJsonAsync<MeResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — read back off the principal the handler built, not off the
 		// request body the test sent.
@@ -51,7 +51,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -65,7 +65,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, forged);
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -82,7 +82,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, tampered);
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -98,7 +98,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, expired);
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -112,7 +112,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, elsewhere);
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -126,7 +126,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, elsewhere);
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -144,7 +144,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, unsigned);
-		using var response = await client.GetAsync(Me);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -158,8 +158,8 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, unknownRole);
-		using var response = await client.GetAsync(Me);
-		var identity = await response.Content.ReadFromJsonAsync<MeResponse>();
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
+		var identity = await response.Content.ReadFromJsonAsync<MeResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then — membership is proven, and no administrative capability
 		// follows from it.
@@ -175,8 +175,8 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, several);
-		using var response = await client.GetAsync(Me);
-		var identity = await response.Content.ReadFromJsonAsync<MeResponse>();
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
+		var identity = await response.Content.ReadFromJsonAsync<MeResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		identity!.Role.ShouldBe("administrator");
@@ -195,8 +195,8 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, chatty);
-		using var response = await client.GetAsync(Me);
-		var body = await response.Content.ReadAsStringAsync();
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then — this system has no use for any of it, and the narrowest read
 		// is the one that cannot leak.

@@ -31,13 +31,13 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		context.OutboxMessages.Add(SummarizationRequestFor(report));
 
 		// When
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Id.ShouldBe(report.Id);
-		(await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id)).BooleanValue.ShouldBe(true);
-		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(1);
+		(await reader.Reports.SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken)).Id.ShouldBe(report.Id);
+		(await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).BooleanValue.ShouldBe(true);
+		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(1);
 	}
 
 	[Fact]
@@ -49,19 +49,19 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		var report = await SubmittedReport(context);
 
 		// When
-		await using (var transaction = await context.Database.BeginTransactionAsync())
+		await using (var transaction = await context.Database.BeginTransactionAsync(TestContext.Current.CancellationToken))
 		{
 			context.Reports.Add(report);
 			context.OutboxMessages.Add(SummarizationRequestFor(report));
-			await context.SaveChangesAsync();
+			await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-			await transaction.RollbackAsync();
+			await transaction.RollbackAsync(TestContext.Current.CancellationToken);
 		}
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		(await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(0);
-		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(0);
+		(await reader.Reports.CountAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(0);
+		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(0);
 	}
 
 	[Fact]
@@ -84,8 +84,8 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		(await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(0);
-		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(0);
+		(await reader.Reports.CountAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(0);
+		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(0);
 	}
 
 	[Fact]
@@ -97,11 +97,11 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		var report = await SubmittedReport(context);
 		context.Reports.Add(report);
 		context.OutboxMessages.Add(SummarizationRequestFor(report));
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		// When
 		await using var reader = PostgresFixture.ContextFor(connectionString);
-		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		message.IsProcessed.ShouldBeFalse();

@@ -40,14 +40,14 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		using var client = _factory.CreateClient();
-		var first = await client.GetFromJsonAsync<JsonElement>(new Uri(Feed, UriKind.Relative));
+		var first = await client.GetFromJsonAsync<JsonElement>(new Uri(Feed, UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}?after={Uri.EscapeDataString(cursor)}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}?after={Uri.EscapeDataString(cursor)}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		page.GetProperty("items").GetRawText().ShouldBe(first.GetProperty("items").GetRawText());
 	}
 
@@ -59,14 +59,14 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		using var client = _factory.CreateClient();
-		var plain = await client.GetFromJsonAsync<JsonElement>(new Uri(Feed, UriKind.Relative));
+		var plain = await client.GetFromJsonAsync<JsonElement>(new Uri(Feed, UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		page.GetRawText().ShouldBe(plain.GetRawText());
 	}
 
@@ -86,11 +86,11 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}&locale=en-CA", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}&locale=en-CA", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		page.GetProperty("items").GetArrayLength().ShouldBe(0);
 		page.GetProperty("next").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
@@ -103,7 +103,7 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		var tooLong = new string('a', 5000);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(tooLong)}&locale=en-CA", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(tooLong)}&locale=en-CA", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -123,7 +123,7 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(query)}&locale=en-CA", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(query)}&locale=en-CA", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -136,15 +136,15 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		using var client = _factory.CreateClient();
-		var first = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA", UriKind.Relative));
+		var first = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA&after={Uri.EscapeDataString(cursor)}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA&after={Uri.EscapeDataString(cursor)}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
-		var firstPage = await first.Content.ReadFromJsonAsync<JsonElement>();
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
+		var firstPage = await first.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		page.GetProperty("items").GetRawText().ShouldBe(firstPage.GetProperty("items").GetRawText());
 	}
 
@@ -159,10 +159,10 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		using var administrator = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		var anonymousBody = await (await anonymous.GetAsync(uri)).Content.ReadAsStringAsync();
-		var userBody = await (await user.GetAsync(uri)).Content.ReadAsStringAsync();
-		var officerBody = await (await officer.GetAsync(uri)).Content.ReadAsStringAsync();
-		var administratorBody = await (await administrator.GetAsync(uri)).Content.ReadAsStringAsync();
+		var anonymousBody = await (await anonymous.GetAsync(uri, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		var userBody = await (await user.GetAsync(uri, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		var officerBody = await (await officer.GetAsync(uri, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		var administratorBody = await (await administrator.GetAsync(uri, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
 		// Then: the same query gets the same answer whoever asks, or asks
 		// anonymously — the public search endpoint never widens by role.
@@ -181,7 +181,7 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.GetAsync(new Uri($"{Feed}/{Uri.EscapeDataString(reportId)}", UriKind.Relative));
+		using var response = await client.GetAsync(new Uri($"{Feed}/{Uri.EscapeDataString(reportId)}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

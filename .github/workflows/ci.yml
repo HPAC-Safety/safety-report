@@ -196,7 +196,7 @@ jobs:
 
       # @ui-tagged scenarios execute via playwright-bdd (tests/e2e), not
       # Reqnroll — see ADR-0053. The acceptance suite skips them itself, by a
-      # hook that throws xUnit's SkipException, which skips cleanly with the
+      # hook that throws xUnit v3's SkipException.ForSkip, which skips cleanly with the
       # Cucumber Messages formatter below on or off, so a bare `dotnet test`
       # is already correct (ADR-0073, ADR-0195); this filter is a
       # second line of defence, keeping the job green even if that hook

@@ -42,7 +42,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new { language = "en-CA", answers = Array.Empty<object>() });
 
 		// When
-		using var response = await client.PostAsync(Submit, content);
+		using var response = await client.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -61,11 +61,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		body.GetProperty("status").GetString().ShouldBe("submitted");
 		body.GetProperty("id").GetString().ShouldNotBeNullOrWhiteSpace();
 	}
@@ -87,7 +87,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -108,7 +108,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then — consent is the only required answer, and it is missing entirely
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -131,7 +131,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -154,7 +154,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -188,9 +188,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			allowsReporterAdditions = false,
 			options = Array.Empty<object>(),
 		};
-		using var revised = await admin.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{original.GetProperty("id").GetString()}", UriKind.Relative), revision);
-		revised.StatusCode.ShouldBe(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync());
+		using var revised = await admin.PutAsJsonAsync(new Uri($"/api/admin/questions/{original.GetProperty("id").GetString()}", UriKind.Relative), revision, cancellationToken: TestContext.Current.CancellationToken);
+		revised.StatusCode.ShouldBe(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 		var currentRevisionId = await RevisionIdFor(key);
 		currentRevisionId.ShouldNotBe(supersededRevisionId);
 
@@ -207,7 +206,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 				new { questionRevisionId = supersededRevisionId, value = (string?)"an old answer" },
 			},
 		});
-		using var supersededResponse = await reporter.PostAsync(Submit, supersededContent);
+		using var supersededResponse = await reporter.PostAsync(Submit, supersededContent, TestContext.Current.CancellationToken);
 		using var currentContent = ReportPart(new
 		{
 			language = "en-CA",
@@ -217,11 +216,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 				new { questionRevisionId = currentRevisionId, value = (string?)"a current answer" },
 			},
 		});
-		using var currentResponse = await reporter.PostAsync(Submit, currentContent);
+		using var currentResponse = await reporter.PostAsync(Submit, currentContent, TestContext.Current.CancellationToken);
 
 		// Then — only the current revision is accepted (ADR-0185)
 		supersededResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		currentResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted, await currentResponse.Content.ReadAsStringAsync());
+		currentResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted, await currentResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -244,7 +243,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then — every ordinary question may be skipped
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -272,15 +271,15 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 
 		// Then — the answer is stored untranslated, with the exact submitted
 		// words; only the Worker ever fills its second language (ADR-0174)
-		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>(cancellationToken: TestContext.Current.CancellationToken);
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.SingleAsync(a => a.ReportId == TinyId.Parse(body!.Id) && a.Value == narrative);
+		var stored = await database.ReportAnswers.SingleAsync(a => a.ReportId == TinyId.Parse(body!.Id) && a.Value == narrative, cancellationToken: TestContext.Current.CancellationToken);
 		stored.TranslatedValue.ShouldBeNull();
 		stored.TranslationSource.ShouldBeNull();
 	}
@@ -307,7 +306,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -338,15 +337,15 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
-		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>(cancellationToken: TestContext.Current.CancellationToken);
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var file = await database.ReportFiles.SingleAsync(f => f.ReportId == TinyId.Parse(body!.Id));
+		var file = await database.ReportFiles.SingleAsync(f => f.ReportId == TinyId.Parse(body!.Id), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Submission copies the original and decodes nothing; the Worker writes
 		// the derivative from the file's outbox message (ADR-0098).
@@ -355,7 +354,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		var outbox = await database.OutboxMessages
 			.Where(message => message.Payload == file.Id.Value)
 			.Select(message => message.Type)
-			.ToListAsync();
+			.ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 		outbox.ShouldBe([Core.Features.Outbox.OutboxMessageType.ProcessAttachment]);
 
 		// The reporter's name is kept, sanitized; the original is named by the
@@ -396,11 +395,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("expiredUploadIds").EnumerateArray().Select(id => id.GetString()).ShouldBe([expired]);
 		(await ReportCount()).ShouldBe(reportsBefore);
 
@@ -442,11 +441,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then — both lists in one answer, and nothing written (REQ-SUB-075)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		problem.GetProperty("expiredUploadIds").EnumerateArray().Select(id => id.GetString()).ShouldBe([expired]);
 		var refused = problem.GetProperty("refusedUploads").EnumerateArray().ToList();
 		refused.Count.ShouldBe(1);
@@ -478,7 +477,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -508,7 +507,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -522,7 +521,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = new MultipartFormDataContent { { new StringContent("{}"), "report" } };
 
 		// When
-		using var response = await reporter.PostAsync(Submit, content);
+		using var response = await reporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -566,15 +565,15 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		});
 
 		// When
-		using var response = await stubbornReporter.PostAsync(Submit, content);
+		using var response = await stubbornReporter.PostAsync(Submit, content, TestContext.Current.CancellationToken);
 
 		// Then — the report committed; the lifecycle rule, not the request, removes the upload
-		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
-		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>(cancellationToken: TestContext.Current.CancellationToken);
 		await using (var scope = _factory.Services.CreateAsyncScope())
 		{
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-			(await database.ReportFiles.CountAsync(f => f.ReportId == TinyId.Parse(body!.Id))).ShouldBe(1);
+			(await database.ReportFiles.CountAsync(f => f.ReportId == TinyId.Parse(body!.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldBe(1);
 		}
 
 		(await ObjectExists($"quarantine/{uploadId}")).ShouldBeTrue();

@@ -6,10 +6,15 @@ type: guide
 
 # Testing conventions
 
-Use xUnit and Shouldly for .NET, `node:test` for the JavaScript tools,
+Use xUnit v3 (`xunit.v3.mtp-off`, so `dotnet test` stays on VSTest) and
+Shouldly for .NET, `node:test` for the JavaScript tools,
 Vitest with Testing Library for web logic, Playwright for
 browser journeys, and Testcontainers for PostgreSQL/storage integration tests.
 `Xunit.Assert` is analyzer-banned.
+A call that takes a `CancellationToken` passes `TestContext.Current.CancellationToken`
+(analyzer `xUnit1051`); a fixture's `InitializeAsync` and `DisposeAsync` return
+`ValueTask`
+([ADR-0198](../.spec/decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md)).
 
 Name a .NET test as **three PascalCase segments joined by single underscores**,
 each opening with `Given`, `When`, or `Then`

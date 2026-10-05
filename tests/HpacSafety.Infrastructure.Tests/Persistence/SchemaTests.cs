@@ -115,7 +115,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 
 		// When
 		await using var context = PostgresFixture.ContextFor(connectionString);
-		var pending = await context.Database.GetPendingMigrationsAsync();
+		var pending = await context.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		pending.ShouldBeEmpty();
@@ -273,15 +273,15 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// Given
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var connection = new NpgsqlConnection(connectionString);
-		await connection.OpenAsync();
+		await connection.OpenAsync(TestContext.Current.CancellationToken);
 		await using var command = new NpgsqlCommand("SELECT * FROM search_admin_reports(@query)", connection);
 		command.Parameters.AddWithValue("query", "zzsynthnothingmatchesanything");
 
 		// When
-		await using var reader = await command.ExecuteReaderAsync();
+		await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
 
 		// Then
-		(await reader.ReadAsync()).ShouldBeFalse();
+		(await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
 	}
 
 	private static async Task<string[]> QueryStrings(string connectionString,

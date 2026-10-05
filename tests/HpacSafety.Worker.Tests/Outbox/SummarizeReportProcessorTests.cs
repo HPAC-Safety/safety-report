@@ -48,16 +48,16 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		summarizer.CallCount.ShouldBe(1);
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id);
+		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		persistedReport.Status.ShouldBe(ReportStatus.Pending);
 
-		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == report.Id);
+		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		summary.AiSummaryEn.ShouldBe("The pilot reported a hard landing.");
 		summary.AiSummaryFr.ShouldBe("Le pilote a signalé un atterrissage brutal.");
 		summary.Model.ShouldBe("fixture-model");
 		summary.PromptVersion.ShouldBe("fixture-v1");
 
-		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		message.IsProcessed.ShouldBeTrue();
 	}
 
@@ -90,7 +90,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		var weather = Question.Create("weather", QuestionType.ShortText, "Weather", "Météo", At, isPrivate: false, isRequired: false);
 		var photo = Question.Create("photo", QuestionType.FileUpload, "Photo", "Photo", At, isPrivate: false);
 		context.Questions.AddRange(narrative, weather, photo);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var report = new Report(Locale.EnCa, At);
 		report.Answer(consent, true, At);
@@ -100,7 +100,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		report.EnsureReadyForSubmission();
 		context.Reports.Add(report);
 		context.OutboxMessages.Add(new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, report.Id.Value, At));
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var summarizer = new FakeSummarizer(("en", "fr"));
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
@@ -150,11 +150,11 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 
 		// Then
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id);
+		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		persistedReport.Status.ShouldBe(ReportStatus.Summarizing);
 		persistedReport.SummaryError.ShouldBeNull();
 
-		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		message.Attempts.ShouldBe(1);
 		message.IsPoisoned.ShouldBeFalse();
 	}
@@ -179,12 +179,12 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 
 		// Then
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id);
+		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		persistedReport.Status.ShouldBe(ReportStatus.SummaryFailed);
 		persistedReport.SummaryError.ShouldNotBeNullOrWhiteSpace();
 		persistedReport.SummaryError.ShouldNotContain("Ada Lovelace");
 
-		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		message.IsPoisoned.ShouldBeTrue();
 	}
 
@@ -207,9 +207,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 			if (attempt == OutboxMessage.PoisonThreshold - 1)
 			{
 				await using var deleter = WorkerPostgresFixture.ContextFor(connectionString);
-				var deleting = await deleter.Reports.SingleAsync(r => r.Id == report.Id);
+				var deleting = await deleter.Reports.SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 				deleting.SoftDelete(now);
-				await deleter.SaveChangesAsync();
+				await deleter.SaveChangesAsync(TestContext.Current.CancellationToken);
 			}
 
 			await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, now, processor.Process, CancellationToken.None);
@@ -218,7 +218,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 
 		// Then
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var persistedReport = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id);
+		var persistedReport = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		persistedReport.Status.ShouldNotBe(ReportStatus.SummaryFailed);
 		persistedReport.SummaryError.ShouldBeNull();
 	}
@@ -235,7 +235,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		report.AttachSummary(summary);
 		report.AwaitReview();
 		context.Summaries.Add(summary);
-		await context.SaveChangesAsync();
+		await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 		var summarizer = new FakeSummarizer(failing: true);
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
@@ -248,7 +248,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		summarizer.CallCount.ShouldBe(0);
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		message.IsProcessed.ShouldBeTrue();
 	}
 
@@ -280,9 +280,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		claimed.ShouldBeTrue();
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		(await reader.Summaries.AnyAsync(s => s.ReportId == report.Id)).ShouldBeFalse();
+		(await reader.Summaries.AnyAsync(s => s.ReportId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeFalse();
 
-		var message = await reader.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		message.IsProcessed.ShouldBeTrue();
 	}
 
@@ -315,11 +315,11 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		claimed.ShouldBeTrue();
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		var stored = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id);
+		var stored = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		stored.Deleted.ShouldNotBeNull();
 		stored.Status.ShouldBe(ReportStatus.Submitted);
 
-		var message = await reader.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.AggregateId == report.Id);
+		var message = await reader.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken);
 		message.Attempts.ShouldBe(1);
 	}
 
@@ -341,9 +341,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		summarizer.CallCount.ShouldBe(0);
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Status.ShouldBe(ReportStatus.Unpublished);
-		(await reader.Summaries.AnyAsync(s => s.ReportId == report.Id)).ShouldBeFalse();
-		(await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id)).IsProcessed.ShouldBeTrue();
+		(await reader.Reports.SingleAsync(r => r.Id == report.Id, cancellationToken: TestContext.Current.CancellationToken)).Status.ShouldBe(ReportStatus.Unpublished);
+		(await reader.Summaries.AnyAsync(s => s.ReportId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeFalse();
+		(await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id, cancellationToken: TestContext.Current.CancellationToken)).IsProcessed.ShouldBeTrue();
 	}
 
 	[Fact]

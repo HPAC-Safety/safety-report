@@ -37,7 +37,7 @@ public sealed class OutboxDrainPassTests(WorkerPostgresFixture postgres)
 				seed.OutboxMessages.Add(new OutboxMessage(reportId, OutboxMessageType.TranslateAnswers, reportId.Value, At));
 			}
 
-			await seed.SaveChangesAsync();
+			await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		var services = new ServiceCollection();
@@ -58,7 +58,7 @@ public sealed class OutboxDrainPassTests(WorkerPostgresFixture postgres)
 
 		// Then
 		await using var check = WorkerPostgresFixture.ContextFor(connectionString);
-		var processed = await check.OutboxMessages.CountAsync(message => message.ProcessedAt != null);
+		var processed = await check.OutboxMessages.CountAsync(message => message.ProcessedAt != null, cancellationToken: TestContext.Current.CancellationToken);
 		processed.ShouldBe(3);
 	}
 
@@ -72,7 +72,7 @@ public sealed class OutboxDrainPassTests(WorkerPostgresFixture postgres)
 		await using (var seed = WorkerPostgresFixture.ContextFor(connectionString))
 		{
 			seed.OutboxMessages.Add(new OutboxMessage(reportId, OutboxMessageType.TranslateAnswers, reportId.Value, At));
-			await seed.SaveChangesAsync();
+			await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
 		}
 
 		var services = new ServiceCollection();
@@ -92,7 +92,7 @@ public sealed class OutboxDrainPassTests(WorkerPostgresFixture postgres)
 
 		// Then — the due message is left for the next invocation.
 		await using var check = WorkerPostgresFixture.ContextFor(connectionString);
-		var message = await check.OutboxMessages.SingleAsync();
+		var message = await check.OutboxMessages.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 		message.ProcessedAt.ShouldBeNull();
 	}
 

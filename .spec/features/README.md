@@ -19,7 +19,7 @@ the repository is intended to become.
 
 Scenarios without `@ui` execute as xUnit tests via Reqnroll
 ([`tests/HpacSafety.Acceptance.Tests`](../../tests/HpacSafety.Acceptance.Tests),
-[ADR-0049](../decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)).
+[ADR-0198](../decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md)).
 A scenario tagged `@ui` asserts browser-observable behavior and executes
 instead through `playwright-bdd`
 ([`tests/e2e/steps`](../../tests/e2e/steps)), which reads these same `.feature`

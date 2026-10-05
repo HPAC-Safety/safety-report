@@ -54,13 +54,13 @@ public class ChoiceParentLinkRaceTests(ApiPostgresFixture fixture)
 		// Then
 		foreach (var response in responses)
 		{
-			response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+			response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 			response.Dispose();
 		}
 
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		(await database.ChoiceParentLinks.CountAsync(link => link.ChoiceId == mentor && link.ParentChoiceId == ozone && link.Deleted == null))
+		(await database.ChoiceParentLinks.CountAsync(link => link.ChoiceId == mentor && link.ParentChoiceId == ozone && link.Deleted == null, cancellationToken: TestContext.Current.CancellationToken))
 			.ShouldBe(1);
 	}
 

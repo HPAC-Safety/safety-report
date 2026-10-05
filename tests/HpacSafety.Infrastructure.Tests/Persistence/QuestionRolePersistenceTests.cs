@@ -31,7 +31,7 @@ public sealed class QuestionRolePersistenceTests(PostgresFixture postgres)
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
 			var seeded = await context.Questions.Include(q => q.Revisions)
-				.SingleAsync(q => q.Role == QuestionRole.ReporterFirstName);
+				.SingleAsync(q => q.Role == QuestionRole.ReporterFirstName, cancellationToken: TestContext.Current.CancellationToken);
 			originalId = seeded.Id.Value;
 		}
 
@@ -42,7 +42,7 @@ public sealed class QuestionRolePersistenceTests(PostgresFixture postgres)
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			var loaded = await context.Questions.Include(q => q.Revisions).SingleAsync(q => q.Role == QuestionRole.ReporterFirstName);
+			var loaded = await context.Questions.Include(q => q.Revisions).SingleAsync(q => q.Role == QuestionRole.ReporterFirstName, cancellationToken: TestContext.Current.CancellationToken);
 			forked = loaded.ApplyEdit(
 				hasBeenAnswered: true, QuestionType.ShortText, "Your first name", "Votre prénom",
 				isPrivate: true, isActive: true, displayOrder: 0, At);
@@ -55,13 +55,13 @@ public sealed class QuestionRolePersistenceTests(PostgresFixture postgres)
 		// Then
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			var live = await context.Questions.Where(q => q.Role == QuestionRole.ReporterFirstName).ToListAsync();
+			var live = await context.Questions.Where(q => q.Role == QuestionRole.ReporterFirstName).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 			live.Count.ShouldBe(1);
 			live.Single().Id.ShouldBe(forked.Id);
 			live.Single().Id.Value.ShouldNotBe(originalId);
 
 			var originalTinyId = TinyId.Parse(originalId);
-			var retired = await context.Questions.IgnoreQueryFilters().SingleAsync(q => q.Id == originalTinyId);
+			var retired = await context.Questions.IgnoreQueryFilters().SingleAsync(q => q.Id == originalTinyId, cancellationToken: TestContext.Current.CancellationToken);
 			retired.Deleted.ShouldNotBeNull();
 			retired.Role.ShouldBe(QuestionRole.ReporterFirstName);
 		}

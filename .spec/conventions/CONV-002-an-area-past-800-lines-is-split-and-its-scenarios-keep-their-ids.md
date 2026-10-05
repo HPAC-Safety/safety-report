@@ -29,7 +29,8 @@ date: 2026-10-03
    - its `Background`: copy the old one into each new feature that needs it,
      or confirm that the steps it gains or loses are contextual no-ops;
    - its `@xunit:collection(...)` tag: keep it wherever the reason for it
-     still holds;
+     still holds, and its partial class in
+     `tests/HpacSafety.Acceptance.Tests/XunitCollectionBindings.cs`;
    - its parallelism: scenarios that used to share one test class may now run
      in parallel. A step that reads a count or a list from the shared booted
      database reads it until it agrees with itself (as `PendingCountSteps`

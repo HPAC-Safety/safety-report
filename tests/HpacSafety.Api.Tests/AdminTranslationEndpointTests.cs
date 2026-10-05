@@ -31,7 +31,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]));
+		using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -45,7 +45,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		var body = await client.GetFromJsonAsync<JsonElement>(Translate);
+		var body = await client.GetFromJsonAsync<JsonElement>(Translate, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		body.GetProperty("available").GetBoolean().ShouldBeTrue();
@@ -62,7 +62,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		var body = await client.GetFromJsonAsync<JsonElement>(Translate);
+		var body = await client.GetFromJsonAsync<JsonElement>(Translate, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		body.GetProperty("available").GetBoolean().ShouldBeFalse();
@@ -76,12 +76,12 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(Translate, Request(["One", "Two"]));
+		using var response = await client.PostAsJsonAsync(Translate, Request(["One", "Two"]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var texts = body.GetProperty("texts").EnumerateArray().Select(text => text.GetString()).ToList();
 
 		texts.ShouldBe(["[fr-CA] One", "[fr-CA] Two"]);
@@ -96,10 +96,10 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(Translate, Request(["Label", "", "   ", "Option"]));
+		using var response = await client.PostAsJsonAsync(Translate, Request(["Label", "", "   ", "Option"]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var texts = body.GetProperty("texts").EnumerateArray().Select(text => text.GetString()).ToList();
 
 		texts.ShouldBe(["[fr-CA] Label", "", "", "[fr-CA] Option"]);
@@ -117,7 +117,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(Translate, Request(["", "  "]));
+		using var response = await client.PostAsJsonAsync(Translate, Request(["", "  "]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -133,8 +133,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			Translate, new { texts = new[] { "Avez-vous été blessé ?" }, from = "fr-CA", to = "en-CA" });
+		using var response = await client.PostAsJsonAsync(Translate, new { texts = new[] { "Avez-vous été blessé ?" }, from = "fr-CA", to = "en-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -155,8 +154,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			Translate, new { texts = new[] { "One" }, from, to });
+		using var response = await client.PostAsJsonAsync(Translate, new { texts = new[] { "One" }, from, to }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -174,12 +172,12 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]));
+		using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]), cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
 
-		var problem = await response.Content.ReadAsStringAsync();
+		var problem = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 		problem.ShouldContain("403");
 		// Neither the drafted wording nor anything resembling a credential
 		// reaches the caller.
@@ -195,8 +193,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn(factory);
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			Translate, new { from = "en-CA", to = "fr-CA" });
+		using var response = await client.PostAsJsonAsync(Translate, new { from = "en-CA", to = "fr-CA" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);

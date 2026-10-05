@@ -31,7 +31,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync("/api/auth/token", new { username, password });
+		using var response = await client.PostAsJsonAsync("/api/auth/token", new { username, password }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -41,7 +41,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.SignedInSucceeded)
 			.OrderByDescending(e => e.OccurredAt)
-			.FirstAsync();
+			.FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
 		entry.TargetType.ShouldBe("Authentication");
@@ -54,8 +54,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		using var client = _factory.CreateClient();
 
 		// When
-		using var response = await client.PostAsJsonAsync(
-			"/api/auth/token", new { username = "administrator", password = "not-the-real-password" });
+		using var response = await client.PostAsJsonAsync("/api/auth/token", new { username = "administrator", password = "not-the-real-password" }, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -65,7 +64,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.SignedInFailed)
 			.OrderByDescending(e => e.OccurredAt)
-			.FirstAsync();
+			.FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.ActorSubject.ShouldBe("administrator");
 		entry.Detail.ShouldBeNull();
@@ -79,31 +78,29 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		var key = $"audit_{Guid.NewGuid():N}"[..30];
 
 		// When
-		using var created = await client.PostAsJsonAsync(
-			Questions,
-			new
-			{
-				key,
-				type = "short_text",
-				labelEn = "Synthetic",
-				labelFr = "Synthétique",
-				isRequired = false,
-				isPrivate = true,
-				isActive = true,
-				allowsReporterAdditions = false,
-				options = Array.Empty<object>(),
-			});
+		using var created = await client.PostAsJsonAsync(Questions, new
+		{
+			key,
+			type = "short_text",
+			labelEn = "Synthetic",
+			labelFr = "Synthétique",
+			isRequired = false,
+			isPrivate = true,
+			isActive = true,
+			allowsReporterAdditions = false,
+			options = Array.Empty<object>(),
+		}, cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
 		created.StatusCode.ShouldBe(HttpStatusCode.Created);
-		var body = await created.Content.ReadFromJsonAsync<JsonElement>();
+		var body = await created.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var questionId = TinyId.Parse(body.GetProperty("id").GetString()!);
 
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.CreatedQuestion && e.TargetId == questionId)
-			.SingleAsync();
+			.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.TargetType.ShouldBe("Question");
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
@@ -116,39 +113,35 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 		var key = $"audit_{Guid.NewGuid():N}"[..30];
 
-		using var created = await client.PostAsJsonAsync(
-			Questions,
-			new
-			{
-				key,
-				type = "short_text",
-				labelEn = "Synthetic",
-				labelFr = "Synthétique",
-				isRequired = false,
-				isPrivate = true,
-				isActive = true,
-				allowsReporterAdditions = false,
-				options = Array.Empty<object>(),
-			});
+		using var created = await client.PostAsJsonAsync(Questions, new
+		{
+			key,
+			type = "short_text",
+			labelEn = "Synthetic",
+			labelFr = "Synthétique",
+			isRequired = false,
+			isPrivate = true,
+			isActive = true,
+			allowsReporterAdditions = false,
+			options = Array.Empty<object>(),
+		}, cancellationToken: TestContext.Current.CancellationToken);
 		created.StatusCode.ShouldBe(HttpStatusCode.Created);
-		var body = await created.Content.ReadFromJsonAsync<JsonElement>();
+		var body = await created.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
 		var questionId = TinyId.Parse(body.GetProperty("id").GetString()!);
 
 		// When — the same edit, only with isActive turned off
-		using var revised = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
-			new
-			{
-				key,
-				type = "short_text",
-				labelEn = "Synthetic",
-				labelFr = "Synthétique",
-				isRequired = false,
-				isPrivate = true,
-				isActive = false,
-				allowsReporterAdditions = false,
-				options = Array.Empty<object>(),
-			});
+		using var revised = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{questionId}", UriKind.Relative), new
+		{
+			key,
+			type = "short_text",
+			labelEn = "Synthetic",
+			labelFr = "Synthétique",
+			isRequired = false,
+			isPrivate = true,
+			isActive = false,
+			allowsReporterAdditions = false,
+			options = Array.Empty<object>(),
+		}, cancellationToken: TestContext.Current.CancellationToken);
 		revised.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
@@ -156,7 +149,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var entry = await database.AuditLog
 			.Where(e => e.Action == AuditAction.DeactivatedQuestion && e.TargetId == questionId)
-			.SingleAsync();
+			.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 		entry.TargetType.ShouldBe("Question");
 	}

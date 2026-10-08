@@ -18,14 +18,14 @@
 		<!-- S3 only, and only in Infrastructure. Uploads go straight from the
 		     browser to a private bucket through a pre-signed PUT, so the SDK never
 		     appears in Core. See ADR-0026. -->
-		<PackageVersion Include="AWSSDK.S3" Version="4.0.104.1" />
+		<PackageVersion Include="AWSSDK.S3" Version="4.0.104.2" />
 		<!-- The API's async nudge to the Worker's Lambda function after a commit
 		     that queues outbox work (ADR-0123, #443). Infrastructure only. -->
-		<PackageVersion Include="AWSSDK.Lambda" Version="4.0.108.2" />
+		<PackageVersion Include="AWSSDK.Lambda" Version="4.0.109" />
 		<!-- Reads the RDS-managed master-user secret at cold start, to assemble
 		     the connection string without ever putting the password in
 		     Terraform state (#443, coordinated with #465). Infrastructure only. -->
-		<PackageVersion Include="AWSSDK.SecretsManager" Version="4.0.100.15" />
+		<PackageVersion Include="AWSSDK.SecretsManager" Version="4.0.100.16" />
 	</ItemGroup>
 	<ItemGroup Label="AWSLambda">
 		<!-- The Worker's own Lambda entry point (ADR-0042, ADR-0123, #443): one

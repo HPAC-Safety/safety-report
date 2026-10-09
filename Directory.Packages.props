@@ -107,8 +107,8 @@
 	<ItemGroup Label="xunit">
 		<!-- xunit.v3.mtp-off keeps `dotnet test` on VSTest, so coverlet, the trx
 		     logger and tools/coverage/report-test-counts.ts stay as they are. -->
-		<PackageVersion Include="xunit.v3.mtp-off" Version="4.0.1" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+		<PackageVersion Include="xunit.v3.mtp-off" Version="4.0.2" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
 	</ItemGroup>
 	<!--
 		Families expected as the system is built, listed here so they land in the

@@ -25,7 +25,7 @@
 		<!-- Reads the RDS-managed master-user secret at cold start, to assemble
 		     the connection string without ever putting the password in
 		     Terraform state (#443, coordinated with #465). Infrastructure only. -->
-		<PackageVersion Include="AWSSDK.SecretsManager" Version="4.0.100.17" />
+		<PackageVersion Include="AWSSDK.SecretsManager" Version="4.0.100.18" />
 	</ItemGroup>
 	<ItemGroup Label="AWSLambda">
 		<!-- The Worker's own Lambda entry point (ADR-0042, ADR-0123, #443): one

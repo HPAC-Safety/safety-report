@@ -10,7 +10,7 @@
 # process doing a stream-copy remux (ADR-0094), never linked into the Worker.
 # The base is pinned by digest; Renovate moves the pin within the .NET major.
 # The major moves by hand, with global.json and the target framework (ADR-0120).
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:939555726cae4c916d212323ac3c0792996dcac2614f00e82cc40fcf059e1af3
 
 RUN apt-get update \
 	&& apt-get install --yes --no-install-recommends ffmpeg \

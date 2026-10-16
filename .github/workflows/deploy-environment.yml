@@ -89,7 +89,7 @@ jobs:
           persist-credentials: false
 
       # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
 
@@ -110,7 +110,7 @@ jobs:
             See infra/SETUP.md (steps 2.2-2.4, or 3.2-3.4) and infra/bootstrap.sh.
 
       - name: Download the release's built artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: artifacts/release
           run-id: ${{ inputs.artifacts_run_id || github.run_id }}

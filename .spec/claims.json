@@ -888,7 +888,7 @@
 			"steps": [
 				{"keyword":"Given","text":"a visitor signs in as an Administrator","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it opens with manage-reports, review-type-ahead-values, and manage-questions items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"it opens with manage-reports, review-type-ahead-values, manage-questions, and manage-roles items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,
@@ -7121,7 +7121,7 @@
 				{"keyword":"Given","text":"a visitor signs in as a Safety Officer","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"When","text":"the visitor activates the Admin menu","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
 				{"keyword":"Then","text":"it opens with manage-reports and review-type-ahead-values items","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
-				{"keyword":"Then","text":"it offers no manage-questions item","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+				{"keyword":"Then","text":"it offers no manage-questions or manage-roles item","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/member-login.steps.ts"],
 			"staleIgnore": false,

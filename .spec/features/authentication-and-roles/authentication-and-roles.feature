@@ -77,7 +77,7 @@ Scenario: An Administrator's header shows an Admin menu
 Scenario: An Administrator's Admin menu offers every item
   Given a visitor signs in as an Administrator
   When the visitor activates the Admin menu
-  Then it opens with manage-reports, review-type-ahead-values, and manage-questions items
+  Then it opens with manage-reports, review-type-ahead-values, manage-questions, and manage-roles items
 
 @REQ-MOD-092
 @ui
@@ -85,7 +85,7 @@ Scenario: A Safety Officer's Admin menu offers reports and type-ahead review
   Given a visitor signs in as a Safety Officer
   When the visitor activates the Admin menu
   Then it opens with manage-reports and review-type-ahead-values items
-  And it offers no manage-questions item
+  And it offers no manage-questions or manage-roles item
 
 @REQ-MOD-009
 @ui

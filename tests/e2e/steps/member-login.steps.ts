@@ -138,16 +138,17 @@ When("the visitor activates the Admin menu", async ({ page }) => {
 })
 
 Then(
-	"it opens with manage-reports, review-type-ahead-values, and manage-questions items",
+	"it opens with manage-reports, review-type-ahead-values, manage-questions, and manage-roles items",
 	async ({ page }) => {
 		const menu = page.getByRole("menu", { name: "Admin" })
 		await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
 		await expect(menu.getByRole("menuitem", { name: "Type-ahead values to review" })).toBeVisible()
 		await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
+		await expect(menu.getByRole("menuitem", { name: "Manage roles" })).toBeVisible()
 		// Shared choice lists are gone: each question owns its choices (ADR-0095).
 		// The answer-translation queue is gone too: only the Worker ever writes
 		// an answer's second language, once (ADR-0174).
-		await expect(menu.getByRole("menuitem")).toHaveCount(3)
+		await expect(menu.getByRole("menuitem")).toHaveCount(4)
 	},
 )
 
@@ -158,9 +159,10 @@ Then("it opens with manage-reports and review-type-ahead-values items", async ({
 	await expect(menu.getByRole("menuitem")).toHaveCount(2)
 })
 
-Then("it offers no manage-questions item", async ({ page }) => {
+Then("it offers no manage-questions or manage-roles item", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeHidden()
+	await expect(menu.getByRole("menuitem", { name: "Manage roles" })).toBeHidden()
 })
 
 Then("the header shows a sign-out action", async ({ page }) => {

@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using HpacSafety.Api.Authentication;
+using HpacSafety.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -138,6 +140,7 @@ public sealed class InterimIssuerRegistrationTests
 
 		return new ServiceCollection()
 			.AddLogging()
+			.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql("Host=localhost"))
 			.AddHpacSafetyAuthentication(configuration, development)
 			.AddSingleton(TimeProvider.System)
 			.BuildServiceProvider();

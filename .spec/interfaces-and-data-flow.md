@@ -63,10 +63,13 @@ below, and a write is audited.
 | List/create/delete eligible question revisions | Administrator; every write audited. |
 | Edit a question's choices (fix or replace a picker option) and machine-translate question wording | Administrator; every write audited. |
 | Review a type-ahead value: approve, correct, merge, or remove | SafetyOfficer or Administrator; every write audited (ADR-0129). |
+| List, add, and revoke role assignments | Administrator only; every write audited. The list always includes the Super Administrator, even when role assignments cannot be read; neither it nor the acting Administrator's own assignment can be revoked ([ADR-0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md), [ADR-0200](decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md)). |
 
-**CON-IF-005** There is no allowlist-management endpoint. Roles come from the token, and
-access is granted or revoked at the identity provider.
-*Verified by: REQ-MOD-015, REQ-MOD-017.*
+**CON-IF-005** Administrator and Safety Officer come only from an active role assignment or
+the Super Administrator, resolved on every request that needs them; a token's
+role claim never grants either. The identity provider only proves membership
+([ADR-0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md), [ADR-0200](decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md)).
+*Verified by: REQ-MOD-017, REQ-AUTH-021, REQ-AUTH-022, REQ-AUTH-023, REQ-AUTH-024.*
 
 **CON-IF-006** Admin mutation routes use explicit command DTOs and concurrency tokens where a
 stale edit could overwrite another officer's work. Error bodies are localized
@@ -165,6 +168,14 @@ answers, private context, model prompts/responses, credentials, bearer tokens,
 the submitting member's subject, IP addresses beyond ephemeral security
 processing, client filenames, or object URLs.
 *Verified by: REQ-AI-021, REQ-SUB-021, REQ-MED-003.*
+
+**CON-IF-011** No email address reaches a log: not a role assignment's, not the
+Super Administrator's, and not one embedded in a token subject (the interim
+issuer's subject is `member:<email>`). That includes the detail of a database
+error, such as a uniqueness violation, which echoes the offending value
+([ADR-0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)).
+*Verified by: none — a log property no scenario observes; a focused boundary
+test on the refused duplicate (REQ-AUTH-016) and on sign-in is its check.*
 
 Metrics aggregate counts and latency. Alerts identify stuck/failed work by
 opaque ID so authorized operators can investigate in the application.

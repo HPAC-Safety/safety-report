@@ -55,16 +55,20 @@ REQ-QB-131.*
 | `report_private_attachments` | ID, report ID, blob key (`<report id>/private/<id>`), the sanitized file name, the content type it was uploaded as, byte size, an optional description of at most 500 characters, the adder's token subject and time, the remover's token subject, Deleted. A staff-only file, never anonymized, summarized, processed, or published; no public query or Worker reads it, and the only view is the admin-only `admin_report_search_document` ([ADR-0135](decisions/ADR-0135-staff-add-private-attachments-to-a-report.md), amended by [ADR-0156](decisions/ADR-0156-postgres-full-text-and-trigram-search-for-manage-reports.md)). |
 | `audit_log` | ID, acting token subject where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
 
-**CON-DP-005** **There is no user table.** Identity and role come from claims on a validated
-token, per request, and are never written down
-([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+**CON-DP-005** **There is no user table.** Identity comes from a validated token, per
+request. The only thing stored about a person is a `role_assignments` row: an
+email address and a role, with its granted time and granting token subject,
+and its revocation time and revoking token subject once revoked, and nothing
+else. Under staging's interim issuer a token subject is `member:<email>`, so
+the granting and revoking subjects, and `audit_log.actor_subject`, can hold an
+Administrator's email; it is stored, never logged (CON-IF-011) ([ADR-0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)).
 `summary_revisions.author_subject` and `approved_by_subject`, `report_comments.author_subject`,
 `report_comments.hidden_by_subject`, `report_private_note_revisions.author_subject`,
 `report_private_attachments.added_by_subject` and `deleted_by_subject`,
 and `audit_log.actor_subject` hold the token's
 `sub` claim as an opaque `varchar(256)` string with **no foreign key** — there
 is nothing to reference.
-*Verified by: REQ-MOD-018.*
+*Verified by: REQ-MOD-018, REQ-AUTH-014.*
 
 Audit rows written before `admin_users` was dropped keep the identifiers they
 were created with: `DropAdminUsersForJwtIdentity` renames and widens the column
@@ -168,6 +172,12 @@ trigger inside its own transaction and enables it again before the transaction
 ends, and needs its own ADR argument. There is no session setting, role, or
 runtime flag that bypasses a trigger.
 *Verified by: REQ-DOM-029.*
+
+**CON-DP-017** No `role_assignments` row is ever deleted: the database refuses
+`DELETE` and `TRUNCATE`. The one update it allows sets the revocation time and
+the revoking token subject, together, on an active row; every other update,
+including one to a revoked row, is refused ([ADR-0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)).
+*Verified by: REQ-AUTH-026, REQ-AUTH-027.*
 
 ## Write transactions
 

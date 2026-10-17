@@ -289,15 +289,15 @@ public static class AttachmentEndpoints
 		TimeProvider clock,
 		CancellationToken cancellationToken)
 	{
-		var identity = MemberRoles.IdentityOf(context.User, authOptions.Value.RoleClaimType);
+		var subject = MemberRoles.SubjectOf(context.User);
 
-		if (identity is null)
+		if (string.IsNullOrWhiteSpace(subject))
 		{
 			return Results.Forbid();
 		}
 
 		database.AuditLog.Add(new AuditLogEntry(
-			identity.Subject, action, "ReportFile", file.Id, clock.GetUtcNow()));
+			subject, action, "ReportFile", file.Id, clock.GetUtcNow()));
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

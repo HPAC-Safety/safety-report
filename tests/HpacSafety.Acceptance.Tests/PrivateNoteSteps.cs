@@ -28,8 +28,8 @@ public sealed class PrivateNoteSteps
 
 	private const string NoteText = "Synthetic: called the reporter, follow up Monday.";
 
-	private readonly string _officer = $"officer:{Guid.NewGuid():n}";
-	private readonly string _administrator = $"admin:{Guid.NewGuid():n}";
+	private readonly string _officer = $"dev:officer-{Guid.NewGuid():n}@example.com";
+	private readonly string _administrator = $"dev:admin-{Guid.NewGuid():n}@example.com";
 	private readonly List<(string Text, string Writer)> _written = [];
 	private readonly List<HttpStatusCode> _answers = [];
 

@@ -11,6 +11,7 @@ import { AdminPage } from "./routes/AdminPage"
 import { ManageReportsPage } from "./routes/ManageReportsPage"
 import { ReportDetailPage } from "./routes/ReportDetailPage"
 import { ManageQuestionsPage } from "./routes/ManageQuestionsPage"
+import { ManageRolesPage } from "./routes/ManageRolesPage"
 import { ReviewTypeAheadValuesPage } from "./routes/ReviewTypeAheadValuesPage"
 import { NotFoundPage } from "./routes/NotFoundPage"
 
@@ -56,6 +57,14 @@ export const routes = createRoutesFromElements(
 			element={
 				<AdminRouteGuard requires="administrator">
 					<ManageQuestionsPage />
+				</AdminRouteGuard>
+			}
+		/>
+		<Route
+			path="/admin/roles"
+			element={
+				<AdminRouteGuard requires="administrator">
+					<ManageRolesPage />
 				</AdminRouteGuard>
 			}
 		/>

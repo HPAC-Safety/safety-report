@@ -29,13 +29,13 @@ the prefix shown after it
 |---|---|---|---|---|---|
 | [Admin report list and search](features/admin-report-search/admin-report-search.feature) | `REQ-ARS` (also `REQ-MOD`) | 39 | 0 | 20 | [README](features/admin-report-search/README.md) — Supporting detail for the admin report list: its rows, filters, search, paging, and quick actions. |
 | [AI anonymization](features/ai-anonymization/ai-anonymization.feature) | `REQ-AI` | 28 | 0 | 0 | [README](features/ai-anonymization/README.md) — Supporting detail for the one-call bilingual summarization and anonymization scenarios. |
-| [Authentication and roles](features/authentication-and-roles/authentication-and-roles.feature) | `REQ-AUTH` (also `REQ-MOD`) | 56 | 0 | 25 | [README](features/authentication-and-roles/README.md) — Supporting detail for member authentication, the three roles, the Admin menu and its pending counts, and access control. |
+| [Authentication and roles](features/authentication-and-roles/authentication-and-roles.feature) | `REQ-AUTH` (also `REQ-MOD`) | 77 | 1 | 27 | [README](features/authentication-and-roles/README.md) — Supporting detail for member authentication, the three roles, role assignments and the Super Administrator, the Admin menu and its pending counts, and access control. |
 | [Choices and type-ahead values](features/choices-and-type-ahead/choices-and-type-ahead.feature) | `REQ-CTA` (also `REQ-MOD`, `REQ-QB`) | 58 | 0 | 35 | [README](features/choices-and-type-ahead/README.md) — Supporting detail for a question's choices: their identity, order and pinning, and the review of type-ahead values reporters add. |
 | [Comments](features/comments/comments.feature) | `REQ-COM` | 27 | 0 | 12 | [README](features/comments/README.md) — Supporting detail for the member comment, translation, and moderation scenarios. |
 | [Dependent choices](features/dependent-choices/dependent-choices.feature) | `REQ-DCH` (also `REQ-QB`) | 59 | 0 | 27 | [README](features/dependent-choices/README.md) — Supporting detail for choices offered under the answer to an earlier single-select or type-ahead question. |
 | [Domain and lifecycle](features/domain-and-lifecycle/domain-and-lifecycle.feature) | `REQ-DOM` | 28 | 0 | 0 | [README](features/domain-and-lifecycle/README.md) — Supporting detail for the report states, invariants, deletion, and retention scenarios. |
 | [Attachments](features/media/media.feature) | `REQ-MED` (also `REQ-MOD`) | 100 | 0 | 44 | [README](features/media/README.md) — Supporting detail for the image, video, document, quarantine, and derivative scenarios, and for the staff-only private attachments on a report. |
-| [Public feed](features/public-feed/public-feed.feature) | `REQ-PUB` (also `REQ-MOD`) | 63 | 0 | 30 | [README](features/public-feed/README.md) — Supporting detail for the public feed, a published report's own page, and public search. |
+| [Public feed](features/public-feed/public-feed.feature) | `REQ-PUB` (also `REQ-MOD`) | 64 | 0 | 30 | [README](features/public-feed/README.md) — Supporting detail for the public feed, a published report's own page, and public search. |
 | [Question authoring](features/question-authoring/question-authoring.feature) | `REQ-QAU` (also `REQ-QB`) | 101 | 0 | 39 | [README](features/question-authoring/README.md) — Supporting detail for the immutable bilingual question revisions, question types, conditions, groups, and the question editor. |
 | [Question translation](features/question-translation/question-translation.feature) | `REQ-QTR` (also `REQ-QB`) | 31 | 0 | 29 | [README](features/question-translation/README.md) — Supporting detail for machine-translating a question's wording and its choices while authoring. |
 | [Report form](features/report-form/report-form.feature) | `REQ-RFM` (also `REQ-QB`) | 75 | 0 | 44 | [README](features/report-form/README.md) — Supporting detail for the report form: stored answer forms, the type-ahead and picker fields, the seeded attachment and Country questions, and the seeded groups. |
@@ -51,9 +51,9 @@ Each normative constraint carries a `CON-*` ID naming the claims that verify it.
 | Page | Constraints | Count | Description |
 |---|---|---|---|
 | [System overview](system-overview.md) | `CON-SO` | 9 | The canonical purpose, boundaries, components, and explicit out-of-scope list. |
-| [Data and persistence](data-and-persistence.md) | `CON-DP` | 16 | The canonical target records, naming, transactions, constraints, and query DTOs. |
-| [Interfaces and data flow](interfaces-and-data-flow.md) | `CON-IF` | 10 | The canonical HTTP surface, ports, and end-to-end flow of a report through the system. |
-| [Infrastructure and operations](infrastructure-and-operations.md) | `CON-INF` | 20 | The canonical minimal AWS topology, deployment, secrets, backups, and alerting. |
+| [Data and persistence](data-and-persistence.md) | `CON-DP` | 17 | The canonical target records, naming, transactions, constraints, and query DTOs. |
+| [Interfaces and data flow](interfaces-and-data-flow.md) | `CON-IF` | 11 | The canonical HTTP surface, ports, and end-to-end flow of a report through the system. |
+| [Infrastructure and operations](infrastructure-and-operations.md) | `CON-INF` | 21 | The canonical minimal AWS topology, deployment, secrets, backups, and alerting. |
 | [Testing and quality](testing-and-quality.md) | `CON-TQ` | 12 | The canonical test strategy, required contract coverage, and quality gates. |
 
 ## Decisions
@@ -63,6 +63,8 @@ Architecture decision records, newest first. What an ADR is for:
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0200](decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md) | A permanent Super Administrator comes from configuration | accepted | 2026-10-16 |
+| [0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md) | Roles come from application-owned role assignments, and the provider proves membership only | accepted | 2026-10-16 |
 | [0198](decisions/ADR-0198-the-dotnet-tests-run-on-xunit-v3.md) | The .NET tests run on xUnit v3, and Reqnroll executes the .feature files through Reqnroll.xUnit.v3 | accepted | 2026-10-04 |
 | [0197](decisions/ADR-0197-backend-and-ux-replace-the-implementer-and-the-adversary-takes-privacy-review.md) | Backend and ux replace the implementer, and the adversary takes privacy review | superseded | 2026-10-04 |
 | [0196](decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md) | A browser receipt shows a reporter their own unpublished report | accepted | 2026-10-03 |
@@ -88,7 +90,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0176](decisions/ADR-0176-a-published-report-page-shows-the-language-it-was-written-in.md) | A published report page shows the language it was written in | accepted | 2026-09-29 |
 | [0174](decisions/ADR-0174-an-answers-second-language-is-written-once-by-the-worker-only.md) | An answer's second language is written once, by the Worker only | accepted | 2026-09-29 |
 | [0173](decisions/ADR-0173-a-fresh-navigation-starts-at-the-top-and-only-a-return-restores.md) | A fresh navigation starts at the top, and only a return restores | accepted | 2026-09-29 |
-| [0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md) | A temporary interim issuer signs staging tokens until a real provider exists | accepted | 2026-09-28 |
+| [0172](decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md) | A temporary interim issuer signs staging tokens until a real provider exists | superseded | 2026-09-28 |
 | [0171](decisions/ADR-0171-terraform-reads-back-only-the-origin-secret-and-log-groups-are-guarded-by-name.md) | Terraform reads back only the origin secret, and log groups are guarded by name | accepted | 2026-09-28 |
 | [0170](decisions/ADR-0170-each-account-groups-its-resources-by-a-tag-based-resource-group-alone.md) | Each account groups its resources by a tag-based Resource Group alone | accepted | 2026-09-28 |
 | [0169](decisions/ADR-0169-the-deploy-role-manages-what-is-tagged-ours-and-tags-only-as-ours.md) | The deploy role manages what is already tagged ours, and tags only as ours | accepted | 2026-09-28 |
@@ -178,7 +180,7 @@ Architecture decision records, newest first. What an ADR is for:
 | [0082](decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md) | A deterministic marking pass precedes the one model call | accepted | 2026-09-22 |
 | [0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md) | Trust forwarded headers because the security group is the trust boundary, not a static proxy list | superseded | 2026-09-22 |
 | [0080](decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md) | Every answer gets a Worker-translated second language; the submitted value is immutable | partially-superseded | 2026-09-22 |
-| [0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md) | A development login may verify against the live members site | accepted | 2026-09-21 |
+| [0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md) | A development login may verify against the live members site | superseded | 2026-09-21 |
 | [0078](decisions/ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md) | Typeform import is English-led, and every real branching rule is pending, not auto-mapped | accepted | 2026-09-22 |
 | [0077](decisions/ADR-0077-typeform-json-import-and-export.md) | Question bank import/export uses Typeform's own JSON, not QSF | accepted | 2026-09-21 |
 | [0076](decisions/ADR-0076-statement-and-group-question-types.md) | Statement and Group are question types again, and a Group has children | accepted | 2026-09-21 |
@@ -192,8 +194,8 @@ Architecture decision records, newest first. What an ADR is for:
 | [0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md) | The member token replaces Turnstile on submission | accepted | 2026-09-21 |
 | [0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md) | A reporter must be a member, and is not recorded | superseded | 2026-09-21 |
 | [0066](decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md) | A development identity provider, signed with a dev key | partially-superseded | 2026-09-21 |
-| [0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md) | No user records; identity is the token subject | accepted | 2026-09-21 |
-| [0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md) | JWT bearer authentication with three roles | accepted | 2026-09-21 |
+| [0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md) | No user records; identity is the token subject | superseded | 2026-09-21 |
+| [0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md) | JWT bearer authentication with three roles | superseded | 2026-09-21 |
 | [0063](decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md) | A reporter may add a missing type-ahead choice, and an autocomplete renders the live list | superseded | 2026-09-21 |
 | [0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md) | An administrator may machine-translate question text while authoring; the database still stores only what they saved | partially-superseded | 2026-09-20 |
 | [0061](decisions/ADR-0061-administrators-may-require-any-question.md) | An administrator may make any question mandatory; consent is merely the one that cannot be optional | accepted | 2026-09-20 |

@@ -36,6 +36,13 @@ public sealed class AdminSearchSteps
 	private string _pendingId = string.Empty;
 	private string _publishedId = string.Empty;
 	private HttpStatusCode? _lastStatus;
+	private readonly RoleAssignmentWorld _roleAssignments;
+
+	/// <summary>Reqnroll hands each scenario its own role-assignment world, which the manage-roles scenarios share these Then steps through.</summary>
+	public AdminSearchSteps(RoleAssignmentWorld roleAssignments)
+	{
+		_roleAssignments = roleAssignments;
+	}
 
 	[Given(@"a report carries a distinct word in its (.+)")]
 	public async Task GivenAReportCarriesAWordIn(string source)
@@ -146,6 +153,13 @@ public sealed class AdminSearchSteps
 	[Then(@"the request is refused as forbidden")]
 	public void ThenRefusedAsForbidden()
 	{
+		// REQ-AUTH-020 and REQ-AUTH-021 say the same sentence of a role-assignment request.
+		if (_roleAssignments.LastResponse is { } roleAssignmentResponse)
+		{
+			roleAssignmentResponse.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+			return;
+		}
+
 		_lastStatus.ShouldBe(HttpStatusCode.Forbidden);
 		_foundIds.ShouldBeEmpty();
 	}

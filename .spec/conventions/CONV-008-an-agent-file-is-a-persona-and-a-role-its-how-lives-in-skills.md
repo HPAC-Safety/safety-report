@@ -1,6 +1,6 @@
 ---
 title: An agent file is a persona and a role; its how lives in skills
-description: Each of the eleven agents has a human name and a personality, and its file says only who it is, what it does, and what it leaves to others; reading lists, procedures, output formats, and git mechanics live in the generic skills it preloads, and every refusal stays in the file.
+description: Each of the fourteen agents has a human name and a personality, and its file says only who it is, what it does, and what it leaves to others; reading lists, procedures, output formats, and git mechanics live in the generic skills it preloads, and every refusal stays in the file.
 type: convention
 status: accepted
 date: 2026-10-04
@@ -37,7 +37,10 @@ agent-team through the
 | `spec-author` | Jennifer | business analyst | Judgement: reads widely, decides what to build |
 | `spec-reviewer` | Jessica | code reviewer | Judgement: weighs a diff against claims and ADRs |
 | `backend` | Brad | back-end engineer | Build: designs and builds the server side within settled claims |
-| `ux` | Tiffany | UX designer and front-end engineer | Build: designs and builds the web UI within settled claims |
+| `ux` | Tiffany | UX designer | Build: specifies flow, accessibility semantics, and copy within settled claims; builds nothing |
+| `designer` | Brittany | UI designer | Build: draws boards and design-system values within settled claims; writes no production code |
+| `client` | Megan | client engineer | Build: builds the web and native clients to the hand-off within settled claims |
+| `babysitter` | Kristy | build babysitter | Routine: reads logs and classifies failures against a fixed rule, read-only |
 | `infrastructure` | Dave | cloud and DevOps engineer | Judgement: cloud and network mistakes outlive the code and reach production |
 | `database-administrator` | Jane | database engineer | Judgement: schema mistakes outlive the code |
 | `ai-author` | Emily | maintainer of agent instructions | Build: rewrites wording, never rules |
@@ -66,8 +69,8 @@ voice stays out of every finding and artifact, and never softens a finding.
   edits code, tests, the specification, `docs/` pages, or runtime prompts,
   and it changes a rule's wording, never the rule.
 - **The chain**: spec-author writes the scenario, test-writer binds it, a
-  builder (`backend`, `ux`, or `infrastructure`, which replaced the single
-  implementer) makes it pass, and spec-reviewer judges the diff against the
+  builder (`backend`, `client`, or `infrastructure`, which replaced the single
+  implementer; for a UI change `ux` then `designer` hand off first) makes it pass, and spec-reviewer judges the diff against the
   claims; each trusts only the artifact from the step before it.
 - **Privacy review is the adversary's**, not the spec-reviewer's.
 - When the critic, the adversary, and the auditor run:

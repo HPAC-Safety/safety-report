@@ -91,22 +91,22 @@ resource "aws_lambda_function" "api" {
         # kept so the translator can be switched back (issue #614).
         AiChatClient__ApiKeySecretArn = aws_secretsmanager_secret.this["gemini_api_key"].arn
         Translation__ApiKeySecretArn  = aws_secretsmanager_secret.this["deepl_api_key"].arn
+        # The permanent Super Administrator (#909, ADR-0200): the ARN only.
+        # The entry may have no version (no SUPER_ADMIN secret set); the API
+        # resolves it at cold start and treats a missing value as none.
+        HpacSafety__Authentication__SuperAdminSecretArn = aws_secretsmanager_secret.this["super_admin"].arn
       },
 
       # The temporary interim issuer (issue #648, ADR-0172) — staging only.
       # Empty where var.interim_issuer_enabled is false, so production's API
       # function carries none of this. The flag and the secret's ARN only;
       # AddHpacSafetyAuthentication resolves the signing key's value itself,
-      # at cold start, the same way as every other secret above. The email
-      # lists are not secret — see interim_issuer_administrator_emails.
-      var.interim_issuer_enabled ? merge(
-        {
-          HpacSafety__Authentication__InterimIssuer__Enabled             = "true"
-          HpacSafety__Authentication__InterimIssuer__SigningKeySecretArn = aws_secretsmanager_secret.interim_issuer_signing_key[0].arn
-        },
-        { for idx, email in var.interim_issuer_administrator_emails : "MembersSiteLogin__AdministratorEmails__${idx}" => email },
-        { for idx, email in var.interim_issuer_safety_officer_emails : "MembersSiteLogin__SafetyOfficerEmails__${idx}" => email },
-      ) : {}
+      # at cold start, the same way as every other secret above. Roles come
+      # from role assignments, not from any email list here (ADR-0199).
+      var.interim_issuer_enabled ? {
+        HpacSafety__Authentication__InterimIssuer__Enabled             = "true"
+        HpacSafety__Authentication__InterimIssuer__SigningKeySecretArn = aws_secretsmanager_secret.interim_issuer_signing_key[0].arn
+      } : {}
     )
   }
 

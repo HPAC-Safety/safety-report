@@ -18,8 +18,10 @@ same section names.
 - Specify first: `AGENTS.md` "Specification-driven development".
 - Ownership, the one home: `backend` owns `src/HpacSafety.*` (Api, Core,
   Infrastructure, Worker) with their unit and integration tests, the `tools/`
-  scripts, and the CI workflows except those `infrastructure` owns. `ux` owns
-  `src/web` and its component tests. `infrastructure` owns `infra/`
+  scripts, and the CI workflows except those `infrastructure` owns. `client` owns
+  `src/web` and its component tests; `ux` owns the flow, accessibility
+  semantics, and copy entries in `locales/`, and `designer` the boards and
+  design-system values. `infrastructure` owns `infra/`
   (Terraform) and the workflows that provision or deploy: `terraform.yml`,
   `terraform-relock.yml`, `deploy-environment.yml`, `release.yml`,
   `promote.yml`; the test-writer owns the acceptance step

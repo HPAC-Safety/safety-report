@@ -82,6 +82,10 @@ locals {
       name        = "${local.name}/deepl-api-key"
       description = "Translation__ApiKey, read by the API and the Worker themselves at cold start via Translation__ApiKeySecretArn (#597). DORMANT: kept, not used, so translation can be switched back from Gemini to DeepL (issue #614, ADR-0179). Same value in both environments for now (issue #30)."
     }
+    super_admin = {
+      name        = "${local.name}/super-administrator"
+      description = "The permanent Super Administrator's email, read by the API itself at cold start via HpacSafety__Authentication__SuperAdminSecretArn (#909, ADR-0200). OPTIONAL: deploy-environment.yml puts a value only from a non-empty SUPER_ADMIN environment secret and otherwise leaves the entry without a version, so an environment with no Super Administrator still deploys and the API treats a missing value as none."
+    }
   }
 }
 

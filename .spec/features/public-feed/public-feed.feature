@@ -33,6 +33,19 @@ Scenario: An Administrator's token widens the feed's attachment count to the ful
   When an Administrator lists the feed
   Then the report's attachment count is 2
 
+@REQ-PUB-032
+Scenario Outline: A member whose Safety Officer role assignment is removed sees a published report as the public does on their next request
+  Given a published report has one public attachment and one attachment only staff may see
+  And a Safety Officer whose role comes from an active role assignment
+  And an Administrator has since removed that role assignment
+  When the member next <reads> with the token they already hold
+  Then <outcome>
+
+Examples:
+  | reads                           | outcome                                      |
+  | lists the feed                  | the report's attachment count is 1           |
+  | reads that report's public page | the report shows no staff attachments        |
+
 @REQ-MOD-152
 Scenario: A Safety Officer sees every attachment on the public report page, each marked public or not
   Given a published report has a public image and a hidden image

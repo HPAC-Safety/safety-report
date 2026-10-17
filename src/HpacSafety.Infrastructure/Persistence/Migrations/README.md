@@ -29,7 +29,9 @@ to a month and a year on purpose; a UUIDv7 would hand the timestamp back ([ADR-0
 `deleted timestamptz null` and a default query filter limiting reads to live
 rows, applied by
 [`SoftDeleteFilters`](../Conventions/SoftDeleteFilters.cs). `audit_log` is
-append-only and has no such column. A reference check that must see deleted
+append-only and has no such column. `role_assignments` has none either: it is never
+deleted, a revoke stamps `revoked_at` instead, and a trigger enforces it
+(ADR-0199). A reference check that must see deleted
 rows — "has any answer, on any report including deleted ones, used this
 revision?" — uses `IgnoreQueryFilters` explicitly.
 
@@ -231,6 +233,16 @@ erDiagram
         timestamptz deleted
     }
 
+    role_assignments {
+        char(11) id PK
+        varchar(320) email "normalised; one active row per email"
+        varchar(64) role "safety_officer or administrator"
+        timestamptz granted_at
+        varchar(256) granted_by_subject "token subject; opaque, no foreign key"
+        timestamptz revoked_at "null while active; set with revoked_by_subject"
+        varchar(256) revoked_by_subject
+    }
+
     audit_log {
         char(11) id PK
         varchar(256) actor_subject "token subject; opaque, no foreign key"
@@ -322,6 +334,7 @@ defines it, under [`Sql/`](../Sql/).
 | `consented_report_media` | The media rule, stated once: each verified image or video derivative under media consent and each validated document under documents consent that is not deleted, hidden, or failed, whether or not its report is public. Never read directly; `public_report_media` and `own_report_media` read it. | `20261003230909_ShowAReportersOwnReport` |
 | `own_reports` | What the browser holding a report's receipt may see of it: a live report filed with a receipt that was never published (`first_published_at` is null) and is not in `public_reports`, with its latest summary revision (approved or not) only when the reporter consented to publication. The API compares `receipt_hash`; nothing is returned without that match (ADR-0196). | `20261003230909_ShowAReportersOwnReport` |
 | `own_report_media` | The files of an `own_reports` report that `consented_report_media` allows, so the holder sees exactly what the public will once it is published. | `20261003230909_ShowAReportersOwnReport` |
+| `active_role_assignments` | The role assignments not yet revoked: `id`, `email`, `role`, `granted_at`. The role resolver and the manage-roles list read it; who granted and who revoked stay in the table (ADR-0199). | `20261017001446_AddRoleAssignments` |
 | `admin_report_queue` | Every live report's state and timing for the admin list, with `is_stuck`, `needs_action`, and the reporter's and pilot's names, read by `QuestionRole` (ADR-0154). | `20260927231919_ShowReporterAndPilotNames` |
 | `answers_awaiting_translation` | Every live answer marked for machine translation that has no second language yet. Choice answers are left out. | `20260925230357_NameEachAnswersChoice` |
 | `admin_pending_counts` | One row of counts for the Admin menu, including type-ahead values awaiting review. | `20260925235946_ReviewTypeAheadValues` |
@@ -386,6 +399,7 @@ defines it, under [`Sql/`](../Sql/).
 | `20261002181219_MakeCountryAPinnedPickList` | No table or column change. Converts the seeded Country question (key `2a401575_8cf4_4c87_b8df_95798d07a772`) from yes/no to an optional single-select of the 249 ISO 3166-1 countries (lowercase alpha-2 codes, CLDR en-CA / fr-CA names frozen in the script, Canada and the United States pinned `first`), and makes Province (`849ea0c4_b36e_44a7_936e_e578967907a3`) conditional on the Canada choice. An unanswered question gets a new revision; an answered one is stamped deleted and replaced by a question with the same key and every choice (ADR-0071), so old yes/no answers stay as given and nothing is back-filled. Any other live question conditional on the old Country is moved to the Canada choice, with a notice. It acts only while Country still reads as the seeded yes/no question, so a re-run is a no-op (#750, ADR-0186). The script is `Sql/20261002181219_MakeCountryAPinnedPickList.sql`; `Down` does nothing, since nothing is physically deleted. |
 | `20261002200257_RestoreSeededGroups` | No table or column change. Restores the seeded group links a database created from scratch never got: `InitialSchema` writes the seed through the legacy shape, which has no grouping column, so the later full seed skipped every question as already present. Each seeded child of From, Pilot, or Aircraft is grouped under the group the seed names, only while it is live, no revision under its key ever had a group, and the group is live and still a group. An unanswered question gets a new revision; an answered one is stamped deleted and replaced by a question with the same key and every choice (ADR-0071). A re-run is a no-op (#754, ADR-0187). The script is `Sql/20261002200257_RestoreSeededGroups.sql`; `Down` does nothing, since nothing is physically deleted. |
 | `20261003230909_ShowAReportersOwnReport` | Added nullable `reports.receipt_hash` (`varchar(43)`, unique index) and nullable `reports.first_published_at` (set once by the first publication, never cleared, backfilled from `published_at`, a `published_report` audit entry, or an approved summary revision; locked set-once by the trigger) so that a report that was ever published never returns to its holder: the SHA-256 of a random receipt the submitting browser keeps, so that browser can see its own unpublished report. Identifies a browser, never a member; null on every earlier report (#820, ADR-0196). Adds `receipt_hash` to the `reports` immutability trigger (ADR-0178), moves the media rule into `consented_report_media` with `public_report_media` reading it (same columns), and creates `own_reports` and `own_report_media`. No row is changed. The scripts are `Sql/20261003230909_ShowAReportersOwnReport.sql` and `.Down.sql`; `Down` restores `public_report_media` and the trigger and drops the rest. |
+| `20261017001446_AddRoleAssignments` | Created `role_assignments` (#909, ADR-0199): `email` (stored trimmed and lower-cased, enforced by a check), `role` (`safety_officer` or `administrator`), `granted_at`, `granted_by_subject`, and `revoked_at` / `revoked_by_subject`, null or set together; a partial unique index allows one active assignment per email. A trigger refuses every `DELETE`, every `TRUNCATE`, any update to a revoked row, and any update to an active row except setting the revoke pair (CON-DP-017); creates the `active_role_assignments` view. Carries no `deleted` column and no live-row filter: a revoke is the retirement. No row is changed. The scripts are `Sql/20261017001446_AddRoleAssignments.sql` and `.Down.sql`; `Down` drops the view and triggers, then the table (a new table, so nothing earlier is lost). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

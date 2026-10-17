@@ -16,6 +16,18 @@ public sealed class FixedAccountCredentialSource : IDevelopmentCredentialSource
 		("user", "user", MemberRole.User),
 	];
 
+	/// <summary>
+	///     The role a fixed account holds, by username, or <c>null</c> when the
+	///     name is not one. Development's role resolver uses this on every
+	///     request (ADR-0199).
+	/// </summary>
+	public static MemberRole? RoleOf(string username)
+	{
+		var match = Accounts.FirstOrDefault(account => string.Equals(account.User, username, StringComparison.Ordinal));
+
+		return match.User is null ? null : match.Role;
+	}
+
 	/// <inheritdoc />
 	public Task<MemberRole?> Verify(string username,
 									string password,

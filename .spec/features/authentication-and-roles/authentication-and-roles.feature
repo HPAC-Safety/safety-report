@@ -213,7 +213,7 @@ Scenario: Development sign-in does not exist outside development
   Then the request is not found
 
 @REQ-MOD-020
-Scenario Outline: A development sign-in verified against the members site resolves role from the email lists
+Scenario Outline: In development only, a sign-in verified against the members site also resolves role from the email lists
   Given development sign-in is available
   And "<email>" is <listed>
   When that email signs in with credentials the members site accepts
@@ -268,7 +268,6 @@ Scenario: With the temporary interim issuer enabled, a member signs in with thei
   Given a deployment outside development with the temporary interim issuer enabled
   When a member signs in with credentials the members site accepts
   Then the member receives a token that later requests are accepted with
-  And an allowlisted Administrator account's token carries the Administrator role
 
 @REQ-AUTH-009
 Scenario: With the temporary interim issuer enabled, the fixed development accounts do not exist
@@ -448,3 +447,237 @@ Scenario: Sign-out is not an audited event
   Given every route the server answers
   Then none of them signs a member out
   And no audit action records a sign-out
+
+@REQ-AUTH-012
+Scenario: An Administrator assigns the Administrator role to an email address
+  Given an Administrator
+  When the Administrator assigns the Administrator role to "new.admin@example.com"
+  Then the role assignment is created
+  And the role assignments list "new.admin@example.com" as an Administrator
+
+@REQ-AUTH-013
+Scenario: An Administrator assigns the Safety Officer role to an email address
+  Given an Administrator
+  When the Administrator assigns the Safety Officer role to "new.officer@example.com"
+  Then the role assignment is created
+  And the role assignments list "new.officer@example.com" as a Safety Officer
+
+@REQ-AUTH-014
+Scenario: An Administrator removes another member's role assignment
+  Given "officer@example.com" has an active Safety Officer role assignment
+  When an Administrator removes that role assignment
+  Then the removal is allowed
+  And the role assignments no longer list "officer@example.com"
+  And the removed role assignment keeps when it was revoked and the token subject of the Administrator who revoked it
+
+@REQ-AUTH-015
+Scenario: An Administrator cannot remove their own role assignment
+  Given an Administrator whose role comes from their own role assignment
+  When the Administrator removes their own role assignment
+  Then the removal is refused as invalid
+  And the role assignments still list the Administrator
+
+@REQ-AUTH-016
+Scenario Outline: An email address with an active role assignment in any role cannot be assigned again
+  Given "officer@example.com" has an active Safety Officer role assignment
+  When an Administrator assigns the <role> role to "officer@example.com"
+  Then the assignment is refused as invalid
+  And "officer@example.com" still has exactly one active role assignment
+
+Examples:
+  | role           |
+  | Safety Officer |
+  | Administrator  |
+
+@REQ-AUTH-017
+Scenario: The Super Administrator is listed as a permanent Administrator that cannot be removed
+  Given a Super Administrator is configured
+  When an Administrator lists the role assignments
+  Then the Super Administrator is listed as a permanent Administrator
+  And the Super Administrator offers no removal
+
+@REQ-AUTH-018
+Scenario: The Super Administrator is listed when role assignments cannot be read
+  Given a Super Administrator is configured
+  And the role assignments cannot be read
+  When the Super Administrator lists the role assignments
+  Then the Super Administrator is listed as a permanent Administrator
+
+@REQ-AUTH-019
+@ui
+Scenario Outline: A member without the Administrator role cannot open the manage-roles page
+  Given a visitor signs in as a <role>
+  When the visitor navigates directly to the manage-roles page
+  Then the page shows a forbidden view in place of that page's content
+  And no role assignment is shown
+
+Examples:
+  | role           |
+  | Safety Officer |
+  | User           |
+
+@REQ-AUTH-020
+Scenario Outline: A member without the Administrator role cannot manage role assignments
+  Given a <role>
+  When the <role> asks to <action>
+  Then the request is refused as forbidden
+  And the role assignments are unchanged
+
+Examples:
+  | role           | action                         |
+  | Safety Officer | list the role assignments      |
+  | Safety Officer | assign a role to an email      |
+  | Safety Officer | remove a role assignment       |
+  | User           | list the role assignments      |
+  | User           | assign a role to an email      |
+  | User           | remove a role assignment       |
+
+@REQ-AUTH-021
+Scenario Outline: A member whose role assignment is removed loses that role's access on their next request
+  Given a member whose <role> role comes from an active role assignment
+  And an Administrator has since removed that role assignment
+  When the member next asks for <page> with the token they already hold
+  Then the request is refused as forbidden
+
+Examples:
+  | role           | page                      |
+  | Safety Officer | the report list           |
+
+Examples:
+  | role           | page                      |
+  | Administrator  | the role assignments list |
+
+@REQ-AUTH-022
+Scenario Outline: A member with a new role assignment signs in with that role
+  Given a deployment outside development with the temporary interim issuer enabled
+  And "<email>" has an active <role> role assignment
+  When that member signs in with credentials the members site accepts
+  Then the member has the <role> role
+  And the member may open <page>
+
+Examples:
+  | email                   | role           | page                      |
+  | new.officer@example.com | Safety Officer | the report list           |
+
+Examples:
+  | email                   | role           | page                      |
+  | new.admin@example.com   | Administrator  | the role assignments list |
+
+@REQ-AUTH-023
+Scenario: A member signs in as a User when role assignments cannot be read
+  Given a deployment outside development with the temporary interim issuer enabled
+  And "officer@example.com" has an active Safety Officer role assignment
+  And the role assignments cannot be read
+  When that member signs in with credentials the members site accepts
+  Then the member has the User role
+
+@REQ-AUTH-024
+Scenario: The Super Administrator signs in as an Administrator when role assignments cannot be read
+  Given a deployment outside development with the temporary interim issuer enabled
+  And a Super Administrator is configured
+  And the role assignments cannot be read
+  When the Super Administrator signs in with credentials the members site accepts
+  Then the member has the Administrator role
+
+@REQ-AUTH-025
+@ignore @issue-911
+Scenario: Under a real identity provider, the Super Administrator signs in as an Administrator
+  Given a deployment with a real identity provider configured
+  And a Super Administrator is configured
+  When the Super Administrator signs in through the identity provider
+  Then the member has the Administrator role
+
+@REQ-AUTH-026
+Scenario Outline: A role assignment is never erased
+  Given a role assignment that is <state>
+  When the stored role assignment is erased
+  Then the erasure is refused, saying that kind of record is never erased
+  And the role assignment is as it was
+
+Examples:
+  | state   |
+  | active  |
+  | revoked |
+
+@REQ-AUTH-027
+Scenario Outline: A stored role assignment changes only by being revoked once
+  Given a role assignment that is <state>
+  When its <part> is changed in storage
+  Then the change is refused
+  And the role assignment is as it was
+
+Examples:
+  | state   | part                   |
+  | active  | email address          |
+  | active  | role                   |
+  | revoked | email address          |
+  | revoked | role                   |
+  | revoked | revocation time        |
+  | revoked | revoking token subject |
+
+Examples:
+  | state   | part                   |
+  | active  | granted time           |
+  | active  | granting token subject |
+  | revoked | granted time           |
+  | revoked | granting token subject |
+
+@REQ-AUTH-028
+Scenario Outline: A role assignment matches an email address whatever its case and surrounding spaces
+  Given a deployment outside development with the temporary interim issuer enabled
+  And "officer@example.com" has an active Safety Officer role assignment
+  When that member signs in as "<typed>" with credentials the members site accepts
+  Then the member has the Safety Officer role
+
+Examples:
+  | typed                   |
+  | Officer@Example.COM     |
+  | " officer@example.com " |
+
+@REQ-AUTH-029
+@ui
+Scenario: When role assignments cannot be read, the manage-roles page says so and offers no change
+  Given a Super Administrator is configured
+  And the role assignments cannot be read
+  When the Super Administrator opens the manage-roles page
+  Then the page lists the Super Administrator as a permanent Administrator
+  And the page says plainly that the other role assignments cannot be shown right now
+  And the page offers no way to add or remove a role assignment
+
+@REQ-AUTH-030
+Scenario Outline: Each change to a role assignment is audited by the assignment, not the email address
+  Given an Administrator
+  And "officer@example.com" <holds>
+  When the Administrator <changes>
+  Then an audit entry records the acting token subject, a <action> action, that role assignment as the target, and the time
+  And no audit entry holds "officer@example.com"
+
+Examples:
+  | holds                                       | changes                                                  | action                  |
+  | has no role assignment                      | assigns the Safety Officer role to "officer@example.com" | role-assigned           |
+  | has an active Safety Officer role assignment | removes that role assignment                            | role-assignment-removed |
+
+@REQ-AUTH-031
+Scenario Outline: An email address with a non-ASCII character is refused when assigned
+  Given an Administrator
+  When the Administrator assigns the Safety Officer role to "<email>"
+  Then the assignment is refused as invalid
+  And the role assignments do not list "<email>"
+
+Examples:
+  | email             |
+  | Kate@example.com  |
+  | oﬃcer@example.com |
+  | rené@example.com  |
+
+@REQ-AUTH-032
+Scenario Outline: A sign-in name with a non-ASCII character never matches a role assignment
+  Given a deployment outside development with the temporary interim issuer enabled
+  And "<assigned>" has an active Administrator role assignment
+  When a member signs in as "<typed>" with credentials the members site accepts
+  Then the member has the User role
+
+Examples:
+  | assigned            | typed                  |
+  | kate@example.com    | Kate@example.com  |
+  | officer@example.com | oﬃcer@example.com |

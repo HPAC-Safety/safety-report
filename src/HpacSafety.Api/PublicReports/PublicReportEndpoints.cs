@@ -60,10 +60,10 @@ public static class PublicReportEndpoints
 		string? locale,
 		HpacSafetyDbContext database,
 		HttpContext context,
-		IOptions<HpacAuthenticationOptions> authOptions,
+		IRoleResolver roles,
 		CancellationToken cancellationToken)
 	{
-		var isStaff = IsStaff(context, authOptions);
+		var isStaff = await IsStaff(context, roles, cancellationToken).ConfigureAwait(false);
 		var trimmed = q?.Trim();
 
 		if (!string.IsNullOrEmpty(trimmed))
@@ -180,10 +180,10 @@ public static class PublicReportEndpoints
 		string reportId,
 		HpacSafetyDbContext database,
 		HttpContext context,
-		IOptions<HpacAuthenticationOptions> authOptions,
+		IRoleResolver roles,
 		CancellationToken cancellationToken)
 	{
-		var isStaff = IsStaff(context, authOptions);
+		var isStaff = await IsStaff(context, roles, cancellationToken).ConfigureAwait(false);
 
 		// Any text is only a lookup key here: an ID that is not one simply has no row.
 		var report = await database.PublicReports
@@ -242,20 +242,23 @@ public static class PublicReportEndpoints
 	}
 
 	/// <summary>
-	///     True for a validated bearer token carrying <c>SafetyOfficer</c> or
+	///     True for a validated bearer token whose member now resolves to <c>SafetyOfficer</c> or
 	///     <c>Administrator</c> (decision 4). The public endpoints stay anonymous;
 	///     JwtBearer is the default scheme, so a sent token is still authenticated
 	///     here even though nothing requires one.
 	/// </summary>
-	private static bool IsStaff(HttpContext context,
-								IOptions<HpacAuthenticationOptions> authOptions)
+	private static async Task<bool> IsStaff(HttpContext context,
+											IRoleResolver roles,
+											CancellationToken cancellationToken)
 	{
 		if (context.User.Identity?.IsAuthenticated != true)
 		{
 			return false;
 		}
 
-		var role = MemberRoles.EffectiveRole(context.User, authOptions.Value.RoleClaimType);
+		// Resolved now, not read from the token, so a revoked member sees the
+		// public view on their next request (ADR-0199).
+		var role = await roles.Resolve(MemberRoles.SubjectOf(context.User), cancellationToken).ConfigureAwait(false);
 		return role is MemberRole.SafetyOfficer or MemberRole.Administrator;
 	}
 

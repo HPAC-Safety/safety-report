@@ -95,9 +95,14 @@ flowchart LR
 - The Worker claims outbox rows, validates attachments, creates image/video derivatives, builds the
   partitioned summary DTO, calls the model once, validates its response, and
   persists the summary pair. Documents are not model input.
-- An identity provider signs a token; the API validates it and reads the
-  subject and role claims. Filing a report requires a member of any role, and
-  records nothing about them. No user record is stored anywhere.
+- An identity provider signs a token that proves membership; the API
+  validates it and reads the subject and role claims. Administrator and
+  Safety Officer come from this application's own role assignments, an email
+  and a role each, or from the configured Super Administrator
+  ([ADR-0199](decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md),
+  [ADR-0200](decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md)).
+  Filing a report requires a member of any role, and records nothing about
+  them. No other record about a person is stored.
 
 ## Primary flow
 

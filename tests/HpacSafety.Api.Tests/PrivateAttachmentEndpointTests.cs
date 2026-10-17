@@ -82,12 +82,11 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenValidatedTokenWithNoSubjectClaim_WhenListingPrivateAttachments_ThenReaderReadsAsUnknownRatherThanFailing()
+	public async Task GivenValidatedTokenWithNoSubjectClaim_WhenListingPrivateAttachments_ThenItIsForbidden()
 	{
-		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
-		// subject claim is not separately enforced, so List has to cope with a
-		// validated token that lacks one, the same stance the review endpoints
-		// take: it reads as "(unknown)" rather than failing.
+		// Given — a role claim never grants a reviewer's role (ADR-0199), and
+		// the role is resolved from the token's subject, so a validated token
+		// with no subject is a User.
 		var root = await Root();
 		var token = ForgeTokenWithNoSubject();
 		using var client = SignedInClient.Bearing(_factory, token);
@@ -96,7 +95,7 @@ public class PrivateAttachmentEndpointTests(ApiPostgresFixture fixture)
 		using var response = await client.GetAsync(root, TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 	}
 
 	private static string ForgeTokenWithNoSubject()

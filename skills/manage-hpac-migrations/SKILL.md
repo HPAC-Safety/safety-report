@@ -34,7 +34,8 @@ decision), plus:
    - Retirement is a `deleted timestamptz` stamp. Every new table gets that
      column and the default live-row filter — except `question_choices` and
      `question_choice_parents`, which skip the filter because their aggregate
-     reads removed rows (the question-owns-its-choices and shared-dependent-choice decisions).
+     reads removed rows (the question-owns-its-choices and shared-dependent-choice decisions),
+     and `role_assignments`, whose revoke stamp is its retirement (the role-assignments decision).
    - A widening cast that loses nothing (`char(11)` → `varchar(256)`) is not
      destructive.
    - The carved exceptions (`AGENTS.md` invariant 8), each argued in its own

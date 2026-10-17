@@ -45,12 +45,14 @@ public sealed class DevelopmentTokenIssuer : IMemberTokenIssuer
 	private readonly HpacAuthenticationOptions _options;
 	private readonly IReadOnlyList<IDevelopmentCredentialSource> _sources;
 	private readonly TimeProvider _time;
+	private readonly IRoleResolver _roles;
 
 	/// <summary>Creates the issuer.</summary>
 	public DevelopmentTokenIssuer(
 		IOptions<HpacAuthenticationOptions> options,
 		IEnumerable<IDevelopmentCredentialSource> sources,
-		TimeProvider time)
+		TimeProvider time,
+		IRoleResolver roles)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 		ArgumentNullException.ThrowIfNull(sources);
@@ -58,6 +60,7 @@ public sealed class DevelopmentTokenIssuer : IMemberTokenIssuer
 		_options = options.Value;
 		_sources = [.. sources];
 		_time = time;
+		_roles = roles;
 	}
 
 	/// <summary>The signing key, as the validation side must also derive it.</summary>
@@ -89,9 +92,7 @@ public sealed class DevelopmentTokenIssuer : IMemberTokenIssuer
 			return null;
 		}
 
-		var role = await ResolveRole(username, password, cancellationToken).ConfigureAwait(false);
-
-		if (role is null)
+		if (!await Verify(username, password, cancellationToken).ConfigureAwait(false))
 		{
 			return null;
 		}
@@ -103,38 +104,41 @@ public sealed class DevelopmentTokenIssuer : IMemberTokenIssuer
 		var expiresAt = issuedAt + _options.TokenLifetime;
 		var subject = $"dev:{username}";
 
+		// The source proved who they are; the role comes from the resolver,
+		// at this moment, and not from the source (ADR-0199).
+		var role = await _roles.Resolve(subject, cancellationToken).ConfigureAwait(false);
+
 		var token = new JwtSecurityToken(
 			IssuerName,
 			_options.Audience,
 			[
 				new Claim(JwtRegisteredClaimNames.Sub, subject),
 				new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("n")),
-				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role.Value)),
+				// Informational only: nothing may trust this claim. Roles come from RoleResolver (ADR-0199).
+				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role)),
 			],
 			issuedAt.UtcDateTime,
 			expiresAt.UtcDateTime,
 			new SigningCredentials(KeyFrom(signingKey), SecurityAlgorithms.HmacSha256));
 
 		return new DevelopmentToken(
-			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, role.Value);
+			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, role);
 	}
 
-	private async Task<MemberRole?> ResolveRole(
+	private async Task<bool> Verify(
 		string username,
 		string password,
 		CancellationToken cancellationToken)
 	{
 		foreach (var source in _sources)
 		{
-			var role = await source.Verify(username, password, cancellationToken).ConfigureAwait(false);
-
-			if (role is not null)
+			if (await source.Verify(username, password, cancellationToken).ConfigureAwait(false) is not null)
 			{
-				return role;
+				return true;
 			}
 		}
 
-		return null;
+		return false;
 	}
 }
 

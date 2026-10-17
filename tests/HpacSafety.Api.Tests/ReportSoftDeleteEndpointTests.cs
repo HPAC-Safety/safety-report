@@ -110,11 +110,11 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenReportIsDeleted_ThenTheAuditRowRecordsUnknownRatherThanFailing()
+	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenReportIsDeleted_ThenItIsForbiddenAndNothingIsAudited()
 	{
-		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
-		// subject claim is not separately enforced, so the endpoint has to cope
-		// with a validated token that lacks one, the same stance /me takes
+		// Given — a role claim never grants a reviewer's role (ADR-0199), and
+		// the role is resolved from the token's subject, so a validated token
+		// with no subject is a User.
 		var reportId = await SeedReport();
 		var token = ForgeTokenWithNoSubject();
 		using var client = SignedInClient.Bearing(_factory, token);
@@ -123,15 +123,14 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative), TestContext.Current.CancellationToken);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var entry = await database.AuditLog
-			.Where(e => e.Action == AuditAction.DeletedReport && e.TargetId == reportId)
-			.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+		var audited = await database.AuditLog
+			.AnyAsync(e => e.Action == AuditAction.DeletedReport && e.TargetId == reportId, TestContext.Current.CancellationToken);
 
-		entry.ActorSubject.ShouldBe("(unknown)");
+		audited.ShouldBeFalse();
 	}
 
 	private static string ForgeTokenWithNoSubject()

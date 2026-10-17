@@ -2,7 +2,7 @@
 title: JWT bearer authentication with three roles
 description: "Identity arrives as a signed JWT, presented as Authorization: Bearer <jwt>."
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: authentication, JWT, bearer token, OIDC, roles, authorization, claims
@@ -10,7 +10,7 @@ keywords: authentication, JWT, bearer token, OIDC, roles, authorization, claims
 
 # ADR-0064 — JWT bearer authentication with three roles
 
-**Status:** Accepted. Supersedes
+**Status:** Superseded by [ADR-0199](ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md). Supersedes
 [ADR-0005](ADR-0005-authentication.md).
 
 **Standing in for, temporarily, in staging:

@@ -5,7 +5,7 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 # Build the HPAC web UI
 
-Extends the `design-web-ui` skill; read that first. This
+Extends the `design-web-ui` and `build-web-ui` skills; read those first. This
 skill holds only what is specific to this repository, under the same section
 names where they exist, and wins where they differ.
 

@@ -53,4 +53,16 @@ public enum AuditAction
 	///     the file's processing state.
 	/// </summary>
 	DownloadedOriginalMedia = 53,
+
+	/// <summary>
+	///     An Administrator assigned a role to an email (ADR-0199). Records the
+	///     acting subject and the assignment's id, never the email.
+	/// </summary>
+	AssignedRole = 60,
+
+	/// <summary>
+	///     An Administrator revoked a role assignment (ADR-0199). Records the acting
+	///     subject and the assignment's id, never the email.
+	/// </summary>
+	RevokedRole = 61,
 }

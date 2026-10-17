@@ -7,6 +7,7 @@ using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.QuestionBank.Typeform;
 using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Core.Features.RoleAssignments;
 using HpacSafety.Infrastructure.Persistence.Configurations;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
@@ -93,6 +94,12 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 	/// <summary>Staff-only files on a report (ADR-0135).</summary>
 	public DbSet<PrivateAttachment> PrivateAttachments => Set<PrivateAttachment>();
+
+	/// <summary>Role assignments, active and revoked; never deleted (ADR-0199, CON-DP-017).</summary>
+	public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
+
+	/// <summary>The <c>active_role_assignments</c> view: role assignments not yet revoked (ADR-0199). Read-only.</summary>
+	public DbSet<ActiveRoleAssignment> ActiveRoleAssignments => Set<ActiveRoleAssignment>();
 
 	/// <summary>Visible comments on public reports, current text only (the <c>public_report_comments</c> view).</summary>
 	public DbSet<PublicReportComment> PublicReportComments => Set<PublicReportComment>();
@@ -262,6 +269,8 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new PrivateNoteConfiguration());
 		modelBuilder.ApplyConfiguration(new PrivateNoteRevisionConfiguration());
 		modelBuilder.ApplyConfiguration(new PrivateAttachmentConfiguration());
+		modelBuilder.ApplyConfiguration(new RoleAssignmentConfiguration());
+		modelBuilder.ApplyConfiguration(new ActiveRoleAssignmentConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportCommentConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportMediaConfiguration());

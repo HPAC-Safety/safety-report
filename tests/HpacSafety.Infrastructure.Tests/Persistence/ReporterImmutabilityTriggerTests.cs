@@ -124,7 +124,7 @@ public sealed class ReporterImmutabilityTriggerTests(PostgresFixture postgres)
 	}
 
 	private const string TriggerNames =
-		"SELECT string_agg(tgname, ',' ORDER BY tgname) FROM pg_trigger WHERE NOT tgisinternal AND (tgname LIKE '%\\_immutable' OR tgname LIKE '%\\_never\\_truncated')";
+		"SELECT string_agg(tgname, ',' ORDER BY tgname) FROM pg_trigger WHERE NOT tgisinternal AND tgrelid::regclass::text <> 'role_assignments' AND (tgname LIKE '%\\_immutable' OR tgname LIKE '%\\_never\\_truncated')";
 
 	private static async Task MigrateTo(HpacSafetyDbContext context,
 										string? targetMigration)

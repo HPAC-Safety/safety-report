@@ -2,7 +2,7 @@
 title: A development login may verify against the live members site
 description: "A fourth Development-only sign-in path may verify a real member's password against the live members site for the single call that checks it."
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: development, mock authentication, members site, email allowlist, credential verification
@@ -10,7 +10,7 @@ keywords: development, mock authentication, members site, email allowlist, crede
 
 # ADR-0079 — A development login may verify against the live members site
 
-**Status:** Accepted. Supersedes [ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)
+**Status:** Superseded by [ADR-0199](ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md). Supersedes [ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)
 for this one case.
 
 **Extended to staging, temporarily, by

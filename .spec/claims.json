@@ -993,7 +993,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0199"],"lessons":[]}
 		},
 		{
 			"id": "REQ-AUTH-010",
@@ -1029,6 +1029,463 @@
 				{"keyword":"Then","text":"it is not found","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-012",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator assigns the Administrator role to an email address",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator","files":["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator assigns the Administrator role to \"new.admin@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignment is created","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments list \"new.admin@example.com\" as an Administrator","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":["ADR-0199"],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-013",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator assigns the Safety Officer role to an email address",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator","files":["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator assigns the Safety Officer role to \"new.officer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignment is created","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments list \"new.officer@example.com\" as a Safety Officer","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-014",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator removes another member's role assignment",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"\"officer@example.com\" has an active Safety Officer role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator removes that role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the removal is allowed","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments no longer list \"officer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the removed role assignment keeps when it was revoked and the token subject of the Administrator who revoked it","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-DP-005"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-015",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An Administrator cannot remove their own role assignment",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator whose role comes from their own role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator removes their own role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the removal is refused as invalid","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments still list the Administrator","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-016",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An email address with an active role assignment in any role cannot be assigned again",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"\"officer@example.com\" has an active Safety Officer role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator assigns the Safety Officer role to \"officer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the assignment is refused as invalid","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"\"officer@example.com\" still has exactly one active role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator assigns the Administrator role to \"officer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-017",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "The Super Administrator is listed as a permanent Administrator that cannot be removed",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Super Administrator is configured","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"an Administrator lists the role assignments","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the Super Administrator is listed as a permanent Administrator","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the Super Administrator offers no removal","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-018",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "The Super Administrator is listed when role assignments cannot be read",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Super Administrator is configured","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the role assignments cannot be read","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Super Administrator lists the role assignments","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the Super Administrator is listed as a permanent Administrator","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-019",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A member without the Administrator role cannot open the manage-roles page",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a visitor signs in as a Safety Officer","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the visitor navigates directly to the manage-roles page","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page shows a forbidden view in place of that page's content","files":["tests/e2e/steps/admin-route-guard.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"no role assignment is shown","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"a visitor signs in as a User","files":["tests/e2e/steps/member-login.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/admin-route-guard.steps.ts","tests/e2e/steps/manage-roles.steps.ts","tests/e2e/steps/member-login.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-020",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A member without the Administrator role cannot manage role assignments",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Safety Officer","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer asks to list the role assignments","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the request is refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments are unchanged","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer asks to assign a role to an email","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Safety Officer asks to remove a role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a User","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the User asks to list the role assignments","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the User asks to assign a role to an email","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the User asks to remove a role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-021",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A member whose role assignment is removed loses that role's access on their next request",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a member whose Safety Officer role comes from an active role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator has since removed that role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the member next asks for the report list with the token they already hold","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the request is refused as forbidden","files":["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a member whose Administrator role comes from an active role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the member next asks for the role assignments list with the token they already hold","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-IF-005"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-022",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A member with a new role assignment signs in with that role",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"new.officer@example.com\" has an active Safety Officer role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the Safety Officer role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member may open the report list","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"new.admin@example.com\" has an active Administrator role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member may open the role assignments list","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-IF-005"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-023",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A member signs in as a User when role assignments cannot be read",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"officer@example.com\" has an active Safety Officer role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the role assignments cannot be read","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the User role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-IF-005"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-024",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "The Super Administrator signs in as an Administrator when role assignments cannot be read",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Super Administrator is configured","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"the role assignments cannot be read","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Super Administrator signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-IF-005"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-025",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "Under a real identity provider, the Super Administrator signs in as an Administrator",
+			"rule": null,
+			"tags": ["@ignore","@issue-911"],
+			"engine": "Reqnroll",
+			"status": "Planned",
+			"steps": [
+				{"keyword":"Given","text":"a deployment with a real identity provider configured","files":[],"ambiguous":false},
+				{"keyword":"Given","text":"a Super Administrator is configured","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Super Administrator signs in through the identity provider","files":[],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-026",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A role assignment is never erased",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a role assignment that is active","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the stored role assignment is erased","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the erasure is refused, saying that kind of record is never erased","files":["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignment is as it was","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a role assignment that is revoked","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-DP-017"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-027",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A stored role assignment changes only by being revoked once",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a role assignment that is active","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"its email address is changed in storage","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the change is refused","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignment is as it was","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"its role is changed in storage","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a role assignment that is revoked","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"its revocation time is changed in storage","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"its revoking token subject is changed in storage","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"its granted time is changed in storage","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"its granting token subject is changed in storage","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": ["CON-DP-017"],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-028",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A role assignment matches an email address whatever its case and surrounding spaces",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"officer@example.com\" has an active Safety Officer role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member signs in as \"Officer@Example.COM\" with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the Safety Officer role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"that member signs in as \"\" officer@example.com \"\" with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-029",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "When role assignments cannot be read, the manage-roles page says so and offers no change",
+			"rule": null,
+			"tags": ["@ui"],
+			"engine": "playwright-bdd",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a Super Administrator is configured","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"Given","text":"the role assignments cannot be read","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"When","text":"the Super Administrator opens the manage-roles page","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page lists the Super Administrator as a permanent Administrator","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page says plainly that the other role assignments cannot be shown right now","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false},
+				{"keyword":"Then","text":"the page offers no way to add or remove a role assignment","files":["tests/e2e/steps/manage-roles.steps.ts"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/e2e/steps/manage-roles.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-030",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "Each change to a role assignment is audited by the assignment, not the email address",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator","files":["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"officer@example.com\" has no role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator assigns the Safety Officer role to \"officer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"an audit entry records the acting token subject, a role-assigned action, that role assignment as the target, and the time","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"no audit entry holds \"officer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"officer@example.com\" has an active Safety Officer role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator removes that role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"an audit entry records the acting token subject, a role-assignment-removed action, that role assignment as the target, and the time","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-031",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "An email address with a non-ASCII character is refused when assigned",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"an Administrator","files":["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator assigns the Safety Officer role to \"Kate@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the assignment is refused as invalid","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments do not list \"Kate@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator assigns the Safety Officer role to \"oﬃcer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments do not list \"oﬃcer@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the Administrator assigns the Safety Officer role to \"rené@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the role assignments do not list \"rené@example.com\"","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-AUTH-032",
+			"area": "authentication-and-roles",
+			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
+			"title": "A sign-in name with a non-ASCII character never matches a role assignment",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"kate@example.com\" has an active Administrator role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a member signs in as \"Kate@example.com\" with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the member has the User role","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"\"officer@example.com\" has an active Administrator role assignment","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"a member signs in as \"oﬃcer@example.com\" with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs","tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -5113,7 +5570,7 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0199"],"lessons":[]}
 		},
 		{
 			"id": "REQ-MOD-014",
@@ -5150,7 +5607,7 @@
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs"],
 			"staleIgnore": false,
-			"constraints": ["CON-IF-005"],
+			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
 		},
 		{
@@ -5229,13 +5686,13 @@
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs"],
 			"staleIgnore": false,
 			"constraints": ["CON-IF-003","CON-INF-006"],
-			"citedBy": {"decisions":[],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0199"],"lessons":[]}
 		},
 		{
 			"id": "REQ-MOD-020",
 			"area": "authentication-and-roles",
 			"file": ".spec/features/authentication-and-roles/authentication-and-roles.feature",
-			"title": "A development sign-in verified against the members site resolves role from the email lists",
+			"title": "In development only, a sign-in verified against the members site also resolves role from the email lists",
 			"rule": null,
 			"tags": [],
 			"engine": "Reqnroll",
@@ -8054,13 +8511,12 @@
 			"steps": [
 				{"keyword":"Given","text":"a deployment outside development with the temporary interim issuer enabled","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
 				{"keyword":"When","text":"a member signs in with credentials the members site accepts","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"the member receives a token that later requests are accepted with","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false},
-				{"keyword":"Then","text":"an allowlisted Administrator account's token carries the Administrator role","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
+				{"keyword":"Then","text":"the member receives a token that later requests are accepted with","files":["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs"],
 			"staleIgnore": false,
 			"constraints": [],
-			"citedBy": {"decisions":["ADR-0172"],"lessons":[]}
+			"citedBy": {"decisions":["ADR-0172","ADR-0199"],"lessons":[]}
 		},
 		{
 			"id": "REQ-MOD-158",
@@ -9780,6 +10236,29 @@
 				{"keyword":"Then","text":"the own reports are still listed once, above the first page, and not among the later pages","files":["tests/e2e/steps/own-reports.steps.ts"],"ambiguous":false}
 			],
 			"stepFiles": ["tests/e2e/steps/own-reports.steps.ts","tests/e2e/steps/public-reports.steps.ts"],
+			"staleIgnore": false,
+			"constraints": [],
+			"citedBy": {"decisions":[],"lessons":[]}
+		},
+		{
+			"id": "REQ-PUB-032",
+			"area": "public-feed",
+			"file": ".spec/features/public-feed/public-feed.feature",
+			"title": "A member whose Safety Officer role assignment is removed sees a published report as the public does on their next request",
+			"rule": null,
+			"tags": [],
+			"engine": "Reqnroll",
+			"status": "Built",
+			"steps": [
+				{"keyword":"Given","text":"a published report has one public attachment and one attachment only staff may see","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"a Safety Officer whose role comes from an active role assignment","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Given","text":"an Administrator has since removed that role assignment","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the member next lists the feed with the token they already hold","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report's attachment count is 1","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"When","text":"the member next reads that report's public page with the token they already hold","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false},
+				{"keyword":"Then","text":"the report shows no staff attachments","files":["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],"ambiguous":false}
+			],
+			"stepFiles": ["tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs"],
 			"staleIgnore": false,
 			"constraints": [],
 			"citedBy": {"decisions":[],"lessons":[]}
@@ -22008,8 +22487,8 @@
 		{
 			"id": "CON-DP-005",
 			"page": ".spec/data-and-persistence.md",
-			"verifiedBy": ["REQ-MOD-018"],
-			"note": "REQ-MOD-018"
+			"verifiedBy": ["REQ-MOD-018","REQ-AUTH-014"],
+			"note": "REQ-MOD-018, REQ-AUTH-014"
 		},
 		{
 			"id": "CON-DP-006",
@@ -22078,6 +22557,12 @@
 			"note": "REQ-DOM-029"
 		},
 		{
+			"id": "CON-DP-017",
+			"page": ".spec/data-and-persistence.md",
+			"verifiedBy": ["REQ-AUTH-026","REQ-AUTH-027"],
+			"note": "REQ-AUTH-026, REQ-AUTH-027"
+		},
+		{
 			"id": "CON-IF-001",
 			"page": ".spec/interfaces-and-data-flow.md",
 			"verifiedBy": ["REQ-QB-011","REQ-SUB-018","REQ-MOD-037","REQ-MOD-038"],
@@ -22104,8 +22589,8 @@
 		{
 			"id": "CON-IF-005",
 			"page": ".spec/interfaces-and-data-flow.md",
-			"verifiedBy": ["REQ-MOD-015","REQ-MOD-017"],
-			"note": "REQ-MOD-015, REQ-MOD-017"
+			"verifiedBy": ["REQ-MOD-017","REQ-AUTH-021","REQ-AUTH-022","REQ-AUTH-023","REQ-AUTH-024"],
+			"note": "REQ-MOD-017, REQ-AUTH-021, REQ-AUTH-022, REQ-AUTH-023, REQ-AUTH-024"
 		},
 		{
 			"id": "CON-IF-006",
@@ -22136,6 +22621,12 @@
 			"page": ".spec/interfaces-and-data-flow.md",
 			"verifiedBy": ["REQ-AI-021","REQ-SUB-021","REQ-MED-003"],
 			"note": "REQ-AI-021, REQ-SUB-021, REQ-MED-003"
+		},
+		{
+			"id": "CON-IF-011",
+			"page": ".spec/interfaces-and-data-flow.md",
+			"verifiedBy": [],
+			"note": "none — a log property no scenario observes; a focused boundary test on the refused duplicate (REQ-AUTH-016) and on sign-in is its check"
 		},
 		{
 			"id": "CON-INF-001",
@@ -22256,6 +22747,12 @@
 			"page": ".spec/infrastructure-and-operations.md",
 			"verifiedBy": [],
 			"note": "none — an infrastructure property no application scenario can observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that was already open when a deploy removed its files"
+		},
+		{
+			"id": "CON-INF-028",
+			"page": ".spec/infrastructure-and-operations.md",
+			"verifiedBy": [],
+			"note": "none — a deployment property no application scenario can observe; review of the deploy workflow and a plan comment is its check. REQ-AUTH-017, REQ-AUTH-024, and REQ-AUTH-029 cover what the application does with it"
 		},
 		{
 			"id": "CON-SO-001",
@@ -23049,10 +23546,10 @@
 			"id": "ADR-0064",
 			"file": ".spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md",
 			"title": "JWT bearer authentication with three roles",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0005","ADR-0033","ADR-0042","ADR-0048","ADR-0065","ADR-0066","ADR-0067","ADR-0172"],
+			"decisions": ["ADR-0005","ADR-0033","ADR-0042","ADR-0048","ADR-0065","ADR-0066","ADR-0067","ADR-0172","ADR-0199"],
 			"supersedes": ["ADR-0005","ADR-0172"],
 			"amends": []
 		},
@@ -23060,10 +23557,10 @@
 			"id": "ADR-0065",
 			"file": ".spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md",
 			"title": "No user records; identity is the token subject",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0020","ADR-0034","ADR-0040","ADR-0047","ADR-0055","ADR-0064"],
+			"decisions": ["ADR-0020","ADR-0034","ADR-0040","ADR-0047","ADR-0055","ADR-0064","ADR-0199"],
 			"supersedes": ["ADR-0020","ADR-0040"],
 			"amends": []
 		},
@@ -23214,10 +23711,10 @@
 			"id": "ADR-0079",
 			"file": ".spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md",
 			"title": "A development login may verify against the live members site",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": [],
 			"constraints": [],
-			"decisions": ["ADR-0064","ADR-0065","ADR-0066","ADR-0172"],
+			"decisions": ["ADR-0064","ADR-0065","ADR-0066","ADR-0172","ADR-0199"],
 			"supersedes": ["ADR-0066"],
 			"amends": []
 		},
@@ -24204,10 +24701,10 @@
 			"id": "ADR-0172",
 			"file": ".spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md",
 			"title": "A temporary interim issuer signs staging tokens until a real provider exists",
-			"status": "accepted",
+			"status": "superseded",
 			"claims": ["REQ-MOD-157","REQ-MOD-158","REQ-MOD-159"],
 			"constraints": [],
-			"decisions": ["ADR-0064","ADR-0079","ADR-0158","ADR-0171"],
+			"decisions": ["ADR-0064","ADR-0079","ADR-0158","ADR-0171","ADR-0199"],
 			"supersedes": [],
 			"amends": ["ADR-0079"]
 		},
@@ -24484,6 +24981,28 @@
 			"constraints": [],
 			"decisions": ["ADR-0013","ADR-0049","ADR-0053","ADR-0073","ADR-0185","ADR-0195"],
 			"supersedes": ["ADR-0049"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0199",
+			"file": ".spec/decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md",
+			"title": "Roles come from application-owned role assignments, and the provider proves membership only",
+			"status": "accepted",
+			"claims": ["REQ-AUTH-009","REQ-AUTH-012","REQ-MOD-013","REQ-MOD-019","REQ-MOD-157"],
+			"constraints": ["CON-DP-005","CON-IF-004","CON-IF-005","CON-IF-011"],
+			"decisions": ["ADR-0064","ADR-0065","ADR-0067","ADR-0079","ADR-0172","ADR-0178","ADR-0200"],
+			"supersedes": ["ADR-0064","ADR-0065","ADR-0079","ADR-0172"],
+			"amends": []
+		},
+		{
+			"id": "ADR-0200",
+			"file": ".spec/decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md",
+			"title": "A permanent Super Administrator comes from configuration",
+			"status": "accepted",
+			"claims": [],
+			"constraints": ["CON-INF-028"],
+			"decisions": ["ADR-0171","ADR-0172","ADR-0199"],
+			"supersedes": [],
 			"amends": []
 		}
 	],

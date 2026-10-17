@@ -66,3 +66,6 @@ Thumbs.db
 
 # Agent-created git worktrees are clone-local, not repo content.
 /.claude/worktrees/
+
+/.codex/
+/.agents/

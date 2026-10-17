@@ -8,6 +8,8 @@ using DotNet.Testcontainers.Containers;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.RoleAssignments;
+using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Worker;
 using HpacSafety.Testing;
 using Microsoft.AspNetCore.Hosting;
@@ -185,19 +187,28 @@ public static class BootedApi
 	///     A stubbed transport for the members-site call, never the real
 	///     network. Omitted when a scenario only needs the fixed accounts.
 	/// </param>
-	/// <param name="administratorEmails">The Development-shaped administrator allowlist for this host.</param>
-	/// <param name="safetyOfficerEmails">The Development-shaped safety-officer allowlist for this host.</param>
+	/// <param name="superAdministrator">The permanent Super Administrator's email address, from configuration (ADR-0200).</param>
+	/// <param name="baseHost">
+	///     The host to derive from, so a scenario that reads or writes role
+	///     assignments can run on a database of its own (<see cref="Scratch" />).
+	///     The shared host when omitted.
+	/// </param>
 	public static async Task<WebApplicationFactory<Program>> ProductionShapedWithInterimIssuer(
 		HttpMessageHandler? membersSiteHandler = null,
-		IReadOnlyList<string>? administratorEmails = null,
-		IReadOnlyList<string>? safetyOfficerEmails = null)
+		string? superAdministrator = null,
+		WebApplicationFactory<Program>? baseHost = null)
 	{
-		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		return (baseHost ?? await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
 		{
 			builder.UseEnvironment("Production");
 			builder.UseSetting("HpacSafety:Security:OriginVerification:Secret", ProductionOriginSecret);
 			builder.UseSetting("HpacSafety:Authentication:InterimIssuer:Enabled", "true");
 			builder.UseSetting("HpacSafety:Authentication:InterimIssuer:SigningKeyPem", InterimIssuerSigningKeyPem);
+
+			if (superAdministrator is not null)
+			{
+				builder.UseSetting(SuperAdministratorSetting, superAdministrator);
+			}
 
 			if (membersSiteHandler is not null)
 			{
@@ -208,25 +219,11 @@ public static class BootedApi
 						.ConfigurePrimaryHttpMessageHandler(() => membersSiteHandler);
 				});
 			}
-
-			var emailSettings = new Dictionary<string, string?>();
-
-			for (var index = 0; index < (administratorEmails?.Count ?? 0); index++)
-			{
-				emailSettings[$"MembersSiteLogin:AdministratorEmails:{index}"] = administratorEmails![index];
-			}
-
-			for (var index = 0; index < (safetyOfficerEmails?.Count ?? 0); index++)
-			{
-				emailSettings[$"MembersSiteLogin:SafetyOfficerEmails:{index}"] = safetyOfficerEmails![index];
-			}
-
-			foreach (var (key, value) in emailSettings)
-			{
-				builder.UseSetting(key, value);
-			}
 		});
 	}
+
+	/// <summary>The plain Super Administrator setting local and test hosts use (ADR-0200).</summary>
+	public const string SuperAdministratorSetting = "HpacSafety:Authentication:SuperAdmin";
 
 	private static string GenerateInterimIssuerSigningKeyPem()
 	{
@@ -373,11 +370,15 @@ public static class BootedApi
 											  string role = "user")
 	{
 		ArgumentNullException.ThrowIfNull(host);
+		ArgumentNullException.ThrowIfNull(subject);
+		ArgumentNullException.ThrowIfNull(role);
+
+		GrantRole(host, subject, role);
 
 		var token = new JwtSecurityToken(
 			DevelopmentTokenIssuer.IssuerName,
 			"hpac-safety-api",
-			[new(JwtRegisteredClaimNames.Sub, subject), new("roles", role)],
+			[new(JwtRegisteredClaimNames.Sub, subject)],
 
 			// JwtSecurityToken wants DateTime. Convert at this boundary and
 			// never carry one past it (ADR-0035).
@@ -388,6 +389,57 @@ public static class BootedApi
 		var client = host.CreateClient();
 		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtSecurityTokenHandler().WriteToken(token));
 		return client;
+	}
+
+	/// <summary>
+	///     Gives a staff subject its role the way production does (ADR-0199): an active
+	///     role assignment for the email inside a <c>dev:</c> subject, which the
+	///     Development host's role resolver reads on every request. A token's own
+	///     role claim grants nothing, so a plain User needs no row.
+	/// </summary>
+	private static void GrantRole(WebApplicationFactory<Program> host,
+								  string subject,
+								  string role)
+	{
+		if (string.Equals(role, "user", StringComparison.Ordinal))
+		{
+			return;
+		}
+
+		const string prefix = "dev:";
+
+		if (!subject.StartsWith(prefix, StringComparison.Ordinal))
+		{
+			throw new ArgumentException("A staff subject must be a Development sign-in name: dev:<email>.", nameof(subject));
+		}
+
+		var memberRole = role switch
+		{
+			"administrator" => MemberRole.Administrator,
+			"safety_officer" => MemberRole.SafetyOfficer,
+			_ => throw new ArgumentOutOfRangeException(nameof(role), role, null),
+		};
+
+		var email = RoleAssignment.Normalize(subject[prefix.Length..]);
+
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		// One active assignment per email: a scenario that signs the same subject in
+		// as another role replaces the earlier grant, as an Administrator would.
+		foreach (var held in database.RoleAssignments.Where(assignment => assignment.Email == email && assignment.RevokedAt == null).ToList())
+		{
+			if (held.Role == memberRole)
+			{
+				return;
+			}
+
+			held.Revoke("acceptance-seed", DateTimeOffset.UtcNow);
+		}
+
+		database.SaveChanges();
+		database.RoleAssignments.Add(RoleAssignment.Grant(email, memberRole, "acceptance-seed", DateTimeOffset.UtcNow));
+		database.SaveChanges();
 	}
 
 	/// <summary>The same, against a specific already-booted host — see <see cref="RateLimited" />.</summary>

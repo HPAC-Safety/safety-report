@@ -230,8 +230,8 @@ jobs:
         run: node .workflow-tools/tools/infra/deploy/copy-vendor-keys.ts
 
       # Optional: when the SUPER_ADMIN environment secret is empty or absent the
-      # entry is blanked, retiring the Super Administrator. The value goes on
-      # stdin and is never echoed (CON-INF-028).
+      # entry is blanked, retiring the Super Administrator. The value goes in a
+      # private temporary file and is never echoed (CON-INF-028, #916).
       - name: Put the Super Administrator into Secrets Manager, if one is set
         env:
           SUPER_ADMIN: ${{ secrets.SUPER_ADMIN }}

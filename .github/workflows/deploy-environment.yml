@@ -53,6 +53,11 @@ on:
         required: true
       DEEPL_API_KEY:
         required: true
+      # Optional (#909, ADR-0200): the permanent Super Administrator's email.
+      # Absent or empty means the deploy blanks the entry, so the environment
+      # has no Super Administrator; production deploys fine without it.
+      SUPER_ADMIN:
+        required: false
 
 permissions:
   contents: read
@@ -223,6 +228,14 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
         run: node .workflow-tools/tools/infra/deploy/copy-vendor-keys.ts
+
+      # Optional: when the SUPER_ADMIN environment secret is empty or absent the
+      # entry is blanked, retiring the Super Administrator. The value goes on
+      # stdin and is never echoed (CON-INF-028).
+      - name: Put the Super Administrator into Secrets Manager, if one is set
+        env:
+          SUPER_ADMIN: ${{ secrets.SUPER_ADMIN }}
+        run: node .workflow-tools/tools/infra/deploy/put-super-admin.ts
 
       # The temporary interim issuer's one signing key (issue #648, ADR-0172,
       # TEMPORARY: deleted along with the whole feature once a real identity

@@ -41,7 +41,8 @@ where they differ.
 ## Soft deletion
 
 - `deleted timestamptz` and a default filter on every table except append-only
-  `audit_log` and hard-deleted `pending_import_logic` (the Typeform import decision).
+  `audit_log`, hard-deleted `pending_import_logic` (the Typeform import decision),
+  and `role_assignments`, retired by its revoke stamp (the role-assignments decision).
   `question_choices` and `question_choice_parents` have the column but no
   default filter, because their aggregate reads removed rows (the question-owns-its-choices and shared-dependent-choice decisions).
 - Reference checks for question deletion include answers beneath deleted

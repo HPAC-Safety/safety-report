@@ -19,11 +19,12 @@ There is one website on one origin
 
 - the public routes contain the report form, public feed, and public detail;
 - the member sign-in route signs a member in;
-- `/admin` contains review and question editing, and appears only for a member
-  whose token carries a reviewer's role.
+- `/admin` contains review and question editing, and appears only for a
+  reviewer.
 
-There is no allowlist management screen, because there is no allowlist
-([ADR-0065](../../decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+`/admin` also holds the manage-roles page, for Administrators only, where role
+assignments are listed, added, and removed
+([ADR-0199](../../decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)).
 
 Hiding `/admin` from the navigation is a convenience, never a security
 boundary — the API authorizes every data request on its own. It is a

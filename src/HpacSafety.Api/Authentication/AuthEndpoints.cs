@@ -66,11 +66,15 @@ public static class AuthEndpoints
 			configured.Authority));
 	}
 
-	private static Results<Ok<MeResponse>, ProblemHttpResult> Me(
+	private static async Task<Results<Ok<MeResponse>, ProblemHttpResult>> Me(
 		HttpContext context,
-		IOptions<HpacAuthenticationOptions> options)
+		IRoleResolver roles,
+		CancellationToken cancellationToken)
 	{
-		var identity = MemberRoles.IdentityOf(context.User, options.Value.RoleClaimType);
+		var subject = MemberRoles.SubjectOf(context.User);
+		var identity = string.IsNullOrWhiteSpace(subject)
+			? null
+			: new MemberIdentity(subject, await roles.Resolve(subject, cancellationToken).ConfigureAwait(false));
 
 		// A validated token should always carry a subject. If one does not,
 		// this reads rather than assumes.

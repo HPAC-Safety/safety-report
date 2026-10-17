@@ -28,9 +28,12 @@ install  claude-code  local
 github  agent  adversary  ChaseFlorell/agent-team  agents/adversary.md
 github  agent  ai-author  ChaseFlorell/agent-team  agents/ai-author.md
 github  agent  auditor  ChaseFlorell/agent-team  agents/auditor.md
+github  agent  babysitter  ChaseFlorell/agent-team  agents/babysitter.md
 github  agent  backend  ChaseFlorell/agent-team  agents/backend.md
+github  agent  client  ChaseFlorell/agent-team  agents/client.md
 github  agent  critic  ChaseFlorell/agent-team  agents/critic.md
 github  agent  database-administrator  ChaseFlorell/agent-team  agents/database-administrator.md
+github  agent  designer  ChaseFlorell/agent-team  agents/designer.md
 github  agent  infrastructure  ChaseFlorell/agent-team  agents/infrastructure.md
 github  agent  spec-author  ChaseFlorell/agent-team  agents/spec-author.md
 github  agent  spec-reviewer  ChaseFlorell/agent-team  agents/spec-reviewer.md
@@ -69,17 +72,24 @@ github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-
 # local skill, `hpac` ones included, from referencing a decision, lesson,
 # convention, claim, or specification page (CONV-009).
 github  skill  agent-persona  ChaseFlorell/agent-team  skills/agent-persona
+github  skill  build-avalonia-ui  ChaseFlorell/agent-team  skills/build-avalonia-ui
+github  skill  build-native-ui  ChaseFlorell/agent-team  skills/build-native-ui
+github  skill  build-web-ui  ChaseFlorell/agent-team  skills/build-web-ui
 github  skill  clarify-requirements  ChaseFlorell/agent-team  skills/clarify-requirements
 github  skill  coding-conventions  ChaseFlorell/agent-team  skills/coding-conventions
 github  skill  deliver-change  ChaseFlorell/agent-team  skills/deliver-change
+github  skill  design-avalonia-ui  ChaseFlorell/agent-team  skills/design-avalonia-ui
 github  skill  design-cloud-infrastructure  ChaseFlorell/agent-team  skills/design-cloud-infrastructure
 github  skill  design-ef-core-model  ChaseFlorell/agent-team  skills/design-ef-core-model
+github  skill  design-native-ui  ChaseFlorell/agent-team  skills/design-native-ui
+github  skill  design-ux-flow  ChaseFlorell/agent-team  skills/design-ux-flow
 github  skill  design-web-ui  ChaseFlorell/agent-team  skills/design-web-ui
 github  skill  manage-ef-core-migrations  ChaseFlorell/agent-team  skills/manage-ef-core-migrations
 github  skill  postgres-dba  ChaseFlorell/agent-team  skills/postgres-dba
 github  skill  review-work  ChaseFlorell/agent-team  skills/review-work
 github  skill  spec-driven-development  ChaseFlorell/agent-team  skills/spec-driven-development
 github  skill  test-from-scenarios  ChaseFlorell/agent-team  skills/test-from-scenarios
+github  skill  watch-builds  ChaseFlorell/agent-team  skills/watch-builds
 github  skill  write-agent-instructions  ChaseFlorell/agent-team  skills/write-agent-instructions
 
 # Project skills. One that extends a generic skill names it and keeps its

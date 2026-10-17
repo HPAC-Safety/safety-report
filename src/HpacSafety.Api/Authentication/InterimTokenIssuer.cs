@@ -9,9 +9,9 @@ namespace HpacSafety.Api.Authentication;
 /// <summary>
 ///     Signs an RS256 token for staging, until a real identity provider
 ///     exists (issue #648, ADR-0172). Temporary and deliberately narrow: the
-///     credential check is exactly <see cref="DevelopmentTokenIssuer" />'s —
-///     the fixed accounts first, then the live members site (ADR-0079) — and
-///     only this type's signature and issuer differ. Registered, and its
+///     credential check is the live members site (ADR-0079), which proves
+///     membership only, and the role comes from <see cref="IRoleResolver" />
+///     (ADR-0199). Registered, and its
 ///     endpoints mapped, only where <c>HpacSafety:Authentication:InterimIssuer:Enabled</c>
 ///     is set and this host is not Development.
 /// </summary>
@@ -36,6 +36,7 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 	private readonly HpacAuthenticationOptions _options;
 	private readonly IReadOnlyList<IDevelopmentCredentialSource> _sources;
 	private readonly TimeProvider _time;
+	private readonly IRoleResolver _roles;
 	private readonly InterimIssuerSigningKey _signingKey;
 
 	/// <summary>Creates the issuer.</summary>
@@ -43,7 +44,8 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 		IOptions<HpacAuthenticationOptions> options,
 		IEnumerable<IDevelopmentCredentialSource> sources,
 		TimeProvider time,
-		InterimIssuerSigningKey signingKey)
+		InterimIssuerSigningKey signingKey,
+		IRoleResolver roles)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 		ArgumentNullException.ThrowIfNull(sources);
@@ -51,6 +53,7 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 		_options = options.Value;
 		_sources = [.. sources];
 		_time = time;
+		_roles = roles;
 		_signingKey = signingKey;
 	}
 
@@ -66,9 +69,7 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 			return null;
 		}
 
-		var role = await ResolveRole(username, password, cancellationToken).ConfigureAwait(false);
-
-		if (role is null)
+		if (!await Verify(username, password, cancellationToken).ConfigureAwait(false))
 		{
 			return null;
 		}
@@ -78,6 +79,7 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 
 		// "member:", not "dev:" — this host is never Development.
 		var subject = $"member:{username}";
+		var role = await _roles.Resolve(subject, cancellationToken).ConfigureAwait(false);
 
 		var token = new JwtSecurityToken(
 			IssuerName,
@@ -85,19 +87,19 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 			[
 				new Claim(JwtRegisteredClaimNames.Sub, subject),
 				new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("n")),
-				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role.Value)),
+				// Informational only: nothing may trust this claim. Roles come from RoleResolver (ADR-0199).
+				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role)),
 			],
 			issuedAt.UtcDateTime,
 			expiresAt.UtcDateTime,
 			new SigningCredentials(_signingKey.SecurityKey, SecurityAlgorithms.RsaSha256));
 
 		return new DevelopmentToken(
-			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, role.Value);
+			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, role);
 	}
 
 	/// <summary>
-	///     Tries each registered source in order, returning the first role one
-	///     resolves.
+	///     Tries each registered source in order; true when one verifies the pair.
 	/// </summary>
 	/// <remarks>
 	///     Deliberately the same shape as <see cref="DevelopmentTokenIssuer" />'s
@@ -106,21 +108,19 @@ public sealed class InterimTokenIssuer : IMemberTokenIssuer
 	///     and sharing code with the permanent <see cref="DevelopmentTokenIssuer" />
 	///     would put that deletion back on the table.
 	/// </remarks>
-	private async Task<MemberRole?> ResolveRole(
+	private async Task<bool> Verify(
 		string username,
 		string password,
 		CancellationToken cancellationToken)
 	{
 		foreach (var source in _sources)
 		{
-			var role = await source.Verify(username, password, cancellationToken).ConfigureAwait(false);
-
-			if (role is not null)
+			if (await source.Verify(username, password, cancellationToken).ConfigureAwait(false) is not null)
 			{
-				return role;
+				return true;
 			}
 		}
 
-		return null;
+		return false;
 	}
 }

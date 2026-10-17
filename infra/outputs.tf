@@ -58,7 +58,7 @@ output "database_master_password_secret_arn" {
 }
 
 output "secret_entries" {
-  description = "The Secrets Manager entries Terraform created. Every one but cloudfront_origin_secret has its VALUE set out of band with `aws secretsmanager put-secret-value`; secrets.tf explains why that one entry is the exception."
+  description = "The Secrets Manager entries Terraform created. Every one but cloudfront_origin_secret has its VALUE set out of band with `aws secretsmanager put-secret-value` (super_admin is optional and may never get one); secrets.tf explains why that one entry is the exception."
   value = merge(
     { for k, s in aws_secretsmanager_secret.this : k => s.name },
     { cloudfront_origin_secret = aws_secretsmanager_secret.cloudfront_origin_secret.name }

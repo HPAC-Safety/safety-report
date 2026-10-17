@@ -29,7 +29,8 @@
     "manageReports": "Gérer les signalements",
     "manageQuestions": "Gérer les questions",
     "reviewTypeAheadValues": "Valeurs de saisie semi-automatique à vérifier",
-    "pendingCount": "{count} en attente"
+    "pendingCount": "{count} en attente",
+    "manageRoles": "Gérer les rôles"
   },
   "language": {
     "switchTo": "Passer à {language}",
@@ -769,6 +770,58 @@
       "empty": "Ce fichier est vide.",
       "download": "Le téléchargement n'a pas pu être lancé. Veuillez réessayer.",
       "remove": "Il n'a pas été possible de supprimer cette pièce jointe. Veuillez réessayer."
+    }
+  },
+  "roles": {
+    "title": "Gérer les rôles",
+    "intro": "Attribuez à un membre le rôle d'agent de sécurité ou d'administrateur à l'aide de son adresse courriel. Un membre sans attribution est un utilisateur.",
+    "loading": "Chargement des attributions de rôles…",
+    "listTitle": "Attributions de rôles",
+    "superAdministrator": {
+      "label": "Superadministrateur",
+      "permanent": "Administrateur, permanent. Ce rôle ne peut pas être retiré."
+    },
+    "empty": "Aucune attribution de rôle pour le moment.",
+    "col": {
+      "email": "Adresse courriel",
+      "role": "Rôle",
+      "granted": "Attribué",
+      "actions": "Actions"
+    },
+    "role": {
+      "safety_officer": "Agent de sécurité",
+      "administrator": "Administrateur"
+    },
+    "you": "Vous",
+    "unavailable": "Les autres attributions de rôles ne peuvent pas être affichées pour le moment. Veuillez réessayer plus tard.",
+    "add": {
+      "title": "Attribuer un rôle",
+      "email": "Adresse courriel",
+      "role": "Rôle",
+      "submit": "Attribuer le rôle",
+      "working": "Attribution en cours…",
+      "done": "Rôle attribué."
+    },
+    "remove": {
+      "action": "Retirer le rôle",
+      "actionFor": "Retirer le rôle pour {email}",
+      "confirm": "Voulez-vous retirer cette attribution de rôle pour {email}? La personne reviendra au rôle d'utilisateur lors de sa prochaine requête.",
+      "yes": "Oui, retirer",
+      "keep": "Conserver",
+      "done": "Attribution de rôle retirée."
+    },
+    "error": {
+      "load": "Les attributions de rôles n'ont pas pu être chargées. Veuillez réessayer.",
+      "add": "Le rôle n'a pas pu être attribué. Veuillez réessayer.",
+      "remove": "L'attribution de rôle n'a pas pu être retirée. Veuillez réessayer."
+    },
+    "refused": {
+      "duplicate": "Cette adresse courriel a déjà une attribution de rôle. Retirez-la d'abord pour changer le rôle.",
+      "super-administrator": "Cette adresse courriel appartient au superadministrateur, dont le rôle est permanent.",
+      "self": "Vous ne pouvez pas retirer votre propre attribution de rôle.",
+      "not-found": "Cette attribution de rôle n'existe plus. Rechargez la liste.",
+      "invalid-email": "Entrez une adresse courriel valide.",
+      "invalid-role": "Choisissez agent de sécurité ou administrateur."
     }
   }
 }

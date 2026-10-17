@@ -37,16 +37,18 @@ skill whose architecture conflicts with `.spec/features`.
 
 A skill and an agent are not the same thing. A skill is knowledge, loaded when
 its topic is in play; it never widens or narrows what a role may do. An agent is a persona and a
-role, and what makes it useful is what it refuses. Eleven are declared here, each
+role, and what makes it useful is what it refuses. Fourteen are declared here, each
 with a human name; the file says who the agent is, what it does, and what it
 leaves to others, and how it works is in the generic skills it preloads
 ([CONV-008](../.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
 Four of them — `spec-author` (Jennifer), `test-writer` (Kevin), a builder
-(`backend` Brad, `ux` Tiffany, or `infrastructure` Dave), `spec-reviewer`
+(`backend` Brad, `client` Megan, or `infrastructure` Dave), `spec-reviewer`
 (Jessica) — are the steps of the specification-driven chain, each holding one
-job and trusting only the artifact from the step before it (CONV-008). `ai-author` (Emily)
-maintains the agent instructions and `database-administrator` (Jane) the
-schema; `critic` (Karen) challenges a plan, `adversary` (Kyle) attacks a
+job and trusting only the artifact from the step before it (CONV-008). For a UI
+change, `ux` (Tiffany) hands the flow, accessibility semantics, and copy to
+`designer` (Brittany), whose approved boards `client` builds. `ai-author` (Emily)
+maintains the agent instructions, `database-administrator` (Jane) the
+schema, and `babysitter` (Kristy) watches pull requests until they merge; `critic` (Karen) challenges a plan, `adversary` (Kyle) attacks a
 change, and `auditor` (Ashley) audits the whole repository on demand
 ([CONV-007](../.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
 Each declares the model and reasoning effort it runs on. A skill's name says

@@ -575,6 +575,12 @@
     "provider": "human",
     "reviewed": true
   },
+  "nav.manageRoles": {
+    "source_hash": "b646c8d2583c0bc098b1af288728e472e44650fdcc4fa107ad1231650468cea9",
+    "target_hash": "15fa8146922bdb4467698d09a01722bf9d6b7580d2222240da7ee1691e9e813f",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
   "nav.memberLogin": {
     "source_hash": "fe7747440a0526f0ccdeb42924b76f94c011997233f4f0e23dd60e3b0da9ded4",
     "target_hash": "697ae1f3b3c2a3c0ddd5616aea59a3ea0545c45b426efc7f15a56a2c40699ffd",
@@ -3075,6 +3081,222 @@
     "source_hash": "1a31f5353f59c6aca06e6b0d05b73ed450d68964c6770af36eccb106951caff9",
     "target_hash": "e0538e3c7a84a91aebe687b1475b0e4c19111355b1ece985114cc1df8d160d2e",
     "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "roles.add.done": {
+    "source_hash": "884e9f8d828f52df9282a28cbbcc9f1603332ac08629933fa1f505ec68744d40",
+    "target_hash": "dc5855a1023ec075b1775255f2720880680e3b212d550c1b8f0f76b89c36d7f8",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.add.email": {
+    "source_hash": "f2488fd4ef4adbc6ac61300083f2c33980e48bb4bbf3c540ad760d61fc36f420",
+    "target_hash": "2f3a8e303079ba5f498cb8faaeb076a703bd4407ffcac2ac8e25e411df930339",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.add.role": {
+    "source_hash": "14736a2eb9f4159f4b6b86f192c3c222243fd9659aadf2ecc0139e3d72bed85c",
+    "target_hash": "a1fc967c558796933832ebe6eb716a7eb69d4ac48349d05366c22531d0b0df66",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.add.submit": {
+    "source_hash": "936413ca07912c0402e194d05c4e3a73c15851ab9a3568ed9afbaaf520946231",
+    "target_hash": "1f2efcf77ff4d3411b5f738e283b23a1ee22a193ed6d9fdacce2814c667e8e5c",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.add.title": {
+    "source_hash": "ef0757ff778b37eb5fa84de30edf7f00e83bee4f1813d60ca29751e9821645b4",
+    "target_hash": "f865ff0d5ef5fa726423383eebd748f065a7192f7a86fe83fcd201c0c806bb9a",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.add.working": {
+    "source_hash": "8157fc4e6bdbbefa9d7cddd8031a6a3f4bdf355d71efed84ebd146b3bfcb7945",
+    "target_hash": "1d5b46b7d170f8fa3e6e1881c336787abff2d584e7cb3da7f7295add5ff915e8",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.col.actions": {
+    "source_hash": "ff8059dc6752afdd30d275932b1d5031a2ec854b387a8c57ecc6689915293a43",
+    "target_hash": "ff8059dc6752afdd30d275932b1d5031a2ec854b387a8c57ecc6689915293a43",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.col.email": {
+    "source_hash": "f2488fd4ef4adbc6ac61300083f2c33980e48bb4bbf3c540ad760d61fc36f420",
+    "target_hash": "2f3a8e303079ba5f498cb8faaeb076a703bd4407ffcac2ac8e25e411df930339",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.col.granted": {
+    "source_hash": "8191888dd97cae12497400274f0ceaa806cc83e10a2a9ecd94e996fd15d38cc8",
+    "target_hash": "4a51e6cdfc40892a4d37fe6dcf6753c3245d41fe65c7ca141ea88a9fc5d53fa9",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.col.role": {
+    "source_hash": "14736a2eb9f4159f4b6b86f192c3c222243fd9659aadf2ecc0139e3d72bed85c",
+    "target_hash": "a1fc967c558796933832ebe6eb716a7eb69d4ac48349d05366c22531d0b0df66",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.empty": {
+    "source_hash": "4fcea8ec34cde2a4c8ffde30722ccfb58a15cd1a36ac2b998019055363a905ac",
+    "target_hash": "faa65c13e82e082a2a8f99c301247cff4d31d2d47144d75367ab2cadc7488323",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.error.add": {
+    "source_hash": "ae2a91d5a3db1f37b7eeec3166f0d84e5b5e1bf5a1784ac40c28d15c593fe195",
+    "target_hash": "5fb56521e79758273c36455334b25daa3c8ffa8a8af508499ca7304966f8afc3",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.error.load": {
+    "source_hash": "0fc7930847d56f04d41263a57aad1a8441f7b2439d874f2abf7d7e6ecfe19ed6",
+    "target_hash": "662d64b06135d1ce4ede4b852739f743a1286682349ee893926506c9b1b0bf30",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.error.remove": {
+    "source_hash": "088eaf9b2cf3a713ef7644906145150a0303185325b388f7e5b438d9de867560",
+    "target_hash": "11d96536c213bb019cb7543dbccc4f74d799e4a686889d5b322dde9b69fc6a82",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.intro": {
+    "source_hash": "1bc11f55f7ef08155dfbfd76079dd162d6cd6ca6f776bbf881cdebee3c6382d2",
+    "target_hash": "15dab50a14eda580ce4d444878d61463605115b30d35cf4f31644279433983c4",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.listTitle": {
+    "source_hash": "920f9fb81509a9dbb989486db32d75d95e6ef37e69a0c6c637d6375baa5a918e",
+    "target_hash": "36135556147b1cc08233fc2b74f9625862967b815102855125b7d21ab0dcf7b6",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.loading": {
+    "source_hash": "e9f5ee2eee0e1bc7a1828130cd98b2bcec0c8db4d01da09ffa98d6a97bb6533e",
+    "target_hash": "1f483b88493940f9baae5cb8067a7b26a7e77b2fde9d284edecee094c36ac489",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.refused.duplicate": {
+    "source_hash": "35c466f9e8c38261e82d166f76ea0fb846fb2a5acf4309fc0dd6a8989625cb35",
+    "target_hash": "9260ec937cb82c507ed3fbc33fe42ebc83d5d357fc23eb8166fe8f91b990d893",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.refused.invalid-email": {
+    "source_hash": "8a966af884a06484aad2032a003c8bb514b24890ef0e2e917a8e0a4df0858def",
+    "target_hash": "1b7062f891b3d3fafeaf3e79a37b773ca8af274d2b480e53dd3f7b4214e1718d",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.refused.invalid-role": {
+    "source_hash": "ed5b559e3888f98174c27f1177cca269ff818e47e1979a62c320033c8c28809f",
+    "target_hash": "f69f4fa3137646abd2ec7613627b1111add86a650360211c8c62c7483c45e07f",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.refused.not-found": {
+    "source_hash": "fca058da3541f5a02754af557727f8e33c014b829b7ef0fcf063f6cbe508eec4",
+    "target_hash": "02808dc3ee7721ad3c25288a120fb4805c22cedeed899c5170cf635719d7c8de",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.refused.self": {
+    "source_hash": "06f97b40295e6b676b0b2a263906c2f7c92392b2eb88bfb9b9fc7aa0f4ee7857",
+    "target_hash": "7c0ac1c557ef04d575875c13bb36cdd834ff9489ff2d8090036d97c4e29185f4",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.refused.super-administrator": {
+    "source_hash": "755a8eb1a6abfacbb43706e0dc1cf49d5b3a518d5d81b9d2210392574f7f5643",
+    "target_hash": "306ac337632f62d8fcf03cc9b2ad4b65c1d40d09f9b84fa127d1016f8a336268",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.remove.action": {
+    "source_hash": "9a1fb81f279f6993962a63a7bd6b541f8b048348f8017ea50ce0874b1122f760",
+    "target_hash": "16b95f84d845235db1d9042f6d1f499b9dd643059970ee0121f6cd6bfbd5f399",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.remove.actionFor": {
+    "source_hash": "8aef9c536ae8b71fdf0d1e68fd8bd2936679288cec071ca6c06ed38b46cc79db",
+    "target_hash": "661f778484f71ecd630652b5c535fe3df82f5674ed8a8349a55c4398c1978aa2",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.remove.confirm": {
+    "source_hash": "b4346fec9a14ed6e831ad4627ee41b7c5640b714ec554f7bb5abb985a2f9e6aa",
+    "target_hash": "571876754c3a5b877cd876b55b777e88a0514a7da37061ce5176c09594839697",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.remove.done": {
+    "source_hash": "7eaa19afbbc9252c58c083cb5382776318fd48fafa5b63c59397e1bea474f449",
+    "target_hash": "5cde031afb598f03c4c4e80e976e2a18f60a511afa546924baf7107dbc59e27d",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.remove.keep": {
+    "source_hash": "183f00f483d3844e875d26eac74c676054383aef38ed5a8e4d1505ef21008585",
+    "target_hash": "869e92a490d95632ec8d45e50dca5cff11c3cd178189911d66124b79936e3a27",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.remove.yes": {
+    "source_hash": "372e28e20d401c540ea6b651ce252c5753168518578ee9a45415714d72c17a1c",
+    "target_hash": "0fe28f3da5c1466aaa5c4538ecd6ad79ee505b00cc7de2c4d26ed72bd10ff4ee",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.role.administrator": {
+    "source_hash": "e7d3e769f3f593dadcb8634cc5b09fc90dd3a61c4a06a79cb0923662fe6fae6b",
+    "target_hash": "e77033f983beb1125cfa83824358449761f254999fce652e3e740926b9539163",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.role.safety_officer": {
+    "source_hash": "41b308065875b1cc1b7f1246903ce4d20ba0edcf6202ac427a4a615fe0e25353",
+    "target_hash": "f7268fd6ff143e466382630aa92b27f13fed8121635ced01ce735a015ee79616",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.superAdministrator.label": {
+    "source_hash": "87f2591eef805f15ebbec1f320d14baac7c2835d73a55a639ac159a49dfb47ec",
+    "target_hash": "55517ba49cbb264e0f3a1dc64ecd11984d2deff174ac6a25eebc163d3df02aae",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.superAdministrator.permanent": {
+    "source_hash": "5b9fd0d8fea60e5200cbd4b1d0aac24d43e2c1634be7729e07a86cc735b4b209",
+    "target_hash": "eb503affe8a70fa4ae9f86050674c20186aeed1528f1b587156757ad026bdd37",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.title": {
+    "source_hash": "b646c8d2583c0bc098b1af288728e472e44650fdcc4fa107ad1231650468cea9",
+    "target_hash": "15fa8146922bdb4467698d09a01722bf9d6b7580d2222240da7ee1691e9e813f",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.unavailable": {
+    "source_hash": "ea0c7143913ebfacabe0f27e9f0805302fd5ff5d90a878146777e8913e5d7d16",
+    "target_hash": "66aa05f8afe328c65e2856574baf14f675207c7e6f2ccaa5d50b077f91ea91ab",
+    "provider": "gemini:gemini-3.7-flash",
+    "reviewed": false
+  },
+  "roles.you": {
+    "source_hash": "08b041935798fbf6fd6ff51099ffedb140a475889986d14f5559ff8e7fc571dd",
+    "target_hash": "e4ed7cf73fe405aa397377b9238f009dfbc87f00a1629e5a8dd89244797aee6a",
+    "provider": "gemini:gemini-3.7-flash",
     "reviewed": false
   },
   "theme.toggleLabel": {

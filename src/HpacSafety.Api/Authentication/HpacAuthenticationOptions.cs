@@ -62,6 +62,21 @@ public sealed class HpacAuthenticationOptions
 	public TimeSpan TokenLifetime { get; set; } = TimeSpan.FromHours(8);
 
 	/// <summary>
+	///     The Super Administrator's email: one per environment, always an
+	///     Administrator, read from configuration and never from the database
+	///     (ADR-0200). Resolved from <see cref="SuperAdminSecretArn" /> at cold
+	///     start when one is configured; set directly only in Development and
+	///     tests. Never logged, never committed.
+	/// </summary>
+	public string? SuperAdmin { get; set; }
+
+	/// <summary>
+	///     The Secrets Manager ARN holding <see cref="SuperAdmin" />. Set by
+	///     Terraform; never a value, only where to find it (CON-INF-028).
+	/// </summary>
+	public string? SuperAdminSecretArn { get; set; }
+
+	/// <summary>
 	///     The temporary, staging-only interim issuer (issue #648, ADR-0172).
 	///     Everything it configures is named "Interim" so the whole feature can
 	///     be deleted in one sweep once a real identity provider replaces it.

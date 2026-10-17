@@ -1,9 +1,6 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using HpacSafety.Api.Authentication;
-using HpacSafety.Core.Features.Moderation;
 using Reqnroll;
 using Shouldly;
 
@@ -27,32 +24,27 @@ public sealed class InterimIssuerSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
-	private const string AdministratorName = "interim-issuer-acceptance-admin";
-	private const string AdministratorEmail = AdministratorName + "@example.test";
-
-	private const string LoginPageBody = """
-										 <html><body>
-										 <form action="/login" method="post">
-										 <input type="hidden" name="authenticity_token" value="csrf-token-abc123" />
-										 </form>
-										 </body></html>
-										 """;
+	private const string MemberEmail = "interim-issuer-acceptance@example.test";
 
 	private HttpClient? _client;
 	private HttpResponseMessage? _response;
 	private TokenPayload? _issuedToken;
+	private readonly RoleAssignmentWorld _world;
+
+	/// <summary>Reqnroll hands each scenario its own role-assignment world, which builds the deployment.</summary>
+	public InterimIssuerSteps(RoleAssignmentWorld world)
+	{
+		_world = world;
+	}
 
 	[Given(@"a deployment outside development with the temporary interim issuer enabled")]
 	public async Task GivenInterimIssuerEnabled()
 	{
-		// The members site accepts only the allowlisted administrator; for
-		// "admin"/"admin" it re-renders its login page — it has no such
-		// account either, so there is no back door even if
+		// The deployment is the role-assignment world's: outside Development, the interim
+		// issuer on, the members site stubbed to accept any email address and refuse the
+		// fixed development accounts, which have no "@" — so there is no back door even if
 		// FixedAccountCredentialSource were mistakenly reachable.
-		var host = await BootedApi.ProductionShapedWithInterimIssuer(
-			new StubTransport(),
-			administratorEmails: [AdministratorEmail]);
-		_client = host.CreateClient();
+		_client = await _world.AnonymousClient();
 	}
 
 	[Given(@"a deployment outside development with the temporary interim issuer disabled")]
@@ -69,7 +61,7 @@ public sealed class InterimIssuerSteps
 		EnsureOriginHeader();
 
 		_response = await _client!.PostAsJsonAsync(
-			"/api/auth/token", new { username = AdministratorEmail, password = "whatever-the-stub-accepts" });
+			"/api/auth/token", new { username = MemberEmail, password = "whatever-the-stub-accepts" });
 		_response.EnsureSuccessStatusCode();
 		_issuedToken = await _response.Content.ReadFromJsonAsync<TokenPayload>();
 	}
@@ -83,12 +75,6 @@ public sealed class InterimIssuerSteps
 
 		using var me = await _client.GetAsync(new Uri("/api/auth/me", UriKind.Relative));
 		me.StatusCode.ShouldBe(HttpStatusCode.OK);
-	}
-
-	[Then(@"an allowlisted Administrator account's token carries the Administrator role")]
-	public void ThenTokenCarriesAdministratorRole()
-	{
-		_issuedToken!.Role.ShouldBe(MemberRoles.CodeFor(MemberRole.Administrator));
 	}
 
 	[When(@"a sign-in is attempted with the fixed development Administrator account")]
@@ -160,39 +146,5 @@ public sealed class InterimIssuerSteps
 		body.ShouldNotContain("\"d\":"); // the RSA private exponent
 	}
 
-	private static HttpResponseMessage LoginPage()
-	{
-		return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(LoginPageBody) };
-	}
-
-	private static HttpResponseMessage Redirect()
-	{
-		return new HttpResponseMessage(HttpStatusCode.Found);
-	}
-
 	private sealed record TokenPayload(string AccessToken, string Role);
-
-	/// <summary>
-	///     The members site's two calls, answered by who signs in: its login
-	///     page for the form's token, then a redirect (accepted) for the
-	///     allowlisted administrator's credentials and the login page again
-	///     (refused) for any other. Kept apart from
-	///     <c>MembersSiteLoginSteps</c>'s stub because this type is temporary
-	///     (ADR-0172) and deletes with it.
-	/// </summary>
-	private sealed class StubTransport : HttpMessageHandler
-	{
-		protected override async Task<HttpResponseMessage> SendAsync(
-			HttpRequestMessage request,
-			CancellationToken cancellationToken)
-		{
-			if (request.Method != HttpMethod.Post || request.Content is null)
-			{
-				return LoginPage();
-			}
-
-			var form = await request.Content.ReadAsStringAsync(cancellationToken);
-			return form.Contains(AdministratorName, StringComparison.Ordinal) ? Redirect() : LoginPage();
-		}
-	}
 }

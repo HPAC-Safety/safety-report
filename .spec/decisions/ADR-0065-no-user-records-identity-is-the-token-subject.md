@@ -2,7 +2,7 @@
 title: No user records; identity is the token subject
 description: This system stores no user records of any kind.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: admin_users, allowlist, identity, token subject, audit, drop table, migration
@@ -10,7 +10,7 @@ keywords: admin_users, allowlist, identity, token subject, audit, drop table, mi
 
 # ADR-0065 — No user records; identity is the token subject
 
-**Status:** Accepted. Partially supersedes
+**Status:** Superseded by [ADR-0199](ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md). Partially supersedes
 [ADR-0020](ADR-0020-seeding-by-migration.md) and
 [ADR-0040](ADR-0040-migrate-canonical-domain-and-persistence.md).
 

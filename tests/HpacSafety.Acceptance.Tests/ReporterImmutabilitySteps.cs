@@ -30,6 +30,13 @@ public sealed class ReporterImmutabilitySteps
 	private int? _rows;
 	private ScratchHost? _scratch;
 	private Guarded.StoredPart? _part;
+	private readonly RoleAssignmentWorld _roleAssignments;
+
+	/// <summary>Reqnroll hands each scenario its own role-assignment world, which REQ-AUTH-026 shares the erasure Then step through.</summary>
+	public ReporterImmutabilitySteps(RoleAssignmentWorld roleAssignments)
+	{
+		_roleAssignments = roleAssignments;
+	}
 
 	[Given(@"a submitted report with answers, a file, and a summary")]
 	public async Task GivenASubmittedReport()
@@ -126,6 +133,14 @@ public sealed class ReporterImmutabilitySteps
 	[Then(@"the erasure is refused, saying that kind of record is never erased")]
 	public void ThenTheErasureIsRefused()
 	{
+		if (_roleAssignments.TargetId is not null)
+		{
+			_roleAssignments.Refusal.ShouldNotBeNull("The statement was not refused.");
+			_roleAssignments.Refusal.SqlState.ShouldBe("23000");
+			_roleAssignments.Refusal.MessageText.ShouldBe("role_assignments rows are never deleted");
+			return;
+		}
+
 		_refusal.ShouldNotBeNull("The statement was not refused.");
 		_refusal.SqlState.ShouldBe("23000");
 		_refusal.MessageText.ShouldBe($"{_table} rows are never deleted");

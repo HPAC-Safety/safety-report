@@ -216,7 +216,8 @@ How the pieces connect:
 API and the Worker are Lambda functions with no ALB, CloudFront routes
 `/api/*` to the API's Function URL guarded by the origin-verify secret,
 `staging.tfvars`/`production.tfvars` carry the only differences between the
-two environments, both accounts get their `hpac-safety-staging`/
+two environments in Terraform (each GitHub environment's `SUPER_ADMIN` secret
+is the one difference outside it, CON-INF-028), both accounts get their `hpac-safety-staging`/
 `hpac-safety-production` Resource Groups, the production pair of
 hostnames plus a staging default address are both wired up, and a NAT
 instance (`fck-nat`) replaces the managed NAT gateway. This remains open:
@@ -290,6 +291,26 @@ deleted. Before a page is uploaded, every file it names is already in place
 observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that
 was already open when a deploy removed its files.*
 
+**CON-INF-028** The Super Administrator's email lives only in a masked GitHub
+environment secret named `SUPER_ADMIN`
+([ADR-0200](decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md)).
+It follows CON-INF-005: Terraform creates a Secrets Manager entry only, with
+no secret version; every deploy puts the value from the `SUPER_ADMIN`
+environment secret, and puts a blank value when that secret is absent or
+empty, so removing the secret retires the Super Administrator at the next
+deploy. A blank value means no Super Administrator.
+The reusable deploy workflow's `SUPER_ADMIN` secret is optional (production
+has none). The API's Lambda function carries only the entry's ARN, as a
+`…SuperAdminSecretArn` setting, and the API resolves the value at cold start,
+like the vendor keys. This change sets it for staging only and creates no
+production environment or secret. Its value never
+appears in a committed file, a log, a workflow's output, or a Terraform plan
+comment.
+*Verified by: none — a deployment property no application scenario can
+observe; review of the deploy workflow and a plan comment is its check.
+REQ-AUTH-017, REQ-AUTH-024, and REQ-AUTH-029 cover what the application does
+with it.*
+
 **CON-INF-013** The NAT instance (`fck-nat` on a `t4g.nano`, in a one-instance
 Auto Scaling group) is the only resource this system ever deletes and
 recreates, and every release does so. Every other resource — the RDS
@@ -308,7 +329,8 @@ observe; Terraform plan review and the `infra` job are its check.*
 [issue #30](https://github.com/HPAC-Safety/safety-report/issues/30): one way
 to do each thing (one Terraform root, one bootstrap script, one release
 workflow, one plan workflow; no modules directory, no workspaces, no
-Terragrunt); the two environments differ only in their tfvars; everything is
+Terragrunt); the two environments differ only in their tfvars and their
+GitHub environment's `SUPER_ADMIN` secret (CON-INF-028); everything is
 code — nobody changes AWS through its console except the one-time steps in
 issue #30's "Human work", and a release re-plans after it applies and fails
 on drift; no hidden steps, every manual action is written down; every

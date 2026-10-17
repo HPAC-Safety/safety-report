@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using HpacSafety.Core.Features.Moderation;
-using Microsoft.Extensions.Options;
 
 namespace HpacSafety.Api.Authentication;
 
@@ -32,8 +31,8 @@ namespace HpacSafety.Api.Authentication;
 ///     <para>
 ///         The members site has no concept of the three roles this system
 ///         uses, and its own cookies are sealed with a secret we do not have.
-///         Role therefore comes from <see cref="MembersSiteLoginOptions" />'s
-///         email lists, never from anything the site returns.
+///         It proves membership only, so a success is a <see cref="MemberRole.User" />;
+///         the role comes from <see cref="RoleResolver" /> (ADR-0199).
 ///     </para>
 /// </remarks>
 public sealed partial class MembersSiteCredentialSource : IDevelopmentCredentialSource
@@ -42,16 +41,11 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 	public const string HttpClientName = "hpac-members-login";
 
 	private readonly IHttpClientFactory _clients;
-	private readonly MembersSiteLoginOptions _options;
 
 	/// <summary>Creates the credential source.</summary>
-	public MembersSiteCredentialSource(IHttpClientFactory clients,
-									   IOptions<MembersSiteLoginOptions> options)
+	public MembersSiteCredentialSource(IHttpClientFactory clients)
 	{
-		ArgumentNullException.ThrowIfNull(options);
-
 		_clients = clients;
-		_options = options.Value;
 	}
 
 	/// <inheritdoc />
@@ -98,7 +92,9 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 			// login page (200) means the credentials were not accepted.
 			if (response.StatusCode is HttpStatusCode.Found or HttpStatusCode.SeeOther)
 			{
-				return RoleFor(username);
+				// Verified: membership is proven and nothing more. The role comes
+				// from the role resolver, never from this source (ADR-0199).
+				return MemberRole.User;
 			}
 
 			if (response.StatusCode == HttpStatusCode.OK)
@@ -109,21 +105,6 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 			throw new MembersSiteUnavailableException(
 				$"The members site answered {(int)response.StatusCode} to a login attempt.");
 		}
-	}
-
-	private MemberRole RoleFor(string email)
-	{
-		if (_options.AdministratorEmails.Any(candidate => string.Equals(candidate, email, StringComparison.OrdinalIgnoreCase)))
-		{
-			return MemberRole.Administrator;
-		}
-
-		if (_options.SafetyOfficerEmails.Any(candidate => string.Equals(candidate, email, StringComparison.OrdinalIgnoreCase)))
-		{
-			return MemberRole.SafetyOfficer;
-		}
-
-		return MemberRole.User;
 	}
 
 	private static async Task<(string CsrfToken, string Cookies)> FetchLoginFormAsync(

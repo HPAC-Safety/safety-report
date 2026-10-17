@@ -2,7 +2,7 @@
 title: A temporary interim issuer signs staging tokens until a real provider exists
 description: The API runs its own RS256 identity provider in staging, behind one flag, so staging is usable end to end before an identity provider is chosen. Deleted in one sweep once one is.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-28
 decision-makers: Chase Florell
 keywords: interim issuer, RS256, JWKS, staging, temporary, identity provider, ADR-0064, ADR-0079, ADR-0158
@@ -10,7 +10,7 @@ keywords: interim issuer, RS256, JWKS, staging, temporary, identity provider, AD
 
 # ADR-0172 — A temporary interim issuer signs staging tokens until a real provider exists
 
-**Status:** Accepted. **Temporary** — every part of this decision is deleted,
+**Status:** Superseded by [ADR-0199](ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md). **Temporary** — every part of this decision is deleted,
 not superseded, once [ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)'s
 identity provider choice is made. This ADR amends
 [AGENTS.md](../../AGENTS.md) invariant 7 and its "Not built" section, and

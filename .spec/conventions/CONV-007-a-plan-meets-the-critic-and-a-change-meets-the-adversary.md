@@ -40,7 +40,7 @@ date: 2026-10-04
   built, the adversary attacks a change for bugs, security, privacy leaks,
   contract violations, and missing tests, `spec-reviewer` judges the diff
   after, against claims and ADRs, and `auditor` judges the whole repository
-  between changes. `backend`, `ux`, and `infrastructure`
+  between changes. `backend`, `client`, and `infrastructure`
   design and build, and still cite claims.
 
 ## Why

@@ -1,7 +1,6 @@
 using System.Net;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core.Features.Moderation;
-using Microsoft.Extensions.Options;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests.Authentication;
@@ -23,46 +22,21 @@ public sealed class MembersSiteCredentialSourceTests
 										 """;
 
 	[Fact]
-	public async Task GivenAnEmailOnTheAdministratorList_WhenTheMembersSiteAcceptsTheLogin_ThenAdministratorRole()
+	public async Task GivenAnyEmail_WhenTheMembersSiteAcceptsTheLogin_ThenItProvesMembershipOnly()
 	{
-		// Given
-		var (source, _) = Source(LoginPage(), Redirect(), administratorEmails: ["chase.florell@gmail.com"]);
+		// Given — the source reads no email list: role comes from the role
+		// resolver (ADR-0199), never from here.
+		var (source, _) = Source(LoginPage(), Redirect());
 
 		// When
-		var role = await source.Verify("chase.florell@gmail.com", "correct-password", CancellationToken.None);
+		var role = await source.Verify("chase@example.test", "correct-password", CancellationToken.None);
 
 		// Then
-		role.ShouldBe(MemberRole.Administrator);
+		role.ShouldBe(MemberRole.User);
 	}
 
 	[Fact]
-	public async Task GivenTheSameEmailInDifferentCase_WhenOnTheAdministratorList_ThenStillAdministratorRole()
-	{
-		// Given
-		var (source, _) = Source(LoginPage(), Redirect(), administratorEmails: ["Chase.Florell@Gmail.com"]);
-
-		// When
-		var role = await source.Verify("chase.florell@gmail.com", "correct-password", CancellationToken.None);
-
-		// Then
-		role.ShouldBe(MemberRole.Administrator);
-	}
-
-	[Fact]
-	public async Task GivenAnEmailOnTheSafetyOfficerList_WhenTheMembersSiteAcceptsTheLogin_ThenSafetyOfficerRole()
-	{
-		// Given
-		var (source, _) = Source(LoginPage(), Redirect(), safetyOfficerEmails: ["officer@example.test"]);
-
-		// When
-		var role = await source.Verify("officer@example.test", "correct-password", CancellationToken.None);
-
-		// Then
-		role.ShouldBe(MemberRole.SafetyOfficer);
-	}
-
-	[Fact]
-	public async Task GivenAnEmailOnNeitherList_WhenTheMembersSiteAcceptsTheLogin_ThenUserRole()
+	public async Task GivenADifferentEmail_WhenTheMembersSiteAcceptsTheLogin_ThenUserRole()
 	{
 		// Given
 		var (source, _) = Source(LoginPage(), Redirect());
@@ -101,6 +75,32 @@ public sealed class MembersSiteCredentialSourceTests
 		transport.Bodies[1].ShouldContain("authenticity_token=csrf-token-abc123");
 		transport.Bodies[1].ShouldContain("session%5Bemail%5D=member%40example.test");
 		transport.Requests[1].Headers.GetValues("Cookie").Single().ShouldBe("_hpac-rails-session=abc123");
+	}
+
+	[Fact]
+	public async Task GivenACookieWithNoAttributes_WhenVerified_ThenItIsSentWhole()
+	{
+		// Given
+		var (source, transport) = Source(LoginPage(setCookie: " sid=abc "), Redirect());
+
+		// When
+		await source.Verify("member@example.test", "correct-password", CancellationToken.None);
+
+		// Then
+		transport.Requests[1].Headers.GetValues("Cookie").Single().ShouldBe("sid=abc");
+	}
+
+	[Fact]
+	public async Task GivenABlankCookie_WhenVerified_ThenNoCookieIsSent()
+	{
+		// Given
+		var (source, transport) = Source(LoginPage(setCookie: " ; path=/"), Redirect());
+
+		// When
+		await source.Verify("member@example.test", "correct-password", CancellationToken.None);
+
+		// Then
+		transport.Requests[1].Headers.GetValues("Cookie").Single().ShouldBeEmpty();
 	}
 
 	[Fact]
@@ -205,19 +205,11 @@ public sealed class MembersSiteCredentialSourceTests
 
 	private static (MembersSiteCredentialSource Source, StubTransport Transport) Source(
 		object getResult,
-		object postResult,
-		IReadOnlyList<string>? administratorEmails = null,
-		IReadOnlyList<string>? safetyOfficerEmails = null)
+		object postResult)
 	{
 		var transport = new StubTransport(getResult, postResult);
 
-		var options = Options.Create(new MembersSiteLoginOptions
-		{
-			AdministratorEmails = administratorEmails ?? [],
-			SafetyOfficerEmails = safetyOfficerEmails ?? [],
-		});
-
-		return (new MembersSiteCredentialSource(new StubClientFactory(transport), options), transport);
+		return (new MembersSiteCredentialSource(new StubClientFactory(transport)), transport);
 	}
 
 	/// <summary>Replays one canned response (or throws one exception) per call, in order.</summary>

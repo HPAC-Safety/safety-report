@@ -78,6 +78,9 @@ export function AdminMenuView({
 							<Link role="menuitem" to="/admin/questions" onClick={onSelectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
 								<Label>{t("nav.manageQuestions")}</Label>
 							</Link>
+							<Link role="menuitem" to="/admin/roles" onClick={onSelectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
+								<Label>{t("nav.manageRoles")}</Label>
+							</Link>
 						</>
 					)}
 				</div>

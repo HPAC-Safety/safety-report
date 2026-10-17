@@ -161,13 +161,21 @@ is in the generic skills it preloads
   ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)):
   - **spec-author** (Jennifer) — writes scenarios and what is out of scope;
   - **test-writer** (Kevin) — turns a claim into a failing step definition;
-  - a builder designs and builds what the claims describe, and makes it pass:
-    **backend** (Brad: server side, scripts, CI), **ux** (Tiffany: web UI), or
-    **infrastructure** (Dave: cloud, network, deployment);
+  - a builder builds what the claims describe, and makes it pass: **backend**
+    (Brad: server side, scripts, CI), **client** (Megan: web and native
+    clients), or **infrastructure** (Dave: cloud, network, deployment);
+  - for a UI change, two roles hand off before **client** builds: **ux**
+    (Tiffany) specifies the flow, accessibility semantics, and localized copy,
+    then **designer** (Brittany) draws and gets approved the boards and
+    design-system values;
   - **spec-reviewer** (Jessica) — judges a diff against those claims and the
     ADRs.
 - **ai-author** (Emily) — maintains these instruction files.
 - **database-administrator** (Jane) — designs, audits, and migrates the schema.
+- **babysitter** (Kristy) — watches pull requests until they merge or close,
+  classifies each failure as a code fault or a CI-server fault, and routes it;
+  spawn it as a plain Agent-tool subagent named `kristy-<task>`, never as a
+  teammate, and never edits, merges, or kills a process.
 - **critic** (Karen) judges a plan before it is built; **adversary** (Kyle)
   attacks a change for bugs, security, privacy leaks, contract violations, and
   missing tests; **spec-reviewer** judges the diff after, against claims and
@@ -182,10 +190,10 @@ is in the generic skills it preloads
     before any pull request or merge.
   - A hook reminds about the critic and never blocks
     ([CONV-007](.spec/conventions/CONV-007-a-plan-meets-the-critic-and-a-change-meets-the-adversary.md)).
-- The eleven agents are a full-stack team; each description opens with its team
+- The fourteen agents are a full-stack team; each description opens with its team
   role. A new agent earns a file only when it reads, uses, runs, or refuses
   something none of these does ([CONV-008](.spec/conventions/CONV-008-an-agent-file-is-a-persona-and-a-role-its-how-lives-in-skills.md)).
-- The eleven agents are generic. Reach each role's repository rules through the
+- The fourteen agents are generic. Reach each role's repository rules through the
   companions of the generic skills it preloads, in the table below.
 - Each declares its model and effort in frontmatter; the general rule is in
   `write-agent-instructions` "An agent file", and each role's reason in the
@@ -296,18 +304,30 @@ Read them before touching the area.
    Claims: `REQ-DOM-003`, `REQ-DOM-005`, `REQ-DOM-024`, `REQ-DOM-025`,
    `REQ-MOD-035`, `REQ-MOD-194`–`200`, `REQ-REV-001`, `CON-SO-007`, `CON-DP-014`.
    ADRs: [0177](.spec/decisions/ADR-0177-summaries-are-append-only-revisions-and-a-live-edit-publishes-itself.md).
-7. **Identity is a validated JWT, and nothing is stored about members**: the
-   API reads the subject and role claim (`User`, `SafetyOfficer`,
-   `Administrator`), never handles a password, and keeps no user record; a
-   reporter must be a member and is not recorded, and a submission returns a
-   random receipt the browser keeps and the report stores only as a hash, so a
-   browser sees its own unpublished report and no member is identified. The only exceptions are
-   Development's members-site login and, temporarily, staging's interim
-   issuer behind `InterimIssuer:Enabled`, which production never sets.
-   Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-AUTH-009`–`011`, `REQ-SUB-019`–`021`,
-   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-PUB-001`–`015`, `REQ-PUB-030`, `REQ-PUB-031`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-DP-005`,
-   `CON-INF-004`.
-   ADRs: [0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+7. **A validated JWT proves membership only; roles come from the application's
+   own role assignments**: the API reads the token subject, never handles a
+   password, and a validated token makes its bearer a User. Safety Officer and
+   Administrator come only from an active role assignment, re-checked on every
+   request (an unreadable store fails closed to User), or from the permanent
+   Super Administrator in configuration, never from a token claim or a
+   committed list. An assignment holds an ASCII email, a role, and the granted
+   time and granting Administrator's subject; revoking stamps the time and the
+   revoking Administrator's subject, and the database refuses a delete. Under
+   staging's interim issuer a subject is `member:<email>`, so those subjects
+   and an audit actor can hold an email in the database. Nothing else is
+   stored about a member, and an email never reaches a log. A reporter must be a member and is not recorded, and a submission
+   returns a random receipt the browser keeps and the report stores only as a
+   hash, so a browser sees its own unpublished report and no member is
+   identified. The only exceptions are Development's members-site login, which
+   also keeps its fixed accounts and `appsettings.Development.json` lists as a
+   direct role source, and, temporarily, staging's interim issuer behind
+   `InterimIssuer:Enabled`, which production never sets.
+   Claims: `REQ-MOD-013`–`022`, `REQ-MOD-157`–`159`, `REQ-AUTH-009`–`032`, `REQ-SUB-019`–`021`,
+   `REQ-SUB-023`, `REQ-SUB-133`–`136`, `REQ-PUB-001`–`015`, `REQ-PUB-030`, `REQ-PUB-031`, `CON-IF-003`, `CON-IF-004`, `CON-IF-005`, `CON-IF-011`, `CON-DP-005`,
+   `CON-DP-017`, `CON-INF-004`, `CON-INF-028`.
+   ADRs: [0199](.spec/decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md),
+   [0200](.spec/decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md),
+   [0064](.spec/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
    [0065](.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
    [0067](.spec/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md),
    [0196](.spec/decisions/ADR-0196-a-browser-receipt-shows-a-reporter-their-own-unpublished-report.md),
@@ -334,17 +354,20 @@ Read them before touching the area.
 
 - **None of these exist**: a deterministic scrubber beyond the marking pass, a
   separate PII auditor, specialized aircraft processing, an outbound email
-  flow, a server-side draft or resumable upload protocol, a user table, an
-  allowlist, a credential proxy, CSRF machinery, or Turnstile verification.
+  flow, a server-side draft or resumable upload protocol, a user table or
+  profile (a role assignment holds an email, a role, and its grant and
+  revoke stamps, nothing more), a role list in configuration or the
+  repository beyond the Super Administrator and Development's lists, a
+  credential proxy, CSRF machinery, or Turnstile verification.
   Claims: `CON-SO-009`, `CON-IF-002`, `CON-IF-004`, `CON-IF-005`,
   `CON-INF-004`.
-- **Two carved exceptions** carry an email allowlist and CSRF/session
-  handling scoped to the members-site credential source: Development's
-  members-site login
+- **Two carved exceptions** carry CSRF/session handling scoped to the
+  members-site credential source; Development's also carries its own email
+  lists: Development's members-site login
   ([ADR-0079](.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md))
   and, temporarily, staging's interim issuer
   ([ADR-0172](.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)).
-  Any other allowlist or credential-proxy-shaped code needs its own argument
+  Any other email list or credential-proxy-shaped code needs its own argument
   on its own facts.
 
 ### Machine translation
@@ -397,7 +420,9 @@ under `.claude/` is generated.
 | Writing, applying, seeding, or squashing a migration | `manage-ef-core-migrations` | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | Attachments or private object storage | — | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
 | English/French behavior | — | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
-| React/TypeScript web UI and design system | `design-web-ui` | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
+| Web UI flow, accessibility semantics, and copy | `design-ux-flow` | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
+| React/TypeScript web UI and design system | `design-web-ui`, `build-web-ui` | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
+| Watching pull requests and builds | `watch-builds` | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
 | AWS, Terraform, or deployment | `design-cloud-infrastructure` | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
 | Specification chain: scenarios, claims, records, generated files, coverage | `spec-driven-development` | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Specification-driven development" |
 | Issues, docs, worktrees, PRs, or CI | `deliver-change` | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |

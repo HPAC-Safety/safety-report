@@ -96,6 +96,18 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 		interimIssuerSigningKeyPem,
 });
 
+// The Super Administrator's email (ADR-0200, CON-INF-028): resolved once, here,
+// from Secrets Manager when Terraform supplies an ARN. Optional: an unset
+// value, or an entry with no version, means there is none. Never logged.
+var superAdminSection = builder.Configuration.GetSection(HpacAuthenticationOptions.SectionName);
+var superAdmin = await SuperAdminSecret.ResolveAsync(
+	superAdminSection[nameof(HpacAuthenticationOptions.SuperAdmin)],
+	superAdminSection[nameof(HpacAuthenticationOptions.SuperAdminSecretArn)]).ConfigureAwait(false);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+	[$"{HpacAuthenticationOptions.SectionName}:{nameof(HpacAuthenticationOptions.SuperAdmin)}"] = superAdmin,
+});
+
 // Identity is a signed JWT this API validates; it never sees a password. In
 // Development the API also issues the tokens it validates, so the same
 // middleware and the same policies run either way and only the issuer and key
@@ -213,6 +225,7 @@ app.MapReportSubmission();
 app.MapAdminQuestions();
 app.MapAdminTranslation();
 app.MapAdminTypeformImport();
+app.MapAdminRoleAssignments();
 
 // Soft deletion (issue #82). The review queue itself is issue #25.
 app.MapAdminReports();

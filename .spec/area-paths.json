@@ -71,15 +71,22 @@
 			"src/HpacSafety.Worker/Summarization/**"
 		],
 		"authentication-and-roles": [
+			"src/HpacSafety.Api/Admin/RoleAssignment*",
 			"src/HpacSafety.Api/Authentication/**",
 			"src/HpacSafety.Core/Features/Moderation/Member*",
+			"src/HpacSafety.Core/Features/RoleAssignments/**",
+			"src/HpacSafety.Infrastructure/Persistence/Configurations/RoleAssignment*",
+			"src/HpacSafety.Infrastructure/Persistence/Sql/*AddRoleAssignments*",
+			"src/HpacSafety.Infrastructure/Persistence/Views/ActiveRoleAssignment.cs",
 			"src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs",
 			"src/HpacSafety.Infrastructure/Persistence/Sql/*RefuseChangesToTheReportersAccount*",
+			"src/web/src/api/roleAssignments*",
 			"src/web/src/auth/**",
 			"src/web/src/components/AdminMenu*",
 			"src/web/src/components/AdminRouteGuard*",
 			"src/web/src/routes/AdminPage*",
 			"src/web/src/routes/ForbiddenPage*",
+			"src/web/src/routes/ManageRoles*",
 			"src/web/src/routes/MemberLoginPage*",
 			"src/web/src/routes/returnTarget*"
 		],

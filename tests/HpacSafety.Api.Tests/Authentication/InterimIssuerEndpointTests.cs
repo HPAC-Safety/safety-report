@@ -5,10 +5,15 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
 using HpacSafety.Api.Authentication;
+using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.RoleAssignments;
+using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests.Authentication;
@@ -47,21 +52,19 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
 	[Fact]
-	public async Task GivenAnEmailOnTheAdministratorAllowlist_WhenTokenIsRequestedThroughTheMembersSite_ThenItCarriesTheAdministratorRole()
+	public async Task GivenAnActiveAdministratorAssignment_WhenTokenIsRequestedThroughTheMembersSite_ThenItCarriesTheAdministratorRole()
 	{
 		// Given
-		await using var host = InterimHost(
-			new StubTransport(LoginPage(), Redirect()),
-			administratorEmails: ["administrator@example.test"]);
+		var email = UniqueEmail();
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
+		await Assign(host, email, MemberRole.Administrator);
 		using var client = OriginVerifiedClient(host);
 
 		// When
-		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "administrator@example.test", password = "correct-password" }, cancellationToken: TestContext.Current.CancellationToken);
-		var token = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: TestContext.Current.CancellationToken);
+		var token = await SignIn(client, email);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-		token!.Role.ShouldBe("administrator");
+		token.Role.ShouldBe("administrator");
 		token.AccessToken.ShouldNotBeNullOrWhiteSpace();
 
 		var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token.AccessToken);
@@ -69,11 +72,141 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		jwt.Issuer.ShouldBe(InterimTokenIssuer.IssuerName);
 	}
 
-	[Fact]
-	public async Task GivenAnEmailOnNeitherAllowlist_WhenTokenIsRequestedThroughTheMembersSite_ThenItCarriesTheUserRole()
+	[Theory]
+	[InlineData("{0}", "{0}")]
+	[InlineData("{0}", " {0} ")]
+	public async Task GivenAnAssignmentTypedInAnotherCase_WhenTheMemberSignsIn_ThenTheAssignmentMatches(string assigned,
+																											string typed)
 	{
-		// Given — the members site accepts the login, but the email is on
-		// neither MembersSiteLoginOptions list.
+		// Given — assigned in one form, typed in upper case with spaces.
+		var email = UniqueEmail();
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
+		await Assign(host, string.Format(System.Globalization.CultureInfo.InvariantCulture, assigned, email), MemberRole.SafetyOfficer);
+		using var client = OriginVerifiedClient(host);
+
+		// When
+		var token = await SignIn(client, string.Format(System.Globalization.CultureInfo.InvariantCulture, typed, email).ToUpperInvariant());
+
+		// Then
+		token.Role.ShouldBe("safety_officer");
+	}
+
+	[Fact]
+	public async Task GivenAnEmailOnTheDevelopmentLists_WhenTheInterimIssuerMintsAToken_ThenTheListsAreIgnored()
+	{
+		// Given — the lists are Development's alone (ADR-0199).
+		var email = UniqueEmail();
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()), listedAdministrator: email);
+		using var client = OriginVerifiedClient(host);
+
+		// When
+		var token = await SignIn(client, email);
+
+		// Then
+		token.Role.ShouldBe("user");
+	}
+
+	[Fact]
+	public async Task GivenTheSuperAdministrator_WhenTheyMintAToken_ThenItCarriesTheAdministratorRole()
+	{
+		// Given
+		var email = UniqueEmail();
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()), superAdmin: email);
+		using var client = OriginVerifiedClient(host);
+
+		// When
+		var token = await SignIn(client, email.ToUpperInvariant());
+
+		// Then
+		token.Role.ShouldBe("administrator");
+	}
+
+	[Fact]
+	public async Task GivenRoleAssignmentsCannotBeRead_WhenMembersSignIn_ThenAMemberIsAUserAndTheSuperAdministratorAnAdministrator()
+	{
+		// Given
+		var assigned = UniqueEmail();
+		var superAdmin = UniqueEmail();
+		await using var host = InterimHost(
+			new StubTransport(LoginPage(), Redirect(), LoginPage(), Redirect()),
+			superAdmin: superAdmin);
+		await Assign(host, assigned, MemberRole.SafetyOfficer);
+		using var client = OriginVerifiedClient(host);
+
+		TokenResponse member;
+		TokenResponse super;
+
+		// When
+		await using (await Unreadable.Begin(host))
+		{
+			member = await SignIn(client, assigned);
+			super = await SignIn(client, superAdmin);
+		}
+
+		// Then
+		member.Role.ShouldBe("user");
+		super.Role.ShouldBe("administrator");
+	}
+
+	[Fact]
+	public async Task GivenSignInsAndAnUnreadableStore_WhenMembersAreResolved_ThenNoEmailOrMemberSubjectReachesALog()
+	{
+		// Given — CON-IF-011: the interim subject is member:<email>
+		var assigned = UniqueEmail();
+		var stranger = UniqueEmail();
+		var logs = new CapturedLogs();
+		await using var host = InterimHost(
+			new StubTransport(LoginPage(), Redirect(), LoginPage(), Redirect(), LoginPage(), Redirect()),
+			configure: services => services.AddLogging(logging => logging.AddProvider(logs)));
+		await Assign(host, assigned, MemberRole.SafetyOfficer);
+		using var client = OriginVerifiedClient(host);
+
+		// When
+		var token = await SignIn(client, assigned);
+		await SignIn(client, stranger);
+		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+
+		await using (await Unreadable.Begin(host))
+		{
+			await SignIn(client, assigned);
+			using var forbidden = await client.GetAsync(new Uri("/api/admin/counts", UriKind.Relative), TestContext.Current.CancellationToken);
+			forbidden.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+		}
+
+		// Then
+		logs.Messages.ShouldNotBeEmpty();
+		logs.Messages.ShouldNotContain(message => message.Contains(assigned, StringComparison.OrdinalIgnoreCase)
+												  || message.Contains(stranger, StringComparison.OrdinalIgnoreCase)
+												  || message.Contains("member:", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[Fact]
+	public async Task GivenARevokedAssignment_WhenTheMemberAsksWithTheTokenTheyHold_ThenTheRequestIsForbidden()
+	{
+		// Given — a Safety Officer by assignment, holding a token.
+		var email = UniqueEmail();
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
+		await Assign(host, email, MemberRole.SafetyOfficer);
+		using var client = OriginVerifiedClient(host);
+		var token = await SignIn(client, email);
+		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+
+		using var before = await client.GetAsync(new Uri("/api/admin/counts", UriKind.Relative), TestContext.Current.CancellationToken);
+
+		// When — an Administrator removes the assignment.
+		await Revoke(host, email);
+		using var after = await client.GetAsync(new Uri("/api/admin/counts", UriKind.Relative), TestContext.Current.CancellationToken);
+
+		// Then
+		before.StatusCode.ShouldBe(HttpStatusCode.OK);
+		after.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	[Fact]
+	public async Task GivenAnEmailWithNoAssignment_WhenTokenIsRequestedThroughTheMembersSite_ThenItCarriesTheUserRole()
+	{
+		// Given — the members site accepts the login, but the email holds no
+		// role assignment.
 		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
 		using var client = OriginVerifiedClient(host);
 
@@ -84,6 +217,23 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 		token!.Role.ShouldBe("user");
+	}
+
+	[Theory]
+	[InlineData("", "correct-password")]
+	[InlineData("someone@example.test", "")]
+	public async Task GivenABlankCredential_WhenTokenIsRequested_ThenItIsRefusedWithoutAskingTheMembersSite(string username,
+																									   string password)
+	{
+		// Given
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
+		using var client = OriginVerifiedClient(host);
+
+		// When
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username, password }, cancellationToken: TestContext.Current.CancellationToken);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 	}
 
 	[Fact]
@@ -109,9 +259,7 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — the whole round trip: mint through the endpoint, validate
 		// with the same parameters this host itself registers.
-		await using var host = InterimHost(
-			new StubTransport(LoginPage(), Redirect()),
-			safetyOfficerEmails: ["officer@example.test"]);
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
 		using var client = OriginVerifiedClient(host);
 
 		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username = "officer@example.test", password = "correct-password" }, cancellationToken: TestContext.Current.CancellationToken);
@@ -189,8 +337,9 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 
 	private WebApplicationFactory<Program> InterimHost(
 		HttpMessageHandler membersSiteHandler,
-		IReadOnlyList<string>? administratorEmails = null,
-		IReadOnlyList<string>? safetyOfficerEmails = null)
+		string? superAdmin = null,
+		string? listedAdministrator = null,
+		Action<IServiceCollection>? configure = null)
 	{
 		return _factory.WithWebHostBuilder(builder =>
 		{
@@ -199,30 +348,63 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 			builder.UseSetting("HpacSafety:Authentication:InterimIssuer:Enabled", "true");
 			builder.UseSetting("HpacSafety:Authentication:InterimIssuer:SigningKeyPem", SigningKeyPem);
 
+			if (superAdmin is not null)
+			{
+				builder.UseSetting("HpacSafety:Authentication:SuperAdmin", superAdmin);
+			}
+
+			if (listedAdministrator is not null)
+			{
+				builder.UseSetting("MembersSiteLogin:AdministratorEmails:0", listedAdministrator);
+			}
+
 			builder.ConfigureTestServices(services =>
 			{
 				services
 					.AddHttpClient(MembersSiteCredentialSource.HttpClientName)
 					.ConfigurePrimaryHttpMessageHandler(() => membersSiteHandler);
+
+				configure?.Invoke(services);
 			});
-
-			var emailSettings = new Dictionary<string, string?>();
-
-			for (var index = 0; index < (administratorEmails?.Count ?? 0); index++)
-			{
-				emailSettings[$"MembersSiteLogin:AdministratorEmails:{index}"] = administratorEmails![index];
-			}
-
-			for (var index = 0; index < (safetyOfficerEmails?.Count ?? 0); index++)
-			{
-				emailSettings[$"MembersSiteLogin:SafetyOfficerEmails:{index}"] = safetyOfficerEmails![index];
-			}
-
-			foreach (var (key, value) in emailSettings)
-			{
-				builder.UseSetting(key, value);
-			}
 		});
+	}
+
+	private static string UniqueEmail()
+	{
+		return $"{Guid.NewGuid():n}@example.com";
+	}
+
+	private static async Task<TokenResponse> SignIn(HttpClient client,
+													string username)
+	{
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username, password = "correct-password" }, cancellationToken: TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+		return (await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: TestContext.Current.CancellationToken))!;
+	}
+
+	private static async Task Assign(WebApplicationFactory<Program> host,
+									 string email,
+									 MemberRole role)
+	{
+		await using var scope = host.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		database.RoleAssignments.Add(RoleAssignment.Grant(email, role, "seed", DateTimeOffset.UtcNow));
+		await database.SaveChangesAsync(TestContext.Current.CancellationToken);
+	}
+
+	private static async Task Revoke(WebApplicationFactory<Program> host,
+									 string email)
+	{
+		await using var scope = host.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var normalised = RoleAssignment.Normalize(email);
+
+		await database.Database.ExecuteSqlInterpolatedAsync(
+			$"UPDATE role_assignments SET revoked_at = now(), revoked_by_subject = 'seed' WHERE email = {normalised} AND revoked_at IS NULL",
+			TestContext.Current.CancellationToken);
 	}
 
 	private static HttpClient OriginVerifiedClient(WebApplicationFactory<Program> host)

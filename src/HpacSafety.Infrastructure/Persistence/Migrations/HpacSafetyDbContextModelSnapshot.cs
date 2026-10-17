@@ -17,7 +17,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1288,6 +1288,95 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_summary_revisions_source_fr", "source_fr IN ('generated', 'human', 'machine')");
                         });
+                });
+
+            modelBuilder.Entity("HpacSafety.Core.Features.RoleAssignments.RoleAssignment", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("granted_at");
+
+                    b.Property<string>("GrantedBySubject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("granted_by_subject");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("RevokedBySubject")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("revoked_by_subject");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("role");
+
+                    b.HasKey("Id")
+                        .HasName("pk_role_assignments");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ux_role_assignments_active_email")
+                        .HasFilter("revoked_at IS NULL");
+
+                    b.ToTable("role_assignments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_role_assignments_email", "email = lower(btrim(email)) AND email !~ '\\s' AND char_length(email) BETWEEN 3 AND 320 AND position('@' in email) > 1");
+
+                            t.HasCheckConstraint("ck_role_assignments_revoked_together", "(revoked_at IS NULL) = (revoked_by_subject IS NULL)");
+
+                            t.HasCheckConstraint("ck_role_assignments_role", "role IN ('safety_officer', 'administrator')");
+                        });
+                });
+
+            modelBuilder.Entity("HpacSafety.Infrastructure.Persistence.Views.ActiveRoleAssignment", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("granted_at");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("role");
+
+                    b.HasKey("Id")
+                        .HasName("pk_active_role_assignments");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("active_role_assignments", (string)null);
                 });
 
             modelBuilder.Entity("HpacSafety.Infrastructure.Persistence.Views.AdminPendingCounts", b =>

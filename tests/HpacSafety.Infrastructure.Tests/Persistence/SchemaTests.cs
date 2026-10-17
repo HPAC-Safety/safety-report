@@ -29,6 +29,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		"report_private_note_revisions",
 		"report_private_notes",
 		"reports",
+		"role_assignments",
 		"summaries",
 		"summary_revisions",
 	];
@@ -69,7 +70,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// which the API serializes as-is — it reads only whichever count fits
 		// the viewer's role.
 		views.ShouldBe([
-			"admin_pending_counts", "admin_report_queue", "admin_report_search_document", "answers_awaiting_translation",
+			"active_role_assignments", "admin_pending_counts", "admin_report_queue", "admin_report_search_document", "answers_awaiting_translation",
 			"consented_report_media", "latest_approved_summary_revisions", "latest_summary_revisions",
 			"own_report_media", "own_reports",
 			"public_report_comments", "public_report_media", "public_reports",

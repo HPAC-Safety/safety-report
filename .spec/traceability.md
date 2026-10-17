@@ -67,6 +67,27 @@ Reqnroll runs a claim without `@ui`; playwright-bdd runs one with it.
 | REQ-AUTH-009 | With the temporary interim issuer enabled, the fixed development accounts do not exist | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs) |
 | REQ-AUTH-010 | With the temporary interim issuer disabled, its JWKS does not exist | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs) |
 | REQ-AUTH-011 | With the temporary interim issuer disabled, it issues no token | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs) |
+| REQ-AUTH-012 | An Administrator assigns the Administrator role to an email address | authentication-and-roles | Reqnroll | Built | [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-013 | An Administrator assigns the Safety Officer role to an email address | authentication-and-roles | Reqnroll | Built | [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-014 | An Administrator removes another member's role assignment | authentication-and-roles | Reqnroll | Built | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-015 | An Administrator cannot remove their own role assignment | authentication-and-roles | Reqnroll | Built | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-016 | An email address with an active role assignment in any role cannot be assigned again | authentication-and-roles | Reqnroll | Built | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-017 | The Super Administrator is listed as a permanent Administrator that cannot be removed | authentication-and-roles | Reqnroll | Built | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-018 | The Super Administrator is listed when role assignments cannot be read | authentication-and-roles | Reqnroll | Built | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-019 | A member without the Administrator role cannot open the manage-roles page | authentication-and-roles | playwright-bdd | Built | [admin-route-guard.steps.ts](../tests/e2e/steps/admin-route-guard.steps.ts), [manage-roles.steps.ts](../tests/e2e/steps/manage-roles.steps.ts), [member-login.steps.ts](../tests/e2e/steps/member-login.steps.ts) |
+| REQ-AUTH-020 | A member without the Administrator role cannot manage role assignments | authentication-and-roles | Reqnroll | Built | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-021 | A member whose role assignment is removed loses that role's access on their next request | authentication-and-roles | Reqnroll | Built | [AdminSearchSteps.cs](../tests/HpacSafety.Acceptance.Tests/AdminSearchSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-022 | A member with a new role assignment signs in with that role | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-023 | A member signs in as a User when role assignments cannot be read | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-024 | The Super Administrator signs in as an Administrator when role assignments cannot be read | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-025 | Under a real identity provider, the Super Administrator signs in as an Administrator | authentication-and-roles | Reqnroll | Planned | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-026 | A role assignment is never erased | authentication-and-roles | Reqnroll | Built | [ReporterImmutabilitySteps.cs](../tests/HpacSafety.Acceptance.Tests/ReporterImmutabilitySteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-027 | A stored role assignment changes only by being revoked once | authentication-and-roles | Reqnroll | Built | [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-028 | A role assignment matches an email address whatever its case and surrounding spaces | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-029 | When role assignments cannot be read, the manage-roles page says so and offers no change | authentication-and-roles | playwright-bdd | Built | [manage-roles.steps.ts](../tests/e2e/steps/manage-roles.steps.ts) |
+| REQ-AUTH-030 | Each change to a role assignment is audited by the assignment, not the email address | authentication-and-roles | Reqnroll | Built | [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-031 | An email address with a non-ASCII character is refused when assigned | authentication-and-roles | Reqnroll | Built | [QuestionLabelColonSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionLabelColonSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
+| REQ-AUTH-032 | A sign-in name with a non-ASCII character never matches a role assignment | authentication-and-roles | Reqnroll | Built | [InterimIssuerSteps.cs](../tests/HpacSafety.Acceptance.Tests/InterimIssuerSteps.cs), [RoleAssignmentSteps.cs](../tests/HpacSafety.Acceptance.Tests/RoleAssignmentSteps.cs) |
 | REQ-COM-001 | A member comments on a published report | comments | Reqnroll | Built | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
 | REQ-COM-002 | Commenting requires a member | comments | Reqnroll | Built | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
 | REQ-COM-003 | A report no visitor can see cannot be commented on | comments | Reqnroll | Built | [CommentSteps.cs](../tests/HpacSafety.Acceptance.Tests/CommentSteps.cs) |
@@ -254,7 +275,7 @@ Reqnroll runs a claim without `@ui`; playwright-bdd runs one with it.
 | REQ-MOD-017 | A token with no recognized role claim authenticates as User | authentication-and-roles | Reqnroll | Built | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
 | REQ-MOD-018 | A member's name, email, or any other claim is never read | authentication-and-roles | Reqnroll | Built | [AuthenticationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthenticationSteps.cs) |
 | REQ-MOD-019 | Development sign-in does not exist outside development | authentication-and-roles | Reqnroll | Built | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
-| REQ-MOD-020 | A development sign-in verified against the members site resolves role from the email lists | authentication-and-roles | Reqnroll | Built | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
+| REQ-MOD-020 | In development only, a sign-in verified against the members site also resolves role from the email lists | authentication-and-roles | Reqnroll | Built | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
 | REQ-MOD-021 | Bad members-site credentials show the same generic failure as bad fixed-account credentials | authentication-and-roles | Reqnroll | Built | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
 | REQ-MOD-022 | A members-site outage during a development sign-in is reported distinctly from bad credentials | authentication-and-roles | Reqnroll | Built | [MembersSiteLoginSteps.cs](../tests/HpacSafety.Acceptance.Tests/MembersSiteLoginSteps.cs) |
 | REQ-MOD-023 | An unauthenticated request for admin data is refused before it is handled | authentication-and-roles | Reqnroll | Built | [AuthorizationSteps.cs](../tests/HpacSafety.Acceptance.Tests/AuthorizationSteps.cs) |
@@ -467,6 +488,7 @@ Reqnroll runs a claim without `@ui`; playwright-bdd runs one with it.
 | REQ-PUB-029 | Going back from a search on the public feed shows the full feed again | public-feed | playwright-bdd | Built | [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
 | REQ-PUB-030 | The holder's attachments are not counted or listed without media consent | public-feed | Reqnroll | Built | [OwnReportSteps.cs](../tests/HpacSafety.Acceptance.Tests/OwnReportSteps.cs) |
 | REQ-PUB-031 | The holder's own reports are not repeated among the later pages of the feed | public-feed | playwright-bdd | Built | [own-reports.steps.ts](../tests/e2e/steps/own-reports.steps.ts), [public-reports.steps.ts](../tests/e2e/steps/public-reports.steps.ts) |
+| REQ-PUB-032 | A member whose Safety Officer role assignment is removed sees a published report as the public does on their next request | public-feed | Reqnroll | Built | [PublicReportFeedSteps.cs](../tests/HpacSafety.Acceptance.Tests/PublicReportFeedSteps.cs) |
 | REQ-QAU-001 | Saving an edit validates both languages and adds a complete revision | question-authoring | Reqnroll | Built | [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs), [QuestionForkEndpointSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionForkEndpointSteps.cs) |
 | REQ-QAU-002 | Changing whether an answered question needs translation replaces it | question-authoring | Reqnroll | Built | [AnswerTranslationModeSteps.cs](../tests/HpacSafety.Acceptance.Tests/AnswerTranslationModeSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
 | REQ-QAU-003 | Changing whether an answered date question allows future dates replaces it | question-authoring | Reqnroll | Built | [FutureDateSteps.cs](../tests/HpacSafety.Acceptance.Tests/FutureDateSteps.cs), [QuestionBankSteps.cs](../tests/HpacSafety.Acceptance.Tests/QuestionBankSteps.cs) |
@@ -998,7 +1020,7 @@ beside it are the scenarios that prove it. `none` carries its reason.
 | CON-DP-002 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-007, REQ-DOM-011 |
 | CON-DP-003 | [data-and-persistence.md](data-and-persistence.md) | none — managed encryption is an infrastructure property, not something a scenario can observe through the application |
 | CON-DP-004 | [data-and-persistence.md](data-and-persistence.md) | REQ-QB-019, REQ-QB-026, REQ-SUB-010, REQ-QB-122, REQ-QB-124, REQ-QB-131 |
-| CON-DP-005 | [data-and-persistence.md](data-and-persistence.md) | REQ-MOD-018 |
+| CON-DP-005 | [data-and-persistence.md](data-and-persistence.md) | REQ-MOD-018, REQ-AUTH-014 |
 | CON-DP-006 | [data-and-persistence.md](data-and-persistence.md) | REQ-SUB-020, REQ-SUB-021, REQ-SUB-134, REQ-SUB-135 |
 | CON-DP-007 | [data-and-persistence.md](data-and-persistence.md) | REQ-QB-005, REQ-QB-030, REQ-QB-031 |
 | CON-DP-008 | [data-and-persistence.md](data-and-persistence.md) | REQ-SUB-013, REQ-SUB-014 |
@@ -1010,16 +1032,18 @@ beside it are the scenarios that prove it. `none` carries its reason.
 | CON-DP-014 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-024, REQ-DOM-025, REQ-DOM-026 |
 | CON-DP-015 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-027, REQ-DOM-030 |
 | CON-DP-016 | [data-and-persistence.md](data-and-persistence.md) | REQ-DOM-029 |
+| CON-DP-017 | [data-and-persistence.md](data-and-persistence.md) | REQ-AUTH-026, REQ-AUTH-027 |
 | CON-IF-001 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-QB-011, REQ-SUB-018, REQ-MOD-037, REQ-MOD-038 |
 | CON-IF-002 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-SUB-001 |
 | CON-IF-003 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-019 |
 | CON-IF-004 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-023, REQ-MOD-024, REQ-MOD-028, REQ-MOD-029, REQ-COM-011, REQ-COM-012 |
-| CON-IF-005 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-015, REQ-MOD-017 |
+| CON-IF-005 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-017, REQ-AUTH-021, REQ-AUTH-022, REQ-AUTH-023, REQ-AUTH-024 |
 | CON-IF-006 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-MOD-060 |
 | CON-IF-007 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | none — an internal structural rule with no observable behavior; it is enforced in review and by the conventions skill |
 | CON-IF-008 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-AI-008, REQ-MED-009, REQ-DOM-007 |
 | CON-IF-009 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-AI-001, REQ-AI-009, REQ-AI-016, REQ-AI-019, REQ-MED-010 |
 | CON-IF-010 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | REQ-AI-021, REQ-SUB-021, REQ-MED-003 |
+| CON-IF-011 | [interfaces-and-data-flow.md](interfaces-and-data-flow.md) | none — a log property no scenario observes; a focused boundary test on the refused duplicate (REQ-AUTH-016) and on sign-in is its check |
 | CON-INF-001 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
 | CON-INF-002 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — a scenario can assert what the system does, not enumerate what it never grew |
 | CON-INF-003 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; Terraform validation and the `infra` job are its check |
@@ -1040,6 +1064,7 @@ beside it are the scenarios that prove it. `none` carries its reason.
 | CON-INF-025 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure/logging property no application scenario observes directly; `infra/observability.tf` and its tests are the check |
 | CON-INF-026 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | REQ-DOM-016, REQ-DOM-017 |
 | CON-INF-027 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — an infrastructure property no application scenario can observe; the `release` workflow is its check. REQ-WLD-049 covers a tab that was already open when a deploy removed its files |
+| CON-INF-028 | [infrastructure-and-operations.md](infrastructure-and-operations.md) | none — a deployment property no application scenario can observe; review of the deploy workflow and a plan comment is its check. REQ-AUTH-017, REQ-AUTH-024, and REQ-AUTH-029 cover what the application does with it |
 | CON-SO-001 | [system-overview.md](system-overview.md) | REQ-QB-001, REQ-QB-002, REQ-QB-009 |
 | CON-SO-002 | [system-overview.md](system-overview.md) | REQ-QB-014, REQ-QB-016, REQ-QB-112, REQ-QB-113 |
 | CON-SO-003 | [system-overview.md](system-overview.md) | REQ-MOD-036, REQ-MED-025, REQ-MED-026, REQ-MED-037, REQ-MED-039 |

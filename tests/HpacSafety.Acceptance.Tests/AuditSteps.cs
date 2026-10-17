@@ -28,9 +28,12 @@ public sealed class AuditSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
+	private const string RoleAssignmentRoutes = "/api/admin/role-assignments";
+
 	private static readonly string[] SignOutWords = ["logout", "logoff", "signout", "signedout", "revoke"];
 
-	private readonly string _subject = $"opaque-{Guid.NewGuid():N}";
+	private readonly string _key = Guid.NewGuid().ToString("N");
+	private readonly string _subject;
 	private readonly string _marker = $"synthetic-narrative-{Guid.NewGuid():N}";
 	private readonly List<HttpStatusCode> _actions = [];
 	private HttpResponseMessage? _response;
@@ -40,6 +43,12 @@ public sealed class AuditSteps
 	private DateTimeOffset _started;
 	private DateTimeOffset _finished;
 	private List<string> _routes = [];
+
+	/// <summary>The audited subject is a Development sign-in name, so its role comes from a role assignment (ADR-0199).</summary>
+	public AuditSteps()
+	{
+		_subject = $"dev:opaque-{_key}@example.com";
+	}
 	private readonly List<string> _secrets = [];
 	private readonly List<bool> _blocked = [];
 	private AuditAction _expectedAction;
@@ -341,7 +350,7 @@ public sealed class AuditSteps
 		await Sql(host, $"DROP FUNCTION IF EXISTS {TriggerName}()");
 	}
 
-	private string TriggerName => $"refuse_audit_{_subject.Replace("-", "_", StringComparison.Ordinal)}"[..40];
+	private string TriggerName => $"refuse_audit_{_key}"[..40];
 
 	/// <summary>True when the call failed: a server error answered, or the host surfaced the exception.</summary>
 	private static async Task<bool> Attempt(Func<Task<HttpResponseMessage>> call)
@@ -520,14 +529,20 @@ public sealed class AuditSteps
 	[Then(@"none of them signs a member out")]
 	public void ThenNoneSignsAMemberOut()
 	{
-		_routes.ShouldNotContain(route => SignOutWords.Any(word => route.Replace("-", string.Empty, StringComparison.Ordinal)
+		// Revoking a role assignment (ADR-0199) ends a grant, not a session; it is
+		// the one route whose name says "revoke" without signing anyone out.
+		_routes.Where(route => !(route.StartsWith(RoleAssignmentRoutes, StringComparison.Ordinal)
+								 && route.EndsWith("/revoke", StringComparison.Ordinal)))
+			.ShouldNotContain(route => SignOutWords.Any(word => route.Replace("-", string.Empty, StringComparison.Ordinal)
 			.Contains(word, StringComparison.OrdinalIgnoreCase)));
 	}
 
 	[Then(@"no audit action records a sign-out")]
 	public void ThenNoAuditActionRecordsASignOut()
 	{
+		// RevokedRole ends a role grant (ADR-0199), not a session.
 		Enum.GetNames<AuditAction>()
+			.Where(name => name != nameof(AuditAction.RevokedRole))
 			.ShouldNotContain(name => SignOutWords.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)));
 	}
 

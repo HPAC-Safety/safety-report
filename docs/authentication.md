@@ -40,17 +40,27 @@ proven, and no administrative capability follows from it.
 There is no CSRF machinery. A bearer token carries no ambient authority, so
 there is nothing for a cross-site request to forge.
 
-## No user records
+## No user records, only role assignments
 
-**This system stores no user details of any kind**
-([ADR-0065](../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-There is no `admin_users` table, no allowlist, no role column, and no active
-flag. Where a summary's approver or an audit entry's actor is recorded, it is
+**This system stores no user details**
+([ADR-0065](../.spec/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
+as narrowed by [ADR-0199](../.spec/decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)). There is no user table, no profile, and no
+name. Where a summary's approver or an audit entry's actor is recorded, it is
 the token subject as an opaque `varchar(256)` string that joins to nothing.
 
-Revoking somebody's access is the identity provider's decision, and it takes
-effect when their token expires or stops being issued. This system has no
-record of them to revoke.
+**The identity provider proves membership only.** Safety Officer and
+Administrator come from this system's own role assignments: an email and a
+role, nothing else, managed by Administrators on the manage-roles page
+([ADR-0199](../.spec/decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)). The role is resolved again on every request, so removing
+an assignment takes effect on that member's next request. Removal is a recorded
+revoke, never a deletion, and the database refuses anything else. When
+assignments cannot be read, a member is treated as `User`.
+
+**The Super Administrator** is one email held in the `SUPER_ADMIN` GitHub
+environment secret and read from configuration, never from the database. It is
+always an Administrator, always listed on the manage-roles page, and cannot be
+removed there, so someone can still administer the site if the provider's
+claims break ([ADR-0200](../.spec/decisions/ADR-0200-a-permanent-super-administrator-comes-from-configuration.md)).
 
 ## Two issuers, one contract
 
@@ -68,10 +78,11 @@ the same policies. Only the issuer and the key differ
 Sign in with a real HPAC membership: `POST /api/auth/token` verifies the
 username and password against the live members site
 (`https://members.hpac.ca`) for that one call, never logging or storing the
-password. Role comes from two email allowlists in configuration, used in Development
-and, through the temporary interim issuer, in staging ([ADR-0172](../.spec/decisions/ADR-0172-a-temporary-interim-issuer-signs-staging-tokens-until-a-real-provider-exists.md)) — `MembersSiteLogin:AdministratorEmails` and
-`MembersSiteLogin:SafetyOfficerEmails` — falling back to `User` for any other
-verified member
+password. Role comes from the Super Administrator and role assignments
+([ADR-0199](../.spec/decisions/ADR-0199-roles-come-from-application-owned-role-assignments-and-the-provider-proves-membership-only.md)), falling back to `User` for any other verified member. In
+Development only, the fixed accounts and the two email lists in configuration —
+`MembersSiteLogin:AdministratorEmails` and `MembersSiteLogin:SafetyOfficerEmails`
+— are a further direct role source
 ([ADR-0079](../.spec/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
 
 The Development (HS256) issuer is **not mapped outside Development**. Until a

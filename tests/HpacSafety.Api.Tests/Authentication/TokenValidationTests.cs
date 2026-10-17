@@ -154,7 +154,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 	public async Task GivenTokenWithNoRecognizedRoleClaim_WhenPresented_ThenItAuthenticatesAsUser()
 	{
 		// Given — validly signed, but its role means nothing here
-		var unknownRole = Forge(role: "wing-commander");
+		var unknownRole = Forge(role: "wing-commander", subject: "dev:nobody");
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, unknownRole);
@@ -168,10 +168,11 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenTokenCarryingSeveralRoleClaims_WhenPresented_ThenHighestWins()
+	public async Task GivenTokenCarryingSeveralRoleClaims_WhenPresented_ThenNoClaimGrantsARole()
 	{
-		// Given — a provider may emit the claim more than once
-		var several = Forge(roles: ["user", "administrator", "safety_officer"]);
+		// Given — a provider may emit the claim more than once, and whatever it
+		// says, the role comes from role assignments (ADR-0199)
+		var several = Forge(roles: ["user", "administrator", "safety_officer"], subject: "dev:nobody");
 
 		// When
 		using var client = SignedInClient.Bearing(_factory, several);
@@ -179,7 +180,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		var identity = await response.Content.ReadFromJsonAsync<MeResponse>(cancellationToken: TestContext.Current.CancellationToken);
 
 		// Then
-		identity!.Role.ShouldBe("administrator");
+		identity!.Role.ShouldBe("user");
 	}
 
 	[Fact]
@@ -206,6 +207,20 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		body.ShouldNotContain("avatar.png");
 	}
 
+	[Fact]
+	public async Task GivenAValidTokenWithABlankSubject_WhenMeIsRead_ThenItIsUnauthorizedAndNeverAUser()
+	{
+		// Given
+		var blank = Forge(subject: " ", role: null);
+
+		// When
+		using var client = SignedInClient.Bearing(_factory, blank);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
 	private static string Base64Url(string value)
 	{
 		return Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -220,12 +235,13 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		string issuer = DevelopmentTokenIssuer.IssuerName,
 		string audience = "hpac-safety-api",
 		string? role = "administrator",
+		string subject = "dev:admin",
 		string[]? roles = null,
 		Claim[]? extra = null,
 		DateTimeOffset? notBefore = null,
 		DateTimeOffset? expires = null)
 	{
-		var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, "dev:admin") };
+		var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, subject) };
 
 		foreach (var value in roles ?? (role is null ? [] : new[] { role }))
 		{

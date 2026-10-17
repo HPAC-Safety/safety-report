@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using HpacSafety.Core.Features.Moderation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -104,22 +105,25 @@ public static class AuthenticationServiceCollectionExtensions
 			.AddPolicy(HpacPolicies.Member, policy => policy.RequireAuthenticatedUser())
 			.AddPolicy(HpacPolicies.Reviewer, policy => policy
 				.RequireAuthenticatedUser()
-				.RequireAssertion(context =>
-					MemberRoles.EffectiveRole(context.User, options.RoleClaimType) >= MemberRole.SafetyOfficer))
+				.AddRequirements(new RoleRequirement(MemberRole.SafetyOfficer)))
 			.AddPolicy(HpacPolicies.Administrator, policy => policy
 				.RequireAuthenticatedUser()
-				.RequireAssertion(context =>
-					MemberRoles.EffectiveRole(context.User, options.RoleClaimType) >= MemberRole.Administrator));
+				.AddRequirements(new RoleRequirement(MemberRole.Administrator)));
+
+		// One resolver decides every role, at sign-in and on every request
+		// (ADR-0199). Scoped: it reads the database. Only Development adds its
+		// own fixed accounts and email lists.
+		services.AddSingleton(new RoleResolverMode(useDevelopmentIssuer, interimIssuerEnabled));
+		services.Configure<MembersSiteLoginOptions>(configuration.GetSection(MembersSiteLoginOptions.SectionName));
+		services.AddScoped<IRoleResolver, RoleResolver>();
+		services.AddScoped<IAuthorizationHandler, RoleRequirementHandler>();
 
 		if (useDevelopmentIssuer)
 		{
-			services.AddSingleton<DevelopmentTokenIssuer>();
-			services.AddSingleton<IMemberTokenIssuer>(provider => provider.GetRequiredService<DevelopmentTokenIssuer>());
+			services.AddScoped<DevelopmentTokenIssuer>();
+			services.AddScoped<IMemberTokenIssuer>(provider => provider.GetRequiredService<DevelopmentTokenIssuer>());
 			services.AddSingleton<IDevelopmentCredentialSource, FixedAccountCredentialSource>();
 			services.AddSingleton<IDevelopmentCredentialSource, MembersSiteCredentialSource>();
-
-			services.Configure<MembersSiteLoginOptions>(
-				configuration.GetSection(MembersSiteLoginOptions.SectionName));
 
 			services
 				.AddHttpClient(MembersSiteCredentialSource.HttpClientName, (provider,
@@ -137,21 +141,17 @@ public static class AuthenticationServiceCollectionExtensions
 		}
 		else if (interimIssuerEnabled)
 		{
-			// The members-site check only — the owner's decision on issue #648:
-			// the password is verified live against the members site, and "we
-			// only use the hard-coded accounts to determine administrators"
-			// (MembersSiteLoginOptions' email lists). NOT FixedAccountCredentialSource:
+			// The members-site check only: the password is verified live against
+			// the members site, which proves membership and nothing more; the role
+			// comes from the role resolver (ADR-0199). NOT FixedAccountCredentialSource:
 			// its admin/admin, officer/officer, user/user accounts are for a
 			// developer's own machine, and on staging's public address they
 			// would let anyone sign in as an Administrator. Everything
 			// registered here is temporary (ADR-0172) and named "Interim".
 			services.AddSingleton(interimSigningKey!);
-			services.AddSingleton<InterimTokenIssuer>();
-			services.AddSingleton<IMemberTokenIssuer>(provider => provider.GetRequiredService<InterimTokenIssuer>());
+			services.AddScoped<InterimTokenIssuer>();
+			services.AddScoped<IMemberTokenIssuer>(provider => provider.GetRequiredService<InterimTokenIssuer>());
 			services.AddSingleton<IDevelopmentCredentialSource, MembersSiteCredentialSource>();
-
-			services.Configure<MembersSiteLoginOptions>(
-				configuration.GetSection(MembersSiteLoginOptions.SectionName));
 
 			services
 				.AddHttpClient(MembersSiteCredentialSource.HttpClientName, (provider,

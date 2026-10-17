@@ -6,7 +6,9 @@ namespace HpacSafety.Api.Authentication;
 ///     see ADR-0079.
 /// </summary>
 /// <remarks>
-///     The email lists here are a throwaway, Development-only convenience —
+///     The email lists here are read only by <see cref="RoleResolver" /> and only
+///     in Development (ADR-0199); no other environment consults them.
+///     They are a throwaway, Development-only convenience —
 ///     the same shape as <see cref="HpacAuthenticationOptions.DevelopmentSigningKey" />
 ///     (ADR-0066). They name nobody's production role and are never consulted
 ///     outside Development.

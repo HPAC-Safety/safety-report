@@ -48,6 +48,7 @@ Core has no runtime package dependency.
 | [`Features/PrivateNotes/`](../src/HpacSafety.Core/Features/PrivateNotes/) | A staff-only note on a report and its immutable revisions (ADR-0133). |
 | [`Features/QuestionBank/`](../src/HpacSafety.Core/Features/QuestionBank/) | Questions, immutable revisions, forks, owned choices, dependencies, grouping, and the two system consent questions (ADR-0071, ADR-0095, ADR-0117). |
 | [`Features/QuestionBank/Typeform/`](../src/HpacSafety.Core/Features/QuestionBank/Typeform/) | The Typeform mapper, export builder, and the hard-deleted pending-logic notes (ADR-0077, ADR-0078). |
+| [`Features/RoleAssignments/`](../src/HpacSafety.Core/Features/RoleAssignments/) | A role assignment: an email and a role, granted and revoked with stamps, never deleted; ASCII-only normalisation (ADR-0199). |
 | [`Features/Reporting/`](../src/HpacSafety.Core/Features/Reporting/) | The report aggregate, answers, files, summary, lifecycle, the media policy and ingestor, the private-value marker (ADR-0082), and the two link chokepoints, `ReviewerMediaLink` and `PublicMediaLink`. |
 
 ## HpacSafety.Infrastructure — adapters

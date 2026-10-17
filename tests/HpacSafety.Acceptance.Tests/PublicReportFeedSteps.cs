@@ -50,6 +50,8 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	private HttpResponseMessage? _response;
 	private JsonElement? _body;
 	private string? _mixedVisibilityReportId;
+	private string? _officerSubject;
+	private HttpClient? _heldToken;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -85,6 +87,33 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			},
 			at: at,
 			mediaConsent: true);
+	}
+
+	[Given(@"a Safety Officer whose role comes from an active role assignment")]
+	public async Task GivenASafetyOfficerWithAnActiveRoleAssignment()
+	{
+		_officerSubject = $"dev:officer-{Guid.NewGuid():n}@example.com";
+
+		// The token is minted now and kept: the When reads with this same token.
+		_heldToken = BootedApi.SignedInAsMember(await BootedApi.Factory(), _officerSubject, "safety_officer");
+	}
+
+	[Given(@"an Administrator has since removed that role assignment")]
+	public async Task GivenAnAdministratorHasSinceRemovedThatRoleAssignment()
+	{
+		var host = await BootedApi.Factory();
+		var email = _officerSubject!["dev:".Length..];
+
+		string id;
+		await using (var scope = host.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			id = (await database.ActiveRoleAssignments.AsNoTracking().SingleAsync(assignment => assignment.Email == email)).Id.Value;
+		}
+
+		using var administrator = await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var removed = await administrator.PostAsync(new Uri($"/api/admin/role-assignments/{id}/revoke", UriKind.Relative), null);
+		removed.IsSuccessStatusCode.ShouldBeTrue();
 	}
 
 	[Given(@"a published report has a public image and a hidden image")]
@@ -249,6 +278,26 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		_response = await client.GetAsync(new Uri($"{Feed}/{_mixedVisibilityReportId}", UriKind.Relative));
+	}
+
+	[When(@"the member next lists the feed with the token they already hold")]
+	public async Task WhenTheMemberNextListsTheFeedWithTheTokenTheyAlreadyHold()
+	{
+		_response = await _heldToken!.GetAsync(new Uri(Feed, UriKind.Relative));
+	}
+
+	[When(@"the member next reads that report's public page with the token they already hold")]
+	public async Task WhenTheMemberNextReadsThatReportsPublicPageWithTheTokenTheyAlreadyHold()
+	{
+		_response = await _heldToken!.GetAsync(new Uri($"{Feed}/{_mixedVisibilityReportId}", UriKind.Relative));
+	}
+
+	[Then(@"the report shows no staff attachments")]
+	public async Task ThenTheResponsesStaffAttachmentListIsNull()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
+		body.GetProperty("staffAttachments").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
 	[Then(@"the report's attachment count is (\d+)")]

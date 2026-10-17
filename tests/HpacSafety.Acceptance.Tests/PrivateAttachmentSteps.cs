@@ -39,8 +39,8 @@ public sealed partial class PrivateAttachmentSteps
 	private const long Megabyte = 1024L * 1024;
 	private const long Gigabyte = 1024L * Megabyte;
 
-	private readonly string _officer = $"officer:{Guid.NewGuid():n}";
-	private readonly string _administrator = $"admin:{Guid.NewGuid():n}";
+	private readonly string _officer = $"dev:officer-{Guid.NewGuid():n}@example.com";
+	private readonly string _administrator = $"dev:admin-{Guid.NewGuid():n}@example.com";
 	private readonly List<HttpStatusCode> _answers = [];
 	private readonly List<string> _publicBodies = [];
 	private readonly List<(string Id, string FileName, string? Description, string AddedBy, long ByteSize)> _added = [];

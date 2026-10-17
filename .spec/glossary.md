@@ -60,6 +60,8 @@ Interface mechanics are part of
 | **Visitor** | Anyone using the public site, signed in or not. "The public" is not an actor; "visible to the public" stays (J11). | `/\b[Tt]he public (?=(?:can\|cannot\|can't\|never\|only\|sees?\|saw\|reads?\|requests?\|gets?)\b)/` | — |
 | **Anonymous visitor** | A visitor who is not signed in. | `signed-out visitor`, `/\bvisitors? who (?:is\|are) not signed in\b/i`, `/\b(?:is\|are) signed out\b/i` | — |
 | **Pilot** | The role word that replaces a pilot's name in a summary: "the pilot" / "le pilote". | — | — |
+| **Role assignment** | This application's record that gives one email address the Administrator or the Safety Officer role (ADR-0199). It holds the email and the role and nothing else about the person. It is *active* until an Administrator *removes* it, which revokes it; it is never erased. | `role grant`, `/\bpermissions? entry\b/i`, `role membership` | — |
+| **Super Administrator** | The one Administrator per environment that comes from configuration, not from a role assignment (ADR-0200). Always listed, never removable. Always these two capitalised words. | `/\bsuper[- ]?admin\b/i`, `/\bsuper administrator\b/` | — |
 | **Token subject** | The opaque `sub` of a validated token, recorded as an approver or an audit actor. It joins to nothing. Always the full term. | `/(?<!token )\bsubjects?\b/i` | — |
 
 ## Reports and their lifecycle

@@ -207,6 +207,20 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		body.ShouldNotContain("avatar.png");
 	}
 
+	[Fact]
+	public async Task GivenAValidTokenWithABlankSubject_WhenMeIsRead_ThenItIsUnauthorizedAndNeverAUser()
+	{
+		// Given
+		var blank = Forge(subject: " ", role: null);
+
+		// When
+		using var client = SignedInClient.Bearing(_factory, blank);
+		using var response = await client.GetAsync(Me, TestContext.Current.CancellationToken);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
 	private static string Base64Url(string value)
 	{
 		return Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');

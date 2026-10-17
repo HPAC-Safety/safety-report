@@ -61,6 +61,22 @@ public sealed class RoleResolverTests
 		role.ShouldBe(expected);
 	}
 
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("auth0|123")]
+	public async Task GivenDevelopment_WhenASubjectIsNotADevelopmentOne_ThenItIsOnlyAUser(string? subject)
+	{
+		// Given
+		var resolver = Resolver(Development, administrators: ["admin"]);
+
+		// When
+		var role = await resolver.Resolve(subject, TestContext.Current.CancellationToken);
+
+		// Then
+		role.ShouldBe(MemberRole.User);
+	}
+
 	[Fact]
 	public async Task GivenAnEmailOnBothLists_WhenResolved_ThenAdministratorWins()
 	{

@@ -219,6 +219,23 @@ public sealed class InterimIssuerEndpointTests(ApiPostgresFixture fixture)
 		token!.Role.ShouldBe("user");
 	}
 
+	[Theory]
+	[InlineData("", "correct-password")]
+	[InlineData("someone@example.test", "")]
+	public async Task GivenABlankCredential_WhenTokenIsRequested_ThenItIsRefusedWithoutAskingTheMembersSite(string username,
+																									   string password)
+	{
+		// Given
+		await using var host = InterimHost(new StubTransport(LoginPage(), Redirect()));
+		using var client = OriginVerifiedClient(host);
+
+		// When
+		using var response = await client.PostAsJsonAsync(new Uri("/api/auth/token", UriKind.Relative), new { username, password }, cancellationToken: TestContext.Current.CancellationToken);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
 	[Fact]
 	public async Task GivenTheFixedDevelopmentAdminAccount_WhenTokenIsRequested_ThenItIsRefused()
 	{

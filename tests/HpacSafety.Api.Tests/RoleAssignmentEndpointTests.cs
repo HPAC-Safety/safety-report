@@ -131,6 +131,20 @@ public sealed class RoleAssignmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenNoEmail_WhenARoleIsAssigned_ThenItIsRefusedAsInvalid()
+	{
+		// Given
+		using var admin = await SignedInClient.As(_factory, MemberRole.Administrator);
+
+		// When
+		using var response = await admin.PostAsJsonAsync(Collection, new { role = "administrator" }, TestContext.Current.CancellationToken);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		(await CodeOf(response)).ShouldBe("invalid-email");
+	}
+
+	[Fact]
 	public async Task GivenTheSuperAdministratorsEmail_WhenItIsAssigned_ThenItIsRefused()
 	{
 		// Given

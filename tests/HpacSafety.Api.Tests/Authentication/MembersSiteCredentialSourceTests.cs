@@ -78,6 +78,32 @@ public sealed class MembersSiteCredentialSourceTests
 	}
 
 	[Fact]
+	public async Task GivenACookieWithNoAttributes_WhenVerified_ThenItIsSentWhole()
+	{
+		// Given
+		var (source, transport) = Source(LoginPage(setCookie: " sid=abc "), Redirect());
+
+		// When
+		await source.Verify("member@example.test", "correct-password", CancellationToken.None);
+
+		// Then
+		transport.Requests[1].Headers.GetValues("Cookie").Single().ShouldBe("sid=abc");
+	}
+
+	[Fact]
+	public async Task GivenABlankCookie_WhenVerified_ThenNoCookieIsSent()
+	{
+		// Given
+		var (source, transport) = Source(LoginPage(setCookie: " ; path=/"), Redirect());
+
+		// When
+		await source.Verify("member@example.test", "correct-password", CancellationToken.None);
+
+		// Then
+		transport.Requests[1].Headers.GetValues("Cookie").Single().ShouldBeEmpty();
+	}
+
+	[Fact]
 	public async Task GivenTheLoginPageCannotBeFetched_WhenVerified_ThenMembersSiteUnavailable()
 	{
 		// Given

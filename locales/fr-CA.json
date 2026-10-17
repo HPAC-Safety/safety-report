@@ -30,7 +30,7 @@
     "manageQuestions": "Gérer les questions",
     "reviewTypeAheadValues": "Valeurs de saisie semi-automatique à vérifier",
     "pendingCount": "{count} en attente",
-    "manageRoles": "#Manage roles"
+    "manageRoles": "Gérer les rôles"
   },
   "language": {
     "switchTo": "Passer à {language}",
@@ -773,55 +773,55 @@
     }
   },
   "roles": {
-    "title": "#Manage roles",
-    "intro": "#Give a member the Safety Officer or Administrator role by their email address. A member without an assignment is a User.",
-    "loading": "#Loading role assignments…",
-    "listTitle": "#Role assignments",
+    "title": "Gérer les rôles",
+    "intro": "Attribuez à un membre le rôle d'agent de sécurité ou d'administrateur à l'aide de son adresse courriel. Un membre sans attribution est un utilisateur.",
+    "loading": "Chargement des attributions de rôles…",
+    "listTitle": "Attributions de rôles",
     "superAdministrator": {
-      "label": "#Super Administrator",
-      "permanent": "#Administrator, permanent. This role cannot be removed."
+      "label": "Superadministrateur",
+      "permanent": "Administrateur, permanent. Ce rôle ne peut pas être retiré."
     },
-    "empty": "#No role assignments yet.",
+    "empty": "Aucune attribution de rôle pour le moment.",
     "col": {
-      "email": "#Email address",
-      "role": "#Role",
-      "granted": "#Assigned",
-      "actions": "#Actions"
+      "email": "Adresse courriel",
+      "role": "Rôle",
+      "granted": "Attribué",
+      "actions": "Actions"
     },
     "role": {
-      "safety_officer": "#Safety Officer",
-      "administrator": "#Administrator"
+      "safety_officer": "Agent de sécurité",
+      "administrator": "Administrateur"
     },
-    "you": "#You",
-    "unavailable": "#The other role assignments cannot be shown right now. Try again later.",
+    "you": "Vous",
+    "unavailable": "Les autres attributions de rôles ne peuvent pas être affichées pour le moment. Veuillez réessayer plus tard.",
     "add": {
-      "title": "#Assign a role",
-      "email": "#Email address",
-      "role": "#Role",
-      "submit": "#Assign role",
-      "working": "#Assigning…",
-      "done": "#Role assigned."
+      "title": "Attribuer un rôle",
+      "email": "Adresse courriel",
+      "role": "Rôle",
+      "submit": "Attribuer le rôle",
+      "working": "Attribution en cours…",
+      "done": "Rôle attribué."
     },
     "remove": {
-      "action": "#Remove role",
-      "actionFor": "#Remove role for {email}",
-      "confirm": "#Remove this role assignment for {email}? They return to the User role on their next request.",
-      "yes": "#Yes, remove",
-      "keep": "#Keep",
-      "done": "#Role assignment removed."
+      "action": "Retirer le rôle",
+      "actionFor": "Retirer le rôle pour {email}",
+      "confirm": "Voulez-vous retirer cette attribution de rôle pour {email}? La personne reviendra au rôle d'utilisateur lors de sa prochaine requête.",
+      "yes": "Oui, retirer",
+      "keep": "Conserver",
+      "done": "Attribution de rôle retirée."
     },
     "error": {
-      "load": "#The role assignments could not be loaded. Try again.",
-      "add": "#The role could not be assigned. Try again.",
-      "remove": "#The role assignment could not be removed. Try again."
+      "load": "Les attributions de rôles n'ont pas pu être chargées. Veuillez réessayer.",
+      "add": "Le rôle n'a pas pu être attribué. Veuillez réessayer.",
+      "remove": "L'attribution de rôle n'a pas pu être retirée. Veuillez réessayer."
     },
     "refused": {
-      "duplicate": "#That email address already has a role assignment. Remove it first to change the role.",
-      "super-administrator": "#That email address belongs to the Super Administrator, whose role is permanent.",
-      "self": "#You cannot remove your own role assignment.",
-      "not-found": "#That role assignment no longer exists. Reload the list.",
-      "invalid-email": "#Enter a valid email address.",
-      "invalid-role": "#Choose Safety Officer or Administrator."
+      "duplicate": "Cette adresse courriel a déjà une attribution de rôle. Retirez-la d'abord pour changer le rôle.",
+      "super-administrator": "Cette adresse courriel appartient au superadministrateur, dont le rôle est permanent.",
+      "self": "Vous ne pouvez pas retirer votre propre attribution de rôle.",
+      "not-found": "Cette attribution de rôle n'existe plus. Rechargez la liste.",
+      "invalid-email": "Entrez une adresse courriel valide.",
+      "invalid-role": "Choisissez agent de sécurité ou administrateur."
     }
   }
 }

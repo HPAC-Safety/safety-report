@@ -10,6 +10,8 @@
 	"timezone": "America/Edmonton",
 	"lockFileMaintenance": {
 		"enabled": true,
+		"autoApprove": true,
+		"automerge": true,
 		"schedule": [
 			"* 0-6 * * 1"
 		]
@@ -97,6 +99,16 @@
 			"prBodyNotes": [
 				"- [ ] This is a breaking change"
 			]
+		},
+		{
+			"description": "Digest and pin updates move no version range, so they automerge under the same required-check gate as minor and patch (#913). The .NET SDK rule and any rule further down that sets automerge false still wins, because later rules override earlier ones.",
+			"matchUpdateTypes": [
+				"digest",
+				"pin",
+				"pinDigest"
+			],
+			"autoApprove": true,
+			"automerge": true
 		},
 		{
 			"description": "A web dependency PR changes src/web/package.json or its lock file, and feature-coverage counts src/** as behavior-bearing. The PR cites the Playwright-covered claims the bump leaves standing, in the one shape tools/spec/check-feature-coverage.ts accepts; the required web and e2e checks re-prove those claims on the same PR, and the dependency category fails if anything but a manifest or lock file changed (ADR-0090, ADR-0111).",

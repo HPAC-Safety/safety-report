@@ -132,7 +132,7 @@ jobs:
       # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       # Preinstalled on the runner. init-dev.sh is POSIX sh, not bash: Windows
       # contributors run it under Git Bash, so a bashism would break the one
@@ -184,7 +184,7 @@ jobs:
           global-json-file: global.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       # Exercises the version parsing on every pull request. setup-dotnet and
       # setup-node above have already satisfied the versions init-dev.sh reads
@@ -306,7 +306,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Install the Gherkin parser
         run: npm --prefix tools/gherkin ci
@@ -331,7 +331,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Every markdown file declares what it is
         run: node tools/docs/check-frontmatter.ts
@@ -466,7 +466,7 @@ jobs:
           global-json-file: global.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Restore tools
         run: dotnet tool restore
@@ -672,7 +672,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: npm ci
         run: npm ci
@@ -711,7 +711,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: npm ci
         run: npm --prefix src/web ci
@@ -777,7 +777,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: npm ci
         run: npm --prefix tests/e2e ci
@@ -832,7 +832,7 @@ jobs:
       # Node 24 runs the .ts scripts under tools/ by type stripping (ADR-0189); the runner's preinstalled Node is older.
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Agent instruction symlinks resolve to AGENTS.md
         run: node tools/docs/check-agent-symlinks.ts
@@ -887,7 +887,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Locale key parity
         run: node tools/i18n/check-locales.ts

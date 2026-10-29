@@ -24,7 +24,7 @@
 #
 # Built locally by tools/dev/ci-local.sh, tagged with this file's hash so a change
 # rebuilds it; never pushed.
-FROM --platform=linux/amd64 ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c AS amd64
+FROM --platform=linux/amd64 ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852 AS amd64
 
 FROM ghcr.io/catthehacker/ubuntu:act-24.04@sha256:62d572b92f9f32d3427b6d220ad1f9dca9c7b6ffad37d295425037dbff78abaf
 

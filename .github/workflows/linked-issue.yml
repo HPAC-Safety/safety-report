@@ -59,7 +59,7 @@ jobs:
       - uses: actions/setup-node@v7
         if: github.event_name != 'merge_group'
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Body closes an issue
         if: github.event_name != 'merge_group'
@@ -87,7 +87,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Body carries no agent session link
         if: github.event_name != 'merge_group'
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/setup-node@v7
         if: github.event_name != 'merge_group'
         with:
-          node-version: 24
+          node-version: 26
 
       - name: A rendered web change shows its screenshots
         if: github.event_name != 'merge_group'

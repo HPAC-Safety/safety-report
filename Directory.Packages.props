@@ -32,7 +32,7 @@
 		     drain-once invocation, not the ASP.NET Core Lambda Web Adapter the API
 		     uses. Worker only. -->
 		<PackageVersion Include="Amazon.Lambda.Core" Version="3.4.0" />
-		<PackageVersion Include="Amazon.Lambda.RuntimeSupport" Version="2.3.0" />
+		<PackageVersion Include="Amazon.Lambda.RuntimeSupport" Version="2.3.1" />
 	</ItemGroup>
 	<ItemGroup Label="Coverage">
 		<!-- ReportGenerator is the other half of this and lives in

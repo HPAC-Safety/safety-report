@@ -86,7 +86,7 @@
 		     with the DbContext and lives in the EntityFrameworkCore group above -
 		     the provider is pinned to EF Core's cadence, this is not. Renovate
 		     groups them the same way. -->
-		<PackageVersion Include="Npgsql" Version="10.0.3" />
+		<PackageVersion Include="Npgsql" Version="10.0.4" />
 	</ItemGroup>
 	<ItemGroup Label="Reqnroll">
 		<!-- Executes the Gherkin scenarios under .spec/features/ as xUnit v3 tests.

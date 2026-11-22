@@ -26,7 +26,7 @@
 # rebuilds it; never pushed.
 FROM --platform=linux/amd64 ubuntu:24.04@sha256:9c7f200c07e3d4a03e7249d2c16bf66a51120fb876aa2242cf31451412543289 AS amd64
 
-FROM ghcr.io/catthehacker/ubuntu:act-24.04@sha256:7bf3a8afc2bbfe7fdaf4b9d2716cb2f3634fd21e4f38e26aa17a12cfda80d721
+FROM ghcr.io/catthehacker/ubuntu:act-24.04@sha256:f195e42bedd719818f81f28c6e54c1d08c5a8400f3012aa187cb90df3823e59a
 
 ARG GH_VERSION=2.101.0
 ARG GH_SHA256_AMD64=9bca2d1c16825f109907a23307628a2f0698fbf99662b73a5cf0b020293072b8

@@ -122,7 +122,7 @@ services:
       Translation__ApiKey: "${DEEPL_API_KEY:-}"
 
   web:
-    image: node:24-alpine
+    image: node:26-alpine
     working_dir: /repo/src/web
     depends_on:
       - api
